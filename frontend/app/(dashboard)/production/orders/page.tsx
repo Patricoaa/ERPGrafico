@@ -262,7 +262,7 @@ export default function WorkOrdersPage() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-orange-500 hover:text-amber-700"
+                            className="h-8 w-8 text-warning hover:text-warning"
                             onClick={() => handleCancel(row.original.id)}
                             title="Anular"
                         >

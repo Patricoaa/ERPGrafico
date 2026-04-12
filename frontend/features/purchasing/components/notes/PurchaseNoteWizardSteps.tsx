@@ -68,16 +68,16 @@ export function Step1_GeneralInfo({
                             className={cn(
                                 "cursor-pointer rounded-lg border-2 p-4 transition-all hover:bg-muted/50",
                                 noteType === "NOTA_CREDITO"
-                                    ? "border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20"
+                                    ? "border-warning bg-warning/10/50 ring-2 ring-warning/20"
                                     : "border-muted"
                             )}
                             onClick={() => setNoteType("NOTA_CREDITO")}
                         >
                             <div className="flex items-center gap-3 mb-2">
-                                <div className={`p-2 rounded-full ${noteType === 'NOTA_CREDITO' ? 'bg-amber-100' : 'bg-muted'}`}>
-                                    <FileText className={`h-5 w-5 ${noteType === 'NOTA_CREDITO' ? 'text-amber-700' : 'text-muted-foreground'}`} />
+                                <div className={`p-2 rounded-full ${noteType === 'NOTA_CREDITO' ? 'bg-warning/10' : 'bg-muted'}`}>
+                                    <FileText className={`h-5 w-5 ${noteType === 'NOTA_CREDITO' ? 'text-warning' : 'text-muted-foreground'}`} />
                                 </div>
-                                <span className={`font-black ${noteType === 'NOTA_CREDITO' ? 'text-amber-900' : 'text-muted-foreground'}`}>
+                                <span className={`font-black ${noteType === 'NOTA_CREDITO' ? 'text-warning' : 'text-muted-foreground'}`}>
                                     Nota de Crédito
                                 </span>
                             </div>
@@ -90,16 +90,16 @@ export function Step1_GeneralInfo({
                             className={cn(
                                 "cursor-pointer rounded-lg border-2 p-4 transition-all hover:bg-muted/50",
                                 noteType === "NOTA_DEBITO"
-                                    ? "border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20"
+                                    ? "border-primary bg-primary/10/50 ring-2 ring-primary/20"
                                     : "border-muted"
                             )}
                             onClick={() => setNoteType("NOTA_DEBITO")}
                         >
                             <div className="flex items-center gap-3 mb-2">
-                                <div className={`p-2 rounded-full ${noteType === 'NOTA_DEBITO' ? 'bg-blue-100' : 'bg-muted'}`}>
+                                <div className={`p-2 rounded-full ${noteType === 'NOTA_DEBITO' ? 'bg-primary/10' : 'bg-muted'}`}>
                                     <FileText className={`h-5 w-5 ${noteType === 'NOTA_DEBITO' ? 'text-primary' : 'text-muted-foreground'}`} />
                                 </div>
-                                <span className={`font-black ${noteType === 'NOTA_DEBITO' ? 'text-blue-900' : 'text-muted-foreground'}`}>
+                                <span className={`font-black ${noteType === 'NOTA_DEBITO' ? 'text-primary' : 'text-muted-foreground'}`}>
                                     Nota de Débito
                                 </span>
                             </div>
@@ -211,7 +211,7 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
                                     key={line.id}
                                     className={cn(
                                         "transition-colors hover:bg-muted/20",
-                                        isSelected ? (noteType === 'NOTA_CREDITO' ? "bg-amber-50/40" : "bg-blue-50/40") : ""
+                                        isSelected ? (noteType === 'NOTA_CREDITO' ? "bg-warning/10/40" : "bg-primary/10/40") : ""
                                     )}
                                 >
                                     <td className="px-4 py-3 text-center text-xs text-muted-foreground font-mono">
@@ -240,7 +240,7 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
                                             className={cn(
                                                 "h-9 text-center font-bold font-mono transition-all",
                                                 isSelected
-                                                    ? (noteType === 'NOTA_CREDITO' ? "border-amber-300 ring-2 ring-amber-100" : "border-blue-300 ring-2 ring-blue-100")
+                                                    ? (noteType === 'NOTA_CREDITO' ? "border-warning/20 ring-2 ring-warning/10" : "border-primary/20 ring-2 ring-primary/10")
                                                     : "border-muted bg-muted/20"
                                             )}
                                             value={line.note_quantity}
@@ -290,7 +290,7 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
                 )}
             </div>
 
-            <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-lg flex gap-3 text-sm text-blue-800">
+            <div className="bg-primary/10/50 border border-primary/10 p-4 rounded-lg flex gap-3 text-sm text-primary">
                 <AlertCircle className="h-5 w-5 shrink-0" />
                 <p>
                     Los montos calculados aquí son referenciales. El sistema ajustará automáticamente los impuestos (IVA)
@@ -327,8 +327,8 @@ export function Step3_Review({
     return (
         <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="text-center space-y-2 mb-8">
-                <div className="inline-flex items-center justify-center p-4 bg-emerald-100 rounded-full mb-4">
-                    <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+                <div className="inline-flex items-center justify-center p-4 bg-success/10 rounded-full mb-4">
+                    <CheckCircle2 className="h-8 w-8 text-success" />
                 </div>
                 <h2 className="text-2xl font-black tracking-tight">Confirmar Registro</h2>
                 <p className="text-muted-foreground">

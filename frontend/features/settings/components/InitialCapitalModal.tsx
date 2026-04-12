@@ -110,9 +110,9 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                 </DialogHeader>
 
                 <div className="space-y-6 py-4">
-                    <Alert variant="default" className="bg-blue-50/50 border-blue-200">
+                    <Alert variant="default" className="bg-primary/10/50 border-primary/20">
                         <Info className="h-4 w-4 text-primary" />
-                        <AlertTitle className="text-blue-800 text-xs font-bold uppercase tracking-wider">Aviso Contable</AlertTitle>
+                        <AlertTitle className="text-primary text-xs font-bold uppercase tracking-wider">Aviso Contable</AlertTitle>
                         <AlertDescription className="text-primary text-xs">
                             Esta acción generará un asiento de **Suscripción de Capital**, debitando la cuenta de **Capital por Cobrar Socios** (Activo) y acreditando la cuenta de **Capital Social** (Patrimonio), manteniendo la trazabilidad individual por socio.
                             Los aportes físicos de bienes se deben registrar posteriormente.

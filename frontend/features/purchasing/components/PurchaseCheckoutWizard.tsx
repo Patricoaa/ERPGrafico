@@ -404,7 +404,7 @@ export function PurchaseCheckoutWizard({
                     ) : (
                         <Button
                             onClick={handleFinish}
-                            className="w-48 h-12 bg-emerald-600 hover:bg-emerald-700 font-bold"
+                            className="w-48 h-12 bg-success hover:bg-success font-bold"
                             disabled={loading}
                         >
                             {loading ? (

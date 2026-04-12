@@ -266,50 +266,50 @@ export default function AuditHubPage() {
                     </>
                 ) : (
                     <>
-                        <Card className="bg-green-50/30 border-green-100 shadow-sm">
+                        <Card className="bg-success/10/30 border-success/10 shadow-sm">
                             <CardContent className="p-4 flex items-center gap-4">
-                                <div className="p-2 bg-emerald-100/50 rounded-full">
-                                    <LogIn className="h-5 w-5 text-emerald-700" />
+                                <div className="p-2 bg-success/10/50 rounded-full">
+                                    <LogIn className="h-5 w-5 text-success" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-tight">Logins (Sesión)</p>
-                                    <p className="text-2xl font-bold text-green-900">{logs.filter(l => l.action_type === 'LOGIN').length}</p>
+                                    <p className="text-[10px] text-success font-bold uppercase tracking-tight">Logins (Sesión)</p>
+                                    <p className="text-2xl font-bold text-success">{logs.filter(l => l.action_type === 'LOGIN').length}</p>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-blue-50/30 border-blue-100 shadow-sm">
+                        <Card className="bg-primary/10/30 border-primary/10 shadow-sm">
                             <CardContent className="p-4 flex items-center gap-4">
-                                <div className="p-2 bg-blue-100/50 rounded-full">
+                                <div className="p-2 bg-primary/10/50 rounded-full">
                                     <Activity className="h-5 w-5 text-primary" />
                                 </div>
                                 <div>
                                     <p className="text-[10px] text-primary font-bold uppercase tracking-tight">Cambios Datos</p>
-                                    <p className="text-2xl font-bold text-blue-900">{logs.filter(l => l.source === 'history').length}</p>
+                                    <p className="text-2xl font-bold text-primary">{logs.filter(l => l.source === 'history').length}</p>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-primary/10/30 border-indigo-100 shadow-sm">
+                        <Card className="bg-primary/10/30 border-info/10 shadow-sm">
                             <CardContent className="p-4 flex items-center gap-4">
                                 <div className="p-2 bg-primary/10/50 rounded-full">
                                     <Settings className="h-5 w-5 text-primary" />
                                 </div>
                                 <div>
                                     <p className="text-[10px] text-primary font-bold uppercase tracking-tight">Configuración</p>
-                                    <p className="text-2xl font-bold text-indigo-900">{logs.filter(l => l.action_type === 'SETTINGS_CHANGE').length}</p>
+                                    <p className="text-2xl font-bold text-info">{logs.filter(l => l.action_type === 'SETTINGS_CHANGE').length}</p>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-red-50/30 border-red-100 shadow-sm">
+                        <Card className="bg-destructive/10/30 border-destructive/10 shadow-sm">
                             <CardContent className="p-4 flex items-center gap-4">
-                                <div className="p-2 bg-red-100/50 rounded-full">
+                                <div className="p-2 bg-destructive/10/50 rounded-full">
                                     <ShieldAlert className="h-5 w-5 text-destructive" />
                                 </div>
                                 <div>
                                     <p className="text-[10px] text-destructive font-bold uppercase tracking-tight">Incidentes</p>
-                                    <p className="text-2xl font-bold text-red-900">{logs.filter(l => l.action_type === 'SECURITY').length}</p>
+                                    <p className="text-2xl font-bold text-destructive">{logs.filter(l => l.action_type === 'SECURITY').length}</p>
                                 </div>
                             </CardContent>
                         </Card>

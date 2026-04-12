@@ -57,14 +57,14 @@ export function DocumentAttachmentDropzone({
                     </div>
                 </div>
             ) : (
-                <div className="flex items-center justify-between p-3 bg-emerald-500/5 border rounded-lg animate-in zoom-in duration-300">
+                <div className="flex items-center justify-between p-3 bg-success/5 border rounded-lg animate-in zoom-in duration-300">
                     <div className="flex items-center gap-3">
-                        <div className="p-1.5 bg-emerald-500/10 rounded text-emerald-600">
+                        <div className="p-1.5 bg-success/10 rounded text-success">
                             <FileText className="h-4 w-4" />
                         </div>
                         <div className="flex flex-col min-w-0">
                             <span className="text-xs font-bold truncate max-w-[250px]" title={file.name}>{file.name}</span>
-                            <span className="text-[10px] uppercase font-black text-emerald-600/50">{(file.size / 1024).toFixed(1)} KB</span>
+                            <span className="text-[10px] uppercase font-black text-success/50">{(file.size / 1024).toFixed(1)} KB</span>
                         </div>
                     </div>
                     <Button 

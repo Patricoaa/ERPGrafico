@@ -122,7 +122,7 @@ export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
                     {row.original.auto_confirm
-                        ? <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        ? <CheckCircle2 className="h-4 w-4 text-success" />
                         : <span className="text-muted-foreground/30">-</span>
                     }
                 </div>
@@ -136,8 +136,8 @@ export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }
                 <div className="flex flex-col items-center justify-center w-full">
                     <span className={cn(
                         "font-bold text-sm",
-                        row.original.success_rate > 80 ? 'text-emerald-600' :
-                        row.original.success_rate > 50 ? 'text-amber-600' : 'text-muted-foreground'
+                        row.original.success_rate > 80 ? 'text-success' :
+                        row.original.success_rate > 50 ? 'text-warning' : 'text-muted-foreground'
                     )}>
                         {row.original.success_rate}%
                     </span>

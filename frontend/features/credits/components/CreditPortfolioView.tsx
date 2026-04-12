@@ -98,7 +98,7 @@ function AgingBar({ aging }: { aging: CreditContact["credit_aging"] }) {
     if (total === 0) return <span className="text-[11px] text-muted-foreground">Sin saldo</span>
     const keys = ["current", "overdue_30", "overdue_60", "overdue_90", "overdue_90plus"] as const
     // We use Tailwind classes that map to our semantic tokens where possible, or specific colors for levels
-    const colors = ["bg-success", "bg-warning", "bg-orange-400", "bg-destructive", "bg-destructive/80 font-black"]
+    const colors = ["bg-success", "bg-warning", "bg-warning/50", "bg-destructive", "bg-destructive/80 font-black"]
     return (
         <div className="flex h-2 w-full rounded-full overflow-hidden gap-px bg-muted">
             {keys.map((k, i) => {
@@ -418,7 +418,7 @@ const portfolioColumns: (onEdit: (c: CreditContact) => void) => ColumnDef<Credit
             const risk = row.original.credit_risk_level
             const color = risk === 'LOW' ? 'text-success' : 
                          risk === 'MEDIUM' ? 'text-warning' : 
-                         risk === 'HIGH' ? 'text-orange-500' : 'text-destructive'
+                         risk === 'HIGH' ? 'text-warning' : 'text-destructive'
             const label = risk === 'LOW' ? 'Bajo' : 
                          risk === 'MEDIUM' ? 'Medio' : 
                          risk === 'HIGH' ? 'Alto' : 'Crítico'

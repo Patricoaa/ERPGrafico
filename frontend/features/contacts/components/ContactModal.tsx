@@ -734,63 +734,63 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                     <>
                         {/* 2. Financial Card (Accounts Receivable/Payable) */}
                         <Card
-                            className={`cursor-pointer transition-all hover:bg-red-50/50 border-none shadow-sm rounded-lg ${activeFilter === 'financial' ? 'ring-2 ring-red-500 ring-offset-2' : 'bg-red-50/20'}`}
+                            className={`cursor-pointer transition-all hover:bg-destructive/10/50 border-none shadow-sm rounded-lg ${activeFilter === 'financial' ? 'ring-2 ring-destructive ring-offset-2' : 'bg-destructive/10/20'}`}
                             onClick={() => setActiveFilter('financial')}
                         >
                             <CardContent className="p-4 flex items-center justify-between">
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-red-600/70 tracking-wider mb-1">
+                                    <p className="text-[10px] font-bold uppercase text-destructive/70 tracking-wider mb-1">
                                         {type === 'sale' ? 'Por Cobrar' : 'Por Pagar'}
                                     </p>
-                                    <p className="text-lg font-bold text-red-700">
+                                    <p className="text-lg font-bold text-destructive">
                                         ${metrics.totalPendingMoney.toLocaleString()}
                                     </p>
-                                    <p className="text-[9px] text-red-600/60 font-medium">
+                                    <p className="text-[9px] text-destructive/60 font-medium">
                                         {metrics.pendingPaymentCount} documentos
                                     </p>
                                 </div>
-                                <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
-                                    <Banknote className="h-4 w-4 text-red-600" />
+                                <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center">
+                                    <Banknote className="h-4 w-4 text-destructive" />
                                 </div>
                             </CardContent>
                         </Card>
 
                         {/* 3. Logistics Card */}
                         <Card
-                            className={`cursor-pointer transition-all hover:bg-amber-50/50 border-none shadow-sm rounded-lg ${activeFilter === 'logistics' ? 'ring-2 ring-amber-500 ring-offset-2' : 'bg-white'}`}
+                            className={`cursor-pointer transition-all hover:bg-warning/10/50 border-none shadow-sm rounded-lg ${activeFilter === 'logistics' ? 'ring-2 ring-warning ring-offset-2' : 'bg-white'}`}
                             onClick={() => setActiveFilter('logistics')}
                         >
                             <CardContent className="p-4 flex items-center justify-between">
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-amber-600/70 tracking-wider mb-1">
+                                    <p className="text-[10px] font-bold uppercase text-warning/70 tracking-wider mb-1">
                                         {type === 'sale' ? 'Despacho Pdte.' : 'Recepción Pdte.'}
                                     </p>
-                                    <p className="text-2xl font-bold text-amber-700">
+                                    <p className="text-2xl font-bold text-warning">
                                         {metrics.pendingLogisticsCount}
                                     </p>
                                 </div>
-                                <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
-                                    <Truck className="h-4 w-4 text-amber-600" />
+                                <div className="h-8 w-8 rounded-full bg-warning/10 flex items-center justify-center">
+                                    <Truck className="h-4 w-4 text-warning" />
                                 </div>
                             </CardContent>
                         </Card>
 
                         {/* 4. Billing Card */}
                         <Card
-                            className={`cursor-pointer transition-all hover:bg-blue-50/50 border-none shadow-sm rounded-lg ${activeFilter === 'billing' ? 'ring-2 ring-blue-500 ring-offset-2' : 'bg-white'}`}
+                            className={`cursor-pointer transition-all hover:bg-primary/10/50 border-none shadow-sm rounded-lg ${activeFilter === 'billing' ? 'ring-2 ring-primary ring-offset-2' : 'bg-white'}`}
                             onClick={() => setActiveFilter('billing')}
                         >
                             <CardContent className="p-4 flex items-center justify-between">
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase text-blue-600/70 tracking-wider mb-1">
+                                    <p className="text-[10px] font-bold uppercase text-primary/70 tracking-wider mb-1">
                                         Facturación Pdte.
                                     </p>
-                                    <p className="text-2xl font-bold text-blue-700">
+                                    <p className="text-2xl font-bold text-primary">
                                         {metrics.pendingBillingCount}
                                     </p>
                                 </div>
-                                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                    <Receipt className="h-4 w-4 text-blue-600" />
+                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <Receipt className="h-4 w-4 text-primary" />
                                 </div>
                             </CardContent>
                         </Card>
@@ -800,20 +800,20 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                 {/* Work Order Specific Card */}
                 {type === 'work_order' && (
                     <Card
-                        className={`cursor-pointer transition-all hover:bg-purple-50/50 border-none shadow-sm ${activeFilter === 'pending' ? 'ring-2 ring-purple-500 ring-offset-2' : 'bg-purple-50/20'}`}
+                        className={`cursor-pointer transition-all hover:bg-primary/10/50 border-none shadow-sm ${activeFilter === 'pending' ? 'ring-2 ring-primary ring-offset-2' : 'bg-primary/10/20'}`}
                         onClick={() => setActiveFilter('pending')}
                     >
                         <CardContent className="p-4 flex items-center justify-between">
                             <div>
-                                <p className="text-[10px] font-bold uppercase text-purple-600/70 tracking-wider mb-1">
+                                <p className="text-[10px] font-bold uppercase text-primary/70 tracking-wider mb-1">
                                     En Proceso / Pdte
                                 </p>
-                                <p className="text-2xl font-bold text-purple-700">
+                                <p className="text-2xl font-bold text-primary">
                                     {metrics.pendingWOCount}
                                 </p>
                             </div>
-                            <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                                <ClipboardList className="h-4 w-4 text-purple-600" />
+                            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <ClipboardList className="h-4 w-4 text-primary" />
                             </div>
                         </CardContent>
                     </Card>
@@ -903,7 +903,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], lo
         {
             accessorKey: "balance",
             header: "Saldo",
-            cell: ({ row }) => <DataCell.Currency value={row.original.balance} className="text-left font-bold text-red-600" />,
+            cell: ({ row }) => <DataCell.Currency value={row.original.balance} className="text-left font-bold text-destructive" />,
         },
         {
             id: "status",

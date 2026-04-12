@@ -116,7 +116,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                                                     <div className={cn(
                                                         "inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase border transition-colors",
                                                         rule.active 
-                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                                            ? 'bg-success/10 text-success border-success/20' 
                                                             : 'bg-muted/50 text-muted-foreground border-transparent'
                                                     )}>
                                                         {rule.active ? "Activa" : "Inactiva"}

@@ -156,7 +156,7 @@ export function Step2_Logistics({
                 </p>
 
                 {hasRestrictedItems && (
-                    <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 mt-2">
+                    <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive mt-2">
                         <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
                         <div className="space-y-1">
                             <p className="text-xs font-bold uppercase tracking-wider tabular-nums leading-none">Producción Requerida</p>
@@ -281,7 +281,7 @@ export function Step2_Logistics({
                                                     <div className="flex flex-col gap-1 py-1">
                                                         <span className="font-medium text-xs leading-tight">{item.product_name}</span>
                                                         {!isEligible && (
-                                                            <span className="text-[10px] text-amber-600 font-bold uppercase tracking-tighter">
+                                                            <span className="text-[10px] text-warning font-bold uppercase tracking-tighter">
                                                                 {isRestricted ? "Requiere Producción" : "Sin control de stock"}
                                                             </span>
                                                         )}

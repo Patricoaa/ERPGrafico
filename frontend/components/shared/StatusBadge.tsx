@@ -73,7 +73,7 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
     // Credit / Risk
     RISK_LOW: { label: "Riesgo Bajo", className: "bg-success/10 text-success border-success/20", type: "success" },
     RISK_MEDIUM: { label: "Riesgo Medio", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
-    RISK_HIGH: { label: "Riesgo Alto", className: "bg-orange-500/10 text-orange-600 border-orange-500/20", type: "warning" },
+    RISK_HIGH: { label: "Riesgo Alto", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
     RISK_CRITICAL: { label: "Riesgo Crítico", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
 
     // Credit Origins
@@ -85,7 +85,7 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
     WRITTEN_OFF: { label: "Castigado", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
     CURRENT: { label: "Vigente", className: "bg-success/10 text-success border-success/20", type: "success" },
     OVERDUE_30: { label: "1-30 Días", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
-    OVERDUE_60: { label: "31-60 Días", className: "bg-orange-500/10 text-orange-600 border-orange-500/20", type: "warning" },
+    OVERDUE_60: { label: "31-60 Días", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
     OVERDUE_90: { label: "61-90 Días", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
     OVERDUE_90PLUS: { label: "+90 Días", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
 

@@ -110,7 +110,7 @@ function CartItemComponent({
                         type="number"
                         className={cn(
                             "h-7 w-12 text-center text-xs font-bold bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0",
-                            isOverLimit && "text-destructive bg-red-50 rounded"
+                            isOverLimit && "text-destructive bg-destructive/10 rounded"
                         )}
                         value={item.qty}
                         onChange={(e) => onQuantityChange(item.cartItemId, e.target.value)}
@@ -123,7 +123,7 @@ function CartItemComponent({
                             variant="secondary"
                             className={cn(
                                 "text-[8px] px-1 h-3.5 bg-muted text-muted-foreground hover:bg-muted font-normal border-0 whitespace-nowrap",
-                                isOverLimit && "text-destructive bg-red-50"
+                                isOverLimit && "text-destructive bg-destructive/10"
                             )}
                         >
                             MAX: {maxQty}

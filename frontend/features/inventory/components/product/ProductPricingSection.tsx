@@ -50,12 +50,12 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
     // UNLESS forceEdit is true (for simplified variant editing)
     if (hasVariants && !forceEdit) {
         return (
-            <div className="p-6 rounded-lg bg-amber-50/50 border border-amber-200">
+            <div className="p-6 rounded-lg bg-warning/10/50 border border-warning/20">
                 <div className="flex items-start gap-3">
-                    <Info className="h-5 w-5 text-amber-600 mt-0.5" />
+                    <Info className="h-5 w-5 text-warning mt-0.5" />
                     <div>
-                        <p className="font-medium text-amber-900">Producto con Variantes</p>
-                        <p className="text-sm text-amber-700 mt-1">
+                        <p className="font-medium text-warning">Producto con Variantes</p>
+                        <p className="text-sm text-warning mt-1">
                             Los precios se asignan individualmente a cada variante desde la pestaña "Variantes".
                         </p>
                     </div>
@@ -261,9 +261,9 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                         <div className={cn(
                             "h-full flex flex-col justify-center p-4 rounded-lg border text-sm font-bold shadow-sm transition-all animate-in fade-in zoom-in duration-300",
                             marginPercentage > 30
-                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                ? "bg-success/10 border-success/20 text-success dark:text-success/50"
                                 : marginPercentage > 15
-                                    ? "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400"
+                                    ? "bg-warning/10 border-warning/20 text-warning dark:text-warning/50"
                                     : "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400"
                         )}>
                             <div className="flex items-center gap-2 mb-1">
@@ -276,9 +276,9 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                                 <Badge className={cn(
                                     "px-2 py-0.5 rounded-lg text-sm font-black border-none shadow-none uppercase tracking-tighter",
                                     marginPercentage > 30
-                                        ? "bg-emerald-500 text-white"
+                                        ? "bg-success text-white"
                                         : marginPercentage > 15
-                                            ? "bg-amber-500 text-white"
+                                            ? "bg-warning text-white"
                                             : "bg-rose-500 text-white"
                                 )}>
                                     {marginPercentage}%

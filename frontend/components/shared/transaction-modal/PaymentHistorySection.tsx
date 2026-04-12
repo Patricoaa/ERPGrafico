@@ -13,7 +13,7 @@ export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo
 
     return (
         <div className="space-y-4 pt-6 border-t">
-            <h3 className="text-lg font-black uppercase tracking-tighter flex items-center gap-2 text-emerald-600">
+            <h3 className="text-lg font-black uppercase tracking-tighter flex items-center gap-2 text-success">
                 <Banknote className="h-5 w-5" />
                 Historial de Pagos
             </h3>
@@ -37,12 +37,12 @@ export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo
                                         <span className="text-[9px] font-mono text-muted-foreground">{pay.transaction_number || pay.reference || '-'}</span>
                                     </div>
                                 </TableCell>
-                                <TableCell className="text-right font-black text-sm text-emerald-600">
+                                <TableCell className="text-right font-black text-sm text-success">
                                     {formatCurrency(pay.amount)}
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-1">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary rounded-lg hover:bg-blue-50" onClick={() => navigateTo('payment', pay.id)}>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary rounded-lg hover:bg-primary/5" onClick={() => navigateTo('payment', pay.id)}>
                                             <Eye className="h-4 w-4" />
                                         </Button>
                                     </div>

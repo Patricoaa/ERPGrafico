@@ -768,22 +768,22 @@ export function SalesCheckoutWizardContent({
                                         <div className="flex gap-2">
                                             {isWaitingApproval ? (
                                                 <>
-                                                    <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="border-amber-500/30 text-amber-700 hover:bg-amber-500/10">
+                                                    <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="border-warning/30 text-warning hover:bg-warning/10">
                                                         Cancelar
                                                     </Button>
                                                     {approvalTaskId && (
-                                                        <Button size="sm" onClick={() => checkApprovalStatus(approvalTaskId, false)} className="bg-amber-500 hover:bg-amber-600 text-white border-none shadow-sm">
+                                                        <Button size="sm" onClick={() => checkApprovalStatus(approvalTaskId, false)} className="bg-warning hover:bg-warning text-white border-none shadow-sm">
                                                             Verificar Estado
                                                         </Button>
                                                     )}
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="border-amber-500/30 text-amber-700 hover:bg-amber-500/10">
+                                                    <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="border-warning/30 text-warning hover:bg-warning/10">
                                                         Ajustar
                                                     </Button>
                                                     {canDirectApprove && (
-                                                        <Button size="sm" variant="secondary" onClick={handleDirectApproval} className="bg-amber-500 hover:bg-amber-600 text-white border-none shadow-sm">
+                                                        <Button size="sm" variant="secondary" onClick={handleDirectApproval} className="bg-warning hover:bg-warning text-white border-none shadow-sm">
                                                             Aprobar
                                                         </Button>
                                                     )}
@@ -799,11 +799,11 @@ export function SalesCheckoutWizardContent({
                         )}
 
                         {securityErrorMessage && (
-                            <Alert className="mb-4 border border-red-500/50 bg-red-500/5">
-                                <ShieldAlert className="h-4 w-4 text-red-500" />
-                                <AlertTitle className="font-bold text-red-700">Alerta de Seguridad</AlertTitle>
+                            <Alert className="mb-4 border border-destructive/50 bg-destructive/5">
+                                <ShieldAlert className="h-4 w-4 text-destructive" />
+                                <AlertTitle className="font-bold text-destructive">Alerta de Seguridad</AlertTitle>
                                 <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
-                                    <span className="text-sm text-red-700/80">{securityErrorMessage}</span>
+                                    <span className="text-sm text-destructive/80">{securityErrorMessage}</span>
                                     <Button 
                                         size="sm" 
                                         variant="outline" 
@@ -814,7 +814,7 @@ export function SalesCheckoutWizardContent({
                                             setIsWaitingApproval(false)
                                             setCreditApprovalRequired(false)
                                         }} 
-                                        className="border-red-500/30 text-red-700 hover:bg-red-500/10 shrink-0"
+                                        className="border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0"
                                     >
                                         Entendido
                                     </Button>

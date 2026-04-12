@@ -266,7 +266,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                                 className={cn(
                                     "h-9",
                                     parseFloat(actualProducedQty) !== parseFloat(plannedProducedQty) &&
-                                    "border-amber-500 focus-visible:ring-amber-500"
+                                    "border-warning focus-visible:ring-warning"
                                 )}
                                 placeholder="Ej: 95"
                             />

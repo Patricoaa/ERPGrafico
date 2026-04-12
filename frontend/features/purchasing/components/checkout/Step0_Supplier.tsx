@@ -91,7 +91,7 @@ export function Step0_Supplier({
                 </div>
 
                 {!selectedSupplierId && !loading && (
-                    <div className="flex items-center gap-2 text-sm text-amber-600 font-medium py-2 px-3 bg-amber-50 rounded-lg border border-amber-100 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center gap-2 text-sm text-warning font-medium py-2 px-3 bg-warning/10 rounded-lg border border-warning/10 animate-in fade-in slide-in-from-top-2">
                         <AlertCircle className="h-4 w-4" />
                         Debe seleccionar un proveedor para proceder.
                     </div>

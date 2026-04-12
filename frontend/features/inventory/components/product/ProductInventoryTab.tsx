@@ -434,13 +434,13 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                 <span className="text-[10px] uppercase text-muted-foreground font-bold">A Mano</span>
                                                 <span className="text-lg font-bold tabular-nums">{initialData.current_stock || 0}</span>
                                             </div>
-                                            <div className="flex flex-col items-center bg-amber-50 rounded p-2 shadow-sm border border-amber-100">
-                                                <span className="text-[10px] uppercase text-amber-700 font-bold">Reservado</span>
-                                                <span className="text-lg font-bold tabular-nums text-amber-700">{initialData.qty_reserved || 0}</span>
+                                            <div className="flex flex-col items-center bg-warning/10 rounded p-2 shadow-sm border border-warning/10">
+                                                <span className="text-[10px] uppercase text-warning font-bold">Reservado</span>
+                                                <span className="text-lg font-bold tabular-nums text-warning">{initialData.qty_reserved || 0}</span>
                                             </div>
-                                            <div className="flex flex-col items-center bg-emerald-50 rounded p-2 shadow-sm border border-emerald-100">
-                                                <span className="text-[10px] uppercase text-emerald-700 font-bold">Disponible</span>
-                                                <span className="text-lg font-bold tabular-nums text-emerald-700">{initialData.qty_available || 0}</span>
+                                            <div className="flex flex-col items-center bg-success/10 rounded p-2 shadow-sm border border-success/10">
+                                                <span className="text-[10px] uppercase text-success font-bold">Disponible</span>
+                                                <span className="text-lg font-bold tabular-nums text-success">{initialData.qty_available || 0}</span>
                                             </div>
                                         </div>
                                     )}

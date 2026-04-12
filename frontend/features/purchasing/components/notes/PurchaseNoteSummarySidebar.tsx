@@ -60,7 +60,7 @@ export function PurchaseNoteSummarySidebar({
                 <Progress value={progress} className="h-2" />
 
                 <div className="mt-6 flex items-center gap-3">
-                    <div className={`p-2.5 rounded-lg ${noteType === 'NOTA_CREDITO' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-primary'}`}>
+                    <div className={`p-2.5 rounded-lg ${noteType === 'NOTA_CREDITO' ? 'bg-warning/10 text-warning' : 'bg-primary/10 text-primary'}`}>
                         {noteType === 'NOTA_CREDITO' ? (
                             <ArrowLeft className="h-5 w-5" />
                         ) : (
@@ -125,8 +125,8 @@ export function PurchaseNoteSummarySidebar({
 
                 {/* Impact Info */}
                 <div className={`p-4 rounded-lg border text-xs leading-relaxed ${noteType === 'NOTA_CREDITO'
-                    ? 'bg-amber-50 border-amber-100 text-amber-800'
-                    : 'bg-blue-50 border-blue-100 text-blue-800'
+                    ? 'bg-warning/10 border-warning/10 text-warning'
+                    : 'bg-primary/10 border-primary/10 text-primary'
                     }`}>
                     <div className="flex items-center gap-2 mb-2 font-bold">
                         <AlertCircle className="h-4 w-4" />
@@ -164,7 +164,7 @@ export function PurchaseNoteSummarySidebar({
 
                 <div className="flex justify-between items-baseline pt-4 border-t">
                     <span className="text-xs font-black uppercase text-muted-foreground tracking-wider">Total</span>
-                    <span className={`text-2xl font-black ${noteType === 'NOTA_CREDITO' ? 'text-amber-600' : 'text-primary'
+                    <span className={`text-2xl font-black ${noteType === 'NOTA_CREDITO' ? 'text-warning' : 'text-primary'
                         }`}>
                         {formatCurrency(totals.total)}
                     </span>

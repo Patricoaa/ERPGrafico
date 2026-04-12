@@ -144,7 +144,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                             {config.status && (
                                                 <div className={cn(
                                                     "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border",
-                                                    config.status.type === 'synced' && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+                                                    config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
                                                     config.status.type === 'saving' && "bg-primary/20 text-primary border-primary/20 animate-pulse",
                                                     config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
                                                     !config.status.type && "bg-muted text-muted-foreground border-border"
@@ -180,7 +180,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     </div>
                 </div>
 
-                <main className="flex-1 bg-transparent border border-white/5 rounded-2xl overflow-y-auto shadow-2xl custom-scrollbar relative backdrop-blur-sm">
+                <main id="main-content" className="flex-1 bg-transparent border border-white/5 rounded-2xl overflow-y-auto shadow-2xl custom-scrollbar relative backdrop-blur-sm">
                     <div className="w-full h-full">
                         {children}
                     </div>

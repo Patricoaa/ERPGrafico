@@ -190,34 +190,34 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                             {/* OVERVIEW TAB */}
                             <TabsContent value="overview" className="mt-0 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                    <Card className="bg-emerald-50/30 border-emerald-100">
+                                    <Card className="bg-success/10/30 border-success/10">
                                         <CardContent className="pt-4">
-                                            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Ventas Totales</p>
+                                            <p className="text-[10px] font-bold text-success uppercase tracking-wider">Ventas Totales</p>
                                             <div className="flex items-baseline gap-2">
-                                                <p className="text-2xl font-black text-emerald-900">{data.sales_analysis.total_sold}</p>
-                                                <span className="text-xs text-emerald-600">uds</span>
+                                                <p className="text-2xl font-black text-success">{data.sales_analysis.total_sold}</p>
+                                                <span className="text-xs text-success">uds</span>
                                             </div>
                                         </CardContent>
                                     </Card>
-                                    <Card className="bg-blue-50/30 border-blue-100">
+                                    <Card className="bg-primary/10/30 border-primary/10">
                                         <CardContent className="pt-4">
                                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Ingresos (Neto)</p>
-                                            <DataCell.Currency value={data.sales_analysis.total_revenue} className="text-2xl font-black text-blue-900 text-left" />
+                                            <DataCell.Currency value={data.sales_analysis.total_revenue} className="text-2xl font-black text-primary text-left" />
                                         </CardContent>
                                     </Card>
-                                    <Card className="bg-amber-50/30 border-amber-100">
+                                    <Card className="bg-warning/10/30 border-warning/10">
                                         <CardContent className="pt-4">
-                                            <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Margen Bruto</p>
+                                            <p className="text-[10px] font-bold text-warning uppercase tracking-wider">Margen Bruto</p>
                                             <div className="flex items-baseline gap-2">
-                                                <DataCell.Currency value={margin} className="text-2xl font-black text-amber-900 text-left" />
+                                                <DataCell.Currency value={margin} className="text-2xl font-black text-warning text-left" />
                                             </div>
                                         </CardContent>
                                     </Card>
-                                    <Card className={marginPercent >= 20 ? "bg-primary/10/30 border-indigo-100" : "bg-rose-50/30 border-rose-100"}>
+                                    <Card className={marginPercent >= 20 ? "bg-primary/10/30 border-info/10" : "bg-rose-50/30 border-rose-100"}>
                                         <CardContent className="pt-4">
                                             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">% de Margen</p>
                                             <div className="flex items-center gap-2">
-                                                <p className={`text-2xl font-black ${marginPercent >= 20 ? 'text-indigo-900' : 'text-rose-900'}`}>
+                                                <p className={`text-2xl font-black ${marginPercent >= 20 ? 'text-info' : 'text-rose-900'}`}>
                                                     {marginPercent.toFixed(1)}%
                                                 </p>
                                                 {marginPercent >= 20 ? <ArrowUpRight className="h-5 w-5 text-primary" /> : <ArrowDownRight className="h-5 w-5 text-rose-600" />}

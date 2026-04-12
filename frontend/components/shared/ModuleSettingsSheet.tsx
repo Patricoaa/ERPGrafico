@@ -79,8 +79,8 @@ export function ModuleSettingsSheet({
                             )}
                             {savingStatus === "synced" && (
                                 <>
-                                    <CloudCheck className="h-3 w-3 text-emerald-500" />
-                                    <span className="text-emerald-600">Sincronizado</span>
+                                    <CloudCheck className="h-3 w-3 text-success" />
+                                    <span className="text-success">Sincronizado</span>
                                 </>
                             )}
                             {savingStatus === "error" && (

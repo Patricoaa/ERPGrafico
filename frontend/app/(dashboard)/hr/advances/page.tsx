@@ -136,7 +136,7 @@ export default function AdvancesPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat(row.original.amount)} className="text-amber-600 font-bold" />
+                    <DataCell.Currency value={parseFloat(row.original.amount)} className="text-warning font-bold" />
                 </div>
             )
         },

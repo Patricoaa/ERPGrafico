@@ -40,20 +40,20 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
     if (isPurchase) {
         Icon = Package
         iconBg = "bg-primary/5"
-        iconColor = "text-indigo-500/60"
+        iconColor = "text-info/60"
         iconBorder = "border-primary/20/10"
         prefix = "OCS"
     } else if (isWorkOrder) {
         Icon = Wand2
         iconBg = "bg-primary/5"
-        iconColor = "text-purple-500/60"
+        iconColor = "text-primary/60"
         iconBorder = "border-primary/20/10"
         prefix = "OT"
     } else if (isNote) {
         Icon = FileBadge
-        iconBg = "bg-amber-500/5"
-        iconColor = "text-amber-500/60"
-        iconBorder = "border-amber-500/10"
+        iconBg = "bg-warning/5"
+        iconColor = "text-warning/60"
+        iconBorder = "border-warning/10"
         prefix = item.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND'
     } else if (isLedger) {
         Icon = ShoppingCart

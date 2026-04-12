@@ -148,7 +148,7 @@ export function Step1_Items({
                                                     {line.product_code || line.product}
                                                 </Badge>
                                                 {line.product_type === 'MANUFACTURABLE' && (
-                                                    <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none text-[8px] py-0 h-4 font-black uppercase tracking-tighter">
+                                                    <Badge className="bg-warning/10 text-warning hover:bg-warning/10 border-none text-[8px] py-0 h-4 font-black uppercase tracking-tighter">
                                                         Fab
                                                     </Badge>
                                                 )}
@@ -161,10 +161,10 @@ export function Step1_Items({
                                             <span className="text-[10px] font-medium opacity-70">{line.uom_name}</span>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-right font-black text-xs tabular-nums text-emerald-600 px-3">
+                                    <TableCell className="text-right font-black text-xs tabular-nums text-success px-3">
                                         <div className="flex flex-col">
                                             <span>{Math.floor(line.quantity_delivered || 0)}</span>
-                                            <span className="text-[10px] font-bold text-emerald-700/60 uppercase">{line.uom_name}</span>
+                                            <span className="text-[10px] font-bold text-success/60 uppercase">{line.uom_name}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell className="px-4">
@@ -195,7 +195,7 @@ export function Step1_Items({
                                                 <div className="absolute -top-3 -right-3">
                                                     <Badge className={cn(
                                                         "h-5 min-w-5 flex items-center justify-center text-[8px] font-black border-2 border-background shadow-sm",
-                                                        isCreditNote ? "bg-primary" : "bg-orange-500"
+                                                        isCreditNote ? "bg-primary" : "bg-warning"
                                                     )}>
                                                         MAX {maxQty}
                                                     </Badge>
@@ -222,7 +222,7 @@ export function Step1_Items({
                                                 />
                                             </div>
                                             {isExempt && (
-                                                <span className="text-[9px] font-black text-emerald-600 uppercase tracking-tighter bg-emerald-50 px-1 py-0.5 rounded border border-emerald-100">
+                                                <span className="text-[9px] font-black text-success uppercase tracking-tighter bg-success/10 px-1 py-0.5 rounded border border-success/10">
                                                     Exento
                                                 </span>
                                             )}

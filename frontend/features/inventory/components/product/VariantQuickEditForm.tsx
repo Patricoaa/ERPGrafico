@@ -173,7 +173,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
                   <h4 className="text-[11px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
                       <Factory className="h-3.5 w-3.5" /> Recetas de Producción
                   </h4>
-                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200 text-[10px]">
+                  <Badge variant="secondary" className="bg-success/10 text-success hover:bg-success/10 border-success/20 text-[10px]">
                     LdM REQUERIDA
                   </Badge>
                 </div>
