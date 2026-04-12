@@ -56,6 +56,7 @@ interface DataTableProps<TData, TValue> {
     useAdvancedFilter?: boolean
     onReset?: () => void
     renderCustomView?: (table: ReactTable<TData>) => React.ReactNode
+    leftAction?: React.ReactNode
     rightAction?: React.ReactNode
     showToolbarSort?: boolean
     onRowClick?: (row: TData) => void
@@ -100,6 +101,7 @@ export function DataTable<TData, TValue>({
     useAdvancedFilter = false,
     onReset,
     renderCustomView,
+    leftAction,
     rightAction,
     showToolbarSort,
     onRowClick,
@@ -127,15 +129,13 @@ export function DataTable<TData, TValue>({
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
     const [globalFilter, setGlobalFilter] = React.useState("")
 
-    const visibilityState = React.useMemo(() => {
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(() => {
         const visibility = { ...initialColumnVisibility }
         hiddenColumns.forEach(col => {
             visibility[col] = false
         })
         return visibility
-    }, [initialColumnVisibility, hiddenColumns])
-
-    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(visibilityState)
+    })
     const [rowSelection, setRowSelection] = React.useState({})
 
     // Guard for async operations/effects during unmount
@@ -148,13 +148,24 @@ export function DataTable<TData, TValue>({
     }, [])
 
     const prevInitialVisibility = React.useRef(initialColumnVisibility)
+    const prevHiddenColumns = React.useRef(hiddenColumns)
+    
     React.useEffect(() => {
         if (!isMounted.current) return
-        if (JSON.stringify(prevInitialVisibility.current) !== JSON.stringify(initialColumnVisibility)) {
-            setColumnVisibility(visibilityState)
+        
+        const visibilityChanged = JSON.stringify(prevInitialVisibility.current) !== JSON.stringify(initialColumnVisibility)
+        const hiddenChanged = JSON.stringify(prevHiddenColumns.current) !== JSON.stringify(hiddenColumns)
+        
+        if (visibilityChanged || hiddenChanged) {
+            const newVisibility = { ...initialColumnVisibility }
+            hiddenColumns.forEach(col => {
+                newVisibility[col] = false
+            })
+            setColumnVisibility(newVisibility)
             prevInitialVisibility.current = initialColumnVisibility
+            prevHiddenColumns.current = hiddenColumns
         }
-    }, [initialColumnVisibility, visibilityState])
+    }, [initialColumnVisibility, hiddenColumns])
 
     const prevRowSelection = React.useRef(rowSelection)
     React.useEffect(() => {
@@ -220,7 +231,7 @@ export function DataTable<TData, TValue>({
         },
     })
 
-    const showToolbar = filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction
+    const showToolbar = filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction
     const selectedRows = table.getSelectedRowModel().rows
 
     if (cardMode) {
@@ -294,6 +305,7 @@ export function DataTable<TData, TValue>({
                             toolbarAction={toolbarAction}
                             useAdvancedFilter={useAdvancedFilter}
                             onReset={onReset}
+                            leftAction={leftAction}
                             rightAction={rightAction}
                             showToolbarSort={showToolbarSort}
                             viewOptions={viewOptions}
@@ -391,6 +403,7 @@ export function DataTable<TData, TValue>({
                         toolbarAction={toolbarAction}
                         useAdvancedFilter={useAdvancedFilter}
                         onReset={onReset}
+                        leftAction={leftAction}
                         rightAction={rightAction}
                         showToolbarSort={showToolbarSort}
                         viewOptions={viewOptions}

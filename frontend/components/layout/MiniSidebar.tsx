@@ -1,6 +1,6 @@
 "use client"
 
-import { Home, Calculator, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, Receipt, UserCog } from "lucide-react"
+import { Home, Calculator, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, Receipt, UserCog, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
@@ -25,6 +25,7 @@ const mainItems = [
     { id: "accounting", icon: Calculator, label: "Contabilidad", permission: "accounting.view_dashboard_accounting" },
     { id: "billing", icon: Receipt, label: "Facturación", permission: "billing.view_dashboard_billing" },
     { id: "sales", icon: ShoppingCart, label: "Ventas", permission: "sales.view_dashboard_sales" },
+    { id: "contacts", icon: Users, label: "Contactos", permission: null },
     { id: "inventory", icon: Package, label: "Inventario", permission: "inventory.view_dashboard_inventory" },
     { id: "production", icon: Printer, label: "Producción", permission: "production.view_dashboard_production" },
     { id: "treasury", icon: Banknote, label: "Tesorería", permission: "treasury.view_dashboard_treasury" },

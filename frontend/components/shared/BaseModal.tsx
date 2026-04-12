@@ -67,8 +67,7 @@ export function BaseModal({
 
     const titleStyles = cn(
         "text-xl font-bold flex items-center gap-2",
-        isTransaction && "tracking-tight text-white",
-        isWizard && "text-center w-full justify-center"
+        isTransaction && "tracking-tight text-white"
     )
 
     const footerStyles = cn(
@@ -97,7 +96,7 @@ export function BaseModal({
                 {(title || description || headerActions) && (
                     <DialogHeader className={headerStyles}>
                         <div className="flex items-center justify-between gap-4 w-full">
-                            <div className={cn("flex flex-col gap-1 w-full", isWizard && "items-center")}>
+                            <div className={cn("flex flex-col gap-1 w-full")}>
                                 <DialogTitle className={titleStyles}>
                                     {title}
                                 </DialogTitle>

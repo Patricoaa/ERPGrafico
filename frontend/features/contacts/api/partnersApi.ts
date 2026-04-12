@@ -66,6 +66,11 @@ export const partnersApi = {
         return response.data
     },
 
+    recordDividendPayment: async (contactId: number, data: { amount: number, date: string, treasury_account_id?: number, description?: string }) => {
+        const response = await api.post(`/contacts/${contactId}/individual_dividend_payment/`, data)
+        return response.data
+    },
+
     getTransactions: async () => {
         const response = await api.get('/contacts/all_partner_transactions/')
         return response.data
@@ -90,7 +95,7 @@ export const partnersApi = {
         return response.data
     },
 
-    updateProfitDistributionLines: async (id: number, lines: { line_id: number, destination: string }[]) => {
+    updateProfitDistributionLines: async (id: number, lines: { line_id: number, destinations: { destination: string, amount: number }[] }[]) => {
         const response = await api.patch(`/contacts/profit-distributions/${id}/update_destinations/`, { lines })
         return response.data
     },
@@ -115,8 +120,13 @@ export const partnersApi = {
         return response.data
     },
 
-    massPaymentProfitDistribution: async (id: number, treasuryAccountId: number) => {
-        const response = await api.post(`/contacts/profit-distributions/${id}/mass_payment/`, { treasury_account_id: treasuryAccountId })
+    massPaymentProfitDistribution: async (id: number, treasuryAccountId: number, paymentsData: { partner_id: number, amount: number }[]) => {
+        const response = await api.post(`/contacts/profit-distributions/${id}/mass_payment/`, { treasury_account_id: treasuryAccountId, payments_data: paymentsData })
+        return response.data
+    },
+
+    massMobilizeRetainedEarnings: async (payload: { mobilizations: { partner_id: number, dividend_amount: number, reinvest_amount: number }[], date: string, description: string }) => {
+        const response = await api.post(`/contacts/mass_mobilize_retained_earnings/`, payload)
         return response.data
     }
 }

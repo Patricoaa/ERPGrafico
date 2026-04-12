@@ -6,7 +6,7 @@ import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load feature components
-const AccountsView = lazy(() => import("@/app/(dashboard)/accounting/accounts/page").then(m => ({ default: m.default })))
+const AccountsView = lazy(() => import("@/features/accounting/components/AccountsClientView").then(m => ({ default: m.AccountsClientView })))
 const EntriesView = lazy(() => import("@/app/(dashboard)/accounting/entries/page").then(m => ({ default: m.default })))
 const ClosuresView = lazy(() => import("@/features/accounting/components").then(m => ({ default: m.AccountingClosuresView })))
 const TrialBalanceView = lazy(() => import("@/features/accounting/components").then(m => ({ default: m.TrialBalanceView })))
@@ -43,14 +43,7 @@ export default async function AccountingPage({ searchParams }: PageProps) {
                     title: "Plan de Cuentas",
                     description: "Estructura contable y clasificación de cuentas.",
                     icon: "list-tree",
-                    action: (
-                        <PageHeaderButton
-                            href="/accounting?view=ledger&modal=new"
-                            iconName="plus"
-                            circular
-                            title="Nueva Cuenta"
-                        />
-                    )
+                    action: null
                 }
             case 'entries':
                 return {

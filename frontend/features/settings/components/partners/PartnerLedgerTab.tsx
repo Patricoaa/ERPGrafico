@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from "react"
 import {
-    History,
-    ArrowUpRight,
     ArrowDownLeft,
+    ArrowUpRight,
     Wallet,
     Calendar,
-    Package
+    Package,
+    LogOut
 } from "lucide-react"
 import { IndustrialCard } from "@/components/shared/IndustrialCard"
 import { Button } from "@/components/ui/button"
@@ -17,15 +17,15 @@ import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
 import { formatCurrency, formatPlainDate as formatDate, cn } from "@/lib/utils"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { InventoryContributionModal } from "@/features/settings/components/partners/InventoryContributionModal"
-import { CapitalContributionModal, ProvisionalWithdrawalModal } from "@/features/settings/components/partners/EquityMovementModals"
+import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
+import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 
@@ -49,11 +49,10 @@ export function PartnerLedgerTab() {
     const [loading, setLoading] = useState(true)
     const [transactions, setTransactions] = useState<any[]>([])
     const [partners, setPartners] = useState<any[]>([])
-    
+
     // Movement Modals
     const [isContributionOpen, setIsContributionOpen] = useState(false)
     const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
-    const [isInventoryOpen, setIsInventoryOpen] = useState(false)
 
     const fetchData = async () => {
         setLoading(true)
@@ -78,12 +77,12 @@ export function PartnerLedgerTab() {
 
     // Identify Inflow vs Outflow types for UI and Balance
     const isInflow = (type: string) => [
-        'SUBSCRIPTION', 'CAPITAL_CASH', 'CAPITAL_INVENTORY', 
+        'SUBSCRIPTION', 'CAPITAL_CASH', 'CAPITAL_INVENTORY',
         'TRANSFER_IN', 'REINVESTMENT', 'RETAINED'
     ].includes(type)
-    
+
     const isOutflow = (type: string) => [
-        'WITHDRAWAL', 'PROV_WITHDRAWAL', 'REDUCTION', 
+        'WITHDRAWAL', 'PROV_WITHDRAWAL', 'REDUCTION',
         'TRANSFER_OUT', 'LOSS_ABSORB', 'DIVIDEND_PAY'
     ].includes(type)
 
@@ -135,15 +134,15 @@ export function PartnerLedgerTab() {
             }
         },
         {
-            accessorKey: "transaction_type_display",
+            accessorKey: "description",
             header: "Concepto",
             cell: ({ row }) => (
                 <div className="flex flex-col gap-0.5">
                     <Badge variant="outline" className={cn("text-[8px] font-black uppercase tracking-wider w-fit h-4 px-1.5 leading-none", getTransactionColor(row.original.transaction_type))}>
-                        {row.getValue("transaction_type_display")}
+                        {row.original.transaction_type_display}
                     </Badge>
                     <span className="text-[10px] text-muted-foreground italic truncate max-w-[180px] leading-tight">
-                        {row.original.description}
+                        {row.getValue("description")}
                     </span>
                 </div>
             )
@@ -184,18 +183,25 @@ export function PartnerLedgerTab() {
                     {formatCurrency(row.getValue("balance_after"))}
                 </div>
             )
+        },
+        {
+            accessorKey: "transaction_type",
+            header: "Tipo",
+            // We'll hide this column via DataTable props
         }
     ]
 
     return (
         <div className="space-y-4">
-            <DataTable 
+            <DataTable
                 columns={columns}
                 data={txsWithBalance}
                 isLoading={loading}
                 cardMode={true}
+                useAdvancedFilter={true}
                 searchPlaceholder="Buscar por descripción..."
                 filterColumn="description"
+                hiddenColumns={["transaction_type"]}
                 facetedFilters={[
                     {
                         column: "partner_name",
@@ -210,39 +216,21 @@ export function PartnerLedgerTab() {
                 ]}
                 toolbarAction={
                     <div className="flex gap-2">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-foreground text-background hover:bg-foreground/90 transition-all rounded">
-                                    <Wallet className="h-3.5 w-3.5 mr-2" />
-                                    Operación Caja
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56 font-mono text-[10px] border-2">
-                                <DropdownMenuLabel className="text-[9px] tracking-[0.2em] text-muted-foreground/60 px-3 py-2">TESORERÍA INDUSTRIAL</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => setIsContributionOpen(true)} className="gap-3 cursor-pointer font-black text-success focus:text-success/80 p-3 hover:bg-success/5">
-                                    <ArrowUpRight className="h-4 w-4 bg-success/10 rounded-full p-0.5" />
-                                    <div className="flex flex-col">
-                                        <span>Registrar Aporte</span>
-                                        <span className="text-[8px] font-medium text-success/70">INGRESO DE EFECTIVO</span>
-                                    </div>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setIsWithdrawalOpen(true)} className="gap-3 cursor-pointer font-black text-destructive focus:text-destructive/80 p-3 hover:bg-destructive/5">
-                                    <ArrowDownLeft className="h-4 w-4 bg-destructive/10 rounded-full p-0.5" />
-                                    <div className="flex flex-col">
-                                        <span>Registrar Retiro</span>
-                                        <span className="text-[8px] font-medium text-destructive/70">EGRESO DE EFECTIVO</span>
-                                    </div>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
                         <Button
                             variant="outline"
-                            className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-2 border-warning/20 hover:bg-warning/5 text-warning transition-all rounded"
-                            onClick={() => setIsInventoryOpen(true)}
+                            className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-success/30 text-success hover:bg-success/10 transition-all rounded-full shadow-none"
+                            onClick={() => setIsContributionOpen(true)}
                         >
-                            <Package className="h-3.5 w-3.5 mr-2" />
-                            Aporte de Bienes
+                            <Wallet className="h-3.5 w-3.5 mr-2" />
+                            Registrar Aporte
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-destructive/30 text-destructive hover:bg-destructive/10 transition-all rounded-full shadow-none"
+                            onClick={() => setIsWithdrawalOpen(true)}
+                        >
+                            <LogOut className="h-3.5 w-3.5 mr-2" />
+                            Registrar Retiro
                         </Button>
                     </div>
                 }
@@ -297,21 +285,15 @@ export function PartnerLedgerTab() {
             />
 
             {/* Movement Wizard Modals */}
-            <CapitalContributionModal 
+            <PartnerContributionWizard
                 open={isContributionOpen}
                 onOpenChange={setIsContributionOpen}
                 onSuccess={fetchData}
             />
-            
-            <ProvisionalWithdrawalModal 
+
+            <PartnerWithdrawalWizard
                 open={isWithdrawalOpen}
                 onOpenChange={setIsWithdrawalOpen}
-                onSuccess={fetchData}
-            />
-
-            <InventoryContributionModal
-                open={isInventoryOpen}
-                onOpenChange={setIsInventoryOpen}
                 onSuccess={fetchData}
             />
         </div>

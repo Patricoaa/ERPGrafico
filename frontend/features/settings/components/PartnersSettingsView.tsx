@@ -2,7 +2,6 @@
 
 import React, { useEffect } from "react"
 import { EquityCompositionTab } from "./partners/EquityCompositionTab"
-import { PartnerLedgerTab } from "./partners/PartnerLedgerTab"
 import { ProfitDistributionsTab } from "./partners/ProfitDistributionsTab"
 
 interface PartnersSettingsViewProps {
@@ -10,14 +9,17 @@ interface PartnersSettingsViewProps {
     onSavingChange?: (saving: boolean) => void
     /** Whether the new-distribution modal should open on mount */
     initialFlowOpen?: boolean
+    initialFlowOpen?: boolean
     /** Callback to clear the modal query param from the URL */
     onModalClose?: () => void
+    initialAddPartnerOpen?: boolean
 }
 
 export function PartnersSettingsView({ 
     activeTab = "composition", 
     onSavingChange,
     initialFlowOpen = false,
+    initialAddPartnerOpen = false,
     onModalClose
 }: PartnersSettingsViewProps) {
     // Reset saving state when switching tabs.
@@ -33,11 +35,10 @@ export function PartnersSettingsView({
     return (
         <div className="space-y-6">
             {activeTab === "composition" && (
-                <EquityCompositionTab />
-            )}
-            
-            {activeTab === "ledger" && (
-                <PartnerLedgerTab />
+                <EquityCompositionTab 
+                    initialAddPartnerOpen={initialAddPartnerOpen}
+                    onModalClose={onModalClose}
+                />
             )}
             
             {activeTab === "distributions" && (

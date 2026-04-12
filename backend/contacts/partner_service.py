@@ -157,6 +157,10 @@ class PartnerService:
     # PROVISIONAL WITHDRAWALS
     # ──────────────────────────────────────────────────────────────
 
+    # ──────────────────────────────────────────────────────────────
+    # DIVIDEND PAYMENTS
+    # ──────────────────────────────────────────────────────────────
+
     @staticmethod
     @transaction.atomic
     def record_provisional_withdrawal(
@@ -168,33 +172,54 @@ class PartnerService:
         created_by=None,
     ) -> PartnerTransaction:
         """
-        Records a provisional withdrawal (advance against future profits).
+        Records a provisional withdrawal (advance).
+        Redirects to the specialized payment logic but with 'Withdrawal' context.
+        """
+        return PartnerService.record_dividend_payment(
+            partner=partner,
+            amount=amount,
+            date=date,
+            description=description or "Retiro Provisorio",
+            treasury_account_id=treasury_account_id,
+            created_by=created_by,
+            is_withdrawal=True
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def record_dividend_payment(
+        partner: Contact,
+        amount: Decimal,
+        date,
+        description: str = '',
+        treasury_account_id=None,
+        created_by=None,
+        is_withdrawal: bool = False
+    ) -> PartnerTransaction:
+        """
+        Records an individual dividend payment.
         
-        This is an advance to be liquidated when profits are formally distributed.
-        Does NOT require a formal distribution resolution.
-        
-        Accounting:
-            Dr: Retiros Provisorios → Socio X (Equity contra)
-            Cr: Caja/Banco (Asset)
+        If amount exceeds the current dividend balance, the excess is treated 
+        as a provisional withdrawal (advance).
         """
         PartnerService._validate_partner(partner)
         PartnerService._validate_amount(amount)
         settings = PartnerService._get_settings()
 
+        dividend_balance = partner.partner_dividends_payable_balance
+        
+        # Resolve accounts
         withdrawal_account = partner.partner_provisional_withdrawal_account
-        if not withdrawal_account:
+        dividends_payable_account = partner.partner_dividends_payable_account or settings.partner_dividends_payable_account
+        
+        if amount > dividend_balance and not withdrawal_account:
             raise ValidationError(
-                f"El socio {partner.name} no tiene cuenta de retiros provisorios asignada. "
-                "Verifique la configuración de contabilidad."
+                f"El monto excede el saldo de dividendos (${dividend_balance:,.0f}) y el socio "
+                "no tiene cuenta de retiros provisorios para el excedente."
             )
             
-        dividends_payable_account = settings.partner_dividends_payable_account
         if not dividends_payable_account:
             raise ValidationError("La cuenta de Dividendos por Pagar no está configurada.")
-
-        # Check outstanding dividends
-        # We query the ledger of the dividends payable account for this partner
-        dividend_balance = partner.partner_dividends_payable_balance
 
         treasury_account = None
         cash_account = None
@@ -203,16 +228,22 @@ class PartnerService:
             treasury_account = TreasuryAccount.objects.get(id=treasury_account_id)
             cash_account = treasury_account.account
         else:
-            # Try POS partner withdrawal account as fallback
-            cash_account = settings.pos_partner_withdrawal_account or settings.default_receivable_account
+            cash_account = settings.default_receivable_account
 
-        # Smart Routing: How much to dividends vs provisional?
+        # Smart Routing
         amount_to_dividends = min(amount, dividend_balance)
         amount_to_provisional = amount - amount_to_dividends
 
         # 1. Journal Entry
+        main_label = "Retiro de Socio" if is_withdrawal else "Pago de Dividendos"
+        entry_desc = f"{main_label}: {partner.name}"
+        if amount_to_provisional > 0 and not is_withdrawal:
+            entry_desc += f" (incluye Retiro Provisorio de ${amount_to_provisional:,.0f})"
+        if description:
+            entry_desc += f" - {description}"
+
         entry = JournalEntry.objects.create(
-            description=f"Retiro de Socio: {partner.name}" + (f" - {description}" if description else ""),
+            description=entry_desc,
             date=date,
             status=JournalEntry.Status.POSTED,
         )
@@ -241,7 +272,7 @@ class PartnerService:
         JournalItem.objects.create(
             entry=entry,
             account=cash_account,
-            label=f"Retiro Socio {partner.name}",
+            label=f"Salida Fondos para {partner.name}",
             debit=0,
             credit=amount,
         )
@@ -253,12 +284,12 @@ class PartnerService:
             from treasury.models import TreasuryMovement
             movement = TreasuryMovement.objects.create(
                 movement_type='OUTBOUND',
-                payment_method='CASH',
+                payment_method='TRANSFER',
                 amount=amount,
                 from_account=treasury_account,
                 contact=partner,
                 date=date,
-                notes=description,
+                notes=description or entry_desc,
                 journal_entry=entry,
                 justify_reason=TreasuryMovement.JustifyReason.PARTNER_WITHDRAWAL,
                 is_pending_registration=False,
@@ -266,19 +297,18 @@ class PartnerService:
             )
 
         # 3. Partner Transactions
-        ptx_list = []
+        primary_ptx = None
         if amount_to_dividends > 0:
-            ptx_div = PartnerTransaction.objects.create(
+            primary_ptx = PartnerTransaction.objects.create(
                 partner=partner,
                 transaction_type=PartnerTransaction.Type.DIVIDEND_PAYMENT,
                 amount=amount_to_dividends,
                 date=date,
-                description=description or "Pago de Dividendos Automático",
+                description=description or "Pago de Dividendos",
                 journal_entry=entry,
                 treasury_movement=movement,
                 created_by=created_by,
             )
-            ptx_list.append(ptx_div)
             
         if amount_to_provisional > 0:
             ptx_prov = PartnerTransaction.objects.create(
@@ -286,14 +316,15 @@ class PartnerService:
                 transaction_type=PartnerTransaction.Type.PROVISIONAL_WITHDRAWAL,
                 amount=amount_to_provisional,
                 date=date,
-                description=description or "Retiro Provisorio",
+                description=description or f"Retiro Provisorio {partner.name}",
                 journal_entry=entry,
                 treasury_movement=movement,
                 created_by=created_by,
             )
-            ptx_list.append(ptx_prov)
-
-        return ptx_list[0] if ptx_list else None
+            if not primary_ptx:
+                primary_ptx = ptx_prov
+        
+        return primary_ptx
 
     # ──────────────────────────────────────────────────────────────
     # EQUITY SUBSCRIPTION (separated from payment)
@@ -660,6 +691,143 @@ class PartnerService:
             'journal_entry': entry,
             'partners_updated': len(contacts_with_amounts),
         }
+
+    # ──────────────────────────────────────────────────────────────
+    # RETAINED EARNINGS MOBILIZATION
+    # ──────────────────────────────────────────────────────────────
+
+    @staticmethod
+    @transaction.atomic
+    def mobilize_retained_earnings(
+        partner: Contact,
+        amount_dividend: Decimal,
+        amount_reinvest: Decimal,
+        date,
+        description: str = '',
+        created_by=None,
+    ) -> list:
+        """
+        Mobilizes historical retained earnings into dividend payables or capital reinvestment.
+        """
+        PartnerService._validate_partner(partner)
+        total_amount = amount_dividend + amount_reinvest
+        if total_amount <= 0:
+            raise ValidationError("El monto total a movilizar debe ser mayor a cero.")
+            
+        current_retained = partner.partner_earnings_balance
+        if total_amount > current_retained:
+            raise ValidationError(
+                f"El monto a movilizar ({total_amount:,.0f}) excede las utilidades "
+                f"retenidas disponibles del socio ({current_retained:,.0f})."
+            )
+
+        settings = PartnerService._get_settings()
+        
+        # Accounts
+        retained_account = partner.partner_earnings_account
+        if not retained_account:
+            retained_account = settings.default_retained_earnings_account
+            if not retained_account:
+                raise ValidationError(f"No hay cuenta de utilidades retenidas configurada para {partner.name}.")
+                
+        dividends_payable_account = partner.partner_dividends_payable_account or settings.partner_dividends_payable_account
+        if amount_dividend > 0 and not dividends_payable_account:
+            raise ValidationError("La cuenta de Dividendos por Pagar no está configurada.")
+            
+        contribution_account = partner.partner_contribution_account
+        if amount_reinvest > 0 and not contribution_account:
+            raise ValidationError(f"La cuenta de Aportes de Capital no está configurada para {partner.name}.")
+
+        # 1. Journal Entry
+        entry = JournalEntry.objects.create(
+            description=f"Movilización de Utilidades Retenidas: {partner.name}" + (f" - {description}" if description else ""),
+            date=date,
+            status=JournalEntry.Status.POSTED,
+        )
+        
+        # Dr: Retained Earnings (Equity decrease)
+        JournalItem.objects.create(
+            entry=entry,
+            account=retained_account,
+            partner=partner,
+            label=f"Salida de Retenidas {partner.name}",
+            debit=total_amount,
+            credit=0,
+        )
+        
+        # Cr: Dividends Payable (Liability increase)
+        if amount_dividend > 0:
+            JournalItem.objects.create(
+                entry=entry,
+                account=dividends_payable_account,
+                partner=partner,
+                label=f"Dividendos por Pagar {partner.name}",
+                debit=0,
+                credit=amount_dividend,
+            )
+            
+        # Cr: Capital Contribution (Equity increase)
+        if amount_reinvest > 0:
+            JournalItem.objects.create(
+                entry=entry,
+                account=contribution_account,
+                partner=partner,
+                label=f"Reinversión de Capital {partner.name}",
+                debit=0,
+                credit=amount_reinvest,
+            )
+            
+        entry.check_balance()
+
+        ptx_list = []
+        
+        # 2. Partner Transactions
+        # Outbound from Retained
+        ptx_out = PartnerTransaction.objects.create(
+            partner=partner,
+            transaction_type=PartnerTransaction.Type.RETAINED_MOBILIZATION,
+            amount=total_amount,
+            date=date,
+            description=description or "Movilización de Utilidades",
+            journal_entry=entry,
+            created_by=created_by,
+        )
+        ptx_list.append(ptx_out)
+        
+        # Inbound to Dividend
+        if amount_dividend > 0:
+            ptx_div = PartnerTransaction.objects.create(
+                partner=partner,
+                transaction_type=PartnerTransaction.Type.DIVIDEND,
+                amount=amount_dividend,
+                date=date,
+                description=description or "Asignación a Dividendos (desde Retenidas)",
+                journal_entry=entry,
+                created_by=created_by,
+            )
+            ptx_list.append(ptx_div)
+            
+        # Inbound to Reinvestment
+        if amount_reinvest > 0:
+            ptx_reinv = PartnerTransaction.objects.create(
+                partner=partner,
+                transaction_type=PartnerTransaction.Type.REINVESTMENT,
+                amount=amount_reinvest,
+                date=date,
+                description=description or "Reinversión de Capital (desde Retenidas)",
+                journal_entry=entry,
+                created_by=created_by,
+            )
+            ptx_list.append(ptx_reinv)
+            
+            # Recalculate if equity changes
+            PartnerService._recalculate_and_snapshot_stakes(
+                date=date,
+                source_transaction=ptx_reinv,
+                created_by=created_by,
+            )
+
+        return ptx_list
 
     # ──────────────────────────────────────────────────────────────
     # QUERY HELPERS
