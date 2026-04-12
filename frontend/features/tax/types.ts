@@ -63,4 +63,19 @@ export interface TaxCalculationData {
     tax_rate: number
     credit_notes_taxed?: number
     purchase_credit_notes?: number
+    drafts_summary?: {
+        invoices: {
+            id: number
+            display_id: string
+            total: number
+            date: string
+            type: 'sale' | 'purchase'
+        }[]
+        entries: {
+            id: number
+            display_id: string
+            description: string
+            date: string
+        }[]
+    }
 }

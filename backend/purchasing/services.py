@@ -568,7 +568,7 @@ class PurchasingService:
     @staticmethod
     @transaction.atomic
     def create_note(order: PurchaseOrder, note_type: str, amount_net: Decimal, amount_tax: Decimal, 
-                    document_number: str, document_attachment=None, return_items=None, original_invoice_id=None):
+                    document_number: str, document_attachment=None, return_items=None, original_invoice_id=None, date=None):
         """
         Integral creation of a Credit or Debit Note linked to a Purchase Order.
         Properly reverses the original invoice accounting based on document type (Boleta vs Factura).
@@ -629,7 +629,8 @@ class PurchasingService:
             amount_tax=amount_tax,
             document_number=document_number,
             document_attachment=document_attachment,
-            partner_name=order.supplier.name
+            partner_name=order.supplier.name,
+            date=date
         )
         
         if original_invoice:

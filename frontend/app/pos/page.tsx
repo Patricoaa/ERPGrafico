@@ -258,8 +258,14 @@ function POSPageContent() {
         updateItem(itemId, { discount_amount: amount, discount_percentage: percent, total_net: linePricing.net, total_gross: linePricing.gross })
     }
 
-    const handleConfirmSale = () => {
+    const handleConfirmSale = async () => {
         const check = canCheckout(); if (!check.valid) { toast.error(check.error); return }
+        
+        // Pre-save draft if it doesn't exist yet to avoid the "flash" when auto-save assigns an ID later
+        if (!currentDraftId) {
+            await saveDraft(undefined, true)
+        }
+        
         setWizardState({ step: 1, isQuickSale: false }); setPosMode('CHECKOUT')
     }
 
@@ -323,8 +329,14 @@ function POSPageContent() {
         toast.success("Borrador liberado y listo para pago")
     }
 
-    const handleQuickSale = () => {
+    const handleQuickSale = async () => {
         const check = Validation.canQuickSale(items, selectedCustomerId); if (!check.allowed) { toast.error(check.reason); return }
+        
+        // Pre-save draft to stabilize ID before entering checkout flow
+        if (!currentDraftId) {
+            await saveDraft(undefined, true)
+        }
+        
         if (!selectedCustomerId && defaultCustomerId) setSelectedCustomerId(defaultCustomerId)
         const isOnlyService = items.every(line => line.product_type === 'SERVICE')
         const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)

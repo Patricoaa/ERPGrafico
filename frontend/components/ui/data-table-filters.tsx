@@ -64,18 +64,17 @@ export function DataTableFilters<TData>({
         <div className={cn("flex items-center space-x-2", className)}>
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-9 flex items-center gap-2 px-4 rounded-md border-dashed border-border/60 hover:bg-muted/50 transition-all font-heading uppercase tracking-wider text-[10px] font-bold">
-                        <div className="relative">
-                            <ListFilter className="h-4 w-4 opacity-70" />
+                    <Button variant="outline" size="icon" className="h-9 w-9 rounded-full bg-transparent border-dashed border-border/60 hover:bg-muted/50 transition-all">
+                        <div className="relative flex items-center justify-center">
+                            <ListFilter className="h-4 w-4 opacity-50" />
                             {isFiltered && (
                                 <Badge
-                                    className="absolute -top-2.5 -right-3 h-4 w-4 p-0 flex items-center justify-center bg-primary text-[9px] font-black font-sans rounded-full border-2 border-background"
+                                    className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center bg-primary text-[9px] font-black font-sans rounded-full border-2 border-background"
                                 >
                                     {totalActiveFilters}
                                 </Badge>
                             )}
                         </div>
-                        <span className="ml-1">Filtros</span>
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[320px] p-0 rounded-md border-border/80 shadow-xl overflow-hidden" align="start">
@@ -207,17 +206,16 @@ export function DataTableFilters<TData>({
 
             {isFiltered && (
                 <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-9 px-3 text-primary hover:text-primary hover:bg-primary/10 rounded-md text-[10px] uppercase font-bold font-heading tracking-widest transition-all"
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full transition-all bg-transparent border border-primary/30"
                     onClick={() => {
                         table.resetColumnFilters()
                         table.setGlobalFilter("")
                         onReset?.()
                     }}
                 >
-                    <X className="h-3.5 w-3.5 mr-1.5 opacity-70" />
-                    Borrar todo
+                    <X className="h-4 w-4 opacity-70" />
                 </Button>
             )}
         </div>

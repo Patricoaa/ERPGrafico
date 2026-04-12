@@ -8,6 +8,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { FileEdit, Loader2, Upload, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
+import { validateTaxPeriod } from "@/lib/actions/tax-actions"
+import { validateAccountingPeriod } from "@/lib/actions/accounting-actions"
+import { FolioValidationInput } from "./FolioValidationInput"
+import { ShieldAlert } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface DocumentCompletionModalProps {
     open: boolean
@@ -17,6 +22,8 @@ interface DocumentCompletionModalProps {
     /** Callback to execute the completion. Receives a FormData with number, date, and optional document_attachment. */
     onComplete: (invoiceId: number, formData: FormData) => Promise<void>
     onSuccess?: () => void
+    contactId?: number
+    isPurchase?: boolean
 }
 
 export function DocumentCompletionModal({
@@ -25,12 +32,15 @@ export function DocumentCompletionModal({
     invoiceId,
     invoiceType,
     onComplete,
-    onSuccess
+    onSuccess,
+    contactId,
+    isPurchase
 }: DocumentCompletionModalProps) {
     const { dateString } = useServerDate()
     const [reference, setReference] = useState("")
     const [date, setDate] = useState("")
     const [attachment, setAttachment] = useState<File | null>(null)
+    const [isFolioValid, setIsFolioValid] = useState(true)
     const [submitting, setSubmitting] = useState(false)
 
     useEffect(() => {
@@ -47,6 +57,25 @@ export function DocumentCompletionModal({
 
         if (invoiceType === 'FACTURA' && !attachment) {
             toast.error("El documento adjunto es obligatorio para Facturas")
+            return
+        }
+
+        // Tax Period Validation
+        const taxCheck = await validateTaxPeriod(date)
+        if (taxCheck.is_closed) {
+            toast.error(`No se puede registrar este documento. El periodo tributario de ${date} ya se encuentra CERRADO.`)
+            return
+        }
+
+        // Accounting Period Validation
+        const accCheck = await validateAccountingPeriod(date)
+        if (accCheck.is_closed) {
+            toast.error(`No se puede registrar este documento. El periodo CONTABLE de ${date} ya se encuentra CERRADO.`)
+            return
+        }
+
+        if (!isFolioValid) {
+            toast.error("El número de folio ya ha sido utilizado. Ingrese uno válido para continuar.")
             return
         }
 
@@ -90,7 +119,7 @@ export function DocumentCompletionModal({
                     <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
                         Cancelar
                     </Button>
-                    <Button onClick={handleSubmit} disabled={submitting}>
+                    <Button onClick={handleSubmit} disabled={submitting || !isFolioValid}>
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Finalizar Documento
                     </Button>
@@ -99,14 +128,14 @@ export function DocumentCompletionModal({
         >
             <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                    <Label htmlFor="comp-reference">
-                        N° de Folio / Referencia <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                        id="comp-reference"
-                        placeholder="Ej: 12345"
+                    <FolioValidationInput
                         value={reference}
-                        onChange={(e) => setReference(e.target.value)}
+                        onChange={setReference}
+                        onValidityChange={setIsFolioValid}
+                        contactId={contactId}
+                        isPurchase={isPurchase}
+                        dteType={invoiceType}
+                        placeholder="Ej: 12345"
                     />
                 </div>
 

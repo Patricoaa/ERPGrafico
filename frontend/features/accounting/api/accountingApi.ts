@@ -39,5 +39,10 @@ export const accountingApi = {
     updateSettings: async (data: any) => {
         const response = await api.patch('/accounting/settings/current/', data)
         return response.data
+    },
+
+    getFiscalYears: async (params?: any): Promise<any[]> => {
+        const { data } = await api.get<{ results: any[] }>('/accounting/fiscal-years/', { params })
+        return data.results || data
     }
 }

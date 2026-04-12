@@ -11,13 +11,15 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { CheckCircle2, FileText, Package, AlertCircle, UploadCloud } from "lucide-react"
+import { CheckCircle2, FileText, Package, AlertCircle, UploadCloud, ShieldAlert } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
+import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
 
 // --- STEP 1: General Information ---
 
@@ -26,8 +28,13 @@ interface Step1Props {
     setNoteType: (type: "NOTA_CREDITO" | "NOTA_DEBITO") => void
     documentNumber: string
     setDocumentNumber: (value: string) => void
+    documentDate: Date | undefined
+    setDocumentDate: (date: Date | undefined) => void
     attachment: File | null
     setAttachment: (file: File | null) => void
+    contactId?: number
+    onValidityChange?: (isValid: boolean) => void
+    onPeriodValidityChange?: (isValid: boolean) => void
 }
 
 export function Step1_GeneralInfo({
@@ -35,8 +42,13 @@ export function Step1_GeneralInfo({
     setNoteType,
     documentNumber,
     setDocumentNumber,
+    documentDate,
+    setDocumentDate,
     attachment,
-    setAttachment
+    setAttachment,
+    contactId,
+    onValidityChange,
+    onPeriodValidityChange
 }: Step1Props) {
     return (
         <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -98,19 +110,37 @@ export function Step1_GeneralInfo({
                     </div>
                 </div>
 
-                {/* Document Number */}
-                <div className="space-y-3">
-                    <Label className="text-base font-bold">Número de Folio</Label>
-                    <Input
-                        value={documentNumber}
-                        onChange={(e) => setDocumentNumber(e.target.value)}
-                        placeholder="Ej: 12345"
-                        className="h-12 text-lg font-mono tracking-widest uppercase"
-                        autoFocus
-                    />
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                        * Ingrese el número exacto que aparece en el documento físico/digital
-                    </p>
+                {/* Document Number & Date */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                        <FolioValidationInput
+                            value={documentNumber}
+                            onChange={setDocumentNumber}
+                            onValidityChange={onValidityChange}
+                            contactId={contactId}
+                            isPurchase={true}
+                            documentType={noteType}
+                            placeholder="Ej: 12345"
+                            className="h-12 text-lg font-mono tracking-widest uppercase"
+                            autoFocus
+                        />
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                            * Folio exacto del documento
+                        </p>
+                    </div>
+
+                    <div className="space-y-3">
+                        <PeriodValidationDateInput
+                            date={documentDate}
+                            onDateChange={setDocumentDate}
+                            validationType="both"
+                            onValidityChange={onPeriodValidityChange}
+                            className="h-12 w-full"
+                        />
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                            * Fecha en que se emitió el documento
+                        </p>
+                    </div>
                 </div>
 
                 {/* Attachment */}

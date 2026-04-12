@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useMemo } from "react"
+import React, { useEffect, useState, useMemo, useRef } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
@@ -11,8 +11,12 @@ import {
     Calendar,
     ChevronRight,
     Plus,
-    Wallet
+    Wallet,
+    Eye,
+    Wand2,
+    Play
 } from "lucide-react"
+import { toast } from "sonner"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -23,50 +27,92 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { CreateDistributionFlow } from "./CreateDistributionFlow"
 import { MassPaymentModal } from "./MassPaymentModal"
-import { useSearchParams, useRouter } from "next/navigation"
+import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 
-export function ProfitDistributionsTab() {
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const [distributions, setDistributions] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
-    const [isFlowOpen, setIsFlowOpen] = useState(false)
-    const [isMassPaymentOpen, setIsMassPaymentOpen] = useState(false)
-    const [selectedResolution, setSelectedResolution] = useState<any>(null)
+interface ProfitDistributionsTabProps {
+    /** Whether the new-distribution flow should open on mount (driven by URL ?modal=new-distribution) */
+    initialFlowOpen?: boolean
+    initialFlowOpen?: boolean
+    /** Callback to clear the modal query param in the URL when the flow closes */
+    onModalClose?: () => void
+}
 
-    const fetchDistributions = async () => {
-        setLoading(true)
+export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose }: ProfitDistributionsTabProps) {
+    // Unified state to prevent fragmented updates
+    const [state, setState] = useState({
+        distributions: [] as any[],
+        loading: true,
+        isFlowOpen: false,
+        isMassPaymentOpen: false,
+        selectedResolution: null as any,
+        viewingDist: null as any
+    })
+
+    const isMounted = useRef(false)
+
+    const fetchDistributions = React.useCallback(async () => {
+        if (!isMounted.current) return
+        setState(prev => ({ ...prev, loading: true }))
+
         try {
             const data = await partnersApi.getProfitDistributions()
-            setDistributions(data)
+            if (isMounted.current) {
+                setState(prev => ({
+                    ...prev,
+                    distributions: data,
+                    loading: false
+                }))
+            }
         } catch (error) {
             console.error(error)
-        } finally {
-            setLoading(false)
+            if (isMounted.current) {
+                setState(prev => ({ ...prev, loading: false }))
+            }
         }
-    }
-
-    useEffect(() => {
-        fetchDistributions()
     }, [])
 
-    // Handle URL-based modal trigger
     useEffect(() => {
-        const modal = searchParams.get("modal")
-        if (modal === "new-distribution") {
-            setSelectedResolution(null)
-            setIsFlowOpen(true)
+        isMounted.current = true
+        fetchDistributions()
+        return () => { isMounted.current = false }
+    }, [fetchDistributions])
+
+    // Effect to handle modal opening from URL/props
+    useEffect(() => {
+        if (initialFlowOpen) {
+            setState(prev => ({
+                ...prev,
+                selectedResolution: null,
+                isFlowOpen: initialFlowOpen
+            }))
         }
-    }, [searchParams])
+    }, [initialFlowOpen])
 
     const closeFlow = () => {
-        setIsFlowOpen(false)
-        if (searchParams.get("modal") === "new-distribution") {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.push(`?${params.toString()}`, { scroll: false })
-        }
+        setState(prev => ({ 
+            ...prev, 
+            isFlowOpen: false
+        }))
+        // Notify parent to clear the URL modal param
+        onModalClose?.()
         fetchDistributions()
+    }
+
+    const handleExecute = async (resolution: any) => {
+        if (!confirm(`¿Está seguro de ejecutar la resolución del año ${resolution.fiscal_year}? Esto generará los asientos contables finales y las transacciones de los socios.`)) return
+
+        setState(prev => ({ ...prev, loading: true }))
+        try {
+            await partnersApi.executeProfitDistribution(resolution.id)
+            toast.success("Distribución ejecutada exitosamente.")
+            fetchDistributions()
+        } catch (error: any) {
+            console.error(error)
+            const detail = error.response?.data?.detail || error.message || "Error al ejecutar la resolución"
+            toast.error(detail)
+        } finally {
+            setState(prev => ({ ...prev, loading: false }))
+        }
     }
 
     const getStatusColor = (status: string) => {
@@ -92,11 +138,11 @@ export function ProfitDistributionsTab() {
     const columns = useMemo<ColumnDef<any>[]>(() => [
         {
             accessorKey: "fiscal_year",
-            header: "Año Fiscal",
+            header: () => <div className="text-center">Año Fiscal</div>,
             cell: ({ row }) => {
                 const dist = row.original
                 return (
-                    <div className="flex flex-col">
+                    <div className="flex flex-col items-center">
                         <span className="font-bold text-sm tracking-tight">{dist.fiscal_year}</span>
                         <span className="text-[9px] text-muted-foreground font-mono uppercase">ID: {dist.display_id}</span>
                     </div>
@@ -105,19 +151,21 @@ export function ProfitDistributionsTab() {
         },
         {
             accessorKey: "status",
-            header: "Estado",
+            header: () => <div className="text-center">Estado</div>,
             cell: ({ row }) => {
                 const status = row.getValue("status") as string
                 return (
-                    <Badge className={`text-[9px] font-black uppercase border-2 ${getStatusColor(status)}`} variant="outline">
-                        {getStatusText(status)}
-                    </Badge>
+                    <div className="flex justify-center">
+                        <Badge className={`text-[9px] font-black uppercase border-2 ${getStatusColor(status)}`} variant="outline">
+                            {getStatusText(status)}
+                        </Badge>
+                    </div>
                 )
             }
         },
         {
             id: "breakdown",
-            header: "Distribución por Destino",
+            header: () => <div className="text-center">Distribución por Destino</div>,
             cell: ({ row }) => {
                 const dist = row.original
                 const totals = (dist.lines || []).reduce((acc: any, line: any) => {
@@ -130,7 +178,7 @@ export function ProfitDistributionsTab() {
                 }, { dividends: 0, reinvest: 0, retained: 0 });
 
                 return (
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap justify-center gap-1.5">
                         {totals.dividends > 0 && (
                             <Badge variant="secondary" className="bg-success/5 text-success border-success/20 text-[9px] font-bold">
                                 DIV: {formatCurrency(totals.dividends)}
@@ -152,11 +200,11 @@ export function ProfitDistributionsTab() {
         },
         {
             accessorKey: "resolution_date",
-            header: "Acta / Fecha",
+            header: () => <div className="text-center">Acta / Fecha</div>,
             cell: ({ row }) => {
                 const dist = row.original
                 return (
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col items-center gap-1">
                         <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">{dist.acta_number || 'Sin Acta'}</span>
                         <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-medium">
                             <Calendar className="h-3 w-3" />
@@ -168,13 +216,13 @@ export function ProfitDistributionsTab() {
         },
         {
             accessorKey: "net_result",
-            header: () => <div className="text-right">Resultado Neto</div>,
+            header: () => <div className="text-center">Resultado Neto</div>,
             cell: ({ row }) => {
                 const amount = parseFloat(row.getValue("net_result"))
                 const status = row.original.status
                 return (
-                    <div className="flex flex-col items-end gap-0.5">
-                         <span className={cn(
+                    <div className="flex flex-col items-center gap-0.5">
+                        <span className={cn(
                             "font-mono font-black text-sm tracking-tighter",
                             amount < 0 ? "text-destructive" : "text-success"
                         )}>
@@ -189,82 +237,126 @@ export function ProfitDistributionsTab() {
         },
         {
             id: "actions",
+            header: () => <div className="text-center">Acciones</div>,
             cell: ({ row }) => {
                 const dist = row.original
+                
+                // Only show action if it's not cancelled
+                if (dist.status === 'CANCELLED') return (
+                    <div className="flex justify-center gap-2">
+                        <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="text-muted-foreground h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                            onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))}
+                        >
+                            <Eye className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )
+
                 return (
-                    <div className="text-right pr-2">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted/80">
-                                    <ChevronRight className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56 font-heading font-bold text-[10px] uppercase tracking-widest">
-                                <DropdownMenuLabel>Acciones de Resolución</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                {(dist.status === 'DRAFT' || dist.status === 'APPROVED') && (
-                                    <DropdownMenuItem 
-                                        className="text-success font-black"
-                                        onClick={() => {
-                                            setSelectedResolution(dist)
-                                            setIsFlowOpen(true)
-                                        }}
-                                    >
-                                        <Plus className="h-3 w-3 mr-2 bg-success text-success-foreground rounded-full p-0.5" />
-                                        Retomar Proceso
-                                    </DropdownMenuItem>
-                                )}
-                                {dist.status === 'EXECUTED' && (dist.lines?.some((l: any) => l.destination === 'DIVIDEND')) && (
-                                    <DropdownMenuItem 
-                                        className="text-primary font-black"
-                                        onClick={() => {
-                                            setSelectedResolution(dist)
-                                            setIsMassPaymentOpen(true)
-                                        }}
-                                    >
-                                        <Wallet className="h-3 w-3 mr-2" />
-                                        Pagar Dividendos
-                                    </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem>
-                                    <Calendar className="h-3 w-3 mr-2" />
-                                    Ver Asiento Contable
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                    <div className="flex justify-center gap-2">
+                        <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="text-muted-foreground h-8 w-8 hover:bg-primary/10 hover:text-primary transition-all"
+                            onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))}
+                            title="Ver Detalle"
+                        >
+                            <Eye className="h-4 w-4" />
+                        </Button>
+
+                        {(dist.status === 'DRAFT') && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-success hover:bg-success/10 h-8 w-8 transition-all"
+                                onClick={() => {
+                                    setState(prev => ({
+                                        ...prev,
+                                        selectedResolution: dist,
+                                        isFlowOpen: true
+                                    }))
+                                }}
+                                title="Retomar Proceso"
+                            >
+                                <Wand2 className="h-4 w-4" />
+                            </Button>
+                        )}
+
+                        {dist.status === 'APPROVED' && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-primary hover:bg-primary/10 h-8 w-8 transition-all"
+                                onClick={() => handleExecute(dist)}
+                                title="Ejecutar Contablemente"
+                            >
+                                <Play className="h-4 w-4 fill-current" />
+                            </Button>
+                        )}
+                        
+                        {dist.status === 'EXECUTED' && (dist.lines?.some((l: any) => l.destination === 'DIVIDEND')) && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-primary hover:bg-primary/10 h-8 w-8 transition-all"
+                                onClick={() => {
+                                    setState(prev => ({
+                                        ...prev,
+                                        selectedResolution: dist,
+                                        isMassPaymentOpen: true
+                                    }))
+                                }}
+                                title="Pagar Dividendos"
+                            >
+                                <Wallet className="h-4 w-4" />
+                            </Button>
+                        )}
                     </div>
                 )
             }
         }
-    ], [searchParams, router])
+    ], [])
 
     return (
         <div className="space-y-6">
             <DataTable
                 columns={columns}
-                data={distributions}
-                isLoading={loading}
+                data={state.distributions}
+                isLoading={state.loading}
                 cardMode={true}
                 searchPlaceholder="Buscar por año o resolución..."
                 filterColumn="fiscal_year"
             />
 
             {/* Modal Flows */}
-            {isFlowOpen && (
-                <CreateDistributionFlow 
-                    open={isFlowOpen} 
+            {state.isFlowOpen && (
+                <CreateDistributionFlow
+                    open={state.isFlowOpen}
                     onOpenChange={closeFlow}
                     onSuccess={fetchDistributions}
-                    initialResolution={selectedResolution}
+                    initialResolution={state.selectedResolution}
                 />
             )}
 
-            {isMassPaymentOpen && (
+            {state.isMassPaymentOpen && (
                 <MassPaymentModal
-                    open={isMassPaymentOpen}
-                    onOpenChange={setIsMassPaymentOpen}
-                    resolution={selectedResolution}
+                    open={state.isMassPaymentOpen}
+                    onOpenChange={(v) => setState(prev => ({ ...prev, isMassPaymentOpen: v }))}
+                    resolution={state.selectedResolution}
                     onSuccess={fetchDistributions}
+                />
+            )}
+
+
+            {state.viewingDist && (
+                <TransactionViewModal
+                    open={!!state.viewingDist}
+                    onOpenChange={() => setState(prev => ({ ...prev, viewingDist: null }))}
+                    type="profit_distribution"
+                    id={state.viewingDist.id}
                 />
             )}
         </div>

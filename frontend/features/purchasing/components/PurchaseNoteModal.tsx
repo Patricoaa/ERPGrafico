@@ -14,8 +14,10 @@ import {
     X
 } from "lucide-react"
 import api from "@/lib/api"
-import { toast } from "sonner"
-import { PricingUtils } from "@/lib/pricing"
+import { PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
+import { validateTaxPeriod } from "@/lib/actions/tax-actions"
+
+import { ShieldAlert } from "lucide-react"
 
 // Components
 import { PurchaseNoteSummarySidebar } from "./notes/PurchaseNoteSummarySidebar"
@@ -49,6 +51,7 @@ export function PurchaseNoteModal({
     // Data State
     const [noteType, setNoteType] = useState<"NOTA_CREDITO" | "NOTA_DEBITO">(initialType)
     const [documentNumber, setDocumentNumber] = useState("")
+    const [documentDate, setDocumentDate] = useState<Date | undefined>(new Date())
     const [attachment, setAttachment] = useState<File | null>(null)
     const [lines, setLines] = useState<any[]>([])
     const [orderDetails, setOrderDetails] = useState<any>(null)
@@ -60,6 +63,9 @@ export function PurchaseNoteModal({
         transactionNumber: '',
         isPending: false
     })
+    const [isFolioValid, setIsFolioValid] = useState(true)
+
+    const [isPeriodValid, setIsPeriodValid] = useState(true)
 
     // -- Effects --
     useEffect(() => {
@@ -67,6 +73,7 @@ export function PurchaseNoteModal({
             // Reset state
             setStep(1)
             setDocumentNumber("")
+            setDocumentDate(new Date())
             setAttachment(null)
             setLines([])
             setNoteType(initialType)
@@ -138,6 +145,10 @@ export function PurchaseNoteModal({
                 toast.error("Debe ingresar el número de folio del documento")
                 return false
             }
+            if (!documentDate) {
+                toast.error("Debe seleccionar la fecha de emisión")
+                return false
+            }
             if (!attachment) {
                 toast.error("El documento adjunto es obligatorio para este tipo de nota")
                 return false
@@ -157,8 +168,19 @@ export function PurchaseNoteModal({
         return true
     }
 
-    const handleNext = () => {
+    const handleNext = async () => {
         if (validateStep(step)) {
+            // Live validation already handles this, but as a secondary check/guard
+            if (!isPeriodValid) {
+                toast.error("El periodo seleccionado está cerrado. No puede continuar.")
+                return
+            }
+
+            if (step === 1 && !isFolioValid) {
+                toast.error("El número de folio ya ha sido utilizado para este proveedor. Ingrese uno válido para continuar.")
+                return
+            }
+
             setStep(prev => prev + 1)
         }
     }
@@ -173,6 +195,9 @@ export function PurchaseNoteModal({
             const formData = new FormData()
             formData.append('note_type', noteType)
             formData.append('document_number', documentNumber)
+            if (documentDate) {
+                formData.append('document_date', documentDate.toISOString().split('T')[0])
+            }
             formData.append('amount_net', amountNet.toString())
             formData.append('amount_tax', amountTax.toString())
 
@@ -268,6 +293,7 @@ export function PurchaseNoteModal({
                     {step < totalSteps ? (
                         <Button
                             onClick={handleNext}
+                            disabled={step === 1 && (isClosed || periodValidating || !documentNumber || !attachment || !isFolioValid)}
                             className="w-40 h-12 font-bold bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all"
                         >
                             Siguiente
@@ -326,10 +352,15 @@ export function PurchaseNoteModal({
                                         <Step1_GeneralInfo
                                             noteType={noteType}
                                             setNoteType={setNoteType}
-                                            documentNumber={documentNumber}
-                                            setDocumentNumber={setDocumentNumber}
+                                            documentNumber={reference}
+                                            setDocumentNumber={setReference}
+                                            documentDate={documentDate}
+                                            setDocumentDate={setDocumentDate}
                                             attachment={attachment}
                                             setAttachment={setAttachment}
+                                            contactId={orderDetails?.supplier}
+                                            onValidityChange={(isValid) => setIsFolioValid(isValid)}
+                                            onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
                                         />
                                     )}
                                     {step === 2 && (

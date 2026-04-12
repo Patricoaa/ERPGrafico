@@ -155,6 +155,15 @@ class AccountingPeriod(models.Model):
         }
         return months.get(self.month, str(self.month))
 
+    def save(self, *args, **kwargs):
+        if not self.tax_period_id:
+            try:
+                tax_period = TaxPeriod.objects.get(year=self.year, month=self.month)
+                self.tax_period = tax_period
+            except TaxPeriod.DoesNotExist:
+                pass
+        super().save(*args, **kwargs)
+
 
 class F29Declaration(models.Model):
     """

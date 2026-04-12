@@ -518,7 +518,7 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                         <Settings2 className="h-3.5 w-3.5" />
                     </Button>
                 ) : (
-                    <Button className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-md shadow-sm">
+                    <Button variant="outline" className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-primary/30 text-primary hover:bg-primary/10 transition-all rounded-full shadow-none">
                         <Plus className="h-3.5 w-3.5 mr-2" /> Nuevo Concepto
                     </Button>
                 )}
@@ -714,7 +714,7 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
                         <Settings2 className="h-3.5 w-3.5" />
                     </Button>
                 ) : (
-                    <Button className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-md shadow-sm">
+                    <Button variant="outline" className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-primary/30 text-primary hover:bg-primary/10 transition-all rounded-full shadow-none">
                         <Plus className="h-3.5 w-3.5 mr-2" /> Añadir Institución
                     </Button>
                 )}

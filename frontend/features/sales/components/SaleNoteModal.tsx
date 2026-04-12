@@ -13,7 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { FileBadge, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
+import { FileBadge, Loader2, CheckCircle2, AlertCircle, ShieldAlert } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/currency"
@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 
 import { SaleOrderLine } from "../types"
 
@@ -51,14 +52,17 @@ export function SaleNoteModal({
 }: SaleNoteModalProps) {
     const [noteType, setNoteType] = useState(initialType)
     const [documentNumber, setDocumentNumber] = useState("")
+    const [documentDate, setDocumentDate] = useState<Date | undefined>(new Date())
     const [lines, setLines] = useState<SaleNoteLine[]>([])
     const [attachment, setAttachment] = useState<File | null>(null)
     const [submitting, setSubmitting] = useState(false)
     const [loadingOrder, setLoadingOrder] = useState(false)
+    const [isPeriodValid, setIsPeriodValid] = useState(true)
 
     useEffect(() => {
         if (open) {
             setDocumentNumber("")
+            setDocumentDate(new Date())
             setAttachment(null)
             fetchDetails()
         }
@@ -110,6 +114,17 @@ export function SaleNoteModal({
             toast.error("El número de documento es obligatorio")
             return
         }
+        if (!documentDate) {
+            toast.error("La fecha del documento es obligatoria")
+            return
+        }
+
+        // Live validation already handles this, but as a secondary check/guard
+        if (!isPeriodValid) {
+            toast.error("El periodo seleccionado está cerrado. No puede continuar.")
+            return
+        }
+
         if (!attachment) {
             toast.error("El archivo adjunto es obligatorio para este tipo de nota")
             return
@@ -124,6 +139,9 @@ export function SaleNoteModal({
             const formData = new FormData()
             formData.append('note_type', noteType)
             formData.append('document_number', documentNumber)
+            if (documentDate) {
+                formData.append('document_date', documentDate.toISOString().split('T')[0])
+            }
             formData.append('amount_net', amountNet.toString())
             formData.append('amount_tax', amountTax.toString())
 
@@ -185,7 +203,7 @@ export function SaleNoteModal({
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={submitting || !documentNumber || amountNet <= 0}
+                        disabled={submitting || !documentNumber || amountNet <= 0 || !isPeriodValid}
                         className="font-bold h-11 px-8"
                     >
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -216,6 +234,16 @@ export function SaleNoteModal({
                             className={FORM_STYLES.input}
                             value={documentNumber}
                             onChange={(e) => setDocumentNumber(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className={FORM_STYLES.label}>Fecha Emisión</Label>
+                        <PeriodValidationDateInput
+                            date={documentDate}
+                            onDateChange={setDocumentDate}
+                            validationType="both"
+                            onValidityChange={setIsPeriodValid}
                         />
                     </div>
                 </div>

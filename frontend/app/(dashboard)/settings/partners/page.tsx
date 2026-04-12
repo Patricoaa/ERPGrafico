@@ -1,12 +1,12 @@
 "use client"
 
-import { lazy, Suspense, useState, useMemo, useEffect, useRef } from "react"
+import { lazy, Suspense, useState, useMemo, useEffect, useRef, useCallback } from "react"
 import { toast } from "sonner"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { SettingsSheetRouteWrapper } from "@/components/shared"
 import { PartnerAccountingTab } from "@/features/settings/components/partners/PartnerAccountingTab"
 import Link from "next/link"
@@ -21,9 +21,23 @@ const PartnersSettingsView = lazy(() =>
 
 export default function PartnersSettingsPage() {
     const searchParams = useSearchParams()
+    const router = useRouter()
     const activeTab = searchParams.get("tab") || "composition"
+    const isNewDistributionModal = searchParams.get("modal") === "new-distribution"
+    const isMobilizeModal = searchParams.get("modal") === "mobilize-earnings"
+    const isAddPartnerModal = searchParams.get("modal") === "add-partner"
     const [saving, setSaving] = useState(false)
     const [configSaving, setConfigSaving] = useState(false)
+
+    // Callback to clear modal param from URL (lifted from ProfitDistributionsTab)
+    const handleModalClose = useCallback(() => {
+        const currentModal = searchParams.get("modal")
+        if (currentModal === "new-distribution" || currentModal === "mobilize-earnings" || currentModal === "add-partner") {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete("modal")
+            router.push(`?${params.toString()}`, { scroll: false })
+        }
+    }, [searchParams, router])
     
     // Track previous state to trigger toast on completion
     const prevSaving = useRef(false)
@@ -56,12 +70,6 @@ export default function PartnersSettingsPage() {
             href: "/settings/partners?tab=composition" 
         },
         { 
-            value: "ledger", 
-            label: "Libro Auxiliar", 
-            iconName: "book-open", 
-            href: "/settings/partners?tab=ledger" 
-        },
-        { 
             value: "distributions", 
             label: "Utilidades", 
             iconName: "pie-chart", 
@@ -76,14 +84,9 @@ export default function PartnersSettingsPage() {
                     title: "Composición Societaria",
                     description: "Gestión de capital suscrito y pagado por los socios.",
                     iconName: "users" as const,
-                    showAction: false
-                }
-            case "ledger":
-                return {
-                    title: "Libro Auxiliar de Socios",
-                    description: "Historial detallado de aportes, retiros y movimientos de capital.",
-                    iconName: "book-open" as const,
-                    showAction: false
+                    showAction: true,
+                    actionTitle: "Añadir Socio",
+                    actionHref: "/settings/partners?tab=composition&modal=add-partner"
                 }
             case "distributions":
                 return {
@@ -113,13 +116,15 @@ export default function PartnersSettingsPage() {
                 variant="minimal"
                 configHref="?config=true"
                 titleActions={headerConfig.showAction && headerConfig.actionHref && (
-                    <Link href={headerConfig.actionHref}>
-                        <PageHeaderButton
-                            iconName="plus"
-                            circular
-                            title={headerConfig.actionTitle}
-                        />
-                    </Link>
+                    <div className="flex gap-2">
+                        <Link href={headerConfig.actionHref}>
+                            <PageHeaderButton
+                                iconName="plus"
+                                circular
+                                title={headerConfig.actionTitle}
+                            />
+                        </Link>
+                    </div>
                 )}
             />
 
@@ -130,6 +135,9 @@ export default function PartnersSettingsPage() {
                     <PartnersSettingsView 
                         activeTab={activeTab} 
                         onSavingChange={setSaving}
+                        initialFlowOpen={isNewDistributionModal}
+                        initialAddPartnerOpen={isAddPartnerModal}
+                        onModalClose={handleModalClose}
                     />
                 </Suspense>
             </div>

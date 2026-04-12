@@ -14,7 +14,7 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import api from "@/lib/api"
-import { ChevronRight, ChevronLeft, Loader2, FileText, CheckCircle2, ArrowRight, X } from "lucide-react"
+import { ChevronRight, ChevronLeft, Loader2, FileText, CheckCircle2, ArrowRight, X, ShieldAlert } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 // Sub-components
@@ -25,6 +25,7 @@ import { Step4_Payment } from "@/features/billing/components/checkout/Step4_Paym
 import { Step2_ManufacturingDetails } from "@/features/sales/components/checkout/Step2_ManufacturingDetails"
 import { NoteProcessSidebar } from "@/features/billing/components/checkout/NoteProcessSidebar"
 import { NoteItemsSummary } from "@/features/billing/components/checkout/NoteItemsSummary"
+
 
 interface NoteCheckoutWizardProps {
     open: boolean
@@ -67,6 +68,8 @@ export function NoteCheckoutWizard({
         transaction_number: '',
         is_pending: false
     })
+
+    const [isPeriodValid, setIsPeriodValid] = useState(true)
 
     // Computed Properties
     const requiresLogistics = selectedItems.some(item =>
@@ -144,7 +147,7 @@ export function NoteCheckoutWizard({
     }, [total])
 
 
-    const handleNext = () => {
+    const handleNext = async () => {
         // Validations per step
         if (step === 1) {
             if (selectedItems.length === 0) {
@@ -160,7 +163,7 @@ export function NoteCheckoutWizard({
             }
         }
         else if (step === 5) {
-            // Check if all mfg items have data
+            // ... (mfg items check)
             const pendingItems = selectedItems.filter((line: any) =>
                 (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing && !line.manufacturing_data) ||
                 (line.product_type === 'MANUFACTURABLE' && !line.has_bom && !line.manufacturing_data)
@@ -191,6 +194,16 @@ export function NoteCheckoutWizard({
                 toast.error("Ingrese el número de folio.")
                 return
             }
+
+            // TAX PERIOD VALIDATION (Handled visually in live, but enforced here)
+            if (!registrationData.is_pending && !isPeriodValid) {
+                toast.error(
+                    `No se puede registrar. El periodo está cerrado.`,
+                    { duration: 5000, icon: <ShieldAlert className="h-5 w-5 text-destructive" /> }
+                )
+                return
+            }
+
             setStep(4)
         }
     }
@@ -344,6 +357,7 @@ export function NoteCheckoutWizard({
                         isCreditNote={initialType === 'NOTA_CREDITO'}
                         data={registrationData}
                         setData={setRegistrationData}
+                        onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
                     />
                 )
             case 4:
@@ -435,7 +449,7 @@ export function NoteCheckoutWizard({
                         <Button
                             onClick={handleNext}
                             className="w-40 h-12 font-bold shadow-lg hover:shadow-xl transition-all"
-                            disabled={isStepLoading}
+                            disabled={isStepLoading || (currentStepId === 'dte' && !isPeriodValid)}
                         >
                             Siguiente
                             <ChevronRight className="ml-2 h-4 w-4" />

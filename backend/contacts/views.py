@@ -659,6 +659,33 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         return Response(self.get_serializer(contact).data)
 
     @action(detail=True, methods=['post'])
+    @transaction.atomic
+    def individual_dividend_payment(self, request, pk=None):
+        """
+        Specialized endpoint for individual dividend payment.
+        Expects: amount, date, description (opt), treasury_account_id (opt).
+        """
+        contact = self.get_object()
+        from .partner_service import PartnerService
+        from .serializers import PartnerTransactionActionSerializer, PartnerTransactionSerializer
+        serializer = PartnerTransactionActionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+        try:
+            ptx = PartnerService.record_dividend_payment(
+                partner=contact,
+                amount=data['amount'],
+                date=data['date'],
+                description=data.get('description', ''),
+                treasury_account_id=data.get('treasury_account_id'),
+                created_by=request.user
+            )
+            return Response(PartnerTransactionSerializer(ptx).data)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
+
+    @action(detail=True, methods=['post'])
     def partner_transactions(self, request, pk=None):
         """
         Register a new partner transaction using PartnerService.
@@ -697,15 +724,17 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                     treasury_account_id=treasury_account_id,
                     created_by=request.user,
                 )
-            elif transaction_type in ['PROV_WITHDRAWAL']:
-                ptx = PartnerService.record_provisional_withdrawal(
+            elif transaction_type in ['PROV_WITHDRAWAL', 'DIVIDEND_PAYMENT']:
+                ptx = PartnerService.record_dividend_payment(
                     partner=contact,
                     amount=amount,
                     date=date,
                     description=description,
                     treasury_account_id=treasury_account_id,
                     created_by=request.user,
+                    is_withdrawal=(transaction_type == 'PROV_WITHDRAWAL')
                 )
+
             else:
                 return Response(
                     {"error": f"Tipo de transacción '{transaction_type}' no soportado en este endpoint. "
@@ -860,4 +889,67 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({"error": f"Error durante la configuración inicial: {str(e)}"}, status=500)
 
+    @action(detail=False, methods=['post'])
+    def mass_mobilize_retained_earnings(self, request):
+        """
+        Mobilize retained earnings in bulk for multiple partners.
+        Payload format:
+        {
+          "date": "2024-05-15",
+          "description": "Distribución general de utilidades históricas",
+          "mobilizations": [
+             { "partner_id": 1, "dividend_amount": 100000, "reinvest_amount": 0 },
+             { "partner_id": 2, "dividend_amount": 50000, "reinvest_amount": 50000 }
+          ]
+        }
+        """
+        from .partner_service import PartnerService
+        from django.core.exceptions import ValidationError
 
+        data_date = request.data.get('date')
+        description = request.data.get('description', 'Movilización masiva de utilidades')
+        mobilizations = request.data.get('mobilizations', [])
+
+        if not data_date:
+            return Response({"error": "La fecha (date) es obligatoria."}, status=400)
+        
+        if not mobilizations or not isinstance(mobilizations, list):
+            return Response({"error": "Debe proporcionar una lista 'mobilizations'."}, status=400)
+
+        created_by = request.user
+        success_count = 0
+
+        try:
+            with transaction.atomic():
+                for mob_data in mobilizations:
+                    partner_id = mob_data.get('partner_id')
+                    dividend_amount = Decimal(str(mob_data.get('dividend_amount', 0)))
+                    reinvest_amount = Decimal(str(mob_data.get('reinvest_amount', 0)))
+
+                    if not partner_id:
+                        raise ValidationError("Falta partner_id en los datos de movilización.")
+                    
+                    partner = Contact.objects.get(id=partner_id, is_partner=True)
+                    
+                    if dividend_amount == 0 and reinvest_amount == 0:
+                        continue # Nothing to do
+
+                    PartnerService.mobilize_retained_earnings(
+                        partner=partner,
+                        amount_dividend=dividend_amount,
+                        amount_reinvest=reinvest_amount,
+                        date=data_date,
+                        description=description,
+                        created_by=created_by
+                    )
+                    success_count += 1
+
+            return Response({
+                "message": f"Se ejecutaron {success_count} movilizaciones de utilidades retenidas correctamente."
+            })
+        except Contact.DoesNotExist:
+            return Response({"error": f"Socio con ID {partner_id} no encontrado o no es socio."}, status=404)
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=400)
+        except Exception as e:
+            return Response({"error": f"Error interno: {str(e)}"}, status=500)

@@ -4,19 +4,31 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { FileText, Receipt, AlertCircle } from "lucide-react"
+import { FileText, Receipt, AlertCircle, ShieldAlert } from "lucide-react"
 import { useQuery } from '@tanstack/react-query'
 import { settingsApi } from "@/features/settings/api/settingsApi"
 import { useMemo, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
+import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 
 interface Step2_PurchaseDTEProps {
     dteData: any
     setDteData: (data: any) => void
+    contactId?: number | string | null
+    onValidityChange?: (isValid: boolean) => void
+    onPeriodValidityChange?: (isValid: boolean) => void
 }
 
-export function Step2_PurchaseDTE({ dteData, setDteData }: Step2_PurchaseDTEProps) {
+export function Step2_PurchaseDTE({ 
+    dteData, 
+    setDteData,
+    contactId,
+    onValidityChange,
+    onPeriodValidityChange
+}: Step2_PurchaseDTEProps) {
     // Fetch billing settings to get allowed DTE types
     const { data: settings } = useQuery({
         queryKey: ['settings-billing'],
@@ -88,7 +100,16 @@ export function Step2_PurchaseDTE({ dteData, setDteData }: Step2_PurchaseDTEProp
                     <Checkbox
                         id="is-pending"
                         checked={dteData.isPending}
-                        onCheckedChange={(checked) => setDteData({ ...dteData, isPending: !!checked })}
+                        onCheckedChange={(checked) => {
+                            const pending = !!checked;
+                            if (pending) {
+                                setDteData({ ...dteData, isPending: true, number: '', attachment: null });
+                                onValidityChange?.(true);
+                                onPeriodValidityChange?.(true);
+                            } else {
+                                setDteData({ ...dteData, isPending: false });
+                            }
+                        }}
                     />
                     <Label htmlFor="is-pending" className="text-xs font-medium cursor-pointer">
                         Recibiré el documento luego
@@ -98,25 +119,35 @@ export function Step2_PurchaseDTE({ dteData, setDteData }: Step2_PurchaseDTEProp
                 {!dteData.isPending && (
                     <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/10">
                         <div className="space-y-2">
-                            <Label htmlFor="folio" className="text-xs font-bold uppercase">
-                                N° de Folio <span className="text-destructive">*</span>
-                            </Label>
-                            <Input
-                                id="folio"
-                                placeholder="Ej: 45223"
+                            <FolioValidationInput
                                 value={dteData.number}
-                                onChange={(e) => setDteData({ ...dteData, number: e.target.value })}
-                                required
+                                onChange={(val: string) => setDteData({ ...dteData, number: val })}
+                                dteType={dteData.type}
+                                contactId={contactId ? Number(contactId) : undefined}
+                                isPurchase={true}
+                                onValidityChange={onValidityChange}
+                                disabled={dteData.isPending}
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="date" className="text-xs font-bold uppercase">Fecha Emisión</Label>
-                            <Input
-                                id="date"
-                                type="date"
-                                value={dteData.date}
-                                onChange={(e) => setDteData({ ...dteData, date: e.target.value })}
-                            />
+                            <Label htmlFor="date" className="text-xs font-bold uppercase">Fecha Emisión <span className="text-destructive">*</span></Label>
+                            <div>
+                                <PeriodValidationDateInput
+                                    date={dteData.date ? new Date(dteData.date + 'T12:00:00') : undefined}
+                                    onDateChange={(d) => {
+                                        if (d) {
+                                            const year = d.getFullYear()
+                                            const month = String(d.getMonth() + 1).padStart(2, '0')
+                                            const day = String(d.getDate()).padStart(2, '0')
+                                            setDteData({ ...dteData, date: `${year}-${month}-${day}` })
+                                        } else {
+                                            setDteData({ ...dteData, date: "" })
+                                        }
+                                    }}
+                                    validationType="both"
+                                    onValidityChange={onPeriodValidityChange}
+                                />
+                            </div>
                         </div>
                         <div className="col-span-2">
                             <DocumentAttachmentDropzone

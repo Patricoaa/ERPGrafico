@@ -28,6 +28,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-z_@n0q5=yw43a$i1x61*c
 DEBUG = os.environ.get('DEBUG', '1') == '1'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
 
 
 # Application definition
@@ -162,7 +163,7 @@ USE_S3 = os.getenv('USE_S3', 'False') == 'True'
 if USE_S3:
     AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID', 'minioadmin')
     AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY', 'minioadmin')
-    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', 'erpgrafico-media')
+    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME', 'erpgrafico-media-private')
     AWS_S3_ENDPOINT_URL = os.getenv('AWS_S3_ENDPOINT_URL', 'http://minio:9000')
     AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-1')
     AWS_S3_SIGNATURE_VERSION = 's3v4'
