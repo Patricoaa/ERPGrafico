@@ -103,7 +103,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
     }
 
 
-    const columns: ColumnDef<Account>[] = [
+    const columns: ColumnDef<Account>[] = React.useMemo(() => [
         {
             accessorKey: "code",
             header: ({ column }) => (
@@ -254,7 +254,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
                 )
             },
         },
-    ]
+    ], [])
 
     return (
         <div className="space-y-4">
@@ -283,14 +283,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
                 defaultPageSize={500}
                 getSubRows={(row: any) => row.children}
                 autoExpand={true}
-                actionButton={
-                    <Button 
-                        onClick={() => handleAddAccount()}
-                        className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-4 h-9 font-heading text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-primary/20"
-                    >
-                        Nueva Cuenta
-                    </Button>
-                }
+                rightAction={null}
             />
 
             <AccountForm 

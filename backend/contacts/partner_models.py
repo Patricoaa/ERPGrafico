@@ -31,6 +31,7 @@ class PartnerTransaction(models.Model):
         DIVIDEND_PAYMENT = 'DIVIDEND_PAY', _('Pago de Dividendo')
         REINVESTMENT = 'REINVESTMENT', _('Reinversión de Utilidades')
         RETAINED = 'RETAINED', _('Utilidades Retenidas (Asignación)')
+        RETAINED_MOBILIZATION = 'RETAINED_MOB', _('Movilización de Utilidades Retenidas (Salida)')
         LOSS_ABSORPTION = 'LOSS_ABSORB', _('Absorción de Pérdidas')
 
         # Equity Composition Movements
@@ -408,33 +409,111 @@ class ProfitDistributionLine(models.Model):
         help_text=_("gross - provisional_withdrawals_offset = neto a pagar/reinvertir.")
     )
 
-    destination = models.CharField(
-        _("Destino"),
-        max_length=20,
-        choices=Destination.choices,
-        default=Destination.DIVIDEND_PAYABLE
-    )
-
-    # Generated records
-    partner_transaction = models.ForeignKey(
-        PartnerTransaction,
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='distribution_line',
-        verbose_name=_("Transacción Generada")
-    )
-    treasury_movement = models.ForeignKey(
-        'treasury.TreasuryMovement',
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='distribution_lines',
-        verbose_name=_("Pago Generado")
-    )
-
     class Meta:
         verbose_name = _("Línea de Distribución")
         verbose_name_plural = _("Líneas de Distribución")
         ordering = ['resolution', 'partner__name']
 
     def __str__(self):
-        return f"{self.partner.name}: {self.percentage_at_date}% → {self.get_destination_display()} (${self.net_amount})"
+        return f"{self.partner.name}: {self.percentage_at_date}% (${self.net_amount})"
+
+    @property
+    def total_destined(self):
+        return sum(d.amount for d in self.destinations.all())
+        
+    @property
+    def remaining_to_destine(self):
+        return self.net_amount - self.total_destined
+
+
+class ProfitDistributionLineDestination(models.Model):
+    """
+    Especifica cuánto monto de una línea de distribución se va a un destino particular.
+    """
+    class Destination(models.TextChoices):
+        DIVIDEND_PAYABLE = 'DIVIDEND', _('Dividendo a Pagar')
+        REINVEST = 'REINVEST', _('Reinversión en Capital')
+        RETAINED = 'RETAINED', _('Utilidades Retenidas')
+        LOSS_ABSORPTION = 'LOSS', _('Absorción de Pérdidas')
+
+    line = models.ForeignKey(
+        ProfitDistributionLine,
+        on_delete=models.CASCADE,
+        related_name='destinations',
+        verbose_name=_("Línea base")
+    )
+    destination = models.CharField(
+        _("Destino"),
+        max_length=20,
+        choices=Destination.choices
+    )
+    amount = models.DecimalField(
+        _("Monto"),
+        max_digits=16,
+        decimal_places=0
+    )
+    partner_transaction = models.ForeignKey(
+        PartnerTransaction,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='distribution_line_destinations',
+        verbose_name=_("Transacción Generada")
+    )
+
+    class Meta:
+        verbose_name = _("Destino de Línea de Distribución")
+        verbose_name_plural = _("Destinos de Líneas de Distribución")
+
+    def __str__(self):
+        return f"{self.line.partner.name} - {self.get_destination_display()}: {self.amount}"
+
+
+class ProfitDistributionPayment(models.Model):
+    """
+    Registra pagos parciales o totales de dividendos aprobados en una resolución.
+    """
+    resolution = models.ForeignKey(
+        ProfitDistributionResolution,
+        on_delete=models.CASCADE,
+        related_name='payments',
+        verbose_name=_("Resolución de Origen")
+    )
+    partner = models.ForeignKey(
+        'contacts.Contact',
+        on_delete=models.PROTECT,
+        related_name='dividend_payments',
+        verbose_name=_("Socio")
+    )
+    amount = models.DecimalField(
+        _("Monto Pagado"),
+        max_digits=16,
+        decimal_places=0
+    )
+    # The actual money out
+    treasury_movement = models.ForeignKey(
+        'treasury.TreasuryMovement',
+        on_delete=models.PROTECT,
+        related_name='profit_distribution_payments',
+        verbose_name=_("Movimiento de Tesorería")
+    )
+    # The formal reduction of liability on the partner's account
+    partner_transaction = models.ForeignKey(
+        PartnerTransaction,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='profit_distribution_payments',
+        verbose_name=_("Transacción de Pago en Cuenta")
+    )
+    created_by = models.ForeignKey(
+        'core.User',
+        on_delete=models.SET_NULL,
+        null=True, blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Pago de Dividendos")
+        verbose_name_plural = _("Pagos de Dividendos")
+
+    def __str__(self):
+        return f"Pago {self.amount} a {self.partner.name} (Res. {self.resolution.id})"

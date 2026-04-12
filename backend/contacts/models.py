@@ -110,6 +110,15 @@ class Contact(models.Model):
         verbose_name=_("Cuenta Capital por Cobrar"),
         help_text=_("Subcuenta (activo) para capital suscrito pendiente de pago de este socio (1.1.05.XX).")
     )
+    partner_dividends_payable_account = models.ForeignKey(
+        Account,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='partner_dividends_payable_contacts',
+        limit_choices_to={'account_type': AccountType.LIABILITY},
+        verbose_name=_("Cuenta Dividendos por Pagar"),
+        help_text=_("Subcuenta (pasivo) para dividendos pendientes de pago de este socio (2.1.07.XX).")
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -140,6 +149,7 @@ class Contact(models.Model):
                     ('partner_contribution_account', 'partner_capital_contribution_account', 'C.A.'),
                     ('partner_provisional_withdrawal_account', 'partner_provisional_withdrawal_account', 'R.P.'),
                     ('partner_earnings_account', 'partner_current_year_earnings_account', 'Ut.'),
+                    ('partner_dividends_payable_account', 'partner_dividends_payable_account', 'Div.'),
                 ]
                 for contact_field, settings_field, prefix in account_specs:
                     if not getattr(self, f'{contact_field}_id') and getattr(settings, settings_field, None):
@@ -407,7 +417,11 @@ class Contact(models.Model):
 
     @property
     def partner_total_paid_in(self) -> Decimal:
-        """Total accumulated assets/cash actually delivered to company."""
+        """
+        Total accumulated assets/cash actually delivered to company.
+        Includes reinvestments, since the partner's profits serve as
+        a non-cash payment for their new capital subscription.
+        """
         if not self.is_partner:
             return Decimal('0')
         from contacts.partner_models import PartnerTransaction
@@ -416,6 +430,7 @@ class Contact(models.Model):
             transaction_type__in=[
                 PartnerTransaction.Type.CAPITAL_CONTRIBUTION_CASH,
                 PartnerTransaction.Type.CAPITAL_CONTRIBUTION_INVENTORY,
+                PartnerTransaction.Type.REINVESTMENT,
             ]
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
 
@@ -486,7 +501,10 @@ class Contact(models.Model):
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
         
         loss = self.partner_transactions.filter(
-            transaction_type=PartnerTransaction.Type.LOSS_ABSORPTION
+            transaction_type__in=[
+                PartnerTransaction.Type.LOSS_ABSORPTION,
+                PartnerTransaction.Type.RETAINED_MOBILIZATION,
+            ]
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
         
         return retained - loss

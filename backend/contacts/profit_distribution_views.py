@@ -29,8 +29,8 @@ class ProfitDistributionResolutionViewSet(viewsets.ModelViewSet):
         acta_number = request.data.get('acta_number', '')
         notes = request.data.get('notes', '')
         
-        if not all([fiscal_year_id, net_result, resolution_date]):
-            return Response({"error": "Faltan campos (fiscal_year_id, net_result, resolution_date)."}, status=status.HTTP_400_BAD_REQUEST)
+        if fiscal_year_id is None or net_result is None or not resolution_date:
+            return Response({"error": "Faltan campos obligatorios (fiscal_year_id, net_result, resolution_date)."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             res = ProfitDistributionService.create_draft_resolution(
@@ -103,12 +103,13 @@ class ProfitDistributionResolutionViewSet(viewsets.ModelViewSet):
         """Execute mass payment for all dividend lines of this resolution"""
         resolution = self.get_object()
         treasury_account_id = request.data.get('treasury_account_id')
+        payments_data = request.data.get('payments_data', [])
         
         if not treasury_account_id:
             return Response({"error": "Falta seleccionar la cuenta de tesorería (treasury_account_id)."}, status=status.HTTP_400_BAD_REQUEST)
             
         try:
-            ProfitDistributionService.execute_mass_payment(resolution, treasury_account_id, request.user)
+            ProfitDistributionService.execute_mass_payment(resolution, treasury_account_id, payments_data, request.user)
             return Response(self.get_serializer(resolution).data)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

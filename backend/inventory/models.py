@@ -992,7 +992,10 @@ class StockMove(models.Model):
                 month=self.date.month
             ).first()
             
-            if period and period.status == AccountingPeriod.Status.CLOSED:
+            # Skip validation if bypass flag is set
+            if getattr(self, '_is_system_closing_entry', False):
+                pass
+            elif period and period.status == AccountingPeriod.Status.CLOSED:
                 if is_new:
                     raise ValidationError(
                         _("No se puede registrar un movimiento de inventario en un periodo contable cerrado (%(period)s).") % {'period': str(period)}

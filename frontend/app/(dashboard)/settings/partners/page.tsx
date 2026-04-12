@@ -24,12 +24,15 @@ export default function PartnersSettingsPage() {
     const router = useRouter()
     const activeTab = searchParams.get("tab") || "composition"
     const isNewDistributionModal = searchParams.get("modal") === "new-distribution"
+    const isMobilizeModal = searchParams.get("modal") === "mobilize-earnings"
+    const isAddPartnerModal = searchParams.get("modal") === "add-partner"
     const [saving, setSaving] = useState(false)
     const [configSaving, setConfigSaving] = useState(false)
 
     // Callback to clear modal param from URL (lifted from ProfitDistributionsTab)
     const handleModalClose = useCallback(() => {
-        if (searchParams.get("modal") === "new-distribution") {
+        const currentModal = searchParams.get("modal")
+        if (currentModal === "new-distribution" || currentModal === "mobilize-earnings" || currentModal === "add-partner") {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
             router.push(`?${params.toString()}`, { scroll: false })
@@ -67,12 +70,6 @@ export default function PartnersSettingsPage() {
             href: "/settings/partners?tab=composition" 
         },
         { 
-            value: "ledger", 
-            label: "Libro Auxiliar", 
-            iconName: "book-open", 
-            href: "/settings/partners?tab=ledger" 
-        },
-        { 
             value: "distributions", 
             label: "Utilidades", 
             iconName: "pie-chart", 
@@ -87,14 +84,9 @@ export default function PartnersSettingsPage() {
                     title: "Composición Societaria",
                     description: "Gestión de capital suscrito y pagado por los socios.",
                     iconName: "users" as const,
-                    showAction: false
-                }
-            case "ledger":
-                return {
-                    title: "Libro Auxiliar de Socios",
-                    description: "Historial detallado de aportes, retiros y movimientos de capital.",
-                    iconName: "book-open" as const,
-                    showAction: false
+                    showAction: true,
+                    actionTitle: "Añadir Socio",
+                    actionHref: "/settings/partners?tab=composition&modal=add-partner"
                 }
             case "distributions":
                 return {
@@ -124,13 +116,15 @@ export default function PartnersSettingsPage() {
                 variant="minimal"
                 configHref="?config=true"
                 titleActions={headerConfig.showAction && headerConfig.actionHref && (
-                    <Link href={headerConfig.actionHref}>
-                        <PageHeaderButton
-                            iconName="plus"
-                            circular
-                            title={headerConfig.actionTitle}
-                        />
-                    </Link>
+                    <div className="flex gap-2">
+                        <Link href={headerConfig.actionHref}>
+                            <PageHeaderButton
+                                iconName="plus"
+                                circular
+                                title={headerConfig.actionTitle}
+                            />
+                        </Link>
+                    </div>
                 )}
             />
 
@@ -142,6 +136,7 @@ export default function PartnersSettingsPage() {
                         activeTab={activeTab} 
                         onSavingChange={setSaving}
                         initialFlowOpen={isNewDistributionModal}
+                        initialAddPartnerOpen={isAddPartnerModal}
                         onModalClose={handleModalClose}
                     />
                 </Suspense>

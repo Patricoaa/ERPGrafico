@@ -96,12 +96,12 @@ class Command(BaseCommand):
             self.stdout.write('Creating Subscriptions...')
             self._create_subscriptions(accounts, partners['suppliers'])
 
-            self.stdout.write('Creating Opening Balance...')
-            self._create_opening_balance(accounts, partners)
-            
-            # Add initial stock for all storable products
+            # Add initial stock for all storable products first to calculate its value
             self.stdout.write('Adding Initial Stock...')
-            self._add_initial_stock(accounts, partners)
+            total_stock_value = self._add_initial_stock(accounts, partners)
+
+            self.stdout.write('Creating Opening Balance...')
+            self._create_opening_balance(accounts, partners, total_stock_value)
 
             self.stdout.write('Creating Treasury Infrastructure...')
             self._create_treasury_infrastructure(accounts, partners)
@@ -394,6 +394,7 @@ class Command(BaseCommand):
         acc_cap_a = get_or_create_subaccount('3.1.01', "Socio A", "001")
         acc_earn_a = get_or_create_subaccount('3.2.01', "Socio A", "001")
         acc_recv_a = get_or_create_subaccount('1.1.05.01', "Socio A", "001")
+        acc_div_a = get_or_create_subaccount('2.1.07', "Socio A", "001")
         
         socio_a, _ = Contact.objects.get_or_create(
             tax_id="11222333-4",
@@ -404,6 +405,7 @@ class Command(BaseCommand):
                 'partner_contribution_account': acc_cap_a,
                 'partner_earnings_account': acc_earn_a,
                 'partner_receivable_account': acc_recv_a,
+                'partner_dividends_payable_account': acc_div_a,
                 'partner_equity_percentage': Decimal('50.00'),
             }
         )
@@ -414,6 +416,7 @@ class Command(BaseCommand):
         acc_cap_b = get_or_create_subaccount('3.1.01', "Socio B", "002")
         acc_earn_b = get_or_create_subaccount('3.2.01', "Socio B", "002")
         acc_recv_b = get_or_create_subaccount('1.1.05.01', "Socio B", "002")
+        acc_div_b = get_or_create_subaccount('2.1.07', "Socio B", "002")
         
         socio_b, _ = Contact.objects.get_or_create(
             tax_id="22333444-5",
@@ -424,6 +427,7 @@ class Command(BaseCommand):
                 'partner_contribution_account': acc_cap_b,
                 'partner_earnings_account': acc_earn_b,
                 'partner_receivable_account': acc_recv_b,
+                'partner_dividends_payable_account': acc_div_b,
                 'partner_equity_percentage': Decimal('50.00'),
             }
         )
@@ -739,24 +743,27 @@ class Command(BaseCommand):
             }
         )
 
-    def _create_opening_balance(self, accounts, partners):
+    def _create_opening_balance(self, accounts, partners, total_stock_value=Decimal('0')):
         if JournalEntry.objects.filter(reference="OPEN-2026").exists():
             return
             
-        entry = JournalEntry.objects.create(
+        entry = JournalEntry(
             date=timezone.now().date(),
             description="Asiento de Apertura 2026 (Suscripción y Pago de Capital)",
             reference="OPEN-2026",
             status=JournalEntry.State.POSTED,
         )
+        entry._is_system_closing_entry = True
+        entry.save()
         
         owners = partners.get('owners', [])
         num_owners = len(owners)
         
         if num_owners > 0:
-            # 1. Suscripción de Capital (Subscription) - Fixed amount 100M (50M each)
-            total_subscription = Decimal('100000000')
-            sub_per_owner = (total_subscription / num_owners).quantize(Decimal('0.01'))
+            # 1. Suscripción de Capital (Subscription) = Initial Cash + Initial Stock Value
+            total_bank = Decimal('50000000')
+            total_subscription = total_bank + total_stock_value
+            sub_per_owner = (total_subscription / num_owners).quantize(Decimal('1'))
             
             for owner in owners:
                 owner_capital_account = owner.partner_contribution_account or accounts['capital']
@@ -786,15 +793,14 @@ class Command(BaseCommand):
                     transaction_type=PartnerTransaction.Type.EQUITY_SUBSCRIPTION,
                     amount=sub_per_owner,
                     date=timezone.now().date(),
-                    description="Suscripción Inicial de Capital",
+                    description=f"Suscripción Inicial de Capital ({total_subscription:,.0f} total)",
                     journal_entry=entry,
                 )
         
             # 2. Pago de Capital en Efectivo/Banco (Cash Contribution)
-            total_bank = Decimal('50000000')
             JournalItem.objects.create(entry=entry, account=accounts['bank'], label="Ingreso Aporte Inicial Banco", debit=total_bank, credit=0)
             
-            val_per_owner = (total_bank / num_owners).quantize(Decimal('0.01'))
+            val_per_owner = (total_bank / num_owners).quantize(Decimal('1'))
             total_distributed = val_per_owner * num_owners
             diff = total_bank - total_distributed
             
@@ -947,12 +953,14 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR("  No initial inventory account found."))
             return
 
-        entry = JournalEntry.objects.create(
+        entry = JournalEntry(
             date=timezone.now().date(),
             description="Carga Inicial de Inventario (Demo Data)",
             reference="INIT-STOCK",
             status=JournalEntry.State.POSTED,
         )
+        entry._is_system_closing_entry = True
+        entry.save()
 
         # Filter products that should receive initial stock
         # Exclude: advanced manufacturing, services, subscriptions, and express manufacturing
@@ -981,7 +989,7 @@ class Command(BaseCommand):
                 cost = Decimal(str(random.randint(500, 5000)))
 
             # 1. Create Stock Move with unit_cost frozen at time of seeding
-            StockMove.objects.create(
+            move = StockMove(
                 date=timezone.now().date(),
                 product=product,
                 warehouse=warehouse,
@@ -990,6 +998,8 @@ class Command(BaseCommand):
                 description="Carga Inicial Demo Data",
                 unit_cost=cost  # Frozen at creation - will not change
             )
+            move._is_system_closing_entry = True
+            move.save()
 
             # Update product cost PMP - single save with update_fields to track only cost change
             # First, remove the $0 history entry created on product creation (before cost was set)
@@ -1052,6 +1062,7 @@ class Command(BaseCommand):
                 )
 
         self.stdout.write(f"  ✓ Initial stock added for {count} products. Total value: ${total_value:,.0f}")
+        return total_value
 
     def _create_treasury_infrastructure(self, accounts, partners):
         self.stdout.write('  Creating POS Terminals and Treasury Physical Accounts...')

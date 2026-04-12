@@ -2,6 +2,7 @@ export type TransactionType =
     | 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment'
     | 'sale_delivery' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order'
     | 'journal_entry' | 'stock_move' | 'cash_movement' | 'sale_return' | 'purchase_return' | 'inventory'
+    | 'profit_distribution'
 
 export interface TransactionLine {
     id?: number | string

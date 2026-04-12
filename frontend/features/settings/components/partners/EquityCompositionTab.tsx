@@ -1,10 +1,10 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import { 
-    TrendingUp, 
-    Plus, 
-    ArrowRightLeft, 
+import {
+    TrendingUp,
+    Plus,
+    ArrowRightLeft,
     AlertCircle,
     PieChart,
     Building2,
@@ -12,41 +12,54 @@ import {
     UserPlus,
     MoreHorizontal,
     Wallet,
-    LogOut
+    LogOut,
+    Banknote,
+    History,
+    BarChart3
 } from "lucide-react"
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { IndustrialCard } from "@/components/shared/IndustrialCard"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { 
-    TableRow, 
-    TableCell 
+import {
+    TableRow,
+    TableCell
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
 import { formatCurrency, cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
-import { 
-    SubscriptionMovementModal, 
-    EquityTransferModal, 
-    CapitalContributionModal, 
-    ProvisionalWithdrawalModal 
+import {
+    SubscriptionMovementModal,
+    EquityTransferModal,
+    DividendPaymentModal
 } from "@/features/settings/components/partners/EquityMovementModals"
+import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
+import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
 import { AddPartnerModal } from "@/features/settings/components/partners/AddPartnerModal"
 import { InitialCapitalModal } from "@/features/settings/components/InitialCapitalModal"
+import { MobilizeEarningsWizard } from "@/features/settings/components/partners/MobilizeEarningsWizard"
+import { PartnerLedgerModal } from "@/features/settings/components/partners/PartnerLedgerModal"
+import { EquityStatsSheet } from "@/features/settings/components/partners/EquityStatsSheet"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 
-export function EquityCompositionTab() {
+export function EquityCompositionTab({
+    initialAddPartnerOpen = false,
+    onModalClose
+}: {
+    initialAddPartnerOpen?: boolean,
+    onModalClose?: () => void
+}) {
     const [loading, setLoading] = useState(true)
     const [partners, setPartners] = useState<any[]>([])
     const [summary, setSummary] = useState<any>(null)
@@ -54,16 +67,23 @@ export function EquityCompositionTab() {
     const [isTransferOpen, setIsTransferOpen] = useState(false)
     const [isInitialSetupOpen, setIsInitialSetupOpen] = useState(false)
     const [isAddPartnerOpen, setIsAddPartnerOpen] = useState(false)
-    
+
     // Custom action modals
     const [isContributionOpen, setIsContributionOpen] = useState(false)
     const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
+    const [isDividendOpen, setIsDividendOpen] = useState(false)
+    const [isMobilizeOpen, setIsMobilizeOpen] = useState(false)
+    const [isLedgerOpen, setIsLedgerOpen] = useState(false)
+    const [isStatsOpen, setIsStatsOpen] = useState(false)
 
     // Modal pre-filling state
     const [subModalParams, setSubModalParams] = useState({
         partnerId: undefined as string | undefined,
         amount: undefined as string | undefined
     })
+
+    const [selectedPartnerId, setSelectedPartnerId] = useState<number | undefined>(undefined)
+    const [selectedPartnerName, setSelectedPartnerName] = useState<string>("")
 
     const fetchData = async () => {
         setLoading(true)
@@ -86,6 +106,12 @@ export function EquityCompositionTab() {
         fetchData()
     }, [])
 
+    useEffect(() => {
+        if (initialAddPartnerOpen) {
+            setIsAddPartnerOpen(true)
+        }
+    }, [initialAddPartnerOpen])
+
     if (loading) {
         return (
             <div className="space-y-6">
@@ -107,16 +133,16 @@ export function EquityCompositionTab() {
                 <div className="flex flex-col gap-1 py-1 max-w-[220px]">
                     <span className="font-black text-[12px] tracking-tight uppercase leading-none">{row.original.name}</span>
                     <span className="text-[9px] font-mono opacity-50">{row.original.tax_id}</span>
-                    
+
                     {row.original.partner_excess_capital > 0 && (
                         <div className="mt-1.5 p-1.5 bg-warning/10 border border-warning/20 rounded-sm flex items-center justify-between gap-2 overflow-hidden ring-1 ring-warning/10">
                             <div className="flex items-center gap-1.5 text-[8px] text-warning font-black uppercase tracking-tighter">
                                 <AlertCircle className="h-2.5 w-2.5 shrink-0" />
                                 Exceso: +{formatCurrency(row.original.partner_excess_capital)}
                             </div>
-                            <Button 
-                                variant="link" 
-                                size="sm" 
+                            <Button
+                                variant="link"
+                                size="sm"
                                 className="h-3 p-0 text-[8px] font-black text-warning hover:text-warning/80 underline uppercase tracking-widest leading-none"
                                 onClick={() => {
                                     setSubModalParams({
@@ -208,6 +234,21 @@ export function EquityCompositionTab() {
             }
         },
         {
+            accessorKey: "partner_dividends_payable_balance",
+            header: () => <div className="text-right whitespace-nowrap text-warning">D. por Pagar</div>,
+            cell: ({ row }) => {
+                const val = parseFloat(row.getValue("partner_dividends_payable_balance"))
+                return (
+                    <div className={cn(
+                        "text-right font-mono text-[11px] font-bold",
+                        val > 0 ? 'text-warning' : 'text-muted-foreground/30'
+                    )}>
+                        {val > 0 ? formatCurrency(val) : '-'}
+                    </div>
+                )
+            }
+        },
+        {
             accessorKey: "partner_net_equity",
             header: () => <div className="text-right whitespace-nowrap text-primary">Patrimonio</div>,
             cell: ({ row }) => (
@@ -218,160 +259,136 @@ export function EquityCompositionTab() {
         },
         {
             id: "actions",
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-primary/5 rounded-sm">
-                                <MoreHorizontal className="h-3.5 w-3.5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 font-mono text-[10px] border-2">
-                            <DropdownMenuLabel className="text-[9px] tracking-widest text-muted-foreground/60 py-1">GESTIÓN PATRIMONIAL</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                                className="text-success font-black p-3 hover:bg-success/10 focus:bg-success/10"
-                                onClick={() => setIsContributionOpen(true)}
-                            >
-                                <Wallet className="h-3.5 w-3.5 mr-2 bg-success/20 rounded-full p-0.5" />
-                                <span>Registrar Aporte</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                                className="text-destructive font-black p-3 hover:bg-destructive/10 focus:bg-destructive/10"
-                                onClick={() => setIsWithdrawalOpen(true)}
-                            >
-                                <LogOut className="h-3.5 w-3.5 mr-2 bg-destructive/20 rounded-full p-0.5" />
-                                <span>Registrar Retiro</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-            )
+            header: () => <div className="text-center">Acciones</div>,
+            cell: ({ row }) => {
+                const partner = row.original
+                const hasEarnings = parseFloat(partner.partner_earnings_balance) > 0
+                const hasDividends = parseFloat(partner.partner_dividends_payable_balance) > 0
+
+                return (
+                    <div className="flex justify-center gap-1">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                                "h-8 w-8 transition-all hover:bg-primary/10",
+                                hasDividends ? "text-primary" : "text-muted-foreground/30"
+                            )}
+                            disabled={!hasDividends}
+                            onClick={() => {
+                                setSelectedPartnerId(partner.id)
+                                setIsDividendOpen(true)
+                            }}
+                            title="Pagar Dividendos"
+                        >
+                            <Banknote className="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className={cn(
+                                "h-8 w-8 transition-all hover:bg-primary/10",
+                                hasEarnings ? "text-primary/70" : "text-muted-foreground/30"
+                            )}
+                            disabled={!hasEarnings}
+                            onClick={() => {
+                                setSelectedPartnerId(partner.id)
+                                setIsMobilizeOpen(true)
+                            }}
+                            title="Distribuir Utilidades Retenidas"
+                        >
+                            <ArrowRightLeft className="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-primary hover:bg-primary/10 transition-all font-black"
+                            onClick={() => {
+                                setSelectedPartnerId(partner.id)
+                                setSelectedPartnerName(partner.name)
+                                setIsLedgerOpen(true)
+                            }}
+                            title="Ver Libro Auxiliar"
+                        >
+                            <History className="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-success hover:bg-success/10 transition-all font-black"
+                            onClick={() => {
+                                setSelectedPartnerId(partner.id)
+                                setIsContributionOpen(true)
+                            }}
+                            title="Registrar Aporte"
+                        >
+                            <Wallet className="h-4 w-4" />
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10 transition-all font-black"
+                            onClick={() => {
+                                setSelectedPartnerId(partner.id)
+                                setIsWithdrawalOpen(true)
+                            }}
+                            title="Registrar Retiro"
+                        >
+                            <LogOut className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )
+            }
         }
     ]
 
     return (
         <div className="space-y-6">
-            {/* Summary Row */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <IndustrialCard variant="industrial">
-                    <CardHeader className="pb-1 p-4">
-                        <CardTitle className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center justify-between">
-                            Suscrito Total
-                            <TrendingUp className="h-3.5 w-3.5 text-primary opacity-50" />
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-xl font-black font-heading tracking-tighter">
-                            {formatCurrency(summary?.total_capital || 0)}
-                        </div>
-                        <p className="text-[9px] font-medium text-muted-foreground mt-1 uppercase tracking-tighter opacity-60">
-                            Compromiso legal total
-                        </p>
-                    </CardContent>
-                </IndustrialCard>
-
-                <IndustrialCard variant="industrial">
-                    <CardHeader className="pb-1 p-4">
-                        <CardTitle className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center justify-between">
-                            Enterado (Pagado)
-                            <PieChart className="h-3.5 w-3.5 text-success opacity-50" />
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-xl font-black text-success font-heading tracking-tighter">
-                            {formatCurrency(summary?.total_paid_in || 0)}
-                        </div>
-                        <div className="flex items-center justify-between mt-1">
-                            <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-tighter opacity-60">Efectivamente pagado</span>
-                            <span className="text-[9px] font-mono font-black text-success bg-success/10 px-1 rounded">
-                                {summary?.total_capital > 0 ? Math.round((summary.total_paid_in / summary.total_capital) * 100) : 0}%
-                            </span>
-                        </div>
-                        {summary?.total_capital > 0 && (
-                            <div className="mt-2 w-full h-1 bg-muted rounded-full overflow-hidden">
-                                <div 
-                                    className="h-full bg-success rounded-full transition-all duration-1000" 
-                                    style={{ width: `${Math.min(100, Math.round((summary.total_paid_in / summary.total_capital) * 100))}%` }}
-                                />
-                            </div>
-                        )}
-                    </CardContent>
-                </IndustrialCard>
-
-                <IndustrialCard variant="industrial">
-                    <CardHeader className="pb-1 p-4">
-                        <CardTitle className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center justify-between">
-                            Capital por Cobrar
-                            <AlertCircle className="h-3.5 w-3.5 text-warning opacity-50" />
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-xl font-black font-heading tracking-tighter text-warning">
-                            {formatCurrency(summary?.total_pending || 0)}
-                        </div>
-                        <p className="text-[9px] font-medium text-muted-foreground mt-1 uppercase tracking-tighter opacity-60">
-                            Suscrito no pagado
-                        </p>
-                    </CardContent>
-                </IndustrialCard>
-
-                <IndustrialCard variant="industrial" className="bg-primary/5 border-primary/20">
-                    <CardHeader className="pb-1 p-4">
-                        <CardTitle className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center justify-between">
-                            Patrimonio Neto
-                            <Building2 className="h-3.5 w-3.5 text-primary opacity-50" />
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <div className="text-xl font-black font-heading tracking-tighter text-primary">
-                            {formatCurrency(summary?.total_net_equity || 0)}
-                        </div>
-                        <p className="text-[9px] font-black text-primary mt-1 uppercase tracking-tighter opacity-60">
-                            Valor Libro Compañía
-                        </p>
-                    </CardContent>
-                </IndustrialCard>
-            </div>
-
             {/* Main Content with DataTable */}
-            <DataTable 
+            <DataTable
                 columns={columns}
                 data={partners}
                 isLoading={loading}
                 cardMode={true}
+                leftAction={
+                    <Button
+                        variant="outline"
+                        onClick={() => setIsStatsOpen(true)}
+                        className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-primary/30 text-primary hover:bg-primary/10 transition-all rounded-full"
+                    >
+                        <BarChart3 className="h-3.5 w-3.5 mr-2" />
+                        Análisis
+                    </Button>
+                }
                 toolbarAction={
                     <div className="flex gap-2">
                         {!hasPartners ? (
-                            <Button 
+                            <Button
+                                variant="outline"
                                 onClick={() => setIsInitialSetupOpen(true)}
-                                className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground hover:bg-primary/90 transition-all rounded-md shadow-sm"
+                                className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-primary/50 text-primary hover:bg-primary/10 transition-all rounded-full"
                             >
                                 <Plus className="h-3.5 w-3.5 mr-2" />
                                 Configuración Inicial
                             </Button>
                         ) : (
                             <>
-                                <Button 
+                                <Button
                                     variant="outline"
-                                    onClick={() => setIsAddPartnerOpen(true)}
-                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-2 border-primary/20 hover:bg-primary/5 text-primary transition-all rounded"
-                                >
-                                    <UserPlus className="h-3.5 w-3.5 mr-2" />
-                                    Añadir Socio
-                                </Button>
-                                <Button 
-                                    variant="outline" 
                                     onClick={() => setIsSubscriptionOpen(true)}
-                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-2 border-muted-foreground/10 hover:bg-muted/5 transition-all rounded-md"
+                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-muted-foreground/30 text-foreground/80 hover:bg-muted/30 transition-all rounded-full"
                                 >
                                     <Plus className="h-3.5 w-3.5 mr-2" />
-                                    Aumento / Reducción
+                                    Modificación del capital
                                 </Button>
-                                <Button 
+                                <Button
                                     variant="outline"
                                     onClick={() => setIsTransferOpen(true)}
-                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-2 border-info/20 hover:bg-info/5 text-info transition-all rounded"
+                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-info/30 text-info hover:bg-info/10 transition-all rounded-full"
                                 >
                                     <ArrowRightLeft className="h-3.5 w-3.5 mr-2" />
                                     Transferencia
@@ -382,18 +399,10 @@ export function EquityCompositionTab() {
                 }
             />
 
-            {/* Info Message */}
-            <div className="bg-primary/5 border-2 border-primary/10 rounded p-4 flex gap-3 items-start animate-in fade-in slide-in-from-bottom-2 duration-500">
-                <Info className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                <div className="text-[11px] text-primary/80 leading-relaxed font-medium">
-                    <p className="font-black text-[12px] mb-1 text-primary">Nota sobre la Composición Societaria:</p>
-                    <p>Esta tabla muestra la <strong>participación formal</strong> según los libros de capital. Los aumentos o transferencias aquí registrados generan asientos contables automáticos contra la cuenta de Capital Social. Para ver el flujo detallado de aportes (efectivo/bienes), consulte la pestaña <strong>Libro Auxiliar</strong>.</p>
-                </div>
-            </div>
 
             {/* Modals remain the same */}
-            <SubscriptionMovementModal 
-                open={isSubscriptionOpen} 
+            <SubscriptionMovementModal
+                open={isSubscriptionOpen}
                 onOpenChange={(open) => {
                     setIsSubscriptionOpen(open)
                     if (!open) setSubModalParams({ partnerId: undefined, amount: undefined })
@@ -402,27 +411,58 @@ export function EquityCompositionTab() {
                 initialPartnerId={subModalParams.partnerId}
                 initialAmount={subModalParams.amount}
             />
-            <EquityTransferModal 
-                open={isTransferOpen} 
+            <EquityTransferModal
+                open={isTransferOpen}
                 onOpenChange={setIsTransferOpen}
                 onSuccess={fetchData}
             />
-            <CapitalContributionModal
+            <PartnerContributionWizard
                 open={isContributionOpen}
                 onOpenChange={setIsContributionOpen}
                 onSuccess={fetchData}
+                initialPartnerId={selectedPartnerId?.toString()}
             />
-            <ProvisionalWithdrawalModal
+            <PartnerWithdrawalWizard
                 open={isWithdrawalOpen}
                 onOpenChange={setIsWithdrawalOpen}
                 onSuccess={fetchData}
+                initialPartnerId={selectedPartnerId?.toString()}
             />
-            <AddPartnerModal 
+            <MobilizeEarningsWizard
+                open={isMobilizeOpen}
+                onOpenChange={setIsMobilizeOpen}
+                onSuccess={fetchData}
+                initialPartnerId={selectedPartnerId}
+            />
+            <DividendPaymentModal
+                open={isDividendOpen}
+                onOpenChange={setIsDividendOpen}
+                onSuccess={fetchData}
+                initialPartnerId={selectedPartnerId?.toString()}
+            />
+            <PartnerLedgerModal
+                open={isLedgerOpen}
+                onOpenChange={setIsLedgerOpen}
+                partnerId={selectedPartnerId}
+                partnerName={selectedPartnerName}
+            />
+            <EquityStatsSheet
+                open={isStatsOpen}
+                onOpenChange={setIsStatsOpen}
+                partners={partners}
+                summary={summary}
+            />
+            <AddPartnerModal
                 open={isAddPartnerOpen}
-                onOpenChange={setIsAddPartnerOpen}
+                onOpenChange={(open) => {
+                    setIsAddPartnerOpen(open)
+                    if (!open) {
+                        onModalClose?.()
+                    }
+                }}
                 onSuccess={fetchData}
             />
-            <InitialCapitalModal 
+            <InitialCapitalModal
                 open={isInitialSetupOpen}
                 onOpenChange={setIsInitialSetupOpen}
                 onSuccess={() => {

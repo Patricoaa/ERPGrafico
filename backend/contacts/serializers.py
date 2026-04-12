@@ -18,6 +18,7 @@ class ContactSerializer(serializers.ModelSerializer):
     partner_provisional_withdrawals_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_total_withdrawals = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_earnings_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    partner_dividends_payable_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_net_equity = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_excess_capital = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     
@@ -35,7 +36,7 @@ class ContactSerializer(serializers.ModelSerializer):
             'partner_balance',
             'partner_total_contributions', 'partner_total_paid_in', 'partner_pending_capital', 'partner_excess_capital',
             'partner_provisional_withdrawals_balance', 'partner_total_withdrawals',
-            'partner_earnings_balance', 'partner_net_equity',
+            'partner_earnings_balance', 'partner_dividends_payable_balance', 'partner_net_equity',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['created_at', 'updated_at']
@@ -50,14 +51,15 @@ class ContactListSerializer(serializers.ModelSerializer):
     partner_total_contributions = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_provisional_withdrawals_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_earnings_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    partner_dividends_payable_balance = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_net_equity = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     partner_excess_capital = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
     
     class Meta:
         model = Contact
-        fields = ['id', 'code', 'display_id', 'name', 'tax_id', 'email', 'phone', 'contact_type', 'is_default_customer', 'is_default_vendor', 'credit_enabled', 'credit_blocked', 'credit_limit', 'credit_available', 'credit_balance', 'credit_balance_used', 'credit_auto_blocked', 'credit_risk_level', 'is_partner', 'partner_balance', 'partner_equity_percentage', 'partner_total_contributions', 'partner_pending_capital', 'partner_excess_capital', 'partner_provisional_withdrawals_balance', 'partner_earnings_balance', 'partner_net_equity']
+        fields = ['id', 'code', 'display_id', 'name', 'tax_id', 'email', 'phone', 'contact_type', 'is_default_customer', 'is_default_vendor', 'credit_enabled', 'credit_blocked', 'credit_limit', 'credit_available', 'credit_balance', 'credit_balance_used', 'credit_auto_blocked', 'credit_risk_level', 'is_partner', 'partner_balance', 'partner_equity_percentage', 'partner_total_contributions', 'partner_pending_capital', 'partner_excess_capital', 'partner_provisional_withdrawals_balance', 'partner_earnings_balance', 'partner_dividends_payable_balance', 'partner_net_equity']
 
-from .partner_models import PartnerTransaction, PartnerEquityStake, ProfitDistributionResolution, ProfitDistributionLine
+from .partner_models import PartnerTransaction, PartnerEquityStake, ProfitDistributionResolution, ProfitDistributionLine, ProfitDistributionLineDestination, ProfitDistributionPayment
 
 class PartnerTransactionSerializer(serializers.ModelSerializer):
     partner_name = serializers.CharField(source='partner.name', read_only=True)
@@ -90,9 +92,20 @@ class PartnerEquityStakeSerializer(serializers.ModelSerializer):
         ]
 
 
+class ProfitDistributionLineDestinationSerializer(serializers.ModelSerializer):
+    destination_display = serializers.CharField(source='get_destination_display', read_only=True)
+
+    class Meta:
+        model = ProfitDistributionLineDestination
+        fields = ['id', 'destination', 'destination_display', 'amount']
+
+
 class ProfitDistributionLineSerializer(serializers.ModelSerializer):
     partner_name = serializers.CharField(source='partner.name', read_only=True)
-    destination_display = serializers.CharField(source='get_destination_display', read_only=True)
+    destinations = ProfitDistributionLineDestinationSerializer(many=True, read_only=True)
+    total_destined = serializers.DecimalField(max_digits=16, decimal_places=0, read_only=True)
+    remaining_to_destine = serializers.DecimalField(max_digits=16, decimal_places=0, read_only=True)
+    paid_dividend_amount = serializers.SerializerMethodField()
 
     class Meta:
         model = ProfitDistributionLine
@@ -100,9 +113,15 @@ class ProfitDistributionLineSerializer(serializers.ModelSerializer):
             'id', 'partner', 'partner_name',
             'percentage_at_date', 'gross_amount',
             'provisional_withdrawals_offset', 'net_amount',
-            'destination', 'destination_display',
-            'partner_transaction', 'treasury_movement',
+            'destinations', 'total_destined', 'remaining_to_destine',
+            'paid_dividend_amount'
         ]
+
+    def get_paid_dividend_amount(self, obj):
+        from django.db.models import Sum
+        from decimal import Decimal
+        payments = obj.resolution.payments.filter(partner=obj.partner).aggregate(total=Sum('amount'))
+        return payments['total'] or Decimal('0')
 
 
 class ProfitDistributionResolutionSerializer(serializers.ModelSerializer):
