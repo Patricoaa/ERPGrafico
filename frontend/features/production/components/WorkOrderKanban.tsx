@@ -58,9 +58,9 @@ export function WorkOrderKanban({ orders, onTransition, onManage, isLoading }: K
                                 <Icon className="h-4 w-4 text-muted-foreground" />
                                 <h3 className="font-bold text-sm uppercase tracking-wider">{stage.label}</h3>
                             </div>
-                            <Badge variant="secondary" className="bg-white/50">
+                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-white text-muted-foreground whitespace-nowrap">
                                 {isLoading ? <Skeleton className="h-4 w-6" /> : stageOrders.length}
-                            </Badge>
+                            </span>
                         </div>
 
                         <div className="p-2 space-y-3 flex-1 overflow-y-auto">
@@ -97,10 +97,13 @@ export function WorkOrderKanban({ orders, onTransition, onManage, isLoading }: K
                                             )}
                                         >
                                             <CardContent className="p-3 space-y-3">
-                                                <div className="flex gap-2 items-center flex-wrap">
-                                                    <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
                                                         OT-{order.number}
                                                     </span>
+                                                    <StatusBadge status={order.status} size="sm" />
+                                                </div>
+                                                <div className="flex gap-2 items-center flex-wrap">
                                                     {order.outsourcing_status === 'partial' && (
                                                         <StatusBadge 
                                                             status="PARTIAL" 

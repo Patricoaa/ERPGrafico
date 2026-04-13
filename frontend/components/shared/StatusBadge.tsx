@@ -83,6 +83,7 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
 
     // Credit Aging
     WRITTEN_OFF: { label: "Castigado", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
+    WRITE_OFF: { label: "Castigado", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
     CURRENT: { label: "Vigente", className: "bg-success/10 text-success border-success/20", type: "success" },
     OVERDUE_30: { label: "1-30 Días", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
     OVERDUE_60: { label: "31-60 Días", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
@@ -97,6 +98,12 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
 
     // HR - General
     DISCOUNTED: { label: "Descontado", className: "bg-success/10 text-success border-success/20", type: "success" },
+
+    // Contact Types
+    CUSTOMER: { label: "Cliente", className: "bg-info/10 text-info border-info/20", type: "info" },
+    SUPPLIER: { label: "Proveedor", className: "bg-primary/10 text-primary border-primary/20", type: "neutral" },
+    BOTH: { label: "Ambos", className: "bg-success/10 text-success border-success/20", type: "success" },
+    RELATED: { label: "Relacionado", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
 }
 
 interface StatusBadgeProps {

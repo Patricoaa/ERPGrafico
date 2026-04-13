@@ -5,7 +5,6 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { AlertCircle, ExternalLink, Package } from "lucide-react"
 import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
 import { Loader2, RefreshCcw } from "lucide-react"
 
 export interface Restriction {
@@ -80,9 +79,9 @@ export function ArchivingRestrictionsDialog({
                         >
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="text-[10px] uppercase font-bold">
+                                    <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
                                         {restriction.label}
-                                    </Badge>
+                                    </span>
                                 </div>
                                 <p className="text-sm text-muted-foreground">
                                     {restriction.description}

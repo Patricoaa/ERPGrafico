@@ -29,7 +29,7 @@ import api from "@/lib/api"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from "@/components/ui/data-table-cells"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
@@ -190,7 +190,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                             {/* OVERVIEW TAB */}
                             <TabsContent value="overview" className="mt-0 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                    <Card className="bg-success/10/30 border-success/10">
+                                    <Card className="bg-success/10 border-success/10">
                                         <CardContent className="pt-4">
                                             <p className="text-[10px] font-bold text-success uppercase tracking-wider">Ventas Totales</p>
                                             <div className="flex items-baseline gap-2">
@@ -199,13 +199,13 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                             </div>
                                         </CardContent>
                                     </Card>
-                                    <Card className="bg-primary/10/30 border-primary/10">
+                                    <Card className="bg-primary/10 border-primary/10">
                                         <CardContent className="pt-4">
                                             <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Ingresos (Neto)</p>
                                             <DataCell.Currency value={data.sales_analysis.total_revenue} className="text-2xl font-black text-primary text-left" />
                                         </CardContent>
                                     </Card>
-                                    <Card className="bg-warning/10/30 border-warning/10">
+                                    <Card className="bg-warning/10 border-warning/10">
                                         <CardContent className="pt-4">
                                             <p className="text-[10px] font-bold text-warning uppercase tracking-wider">Margen Bruto</p>
                                             <div className="flex items-baseline gap-2">
@@ -213,7 +213,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                             </div>
                                         </CardContent>
                                     </Card>
-                                    <Card className={marginPercent >= 20 ? "bg-primary/10/30 border-info/10" : "bg-destructive/10 border-destructive/20"}>
+                                    <Card className={marginPercent >= 20 ? "bg-primary/10 border-info/10" : "bg-destructive/10 border-destructive/20"}>
                                         <CardContent className="pt-4">
                                             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">% de Margen</p>
                                             <div className="flex items-center gap-2">
@@ -326,9 +326,9 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                                         {format(new Date(entry.date), "dd/MM/yyyy HH:mm", { locale: es })}
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge variant="secondary" className="font-normal text-[10px]">
+                                                        <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
                                                             {entry.user}
-                                                        </Badge>
+                                                        </span>
                                                     </TableCell>
                                                     <TableCell>
                                                         <DataCell.Currency value={entry.sale_price} className="text-left font-bold" />
@@ -369,12 +369,10 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                                         {move.display_id}
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge
-                                                            variant={move.type === 'IN' ? 'success' : move.type === 'OUT' ? 'destructive' : 'outline'}
-                                                            className="text-[10px] uppercase font-bold"
-                                                        >
-                                                            {move.type === 'IN' ? 'Entrada' : move.type === 'OUT' ? 'Salida' : 'Ajuste'}
-                                                        </Badge>
+                                                        <StatusBadge 
+                                                            status={move.type === 'IN' ? 'SUCCESS' : move.type === 'OUT' ? 'DESTRUCTIVE' : 'WARNING'} 
+                                                            label={move.type === 'IN' ? 'Entrada' : move.type === 'OUT' ? 'Salida' : 'Ajuste'}
+                                                        />
                                                     </TableCell>
                                                     <TableCell>
                                                         <DataCell.Number value={move.quantity} className="text-left" suffix={move.uom} decimals={2} />
@@ -435,9 +433,9 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                                         {format(new Date(usage.date), "dd/MM/yyyy")}
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge variant="primary" className="font-bold">
+                                                        <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
                                                             OT-{usage.ot_number}
-                                                        </Badge>
+                                                        </span>
                                                     </TableCell>
                                                     <TableCell>
                                                         <DataCell.Number value={usage.quantity} className="text-left" decimals={2} />

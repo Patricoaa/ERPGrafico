@@ -5,7 +5,6 @@ import { useTerminals, type Terminal, type PaymentMethod } from "@/features/trea
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Label } from "@/components/ui/label"
@@ -178,11 +177,11 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                             {terminal.name}
                         </CardTitle>
                         <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="font-mono text-[10px] bg-muted/50 border-border">
+                            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded border bg-muted/50 border-border text-muted-foreground">
                                 {terminal.code}
-                            </Badge>
-                            <StatusBadge 
-                                status={terminal.is_active ? "active" : "inactive"} 
+                            </span>
+                            <StatusBadge
+                                status={terminal.is_active ? "active" : "inactive"}
                                 size="sm"
                                 className="uppercase font-bold tracking-tight"
                             />
@@ -204,12 +203,12 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Métodos Habilitados</p>
                     <div className="flex flex-wrap gap-1.5">
                         {Object.entries(methodsByType).map(([type, count]) => (
-                            <Badge key={type} variant="secondary" className="text-[10px] px-1.5 font-normal">
-                                {type === 'CASH' && <Banknote className="h-3 w-3 mr-1 text-success" />}
-                                {type === 'CARD' && <CreditCard className="h-3 w-3 mr-1 text-info" />}
-                                {type === 'TRANSFER' && <Landmark className="h-3 w-3 mr-1 text-primary" />}
-                                {type} <span className="ml-1 text-muted-foreground">({count})</span>
-                            </Badge>
+                            <div key={type} className="flex items-center gap-1.5 px-2 py-0.5 rounded-sm border bg-muted/10 text-[10px] uppercase font-bold text-foreground/70">
+                                {type === 'CASH' && <Banknote className="h-3 w-3 text-success" />}
+                                {type === 'CARD' && <CreditCard className="h-3 w-3 text-info" />}
+                                {type === 'TRANSFER' && <Landmark className="h-3 w-3 text-primary" />}
+                                {type} <span className="ml-1 opacity-60 font-mono">({count})</span>
+                            </div>
                         ))}
                         {terminal.allowed_payment_methods.length === 0 && (
                             <span className="text-xs text-muted-foreground italic">Ninguno configurado</span>
@@ -453,9 +452,9 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                         <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
                             <div className="flex justify-between items-center">
                                 <Label className={cn(FORM_STYLES.label, "mb-0")}>Métodos de Pago Permitidos</Label>
-                                <Badge variant="outline" className="text-[10px] bg-background">
+                                <span className="text-[9px] font-mono font-black text-muted-foreground uppercase opacity-70">
                                     {selectedMethodIds.length} seleccionados
-                                </Badge>
+                                </span>
                             </div>
 
                             <div className="space-y-5">

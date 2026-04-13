@@ -1,6 +1,5 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
 import { Info } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
@@ -273,16 +272,16 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-[10px] uppercase tracking-wider opacity-70">Margen de Ganancia:</span>
-                                <Badge className={cn(
-                                    "px-2 py-0.5 rounded-lg text-sm font-black border-none shadow-none uppercase tracking-tighter",
+                                <span className={cn(
+                                    "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border whitespace-nowrap",
                                     marginPercentage > 30
-                                        ? "bg-success text-white"
+                                        ? "bg-success/10 text-success border-success/20"
                                         : marginPercentage > 15
-                                            ? "bg-warning text-white"
-                                            : "bg-destructive text-white"
+                                            ? "bg-warning/10 text-warning border-warning/20"
+                                            : "bg-destructive/10 text-destructive border-destructive/20"
                                 )}>
                                     {marginPercentage}%
-                                </Badge>
+                                </span>
                             </div>
                         </div>
                     </div>

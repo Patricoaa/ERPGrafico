@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Plus, Edit, Loader2, ChevronLeft, Users, UserPlus } from "lucide-react"
 import { UserForm } from "@/features/users/components/UserForm"
 import { GroupForm } from "@/features/users/components/GroupForm"
@@ -76,9 +76,12 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
                 const systemRole = groups?.find(g => roles.includes(g))
 
                 return systemRole ? (
-                    <Badge variant={systemRole === 'ADMIN' ? 'default' : 'secondary'}>
+                    <span className={cn(
+                        "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border leading-none",
+                        systemRole === 'ADMIN' ? "border-primary/30 text-primary bg-primary/5" : "border-muted-foreground/20 text-muted-foreground bg-muted/30"
+                    )}>
                         {systemRole}
-                    </Badge>
+                    </span>
                 ) : null
             },
         },
@@ -96,9 +99,9 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
                 return (
                     <div className="flex flex-wrap gap-1">
                         {functionalGroups.map(g => (
-                            <Badge key={g} variant="outline" className="text-xs">
+                            <span key={g} className="text-[9px] font-bold uppercase text-muted-foreground/60 px-1 py-0.5 rounded border border-muted-foreground/10 bg-muted/10 leading-none">
                                 {g}
-                            </Badge>
+                            </span>
                         ))}
                     </div>
                 )
@@ -108,9 +111,9 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
             accessorKey: "is_active",
             header: "Estado",
             cell: ({ row }) => (
-                <Badge variant={row.original.is_active ? "success" : "destructive" as any}>
-                    {row.original.is_active ? "Activo" : "Inactivo"}
-                </Badge>
+                <StatusBadge 
+                    status={row.original.is_active ? "active" : "inactive"} 
+                />
             ),
         },
         {

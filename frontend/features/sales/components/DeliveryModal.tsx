@@ -21,7 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
@@ -392,15 +392,13 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                     {/* Delivery Status */}
                     <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">Estado de Despacho:</span>
-                        <Badge variant={
-                            order?.delivery_status === 'DELIVERED' ? 'success' :
-                                order?.delivery_status === 'PARTIAL' ? 'secondary' :
-                                    'outline'
-                        }>
-                            {order?.delivery_status === 'DELIVERED' ? 'Entregado' :
-                                order?.delivery_status === 'PARTIAL' ? 'Parcial' :
-                                    'Pendiente'}
-                        </Badge>
+                        <StatusBadge
+                            status={
+                                order?.delivery_status === 'DELIVERED' ? 'delivered' :
+                                    order?.delivery_status === 'PARTIAL' ? 'partial' :
+                                        'pending'
+                            }
+                        />
                     </div>
 
                     {/* Products Table */}
@@ -430,41 +428,48 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                <Badge variant="outline" className="font-normal border-none bg-muted/50">{line.uom_name}</Badge>
+                                                <span className="text-[10px] font-bold uppercase text-muted-foreground/60 px-1.5 py-0.5 rounded bg-muted/30">
+                                                    {line.uom_name}
+                                                </span>
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                <Badge variant="outline">{line.quantity_pending}</Badge>
+                                                <span className="text-xs font-black">{line.quantity_pending}</span>
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 <div className="flex flex-col items-center gap-1">
                                                     {line.track_inventory && (
-                                                        <Badge variant={availableStock >= line.quantity_pending ? "success" : "destructive"}>
+                                                        <span className={cn(
+                                                            "text-xs font-black",
+                                                            availableStock >= line.quantity_pending ? "text-success" : "text-destructive"
+                                                        )}>
                                                             {availableStock}
-                                                        </Badge>
+                                                        </span>
                                                     )}
 
                                                     {line.product_type === 'MANUFACTURABLE' && (
                                                         <>
                                                             {!line.track_inventory && (
-                                                                <Badge variant="outline" className="text-[9px] border-primary/20 bg-primary/10 text-primary">
+                                                                <span className="text-[8px] font-bold uppercase text-primary/70 bg-primary/5 px-1 py-0.5 rounded border border-primary/20 leading-none">
                                                                     {line.requires_advanced_manufacturing ? 'Fabricación Avanzada' : 'Fabricable'}
-                                                                </Badge>
+                                                                </span>
                                                             )}
 
                                                             {(line as any).work_order_summary ? (
                                                                 <div className="flex flex-col items-center mt-1">
-                                                                    <Badge
-                                                                        variant={(line as any).work_order_summary.status === 'FINISHED' ? "success" : "outline"}
-                                                                        className={cn("text-[9px] px-1.5 py-0", (line as any).work_order_summary.status === 'FINISHED' ? "" : "bg-warning/10 text-warning border-warning/20")}
-                                                                    >
-                                                                        OT: {(line as any).work_order_summary.status_display}
-                                                                    </Badge>
+                                                                    <StatusBadge
+                                                                        status={(line as any).work_order_summary.status.toLowerCase()}
+                                                                        size="sm"
+                                                                        className="text-[8px]"
+                                                                    />
                                                                     <span className="text-[8px] text-muted-foreground mt-0.5">{(line as any).work_order_summary.number}</span>
                                                                 </div>
                                                             ) : !line.requires_advanced_manufacturing && !line.track_inventory ? (
-                                                                <Badge variant={(line.manufacturable_quantity ?? 0) >= line.quantity_pending ? "success" : "destructive"} className="text-[10px]">
+                                                                <span className={cn(
+                                                                    "text-[10px] font-black",
+                                                                    (line.manufacturable_quantity ?? 0) >= line.quantity_pending ? "text-success" : "text-destructive"
+                                                                )}>
                                                                     {line.manufacturable_quantity ?? 0}
-                                                                </Badge>
+                                                                </span>
                                                             ) : line.requires_advanced_manufacturing ? (
                                                                 <span className="text-[8px] text-destructive">Sin OT registrada</span>
                                                             ) : null}
@@ -472,7 +477,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                     )}
 
                                                     {!line.track_inventory && line.product_type !== 'MANUFACTURABLE' && (
-                                                        <Badge variant="outline" className="text-[9px] border-success/20 bg-success/10 text-success">Disponible</Badge>
+                                                        <span className="text-[8px] font-bold uppercase text-success/80 bg-success/5 px-1.5 py-0.5 rounded border border-success/20 leading-none">Disponible</span>
                                                     )}
                                                 </div>
                                             </TableCell>

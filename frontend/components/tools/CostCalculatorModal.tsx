@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Trash2, Plus, Loader2, Calculator, Info, Package } from "lucide-react"
 import { DynamicIcon } from "@/components/ui/dynamic-icon"
 import { SearchBar } from "@/features/pos/components/SearchBar"
@@ -222,7 +221,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                 <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
                     <div className="flex items-center justify-between w-full pr-12 text-left">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-primary/10 rounded-lg text-primary shadow-sm border border-primary/10 hidden sm:block">
+                            <div className="p-3 bg-primary/10 rounded-[0.25rem] text-primary shadow-sm border border-primary/10 hidden sm:block">
                                 <Calculator className="h-6 w-6" />
                             </div>
                             <div className="flex flex-col">
@@ -230,10 +229,10 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                     <SheetTitle className="text-xl font-bold tracking-tight text-foreground">
                                         Calculadora de Costos
                                     </SheetTitle>
-                                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold animate-pulse shrink-0 uppercase tracking-widest h-5">
-                                        <Info className="h-3 w-3" />
+                                    <span className="bg-primary/10 text-primary border border-primary/20 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold animate-pulse shrink-0 uppercase tracking-widest h-5 rounded-[0.25rem] flex items-center">
+                                        <Info className="h-3 w-3 mr-1" />
                                         Modo Simulación
-                                    </Badge>
+                                    </span>
                                 </div>
                                 <SheetDescription className="text-xs font-medium text-muted-foreground mt-0.5">
                                     Simulación rápida de materiales para determinar costos de producción
@@ -297,22 +296,22 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                             />
                                                         )}
                                                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                                            <Badge className="bg-primary text-white shadow-lg border-none">
+                                                            <span className="bg-primary text-white shadow-sm border-none px-2 py-1 text-[10px] font-bold uppercase rounded-[0.25rem] flex items-center">
                                                                 <Plus className="h-3 w-3 mr-1" /> Agregar
-                                                            </Badge>
+                                                            </span>
                                                         </div>
                                                     </div>
                                                     <CardContent className="p-3 text-center flex-1 flex flex-col justify-center gap-1.5">
                                                         <div className="flex justify-center gap-1">
                                                             {product.internal_code && (
-                                                                <Badge variant="outline" className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70 border-muted-foreground/30">
+                                                                <span className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70 border border-muted-foreground/30 rounded-[0.25rem] text-muted-foreground flex items-center">
                                                                     {product.internal_code}
-                                                                </Badge>
+                                                                </span>
                                                             )}
                                                             {product.code && product.code !== product.internal_code && (
-                                                                <Badge variant="secondary" className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70">
+                                                                <span className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70 bg-secondary text-secondary-foreground rounded-[0.25rem] flex items-center">
                                                                     {product.code}
-                                                                </Badge>
+                                                                </span>
                                                             )}
                                                         </div>
                                                         <p className="text-sm font-bold leading-tight line-clamp-2">
@@ -357,7 +356,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                     <POSCartSkeleton />
                                 ) : selectedItems.length === 0 ? (
                                     <div className="h-[300px] flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-4">
-                                        <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center">
+                                        <div className="h-16 w-16 rounded-[0.25rem] bg-muted/50 flex items-center justify-center">
                                             <Calculator className="h-8 w-8 text-muted-foreground/20" />
                                         </div>
                                         <div className="space-y-1">
@@ -370,9 +369,9 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                 ) : (
                                     <div className="divide-y pb-2">
                                         {selectedItems.map((item, index) => (
-                                            <div key={item.id} className="grid grid-cols-12 gap-2 px-6 py-3 items-center group hover:bg-primary/10/30 transition-colors">
+                                            <div key={item.id} className="grid grid-cols-12 gap-2 px-6 py-3 items-center group hover:bg-primary/5 transition-colors">
                                                 <div className="col-span-6 flex items-center gap-3 min-w-0">
-                                                    <div className="w-8 h-8 rounded bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border">
+                                                    <div className="w-8 h-8 rounded-[0.25rem] bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border">
                                                         {item.product.image ? (
                                                             <img src={item.product.image} className="w-full h-full object-cover" />
                                                         ) : (
@@ -423,7 +422,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                         variant="ghost"
                                                         size="icon"
                                                         onClick={() => removeItem(item.id)}
-                                                        className="h-6 w-6 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                                                        className="h-6 w-6 rounded-[0.25rem] text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
                                                     >
                                                         <Trash2 className="h-3 w-3" />
                                                     </Button>
@@ -458,7 +457,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                     </div>
                                 </div>
 
-                                <div className="bg-primary/5 border border-primary/10 rounded-lg p-3 flex items-start gap-3">
+                                <div className="bg-primary/5 border border-primary/10 rounded-[0.25rem] p-3 flex items-start gap-3">
                                     <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                                     <p className="text-[10px] text-primary/80 leading-relaxed font-medium uppercase tracking-tight">
                                         Esta es una simulación de costos de producción basada en el precio de costo de los materiales seleccionados. No afecta movimientos de stock ni genera registros comerciales.

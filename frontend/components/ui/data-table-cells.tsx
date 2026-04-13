@@ -6,6 +6,7 @@ import { ReactNode, HTMLAttributes } from "react"
 
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 
 interface BaseCellProps extends HTMLAttributes<HTMLDivElement> {
     children?: ReactNode
@@ -201,24 +202,35 @@ export const DataCell = {
 
     // --- Status & Badges ---
 
-    /** Mapped status badge */
-    Status: ({ status, map, variant = "outline", className }: { status: string, map?: Record<string, "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info" | "indigo">, variant?: "default" | "outline" | "secondary", className?: string }) => {
-        const intent = map ? map[status] || "secondary" : "secondary"
+    /** Mapped status badge - Internally uses the standardized StatusBadge */
+    Status: ({ status, label, map, variant = "subtle", className }: { status: string, label?: string, map?: Record<string, any>, variant?: "default" | "hub" | "dot" | "subtle", className?: string }) => {
         return (
             <div className="flex justify-center items-center w-full">
-                <Badge variant={intent as "default" | "secondary" | "destructive" | "outline"} className={cn("whitespace-nowrap", className)}>
-                    {translateStatus(status)}
-                </Badge>
+                <StatusBadge 
+                    status={status} 
+                    label={label || translateStatus(status)} 
+                    variant={variant}
+                    className={className}
+                />
             </div>
         )
     },
 
-    /** Generic Badge wrapper */
-    Badge: ({ children, variant = "secondary", className, ...props }: { children: ReactNode, variant?: "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info" | "indigo", className?: string } & HTMLAttributes<HTMLDivElement>) => (
+    /** 
+     * Industrial Informational Label (formerly Generic Badge)
+     * Follows the text-contract for non-state information: minimalist, sharp, and muted.
+     */
+    Badge: ({ children, variant, className, ...props }: { children: ReactNode, variant?: string, className?: string } & HTMLAttributes<HTMLSpanElement>) => (
         <div className="flex justify-center items-center w-full">
-            <Badge variant={variant as "default" | "secondary" | "destructive" | "outline"} className={className} {...props}>
+            <span 
+                className={cn(
+                    "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap",
+                    className
+                )} 
+                {...props}
+            >
                 {children}
-            </Badge>
+            </span>
         </div>
     ),
 

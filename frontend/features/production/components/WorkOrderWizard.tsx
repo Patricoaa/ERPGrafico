@@ -5,7 +5,7 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -766,7 +766,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                 <td className="p-2">{m.uom_name}</td>
                                                                                 <td className="p-2 text-right font-bold">{formatCurrency(m.total_cost)}</td>
                                                                                 <td className="p-2">
-                                                                                    <Badge variant="outline" className="text-[10px] whitespace-nowrap">{m.source}</Badge>
+                                                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
+                                                        {m.source}
+                                                    </span>
                                                                                 </td>
                                                                                 <td className="p-2">
                                                                                     {m.source === 'MANUAL' && isViewingCurrentStage && (
@@ -922,10 +924,14 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                 </div>
                                                                             )}
                                                                             {m.purchase_order_number && (
-                                                                                <Badge variant="outline" className="gap-1 border-primary/20 text-primary bg-primary/10">
-                                                                                    <FileText className="h-3 w-3" />
-                                                                                    {m.purchase_order_number}
-                                                                                </Badge>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
+                                                                                        OC-{m.purchase_order_number}
+                                                                                    </span>
+                                                                                    <span className="text-[10px] font-medium text-muted-foreground">
+                                                                                        ({m.supplier_name})
+                                                                                    </span>
+                                                                                </div>
                                                                             )}
                                                                         </div>
                                                                     </div>
@@ -1058,12 +1064,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         {m.stock_available >= 999999 ? "∞" : m.stock_available} {m.uom_name}
                                                                     </p>
                                                                 </div>
-                                                                <Badge
-                                                                    variant={m.is_available ? "default" : "destructive"}
-                                                                    className={cn(m.is_available ? "bg-success hover:bg-success" : "")}
-                                                                >
-                                                                    {m.is_available ? "Disponible" : "Sin Stock"}
-                                                                </Badge>
+                                                                <StatusBadge status={m.is_available ? 'active' : 'inactive'} label={m.is_available ? 'Disponible' : 'Sin Stock'} size="sm" />
                                                             </div>
                                                         </div>
                                                     ))}
@@ -1138,12 +1139,14 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         </Button>
                                                                     </div>
                                                                 )}
-                                                                {m.purchase_order_number && (
-                                                                    <Badge variant="outline" className="gap-1 border-primary/20 text-primary bg-primary/10">
-                                                                        <FileText className="h-3 w-3" />
-                                                                        {m.purchase_order_number}
-                                                                    </Badge>
-                                                                )}
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
+                                                                            OC-{m.purchase_order_number}
+                                                                        </span>
+                                                                        <span className="text-[10px] font-medium text-muted-foreground">
+                                                                            ({m.supplier_name})
+                                                                        </span>
+                                                                    </div>
                                                             </div>
                                                         </div>
                                                     ))}
@@ -1307,10 +1310,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         Abrir HUB de OC
                                                                     </Button>
                                                                 )}
-                                                                <Badge variant={isReceived ? "default" : "secondary"} className={cn(isReceived ? "bg-success hover:bg-success/90" : "")}>
-                                                                    {isReceived ? <Check className="h-3 w-3 mr-1" /> : <AlertTriangle className="h-3 w-3 mr-1" />}
-                                                                    {isReceived ? "OK" : "Pendiente"}
-                                                                </Badge>
+                                                                <StatusBadge status={isReceived ? 'RECEIVED' : 'PENDING'} size="sm" />
                                                             </div>
                                                         </div>
                                                     )

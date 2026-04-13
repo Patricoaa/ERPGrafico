@@ -17,7 +17,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Settings2 } from "lucide-react"
+import { Settings2, Check } from "lucide-react"
 
 interface DataTableToolbarProps<TData> {
     table: Table<TData>
@@ -326,21 +326,47 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
 
                         {viewOptions && viewOptions.length > 0 && (
                             <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
-                                {viewOptions.map((option) => (
-                                    <Button
-                                        key={option.value}
-                                        variant="ghost"
-                                        className={cn(
-                                            "h-9 px-3 w-auto rounded-none text-[10px] font-bold uppercase tracking-widest transition-all border-0 ring-0 focus-visible:ring-0",
-                                            currentView === option.value ? "text-primary bg-primary/10" : "text-muted-foreground hover:bg-muted/50 text-opacity-50"
-                                        )}
-                                        onClick={() => onViewChange?.(option.value)}
-                                        title={option.label}
-                                    >
-                                        <option.icon className="h-3.5 w-3.5" />
-                                        <span className="sr-only">{option.label}</span>
-                                    </Button>
-                                ))}
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button 
+                                            variant="ghost" 
+                                            className="h-9 px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0"
+                                        >
+                                            {(() => {
+                                                const activeOption = viewOptions.find(opt => opt.value === currentView) || viewOptions[0];
+                                                const Icon = activeOption.icon;
+                                                return (
+                                                    <>
+                                                        <Icon className="h-3.5 w-3.5 mr-2 opacity-50" />
+                                                        {activeOption.label}
+                                                    </>
+                                                );
+                                            })()}
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-[180px] rounded-md border-border/80 shadow-xl p-1">
+                                        {viewOptions.map((option) => (
+                                            <DropdownMenuItem
+                                                key={option.value}
+                                                onSelect={() => onViewChange?.(option.value)}
+                                                className={cn(
+                                                    "flex items-center justify-between rounded-sm px-2 py-1.5 focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer",
+                                                    currentView === option.value && "bg-primary/5 text-primary"
+                                                )}
+                                            >
+                                                <div className="flex items-center">
+                                                    <option.icon className="h-4 w-4 mr-2" />
+                                                    <span className="text-[10px] uppercase font-bold font-heading tracking-wider">
+                                                        {option.label}
+                                                    </span>
+                                                </div>
+                                                {currentView === option.value && (
+                                                    <Check className="h-3.5 w-3.5" />
+                                                )}
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                         )}
 

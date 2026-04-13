@@ -300,7 +300,7 @@ export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }
                                     ...editingRule,
                                     match_config: { ...editingRule.match_config, min_score: parseInt(e.target.value) }
                                 })}
-                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer"
                             />
                             <span className="font-medium text-sm w-12 text-right">{editingRule.match_config?.min_score || 50}%</span>
                         </div>

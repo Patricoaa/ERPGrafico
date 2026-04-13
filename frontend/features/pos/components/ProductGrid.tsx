@@ -4,7 +4,6 @@
 // Grid display of products with availability indicators
 
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/currency'
@@ -117,7 +116,7 @@ function ProductGridComponent({
                             <button
                                 className={cn(
                                     "absolute top-2 left-2 z-20 p-1.5 rounded-full bg-background/80 backdrop-blur-sm border shadow-sm hover:scale-110 active:scale-95 transition-all",
-                                    product.is_favorite ? "text-destructive border-destructive/10 bg-destructive/10/50" : "text-muted-foreground"
+                                    product.is_favorite ? "text-destructive border-destructive/10 bg-destructive/10" : "text-muted-foreground"
                                 )}
                                 onClick={(e) => {
                                     e.stopPropagation()
@@ -133,11 +132,11 @@ function ProductGridComponent({
                                 />
                             </button>
 
-                            {/* Hover Badge */}
+                            {/* Hover Indicator */}
                             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                <Badge className="bg-primary text-primary-foreground shadow-lg">
-                                    <Plus className="h-3 w-3 mr-1" /> Agregar
-                                </Badge>
+                                <span className="bg-primary text-primary-foreground shadow-lg text-[9px] font-bold uppercase px-2 py-1 rounded border border-primary/20 flex items-center gap-1">
+                                    <Plus className="h-3 w-3" /> Agregar
+                                </span>
                             </div>
 
                             {/* Stock/Availability Badge */}
@@ -213,14 +212,14 @@ function ProductGridComponent({
                         )}>
                             <div className="flex flex-wrap justify-center gap-1 mb-1">
                                 {product.internal_code && (
-                                    <Badge variant="outline" className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70 border-muted-foreground/30">
+                                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/30 text-muted-foreground opacity-70">
                                         {product.internal_code}
-                                    </Badge>
+                                    </span>
                                 )}
                                 {product.code && product.code !== product.internal_code && (
-                                    <Badge variant="secondary" className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70">
+                                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/60 text-muted-foreground opacity-70">
                                         {product.code}
-                                    </Badge>
+                                    </span>
                                 )}
                             </div>
                             <div className={cn(
@@ -234,9 +233,9 @@ function ProductGridComponent({
                                 isTouchPOS ? "text-lg" : "text-base"
                             )}>
                                 {product.is_dynamic_pricing ? (
-                                    <Badge variant="outline" className="text-[10px] border-warning text-warning bg-warning/10">
+                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-warning/20 bg-warning/10 text-warning">
                                         Precio Dinámico
-                                    </Badge>
+                                    </span>
                                 ) : (
                                     <>
                                         {formatCurrency(PricingUtils.netToGross(Number(product.sale_price)))}

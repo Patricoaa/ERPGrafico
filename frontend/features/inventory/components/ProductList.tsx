@@ -6,7 +6,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { TableRow, TableCell } from "@/components/ui/table"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ProductForm } from "./ProductForm"
 import { Pencil, Archive, ChevronRight, ChevronDown, Plus, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -201,11 +201,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="SKU" className="justify-center" />
             ),
-            cell: ({ row }) => (
-                <DataCell.Code className="bg-secondary/30">
-                    {row.getValue("code")}
-                </DataCell.Code>
-            ),
+            cell: ({ row }) => <DataCell.Text className="font-mono text-xs">{row.getValue("code")}</DataCell.Text>,
             size: 100,
             minSize: 80,
         },
@@ -218,7 +214,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 const product = row.original as any;
                 const isChild = product.is_child_variant;
                 return (
-                    <div className={cn("max-w-[250px] flex items-center gap-2", isChild && "ml-8")}>
+                    <div className={cn("w-full flex items-center justify-center gap-2", isChild && "pl-8")}>
                         {isChild && <div className="h-4 w-4 border-l-2 border-b-2 border-muted-foreground/30 rounded-bl-lg -mt-2" />}
                         {product.image_thumbnail && !isChild && (
                             <Avatar className="h-7 w-7 rounded border bg-muted shrink-0">
@@ -231,16 +227,22 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                                 <DataCell.Text className={cn(!product.active ? "line-through text-muted-foreground" : "", isChild && "text-[11px] text-muted-foreground/70")}>
                                     {product.name}
                                 </DataCell.Text>
-                                {!product.active && <Badge variant="destructive" className="text-[8px] h-3 px-1 ml-1">ARCHIVADO</Badge>}
+                                {!product.active && (
+                                    <StatusBadge 
+                                        status="inactive" 
+                                        label="ARCHIVADO" 
+                                        size="sm" 
+                                        className="h-3.5"
+                                    />
+                                )}
                                 {product.has_variants && !isChild && (
-                                    <Badge
-                                        variant="outline"
-                                        className="text-[9px] h-4 cursor-pointer hover:bg-primary/10"
+                                    <span
+                                        className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 text-primary bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-1"
                                         onClick={() => toggleExpand(product.id)}
                                     >
                                         {product.variants?.length || 0} variantes
-                                        {expandedTemplates.has(product.id) ? <ChevronDown className="h-3 w-3 ml-1" /> : <ChevronRight className="h-3 w-3 ml-1" />}
-                                    </Badge>
+                                        {expandedTemplates.has(product.id) ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                                    </span>
                                 )}
                             </div>
                             {isChild && product.variant_display_name && (
@@ -268,6 +270,12 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 const rowValue = !!row.getValue(id)
                 return value.includes(String(rowValue))
             },
+            cell: ({ row }) => (
+                <DataCell.Status 
+                    status={row.original.active ? "active" : "inactive"} 
+                    label={row.original.active ? "Activo" : "Archivado"}
+                />
+            ),
         },
         {
             accessorKey: "product_type",
@@ -275,7 +283,9 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <DataCell.Badge variant="secondary" className="text-[10px]">{translateProductType(row.getValue("product_type"))}</DataCell.Badge>
+                <DataCell.Secondary>
+                    {translateProductType(row.getValue("product_type"))}
+                </DataCell.Secondary>
             ),
         },
 
@@ -284,7 +294,11 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
             header: ({ column }) => <DataTableColumnHeader column={column} title="Neto" className="justify-center" />,
             cell: ({ row }) => {
                 if (row.original.is_dynamic_pricing) {
-                    return <DataCell.Badge variant="warning" className="text-[9px]">Dinámico</DataCell.Badge>
+                    return (
+                        <DataCell.Badge className="border-warning/30 text-warning bg-warning/5">
+                            Dinámico
+                        </DataCell.Badge>
+                    )
                 }
                 return <DataCell.Currency value={row.getValue("sale_price")} />
             },
@@ -307,7 +321,11 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
             cell: ({ row }) => {
                 const total = row.original.sale_price_gross || PricingUtils.netToGross(Number(row.getValue("sale_price")))
                 if (row.original.is_dynamic_pricing) {
-                    return <DataCell.Badge variant="warning" className="text-[9px]">Dinámico</DataCell.Badge>
+                    return (
+                        <DataCell.Badge className="border-warning/30 text-warning bg-warning/5">
+                            Dinámico
+                        </DataCell.Badge>
+                    )
                 }
                 return <DataCell.Currency value={total} className="font-bold text-foreground" />
             },
@@ -320,10 +338,14 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
             cell: ({ row }) => (
                 <div className="flex justify-center gap-1">
                     {row.original.can_be_sold && (
-                        <DataCell.Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4">Venta</DataCell.Badge>
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0 h-4 flex items-center rounded border border-muted-foreground/30 text-muted-foreground/80 bg-muted/20">
+                            Venta
+                        </span>
                     )}
                     {row.original.can_be_purchased && (
-                        <DataCell.Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4">Compra</DataCell.Badge>
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0 h-4 flex items-center rounded border border-muted-foreground/30 text-muted-foreground/80 bg-muted/20">
+                            Compra
+                        </span>
                     )}
                     {!row.original.can_be_sold && !row.original.can_be_purchased && (
                         <span className="text-[10px] text-muted-foreground italic">Ninguno</span>

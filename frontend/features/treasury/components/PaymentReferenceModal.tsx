@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Hash, Landmark, CreditCard, Save, Loader2 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -112,9 +111,9 @@ export function PaymentReferenceModal({
                                 >
                                     <div className="flex w-full justify-between items-center">
                                         <span className="font-bold">${Number(p.amount).toLocaleString()}</span>
-                                        <Badge variant="outline" className="text-[10px]">
+                                        <span className="text-[10px] font-bold uppercase text-muted-foreground opacity-60">
                                             {p.payment_method === 'BANK' || p.payment_method === 'TRANSFER' ? 'Transferencia' : 'Tarjeta'}
-                                        </Badge>
+                                        </span>
                                     </div>
                                     <span className="text-[10px] opacity-70">{formatPlainDate(p.date || p.created_at)}</span>
                                 </Button>

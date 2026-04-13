@@ -37,7 +37,6 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { Truck, Package, Calendar, Info, AlertTriangle, ShoppingBag } from "lucide-react"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
@@ -275,14 +274,14 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                         <span className="font-medium text-xs leading-tight">{line.product_name || line.description}</span>
                                                         <div className="flex flex-wrap gap-1">
                                                             {line.internal_code && (
-                                                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                                                <span className="text-[10px] font-mono border px-1 rounded opacity-80 uppercase border-muted-foreground/20 text-muted-foreground">
                                                                     {line.internal_code}
-                                                                </Badge>
+                                                                </span>
                                                             )}
                                                             {line.code && line.code !== line.internal_code && (
-                                                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                                                <span className="text-[10px] font-mono bg-muted px-1 rounded opacity-80 uppercase text-muted-foreground">
                                                                     {line.code}
-                                                                </Badge>
+                                                                </span>
                                                             )}
                                                             {!isEligible && (
                                                                 <span className="text-[10px] text-warning font-bold uppercase tracking-tighter">Requiere Producción</span>

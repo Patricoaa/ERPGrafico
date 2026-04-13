@@ -4,22 +4,83 @@ import React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowLeft, ShoppingBag, FileText, Receipt, Package, ClipboardList, Banknote, Hash, Eye } from "lucide-react"
 import type { TransactionData, RelatedDocument, TransactionType } from "@/types/transactions"
+import { cva, type VariantProps } from "class-variance-authority"
+import { cn } from "@/lib/utils"
+
+const documentCardVariants = cva(
+    "transition-all cursor-pointer shadow-sm hover:opacity-80 border",
+    {
+        variants: {
+            variant: {
+                primary: "border-primary/20 bg-primary/5",
+                success: "border-success/20 bg-success/5",
+                warning: "border-warning/20 bg-warning/5",
+                destructive: "border-destructive/20 bg-destructive/5",
+                accent: "border-accent/20 bg-accent/5",
+                muted: "border-muted bg-muted/50",
+            }
+        },
+        defaultVariants: {
+            variant: "primary"
+        }
+    }
+)
+
+const iconWrapperVariants = cva(
+    "p-2 rounded-lg",
+    {
+        variants: {
+            variant: {
+                primary: "bg-primary/10 text-primary",
+                success: "bg-success/10 text-success",
+                warning: "bg-warning/10 text-warning",
+                destructive: "bg-destructive/10 text-destructive",
+                accent: "bg-accent/10 text-accent",
+                muted: "bg-muted-foreground/10 text-muted-foreground",
+            }
+        },
+        defaultVariants: {
+            variant: "primary"
+        }
+    }
+)
+
+const textVariants = cva(
+    "font-black text-sm",
+    {
+        variants: {
+            variant: {
+                primary: "text-primary",
+                success: "text-success",
+                warning: "text-warning",
+                destructive: "text-destructive",
+                accent: "text-accent",
+                muted: "text-muted-foreground",
+            }
+        },
+        defaultVariants: {
+            variant: "primary"
+        }
+    }
+)
+
+export type RelatedDocVariant = VariantProps<typeof documentCardVariants>["variant"]
 
 export const RelatedDocumentsSection = React.memo(({ data, currentType, navigateTo }: { data: TransactionData, currentType: TransactionType, navigateTo: (type: TransactionType, id: number | string) => void }) => {
     if (!data) return null;
 
-    const renderCard = (type: TransactionType, id: number | string, title: string, subtitle: string, icon: React.ReactNode, color: string, colorBg: string, colorBorder: string) => (
-        <Card key={`${type}-${id}-${title.replace(/\s+/g, '-')}`} className={`border-${colorBorder} bg-${colorBg}/30 hover:opacity-80 transition-all cursor-pointer shadow-sm`} onClick={() => navigateTo(type, id)}>
+    const renderCard = (type: TransactionType, id: number | string, title: string, subtitle: string, icon: React.ReactNode, variant: RelatedDocVariant = "primary") => (
+        <Card key={`${type}-${id}-${title.replace(/\s+/g, '-')}`} className={documentCardVariants({ variant })} onClick={() => navigateTo(type, id)}>
             <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                    <div className={`p-2 bg-${colorBorder}/20 rounded-lg`}>
+                    <div className={iconWrapperVariants({ variant })}>
                         {icon}
                     </div>
                     <div className="flex-1">
                         <div className="text-[10px] text-muted-foreground uppercase font-black">{title}</div>
-                        <div className={`font-black text-sm text-${color}-600`}>{subtitle}</div>
+                        <div className={textVariants({ variant })}>{subtitle}</div>
                     </div>
-                    <Eye className={`h-4 w-4 text-${color}-600`} />
+                    <Eye className={cn("h-4 w-4", textVariants({ variant }).replace("font-black text-sm", ""))} />
                 </div>
             </CardContent>
         </Card>
@@ -66,7 +127,7 @@ export const RelatedDocumentsSection = React.memo(({ data, currentType, navigate
                         {data.related_returns?.map((ret: RelatedDocument) => renderCard((ret.docType as TransactionType) || 'inventory', ret.id, ret.type || 'Devolución', String(ret.display_id || ''), <Package className="h-5 w-5" />, 'destructive'))}
 
                         {/* Work Orders (for Debit Notes) */}
-                        {data.work_orders?.map((wo: RelatedDocument) => renderCard('work_order', wo.id, 'Orden de Trabajo', String(wo.number || wo.display_id || ''), <ClipboardList className="h-5 w-5" />, 'info'))}
+                        {data.work_orders?.map((wo: RelatedDocument) => renderCard('work_order', wo.id, 'Orden de Trabajo', String(wo.number || wo.display_id || ''), <ClipboardList className="h-5 w-5" />, 'accent'))}
 
                         {/* Stock Moves (for NC/ND) */}
                         {data.related_stock_moves?.map((move: RelatedDocument) => renderCard('inventory', move.id, 'Movimiento de Inventario', String(move.display_id || ''), <Package className="h-5 w-5" />, 'primary'))}
@@ -109,7 +170,7 @@ export const RelatedDocumentsSection = React.memo(({ data, currentType, navigate
                 {currentType === 'purchase_order' && (
                     <>
                         {/* Work Order Origin */}
-                        {data.work_order && renderCard('work_order', data.work_order as number, 'Orden de Trabajo Origen', String(data.work_order_display_id || `OT-${data.work_order_number || data.work_order}`), <ClipboardList className="h-5 w-5" />, 'info')}
+                        {data.work_order && renderCard('work_order', data.work_order as number, 'Orden de Trabajo Origen', String(data.work_order_display_id || `OT-${data.work_order_number || data.work_order}`), <ClipboardList className="h-5 w-5" />, 'accent')}
 
                         {/* Invoices (primary invoices only) */}
                         {(relatedDocs.invoices || []).map((inv: RelatedDocument) => renderCard('invoice', inv.id, inv.type_display || 'Factura', String(inv.display_id || inv.number || ''), <Receipt className="h-5 w-5" />, 'success'))}
@@ -144,12 +205,8 @@ export const RelatedDocumentsSection = React.memo(({ data, currentType, navigate
                             data.document_info.type === 'invoice' ? <Receipt className="h-5 w-5" /> : 
                             data.document_info.type === 'journal_entry' ? <Hash className="h-5 w-5" /> :
                             <ShoppingBag className="h-5 w-5" />,
-                            data.document_info.type === 'invoice' ? 'emerald' : 
-                            data.document_info.type === 'journal_entry' ? 'purple' : 'blue',
-                            data.document_info.type === 'invoice' ? 'emerald-50' : 
-                            data.document_info.type === 'journal_entry' ? 'purple-50' : 'blue-50',
-                            data.document_info.type === 'invoice' ? 'emerald-200' : 
-                            data.document_info.type === 'journal_entry' ? 'purple-200' : 'blue-200'
+                            data.document_info.type === 'invoice' ? 'success' : 
+                            data.document_info.type === 'journal_entry' ? 'accent' : 'primary'
                         )}
 
                         {/* Fallback Legacy Fields if document_info is somehow missing or needs specific display */}

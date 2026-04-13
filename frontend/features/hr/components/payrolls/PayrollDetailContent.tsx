@@ -16,7 +16,7 @@ import { getEmployeePayrollPreview } from "@/lib/profile/api"
 import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
 import type { Payroll, PayrollItem, PayrollConcept, PayrollPayment } from "@/types/hr"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Input } from "@/components/ui/input"
 import { BaseModal } from "@/components/shared/BaseModal"
 import {
@@ -219,9 +219,10 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                                 <h1 className={cn("font-bold tracking-tight text-foreground", isSheet ? "text-xl" : "text-2xl")}>
                                     {isPosted ? "Liquidación" : "Borrador de Liquidación"}
                                 </h1>
-                                <Badge variant={isPosted ? "success" : "warning"} className="rounded-lg text-[9px] uppercase font-black px-2 h-4.5">
-                                    {isPosted ? "Contabilizado" : "Borrador"}
-                                </Badge>
+                                <StatusBadge 
+                                    status={isPosted ? "posted" : "draft"} 
+                                    className="rounded-lg px-2 h-4.5"
+                                />
                             </div>
                             <div className="flex items-center gap-3 text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
                                 <span className="font-bold text-primary/80">{payroll.display_id}</span>

@@ -227,9 +227,9 @@ export default function CreditAssignmentModal({
                                 </span>
                             </div>
                             <div className="p-4 rounded-lg border bg-muted/30 flex flex-col gap-1 items-center justify-center">
-                                <Banknote className="h-4 w-4 text-rose-600 mb-1" />
+                                <Banknote className="h-4 w-4 text-destructive mb-1" />
                                 <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Utilizado</span>
-                                <span className="text-lg font-mono font-black text-rose-700">
+                                <span className="text-lg font-mono font-black text-destructive">
                                     ${fmt((selectedContact || initialContact)?.credit_balance_used || 0)}
                                 </span>
                             </div>

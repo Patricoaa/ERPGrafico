@@ -190,7 +190,7 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
                 </div>
             </div>
 
-            <div className="border rounded-lg overflow-hidden shadow-sm bg-white dark:bg-zinc-900">
+            <div className="border rounded-lg overflow-hidden shadow-sm bg-card">
                 <table className="w-full text-sm">
                     <thead className="bg-muted/30 border-b">
                         <tr>
@@ -265,7 +265,7 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
                                                 type="number"
                                                 className={cn(
                                                     "h-9 pl-6 text-right font-mono font-medium",
-                                                    noteType === 'NOTA_CREDITO' ? "bg-muted/10" : "bg-white"
+                                                    noteType === 'NOTA_CREDITO' ? "bg-muted/10" : "bg-background"
                                                 )}
                                                 value={line.note_unit_cost}
                                                 readOnly={noteType === 'NOTA_CREDITO'} // Usually credit notes maintain original price, but strictly speaking sometimes price adjustments happen.
