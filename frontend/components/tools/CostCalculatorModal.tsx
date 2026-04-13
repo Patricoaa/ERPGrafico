@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Trash2, Plus, Loader2, Calculator, Info, Package, X } from "lucide-react"
+import { Trash2, Plus, Loader2, Calculator, Info, Package } from "lucide-react"
 import { DynamicIcon } from "@/components/ui/dynamic-icon"
 import { SearchBar } from "@/features/pos/components/SearchBar"
 import { CategoryFilter } from "@/features/pos/components/CategoryFilter"
@@ -23,6 +23,7 @@ import {
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
+import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { 
     POSSearchSkeleton, 
     POSGridSkeleton, 
@@ -242,17 +243,10 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                     </div>
                 </SheetHeader>
 
-                {/* Custom Close Button for Sheet (Top Right Corner) */}
-                <div className="absolute top-4 right-4 z-[60]">
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-9 w-9 rounded-full bg-muted/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
-                        onClick={handleClose}
-                    >
-                        <X className="h-5 w-5" />
-                    </Button>
-                </div>
+                <SheetCloseButton 
+                    onClick={handleClose}
+                    className="absolute top-4 right-4 z-[60]"
+                />
 
                 <div className="flex-1 overflow-hidden flex divide-x">
                     {/* Panel Izquierdo: Catálogo */}

@@ -5,6 +5,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet"
+import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { formatCurrency } from "@/lib/utils"
 import {
     TrendingUp,
@@ -27,7 +28,15 @@ import {
     Legend
 } from "recharts"
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--success))', 'hsl(var(--warning))', 'hsl(var(--info))', 'hsl(var(--destructive))', '#f97316', '#eab308']
+const COLORS = [
+    'var(--primary)',
+    'var(--success)',
+    'var(--warning)',
+    'var(--info)',
+    'var(--destructive)',
+    'var(--accent)',
+    'var(--neutral)'
+]
 
 interface EquityStatsSheetProps {
     open: boolean
@@ -80,8 +89,13 @@ export function EquityStatsSheet({ open, onOpenChange, partners, summary }: Equi
             <SheetContent 
                 side="right" 
                 hideOverlay={true}
+                hideCloseButton={true}
                 className="w-[90vw] sm:max-w-md p-0 flex flex-col"
             >
+                <SheetCloseButton 
+                    onClick={() => onOpenChange(false)} 
+                    className="absolute top-6 right-6 z-50"
+                />
 
                 <SheetHeader className="px-8 pt-8 pb-4 space-y-0">
                     <SheetTitle>
@@ -102,7 +116,7 @@ export function EquityStatsSheet({ open, onOpenChange, partners, summary }: Equi
                 <div className="flex-1 overflow-y-auto px-8 pb-8 space-y-8 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent">
                     {/* General Summary Metrics */}
                     <div className="animate-in fade-in slide-in-from-left-4 duration-500">
-                        <div className="p-5 bg-primary/5 border border-primary/20 rounded-2xl flex flex-col justify-center ring-1 ring-primary/10">
+                        <div className="p-5 bg-primary/5 border border-primary/20 rounded-lg flex flex-col justify-center ring-1 ring-primary/10">
                             <div className="flex items-center gap-2 mb-2 text-primary shrink-0">
                                 <Building2 className="h-4 w-4" />
                                 <span className="text-[10px] font-black uppercase tracking-widest leading-none">Patrimonio Neto</span>

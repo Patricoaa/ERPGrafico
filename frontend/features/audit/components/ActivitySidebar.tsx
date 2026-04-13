@@ -237,7 +237,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
                                                                         {formatFieldName(field)}
                                                                     </span>
                                                                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                                                                        <span className="rounded bg-destructive/10 px-2 py-0.5 text-destructive dark:text-destructive line-through decoration-red-500/50 break-words max-w-full">
+                                                                        <span className="rounded bg-destructive/10 px-2 py-0.5 text-destructive dark:text-destructive line-through decoration-destructive/50 break-words max-w-full">
                                                                             {formatValue(field, oldValue)}
                                                                         </span>
                                                                         <span className="text-muted-foreground font-bold shrink-0">→</span>

@@ -89,7 +89,7 @@ export function PaymentReferenceModal({
                 <div className="flex w-full gap-2">
                     <Button variant="ghost" onClick={() => onOpenChange(false)} className="flex-1">Cancelar</Button>
                     <Button
-                        className="flex-[2] bg-success hover:bg-success/90 h-12 text-lg font-bold"
+                        className="flex-[2] bg-income hover:bg-income/90 h-12 text-lg font-bold"
                         onClick={handleSave}
                         disabled={loading || !selectedPaymentId || !transactionNumber}
                     >
@@ -126,11 +126,11 @@ export function PaymentReferenceModal({
                 {selectedPayment && (
                     <div className="space-y-4">
                         <div className={cn("flex items-center gap-4 p-4", FORM_STYLES.card)}>
-                            <div className="p-3 bg-white dark:bg-zinc-900 rounded-full shadow-sm">
+                            <div className="p-3 bg-card border rounded-full shadow-sm">
                                 {selectedPayment.payment_method === 'TRANSFER' ? (
                                     <Landmark className="h-6 w-6 text-primary" />
                                 ) : (
-                                    <CreditCard className="h-6 w-6 text-success" />
+                                    <CreditCard className="h-6 w-6 text-income" />
                                 )}
                             </div>
                             <div>

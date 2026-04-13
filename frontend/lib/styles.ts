@@ -25,7 +25,7 @@ export const LAYOUT_TOKENS = {
 export const CARD_TOKENS = {
     container: "rounded border transition-all duration-200",
     standard: "border-dashed p-4 bg-card/50 shadow-sm",
-    industrial: "shadow-2xl border-none ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-primary bg-card",
+    industrial: "shadow-2xl border-none ring-1 ring-border border-t-4 border-t-primary bg-card",
     list: "bg-card border border-border/50 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/10 transition-all cursor-pointer",
     glass: "backdrop-blur-md bg-white/5 border-white/10 shadow-2xl p-4",
 } as const;

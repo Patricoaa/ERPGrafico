@@ -35,9 +35,9 @@ export function FacetedFilter({
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 border-dashed rounded-md bg-background/50 backdrop-blur-sm hover:bg-muted/50 border-border/60 transition-all">
-                    <PlusCircle className="mr-2 h-4 w-4 opacity-50" />
-                    <span className="font-heading uppercase tracking-wider text-[10px] font-bold">{title}</span>
+                <Button variant="ghost" className="h-9 px-3 rounded-none text-[10px] uppercase font-bold tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
+                    <PlusCircle className="mr-2 h-3.5 w-3.5 opacity-50" />
+                    <span>{title}</span>
                     {selectedSet.size > 0 && (
                         <>
                             <Separator orientation="vertical" className="mx-2 h-4" />
@@ -51,9 +51,9 @@ export function FacetedFilter({
                                 {selectedSet.size > 2 ? (
                                     <Badge
                                         variant="secondary"
-                                        className="rounded-sm px-1 font-bold text-[10px] bg-primary text-primary-foreground uppercase tracking-tighter"
+                                        className="rounded-sm px-1 font-bold text-[10px] bg-primary text-primary-foreground tracking-tighter"
                                     >
-                                        {selectedSet.size} seleccionados
+                                        {selectedSet.size}
                                     </Badge>
                                 ) : (
                                     options
@@ -62,7 +62,7 @@ export function FacetedFilter({
                                             <Badge
                                                 variant="secondary"
                                                 key={option.value}
-                                                className="rounded-sm px-1 font-bold text-[10px] bg-primary/10 text-primary uppercase tracking-tighter"
+                                                className="rounded-sm px-1 font-bold text-[10px] bg-primary/10 text-primary tracking-tighter"
                                             >
                                                 {option.label}
                                             </Badge>

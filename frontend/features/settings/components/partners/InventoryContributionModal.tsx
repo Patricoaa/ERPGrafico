@@ -12,23 +12,13 @@ import {
     Warehouse as WarehouseIcon
 } from "lucide-react"
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { toast } from "sonner"
@@ -216,223 +206,229 @@ export function InventoryContributionModal({
         }
     }
 
+    const footerContent = (
+        <div className="flex w-full gap-3 justify-end">
+            <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5"
+            >
+                Cancelar
+            </Button>
+            <Button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className={cn(
+                    "rounded-lg text-xs font-bold",
+                    moveType === 'IN' ? 'bg-success hover:bg-success/90 text-primary-foreground' : 'bg-destructive hover:bg-destructive/90 text-primary-foreground'
+                )}
+            >
+                {isLoading ? (
+                    <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Procesando...
+                    </>
+                ) : (
+                    moveType === 'IN' ? "Registrar Aporte" : "Registrar Retiro"
+                )}
+            </Button>
+        </div>
+    )
+
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[560px]">
-                <DialogHeader className="mb-4">
-                    <DialogTitle className="flex items-center gap-3 text-lg font-bold tracking-tight">
-                        <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                            <Package className="h-5 w-5" />
-                        </div>
-                        Aporte / Retiro de Bienes
-                    </DialogTitle>
-                    <DialogDescription className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-widest mt-1.5 pl-[3.25rem]">
-                        Registro Societario <span className="opacity-30">|</span> Movimiento de Stock
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-5 pt-2">
-                    {/* Type Tabs */}
-                    <Tabs value={moveType} onValueChange={(v) => setMoveType(v as "IN" | "OUT")} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-full h-11 p-1 border">
-                            <TabsTrigger
-                                value="IN"
-                                className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-success data-[state=active]:border data-[state=active]:border-success/20 data-[state=active]:shadow-sm h-full"
-                            >
-                                <ArrowDownCircle className="mr-2 h-4 w-4" />
-                                Aporte
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="OUT"
-                                className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-destructive data-[state=active]:border data-[state=active]:border-destructive/20 data-[state=active]:shadow-sm h-full"
-                            >
-                                <ArrowUpCircle className="mr-2 h-4 w-4" />
-                                Retiro
-                            </TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-
-                    {/* Section: Clasificación */}
-                    <div className="flex items-center gap-2 pt-2 pb-2">
-                        <div className="flex-1 h-px bg-border" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Clasificación</span>
-                        <div className="flex-1 h-px bg-border" />
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="lg"
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                        <Package className="h-5 w-5" />
                     </div>
+                    Aporte / Retiro de Bienes
+                </div>
+            }
+            description={
+                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-widest mt-1.5 pl-0 sm:pl-[2px]">
+                    Registro Societario <span className="opacity-30">|</span> Movimiento de Stock
+                </div>
+            }
+            footer={footerContent}
+        >
+            <div className="space-y-5">
+                {/* Type Tabs */}
+                <Tabs value={moveType} onValueChange={(v) => setMoveType(v as "IN" | "OUT")} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-full h-11 p-1 border">
+                        <TabsTrigger
+                            value="IN"
+                            className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-success data-[state=active]:border data-[state=active]:border-success/20 data-[state=active]:shadow-sm h-full"
+                        >
+                            <ArrowDownCircle className="mr-2 h-4 w-4" />
+                            Aporte
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="OUT"
+                            className="rounded-full text-[11px] uppercase font-bold tracking-wider data-[state=active]:bg-background data-[state=active]:text-destructive data-[state=active]:border data-[state=active]:border-destructive/20 data-[state=active]:shadow-sm h-full"
+                        >
+                            <ArrowUpCircle className="mr-2 h-4 w-4" />
+                            Retiro
+                        </TabsTrigger>
+                    </TabsList>
+                </Tabs>
 
-                    {/* Partner Selector */}
+                {/* Section: Clasificación */}
+                <div className="flex items-center gap-2 pt-2 pb-2">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Clasificación</span>
+                    <div className="flex-1 h-px bg-border" />
+                </div>
+
+                {/* Partner Selector */}
+                <div className="space-y-1.5">
+                    <Label className={FORM_STYLES.label}>
+                        <Users className="inline h-3.5 w-3.5 mr-1 opacity-50" />
+                        Socio
+                    </Label>
+                    <Select value={partnerId} onValueChange={setPartnerId} disabled={!!preSelectedPartnerId}>
+                        <SelectTrigger className={cn(FORM_STYLES.input, "border-warning/20 bg-warning/5")}>
+                            <SelectValue placeholder="Seleccione un socio" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {partners.map(p => (
+                                <SelectItem key={p.id} value={p.id.toString()}>
+                                    {p.name}
+                                    {p.tax_id && <span className="text-muted-foreground ml-2 font-mono text-[10px]">{p.tax_id}</span>}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* Section: Producto y Ubicación */}
+                <div className="flex items-center gap-2 pt-2 pb-2">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Almacén y Producto</span>
+                    <div className="flex-1 h-px bg-border" />
+                </div>
+
+                {/* Product & Warehouse (Side by Side) */}
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-4">
                     <div className="space-y-1.5">
                         <Label className={FORM_STYLES.label}>
-                            <Users className="inline h-3.5 w-3.5 mr-1 opacity-50" />
-                            Socio
+                            <WarehouseIcon className="inline h-3.5 w-3.5 mr-1 opacity-50" />
+                            Almacén
                         </Label>
-                        <Select value={partnerId} onValueChange={setPartnerId} disabled={!!preSelectedPartnerId}>
-                            <SelectTrigger className={cn(FORM_STYLES.input, "border-warning/20 bg-warning/5")}>
-                                <SelectValue placeholder="Seleccione un socio" />
+                        <Select value={warehouseId} onValueChange={setWarehouseId}>
+                            <SelectTrigger className={FORM_STYLES.input}>
+                                <SelectValue placeholder="Seleccione almacén" />
                             </SelectTrigger>
                             <SelectContent>
-                                {partners.map(p => (
-                                    <SelectItem key={p.id} value={p.id.toString()}>
-                                        {p.name}
-                                        {p.tax_id && <span className="text-muted-foreground ml-2 font-mono text-[10px]">{p.tax_id}</span>}
-                                    </SelectItem>
+                                {warehouses.map(w => (
+                                    <SelectItem key={w.id} value={w.id.toString()}>{w.name}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
-
-                    {/* Section: Producto y Ubicación */}
-                    <div className="flex items-center gap-2 pt-2 pb-2">
-                        <div className="flex-1 h-px bg-border" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Almacén y Producto</span>
-                        <div className="flex-1 h-px bg-border" />
-                    </div>
-
-                    {/* Product & Warehouse (Side by Side) */}
-                    <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-4">
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>
-                                <WarehouseIcon className="inline h-3.5 w-3.5 mr-1 opacity-50" />
-                                Almacén
-                            </Label>
-                            <Select value={warehouseId} onValueChange={setWarehouseId}>
-                                <SelectTrigger className={FORM_STYLES.input}>
-                                    <SelectValue placeholder="Seleccione almacén" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {warehouses.map(w => (
-                                        <SelectItem key={w.id} value={w.id.toString()}>{w.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>
-                                <Package className="inline h-3.5 w-3.5 mr-1 opacity-50" />
-                                Producto
-                            </Label>
-                            <ProductSelector
-                                value={productId}
-                                onChange={(val) => setProductId(val || "")}
-                                allowedTypes={["STORABLE", "MANUFACTURABLE"]}
-                                simpleOnly={true}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Section: Detalles del Movimiento */}
-                    <div className="flex items-center gap-2 pt-2 pb-2">
-                        <div className="flex-1 h-px bg-border" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Detalles del Movimiento</span>
-                        <div className="flex-1 h-px bg-border" />
-                    </div>
-
-                    {/* Quantity, UoM & Cost */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Cantidad</Label>
-                            <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={quantity}
-                                onChange={(e) => setQuantity(e.target.value)}
-                                className={cn(FORM_STYLES.input, "text-right font-mono")}
-                                placeholder="0"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Unidad de Medida</Label>
-                            <Select value={uomId} onValueChange={setUomId} disabled={productUoMs.length === 0}>
-                                <SelectTrigger className={FORM_STYLES.input}>
-                                    <SelectValue placeholder="UoM" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {productUoMs.map(u => (
-                                        <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1.5 bg-muted/20 pb-2 pt-1 border border-transparent rounded-lg px-2 -mx-2 sm:mx-0">
-                            <Label className={cn(FORM_STYLES.label, "flex justify-between")}>
-                                <span>Costo {selectedUoM ? `(${selectedUoM.name})` : ''}</span>
-                                {isCostEditable && <Badge variant="outline" className="text-[8px] h-4 py-0 leading-tight border-warning/30 text-warning bg-warning/10">Editable</Badge>}
-                            </Label>
-                            <Input
-                                type={isCostEditable ? "number" : "text"}
-                                step={isCostEditable ? "0.01" : undefined}
-                                min="0"
-                                readOnly={!isCostEditable}
-                                value={isCostEditable ? unitCost : formatCurrency(Number(unitCost))}
-                                onChange={(e) => isCostEditable && setUnitCost(e.target.value)}
-                                className={cn(FORM_STYLES.input, "text-right font-mono text-sm", !isCostEditable && "opacity-80 bg-muted/50 focus-visible:ring-0 cursor-default")}
-                            />
-                            <div className="flex justify-between text-[11px] items-center px-1 font-bold">
-                                <span className="text-muted-foreground mr-1">V. Total:</span>
-                                <span className="text-primary text-xs font-black font-mono">
-                                    {formatCurrency(totalValue)}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {conversion && baseUoM && (
-                        <Alert className="bg-info/5 border-info/20 text-info py-2">
-                            <Info className="h-4 w-4 text-info" />
-                            <AlertDescription className="text-xs ml-2">
-                                Se registrará formalmente como <strong>{conversion.qty.toFixed(4)} {baseUoM.name}</strong> a un costo base de <strong>{formatCurrency(conversion.cost)} c/u</strong>.
-                            </AlertDescription>
-                        </Alert>
-                    )}
-
-                    {/* Stock Info */}
-                    {productDetails && (
-                        <div className="flex items-center gap-4 text-[10px] font-medium text-muted-foreground bg-muted/30 p-2.5 rounded-lg border">
-                            <span>Stock actual: <strong className="font-mono">{productDetails.qty_on_hand ?? '—'}</strong></span>
-                            <span>Costo promedio: <strong className="font-mono">{formatCurrency(productDetails.cost_price || 0)}</strong></span>
-                        </div>
-                    )}
-
-                    {/* Description */}
                     <div className="space-y-1.5">
-                        <Label className={FORM_STYLES.label}>Notas / Referencia</Label>
-                        <Input
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder={moveType === 'IN' ? "Ej: Aporte inicial de maquinaria" : "Ej: Retiro de materiales por socio"}
-                            className={FORM_STYLES.input}
+                        <Label className={FORM_STYLES.label}>
+                            <Package className="inline h-3.5 w-3.5 mr-1 opacity-50" />
+                            Producto
+                        </Label>
+                        <ProductSelector
+                            value={productId}
+                            onChange={(val) => setProductId(val || "")}
+                            allowedTypes={["STORABLE", "MANUFACTURABLE"]}
+                            simpleOnly={true}
                         />
                     </div>
                 </div>
 
-                <DialogFooter className="flex sm:justify-end gap-3 w-full border-t border-border/40 pt-4 mt-6">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={handleSubmit}
-                        disabled={isLoading}
-                        className={cn(
-                            "rounded-lg text-xs font-bold",
-                            moveType === 'IN' ? 'bg-success hover:bg-success/90 text-primary-foreground' : 'bg-destructive hover:bg-destructive/90 text-primary-foreground'
-                        )}
-                    >
-                        {isLoading ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Procesando...
-                            </>
-                        ) : (
-                            moveType === 'IN' ? "Registrar Aporte" : "Registrar Retiro"
-                        )}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                {/* Section: Detalles del Movimiento */}
+                <div className="flex items-center gap-2 pt-2 pb-2">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Detalles del Movimiento</span>
+                    <div className="flex-1 h-px bg-border" />
+                </div>
+
+                {/* Quantity, UoM & Cost */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-1.5">
+                        <Label className={FORM_STYLES.label}>Cantidad</Label>
+                        <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={quantity}
+                            onChange={(e) => setQuantity(e.target.value)}
+                            className={cn(FORM_STYLES.input, "text-right font-mono")}
+                            placeholder="0"
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <Label className={FORM_STYLES.label}>Unidad de Medida</Label>
+                        <Select value={uomId} onValueChange={setUomId} disabled={productUoMs.length === 0}>
+                            <SelectTrigger className={FORM_STYLES.input}>
+                                <SelectValue placeholder="UoM" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {productUoMs.map(u => (
+                                    <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-1.5 bg-muted/20 pb-2 pt-1 border border-transparent rounded-lg px-2 -mx-2 sm:mx-0">
+                        <Label className={cn(FORM_STYLES.label, "flex justify-between")}>
+                            <span>Costo {selectedUoM ? `(${selectedUoM.name})` : ''}</span>
+                            {isCostEditable && <Badge variant="outline" className="text-[8px] h-4 py-0 leading-tight border-warning/30 text-warning bg-warning/10">Editable</Badge>}
+                        </Label>
+                        <Input
+                            type={isCostEditable ? "number" : "text"}
+                            step={isCostEditable ? "0.01" : undefined}
+                            min="0"
+                            readOnly={!isCostEditable}
+                            value={isCostEditable ? unitCost : formatCurrency(Number(unitCost))}
+                            onChange={(e) => isCostEditable && setUnitCost(e.target.value)}
+                            className={cn(FORM_STYLES.input, "text-right font-mono text-sm", !isCostEditable && "opacity-80 bg-muted/50 focus-visible:ring-0 cursor-default")}
+                        />
+                        <div className="flex justify-between text-[11px] items-center px-1 font-bold">
+                            <span className="text-muted-foreground mr-1">V. Total:</span>
+                            <span className="text-primary text-xs font-black font-mono">
+                                {formatCurrency(totalValue)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {conversion && baseUoM && (
+                    <Alert className="bg-info/5 border-info/20 text-info py-2">
+                        <Info className="h-4 w-4 text-info" />
+                        <AlertDescription className="text-xs ml-2">
+                            Se registrará formalmente como <strong>{conversion.qty.toFixed(4)} {baseUoM.name}</strong> a un costo base de <strong>{formatCurrency(conversion.cost)} c/u</strong>.
+                        </AlertDescription>
+                    </Alert>
+                )}
+
+                {/* Stock Info */}
+                {productDetails && (
+                    <div className="flex items-center gap-4 text-[10px] font-medium text-muted-foreground bg-muted/30 p-2.5 rounded-lg border">
+                        <span>Stock actual: <strong className="font-mono">{productDetails.qty_on_hand ?? '—'}</strong></span>
+                        <span>Costo promedio: <strong className="font-mono">{formatCurrency(productDetails.cost_price || 0)}</strong></span>
+                    </div>
+                )}
+
+                {/* Description */}
+                <div className="space-y-1.5">
+                    <Label className={FORM_STYLES.label}>Notas / Referencia</Label>
+                    <Input
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder={moveType === 'IN' ? "Ej: Aporte inicial de maquinaria" : "Ej: Retiro de materiales por socio"}
+                        className={FORM_STYLES.input}
+                    />
+                </div>
+            </div>
+        </BaseModal>
     )
 }

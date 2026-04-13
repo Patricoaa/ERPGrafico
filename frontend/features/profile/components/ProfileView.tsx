@@ -209,7 +209,7 @@ function AccountTab({ user }: { user: MyProfile['user'] }) {
                                         "text-[9px] uppercase font-bold",
                                         user.is_active
                                             ? "text-success border-success/30 bg-success/10"
-                                            : "text-rose-600 border-rose-500/30 bg-rose-50"
+                                            : "text-destructive border-destructive/30 bg-destructive/5"
                                     )}>
                                         {user.is_active ? "Activo" : "Inactivo"}
                                     </Badge>
@@ -509,7 +509,7 @@ function PersonalTab({
         {
             accessorKey: "total_descuentos",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Descuentos" />,
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("total_descuentos") || "0"} className="text-rose-500 font-bold" />,
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("total_descuentos") || "0"} className="text-destructive font-bold" />,
         },
         {
             accessorKey: "net_salary",

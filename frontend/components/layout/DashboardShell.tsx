@@ -180,7 +180,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     </div>
                 </div>
 
-                <main id="main-content" className="flex-1 bg-transparent border border-white/5 rounded-2xl overflow-y-auto shadow-2xl custom-scrollbar relative backdrop-blur-sm">
+                <main id="main-content" className="flex-1 bg-transparent border border-white/5 rounded-lg overflow-y-auto shadow-2xl custom-scrollbar relative backdrop-blur-sm registration-marks">
                     <div className="w-full h-full">
                         {children}
                     </div>

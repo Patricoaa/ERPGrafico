@@ -505,7 +505,7 @@ function POSPageContent() {
                                 </Card>
                             </motion.div>
                         ) : (
-                            <motion.div key={currentDraftId || 'checkout-new'} initial={{ opacity: 0, scale: 0.98, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex-1 flex flex-col min-h-0 bg-background border rounded-2xl shadow-xl overflow-hidden relative border-primary/20">
+                            <motion.div key={currentDraftId || 'checkout-new'} initial={{ opacity: 0, scale: 0.98, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex-1 flex flex-col min-h-0 bg-background border rounded-lg shadow-xl overflow-hidden relative border-primary/20">
                                 <SalesCheckoutWizardContent
                                     key={currentDraftId || 'checkout-new'}
                                     order={null}
@@ -583,7 +583,7 @@ function POSPageContent() {
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col sm:flex-row gap-3 mt-4">
                         <Button
-                            className="flex-1 h-16 rounded-2xl text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 group"
+                            className="flex-1 h-16 rounded-lg text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 group"
                             onClick={() => {
                                 handlePrint();
                                 setCompletedSaleData(null);
@@ -593,7 +593,7 @@ function POSPageContent() {
                             Imprimir
                         </Button>
                         <AlertDialogCancel
-                            className="flex-1 h-16 border-primary/20 text-primary hover:bg-primary/5 rounded-2xl text-lg font-bold"
+                            className="flex-1 h-16 border-primary/20 text-primary hover:bg-primary/5 rounded-lg text-lg font-bold"
                             onClick={() => setCompletedSaleData(null)}
                         >
                             Cerrar

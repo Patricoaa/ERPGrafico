@@ -13,7 +13,7 @@ El sistema de color se rige por proporciones armónicas para garantizar un entor
 
 *   **60% - Dominante (Neutrales):** Fondo de página (`--background`), superficies de cards (`--card`) y textos principales (`--foreground`). Define la atmósfera del sistema.
 *   **30% - Secundario (Bordes y Superficies):** Bordes (`--border`), fondos de inputs (`--input`) y estados muted (`--muted`). Aporta estructura y profundidad.
-*   **10% - Acento y Marca (Acciones):** Violeta Eléctrico (`--primary`) y Safety Orange (`--accent`). Reservados exclusivamente para acciones críticas, estados activos y feedback directo.
+*   **10% - Acento y Marca (Acciones):** Violeta Eléctrico (`--primary`) y Ámbar Industrial (`--accent`). Reservados exclusivamente para acciones críticas, estados activos y feedback directo. El ámbar evoca los colores de seguridad y señalización de planta industrial.
 
 ---
 
@@ -88,7 +88,7 @@ Estos son los tokens fundamentales del sistema. Se auto-adaptan al modo oscuro s
 | Primary foreground | `--primary-foreground` | `text-primary-foreground` | Texto sobre fondo primary |
 | Secondary | `--secondary` | `bg-secondary` | `oklch(0.90 0.03 240)` — gris-azul claro |
 | Secondary foreground | `--secondary-foreground` | `text-secondary-foreground` | Texto sobre fondo secondary |
-| Accent | `--accent` | `bg-accent` | `oklch(70% 0.049 234)` — gris-azul medio |
+| Accent | `--accent` | `bg-accent` | `oklch(0.72 0.14 55)` — ámbar industrial cálido |
 | Accent foreground | `--accent-foreground` | `text-accent-foreground` | Texto sobre fondo accent |
 
 ### Bordes y Formularios
@@ -98,12 +98,28 @@ Estos son los tokens fundamentales del sistema. Se auto-adaptan al modo oscuro s
 | Borde estándar | `--border` | `border-border` | `oklch(0.12 0.02 240 / 15%)` — translúcido |
 | Input background | `--input` | `border-input` | `oklch(0.12 0.02 240 / 10%)` — muy sutil |
 | Focus ring | `--ring` | `ring` / `outline-ring` | `oklch(0.65 0.25 310 / 40%)` — violeta difuso |
-| Border radius base | `--radius` | `rounded-md` | `0.75rem` — esquinas soft/premium (12px) |
+| Border radius base | `--radius` | `rounded-md` | `0.5rem` — esquinas industriales (8px) |
 
-**Nota de radio:** El sistema usa esquinas suaves y redondeadas (`0.75rem` / 12px) para botones y tarjetas. Las variantes relativas de Tailwind en el sistema son:
-- `rounded-sm` → `calc(var(--radius) - 2px)` (aprox 10px)
-- `rounded-md` → `var(--radius)` (12px)
-- `rounded-lg` → `calc(var(--radius) + 2px)` (aprox 14px)
+**Sistema de radius (Industrial Precision):**
+
+El sistema usa esquinas rectas e industriales (`0.5rem` / 8px) que refuerzan la identidad de la industria gráfica.
+Las variantes relativas de Tailwind son:
+- `rounded-sm` → `calc(var(--radius) - 2px)` (6px) — Inputs, botones, badges
+- `rounded-md` → `var(--radius)` (8px) — Cards, containers
+- `rounded-lg` → `calc(var(--radius) + 2px)` (10px) — Modals, sheets
+- `rounded-xl` → `calc(var(--radius) + 6px)` (14px) — Solo casos especiales documentados
+
+**Regla de uso por tipo de elemento:**
+
+| Tipo de elemento | Clase de radio | Valor | Justificación |
+|---|---|---|---|
+| Inputs, Selects, Buttons | `rounded-sm` | 6px | Precisión operativa, evoca controles de máquina |
+| Cards, Containers | `rounded-md` | 8px | Equilibrio industrial |
+| Modals, Sheets, Overlays | `rounded-lg` | 10px | Separación visual de capas |
+| Logo, Avatar, FAB | `rounded-xl` o `rounded-full` | 14px / full | Excepción documentada |
+| Badges, Chips | `rounded-sm` | 6px | Compacto e industrial |
+
+> **Prohibido:** Usar `rounded-2xl` o `rounded-3xl` en componentes estándar. Esos valores rompen la coherencia industrial.
 
 ---
 
@@ -125,6 +141,13 @@ Estos tokens representan significado de negocio. Son los únicos colores válido
 <span className="bg-warning text-warning-foreground" />
 <span className="bg-destructive text-destructive-foreground" />
 <span className="bg-info text-info-foreground" />
+<span className="bg-neutral text-neutral-foreground" />
+
+// ✅ Correcto (Expansión Semántica - Naturaleza Financiera)
+<span className="bg-income text-income-foreground" />
+<span className="bg-expense text-expense-foreground" />
+<span className="bg-asset text-asset-foreground" />
+<span className="bg-liability text-liability-foreground" />
 
 // ❌ Prohibido
 <span className="bg-green-500 text-white" />
@@ -223,11 +246,11 @@ Este mapa define la codificación de color por naturaleza de cuenta contable par
 
 | Tipo backend | Token semántico | Justificación | Color visual |
 |-------------|-----------------|---------------|-------------|
-| `ASSET` | `info` | Recursos, liquidez y estabilidad | Azul/Cian |
-| `LIABILITY` | `warning` | Obligaciones y compromisos (riesgo) | Ámbar |
-| `EQUITY` | `neutral` | Valor residual, core de la empresa | Gris |
-| `INCOME` | `success` | Flujo positivo, éxito comercial | Verde |
-| `EXPENSE` | `destructive` | Salida de recursos, consumo | Rojo |
+| `ASSET` | `asset` | Recursos, liquidez y estabilidad | Azul/Cian (`--info`) |
+| `LIABILITY` | `liability` | Obligaciones y compromisos (riesgo) | Ámbar (`--warning`) |
+| `EQUITY` | `neutral` | Valor residual, core de la empresa | Gris Industrial |
+| `INCOME` | `income` | Flujo positivo, éxito comercial | Verde (`--success`) |
+| `EXPENSE` | `expense` | Salida de recursos, consumo | Rojo (`--destructive`) |
 
 ---
 
@@ -259,3 +282,50 @@ Este mapa define la codificación de color por naturaleza de cuenta contable par
 El `body` tiene un `background-image` con un SVG de ruido fractal (`opacity: 0.02`) aplicado como `background-attachment: fixed`. Este efecto es parte del diseño industrial del sistema.
 
 **Regla:** No replicar este efecto en componentes individuales. Solo existe a nivel de `body` en `globals.css`.
+
+---
+
+## Vocabulario Visual de la Industria Gráfica
+
+Estos tokens y clases CSS formalizan la identidad visual que diferencia a ERPGrafico de ERPs genéricos. Se inspiran en los elementos reales de la producción gráfica: marcas de registro, guías de sangrado, líneas de corte.
+
+### Tokens CSS
+
+| Token | Variable CSS | Valor (Light) | Uso |
+|---|---|---|---|
+| Color de marca | `--mark-color` | `oklch(0.12 0.02 240 / 0.08)` | Color de registration marks y crop marks |
+| Marca activa | `--mark-color-active` | `var(--primary)` | Para marcas en estado activo/hover |
+| Color de grilla | `--grid-line-color` | `oklch(0.12 0.02 240 / 0.04)` | Líneas de guía tipo bleed |
+| Tamaño de grilla | `--grid-line-size` | `80px` | Tamaño de celda de la grilla decorativa |
+| Separador industrial | `--separator-industry` | `2px dashed ...` | Línea punteada tipo die-cut |
+
+### Clases CSS Utilitarias
+
+| Clase | Descripción | Uso recomendado |
+|---|---|---|
+| `.registration-marks` | Agrega marcas de esquina (crop marks) via `::before`/`::after` | Contenedores principales, modales de transacción |
+| `.bleed-guides` | Superpone una grilla decorativa que evoca guías de sangrado | Paneles de fondo, contenedores vacíos |
+| `.die-cut-separator` | Línea horizontal punteada tipo perforación | Separadores de secciones, alternativa a `<hr>` |
+
+### Componente: IndustryMark
+
+| Prop | Tipo | Default | Descripción |
+|---|---|---|---|
+| `positions` | `MarkPosition[]` | `['top-left', 'top-right', 'bottom-left', 'bottom-right']` | Esquinas a decorar |
+| `variant` | `'corner' \| 'crosshair' \| 'target'` | `'corner'` | Estilo visual de la marca |
+| `active` | `boolean` | `false` | Usa `--mark-color-active` (primary) |
+
+---
+
+## Tokens de Alto Contraste (Specialized UI)
+
+Tokens reservados para interfaces que requieren lectura por máquina (escáneres de código de barras, OCR) o accesibilidad extrema.
+
+| Token | Variable CSS | Valor | Uso |
+|-------|-------------|-------|-----|
+| High Contrast BG | `--high-contrast-bg` | `oklch(1 0 0)` | Fondo para códigos de barras / QR |
+| High Contrast FG | `--high-contrast-fg` | `oklch(0 0 0)` | Color de barras / texto OCR |
+
+**Regla:** No usar estos tokens para elementos decorativos. Su propósito es funcional y de legibilidad técnica.
+
+**Regla de uso:** Las marcas de registro son decorativas y sutiles. No abusar — usarlas solo en contenedores principales y modales de alto impacto visual.

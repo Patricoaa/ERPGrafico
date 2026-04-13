@@ -108,7 +108,7 @@ export function CollapsibleSheet({
             side={side}
             className={cn(
                 "p-0 flex flex-col shadow-2xl overflow-visible", // Removed transition-all to allow inline style only
-                "top-20 bottom-4 right-4 h-[calc(100vh-6rem)] border border-white/5 rounded-2xl",
+                "top-20 bottom-4 right-4 h-[calc(100vh-6rem)] border border-white/5 rounded-lg",
                 // Disable default Radix/Shadcn animations to avoid conflicting with custom high-performance transforms
                 "data-[state=open]:animate-none data-[state=closed]:animate-none duration-0 sm:duration-500",
                 (!open || isCollapsed) ? "border-primary/10" : "translate-x-0",
@@ -134,7 +134,7 @@ export function CollapsibleSheet({
             <div
                 onClick={() => isCollapsed && onOpenChange(true)}
                 className={cn(
-                    "absolute top-0 right-full w-[42px] h-[180px] bg-primary/95 backdrop-blur-md rounded-l-2xl border-l border-y border-primary/20 shadow-[-15px_0_30px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center cursor-pointer transition-all duration-500 overflow-hidden group",
+                    "absolute top-0 right-full w-[42px] h-[180px] bg-primary/95 backdrop-blur-md rounded-l-lg border-l border-y border-primary/20 shadow-[-15px_0_30px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center cursor-pointer transition-all duration-500 overflow-hidden group",
                     (isCollapsed && open) ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
                 )}
                 style={{

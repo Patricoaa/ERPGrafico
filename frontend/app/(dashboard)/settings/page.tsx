@@ -42,7 +42,7 @@ export default function SettingsPage() {
 
 
                 <Link href="/settings/users">
-                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-emerald-500">
+                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-success">
                         <CardHeader className="flex flex-row items-center gap-4">
                             <Shield className="h-8 w-8 text-primary" />
                             <div>

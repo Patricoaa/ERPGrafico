@@ -492,11 +492,10 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                     <div className="flex items-center gap-1 text-xs">
                                                         {stockStatus.type === 'error' && <AlertTriangle className="h-3 w-3 text-destructive" />}
                                                         {stockStatus.type === 'success' && <CheckCircle2 className="h-3 w-3 text-success" />}
-                                                        {stockStatus.type === 'warning' && <AlertTriangle className="h-3 w-3 text-yellow-600" />}
                                                         <span className={
                                                             stockStatus.type === 'error' ? 'text-destructive' :
                                                                 stockStatus.type === 'success' ? 'text-success' :
-                                                                    'text-yellow-600'
+                                                                    'text-warning'
                                                         }>
                                                             {stockStatus.message}
                                                         </span>

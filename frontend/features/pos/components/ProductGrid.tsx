@@ -168,7 +168,7 @@ function ProductGridComponent({
                                 <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
                                     {!product.has_bom ? (
                                         <>
-                                            <div className="h-2 w-2 rounded-full bg-gray-400" />
+                                            <div className="h-2 w-2 rounded-full bg-muted-foreground" />
                                             Sin LdM
                                         </>
                                     ) : (

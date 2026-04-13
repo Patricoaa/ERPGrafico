@@ -2,14 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-    DialogDescription,
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -97,19 +90,33 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                    <div className="flex items-center gap-2 text-primary mb-1">
-                        <Users className="h-5 w-5" />
-                        <DialogTitle>Configuración Inicial de Capital</DialogTitle>
-                    </div>
-                    <DialogDescription>
-                        Defina los socios iniciales y sus aportes para establecer la estructura de capital de la empresa en marcha.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-6 py-4">
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="xl"
+            title={
+                <div className="flex items-center gap-2 text-primary">
+                    <Users className="h-5 w-5" />
+                    Configuración Inicial de Capital
+                </div>
+            }
+            description="Defina los socios iniciales y sus aportes para establecer la estructura de capital de la empresa en marcha."
+            footer={
+                <div className="flex w-full gap-3 justify-end">
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                        Cancelar
+                    </Button>
+                    <Button 
+                        onClick={handleSubmit} 
+                        disabled={loading || entries.length === 0}
+                        className="gap-2"
+                    >
+                        {loading ? "Procesando..." : "Guardar y Generar Asiento"}
+                    </Button>
+                </div>
+            }
+        >
+            <div className="space-y-6">
                     <Alert variant="default" className="bg-primary/10/50 border-primary/20">
                         <Info className="h-4 w-4 text-primary" />
                         <AlertTitle className="text-primary text-xs font-bold uppercase tracking-wider">Aviso Contable</AlertTitle>
@@ -183,7 +190,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50"
+                                                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
                                                             onClick={() => handleRemovePartner(index)}
                                                         >
                                                             <Trash2 className="h-4 w-4" />
@@ -210,20 +217,6 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                         </div>
                     </div>
                 </div>
-
-                <DialogFooter className="gap-2 sm:gap-0">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancelar
-                    </Button>
-                    <Button 
-                        onClick={handleSubmit} 
-                        disabled={loading || entries.length === 0}
-                        className="gap-2"
-                    >
-                        {loading ? "Procesando..." : "Guardar y Generar Asiento"}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        </BaseModal>
     )
 }

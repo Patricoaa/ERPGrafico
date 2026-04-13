@@ -14,6 +14,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
+import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
+import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 import { getErrorMessage } from "@/lib/errors"
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
@@ -276,6 +278,11 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                     GENERAR COMBINACIONES
                                 </SheetTitle>
                             </SheetHeader>
+                            
+                            <SheetCloseButton 
+                                onClick={() => setIsSheetOpen(false)}
+                                className="absolute top-4 right-4 z-[60]"
+                            />
                             
                             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                                 <div className="flex-1 overflow-y-auto pr-3 space-y-6 scrollbar-thin">

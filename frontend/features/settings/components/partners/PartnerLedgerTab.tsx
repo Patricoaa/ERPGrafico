@@ -215,24 +215,22 @@ export function PartnerLedgerTab() {
                     }
                 ]}
                 toolbarAction={
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-success/30 text-success hover:bg-success/10 transition-all rounded-full shadow-none"
+                    <>
+                        <DropdownMenuItem
+                            className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-success focus:bg-success/10 focus:text-success cursor-pointer transition-colors"
                             onClick={() => setIsContributionOpen(true)}
                         >
-                            <Wallet className="h-3.5 w-3.5 mr-2" />
+                            <Wallet className="h-4 w-4 mr-2" />
                             Registrar Aporte
-                        </Button>
-                        <Button
-                            variant="outline"
-                            className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-destructive/30 text-destructive hover:bg-destructive/10 transition-all rounded-full shadow-none"
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer transition-colors"
                             onClick={() => setIsWithdrawalOpen(true)}
                         >
-                            <LogOut className="h-3.5 w-3.5 mr-2" />
+                            <LogOut className="h-4 w-4 mr-2" />
                             Registrar Retiro
-                        </Button>
-                    </div>
+                        </DropdownMenuItem>
+                    </>
                 }
                 renderFooter={(table) => {
                     const rows = table.getFilteredRowModel().rows

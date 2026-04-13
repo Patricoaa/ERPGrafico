@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -72,20 +72,32 @@ export function PartnerEditModal({ open, onOpenChange, contact, onSuccess }: Pro
     if (!contact) return null
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-sm">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <UserCog className="h-5 w-5 text-primary" />
-                        Editar Socio
-                    </DialogTitle>
-                    <DialogDescription>
-                        Ajuste la participación de {contact.name}.
-                    </DialogDescription>
-                </DialogHeader>
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="sm"
+            title={
+                <div className="flex items-center gap-2">
+                    <UserCog className="h-5 w-5 text-primary" />
+                    Editar Socio
+                </div>
+            }
+            description={`Ajuste la participación de ${contact.name}.`}
+            footer={
+                <div className="flex w-full gap-3 justify-end">
+                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+                        Cancelar
+                    </Button>
+                    <Button type="submit" form="partner-edit-form" disabled={submitting} className="font-bold">
+                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Guardar Cambios
+                    </Button>
+                </div>
+            }
+        >
 
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                    <form id="partner-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
                         
                         <FormField
                             control={form.control}
@@ -134,19 +146,8 @@ export function PartnerEditModal({ open, onOpenChange, contact, onSuccess }: Pro
                                 </FormItem>
                             )}
                         />
-
-                        <div className="flex justify-end gap-3 pt-4">
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-                                Cancelar
-                            </Button>
-                            <Button type="submit" disabled={submitting} className="font-bold">
-                                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Guardar Cambios
-                            </Button>
-                        </div>
                     </form>
                 </Form>
-            </DialogContent>
-        </Dialog>
+        </BaseModal>
     )
 }

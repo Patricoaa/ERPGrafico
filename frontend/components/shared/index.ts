@@ -12,6 +12,7 @@ export * from './DocumentCompletionModal';
 export * from './EmptyState';
 export * from './FacetedFilter';
 export * from './IndustrialCard';
+export * from './IndustryMark';
 export * from './LoadingFallback';
 export * from './MoneyDisplay';
 export * from './PageHeader';

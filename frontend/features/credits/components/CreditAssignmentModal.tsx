@@ -173,7 +173,7 @@ export default function CreditAssignmentModal({
                                         c.credit_blocked ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                                     )}>
                                         {c.credit_blocked ? (
-                                            <Badge variant="destructive" className="gap-1 bg-rose-500/10 text-rose-600 border-rose-200">
+                                            <Badge variant="destructive" className="gap-1 bg-destructive/10 text-destructive border-destructive/20">
                                                 BLOQUEADO <AlertCircle className="h-3 w-3" />
                                             </Badge>
                                         ) : (

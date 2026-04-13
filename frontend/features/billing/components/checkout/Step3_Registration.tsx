@@ -88,7 +88,7 @@ export function Step3_Registration({
                                 <Label htmlFor="folio" className="text-xs font-bold uppercase flex items-center gap-2">
                                     <Hash className="h-3 w-3" />
                                     N° de Folio
-                                    <span className="text-rose-500 font-black">*</span>
+                                    <span className="text-destructive font-black">*</span>
                                 </Label>
                                 <Input
                                     id="folio"

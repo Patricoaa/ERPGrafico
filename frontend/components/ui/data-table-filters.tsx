@@ -61,15 +61,16 @@ export function DataTableFilters<TData>({
     const isFiltered = totalActiveFilters > 0
 
     return (
-        <div className={cn("flex items-center space-x-2", className)}>
+        <div className={cn("flex items-center", className)}>
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-9 w-9 rounded-full bg-transparent border-dashed border-border/60 hover:bg-muted/50 transition-all">
+                    <Button variant="ghost" className="h-9 px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
                         <div className="relative flex items-center justify-center">
-                            <ListFilter className="h-4 w-4 opacity-50" />
+                            <ListFilter className="h-3.5 w-3.5 mr-2 opacity-50" />
+                            Filtros
                             {isFiltered && (
                                 <Badge
-                                    className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center bg-primary text-[9px] font-black font-sans rounded-full border-2 border-background"
+                                    className="absolute -top-2 -right-4 h-4 w-4 p-0 flex items-center justify-center bg-primary text-[9px] font-black font-sans rounded-full border-2 border-background"
                                 >
                                     {totalActiveFilters}
                                 </Badge>
@@ -206,16 +207,16 @@ export function DataTableFilters<TData>({
 
             {isFiltered && (
                 <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-9 w-9 text-primary hover:text-primary hover:bg-primary/10 rounded-full transition-all bg-transparent border border-primary/30"
+                    variant="ghost"
+                    className="h-9 px-3 border-l border-border/50 rounded-none text-[10px] uppercase font-bold tracking-widest text-primary hover:bg-primary/10 transition-all focus-visible:ring-0"
                     onClick={() => {
                         table.resetColumnFilters()
                         table.setGlobalFilter("")
                         onReset?.()
                     }}
                 >
-                    <X className="h-4 w-4 opacity-70" />
+                    <X className="h-3.5 w-3.5 mr-2 opacity-70" />
+                    Limpiar
                 </Button>
             )}
         </div>
