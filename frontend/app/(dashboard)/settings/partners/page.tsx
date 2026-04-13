@@ -10,7 +10,8 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { SettingsSheetRouteWrapper } from "@/components/shared"
 import { PartnerAccountingTab } from "@/features/settings/components/partners/PartnerAccountingTab"
 import Link from "next/link"
-import { Plus } from "lucide-react"
+import { BarChart3 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 // Lazy load the PartnersSettingsView component
 const PartnersSettingsView = lazy(() =>
@@ -26,13 +27,14 @@ export default function PartnersSettingsPage() {
     const isNewDistributionModal = searchParams.get("modal") === "new-distribution"
     const isMobilizeModal = searchParams.get("modal") === "mobilize-earnings"
     const isAddPartnerModal = searchParams.get("modal") === "add-partner"
+    const isStatsModal = searchParams.get("modal") === "stats"
     const [saving, setSaving] = useState(false)
     const [configSaving, setConfigSaving] = useState(false)
 
     // Callback to clear modal param from URL (lifted from ProfitDistributionsTab)
     const handleModalClose = useCallback(() => {
         const currentModal = searchParams.get("modal")
-        if (currentModal === "new-distribution" || currentModal === "mobilize-earnings" || currentModal === "add-partner") {
+        if (currentModal === "new-distribution" || currentModal === "mobilize-earnings" || currentModal === "add-partner" || currentModal === "stats") {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
             router.push(`?${params.toString()}`, { scroll: false })
@@ -86,7 +88,8 @@ export default function PartnersSettingsPage() {
                     iconName: "users" as const,
                     showAction: true,
                     actionTitle: "Añadir Socio",
-                    actionHref: "/settings/partners?tab=composition&modal=add-partner"
+                    actionHref: "/settings/partners?tab=composition&modal=add-partner",
+                    showStats: true
                 }
             case "distributions":
                 return {
@@ -95,14 +98,16 @@ export default function PartnersSettingsPage() {
                     iconName: "pie-chart" as const,
                     showAction: true,
                     actionTitle: "Nueva Distribución",
-                    actionHref: "/settings/partners?tab=distributions&modal=new-distribution"
+                    actionHref: "/settings/partners?tab=distributions&modal=new-distribution",
+                    showStats: false
                 }
             default:
                 return {
                     title: "Socios y Capital",
                     description: "Gestión societaria y patrimonial.",
                     iconName: "building-2" as const,
-                    showAction: false
+                    showAction: false,
+                    showStats: false
                 }
         }
     }, [activeTab])
@@ -115,17 +120,26 @@ export default function PartnersSettingsPage() {
                 iconName={headerConfig.iconName}
                 variant="minimal"
                 configHref="?config=true"
-                titleActions={headerConfig.showAction && headerConfig.actionHref && (
-                    <div className="flex gap-2">
-                        <Link href={headerConfig.actionHref}>
-                            <PageHeaderButton
-                                iconName="plus"
-                                circular
-                                title={headerConfig.actionTitle}
-                            />
-                        </Link>
+                titleActions={
+                    <div className="flex items-center gap-2">
+                        {headerConfig.showStats && (
+                            <Link href="/settings/partners?tab=composition&modal=stats">
+                                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-transparent hover:bg-muted/50 text-muted-foreground/70 hover:text-foreground">
+                                    <BarChart3 className="h-4 w-4" />
+                                </Button>
+                            </Link>
+                        )}
+                        {headerConfig.showAction && headerConfig.actionHref && (
+                            <Link href={headerConfig.actionHref}>
+                                <PageHeaderButton
+                                    iconName="plus"
+                                    circular
+                                    title={headerConfig.actionTitle}
+                                />
+                            </Link>
+                        )}
                     </div>
-                )}
+                }
             />
 
             <PageTabs tabs={tabs} activeValue={activeTab} />
@@ -137,6 +151,7 @@ export default function PartnersSettingsPage() {
                         onSavingChange={setSaving}
                         initialFlowOpen={isNewDistributionModal}
                         initialAddPartnerOpen={isAddPartnerModal}
+                        initialStatsOpen={isStatsModal}
                         onModalClose={handleModalClose}
                     />
                 </Suspense>

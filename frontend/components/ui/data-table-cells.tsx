@@ -175,7 +175,7 @@ export const DataCell = {
                 )}
                 <div className="w-full bg-secondary/30 rounded-full h-1 overflow-hidden">
                     <div
-                        className={cn("h-full transition-all", percentage >= 100 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]" : "bg-primary")}
+                        className={cn("h-full transition-all", percentage >= 100 ? "bg-success shadow-[0_0_8px_var(--success)]" : "bg-primary")}
                         style={{ width: `${percentage}%` }}
                     />
                 </div>

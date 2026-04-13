@@ -70,9 +70,9 @@ function SheetContent({
         className={cn(
           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-2xl transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
           side === "right" &&
-            "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right top-20 bottom-4 right-4 h-[calc(100vh-6rem)] w-3/4 border border-white/5 rounded-2xl sm:max-w-sm",
+            "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right top-20 bottom-4 right-4 h-[calc(100vh-6rem)] w-3/4 border border-white/5 rounded-lg sm:max-w-sm",
           side === "left" &&
-            "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left top-20 bottom-4 left-4 h-[calc(100vh-6rem)] w-3/4 border border-white/5 rounded-2xl sm:max-w-sm",
+            "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left top-20 bottom-4 left-4 h-[calc(100vh-6rem)] w-3/4 border border-white/5 rounded-lg sm:max-w-sm",
           side === "top" &&
             "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 h-auto border-b",
           side === "bottom" &&

@@ -264,7 +264,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                                 ? "bg-success/10 border-success/20 text-success dark:text-success/50"
                                 : marginPercentage > 15
                                     ? "bg-warning/10 border-warning/20 text-warning dark:text-warning/50"
-                                    : "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400"
+                                    : "bg-destructive/10 border-destructive/20 text-destructive dark:text-destructive/50"
                         )}>
                             <div className="flex items-center gap-2 mb-1">
                                 <Info className="h-4 w-4 opacity-70" />
@@ -279,7 +279,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                                         ? "bg-success text-white"
                                         : marginPercentage > 15
                                             ? "bg-warning text-white"
-                                            : "bg-rose-500 text-white"
+                                            : "bg-destructive text-white"
                                 )}>
                                     {marginPercentage}%
                                 </Badge>

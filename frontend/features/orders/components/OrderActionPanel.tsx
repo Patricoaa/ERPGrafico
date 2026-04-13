@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Progress } from '@/components/ui/progress'
+import { SheetCloseButton } from '@/components/shared/SheetCloseButton'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import { ActionCategory } from './ActionCategory'
@@ -146,6 +147,11 @@ export function OrderActionPanel({
                         )}
                     </SheetDescription>
                 </SheetHeader>
+
+                <SheetCloseButton 
+                    onClick={() => onOpenChange(false)}
+                    className="absolute top-4 right-4 z-[60]"
+                />
 
                 <Separator />
 

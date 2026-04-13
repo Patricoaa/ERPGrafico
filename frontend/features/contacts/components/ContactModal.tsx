@@ -30,7 +30,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, X } from "lucide-react"
+import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight } from "lucide-react"
 import { OrderCard } from "@/features/orders/components/OrderCard"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -42,6 +42,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
+import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { Card, CardContent } from "@/components/ui/card"
 import { getHubStatuses } from "@/lib/order-status-utils"
 import { FORM_STYLES } from "@/lib/styles"
@@ -286,17 +287,8 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 </div>
             </SheetHeader>
 
-            {/* Custom Close Button for Sheet (Top Right Corner) */}
-            <div className="absolute top-4 right-4 z-[60]">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-full bg-slate-50/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all"
-                    onClick={() => onOpenChange(false)}
-                >
-                    <X className="h-5 w-5" />
-                </Button>
-            </div>
+            {/* Standardized Close Button */}
+            <SheetCloseButton onClick={() => onOpenChange(false)} />
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="h-full w-full flex flex-col overflow-hidden">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">

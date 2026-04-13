@@ -64,11 +64,11 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
     NOT_APPLICABLE: { label: "No aplica", className: "bg-muted/50 text-muted-foreground/50 border-muted", type: "neutral" },
 
     // Accounting - Account Types
-    ASSET: { label: "Activo", className: "bg-info/10 text-info border-info/20", type: "info" },
-    LIABILITY: { label: "Pasivo", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
+    ASSET: { label: "Activo", className: "bg-asset/10 text-asset border-asset/20", type: "info" },
+    LIABILITY: { label: "Pasivo", className: "bg-liability/10 text-liability border-liability/20", type: "warning" },
     EQUITY: { label: "Patrimonio", className: "bg-muted text-muted-foreground border-muted", type: "neutral" },
-    INCOME: { label: "Ingreso", className: "bg-success/10 text-success border-success/20", type: "success" },
-    EXPENSE: { label: "Gasto", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
+    INCOME: { label: "Ingreso", className: "bg-income/10 text-income border-income/20", type: "success" },
+    EXPENSE: { label: "Gasto", className: "bg-expense/10 text-expense border-expense/20", type: "destructive" },
 
     // Credit / Risk
     RISK_LOW: { label: "Riesgo Bajo", className: "bg-success/10 text-success border-success/20", type: "success" },

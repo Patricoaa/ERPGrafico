@@ -216,7 +216,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 rounded-md hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors"
+                            className="h-8 w-8 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground/50 transition-colors"
                             onClick={() => handleDelete(acc.id)} 
                             title="Eliminar"
                         >

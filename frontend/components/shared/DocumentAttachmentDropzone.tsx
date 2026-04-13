@@ -70,7 +70,7 @@ export function DocumentAttachmentDropzone({
                     <Button 
                         size="icon" 
                         variant="ghost" 
-                        className="h-8 w-8 text-rose-500 hover:bg-rose-500/10 rounded-full shrink-0" 
+                        className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-full shrink-0" 
                         onClick={(e) => {
                             e.preventDefault();
                             onFileChange(null);

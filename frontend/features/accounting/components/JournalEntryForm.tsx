@@ -505,7 +505,7 @@ export function JournalEntryForm({
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => remove(index)}
-                                                    className="h-8 w-8 rounded-lg hover:bg-rose-500/10 hover:text-rose-600 transition-colors"
+                                                    className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors"
                                                 >
                                                     <Trash2 className="h-3.5 w-3.5" />
                                                 </Button>

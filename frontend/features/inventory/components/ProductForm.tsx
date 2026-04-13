@@ -16,7 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { productSchema, type ProductFormValues } from "./product/schema"
-import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, X, Layers, Factory, AlertCircle, Loader2 } from "lucide-react"
+import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, Layers, Factory, AlertCircle, Loader2 } from "lucide-react"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -39,6 +39,7 @@ import { Badge } from "@/components/ui/badge"
 import { PricingRuleForm } from "@/features/sales/components/PricingRuleForm"
 import { CategoryForm } from "./CategoryForm"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 
 interface ProductFormProps {
     auditSidebar?: React.ReactNode
@@ -924,17 +925,8 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     </div>
                 </SheetHeader>
 
-                {/* Custom Close Button for Sheet (Top Right Corner) */}
-                <div className="absolute top-4 right-4 z-[60]">
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-9 w-9 rounded-full bg-muted/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
-                        onClick={() => onOpenChange(false)}
-                    >
-                        <X className="h-5 w-5" />
-                    </Button>
-                </div>
+                {/* Standardized Close Button */}
+                <SheetCloseButton onClick={() => onOpenChange(false)} />
 
                 <div className="flex-1 overflow-hidden flex flex-col">
                     {formContent}

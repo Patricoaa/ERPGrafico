@@ -19,15 +19,7 @@ import {
     Settings2,
     AlertCircle
 } from "lucide-react"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Select,
     SelectContent,
@@ -395,6 +387,14 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
 
                 {/* --- Tab: Conceptos --- */}
                 <TabsContent value="concepts" className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
+                    <div className="flex justify-between items-center px-1">
+                        <div>
+                            <h3 className="text-sm font-black uppercase text-primary tracking-widest">Conceptos de Nómina</h3>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground">Gestión de haberes, descuentos y aportes</p>
+                        </div>
+                        <ConceptDialog onSaved={fetchData} />
+                    </div>
+
                     <DataTable 
                         columns={conceptColumns}
                         data={concepts}
@@ -402,7 +402,6 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
                         searchPlaceholder="Buscar concepto..."
                         isLoading={loading}
                         cardMode={true}
-                        toolbarAction={<ConceptDialog onSaved={fetchData} />}
                     />
                 </TabsContent>
 
@@ -511,27 +510,37 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                {concept ? (
-                    <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-primary/5 rounded-sm">
-                        <Settings2 className="h-3.5 w-3.5" />
-                    </Button>
-                ) : (
-                    <Button variant="outline" className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-primary/30 text-primary hover:bg-primary/10 transition-all rounded-full shadow-none">
-                        <Plus className="h-3.5 w-3.5 mr-2" /> Nuevo Concepto
-                    </Button>
-                )}
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] rounded-md border-2">
-                <DialogHeader>
-                    <DialogTitle className="text-sm font-black uppercase tracking-widest">Mantenimiento de Concepto</DialogTitle>
-                    <DialogDescription className="text-[10px] uppercase font-bold italic">
-                        Defina el comportamiento y la cuenta contable de este ítem de nómina.
-                    </DialogDescription>
-                </DialogHeader>
+        <>
+            {concept ? (
+                <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-primary/5 rounded-sm" onClick={() => setOpen(true)}>
+                    <Settings2 className="h-3.5 w-3.5" />
+                </Button>
+            ) : (
+                <Button variant="outline" className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-primary/30 text-primary hover:bg-primary/10 transition-all rounded-full shadow-none" onClick={() => setOpen(true)}>
+                    <Plus className="h-3.5 w-3.5 mr-2" /> Nuevo Concepto
+                </Button>
+            )}
+
+            <BaseModal
+                open={open}
+                onOpenChange={setOpen}
+                size="md"
+                title={
+                    <div className="flex items-center gap-2 text-sm font-black uppercase tracking-widest">
+                        Mantenimiento de Concepto
+                    </div>
+                }
+                description="Defina el comportamiento y la cuenta contable de este ítem de nómina."
+                footer={
+                    <div className="flex w-full gap-3 justify-end pt-2 border-t">
+                        <Button type="submit" form="concept-form" disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px]">
+                            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Validar y Guardar Cambios"}
+                        </Button>
+                    </div>
+                }
+            >
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form id="concept-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <FormField
                             control={form.control}
                             name="name"
@@ -658,15 +667,10 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                                 )}
                             />
                         )}
-                        <DialogFooter className="mt-6 pt-4 border-t">
-                            <Button type="submit" disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px]">
-                                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Validar y Guardar Cambios"}
-                            </Button>
-                        </DialogFooter>
                     </form>
                 </Form>
-            </DialogContent>
-        </Dialog>
+            </BaseModal>
+        </>
     )
 }
 
@@ -707,27 +711,37 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                {afp ? (
-                    <Button variant="outline" size="icon" className="h-7 w-7 border-2 rounded-sm">
-                        <Settings2 className="h-3.5 w-3.5" />
-                    </Button>
-                ) : (
-                    <Button variant="outline" className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-primary/30 text-primary hover:bg-primary/10 transition-all rounded-full shadow-none">
-                        <Plus className="h-3.5 w-3.5 mr-2" /> Añadir Institución
-                    </Button>
-                )}
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[400px] border-2 rounded-md">
-                <DialogHeader>
-                    <DialogTitle className="text-sm font-black uppercase tracking-widest">Mantenimiento de AFP</DialogTitle>
-                    <DialogDescription className="text-[10px] uppercase font-bold italic">
-                        Configure las tasas vigentes para las cotizaciones previsionales.
-                    </DialogDescription>
-                </DialogHeader>
+        <>
+            {afp ? (
+                <Button variant="outline" size="icon" className="h-7 w-7 border-2 rounded-sm" onClick={() => setOpen(true)}>
+                    <Settings2 className="h-3.5 w-3.5" />
+                </Button>
+            ) : (
+                <Button variant="outline" className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-primary/30 text-primary hover:bg-primary/10 transition-all rounded-full shadow-none" onClick={() => setOpen(true)}>
+                    <Plus className="h-3.5 w-3.5 mr-2" /> Añadir Institución
+                </Button>
+            )}
+
+            <BaseModal
+                open={open}
+                onOpenChange={setOpen}
+                size="sm"
+                title={
+                    <div className="text-sm font-black uppercase tracking-widest">
+                        Mantenimiento de AFP
+                    </div>
+                }
+                description="Configure las tasas vigentes para las cotizaciones previsionales."
+                footer={
+                    <div className="flex w-full gap-3 justify-end pt-2 border-t">
+                        <Button type="submit" form="afp-form" disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground">
+                            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Guardar Institución"}
+                        </Button>
+                    </div>
+                }
+            >
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <form id="afp-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <FormField
                             control={form.control}
                             name="name"
@@ -765,14 +779,9 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
                                 </FormItem>
                             )}
                         />
-                        <DialogFooter className="mt-6 pt-4 border-t">
-                            <Button type="submit" disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground">
-                                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Guardar Institución"}
-                            </Button>
-                        </DialogFooter>
                     </form>
                 </Form>
-            </DialogContent>
-        </Dialog>
+            </BaseModal>
+        </>
     )
 }

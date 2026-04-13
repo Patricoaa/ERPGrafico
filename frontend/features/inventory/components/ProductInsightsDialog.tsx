@@ -213,14 +213,14 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                             </div>
                                         </CardContent>
                                     </Card>
-                                    <Card className={marginPercent >= 20 ? "bg-primary/10/30 border-info/10" : "bg-rose-50/30 border-rose-100"}>
+                                    <Card className={marginPercent >= 20 ? "bg-primary/10/30 border-info/10" : "bg-destructive/10 border-destructive/20"}>
                                         <CardContent className="pt-4">
                                             <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">% de Margen</p>
                                             <div className="flex items-center gap-2">
-                                                <p className={`text-2xl font-black ${marginPercent >= 20 ? 'text-info' : 'text-rose-900'}`}>
+                                                <p className={`text-2xl font-black ${marginPercent >= 20 ? 'text-info' : 'text-destructive'}`}>
                                                     {marginPercent.toFixed(1)}%
                                                 </p>
-                                                {marginPercent >= 20 ? <ArrowUpRight className="h-5 w-5 text-primary" /> : <ArrowDownRight className="h-5 w-5 text-rose-600" />}
+                                                {marginPercent >= 20 ? <ArrowUpRight className="h-5 w-5 text-primary" /> : <ArrowDownRight className="h-5 w-5 text-destructive" />}
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -277,7 +277,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
 
                             {/* HISTORY TAB */}
                             <TabsContent value="history" className="mt-0 space-y-6">
-                                <div className="h-[250px] w-full bg-white rounded-lg border p-4">
+                                <div className="h-[250px] w-full bg-card rounded-lg border p-4">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={[...data.price_history].reverse()}>
                                             <defs>
@@ -435,7 +435,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                                         {format(new Date(usage.date), "dd/MM/yyyy")}
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge variant="indigo" className="font-bold">
+                                                        <Badge variant="primary" className="font-bold">
                                                             OT-{usage.ot_number}
                                                         </Badge>
                                                     </TableCell>

@@ -15,7 +15,12 @@ import {
     LogOut,
     Banknote,
     History,
-    BarChart3
+    BarChart3,
+    BookOpen,
+    Layers,
+    Settings2,
+    ArrowDownToLine,
+    MoveHorizontal
 } from "lucide-react"
 
 import {
@@ -55,9 +60,11 @@ import { ColumnDef } from "@tanstack/react-table"
 
 export function EquityCompositionTab({
     initialAddPartnerOpen = false,
+    initialStatsOpen = false,
     onModalClose
 }: {
     initialAddPartnerOpen?: boolean,
+    initialStatsOpen?: boolean,
     onModalClose?: () => void
 }) {
     const [loading, setLoading] = useState(true)
@@ -112,6 +119,12 @@ export function EquityCompositionTab({
         }
     }, [initialAddPartnerOpen])
 
+    useEffect(() => {
+        if (initialStatsOpen) {
+            setIsStatsOpen(true)
+        }
+    }, [initialStatsOpen])
+
     if (loading) {
         return (
             <div className="space-y-6">
@@ -135,25 +148,11 @@ export function EquityCompositionTab({
                     <span className="text-[9px] font-mono opacity-50">{row.original.tax_id}</span>
 
                     {row.original.partner_excess_capital > 0 && (
-                        <div className="mt-1.5 p-1.5 bg-warning/10 border border-warning/20 rounded-sm flex items-center justify-between gap-2 overflow-hidden ring-1 ring-warning/10">
+                        <div className="mt-1.5 p-1.5 bg-warning/10 border border-warning/20 rounded-sm flex items-center gap-2 overflow-hidden ring-1 ring-warning/10">
                             <div className="flex items-center gap-1.5 text-[8px] text-warning font-black uppercase tracking-tighter">
                                 <AlertCircle className="h-2.5 w-2.5 shrink-0" />
                                 Exceso: +{formatCurrency(row.original.partner_excess_capital)}
                             </div>
-                            <Button
-                                variant="link"
-                                size="sm"
-                                className="h-3 p-0 text-[8px] font-black text-warning hover:text-warning/80 underline uppercase tracking-widest leading-none"
-                                onClick={() => {
-                                    setSubModalParams({
-                                        partnerId: row.original.id.toString(),
-                                        amount: row.original.partner_excess_capital.toString()
-                                    })
-                                    setIsSubscriptionOpen(true)
-                                }}
-                            >
-                                Formalizar
-                            </Button>
                         </div>
                     )}
                 </div>
@@ -267,6 +266,23 @@ export function EquityCompositionTab({
 
                 return (
                     <div className="flex justify-center gap-1">
+                        {parseFloat(partner.partner_excess_capital) > 0 && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-warning hover:bg-warning/10 transition-all"
+                                onClick={() => {
+                                    setSubModalParams({
+                                        partnerId: partner.id.toString(),
+                                        amount: partner.partner_excess_capital.toString()
+                                    })
+                                    setIsSubscriptionOpen(true)
+                                }}
+                                title="Formalizar Exceso de Capital"
+                            >
+                                <TrendingUp className="h-4 w-4" />
+                            </Button>
+                        )}
                         <Button
                             variant="ghost"
                             size="icon"
@@ -314,32 +330,6 @@ export function EquityCompositionTab({
                         >
                             <History className="h-4 w-4" />
                         </Button>
-
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-success hover:bg-success/10 transition-all font-black"
-                            onClick={() => {
-                                setSelectedPartnerId(partner.id)
-                                setIsContributionOpen(true)
-                            }}
-                            title="Registrar Aporte"
-                        >
-                            <Wallet className="h-4 w-4" />
-                        </Button>
-
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10 transition-all font-black"
-                            onClick={() => {
-                                setSelectedPartnerId(partner.id)
-                                setIsWithdrawalOpen(true)
-                            }}
-                            title="Registrar Retiro"
-                        >
-                            <LogOut className="h-4 w-4" />
-                        </Button>
                     </div>
                 )
             }
@@ -354,48 +344,35 @@ export function EquityCompositionTab({
                 data={partners}
                 isLoading={loading}
                 cardMode={true}
-                leftAction={
-                    <Button
-                        variant="outline"
-                        onClick={() => setIsStatsOpen(true)}
-                        className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-primary/30 text-primary hover:bg-primary/10 transition-all rounded-full"
-                    >
-                        <BarChart3 className="h-3.5 w-3.5 mr-2" />
-                        Análisis
-                    </Button>
-                }
                 toolbarAction={
-                    <div className="flex gap-2">
+                    <>
                         {!hasPartners ? (
-                            <Button
-                                variant="outline"
+                            <DropdownMenuItem
                                 onClick={() => setIsInitialSetupOpen(true)}
-                                className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-primary/50 text-primary hover:bg-primary/10 transition-all rounded-full"
+                                className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-primary focus:bg-primary/10 focus:text-primary cursor-pointer transition-colors"
                             >
-                                <Plus className="h-3.5 w-3.5 mr-2" />
+                                <Plus className="h-4 w-4 mr-2" />
                                 Configuración Inicial
-                            </Button>
+                            </DropdownMenuItem>
                         ) : (
                             <>
-                                <Button
-                                    variant="outline"
+                                <DropdownMenuItem
                                     onClick={() => setIsSubscriptionOpen(true)}
-                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-muted-foreground/30 text-foreground/80 hover:bg-muted/30 transition-all rounded-full"
+                                    className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-primary focus:bg-primary/10 focus:text-primary cursor-pointer transition-colors"
                                 >
-                                    <Plus className="h-3.5 w-3.5 mr-2" />
-                                    Modificación del capital
-                                </Button>
-                                <Button
-                                    variant="outline"
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Nueva Suscripción
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
                                     onClick={() => setIsTransferOpen(true)}
-                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-info/30 text-info hover:bg-info/10 transition-all rounded-full"
+                                    className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-primary focus:bg-primary/10 focus:text-primary cursor-pointer transition-colors"
                                 >
-                                    <ArrowRightLeft className="h-3.5 w-3.5 mr-2" />
+                                    <MoveHorizontal className="h-4 w-4 mr-2" />
                                     Transferencia
-                                </Button>
+                                </DropdownMenuItem>
                             </>
                         )}
-                    </div>
+                    </>
                 }
             />
 
@@ -448,7 +425,12 @@ export function EquityCompositionTab({
             />
             <EquityStatsSheet
                 open={isStatsOpen}
-                onOpenChange={setIsStatsOpen}
+                onOpenChange={(open) => {
+                    setIsStatsOpen(open)
+                    if (!open) {
+                        onModalClose?.()
+                    }
+                }}
                 partners={partners}
                 summary={summary}
             />

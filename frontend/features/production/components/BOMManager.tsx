@@ -18,6 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
@@ -372,19 +373,18 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                     data={boms}
                     isLoading={loading}
                     cardMode={true}
-                    toolbarAction={!product?.has_variants && (
-                        <Button
-                            type="button"
+                    toolbarAction={!product?.has_variants ? (
+                        <DropdownMenuItem
                             onClick={(e) => {
                                 e.stopPropagation()
                                 handleCreate()
                             }}
-                            className="h-8 px-4 text-[10px] font-black uppercase tracking-widest transition-all rounded-sm"
+                            className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-primary focus:bg-primary/10 focus:text-primary cursor-pointer transition-colors"
                         >
-                            <Plus className="h-3.5 w-3.5 mr-2" />
+                            <Plus className="h-4 w-4 mr-2 opacity-70" />
                             Nueva Lista
-                        </Button>
-                    )}
+                        </DropdownMenuItem>
+                    ) : undefined}
                 />
             </div>
 
