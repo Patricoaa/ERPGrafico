@@ -56,7 +56,7 @@ export function TransactionContent({
                                         : '-'
                                 }
                             </TableCell>
-                            <TableCell className="text-right font-black text-lg text-emerald-600 font-mono tracking-tighter px-6">
+                            <TableCell className="text-right font-black text-lg text-success font-mono tracking-tighter px-6">
                                 {formatCurrency(data.amount)}
                             </TableCell>
                         </TableRow>
@@ -87,7 +87,7 @@ export function TransactionContent({
                                 </TableCell>
                                 <TableCell className="text-xs italic text-muted-foreground leading-snug">{item.label || '-'}</TableCell>
                                 <TableCell className="text-right font-black text-[13px] text-primary font-mono tracking-tighter">{Number(item.debit) > 0 ? formatCurrency(item.debit) : '-'}</TableCell>
-                                <TableCell className="text-right font-black text-[13px] text-emerald-600 font-mono tracking-tighter px-6">{Number(item.credit) > 0 ? formatCurrency(item.credit) : '-'}</TableCell>
+                                <TableCell className="text-right font-black text-[13px] text-success font-mono tracking-tighter px-6">{Number(item.credit) > 0 ? formatCurrency(item.credit) : '-'}</TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

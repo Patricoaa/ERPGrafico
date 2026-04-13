@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 import { formatCurrency } from "@/lib/utils"
@@ -220,7 +220,9 @@ export function DraftCartsList({
                     <Archive className="h-4 w-4 mr-2" />
                     Ver Borradores
                     {drafts.length > 0 && (
-                        <Badge variant="secondary" className="ml-2">{drafts.length}</Badge>
+                        <span className="ml-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/30 text-muted-foreground">
+                            {drafts.length}
+                        </span>
                     )}
                 </Button>
             )}
@@ -235,9 +237,9 @@ export function DraftCartsList({
                             <Archive className="h-4 w-4 text-muted-foreground" />
                             <span>Borradores</span>
                             {drafts.length > 0 && (
-                                <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                                <span className="text-[10px] h-4 px-1.5 font-bold bg-muted text-muted-foreground rounded border border-muted-foreground/20 leading-none flex items-center">
                                     {drafts.length}
-                                </Badge>
+                                </span>
                             )}
                         </div>
                         <Button variant="ghost" size="sm" onClick={fetchDrafts} disabled={loading}>
@@ -300,13 +302,10 @@ export function DraftCartsList({
                                                 {lockedByOther && (
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                            <Badge
-                                                                variant="outline"
-                                                                className="h-4 px-1.5 text-[9px] bg-destructive/10 text-destructive border-destructive/30 gap-0.5 shrink-0 cursor-help"
-                                                            >
+                                                            <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-destructive/10 text-destructive border-destructive/30 gap-1 flex items-center shrink-0 cursor-help">
                                                                 <Lock className="h-2.5 w-2.5" />
                                                                 {lockInfo?.lockedByName || 'En uso'}
-                                                            </Badge>
+                                                            </span>
                                                         </TooltipTrigger>
                                                         <TooltipContent side="top" className="max-w-[200px] text-xs">
                                                             Este borrador está siendo editado por <strong>{lockInfo?.lockedByName}</strong>. 
@@ -315,49 +314,34 @@ export function DraftCartsList({
                                                     </Tooltip>
                                                 )}
                                                 {lockInfo?.isOwnLock && (
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="h-4 px-1 text-[9px] bg-primary/10 text-primary border-primary/30 gap-0.5 shrink-0"
-                                                    >
+                                                    <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-primary/10 text-primary border-primary/30 gap-1 flex items-center shrink-0">
                                                         <Lock className="h-2.5 w-2.5" />
                                                         Tú
-                                                    </Badge>
+                                                    </span>
                                                 )}
                                                 {draft.wizard_state?.isWaitingPayment && !lockedByOther && (
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="h-4 px-1 text-[9px] bg-amber-100 text-amber-700 border-amber-300 gap-0.5 shrink-0 shadow-sm"
-                                                    >
+                                                    <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-warning/10 text-warning border-warning/20 gap-1 flex items-center shrink-0 shadow-sm">
                                                         <Wallet className="h-2.5 w-2.5" />
                                                         Por Pagar
-                                                    </Badge>
+                                                    </span>
                                                 )}
                                                 {draft.wizard_state?.step && !draft.wizard_state?.isWaitingPayment && !lockedByOther && (
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="h-4 px-1 text-[9px] bg-amber-50 text-amber-600 border-amber-200 gap-0.5 shrink-0"
-                                                    >
+                                                    <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-warning/10 text-warning border-warning/20 gap-1 flex items-center shrink-0">
                                                         <ClipboardCheck className="h-2.5 w-2.5" />
                                                         P{draft.wizard_state.step}
-                                                    </Badge>
+                                                    </span>
                                                 )}
                                                 {draft.wizard_state?.isWaitingApproval && (
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="h-4 px-1 text-[9px] bg-blue-50 text-primary border-blue-200 gap-0.5 shrink-0"
-                                                    >
+                                                    <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-primary/10 text-primary border-primary/20 gap-1 flex items-center shrink-0">
                                                         <Loader2 className="h-2.5 w-2.5 animate-spin" />
                                                         Auth
-                                                    </Badge>
+                                                    </span>
                                                 )}
                                                 {draft.wizard_state?.isApproved && (
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="h-4 px-1 text-[9px] bg-emerald-50 text-emerald-600 border-emerald-200 gap-0.5 shrink-0"
-                                                    >
+                                                    <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-success/10 text-success border-success/20 gap-1 flex items-center shrink-0">
                                                         <ClipboardCheck className="h-2.5 w-2.5" />
                                                         OK
-                                                    </Badge>
+                                                    </span>
                                                 )}
                                             </div>
                                             <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">

@@ -14,7 +14,6 @@ import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { CalendarIcon, Loader2, Calculator, Info, Search, ChevronsUpDown, Check } from "lucide-react"
 import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -281,14 +280,14 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                         </div>
                     </div>
 
-                    <div className="grid gap-2 pt-2 border-t border-dashed border-gray-300">
-                        <Label className={cn(FORM_STYLES.label, "text-success font-bold")}>Monto Neto a Depositar</Label>
+                    <div className="grid gap-2 pt-2 border-t border-dashed border-border">
+                        <Label className={cn(FORM_STYLES.label, "text-income font-bold")}>Monto Neto a Depositar</Label>
                         <Input
                             type="number"
                             step="1"
                             value={netDeposit}
                             readOnly
-                            className={cn(FORM_STYLES.input, "font-bold text-lg text-right text-success border-success/20 bg-success/5 cursor-not-allowed")}
+                            className={cn(FORM_STYLES.input, "font-bold text-lg text-right text-income border-income/20 bg-income/5 cursor-not-allowed")}
                         />
                     </div>
                 </div>
@@ -426,7 +425,7 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
                             Seleccionar Todas ({movements.length})
                         </Label>
                     </div>
-                    <div className="text-sm font-black text-success">
+                    <div className="text-sm font-black text-income">
                         Total: {new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(totalSelected)}
                     </div>
                 </div>
@@ -462,7 +461,7 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
                                             <div className="flex items-center gap-2">
                                                 <p className="text-sm font-bold">{m.reference || 'Sin referencia'}</p>
                                                 {m.date === format(date!, "yyyy-MM-dd") && (
-                                                    <Badge variant="secondary" className="text-[9px] h-4 px-1 bg-primary/10 text-primary border-primary/20">Hoy</Badge>
+                                                    <span className="text-[10px] font-black text-primary uppercase ml-1 opacity-70">HOY</span>
                                                 )}
                                             </div>
                                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase">

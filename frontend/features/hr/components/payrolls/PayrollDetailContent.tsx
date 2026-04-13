@@ -16,11 +16,9 @@ import { getEmployeePayrollPreview } from "@/lib/profile/api"
 import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
 import type { Payroll, PayrollItem, PayrollConcept, PayrollPayment } from "@/types/hr"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Input } from "@/components/ui/input"
-import {
-    Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from "@/components/ui/form"
@@ -40,6 +38,7 @@ import { PayrollCard } from "@/features/hr/components/PayrollCard"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 const itemSchema = z.object({
@@ -220,9 +219,10 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                                 <h1 className={cn("font-bold tracking-tight text-foreground", isSheet ? "text-xl" : "text-2xl")}>
                                     {isPosted ? "Liquidación" : "Borrador de Liquidación"}
                                 </h1>
-                                <Badge variant={isPosted ? "success" : "warning"} className="rounded-lg text-[9px] uppercase font-black px-2 h-4.5">
-                                    {isPosted ? "Contabilizado" : "Borrador"}
-                                </Badge>
+                                <StatusBadge 
+                                    status={isPosted ? "posted" : "draft"} 
+                                    className="rounded-lg px-2 h-4.5"
+                                />
                             </div>
                             <div className="flex items-center gap-3 text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
                                 <span className="font-bold text-primary/80">{payroll.display_id}</span>
@@ -283,8 +283,8 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                                 className={cn(
                                     "rounded-lg text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
                                     salaroPaid
-                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                        : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                                        ? "bg-success/10 text-success border-success/20"
+                                        : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/10"
                                 )}
                                 onClick={() => !salaroPaid && setSalaryDialog(true)}
                                 disabled={salaroPaid}
@@ -298,8 +298,8 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                                 className={cn(
                                     "rounded-lg text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
                                     previredPaid
-                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                        : "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+                                        ? "bg-success/10 text-success border-success/20"
+                                        : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
                                 )}
                                 onClick={() => !previredPaid && setPreviredDialog(true)}
                                 disabled={previredPaid}
@@ -314,7 +314,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg text-rose-600 hover:text-rose-700 hover:bg-rose-50" 
+                            className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg text-destructive hover:bg-destructive/10" 
                             onClick={handleDeletePayroll}
                         >
                             <Trash2 className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
@@ -330,16 +330,10 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
 
             {/* Custom Close Button for Sheet (Top Right Corner) */}
             {isSheet && (
-                <div className="absolute top-4 right-4 z-[60]">
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-9 w-9 rounded-full bg-muted/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
-                        onClick={onClose}
-                    >
-                        <X className="h-5 w-5" />
-                    </Button>
-                </div>
+                <SheetCloseButton 
+                    onClick={onClose!} 
+                    className="absolute top-4 right-4 z-[60] bg-muted/50 backdrop-blur-sm border shadow-sm"
+                />
             )}
 
             {/* Scroll Area for Content */}
@@ -356,7 +350,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                         onAddItem={viewMode === 'admin' ? () => setEditingItem({ payroll: payrollId } as any) : undefined}
                         isReadOnly={viewMode === 'employee'}
                         showEmployerContributions={viewMode === 'admin'}
-                        className={isSheet ? "shadow-2xl shadow-slate-200/50" : ""}
+                        className={isSheet ? "shadow-2xl shadow-border/20" : ""}
                     />
                 </div>
             </div>
@@ -463,95 +457,99 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
     }
 
     return (
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) onEditCleared() }}>
-            {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-            <DialogContent className="sm:max-w-[420px] p-0 overflow-hidden border-none shadow-2xl rounded-lg bg-secondary text-secondary-foreground/50 backdrop-blur-sm">
-                <DialogHeader className="px-6 pt-6 pb-2">
-                    <DialogTitle className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                            <Sparkles className="h-5 w-5" />
+        <BaseModal
+            open={open}
+            onOpenChange={(o) => { setOpen(o); if (!o) onEditCleared() }}
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                        <Sparkles className="h-5 w-5" />
+                    </div>
+                    <div className="flex flex-col text-left">
+                        <span className="text-lg font-bold tracking-tight">
+                            {item ? "Editar Línea" : "Nueva Línea"}
+                        </span>
+                        <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
+                            Itemización <span className="opacity-30">|</span> Liquidación
                         </div>
-                        <div className="flex flex-col text-left">
-                            <span className="text-lg font-bold tracking-tight">
-                                {item ? "Editar Línea" : "Nueva Línea"}
-                            </span>
-                            <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
-                                Itemización <span className="opacity-30">|</span> Liquidación
-                            </div>
-                        </div>
-                    </DialogTitle>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0 text-left">
-                        <div className="p-6 space-y-5 bg-white sm:rounded-b-2xl">
-                            <FormField control={form.control} name="concept" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Concepto de Remuneración</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger className="rounded-lg h-11 transition-all focus:ring-primary/20">
-                                                <SelectValue placeholder="Seleccionar..." />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent className="rounded-lg">
-                                            {concepts.map(c => (
-                                                <SelectItem key={c.id} value={c.id.toString()} className="rounded-lg">
-                                                    {c.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </FormItem>
-                            )} />
+                    </div>
+                </div>
+            }
+            footer={
+                <div className="flex justify-end gap-3 w-full">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => { setOpen(false); onEditCleared(); }}
+                        className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5"
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        form="payroll-item-form"
+                        type="submit"
+                        disabled={saving}
+                        className="rounded-lg text-xs font-bold transition-all shadow-lg shadow-primary/20"
+                    >
+                        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {item ? "Actualizar Item" : "Añadir a Liquidación"}
+                    </Button>
+                </div>
+            }
+        >
+            <Form {...form}>
+                <form 
+                    id="payroll-item-form"
+                    onSubmit={form.handleSubmit(onSubmit)} 
+                    className="space-y-5 text-left py-2"
+                >
+                    <FormField control={form.control} name="concept" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className={FORM_STYLES.label}>Concepto de Remuneración</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                    <SelectTrigger className="rounded-lg h-11 transition-all focus:ring-primary/20">
+                                        <SelectValue placeholder="Seleccionar..." />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="rounded-lg">
+                                    {concepts.map(c => (
+                                        <SelectItem key={c.id} value={c.id.toString()} className="rounded-lg">
+                                            {c.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </FormItem>
+                    )} />
 
-                            <FormField control={form.control} name="amount" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Monto ($)</FormLabel>
-                                    <FormControl>
-                                        <Input 
-                                            {...field} 
-                                            type="number" 
-                                            className="rounded-lg h-11 font-bold text-lg transition-all focus:ring-primary/20" 
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )} />
+                    <FormField control={form.control} name="amount" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className={FORM_STYLES.label}>Monto ($)</FormLabel>
+                            <FormControl>
+                                <Input
+                                    {...field}
+                                    type="number"
+                                    className="rounded-lg h-11 font-bold text-lg transition-all focus:ring-primary/20"
+                                />
+                            </FormControl>
+                        </FormItem>
+                    )} />
 
-                            <FormField control={form.control} name="description" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Observaciones (Opcional)</FormLabel>
-                                    <FormControl>
-                                        <Input 
-                                            {...field} 
-                                            className="rounded-lg h-11 transition-all focus:ring-primary/20" 
-                                            placeholder="Detalle adicional..."
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )} />
-                        </div>
-                        
-                        <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40 bg-muted/10">
-                            <Button 
-                                type="button" 
-                                variant="outline" 
-                                onClick={() => { setOpen(false); onEditCleared(); }}
-                                className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5"
-                            >
-                                Cancelar
-                            </Button>
-                            <Button 
-                                type="submit" 
-                                disabled={saving}
-                                className="rounded-lg text-xs font-bold transition-all shadow-lg shadow-primary/20"
-                            >
-                                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {item ? "Actualizar Item" : "Añadir a Liquidación"}
-                            </Button>
-                        </div>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
+                    <FormField control={form.control} name="description" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className={FORM_STYLES.label}>Observaciones (Opcional)</FormLabel>
+                            <FormControl>
+                                <Input
+                                    {...field}
+                                    className="rounded-lg h-11 transition-all focus:ring-primary/20"
+                                    placeholder="Detalle adicional..."
+                                />
+                            </FormControl>
+                        </FormItem>
+                    )} />
+                </form>
+            </Form>
+        </BaseModal>
     )
 }

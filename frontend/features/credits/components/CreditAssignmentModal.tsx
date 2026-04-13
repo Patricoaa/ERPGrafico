@@ -173,7 +173,7 @@ export default function CreditAssignmentModal({
                                         c.credit_blocked ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                                     )}>
                                         {c.credit_blocked ? (
-                                            <Badge variant="destructive" className="gap-1 bg-rose-500/10 text-rose-600 border-rose-200">
+                                            <Badge variant="destructive" className="gap-1 bg-destructive/10 text-destructive border-destructive/20">
                                                 BLOQUEADO <AlertCircle className="h-3 w-3" />
                                             </Badge>
                                         ) : (
@@ -220,16 +220,16 @@ export default function CreditAssignmentModal({
                         {/* Indicators grid */}
                         <div className="grid grid-cols-2 gap-3 mb-8">
                             <div className="p-4 rounded-lg border bg-muted/30 flex flex-col gap-1 items-center justify-center">
-                                <TrendingUp className="h-4 w-4 text-emerald-600 mb-1" />
+                                <TrendingUp className="h-4 w-4 text-success mb-1" />
                                 <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Disponible</span>
-                                <span className="text-lg font-mono font-black text-emerald-700">
+                                <span className="text-lg font-mono font-black text-success">
                                     ${fmt((selectedContact || initialContact)?.credit_available || 0)}
                                 </span>
                             </div>
                             <div className="p-4 rounded-lg border bg-muted/30 flex flex-col gap-1 items-center justify-center">
-                                <Banknote className="h-4 w-4 text-rose-600 mb-1" />
+                                <Banknote className="h-4 w-4 text-destructive mb-1" />
                                 <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Utilizado</span>
-                                <span className="text-lg font-mono font-black text-rose-700">
+                                <span className="text-lg font-mono font-black text-destructive">
                                     ${fmt((selectedContact || initialContact)?.credit_balance_used || 0)}
                                 </span>
                             </div>
@@ -261,9 +261,9 @@ export default function CreditAssignmentModal({
                                                     />
                                                 </div>
                                             </FormControl>
-                                            <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-100 mt-2">
-                                                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-                                                <p className="text-[11px] text-amber-800 leading-tight">
+                                            <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/10 mt-2">
+                                                <AlertCircle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
+                                                <p className="text-[11px] text-warning leading-tight">
                                                     Establezca 0 o deje vacío para deshabilitar el crédito. 
                                                     Los días de plazo se aplican automáticamente según la política global.
                                                 </p>

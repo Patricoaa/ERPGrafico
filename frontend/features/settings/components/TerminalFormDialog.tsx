@@ -16,8 +16,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Badge } from "@/components/ui/badge"
+import { DataCell } from "@/components/ui/data-table-cells"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Loader2, Check, Search, ChevronsUpDown, MonitorSmartphone } from "lucide-react"
@@ -316,7 +315,9 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                                     <FormItem className="space-y-2 border rounded-lg p-4 bg-muted/10 shadow-sm">
                                         <div className="flex justify-between items-center mb-2">
                                             <FormLabel className={cn(FORM_STYLES.label, "mb-0")}>Cuentas Permitidas</FormLabel>
-                                            <Badge variant="secondary" className="font-mono">{field.value.length} SELECCIONADAS</Badge>
+                                            <span className="text-[9px] font-mono font-black text-muted-foreground uppercase opacity-70">
+                                                {field.value.length} SELECCIONADAS
+                                            </span>
                                         </div>
                                         <div className="h-40 overflow-y-auto space-y-1.5 pr-2 custom-scrollbar">
                                             {treasuryAccounts.length === 0 ? (
@@ -353,9 +354,21 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                                                             <div className="flex-1 flex items-center justify-between">
                                                                 <span className="font-semibold text-sm text-foreground/90">{account.name}</span>
                                                                 <div className="flex gap-1.5">
-                                                                    {account.allows_cash && <Badge variant="outline" className="text-[10px] px-1.5 h-5 font-medium text-success bg-success/10 border-success/20">Efectivo</Badge>}
-                                                                    {account.allows_card && <Badge variant="outline" className="text-[10px] px-1.5 h-5 font-medium text-primary bg-primary/5 border-primary/10">Tarjeta</Badge>}
-                                                                    {account.allows_transfer && <Badge variant="outline" className="text-[10px] px-1.5 h-5 font-medium text-primary bg-primary/10 border-primary/20">Transf</Badge>}
+                                                                    {account.allows_cash && (
+                                                                        <span className="text-[10px] font-bold text-success uppercase tracking-tighter">
+                                                                            Efectivo
+                                                                        </span>
+                                                                    )}
+                                                                    {account.allows_card && (
+                                                                        <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">
+                                                                            Tarjeta
+                                                                        </span>
+                                                                    )}
+                                                                    {account.allows_transfer && (
+                                                                        <span className="text-[10px] font-bold text-primary uppercase tracking-tighter opacity-60">
+                                                                            Transf
+                                                                        </span>
+                                                                    )}
                                                                 </div>
                                                             </div>
                                                         </div>

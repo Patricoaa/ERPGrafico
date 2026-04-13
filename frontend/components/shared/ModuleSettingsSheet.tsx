@@ -1,9 +1,9 @@
 "use client"
 
 import React from "react"
-import { LucideIcon, CloudUpload, CloudCheck, Settings2, X } from "lucide-react"
+import { LucideIcon, CloudUpload, CloudCheck, Settings2 } from "lucide-react"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
-import { Button } from "@/components/ui/button"
+import { SheetCloseButton } from "./SheetCloseButton"
 import { SheetTitle, SheetDescription } from "@/components/ui/sheet"
 
 export type SavingStatus = "idle" | "saving" | "synced" | "error"
@@ -79,8 +79,8 @@ export function ModuleSettingsSheet({
                             )}
                             {savingStatus === "synced" && (
                                 <>
-                                    <CloudCheck className="h-3 w-3 text-emerald-500" />
-                                    <span className="text-emerald-600">Sincronizado</span>
+                                    <CloudCheck className="h-3 w-3 text-success" />
+                                    <span className="text-success">Sincronizado</span>
                                 </>
                             )}
                             {savingStatus === "error" && (
@@ -91,15 +91,7 @@ export function ModuleSettingsSheet({
                             )}
                         </div>
                     )}
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-full h-8 w-8 text-muted-foreground hover:bg-muted"
-                    >
-                        <X className="h-4 w-4" />
-                        <span className="sr-only">Cerrar</span>
-                    </Button>
+                    <SheetCloseButton onClick={() => onOpenChange(false)} />
                 </div>
             </div>
 

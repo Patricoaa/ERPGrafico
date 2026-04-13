@@ -16,7 +16,7 @@ import {
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import {
     Loader2, Lock, Unlock, Calculator, Banknote,
     CreditCard, ArrowRightLeft, FileText, Users, LogOut,
@@ -478,7 +478,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 }}
                                 disabled={terminals.filter(t => !availableSessions.some(s => s.terminal === t.id)).length === 0}
                             >
-                                <div className="p-3 rounded-full bg-emerald-100 text-emerald-600 group-hover:scale-110 transition-transform">
+                                <div className="p-3 rounded-full bg-success/10 text-success group-hover:scale-110 transition-transform">
                                     <Unlock className="h-6 w-6" />
                                 </div>
                                 <div className="text-center">
@@ -491,11 +491,11 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
                             <Button
                                 variant="outline"
-                                className="h-32 flex flex-col items-center justify-center gap-3 border-2 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 group transition-all"
+                                className="h-32 flex flex-col items-center justify-center gap-3 border-2 hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/20 group transition-all"
                                 disabled={availableSessions.length === 0}
                                 onClick={() => setWizardStep(10)} // 10 is Join Session Flow
                             >
-                                <div className="p-3 rounded-full bg-blue-100 text-primary group-hover:scale-110 transition-transform">
+                                <div className="p-3 rounded-full bg-primary/10 text-primary group-hover:scale-110 transition-transform">
                                     <Users className="h-6 w-6" />
                                 </div>
                                 <div className="text-center">
@@ -536,9 +536,9 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                         <div className="text-xs opacity-70">{t.location}</div>
                                     </div>
                                     {t.default_treasury_account_balance > 0 && (
-                                        <Badge variant="secondary" className="ml-auto">
-                                            Base: {formatCurrency(t.default_treasury_account_balance)}
-                                        </Badge>
+                                    <span className="ml-auto text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/30 text-muted-foreground">
+                                        Base: {formatCurrency(t.default_treasury_account_balance)}
+                                    </span>
                                     )}
                                 </Button>
                             ))}
@@ -621,8 +621,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                         </div>
 
                         {hasDiff && (
-                            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-3">
-                                <div className="flex items-center gap-2 text-amber-700 font-bold">
+                            <div className="bg-warning/10 dark:bg-warning/20 border border-warning/20 dark:border-warning rounded-lg p-4 space-y-3">
+                                <div className="flex items-center gap-2 text-warning font-bold">
                                     <AlertTriangle className="h-4 w-4" />
                                     <span>Se detectó una diferencia</span>
                                 </div>
@@ -733,10 +733,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
                                         {/* Insufficient funds warning */}
                                         {openingInsufficientFunds && openingSelectedAccount && (
-                                            <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-3 space-y-1">
+                                            <div className="bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 dark:border-destructive rounded-lg p-3 space-y-1">
                                                 <div className="flex items-start gap-2">
                                                     <AlertTriangle className="h-4 w-4 text-destructive dark:text-destructive mt-0.5 flex-shrink-0" />
-                                                    <div className="text-sm text-red-700 dark:text-red-300">
+                                                    <div className="text-sm text-destructive dark:text-destructive/20">
                                                         <div className="font-bold">Fondos Insuficientes</div>
                                                         <div className="text-xs mt-1 space-y-0.5">
                                                             <div>Disponible en {openingSelectedAccount.name}: {formatCurrency(openingSelectedAccount.current_balance || 0)}</div>
@@ -789,7 +789,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                     <div className="text-left w-full">
                                         <div className="font-bold flex justify-between">
                                             <span>{session.treasury_account_name}</span>
-                                            <Badge variant="outline" className="text-[10px] h-5">{session.user_name}</Badge>
+                                            <span className="text-[10px] h-5 px-1.5 font-bold uppercase rounded border border-muted-foreground/20 bg-muted/10 text-muted-foreground flex items-center">{session.user_name}</span>
                                         </div>
                                         <div className="text-xs opacity-70 mt-1">Abierta: {new Date(session.opened_at).toLocaleTimeString()}</div>
                                     </div>
@@ -842,10 +842,13 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 {!hideSessionInfo && (
 
                     <>
-                        <Badge variant={isSharedSession ? "secondary" : "outline"} className={`gap-1 px-3 py-1.5 ${isSharedSession ? 'bg-blue-100 text-blue-800 border-blue-200' : 'border-success text-success'}`}>
-                            <div className={`h-2 w-2 rounded-full ${isSharedSession ? 'bg-primary' : 'bg-success'} animate-pulse`} />
+                        <span className={cn(
+                            "gap-1 px-3 py-1.5 flex items-center text-[10px] font-bold uppercase rounded border",
+                            isSharedSession ? 'bg-primary/10 text-primary border-primary/20' : 'border-success/30 text-success bg-success/5'
+                        )}>
+                            <div className={cn("h-2 w-2 rounded-full animate-pulse", isSharedSession ? 'bg-primary' : 'bg-success')} />
                             {isSharedSession ? "Caja Compartida" : "Caja Abierta"}
-                        </Badge>
+                        </span>
 
                         <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3 mr-2">
                             <span className="text-sm font-medium">

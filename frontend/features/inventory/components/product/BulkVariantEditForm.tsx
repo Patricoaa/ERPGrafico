@@ -95,16 +95,16 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
   }
 
   return (
-    <div className="flex flex-col h-full bg-blue-50/30 rounded-lg border border-blue-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-      <div className="flex items-center justify-between p-4 border-b bg-blue-50/80">
+    <div className="flex flex-col h-full bg-primary/10/30 rounded-lg border border-primary/10 shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+      <div className="flex items-center justify-between p-4 border-b bg-primary/10/80">
         <div>
            <div className="flex items-center gap-2 mb-1">
                <Sparkles className="h-4 w-4 text-primary" />
-               <h3 className="font-bold text-sm text-blue-900 leading-tight">Edición Masiva</h3>
+               <h3 className="font-bold text-sm text-primary leading-tight">Edición Masiva</h3>
            </div>
            <p className="text-[11px] text-primary/80 font-medium">{selectedVariants.length} variantes seleccionadas</p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onCancel} className="h-8 w-8 text-primary/60 hover:text-blue-900 hover:bg-blue-100/50">
+        <Button variant="ghost" size="icon" onClick={onCancel} className="h-8 w-8 text-primary/60 hover:text-primary hover:bg-primary/10/50">
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -112,7 +112,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
       <div className="p-4 overflow-y-auto flex-1 scrollbar-thin">
         <Form {...form}>
           <div className="space-y-4">
-             <div className="text-[11px] text-muted-foreground mb-4 leading-relaxed bg-white/50 p-3 rounded-lg border border-blue-100/50">
+             <div className="text-[11px] text-muted-foreground mb-4 leading-relaxed bg-white/50 p-3 rounded-lg border border-primary/10/50">
                  Deje en blanco los campos que <strong>no desea alterar</strong>. Solo se aplicarán los campos con valores rellenados.
              </div>
 
@@ -155,7 +155,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                 />
              </div>
 
-             <div className="pt-4 border-t border-dashed border-blue-200 mt-4 space-y-4">
+             <div className="pt-4 border-t border-dashed border-primary/20 mt-4 space-y-4">
                  
                  <FormField
                   control={form.control}
@@ -165,7 +165,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                       <FormControl>
                         <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                       </FormControl>
-                      <FormLabel className="text-xs font-bold text-blue-900">Actualizar requisito de LdM masivamente</FormLabel>
+                      <FormLabel className="text-xs font-bold text-primary">Actualizar requisito de LdM masivamente</FormLabel>
                     </FormItem>
                   )}
                 />
@@ -197,11 +197,11 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                   control={form.control}
                   name="copy_bom_from"
                   render={({ field }) => (
-                    <FormItem className="space-y-2 pt-2 border-t border-dashed border-blue-200">
-                      <FormLabel className="text-xs font-bold text-blue-900">Copiar Receta (BOM) desde:</FormLabel>
+                    <FormItem className="space-y-2 pt-2 border-t border-dashed border-primary/20">
+                      <FormLabel className="text-xs font-bold text-primary">Copiar Receta (BOM) desde:</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value || ""}>
                         <FormControl>
-                          <SelectTrigger className="h-9 text-sm bg-white/70 border-blue-200">
+                          <SelectTrigger className="h-9 text-sm bg-white/70 border-primary/20">
                             <SelectValue placeholder="Ninguna / Sin cambios" />
                           </SelectTrigger>
                         </FormControl>
@@ -229,8 +229,8 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
         </Form>
       </div>
 
-      <div className="p-4 border-t border-blue-100 bg-white/50 flex justify-end gap-2">
-         <Button variant="outline" size="sm" onClick={onCancel} className="text-xs border-blue-200 text-primary hover:bg-blue-50">
+      <div className="p-4 border-t border-primary/10 bg-white/50 flex justify-end gap-2">
+         <Button variant="outline" size="sm" onClick={onCancel} className="text-xs border-primary/20 text-primary hover:bg-primary/10">
             Cancelar
          </Button>
          <Button 

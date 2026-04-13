@@ -2,13 +2,6 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import {
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    DialogHeader,
-    DialogDescription,
-} from "@/components/ui/dialog"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
@@ -420,7 +413,7 @@ export function NoteCheckoutWizard({
                                 {title}
                             </span>
                             {isExempt && (
-                                <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase rounded shadow-sm border border-emerald-200">
+                                <span className="px-1.5 py-0.5 bg-success/10 text-success text-[10px] font-black uppercase rounded shadow-sm border border-success/20">
                                     Documento Exento
                                 </span>
                             )}
@@ -457,7 +450,7 @@ export function NoteCheckoutWizard({
                     ) : (
                         <Button
                             onClick={handleFinish}
-                            className="w-48 h-12 bg-emerald-600 hover:bg-emerald-700 font-bold shadow-lg hover:shadow-xl transition-all"
+                            className="w-48 h-12 bg-success hover:bg-success font-bold shadow-lg hover:shadow-xl transition-all"
                             disabled={loading}
                         >
                             {loading ? (

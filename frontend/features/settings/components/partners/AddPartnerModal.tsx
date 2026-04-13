@@ -2,15 +2,8 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState } from "react"
-import { 
-    Dialog, 
-    DialogContent, 
-    DialogDescription, 
-    DialogFooter, 
-    DialogHeader, 
-    DialogTitle 
-} from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
@@ -88,127 +81,129 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
     const newAmount = parseFloat(formData.amount) || 0
     const projectedTotal = totalCapital + newAmount
 
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <UserPlus className="h-5 w-5 text-primary" />
-                        Incorporación de Nuevo Socio
-                    </DialogTitle>
-                    <DialogDescription>
-                        Añada un nuevo integrante a la sociedad y registre su compromiso de capital inicial.
-                    </DialogDescription>
-                </DialogHeader>
+    const footerContent = (
+        <div className="flex w-full gap-3 justify-end">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+                Cancelar
+            </Button>
+            <Button onClick={handleSubmit} disabled={loading || !formData.contact_id || newAmount <= 0}>
+                {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Confirmar Incorporación
+            </Button>
+        </div>
+    )
 
-                <div className="space-y-6 py-4">
-                    {/* Selector de nuevo socio */}
-                    <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
+    return (
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="lg"
+            title={
+                <div className="flex items-center gap-2">
+                    <UserPlus className="h-5 w-5 text-primary" />
+                    Incorporación de Nuevo Socio
+                </div>
+            }
+            description="Añada un nuevo integrante a la sociedad y registre su compromiso de capital inicial."
+            footer={footerContent}
+        >
+            <div className="space-y-6">
+                {/* Selector de nuevo socio */}
+                <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
+                    <div className="grid gap-2">
+                        <Label>Seleccionar Persona / Empresa</Label>
+                        <AdvancedContactSelector 
+                            value={formData.contact_id} 
+                            onChange={(val) => setFormData(prev => ({ ...prev, contact_id: val || "" }))}
+                            placeholder="Busque por nombre o RUT..."
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
-                            <Label>Seleccionar Persona / Empresa</Label>
-                            <AdvancedContactSelector 
-                                value={formData.contact_id} 
-                                onChange={(val) => setFormData(prev => ({ ...prev, contact_id: val || "" }))}
-                                placeholder="Busque por nombre o RUT..."
+                            <Label htmlFor="amount">Aporte de Capital ($)</Label>
+                            <Input 
+                                id="amount" 
+                                type="number" 
+                                value={formData.amount}
+                                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                                placeholder="0"
+                                className="font-mono"
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="amount">Aporte de Capital ($)</Label>
-                                <Input 
-                                    id="amount" 
-                                    type="number" 
-                                    value={formData.amount}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                                    placeholder="0"
-                                    className="font-mono"
-                                />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label htmlFor="date">Fecha de Incorporación</Label>
-                                <Input 
-                                    id="date" 
-                                    type="date" 
-                                    value={formData.date}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                                />
-                            </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="date">Fecha de Incorporación</Label>
+                            <Input 
+                                id="date" 
+                                type="date" 
+                                value={formData.date}
+                                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                            />
                         </div>
                     </div>
-
-                    {/* Proyección de Dilución */}
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between px-1">
-                            <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                                <TrendingDown className="h-4 w-4" />
-                                Proyección de Participación (Dilución)
-                            </h4>
-                            <div className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded">
-                                Total Proyectado: {formatCurrency(projectedTotal)}
-                            </div>
-                        </div>
-
-                        <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="bg-muted/50">
-                                        <TableHead className="text-[10px] font-bold uppercase">Socio</TableHead>
-                                        <TableHead className="text-[10px] font-bold uppercase text-right">Capital Actual</TableHead>
-                                        <TableHead className="text-[10px] font-bold uppercase text-right">Actual %</TableHead>
-                                        <TableHead className="text-[10px] font-bold uppercase text-right text-primary">Proyectado %</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {partners.map(p => {
-                                        const contributions = typeof p.partner_total_contributions === 'string' 
-                                            ? parseFloat(p.partner_total_contributions) 
-                                            : (p.partner_total_contributions || 0)
-                                        
-                                        const currentPerc = p.partner_equity_percentage
-                                        const projectedPerc = projectedTotal > 0 ? (contributions / projectedTotal * 100).toFixed(2) : '0.00'
-                                        
-                                        return (
-                                            <TableRow key={p.id} className="opacity-70 grayscale-[0.5]">
-                                                <TableCell className="text-xs font-medium">{p.name}</TableCell>
-                                                <TableCell className="text-right text-xs font-mono">{formatCurrencyExcludingSymbol(contributions)}</TableCell>
-                                                <TableCell className="text-right text-xs">{currentPerc}%</TableCell>
-                                                <TableCell className="text-right text-xs font-bold text-primary">{projectedPerc}%</TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
-                                    {/* Nueva fila */}
-                                    {newAmount > 0 && (
-                                        <TableRow className="bg-primary/5 font-bold">
-                                            <TableCell className="text-xs text-primary">NUEVO SOCIO</TableCell>
-                                            <TableCell className="text-right text-xs font-mono text-primary">{formatCurrencyExcludingSymbol(newAmount)}</TableCell>
-                                            <TableCell className="text-right text-xs">-</TableCell>
-                                            <TableCell className="text-right text-xs text-primary">{ (newAmount / projectedTotal * 100).toFixed(2) }%</TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </div>
-
-                    <Alert className="bg-primary/5 border-primary/20">
-                        <Info className="h-4 w-4 text-primary" />
-                        <AlertDescription className="text-xs text-primary">
-                            Esta acción registrará la suscripción formal de capital. Los aportes reales (efectivo/activos) deben cargarse a través del Libro Auxiliar o Tesorería.
-                        </AlertDescription>
-                    </Alert>
                 </div>
 
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                        Cancelar
-                    </Button>
-                    <Button onClick={handleSubmit} disabled={loading || !formData.contact_id || newAmount <= 0}>
-                        {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                        Confirmar Incorporación
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                {/* Proyección de Dilución */}
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between px-1">
+                        <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                            <TrendingDown className="h-4 w-4" />
+                            Proyección de Participación (Dilución)
+                        </h4>
+                        <div className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded">
+                            Total Proyectado: {formatCurrency(projectedTotal)}
+                        </div>
+                    </div>
+
+                    <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/50">
+                                    <TableHead className="text-[10px] font-bold uppercase">Socio</TableHead>
+                                    <TableHead className="text-[10px] font-bold uppercase text-right">Capital Actual</TableHead>
+                                    <TableHead className="text-[10px] font-bold uppercase text-right">Actual %</TableHead>
+                                    <TableHead className="text-[10px] font-bold uppercase text-right text-primary">Proyectado %</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {partners.map(p => {
+                                    const contributions = typeof p.partner_total_contributions === 'string' 
+                                        ? parseFloat(p.partner_total_contributions) 
+                                        : (p.partner_total_contributions || 0)
+                                    
+                                    const currentPerc = p.partner_equity_percentage
+                                    const projectedPerc = projectedTotal > 0 ? (contributions / projectedTotal * 100).toFixed(2) : '0.00'
+                                    
+                                    return (
+                                        <TableRow key={p.id} className="opacity-70 grayscale-[0.5]">
+                                            <TableCell className="text-xs font-medium">{p.name}</TableCell>
+                                            <TableCell className="text-right text-xs font-mono">{formatCurrencyExcludingSymbol(contributions)}</TableCell>
+                                            <TableCell className="text-right text-xs">{currentPerc}%</TableCell>
+                                            <TableCell className="text-right text-xs font-bold text-primary">{projectedPerc}%</TableCell>
+                                        </TableRow>
+                                    )
+                                })}
+                                {/* Nueva fila */}
+                                {newAmount > 0 && (
+                                    <TableRow className="bg-primary/5 font-bold">
+                                        <TableCell className="text-xs text-primary">NUEVO SOCIO</TableCell>
+                                        <TableCell className="text-right text-xs font-mono text-primary">{formatCurrencyExcludingSymbol(newAmount)}</TableCell>
+                                        <TableCell className="text-right text-xs">-</TableCell>
+                                        <TableCell className="text-right text-xs text-primary">{ (newAmount / projectedTotal * 100).toFixed(2) }%</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+
+                <Alert className="bg-primary/5 border-primary/20">
+                    <Info className="h-4 w-4 text-primary" />
+                    <AlertDescription className="text-xs text-primary">
+                        Esta acción registrará la suscripción formal de capital. Los aportes reales (efectivo/activos) deben cargarse a través del Libro Auxiliar o Tesorería.
+                    </AlertDescription>
+                </Alert>
+            </div>
+        </BaseModal>
     )
 }
 

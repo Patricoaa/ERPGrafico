@@ -35,6 +35,9 @@ export default function RootLayout({
       <body
         className={`${syne.variable} ${onest.variable} font-sans antialiased`}
       >
+        <a href="#main-content" className="skip-to-content">
+          Ir al contenido principal
+        </a>
         <Providers>
           <AuthProvider>
             <HeaderProvider>

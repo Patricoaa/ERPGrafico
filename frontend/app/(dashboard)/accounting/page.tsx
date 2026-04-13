@@ -43,7 +43,14 @@ export default async function AccountingPage({ searchParams }: PageProps) {
                     title: "Plan de Cuentas",
                     description: "Estructura contable y clasificación de cuentas.",
                     icon: "list-tree",
-                    action: null
+                    action: (
+                        <PageHeaderButton
+                            href="/accounting?view=ledger&modal=new"
+                            iconName="plus"
+                            circular
+                            title="Nueva Cuenta"
+                        />
+                    )
                 }
             case 'entries':
                 return {

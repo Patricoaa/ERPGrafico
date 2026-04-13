@@ -58,7 +58,7 @@ export function GlobalHubPanel() {
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: "120%", opacity: 0 }}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        className="fixed top-20 right-4 h-[calc(100vh-6rem)] w-[360px] max-w-[calc(100vw-2rem)] z-[60] border border-white/5 bg-sidebar dark flex flex-col pointer-events-auto rounded-2xl shadow-2xl overflow-hidden"
+                        className="fixed top-20 right-4 h-[calc(100vh-6rem)] w-[360px] max-w-[calc(100vw-2rem)] z-[60] border border-white/5 bg-sidebar dark flex flex-col pointer-events-auto rounded-lg shadow-2xl overflow-hidden"
                     >
                         {hubConfig && (
                             <OrderHubPanel

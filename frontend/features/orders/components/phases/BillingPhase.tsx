@@ -119,7 +119,7 @@ export function BillingPhase({
                             activeDoc.display_id
                         ),
                         icon: FileText,
-                        color: 'text-amber-600',
+                        color: 'text-warning',
                         id: activeDoc.id,
                         docType: 'invoice',
                         status: activeDoc.status,
@@ -138,7 +138,7 @@ export function BillingPhase({
                                 inv.display_id
                             ),
                             icon: FileText,
-                            color: (inv.dte_type === 'FACTURA_EXENTA' || inv.dte_type === 'BOLETA_EXENTA') ? 'text-amber-600' : 'text-primary',
+                            color: (inv.dte_type === 'FACTURA_EXENTA' || inv.dte_type === 'BOLETA_EXENTA') ? 'text-warning' : 'text-primary',
                             id: inv.id,
                             docType: 'invoice',
                             status: inv.status,
@@ -152,7 +152,7 @@ export function BillingPhase({
                                 ...((inv.status !== 'CANCELLED' && inv.status !== 'DRAFT') ? [{
                                     icon: X,
                                     title: 'Anular Documento',
-                                    color: 'text-amber-700 hover:bg-orange-600/10',
+                                    color: 'text-warning hover:bg-warning/10',
                                     onClick: () => handleAnnulDocument(inv.id)
                                 }] : [])
                             ]

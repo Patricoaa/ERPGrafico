@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { X, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown } from "lucide-react"
+import { X, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown, MoreHorizontal } from "lucide-react"
 import { Table } from "@tanstack/react-table"
 
 import { Button } from "@/components/ui/button"
@@ -17,7 +17,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Settings2 } from "lucide-react"
+import { Settings2, Check } from "lucide-react"
 
 interface DataTableToolbarProps<TData> {
     table: Table<TData>
@@ -164,178 +164,228 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     )}
                 </div>
 
-                {/* Center Section: Primary Actions (flex-1 + justify-center) */}
-                <div className="flex-1 flex items-center justify-center min-w-0 animate-in fade-in zoom-in-95 duration-500">
-                    <div className="flex items-center gap-2">
-                        {/* Always show toolbarAction in the center of the toolbar */}
-                        {toolbarAction}
-                    </div>
-                </div>
-
-                {/* Right Section: Filters & Tools (flex-1 + justify-end) */}
-                <div className="flex-1 flex items-center justify-end gap-2 min-w-0">
-                    {useAdvancedFilter ? (
-                        <div className="flex items-center gap-2">
-                            <DataTableFilters
-                                table={table}
-                                facetedFilters={facetedFilters}
-                                filterColumn={filterColumn}
-                                globalFilterFields={globalFilterFields}
-                                searchPlaceholder={searchPlaceholder}
-                                // We no longer pass toolbarAction into filters since it's centered in the main toolbar
-                                onReset={onReset}
-                                customFilters={customFilters}
-                                customFilterCount={customFilterCount}
-                            />
-                            {showToolbarSort && sortableColumns.length > 0 && (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" size="icon" className="h-9 w-9 rounded-full bg-transparent border-dashed border-border/60 hover:bg-muted/50 transition-all">
-                                            {currentSortColumn ? (
-                                                currentSort?.desc ? <ArrowDown className="h-4 w-4 text-primary" /> : <ArrowUp className="h-4 w-4 text-primary" />
-                                            ) : (
-                                                <ArrowUpDown className="h-4 w-4 opacity-50" />
-                                            )}
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-[200px] rounded-md border-border/80 shadow-xl">
-                                        {sortableColumns.map((column) => (
-                                            <DropdownMenuItem
-                                                key={column.id}
-                                                onSelect={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                                                className="flex items-center justify-between rounded-sm px-2 py-1.5 focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer"
-                                            >
-                                                <span className="text-[10px] uppercase font-bold font-heading tracking-wider">
-                                                    {(column.columnDef.meta as { title?: string })?.title ||
-                                                        (typeof column.columnDef.header === 'string'
-                                                            ? column.columnDef.header
-                                                            : column.id)}
-                                                </span>
-                                                {column.getIsSorted() === "desc" ? (
-                                                    <ArrowDown className="h-4 w-4 text-primary" />
-                                                ) : column.getIsSorted() === "asc" ? (
-                                                    <ArrowUp className="h-4 w-4 text-primary" />
-                                                ) : null}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-2">
-                            {facetedFilters.map((filter) => {
-                                const column = table.getColumn(filter.column)
-                                if (!column) return null
-                                let options = filter.options
-                                if (!options || options.length === 0) {
-                                    const uniqueValues = column.getFacetedUniqueValues()
-                                    options = Array.from(uniqueValues.keys())
-                                        .filter(val => val !== undefined && val !== null && val !== "")
-                                        .map(val => ({
-                                            label: String(val),
-                                            value: String(val)
-                                        }))
-                                        .sort((a, b) => a.label.localeCompare(b.label))
-                                }
-                                return (
-                                    <DataTableFacetedFilter
-                                        key={filter.column}
-                                        column={column}
-                                        title={filter.title}
-                                        options={options}
-                                    />
-                                )
-                            })}
-
-                            {showToolbarSort && sortableColumns.length > 0 && (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" size="icon" className="h-9 w-9 rounded-full bg-transparent border-dashed border-border/60 hover:bg-muted/50 transition-all">
-                                            {currentSortColumn ? (
-                                                currentSort?.desc ? <ArrowDown className="h-4 w-4 text-primary" /> : <ArrowUp className="h-4 w-4 text-primary" />
-                                            ) : (
-                                                <ArrowUpDown className="h-4 w-4 opacity-50" />
-                                            )}
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-[200px] rounded-md border-border/80 shadow-xl p-1">
-                                        {sortableColumns.map((column) => (
-                                            <DropdownMenuItem
-                                                key={column.id}
-                                                onSelect={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                                                className="flex items-center justify-between rounded-sm px-2 py-1.5 focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer"
-                                            >
-                                                <span className="text-[10px] uppercase tracking-wider font-bold font-heading">
-                                                    {(column.columnDef.meta as { title?: string })?.title ||
-                                                        translateColumnId(column.id)}
-                                                </span>
-                                                {column.getIsSorted() === "desc" ? (
-                                                    <ArrowDown className="h-4 w-4 text-primary" />
-                                                ) : column.getIsSorted() === "asc" ? (
-                                                    <ArrowUp className="h-4 w-4 text-primary" />
-                                                ) : null}
-                                            </DropdownMenuItem>
-                                        ))}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
-                        </div>
-                    )}
-
+                {/* Right Section: Button Group & Actions */}
+                <div className="flex-1 flex items-center justify-end gap-3 min-w-0">
                     {rightAction && (
                         <div className="flex items-center gap-2">
                             {rightAction}
                         </div>
                     )}
 
-                    {viewOptions && viewOptions.length > 0 && (
-                        <div className="flex items-center gap-1 h-9">
-                            {viewOptions.map((option) => (
-                                <Button
-                                    key={option.value}
-                                    variant="outline"
-                                    size="icon"
-                                    className={cn(
-                                        "h-9 w-9 rounded-full bg-transparent transition-all border-dashed border-border/60",
-                                        currentView === option.value ? "border-primary text-primary shadow-sm" : "text-muted-foreground opacity-50 hover:bg-muted/50 hover:opacity-100"
-                                    )}
-                                    onClick={() => onViewChange?.(option.value)}
-                                >
-                                    <option.icon className="h-4 w-4" />
-                                </Button>
-                            ))}
-                        </div>
-                    )}
+                    <div className="flex h-9 items-center rounded-md border border-border/50 bg-background shadow-sm overflow-hidden">
+                        
+                        {useAdvancedFilter ? (
+                            <>
+                                <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
+                                    <DataTableFilters
+                                        table={table}
+                                        facetedFilters={facetedFilters}
+                                        filterColumn={filterColumn}
+                                        globalFilterFields={globalFilterFields}
+                                        searchPlaceholder={searchPlaceholder}
+                                        onReset={onReset}
+                                        customFilters={customFilters}
+                                        customFilterCount={customFilterCount}
+                                    />
+                                </div>
+                                {showToolbarSort && sortableColumns.length > 0 && (
+                                    <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-9 px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
+                                                    {currentSortColumn ? (
+                                                        currentSort?.desc ? <ArrowDown className="h-3.5 w-3.5 mr-2 text-primary" /> : <ArrowUp className="h-3.5 w-3.5 mr-2 text-primary" />
+                                                    ) : (
+                                                        <ArrowUpDown className="h-3.5 w-3.5 mr-2 opacity-50" />
+                                                    )}
+                                                    Ordenar
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-[200px] rounded-md border-border/80 shadow-xl p-1">
+                                                {sortableColumns.map((column) => (
+                                                    <DropdownMenuItem
+                                                        key={column.id}
+                                                        onSelect={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                                                        className="flex items-center justify-between rounded-sm px-2 py-1.5 focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer"
+                                                    >
+                                                        <span className="text-[10px] uppercase tracking-wider font-bold font-heading">
+                                                            {(column.columnDef.meta as { title?: string })?.title ||
+                                                                (typeof column.columnDef.header === 'string'
+                                                                    ? column.columnDef.header
+                                                                    : column.id) ||
+                                                                translateColumnId(column.id)}
+                                                        </span>
+                                                        {column.getIsSorted() === "desc" ? (
+                                                            <ArrowDown className="h-4 w-4 text-primary" />
+                                                        ) : column.getIsSorted() === "asc" ? (
+                                                            <ArrowUp className="h-4 w-4 text-primary" />
+                                                        ) : null}
+                                                    </DropdownMenuItem>
+                                                ))}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                {facetedFilters.map((filter) => {
+                                    const column = table.getColumn(filter.column)
+                                    if (!column) return null
+                                    let options = filter.options
+                                    if (!options || options.length === 0) {
+                                        const uniqueValues = column.getFacetedUniqueValues()
+                                        options = Array.from(uniqueValues.keys())
+                                            .filter(val => val !== undefined && val !== null && val !== "")
+                                            .map(val => ({
+                                                label: String(val),
+                                                value: String(val)
+                                            }))
+                                            .sort((a, b) => a.label.localeCompare(b.label))
+                                    }
+                                    return (
+                                        <div key={filter.column} className="border-r border-border/50 last:border-r-0 flex items-center h-full">
+                                            <DataTableFacetedFilter
+                                                column={column}
+                                                title={filter.title}
+                                                options={options}
+                                            />
+                                        </div>
+                                    )
+                                })}
 
-                    {showColumnToggle && (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="icon" className="h-9 w-9 rounded-full bg-transparent border-dashed border-border/60 hover:bg-muted/50 transition-all">
-                                    <Settings2 className="h-4 w-4 opacity-50" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-[180px] rounded-md border-border/80 shadow-xl">
-                                {table
-                                    .getAllColumns()
-                                    .filter((column) => column.getCanHide() && !["actions", "select", "hub_trigger", "production_status", "logistics_status", "billing_status", "treasury_status"].includes(column.id))
-                                    .map((column) => (
-                                        <DropdownMenuCheckboxItem
-                                            key={column.id}
-                                            className="flex items-center justify-between rounded-sm py-1.5 focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer"
-                                            checked={column.getIsVisible()}
-                                            onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                                            onSelect={(e) => e.preventDefault()}
+                                {showToolbarSort && sortableColumns.length > 0 && (
+                                    <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-9 px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
+                                                    {currentSortColumn ? (
+                                                        currentSort?.desc ? <ArrowDown className="h-3.5 w-3.5 mr-2 text-primary" /> : <ArrowUp className="h-3.5 w-3.5 mr-2 text-primary" />
+                                                    ) : (
+                                                        <ArrowUpDown className="h-3.5 w-3.5 mr-2 opacity-50" />
+                                                    )}
+                                                    Ordenar
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end" className="w-[200px] rounded-md border-border/80 shadow-xl p-1">
+                                                {sortableColumns.map((column) => (
+                                                    <DropdownMenuItem
+                                                        key={column.id}
+                                                        onSelect={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                                                        className="flex items-center justify-between rounded-sm px-2 py-1.5 focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer"
+                                                    >
+                                                        <span className="text-[10px] uppercase tracking-wider font-bold font-heading">
+                                                            {(column.columnDef.meta as { title?: string })?.title ||
+                                                                translateColumnId(column.id)}
+                                                        </span>
+                                                        {column.getIsSorted() === "desc" ? (
+                                                            <ArrowDown className="h-4 w-4 text-primary" />
+                                                        ) : column.getIsSorted() === "asc" ? (
+                                                            <ArrowUp className="h-4 w-4 text-primary" />
+                                                        ) : null}
+                                                    </DropdownMenuItem>
+                                                ))}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {showColumnToggle && (
+                            <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="h-9 px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
+                                            <Settings2 className="h-3.5 w-3.5 mr-2 opacity-50" />
+                                            Columnas
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-[180px] rounded-md border-border/80 shadow-xl p-1">
+                                        {table
+                                            .getAllColumns()
+                                            .filter((column) => column.getCanHide() && !["actions", "select", "hub_trigger", "production_status", "logistics_status", "billing_status", "treasury_status"].includes(column.id))
+                                            .map((column) => (
+                                                <DropdownMenuCheckboxItem
+                                                    key={column.id}
+                                                    className="flex items-center justify-between rounded-sm py-1.5 focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer"
+                                                    checked={column.getIsVisible()}
+                                                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                                                    onSelect={(e) => e.preventDefault()}
+                                                >
+                                                    <span className="text-[10px] uppercase font-bold font-heading tracking-wider">
+                                                        {(column.columnDef.meta as { title?: string })?.title ||
+                                                            translateColumnId(column.id)}
+                                                    </span>
+                                                </DropdownMenuCheckboxItem>
+                                            ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        )}
+
+                        {viewOptions && viewOptions.length > 0 && (
+                            <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button 
+                                            variant="ghost" 
+                                            className="h-9 px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0"
                                         >
-                                            <span className="text-[10px] uppercase font-bold font-heading tracking-wider">
-                                                {(column.columnDef.meta as { title?: string })?.title ||
-                                                    translateColumnId(column.id)}
-                                            </span>
-                                        </DropdownMenuCheckboxItem>
-                                    ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    )}
+                                            {(() => {
+                                                const activeOption = viewOptions.find(opt => opt.value === currentView) || viewOptions[0];
+                                                const Icon = activeOption.icon;
+                                                return (
+                                                    <>
+                                                        <Icon className="h-3.5 w-3.5 mr-2 opacity-50" />
+                                                        {activeOption.label}
+                                                    </>
+                                                );
+                                            })()}
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-[180px] rounded-md border-border/80 shadow-xl p-1">
+                                        {viewOptions.map((option) => (
+                                            <DropdownMenuItem
+                                                key={option.value}
+                                                onSelect={() => onViewChange?.(option.value)}
+                                                className={cn(
+                                                    "flex items-center justify-between rounded-sm px-2 py-1.5 focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer",
+                                                    currentView === option.value && "bg-primary/5 text-primary"
+                                                )}
+                                            >
+                                                <div className="flex items-center">
+                                                    <option.icon className="h-4 w-4 mr-2" />
+                                                    <span className="text-[10px] uppercase font-bold font-heading tracking-wider">
+                                                        {option.label}
+                                                    </span>
+                                                </div>
+                                                {currentView === option.value && (
+                                                    <Check className="h-3.5 w-3.5" />
+                                                )}
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        )}
+
+                        {toolbarAction && (
+                            <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="h-9 px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
+                                            <MoreHorizontal className="h-4 w-4 mr-2 opacity-50" />
+                                            Acciones
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-[200px] rounded-md border-border/80 shadow-xl p-1 flex flex-col gap-1">
+                                        {toolbarAction}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

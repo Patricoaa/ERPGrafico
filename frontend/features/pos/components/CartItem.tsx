@@ -9,7 +9,6 @@ import { Trash2 } from 'lucide-react'
 import { TableRow, TableCell } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/currency'
@@ -90,14 +89,14 @@ function CartItemComponent({
                     </span>
                     <div className="flex flex-wrap gap-1">
                         {item.internal_code && (
-                            <Badge variant="outline" className="text-[8px] h-3 px-1 font-normal opacity-70 uppercase">
+                            <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/30 text-muted-foreground opacity-70">
                                 {item.internal_code}
-                            </Badge>
+                            </span>
                         )}
                         {item.code && item.code !== item.internal_code && (
-                            <Badge variant="secondary" className="text-[8px] h-3 px-1 font-normal opacity-70 uppercase">
+                            <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/10 text-muted-foreground opacity-70">
                                 {item.code}
-                            </Badge>
+                            </span>
                         )}
                     </div>
                 </div>
@@ -110,7 +109,7 @@ function CartItemComponent({
                         type="number"
                         className={cn(
                             "h-7 w-12 text-center text-xs font-bold bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0",
-                            isOverLimit && "text-destructive bg-red-50 rounded"
+                            isOverLimit && "text-destructive bg-destructive/10 rounded"
                         )}
                         value={item.qty}
                         onChange={(e) => onQuantityChange(item.cartItemId, e.target.value)}
@@ -123,7 +122,7 @@ function CartItemComponent({
                             variant="secondary"
                             className={cn(
                                 "text-[8px] px-1 h-3.5 bg-muted text-muted-foreground hover:bg-muted font-normal border-0 whitespace-nowrap",
-                                isOverLimit && "text-destructive bg-red-50"
+                                isOverLimit && "text-destructive bg-destructive/10"
                             )}
                         >
                             MAX: {maxQty}

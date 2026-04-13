@@ -70,7 +70,7 @@ export function NoteProcessSidebar({
                         className={cn(
                             "rounded-lg transition-all duration-200",
                             isActive && "bg-primary text-primary-foreground shadow-sm",
-                            isPast && "bg-green-50 text-emerald-700",
+                            isPast && "bg-success/10 text-success",
                             isFuture && "text-muted-foreground"
                         )}
                     >

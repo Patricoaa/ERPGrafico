@@ -59,7 +59,7 @@ export function POSCheckoutHeader() {
                             </div>
                             <span className={cn(
                                 "text-[8px] font-bold uppercase tracking-tight truncate max-w-[50px] sm:max-w-none transition-colors",
-                                isActive ? "text-primary" : isCompleted ? "text-emerald-600" : "text-muted-foreground"
+                                isActive ? "text-primary" : isCompleted ? "text-success" : "text-muted-foreground"
                             )}>
                                 {step.label}
                             </span>

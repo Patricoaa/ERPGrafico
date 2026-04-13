@@ -64,16 +64,16 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
     NOT_APPLICABLE: { label: "No aplica", className: "bg-muted/50 text-muted-foreground/50 border-muted", type: "neutral" },
 
     // Accounting - Account Types
-    ASSET: { label: "Activo", className: "bg-info/10 text-info border-info/20", type: "info" },
-    LIABILITY: { label: "Pasivo", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
+    ASSET: { label: "Activo", className: "bg-asset/10 text-asset border-asset/20", type: "info" },
+    LIABILITY: { label: "Pasivo", className: "bg-liability/10 text-liability border-liability/20", type: "warning" },
     EQUITY: { label: "Patrimonio", className: "bg-muted text-muted-foreground border-muted", type: "neutral" },
-    INCOME: { label: "Ingreso", className: "bg-success/10 text-success border-success/20", type: "success" },
-    EXPENSE: { label: "Gasto", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
+    INCOME: { label: "Ingreso", className: "bg-income/10 text-income border-income/20", type: "success" },
+    EXPENSE: { label: "Gasto", className: "bg-expense/10 text-expense border-expense/20", type: "destructive" },
 
     // Credit / Risk
     RISK_LOW: { label: "Riesgo Bajo", className: "bg-success/10 text-success border-success/20", type: "success" },
     RISK_MEDIUM: { label: "Riesgo Medio", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
-    RISK_HIGH: { label: "Riesgo Alto", className: "bg-orange-500/10 text-orange-600 border-orange-500/20", type: "warning" },
+    RISK_HIGH: { label: "Riesgo Alto", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
     RISK_CRITICAL: { label: "Riesgo Crítico", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
 
     // Credit Origins
@@ -83,9 +83,10 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
 
     // Credit Aging
     WRITTEN_OFF: { label: "Castigado", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
+    WRITE_OFF: { label: "Castigado", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
     CURRENT: { label: "Vigente", className: "bg-success/10 text-success border-success/20", type: "success" },
     OVERDUE_30: { label: "1-30 Días", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
-    OVERDUE_60: { label: "31-60 Días", className: "bg-orange-500/10 text-orange-600 border-orange-500/20", type: "warning" },
+    OVERDUE_60: { label: "31-60 Días", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
     OVERDUE_90: { label: "61-90 Días", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
     OVERDUE_90PLUS: { label: "+90 Días", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
 
@@ -97,6 +98,12 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
 
     // HR - General
     DISCOUNTED: { label: "Descontado", className: "bg-success/10 text-success border-success/20", type: "success" },
+
+    // Contact Types
+    CUSTOMER: { label: "Cliente", className: "bg-info/10 text-info border-info/20", type: "info" },
+    SUPPLIER: { label: "Proveedor", className: "bg-primary/10 text-primary border-primary/20", type: "neutral" },
+    BOTH: { label: "Ambos", className: "bg-success/10 text-success border-success/20", type: "success" },
+    RELATED: { label: "Relacionado", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
 }
 
 interface StatusBadgeProps {

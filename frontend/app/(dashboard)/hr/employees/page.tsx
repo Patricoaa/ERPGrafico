@@ -682,7 +682,7 @@ function EmployeeDialog({ open, onOpenChange, employee, onSaved, trigger }: Empl
                                                     {availableConcepts.length > 0 ? (
                                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                                                             {availableConcepts.map(concept => (
-                                                                <FormItem key={concept.id} className="space-y-3 p-4 rounded-2xl bg-muted/5 border border-transparent hover:border-primary/10 transition-all group">
+                                                                <FormItem key={concept.id} className="space-y-3 p-4 rounded-lg bg-muted/5 border border-transparent hover:border-primary/10 transition-all group">
                                                                     <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">{concept.name}</FormLabel>
                                                                     <FormControl>
                                                                         <Input
@@ -700,7 +700,7 @@ function EmployeeDialog({ open, onOpenChange, employee, onSaved, trigger }: Empl
                                                             ))}
                                                         </div>
                                                     ) : (
-                                                        <div className="h-48 flex flex-col items-center justify-center border-2 border-dashed rounded-3xl gap-3">
+                                                        <div className="h-48 flex flex-col items-center justify-center border-2 border-dashed rounded-lg gap-3">
                                                             <p className="text-sm text-muted-foreground font-medium">No hay conceptos de haberes específicos configurados.</p>
                                                         </div>
                                                     )}

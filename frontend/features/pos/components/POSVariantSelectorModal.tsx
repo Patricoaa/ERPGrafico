@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Package, Check, ImageIcon } from "lucide-react"
+import { Package, ImageIcon } from "lucide-react"
 import api from "@/lib/api"
 import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
@@ -190,7 +190,7 @@ export function POSVariantSelectorModal({
                                                     </Badge>
                                                 ) : (
                                                     (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) ? (
-                                                        <Badge variant="outline" className="bg-blue-50 text-primary border-blue-200 text-[10px]">
+                                                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px]">
                                                             Disponible
                                                         </Badge>
                                                     ) : (

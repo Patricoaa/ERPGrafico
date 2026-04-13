@@ -292,7 +292,7 @@ export function PaymentForm({
                                                 <FormLabel className={FORM_STYLES.label}>Método Detallado</FormLabel>
                                                 <Select onValueChange={field.onChange} value={field.value || ""} disabled={isFetchingMethods}>
                                                     <FormControl>
-                                                        <SelectTrigger className="border-blue-200 bg-blue-50/30">
+                                                        <SelectTrigger className="border-primary/20 bg-primary/10/30">
                                                             {isFetchingMethods ? (
                                                                 <div className="flex items-center gap-2 text-muted-foreground">
                                                                     <Loader2 className="h-4 w-4 animate-spin" />

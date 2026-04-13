@@ -102,7 +102,7 @@ export function AuditTimeline({
             </CardHeader>
             <CardContent className="px-0">
                 <ScrollArea className="h-[500px] pr-4">
-                    <div className="relative pl-6 border-l-2 border-slate-100 ml-3 space-y-8">
+                    <div className="relative pl-6 border-l-2 border-border ml-3 space-y-8">
                         {history.map((item, index) => {
                             const info = getHistoryTypeInfo(item.history_type);
                             const isExpanded = expandedItems.includes(item.history_id);
@@ -155,9 +155,9 @@ export function AuditTimeline({
                                                 </Button>
 
                                                 {isExpanded && (
-                                                    <div className="mt-2 text-xs space-y-1 bg-muted/50 p-3 rounded-md border border-slate-100">
+                                                    <div className="mt-2 text-xs space-y-1 bg-muted/50 p-3 rounded-md border border-border">
                                                         {diffs.map((d, i) => (
-                                                            <div key={i} className="grid grid-cols-12 gap-2 border-b border-slate-100 pb-1 last:border-0">
+                                                            <div key={i} className="grid grid-cols-12 gap-2 border-b border-border pb-1 last:border-0">
                                                                 <span className="col-span-3 font-medium text-muted-foreground">{d.field}:</span>
                                                                 <div className="col-span-9 flex items-center gap-2 flex-wrap">
                                                                     <span className="text-destructive line-through decoration-destructive/30">

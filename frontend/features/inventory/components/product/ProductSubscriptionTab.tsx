@@ -278,7 +278,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                         control={form.control}
                         name="is_variable_amount"
                         render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-muted/5">
+                            <FormItem className="flex flex-row items-center justify-between rounded-[0.25rem] p-4 bg-muted/5">
                                 <div className="space-y-0.5">
                                     <FormLabel className={FORM_STYLES.label}>Costo Variable</FormLabel>
                                     <FormDescription className="text-[10px] leading-tight">
@@ -361,7 +361,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                         control={form.control}
                         name="is_indefinite"
                         render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg p-4 bg-muted/5">
+                            <FormItem className="flex flex-row items-center justify-between rounded-[0.25rem] p-4 bg-muted/5">
                                 <div className="space-y-0.5">
                                     <FormLabel className={FORM_STYLES.label}>Contrato Indefinido</FormLabel>
                                     <FormDescription className="text-[10px] leading-tight">

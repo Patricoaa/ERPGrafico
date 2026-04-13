@@ -163,7 +163,7 @@ export function DocumentCompletionModal({
                         />
                     </div>
                     {attachment && (
-                        <div className="text-xs text-emerald-600 font-medium flex items-center gap-1 mt-1">
+                        <div className="text-xs text-success font-medium flex items-center gap-1 mt-1">
                             <CheckCircle2 className="h-3 w-3" /> {attachment.name}
                         </div>
                     )}

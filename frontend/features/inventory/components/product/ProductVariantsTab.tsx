@@ -3,17 +3,18 @@ import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Plus, ListFilter, Trash2, RefreshCw, Layers, Pencil, AlertCircle, Wand2 } from "lucide-react"
+import { Trash2, RefreshCw, Layers, Pencil, Wand2 } from "lucide-react"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
+import { SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
+import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 import { getErrorMessage } from "@/lib/errors"
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
@@ -233,9 +234,9 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         Variantes Configuradas ({variants.length})
                     </h3>
                     {selectedVariantIds.length > 0 && (
-                        <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                        <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-1 rounded-full">
                             {selectedVariantIds.length} seleccionadas
-                        </Badge>
+                        </span>
                     )}
                 </div>
 
@@ -270,17 +271,22 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         <div className="flex flex-col h-full p-6 sm:p-8">
                             <SheetHeader className="mb-6 shrink-0">
                                 <SheetTitle className="flex items-center gap-3 text-xl font-bold">
-                                    <div className="p-2.5 rounded-lg bg-violet-100/80">
-                                        <Wand2 className="h-6 w-6 text-violet-700" />
+                                    <div className="p-2.5 rounded-lg bg-primary/10">
+                                        <Wand2 className="h-6 w-6 text-primary" />
                                     </div>
                                     GENERAR COMBINACIONES
                                 </SheetTitle>
                             </SheetHeader>
                             
+                            <SheetCloseButton 
+                                onClick={() => setIsSheetOpen(false)}
+                                className="absolute top-4 right-4 z-[60]"
+                            />
+                            
                             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                                 <div className="flex-1 overflow-y-auto pr-3 space-y-6 scrollbar-thin">
                                     {availableAttributes.map(attr => (
-                                        <div key={attr.id} className="space-y-4 p-5 border rounded-lg bg-white shadow-sm">
+                                        <div key={attr.id} className="space-y-4 p-5 border rounded-lg bg-card shadow-sm">
                                             <Label className={cn(FORM_STYLES.label, "font-bold text-sm text-foreground/80 tracking-wide uppercase")}>{attr.name}</Label>
                                             <div className="grid grid-cols-2 gap-3">
                                                 {attr.values.map(val => (
@@ -303,7 +309,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
 
                                 <div className="shrink-0 mt-8 pt-6 border-t">
                                     <Button
-                                        className="w-full h-14 rounded-lg font-bold text-md shadow-md bg-violet-700 hover:bg-violet-800 text-white transition-colors"
+                                        className="w-full h-14 rounded-lg font-bold text-md shadow-md bg-primary hover:bg-primary/90 text-primary-foreground transition-colors"
                                         onClick={handleGenerateVariants}
                                         disabled={isGenerating || availableAttributes.length === 0}
                                     >
@@ -359,7 +365,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                             className={cn(
                                                 "cursor-pointer group transition-colors",
                                                 isActive ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50",
-                                                isSelected && "bg-blue-50/50 hover:bg-blue-50/80"
+                                                isSelected && "bg-primary/10/50 hover:bg-primary/10/80"
                                             )}
                                             onClick={() => handleRowClick(v.id)}
                                         >
@@ -370,15 +376,19 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                     onClick={(e) => e.stopPropagation()}
                                                 />
                                             </TableCell>
-                                            <TableCell className="font-mono text-[11px]">{v.internal_code || v.code}</TableCell>
+                                            <TableCell>
+                                                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border bg-muted/30 border-border/50 text-muted-foreground font-mono">
+                                                    {v.internal_code || v.code || 'SIN SKU'}
+                                                </span>
+                                            </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-xs truncate max-w-[150px]" title={v.variant_display_name || v.name}>{v.variant_display_name || v.name}</span>
                                                     <div className="flex gap-1 flex-wrap mt-1">
-                                                        {v.attribute_values_data?.slice(0, 2).map((av: any) => (
-                                                            <Badge key={av.id} variant="secondary" className="text-[9px] px-1 py-0 bg-background/80">
+                                                        {v.attribute_values_data?.slice(0, 2).map((av: any, valIndex: number) => (
+                                                            <span key={valIndex} className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-muted/50 border-border/50 text-muted-foreground">
                                                                 {av.value}
-                                                            </Badge>
+                                                            </span>
                                                         ))}
                                                         {v.attribute_values_data?.length > 2 && (
                                                             <span className="text-[10px] text-muted-foreground ml-1">+{v.attribute_values_data.length - 2}</span>
@@ -391,16 +401,19 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 {v.has_active_bom ? (
-                                                    <Badge className={cn("font-bold px-1.5 py-0 text-[10px] border", v.current_stock > 0 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-muted/50 text-muted-foreground")}>
-                                                        {v.current_stock}
-                                                    </Badge>
+                                                    <span className={cn(
+                                                        "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border",
+                                                        v.current_stock > 0 ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20"
+                                                    )}>
+                                                        STOCK: {v.current_stock || 0}
+                                                    </span>
                                                 ) : (
                                                     (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) ? (
-                                                        <Badge variant="outline" className="bg-blue-50 text-primary border-blue-200 px-1.5 py-0 text-[10px]">
+                                                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-primary/10 text-primary border-primary/20">
                                                             Disp
-                                                        </Badge>
+                                                        </span>
                                                     ) : (
-                                                        <Badge className={cn("font-bold px-1.5 py-0 text-[10px] border", v.current_stock > 0 ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200")}>
+                                                        <Badge className={cn("font-bold px-1.5 py-0 text-[10px] border", v.current_stock > 0 ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20")}>
                                                             {v.current_stock}
                                                         </Badge>
                                                     )
@@ -408,10 +421,10 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                             </TableCell>
                                             <TableCell className="text-center">
                                                  {v.has_active_bom ? (
-                                                      <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">✓ BOM</span>
+                                                      <span className="text-[10px] text-success font-bold bg-success/10 px-1.5 py-0.5 rounded border border-success/20">✓ BOM</span>
                                                  ) : (
                                                       v.mfg_auto_finalize ? (
-                                                          <span className="text-[10px] text-rose-700 font-bold bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">FALTA</span>
+                                                          <span className="text-[10px] text-destructive font-bold bg-destructive/10 px-1.5 py-0.5 rounded border border-destructive/20">FALTA</span>
                                                       ) : (
                                                           <span className="text-[10px] text-muted-foreground">-</span>
                                                       )

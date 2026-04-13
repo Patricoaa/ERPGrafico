@@ -1,7 +1,6 @@
 "use client"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
 import { Package, Briefcase } from "lucide-react"
 
 interface MaterialAssignmentTabsProps {
@@ -35,18 +34,18 @@ export function MaterialAssignmentTabs({
                     <Package className="h-4 w-4" />
                     Materiales de Stock
                     {stockCount > 0 && (
-                        <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">
+                        <span className="ml-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
                             {stockCount}
-                        </Badge>
+                        </span>
                     )}
                 </TabsTrigger>
                 <TabsTrigger value="outsourced" className="gap-2">
                     <Briefcase className="h-4 w-4" />
                     Servicios Tercerizados
                     {outsourcedCount > 0 && (
-                        <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">
+                        <span className="ml-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
                             {outsourcedCount}
-                        </Badge>
+                        </span>
                     )}
                 </TabsTrigger>
             </TabsList>

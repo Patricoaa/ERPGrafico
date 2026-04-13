@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils"
 import { type VariantProps } from "class-variance-authority"
 import { dialogContentVariants } from "@/components/ui/dialog"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { SheetCloseButton } from "./SheetCloseButton"
 
 export type BaseModalVariant = "default" | "transaction" | "wizard" | "raw"
 
@@ -80,7 +81,7 @@ export function BaseModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
                 size={size}
-                showCloseButton={showCloseButton && !isTransaction} // Hide standard close if transaction for custom design
+                showCloseButton={false}
                 className={cn(
                     "p-0 overflow-hidden flex flex-col max-h-[95vh]",
                     isTransaction && "border-none shadow-2xl",
@@ -88,6 +89,12 @@ export function BaseModal({
                 )}
                 {...props}
             >
+                {showCloseButton && (
+                    <SheetCloseButton 
+                        onClick={() => onOpenChange(false)}
+                        className="absolute top-4 right-4 z-[60]"
+                    />
+                )}
                 {!title && (
                     <DialogTitle className="sr-only">
                         Modal Window

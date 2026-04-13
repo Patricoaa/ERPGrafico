@@ -222,7 +222,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                     </FormControl>
                                     <div className="space-y-0.5">
                                         <FormLabel className={cn(FORM_STYLES.label, "flex items-center gap-2 cursor-pointer")}>
-                                            <ShoppingCart className="h-3.5 w-3.5 text-emerald-600" />
+                                            <ShoppingCart className="h-3.5 w-3.5 text-success" />
                                             Habilitar para Venta
                                         </FormLabel>
                                     </div>
@@ -244,7 +244,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                     </FormControl>
                                     <div className="space-y-0.5">
                                         <FormLabel className={cn(FORM_STYLES.label, "flex items-center gap-2 cursor-pointer")}>
-                                            <Truck className="h-3.5 w-3.5 text-amber-600" />
+                                            <Truck className="h-3.5 w-3.5 text-warning" />
                                             Habilitar para Compra
                                         </FormLabel>
                                     </div>

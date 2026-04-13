@@ -125,7 +125,7 @@ export function BankManagement({ externalOpen, onOpenChange }: BankManagementPro
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 rounded-md hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors" 
+                        className="h-8 w-8 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground/50 transition-colors" 
                         onClick={() => handleDelete(row.original.id)}
                     >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -416,7 +416,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
                         {row.original.allow_for_sales && (
                             <DataCell.Badge 
                                 variant="outline" 
-                                className="text-[9px] px-1 h-3.5 bg-success/5 text-success border-success/10 font-black uppercase tracking-tighter"
+                                className="text-[9px] px-1 h-3.5 bg-income/5 text-income border-income/10 font-black uppercase tracking-tighter"
                             >
                                 Ventas
                             </DataCell.Badge>
@@ -424,7 +424,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
                         {row.original.allow_for_purchases && (
                             <DataCell.Badge 
                                 variant="outline" 
-                                className="text-[9px] px-1 h-3.5 bg-info/5 text-info border-info/10 font-black uppercase tracking-tighter"
+                                className="text-[9px] px-1 h-3.5 bg-asset/5 text-asset border-asset/10 font-black uppercase tracking-tighter"
                             >
                                 Compras
                             </DataCell.Badge>
@@ -449,7 +449,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-8 w-8 rounded-md hover:bg-rose-500/10 hover:text-rose-600 text-muted-foreground/50 transition-colors" 
+                        className="h-8 w-8 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground/50 transition-colors" 
                         onClick={() => handleDelete(row.original.id)}
                     >
                         <Trash2 className="h-3.5 w-3.5" />

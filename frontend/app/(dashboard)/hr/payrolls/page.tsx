@@ -19,8 +19,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import {
-    Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger
+    Dialog, DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from "@/components/ui/form"
@@ -182,7 +183,7 @@ export default function PayrollsPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Haberes" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat(row.getValue("total_haberes"))} className="text-emerald-600 font-medium" />
+                    <DataCell.Currency value={parseFloat(row.getValue("total_haberes"))} className="text-success font-medium" />
                 </div>
             ),
         },
@@ -191,7 +192,7 @@ export default function PayrollsPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Desc. Legales" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat((row.original as any).legal_deductions_worker || 0)} className="text-rose-600 text-[11px]" />
+                    <DataCell.Currency value={parseFloat((row.original as any).legal_deductions_worker || 0)} className="text-destructive text-[11px]" />
                 </div>
             ),
         },
@@ -200,7 +201,7 @@ export default function PayrollsPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Aporte Patr." className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat((row.original as any).employer_contribution || 0)} className="text-amber-600 text-[11px]" />
+                    <DataCell.Currency value={parseFloat((row.original as any).employer_contribution || 0)} className="text-warning text-[11px]" />
                 </div>
             ),
         },
@@ -274,7 +275,7 @@ export default function PayrollsPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 title="Registrar Anticipo"
-                                className="h-8 w-8 rounded-md text-primary hover:text-primary hover:bg-blue-50 transition-colors"
+                                className="h-8 w-8 rounded-md text-primary hover:text-primary hover:bg-primary/10 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedPayroll(p);
@@ -290,7 +291,7 @@ export default function PayrollsPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 title="Registrar Pago Sueldo"
-                                className="h-8 w-8 rounded-md text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+                                className="h-8 w-8 rounded-md text-success hover:text-success hover:bg-success/10 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedPayroll(p);
@@ -306,7 +307,7 @@ export default function PayrollsPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 title="Pagar Previred"
-                                className="h-8 w-8 rounded-md text-amber-600 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                                className="h-8 w-8 rounded-md text-warning hover:text-warning hover:bg-warning/10 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedPayroll(p);
@@ -321,7 +322,7 @@ export default function PayrollsPage() {
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-8 w-8 rounded-md text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-colors"
+                                className="h-8 w-8 rounded-md text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
                                 onClick={async (e) => {
                                     e.stopPropagation();
                                     if (confirm("¿Eliminar borrador?")) {
@@ -462,105 +463,127 @@ function CreatePayrollDialog({ open, onOpenChange, onSaved, trigger }: CreatePay
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-            <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-2xl">
-                <DialogHeader className="px-6 pt-6 pb-2">
-                    <DialogTitle className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-xl text-primary">
-                            <FileText className="h-5 w-5" />
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                        <Plus className="h-5 w-5" />
+                    </div>
+                    <div className="flex flex-col text-left">
+                        <span className="text-lg font-bold tracking-tight">Nueva Liquidación</span>
+                        <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
+                            RRHH <span className="opacity-30">|</span> Emisión Mensual
                         </div>
-                        <div className="flex flex-col text-left">
-                            <span className="text-base font-bold tracking-tight">Nueva Liquidación</span>
-                            <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
-                                RRHH <span className="opacity-30">|</span> Emisión Mensual
-                            </div>
-                        </div>
-                    </DialogTitle>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-0 text-left">
-                        <div className="p-6 space-y-5">
-                            <FormField control={form.control} name="employee" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Empleado</FormLabel>
-                                    <Select value={field.value} onValueChange={field.onChange}>
-                                        <FormControl>
-                                            <SelectTrigger className="rounded-xl h-11">
-                                                <SelectValue placeholder="Seleccionar empleado..." />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent className="rounded-xl">
-                                            {employees.map(e => (
-                                                <SelectItem key={e.id} value={String(e.id)} className="rounded-lg">
-                                                    {e.contact_detail?.name} — {e.contact_detail?.tax_id}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
+                    </div>
+                </div>
+            }
+            footer={
+                <div className="flex justify-end gap-3 w-full">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onOpenChange(false)}
+                        className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5"
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        form="create-payroll-form"
+                        type="submit"
+                        disabled={saving}
+                        className="rounded-lg text-xs font-bold transition-all shadow-lg shadow-primary/20"
+                    >
+                        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <FileText className="mr-2 h-3.5 w-3.5" />
+                        Crear Liquidación
+                    </Button>
+                </div>
+            }
+        >
+            <Form {...form}>
+                <form 
+                    id="create-payroll-form"
+                    onSubmit={form.handleSubmit(onSubmit)} 
+                    className="space-y-4 py-2 text-left"
+                >
+                    <FormField control={form.control} name="employee" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className={FORM_STYLES.label}>Empleado</FormLabel>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                                <FormControl>
+                                    <SelectTrigger className="rounded-lg h-11 focus:ring-primary/20">
+                                        <SelectValue placeholder="Seleccionar empleado..." />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="rounded-lg">
+                                    {employees.map(e => (
+                                        <SelectItem key={e.id} value={String(e.id)} className="rounded-lg">
+                                            {e.contact_detail?.name} — {e.contact_detail?.tax_id}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormMessage className="text-[10px]" />
+                        </FormItem>
+                    )} />
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField control={form.control} name="period_year" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Año</FormLabel>
-                                        <Select value={field.value} onValueChange={field.onChange}>
-                                            <FormControl>
-                                                <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent className="rounded-xl">
-                                                {[currentYear - 1, currentYear, currentYear + 1].map(y => (
-                                                    <SelectItem key={y} value={String(y)} className="rounded-lg">{y}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-                                <FormField control={form.control} name="period_month" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Mes</FormLabel>
-                                        <Select value={field.value} onValueChange={field.onChange}>
-                                            <FormControl>
-                                                <SelectTrigger className="rounded-xl h-11"><SelectValue /></SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent className="rounded-xl">
-                                                {MONTHS.map(m => (
-                                                    <SelectItem key={m.value} value={String(m.value)} className="rounded-lg">{m.label}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-                            </div>
-                        </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="period_year" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={FORM_STYLES.label}>Año</FormLabel>
+                                <Select value={field.value} onValueChange={field.onChange}>
+                                    <FormControl>
+                                        <SelectTrigger className="rounded-lg h-11 focus:ring-primary/20">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent className="rounded-lg">
+                                        {[currentYear - 1, currentYear, currentYear + 1].map(y => (
+                                            <SelectItem key={y} value={String(y)} className="rounded-lg">{y}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage className="text-[10px]" />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="period_month" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={FORM_STYLES.label}>Mes</FormLabel>
+                                <Select value={field.value} onValueChange={field.onChange}>
+                                    <FormControl>
+                                        <SelectTrigger className="rounded-lg h-11 focus:ring-primary/20">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent className="rounded-lg">
+                                        {MONTHS.map(m => (
+                                            <SelectItem key={m.value} value={String(m.value)} className="rounded-lg">{m.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage className="text-[10px]" />
+                            </FormItem>
+                        )} />
+                    </div>
 
-                        <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40 bg-muted/10">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => onOpenChange(false)}
-                                className="rounded-xl text-xs font-bold border-primary/20 hover:bg-primary/5"
-                            >
-                                Cancelar
-                            </Button>
-                            <Button
-                                type="submit"
-                                disabled={saving}
-                                className="rounded-xl text-xs font-bold"
-                            >
-                                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                <FileText className="mr-2 h-3.5 w-3.5" />
-                                Crear Liquidación
-                            </Button>
-                        </div>
-                    </form>
-                </Form>
-            </DialogContent>
-        </Dialog>
+                    <FormField control={form.control} name="notes" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className={FORM_STYLES.label}>Notas (Opcional)</FormLabel>
+                            <FormControl>
+                                <Input 
+                                    {...field} 
+                                    className="rounded-lg h-11 focus:ring-primary/20" 
+                                    placeholder="Información adicional..."
+                                />
+                            </FormControl>
+                            <FormMessage className="text-[10px]" />
+                        </FormItem>
+                    )} />
+                </form>
+            </Form>
+        </BaseModal>
     )
 }
 

@@ -297,12 +297,12 @@ export function ProductSelector({
                                                     {['STORABLE', 'MANUFACTURABLE'].includes(product.product_type) && (
                                                         <>
                                                             <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
-                                                                (product.current_stock || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-200 text-destructive"
+                                                                (product.current_stock || 0) > 0 ? "border-success text-success" : "border-destructive/20 text-destructive"
                                                             )}>
                                                                 Stock: {product.current_stock || 0}
                                                             </Badge>
                                                             <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
-                                                                (product.qty_available || 0) > 0 ? "border-emerald-500 text-emerald-600" : "border-red-500 text-white bg-destructive/10"
+                                                                (product.qty_available || 0) > 0 ? "border-success text-success" : "border-destructive text-white bg-destructive/10"
                                                             )}>
                                                                 Disp: {product.qty_available || 0}
                                                             </Badge>
@@ -311,16 +311,16 @@ export function ProductSelector({
 
                                                     {/* Manufacturing Badges */}
                                                     {product.requires_advanced_manufacturing ? (
-                                                        <Badge variant="outline" className="text-[9px] px-1 h-4 border-purple-400 text-primary bg-primary/10">
+                                                        <Badge variant="outline" className="text-[9px] px-1 h-4 border-primary/50 text-primary bg-primary/10">
                                                             Fab: Avanzada
                                                         </Badge>
                                                     ) : product.mfg_auto_finalize ? (
-                                                        <Badge variant="outline" className="text-[9px] px-1 h-4 border-orange-400 text-amber-700 bg-orange-50">
+                                                        <Badge variant="outline" className="text-[9px] px-1 h-4 border-warning/50 text-warning bg-warning/10">
                                                             Fab: Express
                                                         </Badge>
                                                     ) : product.has_bom ? (
-                                                        <Badge variant="outline" className={cn("text-[9px] px-1 h-4 border-blue-400 text-primary",
-                                                            (product.manufacturable_quantity ?? 0) <= 0 && "border-red-500 text-destructive bg-red-50"
+                                                        <Badge variant="outline" className={cn("text-[9px] px-1 h-4 border-primary/50 text-primary",
+                                                            (product.manufacturable_quantity ?? 0) <= 0 && "border-destructive text-destructive bg-destructive/10"
                                                         )}>
                                                             Fab: {product.manufacturable_quantity ?? 'N/A'}
                                                         </Badge>
@@ -333,7 +333,7 @@ export function ProductSelector({
 
                                                 <span className="text-[10px] font-bold whitespace-nowrap ml-2">
                                                     {product.is_dynamic_pricing ? (
-                                                        <Badge variant="outline" className="text-[9px] border-amber-500 text-amber-600 bg-amber-50 px-1 py-0 h-4">Precio Dinámico</Badge>
+                                                        <Badge variant="outline" className="text-[9px] border-warning text-warning bg-warning/10 px-1 py-0 h-4">Precio Dinámico</Badge>
                                                     ) : (
                                                         <>
                                                             ${(Number(product.sale_price_gross) || PricingUtils.netToGross(Number(product.sale_price))).toLocaleString()}

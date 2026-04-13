@@ -29,7 +29,7 @@ export default function SettingsPage() {
                 </Link>
 
                 <Link href="/settings/partners">
-                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-pink-500">
+                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-accent">
                         <CardHeader className="flex flex-row items-center gap-4">
                             <Building2 className="h-8 w-8 text-primary" />
                             <div>
@@ -42,7 +42,7 @@ export default function SettingsPage() {
 
 
                 <Link href="/settings/users">
-                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-emerald-500">
+                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-success">
                         <CardHeader className="flex flex-row items-center gap-4">
                             <Shield className="h-8 w-8 text-primary" />
                             <div>
@@ -56,7 +56,7 @@ export default function SettingsPage() {
 
 
                 <Link href="/settings/audit">
-                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-slate-500">
+                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-muted-foreground/30">
                         <CardHeader className="flex flex-row items-center gap-4">
                             <History className="h-8 w-8 text-primary" />
                             <div>
@@ -68,7 +68,7 @@ export default function SettingsPage() {
                 </Link>
 
                 <Link href="/settings/workflow">
-                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-purple-500">
+                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-primary">
                         <CardHeader className="flex flex-row items-center gap-4">
                             <Settings className="h-8 w-8 text-primary" />
                             <div>
@@ -82,7 +82,7 @@ export default function SettingsPage() {
 
             </div>
 
-            <IndustrialCard variant="industrial" className="border-t-slate-200">
+            <IndustrialCard variant="industrial" className="border-t-border">
                 <CardHeader>
                     <CardTitle>Información del ERP</CardTitle>
                     <CardDescription>Versión y estado del servidor.</CardDescription>
@@ -94,7 +94,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Estado API</span>
-                        <span className="text-green-500 font-bold">Conectado</span>
+                        <span className="text-success font-bold">Conectado</span>
                     </div>
                 </CardContent>
             </IndustrialCard>
