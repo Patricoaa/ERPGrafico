@@ -110,7 +110,7 @@ class AccountingService:
             ('1.1.02.02', 'Anticipos a Proveedores', AccountType.ASSET, '1.1.02', None, None, None),
             ('1.1.02.03', 'Anticipos de Remuneraciones', AccountType.ASSET, '1.1.02', None, None, None),
             
-            ('1.1.03', 'Inventarios', AccountType.ASSET, '1.1', None, CFCategory.OPERATING, None),
+            ('1.1.03', 'Inventarios', AccountType.ASSET, '1.1', None, CFCategory.OPERATING, BSCategory.INVENTORY),
             ('1.1.03.01', 'Mercaderías / Productos Terminados', AccountType.ASSET, '1.1.03', None, None, None),
             ('1.1.03.02', 'Materias Primas y Suministros', AccountType.ASSET, '1.1.03', None, None, None),
             
@@ -160,25 +160,33 @@ class AccountingService:
             ('2.1.06.01', 'Entrada de Stock (Pendiente de Recibir Factura)', AccountType.LIABILITY, '2.1.06', None, None, None),
             ('2.1.07', 'Dividendos por Pagar (Pasivo)', AccountType.LIABILITY, '2.1', None, CFCategory.FINANCING, None),
 
-            # 3.1 Paid-in Capital
-            ('3.1', 'Capital Pagado', AccountType.EQUITY, None, None, CFCategory.FINANCING, None),
+            # 2.2 Non-Current Liabilities
+            ('2.2', 'Pasivos No Corrientes', AccountType.LIABILITY, None, None, None, BSCategory.NON_CURRENT_LIABILITY),
+            ('2.2.01', 'Préstamos Bancarios Largo Plazo', AccountType.LIABILITY, '2.2', None, CFCategory.FINANCING, None),
+
+            # 3. Patrimonio
+            ('3', 'Patrimonio Neto', AccountType.EQUITY, None, None, None, BSCategory.EQUITY),
+            ('3.1', 'Capital Pagado', AccountType.EQUITY, '3', None, CFCategory.FINANCING, None),
             ('3.1.01', 'Capital Social (Cuenta Maestra)', AccountType.EQUITY, '3.1', None, None, None),
             ('3.1.02', 'Aportes de Capital', AccountType.EQUITY, '3.1', None, None, None),
             ('3.1.03', 'Retiros de Socios', AccountType.EQUITY, '3.1', None, None, None),
             ('3.1.05', 'Retiros Provisorios de Socios', AccountType.EQUITY, '3.1', None, None, None),
             ('3.1.06', 'Utilidades del Ejercicio (Distribuciones)', AccountType.EQUITY, '3.1', None, None, None),
-            ('3.2', 'Reservas y Ganancias', AccountType.EQUITY, None, None, None, None),
+            ('3.2', 'Reservas y Ganancias', AccountType.EQUITY, '3', None, None, None),
             ('3.2.01', 'Utilidades Retenidas (Consolidada)', AccountType.EQUITY, '3.2', None, None, None),
-            ('3.3', 'Resultado del Ejercicio', AccountType.EQUITY, None, None, None, None),
-            ('3.4', 'Resultado Ejercicio Actual', AccountType.EQUITY, None, None, None, None),
+            ('3.3', 'Resultados en Suspensión', AccountType.EQUITY, '3', None, None, None),
+            ('3.4', 'Resultado Ejercicio Actual', AccountType.EQUITY, '3', None, None, None),
             ('3.4.01', 'Utilidad del Ejercicio Actual', AccountType.EQUITY, '3.4', None, None, None),
 
             # 4.1 Ordinary Activities Revenue
-            ('4.1', 'Ingresos de Actividades Ordinarias', AccountType.INCOME, None, None, None, None),
+            ('4.1', 'Ingresos de Actividades Ordinarias', AccountType.INCOME, None, ISCategory.REVENUE, None, None),
             ('4.1.01', 'Venta de Productos', AccountType.INCOME, '4.1', None, None, None),
             ('4.1.02', 'Venta de Servicios', AccountType.INCOME, '4.1', None, None, None),
             ('4.2', 'Otros Ingresos', AccountType.INCOME, None, ISCategory.NON_OPERATING_REVENUE, None, None),
-            ('4.2.01', 'Intereses Ganados', AccountType.INCOME, '4.2', None, None, None),
+            ('4.2.01', 'Ajuste de Precios / Otros Ingresos', AccountType.INCOME, '4.2', None, None, None),
+            ('4.2.02', 'Ganancia por Ajuste de Inventario', AccountType.INCOME, '4.2', None, None, None),
+            ('4.2.03', 'Intereses Ganados', AccountType.INCOME, '4.2', None, None, None),
+            ('4.2.04', 'Diferencia de Cambio (Ganancia)', AccountType.INCOME, '4.2', None, None, None),
             ('4.2.05', 'Otros Ingresos POS', AccountType.INCOME, '4.2', None, None, None),
             ('4.2.06', 'Propinas POS', AccountType.INCOME, '4.2', None, None, None),
             ('4.2.07', 'Ingreso por Corrección Monetaria', AccountType.INCOME, '4.2', None, None, None),
@@ -198,7 +206,7 @@ class AccountingService:
             ('5.2.04', 'Honorarios Profesionales', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.05', 'Materiales y Suministros Consumibles', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.06', 'Gastos Generales', AccountType.EXPENSE, '5.2', None, None, None),
-            ('5.2.07', 'Mantenimiento y Reparaciones', AccountType.EXPENSE, '5.2', None, None, None),
+            ('5.2.07', 'Pérdida por Ajuste de Inventario', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.08', 'Publicidad y Propaganda', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.09', 'Seguros', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.10', 'Comisiones Bancarias', AccountType.EXPENSE, '5.2', None, None, None),
@@ -209,26 +217,17 @@ class AccountingService:
             ('5.2.15', 'Otros Egresos POS', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.16', 'Redondeo y Vueltos POS (Ajuste)', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.17', 'Errores de Conteo y Sistema POS', AccountType.EXPENSE, '5.2', None, None, None),
-            ('5.2.18', 'Gastos de Colación y Movilización', AccountType.EXPENSE, '5.2', None, None, None),
-            ('5.2.19', 'Suministros de Oficina y Computación', AccountType.EXPENSE, '5.2', None, None, None),
-            ('5.2.20', 'Amortización Intangibles', AccountType.EXPENSE, '5.2', None, None, None),
-            ('5.2.21', 'Gastos de Representación', AccountType.EXPENSE, '5.2', None, None, None),
-            ('5.2.22', 'Impuestos, Tasas y Patentes', AccountType.EXPENSE, '5.2', None, None, None),
-            ('5.2.23', 'Seguridad y Vigilancia', AccountType.EXPENSE, '5.2', None, None, None),
-            ('5.2.24', 'Suscripciones y Membresías Software', AccountType.EXPENSE, '5.2', None, None, None),
-            ('5.2.25', 'Gastos de Correspondencia', AccountType.EXPENSE, '5.2', None, None, None),
-            ('5.2.26', 'Deudores Incobrables', AccountType.EXPENSE, '5.2', None, None, None),
-            
-            # Missing Inventory Adjustments
-            ('4.2.02', 'Ganancia por Ajuste de Inventario', AccountType.INCOME, '4.2', None, None, None),
-            ('5.2.07', 'Pérdida por Ajuste de Inventario', AccountType.EXPENSE, '5.2', None, None, None), # Note: 5.2.07 was Mantenimiento via overwrite check if needed, better use new code or check
-            ('3.1.02', 'Contrapartida Inicial de Inventario', AccountType.EQUITY, '3.1', None, None, None),
-            ('5.1.03', 'Ajuste por Revalorización de Stock', AccountType.EXPENSE, '5.1', None, None, None), 
-
-            # Missing Treasury Reconciliation
-            ('4.2.03', 'Intereses Ganados', AccountType.INCOME, '4.2', None, None, None),
-            ('4.2.04', 'Diferencia de Cambio', AccountType.INCOME, '4.2', None, None, None),
+            ('5.2.18', 'Asignaciones y Bonos No Imponibles', AccountType.EXPENSE, '5.2', None, None, None),
             ('5.2.99', 'Otros Gastos Varios', AccountType.EXPENSE, '5.2', None, None, None),
+
+            # 5.3 Non-Operating Expenses
+            ('5.3', 'Otros Gastos (No Operacionales)', AccountType.EXPENSE, None, ISCategory.NON_OPERATING_EXPENSE, None, None),
+            ('5.3.01', 'Gastos Financieros / Intereses', AccountType.EXPENSE, '5.3', None, None, None),
+            ('5.3.02', 'Diferencia de Cambio (Pérdida)', AccountType.EXPENSE, '5.3', None, None, None),
+
+            # 5.4 Income Tax
+            ('5.4', 'Impuesto a la Renta', AccountType.EXPENSE, None, ISCategory.TAX_EXPENSE, None, None),
+            ('5.4.01', 'Gasto Impuesto a la Renta (Provisionado)', AccountType.EXPENSE, '5.4', None, None, None),
         ]
         
         created_count = 0
@@ -385,13 +384,15 @@ class AccountingMapper:
         total_net_remaining = order.total_net
         accounts = list(revenue_gross_grouping.items())
         
+        tax_divisor = Decimal('1') + (settings.default_tax_rate / Decimal('100.00'))
+        
         for i, (acc, gross_amount) in enumerate(accounts):
             if i == len(accounts) - 1:
                 # Last account takes the remainder to ensure exact match
                 net_amount = total_net_remaining
             else:
-                # Calculate Net for this bucket: Gross / 1.19
-                net_amount = (gross_amount / Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                # Calculate Net for this bucket: Gross / tax_divisor
+                net_amount = (gross_amount / tax_divisor).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
             
             if net_amount != 0:
                 items.append({'account': acc, 'debit': Decimal('0.00'), 'credit': net_amount, 'label': f"Venta {order.number}"})
@@ -576,13 +577,14 @@ class AccountingMapper:
             # Distribute Total Net across accounts based on Gross grouping
             total_net_remaining = invoice.total_net
             accounts = list(revenue_gross_grouping.items())
+            tax_divisor = Decimal('1') + (settings.default_tax_rate / Decimal('100.00'))
             
             for i, (acc, gross_amount) in enumerate(accounts):
                 if i == len(accounts) - 1:
                      # Last account takes the remainder
                      net_amount = total_net_remaining
                 else:
-                     net_amount = (gross_amount / Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                     net_amount = (gross_amount / tax_divisor).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
                 
                 if net_amount != 0:
                     items.append({'account': acc, 'debit': Decimal('0.00'), 'credit': net_amount, 'label': f"Factura {invoice.number or ''}"})
@@ -704,6 +706,178 @@ class AccountingMapper:
         return f"Recepción OC-{order.number}", f"REC-{receipt.id}", items
 
 class BudgetService:
+    @staticmethod
+    def get_variance_report(budget: Budget, year: int, month: int):
+        """
+        Calculates a highly detailed variance report comparing a selected month and YTD 
+        against the budget definitions. Returns a hierarchical account tree.
+        """
+        from django.db.models import Sum, Q
+        from decimal import Decimal
+        from calendar import monthrange
+        from datetime import date
+
+        # 1. Period definitions
+        _, last_day = monthrange(year, month)
+        month_start = date(year, month, 1)
+        month_end = date(year, month, last_day)
+        
+        # YTD is from budget start to the end of the selected month
+        ytd_start = budget.start_date
+        ytd_end = month_end
+
+        # 2. Get all relevant accounts (budgeted OR have actuals in period)
+        budgeted_account_ids = budget.items.values_list('account_id', flat=True).distinct()
+        actual_account_ids = JournalItem.objects.filter(
+            entry__status='POSTED',
+            entry__date__gte=ytd_start,
+            entry__date__lte=ytd_end
+        ).values_list('account_id', flat=True).distinct()
+        
+        all_account_ids = set(budgeted_account_ids) | set(actual_account_ids)
+        
+        # Get all parent accounts too to build the tree
+        relevant_accounts = Account.objects.filter(id__in=all_account_ids)
+        hierarchy_accounts_ids = set()
+        for acc in relevant_accounts:
+            hierarchy_accounts_ids.add(acc.id)
+            curr = acc.parent
+            while curr:
+                hierarchy_accounts_ids.add(curr.id)
+                curr = curr.parent
+        
+        all_relevant_accounts = Account.objects.filter(id__in=hierarchy_accounts_ids)
+
+        # 3. Pre-fetch Data for performance
+        # Monthly Actuals
+        m_actuals_qs = JournalItem.objects.filter(
+            entry__status='POSTED',
+            entry__date__gte=month_start,
+            entry__date__lte=month_end
+        ).values('account_id').annotate(debit=Sum('debit'), credit=Sum('credit'))
+        m_actuals = {i['account_id']: i for i in m_actuals_qs}
+
+        # YTD Actuals
+        y_actuals_qs = JournalItem.objects.filter(
+            entry__status='POSTED',
+            entry__date__gte=ytd_start,
+            entry__date__lte=ytd_end
+        ).values('account_id').annotate(debit=Sum('debit'), credit=Sum('credit'))
+        y_actuals = {i['account_id']: i for i in y_actuals_qs}
+
+        # Monthly Budget
+        m_budget_qs = budget.items.filter(year=year, month=month).values('account_id').annotate(total=Sum('amount'))
+        m_budget = {i['account_id']: float(i['total']) for i in m_budget_qs}
+
+        # YTD Budget
+        y_budget_qs = budget.items.filter(
+            Q(year__lt=year) | Q(year=year, month__lte=month)
+        ).values('account_id').annotate(total=Sum('amount'))
+        y_budget = {i['account_id']: float(i['total']) for i in y_budget_qs}
+
+        # 4. Tree Building Logic
+        def get_node_data(account_id):
+            acc = all_relevant_accounts.get(id=account_id)
+            
+            # Helper to calculate balance based on type
+            def calc_bal(data):
+                if not data: return 0.0
+                d = float(data.get('debit') or 0)
+                c = float(data.get('credit') or 0)
+                if acc.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
+                    return d - c
+                return c - d
+
+            # If leaf, direct data. If group, sum of children.
+            if not acc.children.exists():
+                ma = calc_bal(m_actuals.get(account_id))
+                mb = m_budget.get(account_id, 0.0)
+                ya = calc_bal(y_actuals.get(account_id))
+                yb = y_budget.get(account_id, 0.0)
+            else:
+                # Recurse children
+                ma = mb = ya = yb = 0.0
+                # We only sum children that are path of our 'all_account_ids' descendants
+                # Or just sum all children from our prefetched relevant set
+                children = all_relevant_accounts.filter(parent_id=account_id)
+                for child in children:
+                    cma, cmb, cya, cyb = get_node_sums(child.id)
+                    ma += cma
+                    mb += cmb
+                    ya += cya
+                    yb += cyb
+
+            mv = ma - mb
+            mp = (ma / mb * 100) if mb != 0 else (100.0 if ma != 0 else 0.0)
+            
+            yv = ya - yb
+            yp = (ya / yb * 100) if yb != 0 else (100.0 if ya != 0 else 0.0)
+
+            return {
+                'id': acc.id,
+                'code': acc.code,
+                'name': acc.name,
+                'type': acc.account_type,
+                'month_actual': ma,
+                'month_budget': mb,
+                'month_variance': mv,
+                'month_percentage': mp,
+                'ytd_actual': ya,
+                'ytd_budget': yb,
+                'ytd_variance': yv,
+                'ytd_percentage': yp,
+                'is_unbudgeted': account_id not in budgeted_account_ids and (ma != 0 or ya != 0)
+            }
+
+        # Optimization: Memoize recursive sums
+        memo_sums = {}
+        def get_node_sums(account_id):
+            if account_id in memo_sums: return memo_sums[account_id]
+            
+            acc = all_relevant_accounts.get(id=account_id)
+            if not acc.children.exists():
+                def calc_bal(data):
+                    if not data: return 0.0
+                    d = float(data.get('debit') or 0)
+                    c = float(data.get('credit') or 0)
+                    if acc.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
+                        return d - c
+                    return c - d
+                
+                res = (
+                    calc_bal(m_actuals.get(account_id)),
+                    m_budget.get(account_id, 0.0),
+                    calc_bal(y_actuals.get(account_id)),
+                    y_budget.get(account_id, 0.0)
+                )
+            else:
+                ma = mb = ya = yb = 0.0
+                for child in all_relevant_accounts.filter(parent_id=account_id):
+                    cma, cmb, cya, cyb = get_node_sums(child.id)
+                    ma += cma
+                    mb += cmb
+                    ya += cya
+                    yb += cyb
+                res = (ma, mb, ya, yb)
+            
+            memo_sums[account_id] = res
+            return res
+
+        def build_recursive_tree(account_id):
+            data = get_node_data(account_id)
+            node = { **data, 'children': [] }
+            for child in all_relevant_accounts.filter(parent_id=account_id).order_by('code'):
+                node['children'].append(build_recursive_tree(child.id))
+            return node
+
+        # Start from top-level accounts in our relevant set
+        tree = []
+        roots = all_relevant_accounts.filter(parent__isnull=True).order_by('code')
+        for root in roots:
+            tree.append(build_recursive_tree(root.id))
+
+        return tree
+
     @staticmethod
     def get_execution_report(budget: Budget):
         """

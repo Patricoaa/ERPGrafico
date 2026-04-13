@@ -393,6 +393,107 @@ class FinanceService:
         }
 
     @staticmethod
+    def get_financial_analysis(start_date=None, end_date=None):
+        bs = FinanceService.get_balance_sheet(end_date, start_date)
+        
+        total_assets = bs['total_assets']
+        total_liabilities = bs['total_liabilities']
+        total_equity = bs['total_equity']
+        
+        debt_ratio = (total_liabilities / total_assets) if total_assets else 0
+        equity_ratio = (total_equity / total_assets) if total_assets else 0
+        debt_to_equity = (total_liabilities / total_equity) if total_equity else 0
+        
+        # Efficient Category Aggregation to avoid N+1 queries
+        filters = Q(entry__status='POSTED')
+        if end_date:
+            filters &= Q(entry__date__lte=end_date)
+
+        aggregations = JournalItem.objects.filter(filters).values('account_id', 'account__account_type').annotate(
+            debit=Sum('debit'),
+            credit=Sum('credit')
+        )
+        
+        balances = {}
+        for row in aggregations:
+            d = row['debit'] or 0
+            c = row['credit'] or 0
+            if row['account__account_type'] in [AccountType.ASSET, AccountType.EXPENSE]:
+                balances[row['account_id']] = d - c
+            else:
+                balances[row['account_id']] = c - d
+
+        all_accounts = Account.objects.all()
+        acc_dict = {a.id: a for a in all_accounts}
+
+        from accounting.models import BSCategory
+        def get_effective_bs(acc_id):
+            curr = acc_dict.get(acc_id)
+            while curr:
+                if curr.bs_category:
+                    return curr.bs_category
+                curr = acc_dict.get(curr.parent_id)
+            return None
+
+        current_assets = 0
+        inventory = 0
+        current_liabilities = 0
+        
+        for acc_id, bal in balances.items():
+            if bal == 0:
+                continue
+            cat = get_effective_bs(acc_id)
+            if cat in [BSCategory.CURRENT_ASSET, BSCategory.INVENTORY]:
+                current_assets += float(bal)
+                if cat == BSCategory.INVENTORY:
+                    inventory += float(bal)
+            elif cat == BSCategory.CURRENT_LIABILITY:
+                current_liabilities += float(bal)
+                    
+        current_ratio = (current_assets / current_liabilities) if current_liabilities else 0
+        acid_test = ((current_assets - inventory) / current_liabilities) if current_liabilities else 0
+        solvency_ratio = (total_assets / total_liabilities) if total_liabilities else 0
+
+        # Extract income statement totals for margin calculations
+        is_res = FinanceService.get_income_statement(start_date, end_date)
+        
+        total_revenue = is_res.get('total_revenue', 0)
+        gross_profit = is_res.get('gross_profit', 0)
+        operating_profit = is_res.get('operating_profit', 0)
+        net_income = is_res.get('net_income', 0)
+        
+        # Margin calculations
+        gross_margin = (gross_profit / total_revenue) if total_revenue else 0
+        operating_margin = (operating_profit / total_revenue) if total_revenue else 0
+        net_margin = (net_income / total_revenue) if total_revenue else 0
+
+        return {
+            'structure': {
+                'total_assets': total_assets,
+                'total_liabilities': total_liabilities,
+                'total_equity': total_equity,
+                'debt_ratio': debt_ratio,
+                'equity_ratio': equity_ratio,
+                'debt_to_equity': debt_to_equity
+            },
+            'liquidity': {
+                'current_assets': current_assets,
+                'current_liabilities': current_liabilities,
+                'current_ratio': current_ratio,
+                'acid_test': acid_test
+            },
+            'solvency': {
+                'solvency_ratio': solvency_ratio
+            },
+            'profitability': {
+                'total_revenue': total_revenue,
+                'gross_margin': gross_margin,
+                'operating_margin': operating_margin,
+                'net_margin': net_margin
+            }
+        }
+
+    @staticmethod
     def get_bi_analytics(start_date=None, end_date=None):
         """
         Aggregates cross-module data for BI Analytics.

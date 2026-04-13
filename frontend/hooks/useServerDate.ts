@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 
 interface ServerDateResponse {
@@ -11,37 +12,41 @@ interface ServerDateResponse {
 }
 
 export function useServerDate() {
-    const [serverDate, setServerDate] = useState<Date | null>(null)
-    const [rawDate, setRawDate] = useState<string>('')
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<Error | null>(null)
-
-    useEffect(() => {
-        const fetchServerDate = async () => {
+    const { data, isLoading, error } = useQuery({
+        queryKey: ['server-time'],
+        queryFn: async () => {
             try {
                 const response = await api.get<ServerDateResponse>('/core/server-time/')
-                const { year, month, day } = response.data
-                setServerDate(new Date(year, month - 1, day))
-                setRawDate(response.data.date)
-                setError(null)
-            } catch (err) {
-                console.error('Error fetching server date:', err)
-                setError(err as Error)
-                setServerDate(null)
-                setRawDate('')
-            } finally {
-                setIsLoading(false)
+                return response.data
+            } catch (err: any) {
+                // If the server fails or rate limits, fallback to the local machine date.
+                // This prevents the application from breaking over a minor utility endpoint.
+                console.warn('Could not fetch server time, falling back to local time', err?.message)
+                const now = new Date()
+                return {
+                    datetime: now.toISOString(),
+                    date: now.toISOString().split('T')[0],
+                    year: now.getFullYear(),
+                    month: now.getMonth() + 1,
+                    day: now.getDate(),
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                } as ServerDateResponse
             }
-        }
-        fetchServerDate()
-    }, [])
+        },
+        staleTime: 5 * 60 * 1000, 
+        refetchOnWindowFocus: false,
+    })
+
+    const serverDate = useMemo(() => {
+        return data ? new Date(data.year, data.month - 1, data.day) : null
+    }, [data?.year, data?.month, data?.day])
 
     return {
         serverDate,
         isLoading,
-        error,
-        dateString: rawDate,
-        year: serverDate?.getFullYear() || null,
-        month: serverDate ? serverDate.getMonth() + 1 : null
+        error: error ? (error as Error) : null,
+        dateString: data?.date || '',
+        year: data?.year || null,
+        month: data?.month || null
     }
 }

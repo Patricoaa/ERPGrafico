@@ -91,11 +91,14 @@ export async function pollTask(
                     setTimeout(checkStatus, currentInterval);
                 }
             } catch (error: any) {
-                if (error.response?.status === 429 && retryCount < maxRetries) {
+                const status = error.response?.status;
+                const isRetriable = status === 429 || (status >= 500 && status < 600);
+                
+                if (isRetriable && retryCount < maxRetries) {
                     retryCount++;
                     // Exponential backoff: increase interval (e.g. 2s, 4s, 8s, 16s, max 30s)
                     currentInterval = Math.min(currentInterval * 2, 30000); 
-                    console.warn(`Rate limit hit (429). Retrying in ${currentInterval}ms... (Attempt ${retryCount}/${maxRetries})`);
+                    console.warn(`Retriable error (${status}). Retrying in ${currentInterval}ms... (Attempt ${retryCount}/${maxRetries})`);
                     setTimeout(checkStatus, currentInterval);
                 } else {
                     reject(error);

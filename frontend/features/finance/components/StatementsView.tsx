@@ -8,11 +8,12 @@ import { LAYOUT_TOKENS } from "@/lib/styles"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Download, FileText, BarChart2, TrendingUp } from "lucide-react"
+import { DownloadSimple, FileText, ChartBar, TrendUp, FadersHorizontal } from "@phosphor-icons/react"
 import api, { pollTask } from "@/lib/api"
 import { toast } from "sonner"
 import { FinancialStatementTable } from "@/features/finance/components/FinancialStatementTable"
 import { CashFlowTable } from "@/features/finance/components/CashFlowTable"
+import { MappingConfigSheet } from "@/features/finance/components/MappingConfigSheet"
 import { DateRangeSelector } from "@/features/finance/components/DateRangeSelector"
 import { DateRange } from "react-day-picker"
 import { format, startOfYear, subYears } from "date-fns"
@@ -27,6 +28,7 @@ interface StatementsViewProps {
 export function StatementsView({ activeTab }: StatementsViewProps) {
     const [loading, setLoading] = useState(false)
     const [showComparison, setShowComparison] = useState(false)
+    const [mappingOpen, setMappingOpen] = useState(false)
 
     // Date State
     const { serverDate } = useServerDate()
@@ -101,32 +103,6 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
         }
     }, [date, showComparison, compDate])
 
-    const downloadPDF = async () => {
-        const type = activeTab === 'bs' ? 'balance-sheet' : 'income-statement'
-        if (activeTab === 'cf') {
-            toast.error("Descarga PDF para Flujo de Caja no implementada aún.")
-            return
-        }
-        try {
-            let url = ''
-            if (type === 'balance-sheet') url = 'finances/balance-sheet/'
-            if (type === 'income-statement') url = 'finances/income-statement/'
-
-            if (url) {
-                const response = await api.get(url, { responseType: 'blob' })
-                const file = new Blob([response.data], { type: 'application/pdf' })
-                const fileURL = URL.createObjectURL(file)
-                const link = document.createElement('a')
-                link.href = fileURL
-                link.setAttribute('download', `${type}.pdf`)
-                document.body.appendChild(link)
-                link.click()
-                link.parentNode?.removeChild(link)
-            }
-        } catch (error) {
-            console.error("Error downloading report", error)
-        }
-    }
 
     const getPeriodLabel = (range: DateRange | undefined) => {
         if (!range?.from || !range?.to) return ""
@@ -204,6 +180,16 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
     return (
         <div className={LAYOUT_TOKENS.view}>
             <div className="flex flex-wrap items-center justify-end gap-4">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMappingOpen(true)}
+                    className="text-xs font-black uppercase tracking-widest text-primary gap-1.5"
+                >
+                    <FadersHorizontal className="h-3.5 w-3.5" />
+                    Configurar Mapeo
+                </Button>
+
                 <div className="flex items-center space-x-2 border-l pl-4">
                     <Switch id="compare-mode" checked={showComparison} onCheckedChange={setShowComparison} />
                     <Label htmlFor="compare-mode" className="text-sm cursor-pointer">Comparar</Label>
@@ -224,12 +210,8 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                 <TabsContent value="bs" className="mt-0 outline-none">
                     {activeTab === "bs" && (
                         <IndustrialCard variant="industrial" className="shadow-xl border-t-primary overflow-hidden">
-                            <CardHeader className="flex flex-row items-center justify-between pb-0">
-                                <div className="invisible h-10 w-10" />
-                                <CardTitle className="text-center w-full">Balance General</CardTitle>
-                                <Button variant="outline" size="sm" onClick={() => downloadPDF()} className="h-9 whitespace-nowrap">
-                                    <Download className="mr-2 h-4 w-4" /> PDF
-                                </Button>
+                            <CardHeader className="flex flex-row items-center justify-center pb-0">
+                                <CardTitle className="text-center">Balance General</CardTitle>
                             </CardHeader>
                             <CardContent className="p-10 pt-4">
                                 <ReportHeader title="Situación Financiera" dateRange={date} />
@@ -283,12 +265,8 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                 <TabsContent value="pl" className="mt-0 outline-none">
                     {activeTab === "pl" && (
                         <IndustrialCard variant="industrial" className="shadow-xl border-t-success overflow-hidden">
-                            <CardHeader className="flex flex-row items-center justify-between pb-0">
-                                <div className="invisible h-10 w-10" />
-                                <CardTitle className="text-center w-full">Estado de Resultados</CardTitle>
-                                <Button variant="outline" size="sm" onClick={() => downloadPDF()} className="h-9 whitespace-nowrap">
-                                    <Download className="mr-2 h-4 w-4" /> PDF
-                                </Button>
+                            <CardHeader className="flex flex-row items-center justify-center pb-0">
+                                <CardTitle className="text-center">Estado de Resultados</CardTitle>
                             </CardHeader>
                             <CardContent className="p-10 pt-4">
                                 <ReportHeader title="Estado de Resultados" dateRange={date} />
@@ -345,12 +323,8 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                 <TabsContent value="cf" className="mt-0 outline-none">
                     {activeTab === "cf" && (
                         <IndustrialCard variant="industrial" className="shadow-xl border-t-info overflow-hidden">
-                            <CardHeader className="flex flex-row items-center justify-between pb-0">
-                                <div className="invisible h-10 w-10" />
-                                <CardTitle className="text-center w-full">Flujo de Efectivo</CardTitle>
-                                <Button variant="outline" size="sm" onClick={() => downloadPDF()} className="h-9 whitespace-nowrap" disabled>
-                                    <Download className="mr-2 h-4 w-4" /> PDF
-                                </Button>
+                            <CardHeader className="flex flex-row items-center justify-center pb-0">
+                                <CardTitle className="text-center">Flujo de Efectivo</CardTitle>
                             </CardHeader>
                             <CardContent className="p-10 pt-4">
                                 <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} />
@@ -370,6 +344,13 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                     )}
                 </TabsContent>
             </div>
+            
+            <MappingConfigSheet
+                open={mappingOpen}
+                onOpenChange={setMappingOpen}
+                mappingType={activeTab === 'pl' ? 'is' : activeTab === 'cf' ? 'cf' : 'bs'}
+                onSaveSuccess={loadData}
+            />
         </div>
     )
 }
