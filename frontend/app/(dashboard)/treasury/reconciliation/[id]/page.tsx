@@ -336,7 +336,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                                 <Button
                                     onClick={handleConfirmStatement}
                                     disabled={confirming}
-                                    className="bg-success hover:bg-success shadow-lg shadow-emerald-600/20 px-6 font-bold"
+                                    className="bg-success hover:bg-success shadow-sm px-6 font-bold"
                                 >
                                     {confirming ? (
                                         <>
@@ -431,7 +431,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
             {/* Summary Grid */}
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
+                <Card className="shadow-sm bg-card border">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                         <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Apertura</CardTitle>
                         <Banknote className="h-3.5 w-3.5 text-primary" />
@@ -447,7 +447,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
+                <Card className="shadow-sm bg-card border">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                         <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Cierre</CardTitle>
                         <TrendingUp className="h-3.5 w-3.5 text-success" />
@@ -463,7 +463,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
+                <Card className="shadow-sm bg-card border">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                         <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Cargos (Sale)</CardTitle>
                         <TrendingDown className="h-3.5 w-3.5 text-destructive" />
@@ -478,7 +478,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
+                <Card className="shadow-sm bg-card border">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                         <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Abonos (Entra)</CardTitle>
                         <TrendingUp className="h-3.5 w-3.5 text-success/50" />

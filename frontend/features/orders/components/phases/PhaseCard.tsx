@@ -313,7 +313,7 @@ export function PhaseCard({
                                                             {doc.number}
                                                         </span>
                                                         {doc.status === 'CANCELLED' && (
-                                                            <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-slate-400 text-muted-foreground font-bold uppercase">Anulada</Badge>
+                                                            <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-muted-foreground/30 text-muted-foreground font-bold uppercase">Anulada</Badge>
                                                         )}
                                                     </div>
                                                 </div>

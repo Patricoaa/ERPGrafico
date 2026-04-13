@@ -113,7 +113,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                 const isNegative = type === 'WITHDRAWAL' || type === 'REDUCTION' || type === 'TRANSFER_OUT' || type === 'LOAN_OUT'
                 
                 return (
-                    <div className={cn("flex items-center justify-center gap-1 font-bold w-full", isNegative ? 'text-rose-600' : 'text-success')}>
+                    <div className={cn("flex items-center justify-center gap-1 font-bold w-full", isNegative ? 'text-destructive' : 'text-success')}>
                         <span>{isNegative ? '-' : '+'}</span>
                         <DataCell.Currency value={amount} className="" />
                     </div>

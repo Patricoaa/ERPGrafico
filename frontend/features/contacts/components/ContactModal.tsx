@@ -29,7 +29,7 @@ import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight } from "lucide-react"
 import { OrderCard } from "@/features/orders/components/OrderCard"
 import { format } from "date-fns"
@@ -275,9 +275,9 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                 <SheetTitle className="text-xl font-bold tracking-tight text-foreground">
                                     Ficha de Contacto
                                 </SheetTitle>
-                                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold shrink-0 uppercase tracking-widest h-5">
+                                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 bg-primary/5 text-primary tracking-widest leading-none">
                                     {contact?.display_id ? contact.display_id : "Nuevo"}
-                                </Badge>
+                                </span>
                             </div>
                             <SheetDescription className="text-xs font-medium text-muted-foreground mt-0.5">
                                 {form.watch("name") || "Nuevo Contacto"} {form.watch("tax_id") ? `• ${formatRUT(form.watch("tax_id"))}` : ""}
@@ -309,9 +309,9 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                     <div className="flex items-center gap-2">
                                         <ShoppingCart className="h-4 w-4" />
                                         Cliente
-                                        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground h-4 flex items-center leading-none ml-1">
                                             {insightsData?.sales?.count || 0}
-                                        </Badge>
+                                        </span>
                                     </div>
                                 </TabsTrigger>
 
@@ -322,9 +322,9 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                     <div className="flex items-center gap-2">
                                         <Package className="h-4 w-4" />
                                         Proveedor
-                                        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground h-4 flex items-center leading-none ml-1">
                                             {insightsData?.purchases?.count || 0}
-                                        </Badge>
+                                        </span>
                                     </div>
                                 </TabsTrigger>
 
@@ -335,9 +335,9 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                     <div className="flex items-center gap-2">
                                         <Wand2 className="h-4 w-4" />
                                         Relacionado
-                                        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground h-4 flex items-center leading-none ml-1">
                                             {insightsData?.work_orders?.count || 0}
-                                        </Badge>
+                                        </span>
                                     </div>
                                 </TabsTrigger>
                             </TabsList>
@@ -651,9 +651,9 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                 else if (type === 'work_order') { prefix = "OT-"; variant = "purple" }
 
                 return (
-                    <Badge variant={variant} className="font-bold">
+                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground tracking-tight">
                         {row.original.display_id || `${prefix}${row.original.number?.toString().padStart(6, '0')}`}
-                    </Badge>
+                    </span>
                 )
             },
         },
@@ -670,9 +670,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
             cell: ({ row }) => {
                 if (type === 'work_order') {
                     return (
-                        <Badge variant={row.original.status === 'COMPLETED' ? 'success' : 'outline'} className="text-[10px]">
-                            {row.original.status}
-                        </Badge>
+                        <StatusBadge status={row.original.status} size="sm" />
                     )
                 }
                 return <OrderHubStatus order={row.original} />
@@ -818,9 +816,9 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                     <Icon className="h-3 w-3" />
                     {title}
                     {activeFilter !== 'all' && (
-                        <Badge variant="secondary" className="text-[9px] h-4 px-1">
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-warning/30 bg-warning/10 text-warning leading-none scale-90">
                             FILTRADO
-                        </Badge>
+                        </span>
                     )}
                 </span>
                 <div className="flex-1 h-px bg-border" />
@@ -887,9 +885,9 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], lo
             accessorKey: "number",
             header: "Número",
             cell: ({ row }) => (
-                <Badge variant="indigo" className="font-bold">
+                <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground tracking-tight">
                     NV-{row.original.number?.toString().padStart(6, '0')}
-                </Badge>
+                </span>
             ),
         },
         {

@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -133,7 +132,9 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                     <div className="flex items-center gap-2 mb-3">
                         <Package className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium text-foreground">Materiales de Stock</span>
-                        <Badge variant="secondary" className="text-xs">{stockMaterials.length}</Badge>
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
+                            {stockMaterials.length}
+                        </span>
                     </div>
                     <div className="rounded-lg border border-border overflow-hidden">
                         <table className="w-full text-sm">
@@ -222,7 +223,9 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                 <div>
                     <div className="flex items-center gap-2 mb-2">
                         <span className="text-sm font-medium text-muted-foreground">Servicios Tercerizados</span>
-                        <Badge variant="outline" className="text-xs">No rectificables</Badge>
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
+                            No rectificables
+                        </span>
                     </div>
                     <div className="rounded-lg border border-dashed border-border p-3 space-y-1">
                         {outsourcedMaterials.map((m: any) => (
@@ -244,7 +247,9 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                     <div className="flex items-center gap-2">
                         <Scale className="h-4 w-4 text-primary" />
                         <span className="text-sm font-semibold text-foreground">Cantidad Real Producida</span>
-                        <Badge variant="secondary" className="text-xs">Solo OT de Stock</Badge>
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
+                            Solo OT de Stock
+                        </span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 items-center">

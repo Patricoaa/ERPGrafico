@@ -4,7 +4,6 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
     ColumnDef,
     RowSelectionState
@@ -252,16 +251,16 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                 return (
                     <div className="flex flex-col items-center gap-1 py-1 w-full">
                         <DataCell.Text className="font-medium text-xs leading-tight text-center">{sub.product_name}</DataCell.Text>
-                        <div className="flex flex-wrap justify-center gap-1">
+                        <div className="flex flex-wrap justify-center gap-1 mt-1">
                             {sub.product_internal_code && (
-                                <DataCell.Code className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center">
+                                <DataCell.Badge className="text-[10px] h-4 px-1.5 font-normal opacity-80 uppercase">
                                     {sub.product_internal_code}
-                                </DataCell.Code>
+                                </DataCell.Badge>
                             )}
                             {sub.product_code && sub.product_code !== sub.product_internal_code && (
-                                <DataCell.Code className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center bg-secondary/50">
+                                <DataCell.Badge className="text-[10px] h-4 px-1.5 font-normal opacity-80 uppercase bg-primary/5 text-primary border-primary/20">
                                     {sub.product_code}
-                                </DataCell.Code>
+                                </DataCell.Badge>
                             )}
                         </div>
                     </div>
@@ -273,7 +272,16 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Secondary className="text-xs text-center w-full">{row.getValue("category_name")}</DataCell.Secondary>,
+            cell: ({ row }) => {
+                const value = row.getValue("category_name") as string;
+                return (
+                    <div className="flex justify-center w-full">
+                        <DataCell.Secondary className="text-xs text-center">
+                            {value || "Sin Categoría"}
+                        </DataCell.Secondary>
+                    </div>
+                );
+            },
         },
         {
             accessorKey: "supplier_name",
@@ -283,9 +291,10 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
                     <DataCell.ContactLink 
-                        name={row.getValue("supplier_name")} 
-                        id={row.original.supplier_id.toString()} 
-                    />
+                        contactId={row.original.supplier_id} 
+                    >
+                        {row.getValue("supplier_name")}
+                    </DataCell.ContactLink>
                 </div>
             ),
         },
@@ -343,7 +352,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+                            className="h-8 w-8 rounded-[0.25rem] text-muted-foreground hover:text-foreground"
                             onClick={() => openEditForm(sub.product)}
                             title="Editar Producto"
                         >
@@ -354,7 +363,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                             <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-8 w-8 rounded-lg text-warning hover:text-warning hover:bg-yellow-50"
+                                className="h-8 w-8 rounded-[0.25rem] text-warning hover:text-warning hover:bg-warning/10"
                                 onClick={() => handlePause(sub.id)}
                                 title="Pausar Suscripción"
                             >
@@ -365,7 +374,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                             <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-8 w-8 rounded-lg text-success hover:text-success hover:bg-success/10"
+                                className="h-8 w-8 rounded-[0.25rem] text-success hover:text-success hover:bg-success/10"
                                 onClick={() => handleResume(sub.id)}
                                 title="Reanudar Suscripción"
                             >
@@ -376,7 +385,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-lg text-primary hover:text-primary hover:bg-primary/10"
+                            className="h-8 w-8 rounded-[0.25rem] text-primary hover:text-primary hover:bg-primary/10"
                             onClick={() => {
                                 setCurrentHistorySubscriptionId(sub.id)
                                 setIsHistoryOpen(true)
@@ -389,7 +398,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 rounded-lg text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                            className="h-8 w-8 rounded-[0.25rem] text-destructive/70 hover:text-destructive hover:bg-destructive/10"
                             onClick={() => {
                                 setCurrentArchivingProduct({ id: sub.product, name: sub.product_name })
                                 setIsConfirmModalOpen(true)
@@ -485,11 +494,34 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             <div className="space-y-4">
 
                 {loading ? (
-                    <div className="rounded-lg border shadow-sm overflow-hidden bg-card p-10 text-center text-muted-foreground">
+                    <div className="rounded-[0.25rem] border shadow-sm overflow-hidden bg-card p-10 text-center text-muted-foreground">
                         Cargando suscripciones...
                     </div>
                 ) : (
-                    <div className="">
+                    <div className="space-y-6">
+                        {/* Industrial Stats Panel */}
+                        {stats && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="p-4 rounded-[0.25rem] border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Suscripciones Activas</span>
+                                    <span className="text-2xl font-black text-foreground tabular-nums">{stats.active_subscriptions}</span>
+                                </div>
+                                <div className="p-4 rounded-[0.25rem] border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Costo Mensual Total</span>
+                                    <div className="text-2xl font-black text-foreground tabular-nums">
+                                        <DataCell.Currency value={stats.total_monthly_cost} />
+                                    </div>
+                                </div>
+                                <div className="p-4 rounded-[0.25rem] border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Próximas Renovaciones</span>
+                                    <span className="text-2xl font-black text-warning tabular-nums">{stats.upcoming_renewals_30_days}</span>
+                                </div>
+                                <div className="p-4 rounded-[0.25rem] border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Estado Pausadas</span>
+                                    <span className="text-2xl font-black text-muted-foreground tabular-nums">{stats.paused_subscriptions}</span>
+                                </div>
+                            </div>
+                        )}
                         <DataTable
                             columns={columns}
                             data={subscriptions}
@@ -515,7 +547,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
-                                        className="h-8 rounded-lg text-warning hover:bg-warning/10 gap-2 disabled:opacity-30"
+                                        className="h-8 rounded-[0.25rem] text-warning hover:bg-warning/10 gap-2 disabled:opacity-30"
                                         onClick={handleBulkPause}
                                         disabled={!canPauseAll}
                                     >
@@ -525,7 +557,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
-                                        className="h-8 rounded-lg text-success hover:bg-success/10 gap-2 disabled:opacity-30"
+                                        className="h-8 rounded-[0.25rem] text-success hover:bg-success/10 gap-2 disabled:opacity-30"
                                         onClick={handleBulkResume}
                                         disabled={!canResumeAll}
                                     >
@@ -535,7 +567,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
-                                        className="h-8 rounded-lg text-destructive-foreground hover:bg-destructive/10 gap-2 disabled:opacity-30"
+                                        className="h-8 rounded-[0.25rem] text-destructive-foreground hover:bg-destructive/10 gap-2 disabled:opacity-30"
                                         onClick={handleBulkArchive}
                                         disabled={!canArchiveAllActive}
                                     >
@@ -577,7 +609,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                         <p>
                             ¿Está seguro de que desea archivar el producto <strong>{currentArchivingProduct?.name}</strong>?
                         </p>
-                        <div className="bg-warning/10/10 border border-warning/20 p-3 rounded-lg flex gap-3 text-warning">
+                        <div className="bg-warning/10 border border-warning/20 p-3 rounded-[0.25rem] flex gap-3 text-warning">
                             <AlertCircle className="h-5 w-5 shrink-0" />
                             <div className="text-xs">
                                 <p className="font-bold mb-1">Impacto en Suscripciones</p>

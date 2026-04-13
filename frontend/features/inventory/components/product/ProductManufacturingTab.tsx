@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import { Package, Plus, Trash2, Layers, Check, ChevronUp, ChevronDown, X, Clock, Settings2 } from "lucide-react"
+import { Package, Plus, Trash2, Layers, Check, ChevronUp, ChevronDown, X, Clock, Settings2, Search } from "lucide-react"
 import { UseFormReturn, useFieldArray } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -11,10 +11,7 @@ import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { BOMManager } from "@/features/production/components/BOMManager"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Search } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
 import { Label } from "@/components/ui/label"
 
@@ -473,6 +470,10 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                     lineFields.map((field, index) => (
                                         <TableRow key={field.id} className="h-10 hover:bg-muted/5 border-b last:border-0">
                                             <TableCell className="p-1 px-2">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-bold uppercase text-primary tracking-tight">AUTOGESTIONADO</span>
+                                                    <div className="h-4 w-[1px] bg-border/50" />
+                                                </div>
                                                 <ProductSelector
                                                     value={form.watch(`boms.${bomIndex}.lines.${index}.component`)}
                                                     onChange={(val: any) => {

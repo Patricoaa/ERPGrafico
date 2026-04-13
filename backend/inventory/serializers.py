@@ -73,10 +73,18 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     product_internal_code = serializers.CharField(source='product.internal_code', read_only=True)
     category_name = serializers.CharField(source='product.category.name', read_only=True)
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    recurrence_display = serializers.CharField(source='get_recurrence_period_display', read_only=True)
     
     class Meta:
         model = Subscription
-        fields = '__all__'
+        fields = [
+            'id', 'product', 'supplier', 'product_name', 'product_code', 
+            'product_internal_code', 'category_name', 'supplier_name',
+            'start_date', 'end_date', 'next_payment_date', 'amount', 
+            'currency', 'status', 'status_display', 'notes', 
+            'recurrence_period', 'recurrence_display', 'created_at', 'updated_at'
+        ]
 
 
 class ProductSimpleSerializer(serializers.ModelSerializer):

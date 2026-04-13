@@ -26,7 +26,7 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from "@/components/ui/data-table-cells"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     ResponsiveContainer,
@@ -206,7 +206,9 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                             <Card className="bg-success/10/30 border-success/10 shadow-none">
                                                 <CardContent className="p-4">
                                                     <p className="text-[10px] font-bold text-success uppercase tracking-wider">Estado Actual</p>
-                                                    <Badge variant="success" className="mt-1 font-bold">ACTIVA</Badge>
+                                                    <div className="mt-1">
+                                                        <StatusBadge status="SUCCESS" label="ACTIVA" />
+                                                    </div>
                                                 </CardContent>
                                             </Card>
                                         </div>
@@ -280,9 +282,12 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                             {format(new Date(order.date), "dd/MM/yyyy")}
                                                         </TableCell>
                                                         <TableCell className="text-center">
-                                                            <Badge variant={order.status === 'PAID' || order.status === 'RECEIVED' ? 'success' : 'secondary'} className="text-[10px] font-black uppercase px-2 py-0.5">
-                                                                {translateStatus(order.status)}
-                                                            </Badge>
+                                                            <div className="flex justify-center">
+                                                                <StatusBadge 
+                                                                    status={order.status === 'PAID' || order.status === 'RECEIVED' ? 'SUCCESS' : 'NEUTRAL'} 
+                                                                    label={translateStatus(order.status)}
+                                                                />
+                                                            </div>
                                                         </TableCell>
                                                         <TableCell>
                                                             <DataCell.Currency value={order.total} className="text-right font-black" />
@@ -345,17 +350,20 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                             </div>
                                                         </TableCell>
                                                         <TableCell>
-                                                            <Badge variant="outline" className="font-mono text-[10px] font-bold">
+                                                            <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap font-mono">
                                                                 OCS-{note.purchase_order_number}
-                                                            </Badge>
+                                                            </span>
                                                         </TableCell>
                                                         <TableCell className="text-xs font-medium">
                                                             {format(new Date(note.date), "dd/MM/yyyy")}
                                                         </TableCell>
                                                         <TableCell className="text-center">
-                                                            <Badge variant={note.status === 'PAID' || note.status === 'POSTED' ? 'success' : 'secondary'} className="text-[10px] font-black uppercase px-2 py-0.5">
-                                                                {translateStatus(note.status)}
-                                                            </Badge>
+                                                            <div className="flex justify-center">
+                                                                <StatusBadge 
+                                                                    status={note.status === 'PAID' || note.status === 'POSTED' ? 'SUCCESS' : 'NEUTRAL'} 
+                                                                    label={translateStatus(note.status)}
+                                                                />
+                                                            </div>
                                                         </TableCell>
                                                         <TableCell>
                                                             <DataCell.Currency value={note.total} className="text-right font-black" />

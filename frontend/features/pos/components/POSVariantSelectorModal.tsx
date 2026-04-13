@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Package, Check, ImageIcon } from "lucide-react"
+import { Package, ImageIcon } from "lucide-react"
 import api from "@/lib/api"
 import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"

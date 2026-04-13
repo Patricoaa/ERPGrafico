@@ -12,6 +12,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { DataCell } from "@/components/ui/data-table-cells"
 import { useContacts, type Contact } from "@/features/contacts"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { cn } from "@/lib/utils"
 
 // Lazy load heavy components
 const ContactModal = lazy(() => import("./ContactModal"))
@@ -69,13 +71,7 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
     }
 
     const getContactTypeBadge = (type: string) => {
-        switch (type) {
-            case 'CUSTOMER': return <DataCell.Badge variant="info">Cliente</DataCell.Badge>
-            case 'SUPPLIER': return <DataCell.Badge variant="indigo">Proveedor</DataCell.Badge>
-            case 'BOTH': return <DataCell.Badge variant="success">Ambos</DataCell.Badge>
-            case 'RELATED': return <DataCell.Badge variant="warning">Relacionado</DataCell.Badge>
-            default: return <DataCell.Badge variant="outline">Sin Clasificar</DataCell.Badge>
-        }
+        return <StatusBadge status={type} size="sm" />
     }
 
     const columns: ColumnDef<Contact>[] = [

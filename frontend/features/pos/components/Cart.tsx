@@ -5,7 +5,7 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '@/components/ui/table'
 import { ShoppingCart, Zap, Clock, User, FileText, Truck, Calendar, Edit } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -113,11 +113,11 @@ export function Cart({
                         <span className="font-bold text-xl tracking-tight">Resumen de Venta</span>
                         <div className="flex items-center gap-2">
                              {currentDraftId && (
-                                <Badge variant="outline" className="text-[10px] h-5 px-2 bg-primary/5 font-bold text-primary uppercase tracking-tighter border-primary/20 gap-1 font-mono">
+                                <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 bg-primary/5 text-primary">
                                     #{currentDraftId}
-                                </Badge>
+                                </span>
                             )}
-                            <span className="text-[10px] font-black bg-primary text-primary-foreground px-2 py-0.5 rounded-md uppercase tracking-tighter">
+                            <span className="text-[9px] font-black bg-primary text-primary-foreground px-2 py-0.5 rounded-md uppercase tracking-tighter">
                                 {items.length} Items
                             </span>
                         </div>
@@ -216,9 +216,9 @@ export function Cart({
                                         <FileText className="h-3 w-3 text-primary" />
                                         <span>Documento</span>
                                     </div>
-                                    <Badge variant="secondary" className="h-4 px-1.5 text-[9px] font-bold bg-primary/10 text-primary border-primary/10 uppercase">
+                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 bg-primary/10 text-primary">
                                         {getDteLabel(dteType)}
-                                    </Badge>
+                                    </span>
                                 </div>
                             )}
 
@@ -229,9 +229,9 @@ export function Cart({
                                         <span>Logística</span>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <Badge variant="secondary" className="h-4 px-1.5 text-[9px] font-bold bg-success/10 text-success border-success/10 uppercase">
+                                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-success/20 bg-success/10 text-success">
                                             {getDeliveryLabel(deliveryType)}
-                                        </Badge>
+                                        </span>
                                         <span className="text-[10px] text-muted-foreground flex items-center gap-1 ml-1 font-mono font-medium">
                                             <Calendar className="h-3 w-3" />
                                             {deliveryDate ? new Date(deliveryDate).toLocaleDateString() : new Date().toLocaleDateString()}

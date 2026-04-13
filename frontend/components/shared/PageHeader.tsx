@@ -128,9 +128,9 @@ export function PageHeaderButton({ icon: Icon, iconName, label, circular, href, 
         <Button
             className={cn(
                 "transition-all duration-300",
-                circular 
+                circular
                     ? "rounded-full aspect-square p-0 w-10 h-10 shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-105 active:scale-95" 
-                    : "rounded-lg px-4",
+                    : "rounded-[0.25rem] px-4",
                 className
             )}
             title={title}

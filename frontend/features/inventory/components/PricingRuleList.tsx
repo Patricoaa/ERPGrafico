@@ -7,7 +7,6 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import api from "@/lib/api"
-import { Badge } from "@/components/ui/badge"
 import { PricingRuleForm } from "@/features/sales/components/PricingRuleForm"
 import { Pencil, Trash2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -158,7 +157,13 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
             header: ({ column }) => <DataTableColumnHeader column={column} title="UdM" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    {row.original.uom_name ? <Badge variant="outline">{row.original.uom_name}</Badge> : <span className="text-xs text-muted-foreground italic">Base</span>}
+                    {row.original.uom_name ? (
+                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
+                            {row.original.uom_name}
+                        </span>
+                    ) : (
+                        <span className="text-xs text-muted-foreground italic">Base</span>
+                    )}
                 </div>
             ),
         },

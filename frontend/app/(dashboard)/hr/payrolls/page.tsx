@@ -192,7 +192,7 @@ export default function PayrollsPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Desc. Legales" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat((row.original as any).legal_deductions_worker || 0)} className="text-rose-600 text-[11px]" />
+                    <DataCell.Currency value={parseFloat((row.original as any).legal_deductions_worker || 0)} className="text-destructive text-[11px]" />
                 </div>
             ),
         },
@@ -322,7 +322,7 @@ export default function PayrollsPage() {
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-8 w-8 rounded-md text-rose-600 hover:text-rose-700 hover:bg-rose-50 transition-colors"
+                                className="h-8 w-8 rounded-md text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
                                 onClick={async (e) => {
                                     e.stopPropagation();
                                     if (confirm("¿Eliminar borrador?")) {
@@ -459,7 +459,10 @@ function CreatePayrollDialog({ open, onOpenChange, onSaved, trigger }: CreatePay
             toast.error(msg)
         } finally {
             setSaving(false)
-           return (
+        }
+    }
+
+    return (
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}

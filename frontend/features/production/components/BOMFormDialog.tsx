@@ -27,7 +27,6 @@ import { Plus, Trash2, Save, Loader2, Info, Workflow, Box, Layers, CheckCircle2,
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { cn, formatCurrency } from "@/lib/utils"
 import api from "@/lib/api"
@@ -435,13 +434,12 @@ export function BOMFormDialog({
                                                             {v.attribute_values_data && v.attribute_values_data.length > 0 && (
                                                                 <div className="flex flex-wrap gap-1 mt-0.5">
                                                                     {(v as ProductMinimal).attribute_values_data?.map((attr: { id: string | number; value: string }) => (
-                                                                        <Badge 
+                                                                        <span 
                                                                             key={attr.id} 
-                                                                            variant="secondary" 
-                                                                            className="text-[8px] h-3.5 px-1 py-0 font-medium bg-primary/10 text-primary border-none rounded-sm"
+                                                                            className="text-[8px] h-3.5 px-1 py-0 font-bold uppercase rounded border border-primary/20 bg-primary/5 text-primary flex items-center"
                                                                         >
                                                                             {attr.value}
-                                                                        </Badge>
+                                                                        </span>
                                                                     ))}
                                                                 </div>
                                                             )}
@@ -472,7 +470,9 @@ export function BOMFormDialog({
                            </span>
                        </div>
                    </div>
-                   <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary">Edición</Badge>
+                   <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 bg-primary/5 text-primary">
+                        Edición
+                   </span>
                 </div>
             )}
 

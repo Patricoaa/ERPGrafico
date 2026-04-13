@@ -9,7 +9,6 @@ import { Trash2 } from 'lucide-react'
 import { TableRow, TableCell } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/currency'
@@ -90,14 +89,14 @@ function CartItemComponent({
                     </span>
                     <div className="flex flex-wrap gap-1">
                         {item.internal_code && (
-                            <Badge variant="outline" className="text-[8px] h-3 px-1 font-normal opacity-70 uppercase">
+                            <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/30 text-muted-foreground opacity-70">
                                 {item.internal_code}
-                            </Badge>
+                            </span>
                         )}
                         {item.code && item.code !== item.internal_code && (
-                            <Badge variant="secondary" className="text-[8px] h-3 px-1 font-normal opacity-70 uppercase">
+                            <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/10 text-muted-foreground opacity-70">
                                 {item.code}
-                            </Badge>
+                            </span>
                         )}
                     </div>
                 </div>

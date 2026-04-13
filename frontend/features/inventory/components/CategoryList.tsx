@@ -56,7 +56,6 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
     }
 
     const fetchCategories = useCallback(async () => {
-        setLoading(true)
         try {
             const response = await api.get('/inventory/categories/')
             setCategories(response.data.results || response.data)
@@ -89,17 +88,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
     }, [fetchCategories])
 
     useEffect(() => {
-        let isMounted = true
-        
-        const load = async () => {
-            if (isMounted) await fetchCategories()
-        }
-
-        load()
-
-        return () => {
-            isMounted = false
-        }
+        fetchCategories()
     }, [fetchCategories])
 
     const columns = useMemo<ColumnDef<Category>[]>(() => [

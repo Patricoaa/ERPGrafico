@@ -110,7 +110,7 @@ export function Numpad({
                 {/* Row 4 */}
                 <Button
                     variant="destructive"
-                    className="h-14 text-lg font-bold active:scale-95 transition-transform bg-red-100 text-destructive hover:bg-red-200 border-red-200"
+                    className="h-14 text-lg font-bold active:scale-95 transition-transform bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20"
                     onClick={handleClear}
                 >
                     C
@@ -135,7 +135,7 @@ export function Numpad({
                 ) : (
                     <Button
                         variant="outline"
-                        className="h-14 text-amber-700 font-bold active:scale-95 transition-transform"
+                        className="h-14 text-warning font-bold active:scale-95 transition-transform"
                         onClick={handleDelete}
                     >
                         <Delete className="h-6 w-6" />
@@ -146,7 +146,7 @@ export function Numpad({
             {onExactAmount && (
                 <Button
                     variant="outline"
-                    className="w-full h-12 font-bold text-sm bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 border-emerald-200 mb-2"
+                    className="w-full h-12 font-bold text-sm bg-success/10 text-success hover:bg-success/20 hover:text-success border-success/20 mb-2"
                     onClick={onExactAmount}
                 >
                     {exactAmountLabel || "MONTO EXACTO"}

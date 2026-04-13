@@ -14,7 +14,6 @@ import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { CalendarIcon, Loader2, Calculator, Info, Search, ChevronsUpDown, Check } from "lucide-react"
 import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -462,7 +461,7 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
                                             <div className="flex items-center gap-2">
                                                 <p className="text-sm font-bold">{m.reference || 'Sin referencia'}</p>
                                                 {m.date === format(date!, "yyyy-MM-dd") && (
-                                                    <Badge variant="secondary" className="text-[9px] h-4 px-1 bg-primary/10 text-primary border-primary/20">Hoy</Badge>
+                                                    <span className="text-[10px] font-black text-primary uppercase ml-1 opacity-70">HOY</span>
                                                 )}
                                             </div>
                                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase">

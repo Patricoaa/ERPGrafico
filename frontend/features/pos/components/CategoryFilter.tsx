@@ -6,7 +6,6 @@
 import { useRef } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { DynamicIcon } from '@/components/ui/dynamic-icon'
 import { cn } from '@/lib/utils'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
@@ -56,32 +55,35 @@ export function CategoryFilter({
                     isTouch && "snap-x snap-mandatory"
                 )}
             >
-                <Badge
-                    variant={selectedCategoryId === null ? "default" : "outline"}
+                <button
                     className={cn(
-                        "cursor-pointer whitespace-nowrap flex items-center",
-                        // Larger touch targets
-                        isTouchPOS ? "h-10 px-4 text-sm" : "h-7 px-3 text-xs",
+                        "whitespace-nowrap flex items-center justify-center rounded-full font-bold uppercase tracking-wider transition-all border",
+                        isTouchPOS ? "h-10 px-5 text-xs" : "h-7 px-3 text-[10px]",
+                        selectedCategoryId === null
+                            ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                            : "bg-background border-muted-foreground/20 text-muted-foreground hover:border-primary/50 hover:bg-muted/30",
                         isTouch && "snap-start"
                     )}
                     onClick={() => onSelectCategory(null)}
                 >
                     Todos
-                </Badge>
+                </button>
                 {categories.map(cat => (
-                    <Badge
+                    <button
                         key={cat.id}
-                        variant={selectedCategoryId === cat.id ? "default" : "outline"}
                         className={cn(
-                            "cursor-pointer whitespace-nowrap flex items-center gap-1",
-                            isTouchPOS ? "h-10 px-4 text-sm" : "h-7 px-3 text-xs",
+                            "whitespace-nowrap flex items-center justify-center gap-1.5 rounded-full font-bold uppercase tracking-wider transition-all border",
+                            isTouchPOS ? "h-10 px-5 text-xs" : "h-7 px-3 text-[10px]",
+                            selectedCategoryId === cat.id
+                                ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                : "bg-background border-muted-foreground/20 text-muted-foreground hover:border-primary/50 hover:bg-muted/30",
                             isTouch && "snap-start"
                         )}
                         onClick={() => onSelectCategory(cat.id)}
                     >
                         {cat.icon && <DynamicIcon name={cat.icon} className={isTouchPOS ? "h-4 w-4" : "h-3 w-3"} />}
                         {cat.name}
-                    </Badge>
+                    </button>
                 ))}
             </div>
 
