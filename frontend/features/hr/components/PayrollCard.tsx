@@ -52,10 +52,10 @@ function ItemRow({ item, type, isReadOnly, onEdit, onDeleteRequest }: {
                 </div>
             </TableCell>
             <TableCell className="text-right py-3 tabular-nums">
-                {type === 'HABER' && <DataCell.Currency value={item.amount} className="text-[11px] font-black text-emerald-600" />}
+                {type === 'HABER' && <DataCell.Currency value={item.amount} className="text-[11px] font-black text-success" />}
             </TableCell>
             <TableCell className="text-right py-3 pr-8 tabular-nums">
-                {type === 'DESCUENTO' && <DataCell.Currency value={item.amount} className="text-[11px] font-black text-rose-500" />}
+                {type === 'DESCUENTO' && <DataCell.Currency value={item.amount} className="text-[11px] font-black text-expense" />}
             </TableCell>
             {!isReadOnly && (
                 <TableCell className="w-[80px] p-0 pr-6 text-right">
@@ -71,7 +71,7 @@ function ItemRow({ item, type, isReadOnly, onEdit, onDeleteRequest }: {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-50"
+                            className="h-7 w-7 rounded-lg text-muted-foreground hover:text-expense hover:bg-expense/10"
                             onClick={() => onDeleteRequest?.(item)}
                         >
                             <Trash2 className="h-3 w-3" />
@@ -167,7 +167,7 @@ export function PayrollCard({
                                 <Sparkles className="h-7 w-7" />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-slate-950 tracking-tight leading-none">
+                                <h1 className="text-2xl font-bold text-foreground tracking-tight leading-none">
                                     Liquidación de Sueldo
                                 </h1>
                             </div>
@@ -211,8 +211,8 @@ export function PayrollCard({
                             <Badge variant="outline" className={cn(
                                 "px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm border-none ring-1 ring-inset",
                                 isPosted
-                                    ? "bg-emerald-50 text-emerald-700 ring-emerald-600/20"
-                                    : "bg-amber-50 text-amber-700 ring-amber-600/20"
+                                    ? "bg-success/10 text-success ring-success/20"
+                                    : "bg-warning/10 text-warning ring-warning/20"
                             )}>
                                 {payroll.status_display}
                             </Badge>
@@ -220,23 +220,15 @@ export function PayrollCard({
                     )}
                 </div>
 
-                <div className="flex items-center gap-2 pt-3 pb-0 opacity-60">
-                    <div className="flex-1 h-px bg-slate-200" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 px-3">
-                        Asistencia y Base
-                    </span>
-                    <div className="flex-1 h-px bg-slate-200" />
-                </div>
-
                 {/* STATS BAR */}
-                <div className="mt-1 grid grid-cols-4 border rounded-lg overflow-hidden bg-muted/50 shadow-sm border/60 divide-x divide-slate-200/60">
+                <div className="mt-1 grid grid-cols-4 border rounded-lg overflow-hidden bg-muted/50 shadow-sm border/60 divide-x divide-border">
                     <div className="p-4 text-center space-y-1">
                         <p className={FORM_STYLES.label}>Días Pactados</p>
                         <p className="text-sm font-bold text-foreground">{payroll.agreed_days || 0}</p>
                     </div>
                     <div className="p-4 text-center space-y-1">
                         <p className={FORM_STYLES.label}>Ausencias</p>
-                        <p className="text-sm font-bold text-rose-600">{payroll.absent_days || 0}</p>
+                        <p className="text-sm font-bold text-expense">{payroll.absent_days || 0}</p>
                     </div>
                     <div className="p-4 text-center space-y-1">
                         <p className={FORM_STYLES.label}>Trabajados</p>
@@ -256,20 +248,20 @@ export function PayrollCard({
             <CardContent className="px-10 py-8">
                 {/* 2. CONSOLIDATED DETAIL TABLE */}
                 <div className="flex items-center gap-2 pt-2 pb-6">
-                    <div className="flex-1 h-px bg-slate-200" />
+                    <div className="flex-1 h-px bg-border/60" />
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 px-3">
                         Detalle de Conceptos
                     </span>
-                    <div className="flex-1 h-px bg-slate-200" />
+                    <div className="flex-1 h-px bg-border/60" />
                 </div>
 
-                <div className="border border/60 rounded-lg overflow-hidden shadow-sm bg-white transition-all">
+                <div className="border border/60 rounded-lg overflow-hidden shadow-sm bg-card transition-all">
                     <Table>
                         <TableHeader className="bg-muted/80 border-b border/60 transition-colors">
                             <TableRow className="hover:bg-transparent border-none py-1">
                                 <TableHead className={cn(FORM_STYLES.label, "h-11 pl-8 text-muted-foreground")}>Conceptos de Remuneración</TableHead>
-                                <TableHead className={cn(FORM_STYLES.label, "h-11 text-emerald-600 text-right")}>Haberes (+)</TableHead>
-                                <TableHead className={cn(FORM_STYLES.label, "h-11 text-rose-500 text-right pr-8")}>Descuentos (-)</TableHead>
+                                <TableHead className={cn(FORM_STYLES.label, "h-11 text-success text-right")}>Haberes (+)</TableHead>
+                                <TableHead className={cn(FORM_STYLES.label, "h-11 text-expense text-right pr-8")}>Descuentos (-)</TableHead>
                                 {!isReadOnly && <TableHead className="h-11 w-[80px]"></TableHead>}
                             </TableRow>
                         </TableHeader>
@@ -283,7 +275,7 @@ export function PayrollCard({
                             <TableRow className="bg-muted/30 hover:bg-muted/30 border-y">
                                 <TableCell className="py-2 pl-6 text-[11px] font-black text-muted-foreground uppercase tracking-wider">Subtotal Haberes</TableCell>
                                 <TableCell className="py-2 text-right">
-                                    <MoneyDisplay amount={parseFloat(payroll.total_haberes || "0")} className="text-sm font-black text-emerald-600" />
+                                    <MoneyDisplay amount={parseFloat(payroll.total_haberes || "0")} className="text-sm font-black text-success" />
                                 </TableCell>
                                 <TableCell colSpan={isReadOnly ? 1 : 2}></TableCell>
                             </TableRow>
@@ -300,7 +292,7 @@ export function PayrollCard({
                                 <TableCell className="py-2.5 pl-8 text-[11px] font-black text-muted-foreground uppercase tracking-wider">Subtotal Descuentos</TableCell>
                                 <TableCell></TableCell>
                                 <TableCell className="py-2.5 text-right pr-8">
-                                    <MoneyDisplay amount={parseFloat(payroll.total_descuentos || "0")} className="text-sm font-black text-rose-600" />
+                                    <MoneyDisplay amount={parseFloat(payroll.total_descuentos || "0")} className="text-sm font-black text-expense" />
                                 </TableCell>
                                 {!isReadOnly && <TableCell></TableCell>}
                             </TableRow>
@@ -377,7 +369,7 @@ export function PayrollCard({
                                                 <div className="flex items-center gap-2">
                                                     <span className={cn(
                                                         "text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter",
-                                                        p.isAdvance ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
+                                                        p.isAdvance ? "bg-warning/10 text-warning" : "bg-success/10 text-success"
                                                     )}>
                                                         {p.type}
                                                     </span>
@@ -395,8 +387,8 @@ export function PayrollCard({
                                 </div>
                                 {pendingToPay > 0 && isPosted && (
                                     <div className="pt-3 border-t border/60 flex justify-between items-center">
-                                        <span className="text-[10px] font-black uppercase text-amber-600 tracking-wider">Saldo Pendiente de Pago</span>
-                                        <MoneyDisplay amount={pendingToPay} className="text-sm font-black text-amber-700" />
+                                        <span className="text-[10px] font-black uppercase text-warning tracking-wider">Saldo Pendiente de Pago</span>
+                                        <MoneyDisplay amount={pendingToPay} className="text-sm font-black text-warning" />
                                     </div>
                                 )}
                             </div>
@@ -404,13 +396,13 @@ export function PayrollCard({
 
                         {/* STATUS MESSAGE FOR EMPLOYEE */}
                         {isPosted && isSalaryPaid && (
-                            <div className="p-5 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-between transition-all hover:shadow-md">
+                            <div className="p-5 rounded-lg bg-success/10 border border-success/10 flex items-center justify-between transition-all hover:shadow-md">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-emerald-100 rounded-lg">
-                                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                    <div className="p-2 bg-success/10 rounded-lg">
+                                        <CheckCircle2 className="h-4 w-4 text-success" />
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700">Remuneración Pagada</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-success">Remuneración Pagada</span>
                                     </div>
                                 </div>
                             </div>
@@ -419,13 +411,13 @@ export function PayrollCard({
                 </div>
 
                 {/* 4. LEGAL FOOTER */}
-                <div className="mt-20 pt-10 border-t border-slate-100 grid grid-cols-2 gap-24">
+                <div className="mt-20 pt-10 border-t border-border/50 grid grid-cols-2 gap-24">
                     <div className="space-y-4">
-                        <div className="h-[1px] w-full bg-slate-200 mb-2"></div>
+                        <div className="h-[1px] w-full bg-border/50 mb-2"></div>
                         <p className={cn(FORM_STYLES.label, "text-center text-muted-foreground/40")}>Firma del Empleador</p>
                     </div>
                     <div className="space-y-4">
-                        <div className="h-[1px] w-full bg-slate-200 mb-2"></div>
+                        <div className="h-[1px] w-full bg-border/50 mb-2"></div>
                         <p className={cn(FORM_STYLES.label, "text-center text-muted-foreground/40")}>Firma del Trabajador</p>
                     </div>
                 </div>

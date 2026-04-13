@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, Plus, Factory, Save, X, Layers, Settings2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { FORM_STYLES } from "@/lib/styles"
@@ -99,7 +99,9 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
              <Layers className="h-4 w-4 text-primary" />
            </div>
            <div>
-              <Badge variant="outline" className="mb-0.5 text-[10px] font-mono">{variant.internal_code || 'SIN SKU'}</Badge>
+               <span className="block mb-1 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border bg-muted/30 border-border/50 text-muted-foreground font-mono w-fit">
+                  {variant.internal_code || 'SIN SKU'}
+               </span>
               <h3 className="font-bold text-sm leading-tight">{variant.variant_display_name || variant.name}</h3>
            </div>
         </div>
@@ -173,9 +175,9 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
                   <h4 className="text-[11px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
                       <Factory className="h-3.5 w-3.5" /> Recetas de Producción
                   </h4>
-                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200 text-[10px]">
+                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-success/10 text-success border-success/20">
                     LdM REQUERIDA
-                  </Badge>
+                  </span>
                 </div>
                 
                 <div className="p-4 border rounded-lg bg-muted/5 border-dashed space-y-4">

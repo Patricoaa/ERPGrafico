@@ -329,9 +329,9 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                         </Card>
 
                         {/* Accounting details */}
-                        <Card className="border-indigo-100 bg-primary/10/10">
+                        <Card className="border-info/10 bg-primary/10/10">
                             <CardContent className="pt-6 space-y-4">
-                                <h3 className="text-sm font-semibold text-indigo-900 border-b pb-2 flex justify-between items-center">
+                                <h3 className="text-sm font-semibold text-info border-b pb-2 flex justify-between items-center">
                                     Configuración Contable
                                     <span className="text-[10px] font-normal text-muted-foreground uppercase">Avanzado</span>
                                 </h3>

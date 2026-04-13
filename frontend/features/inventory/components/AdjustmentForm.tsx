@@ -35,7 +35,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import api from "@/lib/api"
-import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { validateAccountingPeriod } from "@/lib/actions/accounting-actions"
@@ -271,14 +270,14 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                         <TabsList className="grid w-full grid-cols-2 bg-muted/50 rounded-full h-12 p-1 border max-w-md mx-auto">
                             <TabsTrigger
                                 value="IN"
-                                className="rounded-full transition-all text-[11px] uppercase tracking-wider font-bold text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-emerald-700 data-[state=active]:border data-[state=active]:border-emerald-200 data-[state=active]:shadow-sm h-full"
+                                className="rounded-full transition-all text-[11px] uppercase tracking-wider font-bold text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-success data-[state=active]:border data-[state=active]:border-success/20 data-[state=active]:shadow-sm h-full"
                             >
                                 <ArrowDownCircle className="mr-2 h-4 w-4" />
                                 Entrada de Stock
                             </TabsTrigger>
                             <TabsTrigger
                                 value="OUT"
-                                className="rounded-full transition-all text-[11px] uppercase tracking-wider font-bold text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-rose-700 data-[state=active]:border data-[state=active]:border-rose-200 data-[state=active]:shadow-sm h-full"
+                                className="rounded-full transition-all text-[11px] uppercase tracking-wider font-bold text-muted-foreground hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-destructive data-[state=active]:border data-[state=active]:border-destructive/20 data-[state=active]:shadow-sm h-full"
                             >
                                 <ArrowUpCircle className="mr-2 h-4 w-4" />
                                 Salida de Stock
@@ -341,7 +340,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                                     <FormLabel className={FORM_STYLES.label}>Socio *</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl>
-                                            <SelectTrigger className={cn(FORM_STYLES.input, "border-amber-200 bg-amber-50/30")}>
+                                            <SelectTrigger className={cn(FORM_STYLES.input, "border-warning/20 bg-warning/10")}>
                                                 <SelectValue placeholder="Seleccione un socio" />
                                             </SelectTrigger>
                                         </FormControl>
@@ -514,7 +513,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
 
                 {/* Conversion Alert / Info */}
                 {conversion && baseUoM && (
-                    <Alert variant="default" className="bg-blue-50/50 border-blue-100 text-blue-900 py-2">
+                    <Alert variant="default" className="bg-primary/10/50 border-primary/10 text-primary py-2">
                         <Info className="h-4 w-4 text-primary mt-0.5" />
                         <AlertTitle className="text-xs font-bold text-primary mb-1">Conversión Automática</AlertTitle>
                         <AlertDescription className="text-xs opacity-90">
@@ -531,7 +530,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                     <Button
                         type="submit"
                         disabled={isLoading}
-                        className={cn("rounded-lg text-xs font-bold", moveType === 'IN' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700')}
+                        className={cn("rounded-lg text-xs font-bold", moveType === 'IN' ? 'bg-success hover:bg-success' : 'bg-destructive hover:bg-destructive/90')}
                     >
                         {isLoading ? "Procesando..." : (
                             <>

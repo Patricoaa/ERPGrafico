@@ -2,14 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import JsBarcode from "jsbarcode"
-import { 
-    Dialog, 
-    DialogContent, 
-    DialogHeader, 
-    DialogTitle, 
-    DialogDescription,
-    DialogFooter
-} from "@/components/ui/dialog"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -39,8 +32,8 @@ export function BarcodeDialog({ open, onOpenChange, initialValue = "", onApply }
                 displayValue: true,
                 fontSize: 16,
                 margin: 10,
-                background: "#ffffff",
-                lineColor: "#000000",
+                background: "white", // High contrast white for machine reading
+                lineColor: "black", // High contrast black for machine reading
             })
         } catch (error) {
             console.error("Barcode generation failed:", error)
@@ -147,19 +140,40 @@ export function BarcodeDialog({ open, onOpenChange, initialValue = "", onApply }
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <Barcode className="h-5 w-5 text-primary" />
-                        Código de Barras
-                    </DialogTitle>
-                    <DialogDescription>
-                        Visualice, genere o descargue el código de barras para este producto.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-6 pt-4">
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="md"
+            title={
+                <div className="flex items-center gap-2">
+                    <Barcode className="h-5 w-5 text-primary" />
+                    Código de Barras
+                </div>
+            }
+            description="Visualice, genere o descargue el código de barras para este producto."
+            footer={
+                <div className="flex w-full justify-end gap-2">
+                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+                        Cancelar
+                    </Button>
+                    <Button 
+                        type="button" 
+                        variant="default" 
+                        className="gap-2"
+                        onClick={() => {
+                            onApply(barcodeValue)
+                            onOpenChange(false)
+                            toast.success("Código de barras aplicado")
+                        }}
+                        disabled={!barcodeValue}
+                    >
+                        <Check className="h-4 w-4" />
+                        Aplicar al Producto
+                    </Button>
+                </div>
+            }
+        >
+            <div className="space-y-6">
                     <div className="space-y-2">
                         <Label htmlFor="barcode-input">Valor del Código</Label>
                         <div className="flex gap-2">
@@ -182,7 +196,7 @@ export function BarcodeDialog({ open, onOpenChange, initialValue = "", onApply }
                         </div>
                     </div>
 
-                    <div className="flex flex-col items-center justify-center p-6 bg-white rounded-lg border-2 border-dashed min-h-[160px]">
+                    <div className="flex flex-col items-center justify-center p-6 bg-high-contrast-bg rounded-lg border-2 border-dashed border-border min-h-[160px]">
                         {barcodeValue ? (
                             <svg ref={setRef} className="max-w-full h-auto" />
                         ) : (
@@ -215,27 +229,6 @@ export function BarcodeDialog({ open, onOpenChange, initialValue = "", onApply }
                         </Button>
                     </div>
                 </div>
-
-                <DialogFooter className="sm:justify-end gap-2 mt-6">
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                        Cancelar
-                    </Button>
-                    <Button 
-                        type="button" 
-                        variant="default" 
-                        className="gap-2"
-                        onClick={() => {
-                            onApply(barcodeValue)
-                            onOpenChange(false)
-                            toast.success("Código de barras aplicado")
-                        }}
-                        disabled={!barcodeValue}
-                    >
-                        <Check className="h-4 w-4" />
-                        Aplicar al Producto
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        </BaseModal>
     )
 }

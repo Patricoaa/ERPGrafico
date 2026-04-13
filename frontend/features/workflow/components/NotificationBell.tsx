@@ -114,7 +114,7 @@ export function NotificationBell() {
                                     key={notif.id}
                                     className={cn(
                                         "flex flex-col gap-1 p-4 border-b hover:bg-muted/50 transition-colors cursor-pointer",
-                                        !notif.read && "bg-blue-50/50 dark:bg-blue-900/10"
+                                        !notif.read && "bg-primary/10/50 dark:bg-primary/10"
                                     )}
                                     onClick={() => handleItemClick(notif)}
                                 >

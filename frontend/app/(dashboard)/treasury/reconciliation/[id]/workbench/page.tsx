@@ -87,7 +87,7 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
     if (!statement) {
         return (
             <div className="flex-1 p-8 pt-6">
-                <Card className="max-w-md mx-auto mt-12 bg-red-50/50 border-red-100">
+                <Card className="max-w-md mx-auto mt-12 bg-destructive/10/50 border-destructive/10">
                     <CardHeader>
                         <CardTitle className="text-destructive flex items-center gap-2">
                             <Info className="h-5 w-5" />
@@ -144,7 +144,7 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
                             <Button
                                 onClick={handleConfirmStatement}
                                 disabled={confirming}
-                                className="bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 px-6 font-bold"
+                                className="bg-success hover:bg-success shadow-sm px-6 font-bold"
                             >
                                 {confirming ? (
                                     <>
@@ -166,7 +166,7 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
                 </div>
 
                 {/* Global Progress Header Tooltip-like Area */}
-                <div className="bg-card p-5 rounded-2xl border shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)]">
+                <div className="bg-card p-5 rounded-lg border shadow-sm">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                             <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />

@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
@@ -78,14 +77,14 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                                             <span className="font-medium text-xs leading-tight">{item.product_name || item.description}</span>
                                             <div className="flex flex-wrap gap-1">
                                                 {item.internal_code && (
-                                                    <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/30 text-muted-foreground opacity-80 whitespace-nowrap">
                                                         {item.internal_code}
-                                                    </Badge>
+                                                    </span>
                                                 )}
                                                 {item.code && item.code !== item.internal_code && (
-                                                    <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase">
+                                                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/60 text-muted-foreground opacity-80 whitespace-nowrap">
                                                         {item.code}
-                                                    </Badge>
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>

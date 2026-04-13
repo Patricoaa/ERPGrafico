@@ -113,7 +113,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                 const isNegative = type === 'WITHDRAWAL' || type === 'REDUCTION' || type === 'TRANSFER_OUT' || type === 'LOAN_OUT'
                 
                 return (
-                    <div className={cn("flex items-center justify-center gap-1 font-bold w-full", isNegative ? 'text-rose-600' : 'text-emerald-600')}>
+                    <div className={cn("flex items-center justify-center gap-1 font-bold w-full", isNegative ? 'text-destructive' : 'text-success')}>
                         <span>{isNegative ? '-' : '+'}</span>
                         <DataCell.Currency value={amount} className="" />
                     </div>
@@ -251,7 +251,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                         <Card className="border shadow-sm overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600">
+                                    <div className="p-2 rounded-lg bg-success/10 text-success">
                                         <Activity className="h-5 w-5" />
                                     </div>
                                     <div className="text-left">

@@ -307,7 +307,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                         </section>
                     </div>
                     {calcData?.drafts_summary && (calcData.drafts_summary.invoices.length > 0 || calcData.drafts_summary.entries.length > 0) && (
-                        <Alert variant="warning" className="border-warning/30 bg-warning/5 rounded-2xl p-6">
+                        <Alert variant="warning" className="border-warning/30 bg-warning/5 rounded-lg p-6">
                             <AlertCircle className="h-5 w-5 text-warning" />
                             <div className="space-y-4 w-full">
                                 <AlertTitle className="text-sm font-black uppercase tracking-widest text-warning/90">Documentos en Borrador</AlertTitle>
@@ -379,7 +379,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             isValid: true,
             component: (
                 <div className="max-w-4xl mx-auto pb-6 space-y-8">
-                    <div className="bg-card border border-border/50 rounded-2xl p-8 space-y-6">
+                    <div className="bg-card border border-border/50 rounded-lg p-8 space-y-6">
                         <div className="flex justify-between items-center text-sm font-medium">
                             <span className="text-muted-foreground">IVA Determinado</span>
                             <MoneyDisplay amount={vatToPay} showColor={false} className="font-bold" />

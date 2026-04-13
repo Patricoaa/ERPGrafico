@@ -1,6 +1,6 @@
 "use client"
 
-import { ShoppingCart, FileText, Loader2, ArrowLeft } from "lucide-react"
+import { ShoppingCart, FileText, Loader2 } from "lucide-react"
 import { SalesOrdersView } from "@/features/sales"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
+import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 
 interface SalesOrdersModalProps {
     open: boolean
@@ -77,7 +78,7 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
             >
                 <div className="flex flex-col h-full bg-transparent backdrop-blur-md">
                     <SheetHeader className="p-6 pb-4 border-b bg-transparent sticky top-0 z-50">
-                        <div className="flex items-center justify-between w-full pl-12 text-left">
+                        <div className="flex items-center justify-between w-full text-left">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 bg-primary/10 rounded-lg text-primary shadow-sm border border-primary/5 hidden sm:block">
                                     {viewMode === 'orders' ? <ShoppingCart className="h-6 w-6" /> : <FileText className="h-6 w-6" />}
@@ -111,17 +112,10 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                         </div>
                     </SheetHeader>
 
-                    {/* Custom Navigation Button for Sheet (Top Left Corner) */}
-                    <div className="absolute top-4 left-4 z-[60]">
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-9 w-9 rounded-full bg-muted/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-primary transition-all" 
-                            onClick={() => handleOpenChange(false)}
-                        >
-                            <ArrowLeft className="h-5 w-5" />
-                        </Button>
-                    </div>
+                    <SheetCloseButton 
+                        onClick={() => handleOpenChange(false)}
+                        className="absolute top-4 right-4 z-[60]"
+                    />
 
                     <ScrollAreaUI className="flex-1 px-6">
                         <div className="py-6">

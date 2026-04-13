@@ -63,19 +63,20 @@ Contenedores unificados que definen la jerarquía visual del sistema.
   - `list`: Variante minimalista para listados, con **sombra 2xl solo en hover**.
   - `standard`: Card con borde discontinuo para estados secundarios.
 - **Reglas Visuales**:
-  - **Radio de Borde**: Debe ser siempre **`rounded-2xl`** (1rem) para todos los contenedores y modales.
+  - **Radio de Borde**: Debe usar **`rounded-md`** (8px) vía el token `CARD_TOKENS.container`. Prohibido usar `rounded-2xl` o `rounded-xl` en cards estándar.
   - **Sombras**: Utilizar sombras pronunciadas (`shadow-xl` o `shadow-2xl`) para elevar los contenedores sobre el fondo.
+  - **Registration Marks**: Para cards de alto impacto (dashboards, landing sections), se puede agregar `IndustryMark` como child o la clase CSS `.registration-marks`.
 
 ## 4. FORM_STYLES & Acciones
 Conjunto de tokens para elementos operativos que requieren precisión visual.
 
 - **Reglas Visuales**:
-  - **Radio de Borde**: Debe ser estrictamente **`rounded`** (0.25rem) para botones, inputs y selectores.
+  - **Radio de Borde**: Debe ser estrictamente **`rounded-sm`** (6px) para botones, inputs y selectores. Refuerza la precisión industrial.
   - **Tipografía**: Labels en uppercase con extra-tracking.
 - **Tokens**:
-  - `input`: Rounded (0.25rem), border-solid, h-10.
-  - `button`: Rounded (0.25rem), transiciones suaves.
-  - `sectionHeader`: Industrial separator style.
+  - `input`: Rounded-sm (6px), border-solid, h-10.
+  - `button`: Rounded-sm (6px), transiciones suaves.
+  - `sectionHeader`: Industrial separator style. Puede usar `.die-cut-separator` como alternativa a bordes sólidos.
 
 ## 5. CONTRATO DE HOOKS (Data Fetching)
 Todo hook de feature debe seguir este patrón:
@@ -118,5 +119,61 @@ La visualización de celdas en el `DataTable` debe seguir estrictamente la regla
 - **Atributos de Categoría (e.g., Tipos DTE)**: Despojados de fondos de color. Deben renderizarse `font-bold text-[10px] uppercase text-muted-foreground ml-2` acompañados del ícono `text-muted-foreground/70`.
 - **`StatusBadge`**: Es el **único** elemento de la columna con permiso para inyectar fondos de color (`primary`, `warning`, `destructive`, `success`) basados en `BUSINESS_STATES.md`.
 
+## 9. IndustryMark («Marcas de Registro»)
 
+Componente decorativo que agrega marcas de registro (crop/registration marks) propias de la industria gráfica a cualquier contenedor.
 
+**Props:**
+- `positions`: Array de `'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'` (default: all 4).
+- `variant`: `'corner'` (L-shaped) | `'crosshair'` (cruceta) | `'target'` (círculo) (default: `'corner'`).
+- `active`: Boolean — usa `--mark-color-active` (primary) en vez del color sutil.
+
+**Reglas de Uso:**
+1. El contenedor padre **debe** tener `position: relative` (o usar la clase `.registration-marks` como alternativa CSS-only).
+2. Usar con moderación: solo en contenedores principales, modales de transacción, y vistas de alto impacto.
+3. **Prohibido** usar en celdas de tabla, badges, o componentes pequeños.
+4. Para contenedores simples sin necesidad de control por props, preferir la clase CSS `.registration-marks`.
+
+**Ejemplo:**
+```tsx
+// Con componente (más control):
+<div className="relative">
+  <IndustryMark variant="corner" />
+  {children}
+</div>
+
+// Con clase CSS (cero JS):
+<div className="registration-marks">
+  {children}
+</div>
+```
+
+## 10. Vocabulario Visual de Industria Gráfica
+
+Estos elementos formalizan la identidad visual que conecta al ERP con el mundo de la imprenta y la producción gráfica.
+
+| Elemento | Clase CSS / Componente | Descripción | Uso recomendado |
+|---|---|---|---|
+| Marcas de registro | `.registration-marks` / `IndustryMark` | Crop marks en esquinas | Contenedores principales, modales |
+| Guías de sangrado | `.bleed-guides` | Grilla decorativa 80px | Paneles de fondo, vistas vacías |
+| Separador die-cut | `.die-cut-separator` | Línea punteada | Separadores de secciones |
+| Textura de ruido | `body` background (globals.css) | SVG noise fractal | Solo a nivel body, no replicar |
+
+**Regla de proporcionalidad:** El vocabulario gráfico es decorativo y sutil (opacidades del 3-8%). No debe competir con el contenido funcional. Si un usuario no nota conscientemente las marcas, están funcionando correctamente.
+
+## 11. SheetCloseButton
+
+El cierre estandarizado para Sheets y Modales de alta gama. Este componente sustituye al botón de cierre por defecto de Radix/shadcn cuando el diseño requiere una interacción más integrada y refinada.
+
+**Visual Design:**
+- **Forma**: Circular (`rounded-full`).
+- **Variante**: `ghost`.
+- **Icono**: `X` (size-4).
+- **Dimensiones**: `h-8 w-8` (o `h-9 w-9` en modales expandidos).
+- **Comportamiento**: Debe centrar el icono perfectamente y usar transiciones suaves de opacidad y color de fondo.
+
+**Reglas de Uso:**
+1. **Uso Obligatorio**: En `ModuleSettingsSheet` y paneles de análisis laterales.
+2. **Posición**: Top-right con suficiente padding (normalmente `top-4 right-4` o dentro de un `flex` header).
+3. **Consistencia**: No usar variantes de color (`destructive`, `primary`) para el botón de cierre. Debe ser siempre neutral (`text-muted-foreground`).
+4. **Accesibilidad**: Incluir siempre un `span.sr-only` con el texto "Cerrar".

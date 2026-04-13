@@ -91,7 +91,7 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -20, scale: 0.95 }}
                         transition={{ type: "spring", damping: 20, stiffness: 300 }}
-                        className="fixed top-20 left-4 w-[65px] flex flex-col items-center py-4 gap-4 bg-sidebar border border-sidebar-border/50 rounded-2xl z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] max-h-[calc(100vh-100px)] overflow-y-auto no-scrollbar"
+                        className="fixed top-20 left-4 w-[65px] flex flex-col items-center py-4 gap-4 bg-sidebar border border-sidebar-border/50 rounded-lg z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] max-h-[calc(100vh-100px)] overflow-y-auto no-scrollbar"
                     >
                         <TooltipProvider delayDuration={0}>
                             {/* Main Navigation Items */}

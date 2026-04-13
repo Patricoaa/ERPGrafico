@@ -9,10 +9,10 @@ interface PartnersSettingsViewProps {
     onSavingChange?: (saving: boolean) => void
     /** Whether the new-distribution modal should open on mount */
     initialFlowOpen?: boolean
-    initialFlowOpen?: boolean
     /** Callback to clear the modal query param from the URL */
     onModalClose?: () => void
     initialAddPartnerOpen?: boolean
+    initialStatsOpen?: boolean
 }
 
 export function PartnersSettingsView({ 
@@ -20,6 +20,7 @@ export function PartnersSettingsView({
     onSavingChange,
     initialFlowOpen = false,
     initialAddPartnerOpen = false,
+    initialStatsOpen = false,
     onModalClose
 }: PartnersSettingsViewProps) {
     // Reset saving state when switching tabs.
@@ -37,6 +38,7 @@ export function PartnersSettingsView({
             {activeTab === "composition" && (
                 <EquityCompositionTab 
                     initialAddPartnerOpen={initialAddPartnerOpen}
+                    initialStatsOpen={initialStatsOpen}
                     onModalClose={onModalClose}
                 />
             )}

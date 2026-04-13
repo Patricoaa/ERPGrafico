@@ -1,7 +1,6 @@
 "use client"
 
 import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
 import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
@@ -51,24 +50,24 @@ export function OrderSummaryCard({
                                         </p>
                                         <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                                             {line.internal_code && (
-                                                <Badge variant="outline" className="text-[8px] h-3 px-1 font-normal opacity-70 uppercase border-muted-foreground/20">
+                                                <span className="text-[8px] font-mono border px-1 rounded opacity-70 uppercase border-muted-foreground/20 text-muted-foreground">
                                                     {line.internal_code}
-                                                </Badge>
+                                                </span>
                                             )}
                                             {line.code && line.code !== line.internal_code && (
-                                                <Badge variant="secondary" className="text-[8px] h-3 px-1 font-normal opacity-70 uppercase">
+                                                <span className="text-[8px] font-mono bg-muted px-1 rounded opacity-70 uppercase text-muted-foreground">
                                                     {line.code}
-                                                </Badge>
+                                                </span>
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2 mt-1">
-                                            <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-muted text-muted-foreground font-bold">
+                                            <span className="text-[9px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded leading-none">
                                                 {line.qty || line.quantity} {line.uom_name || 'un'}
-                                            </Badge>
+                                            </span>
                                             {line.product_type === 'MANUFACTURABLE' && (
-                                                <Badge className="bg-warning/10 text-warning hover:bg-warning/10 border-none text-[8px] py-0 h-4 font-black uppercase">
+                                                <span className="text-[8px] font-black uppercase text-warning border border-warning/30 bg-warning/5 px-1 py-0.5 rounded leading-none">
                                                     Fab
-                                                </Badge>
+                                                </span>
                                             )}
                                         </div>
                                     </div>
@@ -94,13 +93,13 @@ export function OrderSummaryCard({
                     </div>
                 )}
                 {lineDiscounts > 0 && (
-                    <div className="flex justify-between text-xs font-bold text-blue-600/70 italic">
+                    <div className="flex justify-between text-xs font-bold text-primary/70 italic">
                         <span>Descuentos por Línea</span>
                         <span className="whitespace-nowrap font-mono">-{formatCurrency(lineDiscounts)}</span>
                     </div>
                 )}
                 {totalDiscountAmount > 0 && (
-                    <div className="flex justify-between text-xs font-bold text-blue-600">
+                    <div className="flex justify-between text-xs font-bold text-primary">
                         <span>Descuento Global</span>
                         <span className="whitespace-nowrap font-mono">-{formatCurrency(totalDiscountAmount)}</span>
                     </div>

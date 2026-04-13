@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Banknote, LogOut, ArrowRightLeft, Loader2, AlertTriangle, Info, ShieldAlert, CheckCircle2 } from "lucide-react"
@@ -412,16 +411,14 @@ export function MovementWizard({
                 title: 'Monto y Referencia',
                 component: (
                     <div className="space-y-4 pt-2">
-                        <div className="text-center">
-                            <Badge variant="outline" className={cn(
-                                "capitalize font-bold border-2",
-                                impact === "IN" ? "border-success/50 text-success bg-success/10" :
-                                    impact === "OUT" ? "border-warning/50 text-warning bg-warning/10" :
-                                        "border-info/50 text-info bg-info/10"
+                            <div className={cn(
+                                "capitalize font-bold border rounded px-2 py-0.5 text-xs",
+                                impact === "IN" ? "border-success/30 text-success bg-success/5" :
+                                    impact === "OUT" ? "border-warning/30 text-warning bg-warning/5" :
+                                        "border-info/30 text-info bg-info/5"
                             )}>
                                 {impact === 'TRANSFER' ? 'Traspaso' : MOVEMENT_TYPES[impact as 'IN' | 'OUT'].find(t => t.value === moveType)?.label}
-                            </Badge>
-                        </div>
+                            </div>
 
                         <div className="bg-muted/30 p-3 rounded-lg border-2 border-primary/10">
                             <div className="text-right mb-2">
@@ -512,12 +509,14 @@ export function MovementWizard({
                             <div className="bg-card border-2 rounded-lg divide-y-2 overflow-hidden">
                                 <div className="p-4 flex justify-between items-center text-sm">
                                     <span className="text-muted-foreground font-medium">Operación:</span>
-                                    <Badge className={cn(
-                                        "font-black uppercase tracking-widest px-3",
-                                        impact === "IN" ? "bg-success" : impact === "OUT" ? "bg-warning" : "bg-info"
+                                    <span className={cn(
+                                        "font-black uppercase tracking-widest px-3 py-1 rounded text-[10px]",
+                                        impact === "IN" ? "bg-success/10 text-success border border-success/30" : 
+                                        impact === "OUT" ? "bg-warning/10 text-warning border border-warning/30" : 
+                                        "bg-info/10 text-info border border-info/30"
                                     )}>
                                         {impact === 'IN' ? 'Ingreso' : impact === 'OUT' ? 'Salida' : 'Traspaso'}
-                                    </Badge>
+                                    </span>
                                 </div>
                                 {contactName && (
                                     <div className="p-4 flex justify-between items-center text-sm">

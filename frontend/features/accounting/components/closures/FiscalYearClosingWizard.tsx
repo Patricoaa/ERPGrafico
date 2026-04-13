@@ -102,14 +102,14 @@ export function FiscalYearClosingWizard({
                             {Object.entries(preview.validations).map(([key, val]: [string, any]) => (
                                 <div key={key} className={cn(
                                     "flex items-center justify-between p-3 border rounded-sm transition-colors",
-                                    val.passed ? (val.is_warning ? "bg-amber-500/5 border-amber-500/30" : "bg-muted/20 border-border/50") : "bg-destructive/5 border-destructive/20"
+                                    val.passed ? (val.is_warning ? "bg-warning/5 border-warning/30" : "bg-muted/20 border-border/50") : "bg-destructive/5 border-destructive/20"
                                 )}>
                                     <span className={cn(
                                         "text-xs font-medium uppercase tracking-tight",
-                                        val.passed && val.is_warning && "text-amber-600"
+                                        val.passed && val.is_warning && "text-warning"
                                     )}>{val.message}</span>
                                     {val.passed ? (
-                                        val.is_warning ? <AlertTriangle className="w-4 h-4 text-amber-500" /> : <CheckCircle2 className="w-4 h-4 text-success" />
+                                        val.is_warning ? <AlertTriangle className="w-4 h-4 text-warning" /> : <CheckCircle2 className="w-4 h-4 text-success" />
                                     ) : <AlertTriangle className="w-4 h-4 text-destructive" />}
                                 </div>
                             ))}

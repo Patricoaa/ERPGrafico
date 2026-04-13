@@ -33,28 +33,28 @@ const actions = [
         title: "POS",
         icon: ShoppingCart,
         url: "/pos",
-        color: "text-emerald-500",
+        color: "text-success",
         permission: "sales.view_dashboard_sales",
     },
     {
         title: "Órdenes de Compra",
         icon: ShoppingBag,
         url: "/purchasing/orders",
-        color: "text-amber-500",
+        color: "text-warning",
         permission: "purchasing.view_dashboard_purchasing",
     },
     {
         title: "Órdenes de Trabajo",
         icon: Printer,
         url: "/production/orders",
-        color: "text-purple-500",
+        color: "text-primary",
         permission: "production.view_dashboard_production",
     },
     {
         title: "Contactos",
         icon: Users,
         url: "/contacts",
-        color: "text-indigo-500",
+        color: "text-info",
         permission: "contacts.view_dashboard_contacts",
     },
 ]
@@ -169,7 +169,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                         : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                 )}
                             >
-                                <Calculator className={cn("h-5 w-5 transition-colors", !isCalculatorOpen && "group-hover:text-purple-500")} />
+                                <Calculator className={cn("h-5 w-5 transition-colors", !isCalculatorOpen && "group-hover:text-primary")} />
                                 {isCalculatorOpen && (
                                     <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary-foreground rounded-full" />
                                 )}

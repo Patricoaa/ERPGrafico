@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { Info, Plus, Pencil, Trash2 } from "lucide-react"
@@ -90,9 +89,15 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                                         return (
                                             <TableRow key={rule.id} className="group transition-colors">
                                                 <TableCell>
-                                                    <Badge variant={isProductRule ? "default" : "outline"} className="text-[10px] uppercase font-bold px-1.5">
-                                                        {isProductRule ? "Producto" : "Categoría"}
-                                                    </Badge>
+                                                    {rule.is_category_rule ? (
+                                                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-amber-500/10 text-amber-600 border-amber-500/20">
+                                                            Categoría
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-primary/5 text-primary border-primary/20">
+                                                            Producto
+                                                        </span>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex flex-col">
@@ -116,7 +121,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                                                     <div className={cn(
                                                         "inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase border transition-colors",
                                                         rule.active 
-                                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                                                            ? 'bg-success/10 text-success border-success/20' 
                                                             : 'bg-muted/50 text-muted-foreground border-transparent'
                                                     )}>
                                                         {rule.active ? "Activa" : "Inactiva"}

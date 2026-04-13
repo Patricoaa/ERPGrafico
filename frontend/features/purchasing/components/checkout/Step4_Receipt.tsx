@@ -109,14 +109,14 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             label: `${receiptLabel} Inmediata`,
             description: `Confirmar ${itemLabel} ahora`,
             icon: Receipt,
-            color: 'text-emerald-600'
+            color: 'text-success'
         },
         {
             id: 'DEFERRED',
             label: `${receiptLabel} Diferida`,
             description: `Registrar factura sin confirmar ${itemLabel}`,
             icon: FileText,
-            color: 'text-amber-600'
+            color: 'text-warning'
         },
         {
             id: 'PARTIAL',
@@ -355,8 +355,8 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             )}
 
             {receiptData.type === 'DEFERRED' && (
-                <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-600 dark:text-amber-400">
-                    <div className="p-2 rounded-lg bg-background border border-amber-500/20">
+                <div className="flex items-start gap-3 p-4 bg-warning/10 border border-warning/20 rounded-lg text-warning dark:text-warning/50">
+                    <div className="p-2 rounded-lg bg-background border border-warning/20">
                         <FileText className="h-5 w-5" />
                     </div>
                     <div className="space-y-1">

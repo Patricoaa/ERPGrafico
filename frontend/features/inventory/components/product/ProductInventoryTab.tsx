@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { useState } from "react"
-import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -235,12 +234,11 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                                     const isBaseUom = u.id.toString() === stockUomId?.toString();
 
                                                                     return (
-                                                                        <Badge
+                                                                        <div
                                                                             key={u.id}
-                                                                            variant={isSelected ? "default" : "outline"}
                                                                             className={cn(
-                                                                                "cursor-pointer px-2 py-1 transition-all hover:scale-105 active:scale-95 border-primary/20 text-[10px]",
-                                                                                isSelected ? "bg-primary text-white shadow-sm font-bold" : "bg-background hover:bg-muted font-normal text-muted-foreground",
+                                                                                "cursor-pointer px-2 py-1 rounded-full text-[10px] transition-all hover:scale-105 active:scale-95 border",
+                                                                                isSelected ? "bg-primary text-white border-primary shadow-sm font-bold" : "bg-background border-primary/20 hover:bg-muted font-normal text-muted-foreground",
                                                                                 isBaseUom && "ring-1 ring-primary ring-offset-1"
                                                                             )}
                                                                             onClick={() => {
@@ -258,7 +256,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                                             {u.name}
                                                                             {isBaseUom && <span className="ml-1 opacity-70">(BASE)</span>}
                                                                             {isSelected && !isBaseUom && <Plus className="ml-1.5 h-2.5 w-2.5 inline-block rotate-45" />}
-                                                                        </Badge>
+                                                                        </div>
                                                                     );
                                                                 })
                                                             }
@@ -296,7 +294,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                             <div className="space-y-0.5">
                                                 <div className="flex items-center gap-2">
                                                     <FormLabel className={FORM_STYLES.label}>Control de Inventario</FormLabel>
-                                                    <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/20 uppercase font-black">Automático</Badge>
+                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-muted/50 border-border/50 text-muted-foreground">Automático</span>
                                                 </div>
                                                 <FormDescription className="text-[10px]">
                                                     Gestionado por el Modo de Producción seleccionado.
@@ -434,13 +432,13 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                 <span className="text-[10px] uppercase text-muted-foreground font-bold">A Mano</span>
                                                 <span className="text-lg font-bold tabular-nums">{initialData.current_stock || 0}</span>
                                             </div>
-                                            <div className="flex flex-col items-center bg-amber-50 rounded p-2 shadow-sm border border-amber-100">
-                                                <span className="text-[10px] uppercase text-amber-700 font-bold">Reservado</span>
-                                                <span className="text-lg font-bold tabular-nums text-amber-700">{initialData.qty_reserved || 0}</span>
+                                            <div className="flex flex-col items-center bg-warning/10 rounded p-2 shadow-sm border border-warning/10">
+                                                <span className="text-[10px] uppercase text-warning font-bold">Reservado</span>
+                                                <span className="text-lg font-bold tabular-nums text-warning">{initialData.qty_reserved || 0}</span>
                                             </div>
-                                            <div className="flex flex-col items-center bg-emerald-50 rounded p-2 shadow-sm border border-emerald-100">
-                                                <span className="text-[10px] uppercase text-emerald-700 font-bold">Disponible</span>
-                                                <span className="text-lg font-bold tabular-nums text-emerald-700">{initialData.qty_available || 0}</span>
+                                            <div className="flex flex-col items-center bg-success/10 rounded p-2 shadow-sm border border-success/10">
+                                                <span className="text-[10px] uppercase text-success font-bold">Disponible</span>
+                                                <span className="text-lg font-bold tabular-nums text-success">{initialData.qty_available || 0}</span>
                                             </div>
                                         </div>
                                     )}

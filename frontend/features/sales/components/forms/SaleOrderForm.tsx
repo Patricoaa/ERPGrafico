@@ -42,7 +42,6 @@ import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { PricingUtils } from "@/lib/pricing"
-import { Badge } from "@/components/ui/badge"
 import { useStockValidation } from "@/hooks/useStockValidation"
 import { SaleOrder, SaleOrderLine, SaleOrderPayload } from "../../types"
 import { Product } from "@/features/inventory/types"
@@ -434,29 +433,29 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                             <div className="flex gap-1 flex-wrap">
                                                                                 {prod.product_type === 'STORABLE' && (
                                                                                     <>
-                                                                                        <Badge variant="outline" className={cn("text-[10px] px-1 h-5",
-                                                                                            (prod.current_stock || 0) > 0 ? "border-success/50 text-success bg-success/10" : "border-destructive/20 text-destructive/60"
+                                                                                        <span className={cn("text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border leading-none",
+                                                                                            (prod.current_stock || 0) > 0 ? "border-success/30 text-success bg-success/5" : "border-destructive/10 text-destructive/40 bg-muted/30"
                                                                                         )}>
                                                                                             Stock: {prod.current_stock || 0}
-                                                                                        </Badge>
-                                                                                        <Badge variant="outline" className={cn("text-[10px] px-1 h-5",
-                                                                                            (prod.qty_available || 0) > 0 ? "border-success/50 text-success bg-success/10" : "border-warning/50 text-warning bg-warning/10"
+                                                                                        </span>
+                                                                                        <span className={cn("text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border leading-none",
+                                                                                            (prod.qty_available || 0) > 0 ? "border-success/30 text-success bg-success/5" : "border-warning/30 text-warning bg-warning/5"
                                                                                         )}>
                                                                                             Disp: {prod.qty_available || 0}
-                                                                                        </Badge>
+                                                                                        </span>
                                                                                     </>
                                                                                 )}
 
                                                                                 {prod.product_type === 'MANUFACTURABLE' && prod.has_bom && (
-                                                                                    <Badge variant="outline" className="text-[10px] px-1 h-5 border-info/50 text-info bg-info/10">
+                                                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-info/30 text-info bg-info/5 leading-none">
                                                                                         Fab: {prod.manufacturable_quantity ?? 'N/A'}
-                                                                                    </Badge>
+                                                                                    </span>
                                                                                 )}
 
                                                                                 {(prod.product_type === 'MANUFACTURABLE' || prod.product_type === 'MANUFACTURABLE_CUSTOM') && prod.active && (
-                                                                                    <Badge variant="outline" className="text-[10px] px-1 h-5 border-success/50 text-success bg-success/10">
+                                                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-success/30 text-success bg-success/5 leading-none">
                                                                                         Disponible
-                                                                                    </Badge>
+                                                                                    </span>
                                                                                 )}
                                                                             </div>
 
@@ -533,9 +532,9 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                     if (maxQty !== null && maxQty !== Infinity) {
                                                                         return (
                                                                             <div className="flex justify-end">
-                                                                                <Badge variant="secondary" className="text-[9px] px-1 h-4 bg-muted text-muted-foreground hover:bg-muted font-normal border-0">
-                                                                                    MAX: {maxQty}
-                                                                                </Badge>
+                                                                                 <span className="text-[9px] font-mono font-bold text-muted-foreground uppercase opacity-60">
+                                                                                     MAX: {maxQty}
+                                                                                 </span>
                                                                             </div>
                                                                         )
                                                                     }

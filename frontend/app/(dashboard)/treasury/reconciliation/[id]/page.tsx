@@ -175,7 +175,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             ),
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("credit"))
-                return val > 0 ? <DataCell.Currency value={val} className="text-emerald-600 font-bold" /> : <span className="text-muted-foreground/30 ml-4">-</span>
+                return val > 0 ? <DataCell.Currency value={val} className="text-success font-bold" /> : <span className="text-muted-foreground/30 ml-4">-</span>
             },
         },
         {
@@ -336,7 +336,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                                 <Button
                                     onClick={handleConfirmStatement}
                                     disabled={confirming}
-                                    className="bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 px-6 font-bold"
+                                    className="bg-success hover:bg-success shadow-sm px-6 font-bold"
                                 >
                                     {confirming ? (
                                         <>
@@ -431,7 +431,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
             {/* Summary Grid */}
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
+                <Card className="shadow-sm bg-card border">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                         <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Apertura</CardTitle>
                         <Banknote className="h-3.5 w-3.5 text-primary" />
@@ -447,23 +447,23 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
+                <Card className="shadow-sm bg-card border">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                         <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Cierre</CardTitle>
-                        <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+                        <TrendingUp className="h-3.5 w-3.5 text-success" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-xl font-bold font-mono">
                             {formatCurrency(statement.closing_balance)}
                         </div>
-                        <p className={`text-[10px] font-medium mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-emerald-600' : 'text-destructive'}`}>
+                        <p className={`text-[10px] font-medium mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-success' : 'text-destructive'}`}>
                             {netMovement >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
                             {netMovement >= 0 ? 'Excedente' : 'Déficit'}: {formatCurrency(Math.abs(netMovement))}
                         </p>
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
+                <Card className="shadow-sm bg-card border">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                         <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Cargos (Sale)</CardTitle>
                         <TrendingDown className="h-3.5 w-3.5 text-destructive" />
@@ -478,13 +478,13 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-sm border-none bg-gradient-to-br from-white to-slate-50">
+                <Card className="shadow-sm bg-card border">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                         <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Abonos (Entra)</CardTitle>
-                        <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
+                        <TrendingUp className="h-3.5 w-3.5 text-success/50" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-xl font-bold font-mono text-emerald-600/80">
+                        <div className="text-xl font-bold font-mono text-success/80">
                             {formatCurrency(totalCredits)}
                         </div>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -560,7 +560,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleUnmatch} className="bg-destructive hover:bg-red-700">Confirmar</AlertDialogAction>
+                        <AlertDialogAction onClick={handleUnmatch} className="bg-destructive hover:bg-destructive">Confirmar</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

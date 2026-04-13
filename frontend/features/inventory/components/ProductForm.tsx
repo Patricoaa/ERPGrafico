@@ -16,7 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { productSchema, type ProductFormValues } from "./product/schema"
-import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, X, Layers, Factory, AlertCircle, Loader2 } from "lucide-react"
+import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, Layers, Factory, AlertCircle, Loader2 } from "lucide-react"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -33,12 +33,13 @@ import { ProductManufacturingTab } from "./product/ProductManufacturingTab"
 import { ProductPricingTab } from "./product/ProductPricingTab"
 import { ProductSubscriptionTab } from "./product/ProductSubscriptionTab"
 import { ProductVariantsTab } from "./product/ProductVariantsTab"
-import { Badge } from "@/components/ui/badge"
+// Removed Badge import for governance compliance
 
 // Import dialogs
 import { PricingRuleForm } from "@/features/sales/components/PricingRuleForm"
 import { CategoryForm } from "./CategoryForm"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 
 interface ProductFormProps {
     auditSidebar?: React.ReactNode
@@ -744,19 +745,19 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     {isFetchingInitialData ? (
                         <div className="p-6 space-y-8 animate-in fade-in duration-500">
                             <div className="flex items-center gap-4">
-                                <Skeleton className="h-10 w-48 rounded-md" />
-                                <Skeleton className="h-10 w-32 rounded-md" />
-                                <Skeleton className="h-10 w-32 rounded-md" />
+                                <Skeleton className="h-10 w-48 rounded-[0.25rem]" />
+                                <Skeleton className="h-10 w-32 rounded-[0.25rem]" />
+                                <Skeleton className="h-10 w-32 rounded-[0.25rem]" />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                                 <div className="md:col-span-3 space-y-4">
-                                    <Skeleton className="h-[250px] w-full rounded-lg" />
-                                    <Skeleton className="h-32 w-full rounded-lg" />
+                                    <Skeleton className="h-[250px] w-full rounded-[0.25rem]" />
+                                    <Skeleton className="h-32 w-full rounded-[0.25rem]" />
                                 </div>
                                 <div className="md:col-span-9 space-y-4">
-                                    <Skeleton className="h-16 w-full rounded-lg" />
-                                    <Skeleton className="h-40 w-full rounded-lg" />
-                                    <Skeleton className="h-64 w-full rounded-lg" />
+                                    <Skeleton className="h-16 w-full rounded-[0.25rem]" />
+                                    <Skeleton className="h-40 w-full rounded-[0.25rem]" />
+                                    <Skeleton className="h-64 w-full rounded-[0.25rem]" />
                                 </div>
                             </div>
                         </div>
@@ -912,9 +913,9 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                                     <SheetTitle className="text-xl font-bold tracking-tight text-foreground">
                                         Ficha de Producto
                                     </SheetTitle>
-                                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold shrink-0 uppercase tracking-widest h-5">
+                                    <span className="bg-muted/10 text-muted-foreground border border-muted-foreground/20 px-2 py-0.5 text-[9px] font-bold rounded-sm uppercase tracking-wider h-5 flex items-center">
                                         {initialData?.internal_code || "Nuevo"}
-                                    </Badge>
+                                    </span>
                                 </div>
                                 <SheetDescription className="text-xs font-medium text-muted-foreground mt-0.5">
                                     {initialData?.name || form.watch("name") || 'Nuevo Producto'} • {variantMode ? "Edición de Variante" : "Configuración Maestra"}
@@ -924,17 +925,8 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     </div>
                 </SheetHeader>
 
-                {/* Custom Close Button for Sheet (Top Right Corner) */}
-                <div className="absolute top-4 right-4 z-[60]">
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-9 w-9 rounded-full bg-muted/50 backdrop-blur-sm border shadow-sm text-muted-foreground hover:bg-white hover:text-rose-500 transition-all" 
-                        onClick={() => onOpenChange(false)}
-                    >
-                        <X className="h-5 w-5" />
-                    </Button>
-                </div>
+                {/* Standardized Close Button */}
+                <SheetCloseButton onClick={() => onOpenChange(false)} />
 
                 <div className="flex-1 overflow-hidden flex flex-col">
                     {formContent}

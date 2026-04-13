@@ -220,10 +220,10 @@ export function SessionCloseModal({
 
                         {/* Right Column: Counter */}
                         <div className="space-y-4">
-                            <div className="md:hidden mb-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-100 dark:border-blue-900">
+                            <div className="md:hidden mb-4 p-3 bg-primary/10 dark:bg-primary/20 rounded-lg border border-primary/10 dark:border-primary">
                                 <div className="flex justify-between text-sm font-bold">
                                     <span>Efectivo Esperado:</span>
-                                    <span className="text-primary dark:text-blue-400">{formatCurrency(session.expected_cash)}</span>
+                                    <span className="text-primary dark:text-primary/50">{formatCurrency(session.expected_cash)}</span>
                                 </div>
                             </div>
 
@@ -267,8 +267,8 @@ export function SessionCloseModal({
                         </div>
 
                         {hasDiff ? (
-                            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 space-y-3">
-                                <div className="flex items-center gap-2 text-amber-700 font-bold">
+                            <div className="bg-warning/10 dark:bg-warning/20 border border-warning/20 dark:border-warning rounded-lg p-4 space-y-3">
+                                <div className="flex items-center gap-2 text-warning font-bold">
                                     <AlertTriangle className="h-4 w-4" />
                                     <span>Diferencia Detectada</span>
                                 </div>
@@ -332,10 +332,10 @@ export function SessionCloseModal({
 
                                         {/* Insufficient funds warning */}
                                         {insufficientFunds && selectedAccount && (
-                                            <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg p-3 space-y-1">
+                                            <div className="bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 dark:border-destructive rounded-lg p-3 space-y-1">
                                                 <div className="flex items-start gap-2">
                                                     <AlertTriangle className="h-4 w-4 text-destructive dark:text-destructive mt-0.5 flex-shrink-0" />
-                                                    <div className="text-sm text-red-700 dark:text-red-300">
+                                                    <div className="text-sm text-destructive dark:text-destructive/20">
                                                         <div className="font-bold">Fondos Insuficientes</div>
                                                         <div className="text-xs mt-1 space-y-0.5">
                                                             <div>Disponible en {selectedAccount.name}: {formatCurrency(selectedAccount.current_balance || 0)}</div>
@@ -350,7 +350,7 @@ export function SessionCloseModal({
                                 )}
                             </div>
                         ) : (
-                            <div className="text-center p-6 bg-emerald-50 text-emerald-700 rounded-lg">
+                            <div className="text-center p-6 bg-success/10 text-success rounded-lg">
                                 <span className="text-4xl block mb-2">✨</span>
                                 <div className="font-bold">¡Cierre Perfecto!</div>
                                 <div className="text-sm opacity-80">El efectivo coincide exactamente con el sistema.</div>
@@ -388,7 +388,7 @@ export function SessionCloseModal({
                             </Button>
                             <Button
                                 variant="outline"
-                                className="h-20 flex flex-col items-center justify-center border-2 hover:border-emerald-500 hover:bg-emerald-500/5 group"
+                                className="h-20 flex flex-col items-center justify-center border-2 hover:border-success hover:bg-success/5 group"
                                 onClick={() => {
                                     setWithdrawalAmount("0")
                                     // Use a timeout to ensure state is updated before call

@@ -206,7 +206,7 @@ export default function PurchaseInvoicesPage() {
                 const doc = row.original
                 return (
                     <div className="flex items-center gap-2" title={doc.dte_type_display}>
-                        <FileBadge className={`h-4 w-4 ${doc.dte_type === 'NOTA_CREDITO' ? 'text-primary' : doc.dte_type === 'NOTA_DEBITO' ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                        <FileBadge className={`h-4 w-4 ${doc.dte_type === 'NOTA_CREDITO' ? 'text-primary' : doc.dte_type === 'NOTA_DEBITO' ? 'text-warning' : 'text-muted-foreground'}`} />
                         <span className="text-xs font-bold uppercase hidden md:inline-block">
                             {doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
                                 doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
@@ -274,7 +274,7 @@ export default function PurchaseInvoicesPage() {
                                 <Badge variant="success" className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">Pagado</Badge>
                             )}
                             {doc.po_receiving_status === 'RECEIVED' && (
-                                <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-orange-500 text-amber-700 font-bold whitespace-nowrap">
+                                <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-warning text-warning font-bold whitespace-nowrap">
                                     {doc.dte_type === 'NOTA_CREDITO' ? 'Devuelto' : 'Recibido'}
                                 </Badge>
                             )}
@@ -327,7 +327,7 @@ export default function PurchaseInvoicesPage() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="text-amber-600"
+                                        className="text-warning"
                                         onClick={() => setCompletingDoc(doc)}
                                         title="Completar Folio"
                                     >
@@ -340,7 +340,7 @@ export default function PurchaseInvoicesPage() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="text-amber-700"
+                                        className="text-warning"
                                         onClick={() => setReceivingDoc(doc)}
                                         title={doc.dte_type === 'NOTA_CREDITO' ? "Devolución Mercadería" : "Recibir Mercadería"}
                                     >
@@ -354,7 +354,7 @@ export default function PurchaseInvoicesPage() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="text-amber-600"
+                                        className="text-warning"
                                         onClick={() => setNotingDoc(doc)}
                                         title="Registrar Nota Crédito/Débito"
                                     >
@@ -367,7 +367,7 @@ export default function PurchaseInvoicesPage() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="text-emerald-600"
+                                        className="text-success"
                                         onClick={() => setPayingDoc(doc)}
                                         title={doc.dte_type === 'NOTA_CREDITO' ? "Registrar Devolución Dinero" : "Registrar Pago"}
                                     >
@@ -380,7 +380,7 @@ export default function PurchaseInvoicesPage() {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="text-emerald-600"
+                                        className="text-success"
                                         onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'history' })}
                                         title="Historial de Pagos"
                                     >
@@ -457,7 +457,7 @@ export default function PurchaseInvoicesPage() {
                         const rows = table.getRowModel().rows
                         if (rows.length === 0) {
                             return (
-                                <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-3xl border-2 border-dashed">
+                                <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-lg border-2 border-dashed">
                                     <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
                                     <p className="text-muted-foreground font-medium">No se encontraron documentos</p>
                                 </div>

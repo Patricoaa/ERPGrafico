@@ -74,8 +74,8 @@ export function SimulationResults({ rule }: { rule: any }) {
                             <TableCell className="text-right py-3">
                                 <div className={cn(
                                     "inline-flex items-center justify-center h-7 px-2 font-mono font-black text-[12px] rounded-sm border",
-                                    res.score >= 90 ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                                    res.score >= 70 ? "bg-amber-50 text-amber-700 border-amber-200" :
+                                    res.score >= 90 ? "bg-success/10 text-success border-success/20" :
+                                    res.score >= 70 ? "bg-warning/10 text-warning border-warning/20" :
                                     "bg-muted/50 text-muted-foreground border-border/40"
                                 )}>
                                     {Math.round(res.score)}%

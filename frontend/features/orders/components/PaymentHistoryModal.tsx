@@ -94,7 +94,7 @@ export function PaymentHistoryModal({
                                                     </span>
                                                 )}
                                                 {payment.transaction_number && (
-                                                    <span className="text-xs font-black text-emerald-600 flex items-center gap-1">
+                                                    <span className="text-xs font-black text-success flex items-center gap-1">
                                                         <Hash className="h-3 w-3" /> {payment.transaction_number}
                                                     </span>
                                                 )}

@@ -57,7 +57,7 @@ const agingBg: Record<string, string> = {
     'written_off': 'bg-destructive/10 text-destructive border-destructive/20',
     'current': 'bg-success/10 text-success border-success/20',
     'overdue_30': 'bg-warning/10 text-warning border-warning/20',
-    'overdue_60': 'bg-orange-500/10 text-orange-700 border-orange-200',
+    'overdue_60': 'bg-warning/10 text-warning border-warning/20',
     'overdue_90': 'bg-destructive/10 text-destructive border-destructive/20',
     'overdue_90plus': 'bg-destructive/20 text-destructive border-destructive/30',
 }

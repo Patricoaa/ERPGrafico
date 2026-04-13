@@ -88,7 +88,7 @@ export function Step3_Registration({
                                 <Label htmlFor="folio" className="text-xs font-bold uppercase flex items-center gap-2">
                                     <Hash className="h-3 w-3" />
                                     N° de Folio
-                                    <span className="text-rose-500 font-black">*</span>
+                                    <span className="text-destructive font-black">*</span>
                                 </Label>
                                 <Input
                                     id="folio"
@@ -134,7 +134,7 @@ export function Step3_Registration({
                         </div>
 
                         {/* Note hint */}
-                        <div className="flex items-start gap-2 p-3 bg-blue-50 text-primary rounded-lg text-[11px] leading-tight">
+                        <div className="flex items-start gap-2 p-3 bg-primary/10 text-primary rounded-lg text-[11px] leading-tight">
                             <ShieldAlert className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                             <p>
                                 Recuerde que la información ingresada debe coincidir exactamente con el documento tributario emitido en el SII.

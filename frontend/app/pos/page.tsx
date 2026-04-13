@@ -8,7 +8,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Loader2, LayoutGrid, FileText, ChevronDown, BarChart3, Save, Lock, ArrowRightLeft, LogOut, ShoppingCart, Wallet } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -364,8 +364,12 @@ function POSPageContent() {
                     </h2>
                     {currentSession?.status === 'OPEN' && (
                         <div className="hidden sm:flex items-center gap-2">
-                            <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary tracking-widest px-2 py-0.5 text-[10px] h-5 font-bold uppercase transition-colors">Sesión #{currentSession.id}</Badge>
-                            <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/5 text-emerald-700 px-2 py-0.5 text-[10px] h-5 font-medium uppercase">{user?.first_name} {user?.last_name}</Badge>
+                            <span className="border border-primary/20 bg-primary/5 text-primary tracking-widest px-2 py-0.5 text-[10px] h-5 font-bold uppercase transition-colors rounded-[0.25rem]">
+                                Sesión #{currentSession.id}
+                            </span>
+                            <span className="border border-success/30 bg-success/5 text-success px-2 py-0.5 text-[10px] h-5 font-medium uppercase rounded-[0.25rem]">
+                                {user?.first_name} {user?.last_name}
+                            </span>
                         </div>
                     )}
                 </div>
@@ -407,11 +411,11 @@ function POSPageContent() {
                                             variant="outline"
                                             size="sm"
                                             className={cn(
-                                                "h-8 min-w-[32px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative",
+                                                "h-8 min-w-[32px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative rounded-[0.25rem]",
                                                 currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-sm border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
                                                 isSaving && currentDraftId === d.id && "animate-pulse opacity-70",
                                                 lockedByOther && "border-destructive/40 opacity-60",
-                                                isWaitingPayment && currentDraftId !== d.id && "border-amber-500 text-amber-700 bg-amber-100/50 shadow-md border-solid ring-2 ring-amber-500/30 animate-in zoom-in-95 duration-500"
+                                                isWaitingPayment && currentDraftId !== d.id && "border-warning text-warning bg-warning/10 shadow-sm border-solid ring-1 ring-warning/30 animate-in zoom-in-95 duration-500"
                                             )}
                                             onClick={() => handleLoadDraft(d)}
                                             title={lockedByOther ? `En uso por ${lockInfo.lockedByName}` : isWaitingPayment ? "Registrar Pago (Pendiente)" : undefined}
@@ -420,7 +424,7 @@ function POSPageContent() {
                                             {isWaitingPayment && currentDraftId !== d.id && !lockedByOther ? (
                                                 <div className="flex items-center gap-1">
                                                     {d.id}
-                                                    <Wallet className="h-3.5 w-3.5 text-amber-600 animate-pulse" />
+                                                    <Wallet className="h-3.5 w-3.5 text-warning animate-pulse" />
                                                 </div>
                                             ) : (
                                                 (!isWaitingPayment || currentDraftId === d.id) && d.id
@@ -430,7 +434,9 @@ function POSPageContent() {
                                     )
                                 })}
                                 {currentDraftId === null && items.length > 0 && (
-                                    <Badge variant="outline" className="h-8 border-dashed text-[9px] px-2 opacity-50 bg-muted/20">Nuevo...</Badge>
+                                    <span className="h-8 border border-dashed border-muted-foreground/30 text-[9px] px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-[0.25rem] text-muted-foreground uppercase font-bold tracking-widest">
+                                        Nuevo...
+                                    </span>
                                 )}
                             </div>
                         )
@@ -453,7 +459,7 @@ function POSPageContent() {
                                 <DropdownMenuItem
                                     onClick={() => setWithdrawDialogOpen(true)}
                                     disabled={items.some(i => !i.track_inventory)}
-                                    className="font-bold text-amber-600 focus:text-amber-700"
+                                    className="font-bold text-warning focus:text-warning"
                                 >
                                     <ShoppingCart className="mr-2 h-4 w-4" />
                                     Retiro de Socio
@@ -483,7 +489,7 @@ function POSPageContent() {
             <div className="relative grid grid-cols-1 md:grid-cols-12 gap-4 flex-1 min-h-0 overflow-hidden">
                 {currentSession !== undefined && currentSession === null && (
                     <div className="absolute inset-0 z-30 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
-                        <Card className="w-full max-w-md shadow-2xl border-primary/20 p-8 text-center space-y-4">
+                        <Card className="w-full max-w-md shadow-sm border-primary/20 p-8 text-center space-y-4 rounded-[0.25rem]">
                             <Lock className="h-12 w-12 text-primary mx-auto mb-2" />
                             <h3 className="text-2xl font-bold">Caja Cerrada</h3>
                             <p className="text-muted-foreground">Debe abrir una sesión de caja para realizar ventas.</p>
@@ -505,7 +511,7 @@ function POSPageContent() {
                                 </Card>
                             </motion.div>
                         ) : (
-                            <motion.div key={currentDraftId || 'checkout-new'} initial={{ opacity: 0, scale: 0.98, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex-1 flex flex-col min-h-0 bg-background border rounded-2xl shadow-xl overflow-hidden relative border-primary/20">
+                            <motion.div key={currentDraftId || 'checkout-new'} initial={{ opacity: 0, scale: 0.98, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex-1 flex flex-col min-h-0 bg-background border rounded-[0.25rem] shadow-sm overflow-hidden relative border-primary/20">
                                 <SalesCheckoutWizardContent
                                     key={currentDraftId || 'checkout-new'}
                                     order={null}
@@ -571,19 +577,19 @@ function POSPageContent() {
             <SalesOrdersModal open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
 
             <AlertDialog open={!!completedSaleData} onOpenChange={(open) => { if (!open) setCompletedSaleData(null) }}>
-                <AlertDialogContent className="max-w-md bg-white border-primary/10 shadow-2xl">
+                <AlertDialogContent className="max-w-md bg-card border-primary/10 shadow-sm rounded-[0.25rem]">
                     <AlertDialogHeader>
-                        <div className="mx-auto bg-primary text-primary-foreground p-4 rounded-full mb-4 shadow-xl shadow-primary/20">
+                        <div className="mx-auto bg-primary text-primary-foreground p-4 rounded-full mb-4 shadow-sm">
                             <Check className="h-10 w-10 stroke-[3px]" />
                         </div>
-                        <AlertDialogTitle className="text-2xl font-black text-center text-primary-950">¡Venta Exitosa!</AlertDialogTitle>
+                        <AlertDialogTitle className="text-2xl font-black text-center text-foreground">¡Venta Exitosa!</AlertDialogTitle>
                         <AlertDialogDescription className="text-center text-primary/60 font-medium">
                             La venta se ha procesado correctamente. ¿Desea imprimir el comprobante térmico?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col sm:flex-row gap-3 mt-4">
                         <Button
-                            className="flex-1 h-16 rounded-2xl text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 group"
+                            className="flex-1 h-14 rounded-[0.25rem] text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-sm group"
                             onClick={() => {
                                 handlePrint();
                                 setCompletedSaleData(null);
@@ -593,7 +599,7 @@ function POSPageContent() {
                             Imprimir
                         </Button>
                         <AlertDialogCancel
-                            className="flex-1 h-16 border-primary/20 text-primary hover:bg-primary/5 rounded-2xl text-lg font-bold"
+                            className="flex-1 h-14 border-primary/20 text-primary hover:bg-primary/5 rounded-[0.25rem] text-lg font-bold"
                             onClick={() => setCompletedSaleData(null)}
                         >
                             Cerrar
@@ -618,13 +624,13 @@ function POSPageContent() {
 
             {/* Partner Withdrawal Confirmation */}
             <AlertDialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
-                <AlertDialogContent className="max-w-md bg-white border-amber-100 shadow-2xl">
+                <AlertDialogContent className="max-w-md bg-card border-warning/10 shadow-sm rounded-[0.25rem]">
                     <AlertDialogHeader>
-                        <div className="mx-auto bg-amber-500 text-white p-4 rounded-full mb-4 shadow-lg shadow-amber-200">
+                        <div className="mx-auto bg-warning/10 text-warning p-4 rounded-full mb-4 border border-warning/20">
                             <ShoppingCart className="h-8 w-8" />
                         </div>
-                        <AlertDialogTitle className="text-xl font-bold text-center text-amber-950">Confirmar Retiro de Socio</AlertDialogTitle>
-                        <AlertDialogDescription className="text-center text-amber-900/60 font-medium pt-2 text-sm">
+                        <AlertDialogTitle className="text-xl font-bold text-center text-warning">Confirmar Retiro de Socio</AlertDialogTitle>
+                        <AlertDialogDescription className="text-center text-warning/60 font-medium pt-2 text-sm">
                             Se registrará un retiro de stock por concepto de <strong>Retiro de Utilidades</strong>.
                             <br />
                             Esta acción descontará el inventario inmediatamente y no genera factura ni boleta.
@@ -633,7 +639,7 @@ function POSPageContent() {
 
                     <div className="space-y-4 my-2">
                         <div className="space-y-1.5">
-                            <Label className="text-[10px] font-black uppercase text-amber-900/50 tracking-widest pl-1">Seleccionar Socio</Label>
+                            <Label className="text-[10px] font-black uppercase text-warning/50 tracking-widest pl-1">Seleccionar Socio</Label>
                             <AdvancedContactSelector
                                 value={selectedPartnerId}
                                 onChange={setSelectedPartnerId}
@@ -648,7 +654,7 @@ function POSPageContent() {
 
                     <AlertDialogFooter className="flex-col sm:flex-row gap-3 mt-2">
                         <Button
-                            className="flex-1 h-12 rounded-xl text-sm font-bold uppercase tracking-wider bg-amber-600 hover:bg-amber-700 shadow-lg shadow-amber-200 disabled:opacity-50"
+                            className="flex-1 h-12 rounded-[0.25rem] text-sm font-bold uppercase tracking-wider bg-warning hover:bg-warning shadow-sm disabled:opacity-50"
                             onClick={handleWithdraw}
                             disabled={isWithdrawing || !selectedPartnerId}
                         >
@@ -656,7 +662,7 @@ function POSPageContent() {
                             Confirmar Retiro
                         </Button>
                         <AlertDialogCancel
-                            className="flex-1 h-12 border-amber-200 text-amber-900 hover:bg-amber-50 rounded-xl text-sm font-bold"
+                            className="flex-1 h-12 border-warning/20 text-warning hover:bg-warning/10 rounded-[0.25rem] text-sm font-bold"
                             disabled={isWithdrawing}
                         >
                             Cancelar

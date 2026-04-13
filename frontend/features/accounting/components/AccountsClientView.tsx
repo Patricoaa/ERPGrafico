@@ -224,15 +224,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
                             />
                         )}
                         <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
-                            onClick={() => handleAddAccount(account.id.toString())}
-                            title="Añadir Sub-cuenta"
-                        >
-                            <Plus className="h-4 w-4" />
-                        </Button>
-                        <Button
                             variant="ghost" 
                             size="icon" 
                             className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"

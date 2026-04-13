@@ -10,7 +10,10 @@ import {
     ArrowUpCircle,
     Info,
     Receipt,
-    Download
+    Download,
+    Plus,
+    Wallet,
+    LogOut
 } from "lucide-react"
 import {
     Sheet,
@@ -18,6 +21,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet"
+import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
 import { formatCurrency, formatPlainDate as formatDate, cn } from "@/lib/utils"
@@ -26,6 +30,9 @@ import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Skeleton } from "@/components/ui/skeleton"
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
+import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
 
 interface PartnerLedgerModalProps {
     open: boolean
@@ -42,6 +49,8 @@ export function PartnerLedgerModal({
 }: PartnerLedgerModalProps) {
     const [loading, setLoading] = useState(false)
     const [data, setData] = useState<any>(null)
+    const [isContributionOpen, setIsContributionOpen] = useState(false)
+    const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
 
     const fetchData = async () => {
         if (!partnerId) return
@@ -172,10 +181,16 @@ export function PartnerLedgerModal({
             <SheetContent
                 side="bottom"
                 hideOverlay={true}
+                hideCloseButton={true}
                 className="h-[85vh] sm:h-[90vh] p-0 border-t-0 bg-background rounded-t-[2.5rem] shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.25)] flex flex-col"
             >
                 {/* Visual Handle for "Drawer" feel */}
                 <div className="w-12 h-1.5 bg-muted-foreground/20 rounded-full mx-auto my-4 shrink-0 shadow-inner" />
+
+                <SheetCloseButton 
+                    onClick={() => onOpenChange(false)}
+                    className="absolute top-4 right-8 z-[60]"
+                />
 
                 <SheetHeader className="px-8 pb-2 space-y-0">
                     <SheetTitle>
@@ -194,7 +209,7 @@ export function PartnerLedgerModal({
                 <div className="flex-1 overflow-y-auto px-8 pb-8 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent">
                     {loading ? (
                         <div className="space-y-6 mt-4">
-                            <Skeleton className="h-96 w-full rounded-2xl" />
+                            <Skeleton className="h-96 w-full rounded-lg" />
                         </div>
                     ) : (
                         <div className="mt-4 animate-in fade-in duration-500">
@@ -205,11 +220,42 @@ export function PartnerLedgerModal({
                                 cardMode={false}
                                 searchPlaceholder="Filtrar por concepto (ej: aporte, retiro)..."
                                 filterColumn="description"
+                                toolbarAction={
+                                    <>
+                                        <DropdownMenuItem
+                                            onClick={() => setIsContributionOpen(true)}
+                                            className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-success focus:bg-success/10 focus:text-success cursor-pointer transition-colors"
+                                        >
+                                            <Wallet className="h-4 w-4 mr-2" />
+                                            Registrar Aporte
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={() => setIsWithdrawalOpen(true)}
+                                            className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer transition-colors"
+                                        >
+                                            <LogOut className="h-4 w-4 mr-2" />
+                                            Registrar Retiro
+                                        </DropdownMenuItem>
+                                    </>
+                                }
                             />
                         </div>
                     )}
                 </div>
             </SheetContent>
+
+            <PartnerContributionWizard
+                open={isContributionOpen}
+                onOpenChange={setIsContributionOpen}
+                onSuccess={fetchData}
+                initialPartnerId={partnerId?.toString()}
+            />
+            <PartnerWithdrawalWizard
+                open={isWithdrawalOpen}
+                onOpenChange={setIsWithdrawalOpen}
+                onSuccess={fetchData}
+                initialPartnerId={partnerId?.toString()}
+            />
         </Sheet>
     )
 }

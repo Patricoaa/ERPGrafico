@@ -79,7 +79,7 @@ export function ProcessSummarySidebar({
                         className={cn(
                             "rounded-lg transition-all duration-200",
                             isActive && "bg-primary text-primary-foreground shadow-sm",
-                            isPast && "bg-green-50 text-green-700",
+                            isPast && "bg-success/10 text-success",
                             isFuture && "text-muted-foreground"
                         )}
                     >
@@ -107,7 +107,7 @@ export function ProcessSummarySidebar({
                                             ${paymentData.amount.toLocaleString()}
                                         </p>
                                         {paymentData.creditAssigned !== undefined && paymentData.creditAssigned > 0 && (
-                                            <p className="text-[10px] text-orange-600 font-semibold">
+                                            <p className="text-[10px] text-warning font-semibold">
                                                 Crédito: ${paymentData.creditAssigned.toLocaleString()}
                                             </p>
                                         )}

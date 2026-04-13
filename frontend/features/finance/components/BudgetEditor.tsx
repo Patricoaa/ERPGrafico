@@ -1,13 +1,6 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter
-} from "@/components/ui/dialog";
 import { BaseModal } from "@/components/shared/BaseModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,10 +70,10 @@ const BudgetAccountRow = React.memo(({
                 </DropdownMenu>
             </div>
             {months.map(m => (
-                <div key={m} className="flex-1 border-r p-1 bg-white dark:bg-slate-900/50">
+                <div key={m} className="flex-1 border-r p-1 bg-card/10">
                     <Input
                         type="number"
-                        className="h-8 text-[11px] text-right px-1 border-none bg-transparent focus-visible:bg-white dark:focus-visible:bg-slate-950 font-medium"
+                        className="h-8 text-[11px] text-right px-1 border-none bg-transparent focus-visible:bg-accent/40 font-medium"
                         placeholder="0"
                         value={monthlyData?.[m] || ''}
                         onChange={e => onAmountChange(account.id, m, e.target.value)}
@@ -259,7 +252,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                             placeholder="Buscar cuenta por nombre o código..."
                             value={filter}
                             onChange={e => setFilter(e.target.value)}
-                            className={cn(FORM_STYLES.input, "bg-white dark:bg-slate-950")}
+                            className={cn(FORM_STYLES.input, "bg-background")}
                         />
                         <TooltipProvider>
                             <Tooltip>
