@@ -10,7 +10,10 @@ import { DateRange } from "react-day-picker"
 import { startOfYear, subYears } from "date-fns"
 import { useServerDate } from "@/hooks/useServerDate"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { MappingConfigSheet } from "@/features/finance/components/MappingConfigSheet"
 import { LAYOUT_TOKENS } from "@/lib/styles"
+import { Button } from "@/components/ui/button"
+import { SlidersHorizontal } from "lucide-react"
 
 const RatiosView = dynamic(() => import("@/features/finance/components/RatiosView").then(mod => mod.RatiosView), {
     ssr: false,
@@ -28,6 +31,7 @@ interface AnalysisViewProps {
 
 export function AnalysisView({ activeTab }: AnalysisViewProps) {
     const [showComparison, setShowComparison] = useState(false)
+    const [mappingOpen, setMappingOpen] = useState(false)
 
     // Date State
     const { serverDate } = useServerDate()
@@ -58,6 +62,18 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
     return (
         <div className={LAYOUT_TOKENS.view}>
             <div className="flex flex-wrap items-center justify-end gap-4">
+                {activeTab === "ratios" && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setMappingOpen(true)}
+                        className="text-xs font-black uppercase tracking-widest text-primary gap-1.5"
+                    >
+                        <SlidersHorizontal className="h-3.5 w-3.5" />
+                        Configurar Mapeo
+                    </Button>
+                )}
+
                 <div className="flex items-center space-x-2 border-l pl-4">
                     <Switch id="compare-mode" checked={showComparison} onCheckedChange={setShowComparison} />
                     <Label htmlFor="compare-mode" className="text-sm cursor-pointer">Comparar</Label>
@@ -87,6 +103,15 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
                     )}
                 </TabsContent>
             </div>
+            
+            <MappingConfigSheet
+                open={mappingOpen}
+                onOpenChange={setMappingOpen}
+                mappingType="bs" // Defaulting to Balance Sheet mappings for Ratios
+                // Ratios data will be fetched inside RatiosView on next mount or we can't easily force refresh here 
+                // since RatiosView does its own fetch on mount/date change. 
+                // But saving mappings will take effect on next refresh.
+            />
         </div>
     )
 }

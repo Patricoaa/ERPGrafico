@@ -45,7 +45,16 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                 { value: "bi", label: "Business Intelligence", iconName: "activity", href: "/finances?view=analysis&tab=bi" },
             ]
         },
-        { value: "budgets", label: "Presupuestos", iconName: "target", href: "/finances?view=budgets" },
+        { 
+            value: "budgets", 
+            label: "Presupuestos", 
+            iconName: "target", 
+            href: "/finances?view=budgets",
+            subTabs: [
+                { value: "list", label: "Gestión", iconName: "list", href: "/finances?view=budgets&tab=list" },
+                { value: "versus", label: "Versus", iconName: "chart-bar", href: "/finances?view=budgets&tab=versus" },
+            ]
+        },
     ]
 
     const getHeaderConfig = () => {
@@ -69,6 +78,9 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                     return { title: "Análisis Financiero", description: "Visualización de ratios, KPIs e inteligencia de negocio.", icon: "line-chart", action: null }
                 }
             case 'budgets':
+                if (tab === 'versus') {
+                    return { title: "Versus Presupuestario", description: "Análisis de variaciones mes y acumulado.", icon: "chart-bar", action: null }
+                }
                 return { 
                     title: "Control Presupuestario", 
                     description: "Gestión de metas presupuestarias y ejecución.", 
@@ -106,7 +118,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                 <Suspense fallback={<LoadingFallback />}>
                     {viewMode === 'statements' && <StatementsView searchParams={Promise.resolve({ tab })} />}
                     {viewMode === 'analysis' && <AnalysisView searchParams={Promise.resolve({ tab })} />}
-                    {viewMode === 'budgets' && <BudgetsView externalOpen={modal === 'new'} />}
+                    {viewMode === 'budgets' && <BudgetsView externalOpen={modal === 'new'} tab={tab} />}
                 </Suspense>
             </div>
         </div>

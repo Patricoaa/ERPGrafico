@@ -30,6 +30,7 @@ class CFCategory(models.TextChoices):
 
 class BSCategory(models.TextChoices):
     CURRENT_ASSET = 'CURRENT_ASSET', _('Activo Corriente')
+    INVENTORY = 'INVENTORY', _('Inventario')
     NON_CURRENT_ASSET = 'NON_CURRENT_ASSET', _('Activo No Corriente')
     CURRENT_LIABILITY = 'CURRENT_LIABILITY', _('Pasivo Corriente')
     NON_CURRENT_LIABILITY = 'NON_CURRENT_LIABILITY', _('Pasivo No Corriente')
@@ -127,6 +128,26 @@ class Account(models.Model):
                 raise ValidationError({
                     'account_type': _("El tipo de cuenta debe coincidir con el de la cuenta padre (%s).") % self.parent.get_account_type_display()
                 })
+        
+        # Validation for BS / IS categories vs Account Type
+        if self.is_category and self.account_type not in [AccountType.INCOME, AccountType.EXPENSE]:
+            raise ValidationError({
+                'is_category': _("Solo las cuentas de Ingresos y Gastos pueden tener categorías de Estado de Resultados.")
+            })
+            
+        if self.bs_category and self.account_type not in [AccountType.ASSET, AccountType.LIABILITY, AccountType.EQUITY]:
+            raise ValidationError({
+                'bs_category': _("Solo las cuentas de Activo, Pasivo y Patrimonio pueden tener categorías de Balance General.")
+            })
+            
+        if self.bs_category:
+            if self.account_type == AccountType.ASSET and self.bs_category not in [BSCategory.CURRENT_ASSET, BSCategory.INVENTORY, BSCategory.NON_CURRENT_ASSET]:
+                raise ValidationError({'bs_category': _("Las cuentas de Activo solo pueden ser Activo Corriente, Inventario o No Corriente.")})
+            if self.account_type == AccountType.LIABILITY and self.bs_category not in [BSCategory.CURRENT_LIABILITY, BSCategory.NON_CURRENT_LIABILITY]:
+                raise ValidationError({'bs_category': _("Las cuentas de Pasivo solo pueden ser Pasivo Corriente o No Corriente.")})
+            if self.account_type == AccountType.EQUITY and self.bs_category != BSCategory.EQUITY:
+                raise ValidationError({'bs_category': _("Las cuentas de Patrimonio solo pueden ser categoría Patrimonio.")})
+
         # Max hierarchy depth validation
         from .models import AccountingSettings
         settings = AccountingSettings.get_solo()
@@ -493,6 +514,10 @@ class AccountingSettings(models.Model):
     default_expense_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_expense')
     default_tax_receivable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax_receivable')
     default_tax_payable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_tax_payable')
+    default_tax_rate = models.DecimalField(
+        _("Tasa de IVA por Defecto (%)"), max_digits=5, decimal_places=2, default=Decimal('19.00'),
+        help_text=_("Tasa porcentual a aplicar (ej. 19.00) para desglosar el neto del IVA.")
+    )
     default_uncollectible_expense_account = models.ForeignKey(
         Account, 
         on_delete=models.SET_NULL, 
