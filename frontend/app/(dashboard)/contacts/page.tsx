@@ -25,7 +25,7 @@ export default function ContactsPage() {
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Contactos"
-                description="Directorio centralizado de clientes, proveedores y colaboradores."
+                description="Directorio de contactos."
                 titleActions={
                     <PageHeaderButton
                         onClick={handleOpenNew}

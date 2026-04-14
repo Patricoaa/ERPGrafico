@@ -13,7 +13,7 @@ import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -177,22 +177,15 @@ export default function EmployeesPage() {
                 </div>
             ),
         },
-        {
-            id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
-                        onClick={() => { setEditingEmployee(row.original); setDialogOpen(true) }}
-                    >
-                        <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                </div>
-            ),
-        },
+        createActionsColumn<Employee>({
+            renderActions: (employee) => (
+                <DataCell.Action
+                    icon={Pencil}
+                    title="Editar Empleado"
+                    onClick={(e) => { e.stopPropagation(); setEditingEmployee(employee); setDialogOpen(true); }}
+                />
+            )
+        }),
     ]
 
     return (

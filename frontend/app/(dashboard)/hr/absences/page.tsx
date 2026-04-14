@@ -13,7 +13,7 @@ import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -124,28 +124,23 @@ export default function AbsencesPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Días" className="justify-center" />,
             cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Text className="font-mono">{row.getValue("days")}</DataCell.Text></div>,
         },
-        {
-            id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex items-center justify-center gap-1 w-full">
-                    <Button
-                        variant="ghost" size="icon"
-                        className="h-8 w-8 rounded-md hover:bg-primary/10 hover:text-primary"
-                        onClick={() => { setEditingAbsence(row.original); setDialogOpen(true) }}
-                    >
-                        <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                        variant="ghost" size="icon"
-                        className="h-8 w-8 rounded-md text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDelete(row.original.id)}
-                    >
-                        <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                </div>
-            ),
-        },
+        createActionsColumn<Absence>({
+            renderActions: (absence) => (
+                <>
+                    <DataCell.Action
+                        icon={Pencil}
+                        title="Editar"
+                        onClick={() => { setEditingAbsence(absence); setDialogOpen(true) }}
+                    />
+                    <DataCell.Action
+                        icon={Trash2}
+                        title="Eliminar"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(absence.id)}
+                    />
+                </>
+            )
+        }),
     ]
 
     return (

@@ -5,8 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation"
 import {
     ColumnDef
 } from "@tanstack/react-table"
-import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Plus, Pencil, Trash2, Layers, CheckCircle2, XCircle } from "lucide-react"
@@ -182,33 +182,23 @@ export default function BOMsPage() {
                 </div>
             ),
         },
-        {
-            id: "actions",
-            cell: ({ row }) => {
-                const bom = row.original
-                return (
-                    <div className="text-center">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(bom.id)}
-                            title="Editar"
-                        >
-                            <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => handleDelete(bom.id)}
-                            title="Eliminar"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                    </div>
-                )
-            },
-        },
+        createActionsColumn<BOM>({
+            renderActions: (bom) => (
+                <>
+                    <DataCell.Action
+                        icon={Pencil}
+                        title="Editar"
+                        onClick={() => handleEdit(bom.id)}
+                    />
+                    <DataCell.Action
+                        icon={Trash2}
+                        title="Eliminar"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(bom.id)}
+                    />
+                </>
+            )
+        }),
     ]
 
     return (
