@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { DownloadSimple, FileText, ChartBar, TrendUp, FadersHorizontal } from "@phosphor-icons/react"
 import api, { pollTask } from "@/lib/api"
 import { toast } from "sonner"
-import { FinancialStatementTable } from "@/features/finance/components/FinancialStatementTable"
+import { ReportTable } from "@/components/shared/ReportTable"
 import { CashFlowTable } from "@/features/finance/components/CashFlowTable"
 import { MappingConfigSheet } from "@/features/finance/components/MappingConfigSheet"
 import { DateRangeSelector } from "@/features/finance/components/DateRangeSelector"
@@ -123,14 +123,13 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
     const compPeriodLabel = getPeriodLabel(compDate)
 
     const ReportHeader = ({ title, dateRange }: { title: string, dateRange?: DateRange }) => (
-        <div className="flex flex-col items-center text-center space-y-1 mb-8 pb-6 border-b">
-            <h2 className="text-xl font-bold text-foreground dark:text-foreground">{title}</h2>
+        <div className="flex flex-col items-start text-left space-y-1 mb-8 pb-6 border-b w-full">
+            <h2 className="text-2xl font-black uppercase tracking-tight text-foreground dark:text-foreground">{title}</h2>
             {dateRange?.from && dateRange?.to && (
-                <p className="text-sm text-muted-foreground font-medium">
+                <p className="text-sm text-muted-foreground font-medium opacity-80">
                     Período: {format(dateRange.from, 'dd MMMM yyyy', { locale: es })} al {format(dateRange.to, 'dd MMMM yyyy', { locale: es })}
                 </p>
             )}
-            <div className="w-16 h-1 bg-primary mt-4 rounded-full" />
         </div>
     )
 
@@ -177,49 +176,55 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
         )
     }
 
-    return (
-        <div className={LAYOUT_TOKENS.view}>
-            <div className="flex flex-wrap items-center justify-end gap-4">
+    const RenderToolbar = () => (
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-8 bg-muted/20 p-4 rounded-sm border border-dashed">
+            <div className="flex items-center gap-6">
                 <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setMappingOpen(true)}
-                    className="text-xs font-black uppercase tracking-widest text-primary gap-1.5"
+                    className="text-[10px] font-black uppercase tracking-[0.2em] text-primary gap-1.5 hover:bg-primary/5 p-0 h-auto"
                 >
                     <FadersHorizontal className="h-3.5 w-3.5" />
                     Configurar Mapeo
                 </Button>
 
-                <div className="flex items-center space-x-2 border-l pl-4">
+                <div className="flex items-center space-x-2 border-l pl-6 border-muted-foreground/20">
                     <Switch id="compare-mode" checked={showComparison} onCheckedChange={setShowComparison} />
-                    <Label htmlFor="compare-mode" className="text-sm cursor-pointer">Comparar</Label>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                    <DateRangeSelector date={date} onDateChange={setDate} />
-                    {showComparison && (
-                        <div className="flex items-center space-x-2 border-l pl-4">
-                            <span className="text-xs text-muted-foreground">vs</span>
-                            <DateRangeSelector date={compDate} onDateChange={setCompDate} />
-                        </div>
-                    )}
+                    <Label htmlFor="compare-mode" className="text-[10px] font-bold uppercase tracking-widest cursor-pointer">Comparar</Label>
                 </div>
             </div>
+
+            <div className="flex items-center space-x-2">
+                <div className="flex flex-col items-end">
+                    <span className="text-[9px] uppercase font-bold text-muted-foreground mb-1 tracking-tighter">Período Actual</span>
+                    <DateRangeSelector date={date} onDateChange={setDate} />
+                </div>
+                {showComparison && (
+                    <div className="flex flex-col items-end border-l pl-4 border-muted-foreground/20">
+                        <span className="text-[9px] uppercase font-bold text-muted-foreground mb-1 tracking-tighter">Período Comparativo</span>
+                        <DateRangeSelector date={compDate} onDateChange={setCompDate} />
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+
+    return (
+        <div className={LAYOUT_TOKENS.view}>
 
             <div className="max-w-5xl mx-auto w-full pt-4">
                 <TabsContent value="bs" className="mt-0 outline-none">
                     {activeTab === "bs" && (
                         <IndustrialCard variant="industrial" className="shadow-xl border-t-primary overflow-hidden">
-                            <CardHeader className="flex flex-row items-center justify-center pb-0">
-                                <CardTitle className="text-center">Balance General</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-10 pt-4">
+                            <CardContent className="p-10 pt-10">
                                 <ReportHeader title="Situación Financiera" dateRange={date} />
+                                <RenderToolbar />
                                 {bsData ? (
                                     <div className="space-y-10">
                                         {!showComparison && renderBSDistribution()}
-                                        <div className="grid gap-12">
-                                            <FinancialStatementTable
+                                        <div className="space-y-8">
+                                            <ReportTable
                                                 title="Activos"
                                                 data={bsData.assets}
                                                 totalLabel="Total Activos"
@@ -228,9 +233,11 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                 compPeriodLabel={compPeriodLabel}
                                                 periodLabel={periodLabel}
                                                 showComparison={showComparison}
+                                                isLoading={loading}
+                                                accentColor="success"
                                                 embedded
                                             />
-                                            <FinancialStatementTable
+                                            <ReportTable
                                                 title="Pasivos"
                                                 data={bsData.liabilities}
                                                 totalLabel="Total Pasivos"
@@ -239,9 +246,11 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                 compPeriodLabel={compPeriodLabel}
                                                 periodLabel={periodLabel}
                                                 showComparison={showComparison}
+                                                isLoading={loading}
+                                                accentColor="destructive"
                                                 embedded
                                             />
-                                            <FinancialStatementTable
+                                            <ReportTable
                                                 title="Patrimonio"
                                                 data={bsData.equity}
                                                 totalLabel="Total Patrimonio"
@@ -250,12 +259,14 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                 compPeriodLabel={compPeriodLabel}
                                                 periodLabel={periodLabel}
                                                 showComparison={showComparison}
+                                                isLoading={loading}
+                                                accentColor="primary"
                                                 embedded
                                             />
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="p-8 text-center animate-pulse">Cargando datos del balance...</div>
+                                    <ReportTable data={null} isLoading={loading} showComparison={showComparison} />
                                 )}
                             </CardContent>
                         </IndustrialCard>
@@ -265,11 +276,9 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                 <TabsContent value="pl" className="mt-0 outline-none">
                     {activeTab === "pl" && (
                         <IndustrialCard variant="industrial" className="shadow-xl border-t-success overflow-hidden">
-                            <CardHeader className="flex flex-row items-center justify-center pb-0">
-                                <CardTitle className="text-center">Estado de Resultados</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-10 pt-4">
+                            <CardContent className="p-10 pt-10">
                                 <ReportHeader title="Estado de Resultados" dateRange={date} />
+                                <RenderToolbar />
                                 {plData ? (
                                     <div className="space-y-8">
                                         {(plData.sections || []).map((section: any, idx: number) => (
@@ -299,7 +308,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                     </div>
                                                 </div>
                                             ) : (
-                                                <FinancialStatementTable
+                                                <ReportTable
                                                     key={idx}
                                                     title={section.name}
                                                     data={section.tree}
@@ -307,13 +316,15 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                     totalValue={section.total}
                                                     totalValueComp={section.total_comp}
                                                     showComparison={showComparison}
+                                                    isLoading={loading}
+                                                    accentColor={section.name.toLowerCase().includes('ingreso') ? 'success' : section.name.toLowerCase().includes('gasto') || section.name.toLowerCase().includes('costo') ? 'destructive' : 'primary'}
                                                     embedded
                                                 />
                                             )
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="p-8 text-center animate-pulse">Cargando estado de resultados...</div>
+                                    <ReportTable data={null} isLoading={loading} showComparison={showComparison} />
                                 )}
                             </CardContent>
                         </IndustrialCard>
@@ -323,11 +334,9 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                 <TabsContent value="cf" className="mt-0 outline-none">
                     {activeTab === "cf" && (
                         <IndustrialCard variant="industrial" className="shadow-xl border-t-info overflow-hidden">
-                            <CardHeader className="flex flex-row items-center justify-center pb-0">
-                                <CardTitle className="text-center">Flujo de Efectivo</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-10 pt-4">
+                            <CardContent className="p-10 pt-10">
                                 <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} />
+                                <RenderToolbar />
                                 {cfData ? (
                                     <CashFlowTable 
                                         data={cfData} 

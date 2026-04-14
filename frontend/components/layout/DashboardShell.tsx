@@ -15,6 +15,7 @@ import { DynamicIcon } from "@/components/ui/dynamic-icon"
 import { motion, AnimatePresence } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Loader2 } from "lucide-react"
+import { IndustryMark } from "@/components/shared/IndustryMark"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
@@ -88,9 +89,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 }}
             />
 
-            {/* Main Content Area - Wrapped in a Premium Card */}
+            {/* Main Content Area */}
             <div
-                className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-500 ease-[var(--ease-premium)] pt-[84px] pb-4 px-4"
+                className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-500 ease-[var(--ease-premium)] pt-[104px] pb-8 px-8"
                 style={{
                     marginRight: isInboxOpen && isHubEffectivelyOpen
                         ? "calc(360px + 320px + 2rem)"
@@ -101,9 +102,15 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                 : "0px"
                 }}
             >
-                {/* Global Header Slot - Transversal */}
-                <div className="absolute top-0 left-0 right-0 h-[84px] flex items-center px-4 pointer-events-none">
-                    <div className="flex items-center gap-4 w-full pl-16 pr-[320px]">
+                {/* ── TOP BAR ─────────────────────────────────────────── */}
+                {/* Single 64px bar that aligns: logo zone | title | actions */}
+                <div className="absolute top-0 left-0 right-0 h-[64px] flex items-center border-b border-white/[0.04]">
+
+                    {/* Left: logo placeholder — actual logo button is in MiniSidebar fixed */}
+                    <div className="w-[72px] shrink-o" />
+
+                    {/* Center: page title & meta — takes remaining space */}
+                    <div className="flex-1 flex items-center gap-4 min-w-0 pointer-events-none">
                         <AnimatePresence mode="wait">
                             {config && (
                                 <motion.div
@@ -111,39 +118,35 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: 10 }}
-                                    className="flex items-center gap-4 pointer-events-auto"
+                                    className="flex items-center gap-3 pointer-events-auto min-w-0"
                                 >
-                                    {/* Removed leading icon to avoid saturating layout */}
                                     {config.isLoading && (
-                                        <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/10 shadow-sm shrink-0 animate-pulse">
+                                        <div className="p-2 bg-primary/10 text-primary border border-primary/10 shadow-sm shrink-0 animate-pulse">
                                             <Loader2 className="h-4 w-4 animate-spin" />
                                         </div>
                                     )}
 
-                                    {/* Text Content */}
-                                    <div className="flex flex-col">
-                                        <div className="flex items-center gap-3">
-                                            <h1 className="text-xl font-black tracking-tight font-heading uppercase text-foreground leading-none">
+                                    <div className="flex flex-col min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <h1 className="text-base font-black tracking-tight font-heading uppercase text-foreground leading-none truncate">
                                                 {config.title}
                                             </h1>
 
-                                            {/* Config Action (Settings Gear) */}
                                             {config.configHref && (
-                                                <Link href={config.configHref} className="pointer-events-auto">
+                                                <Link href={config.configHref} className="pointer-events-auto shrink-0">
                                                     <motion.div
                                                         whileHover={{ rotate: 90, scale: 1.1 }}
                                                         transition={{ duration: 0.3 }}
-                                                        className="p-1 rounded-lg text-muted-foreground/50 hover:text-primary transition-colors"
+                                                        className="p-1 text-muted-foreground/40 hover:text-primary transition-colors"
                                                     >
-                                                        <DynamicIcon name="settings" className="h-4 w-4" />
+                                                        <DynamicIcon name="settings" className="h-3.5 w-3.5" />
                                                     </motion.div>
                                                 </Link>
                                             )}
-                                            
-                                            {/* Status */}
+
                                             {config.status && (
                                                 <div className={cn(
-                                                    "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border",
+                                                    "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border shrink-0",
                                                     config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
                                                     config.status.type === 'saving' && "bg-primary/20 text-primary border-primary/20 animate-pulse",
                                                     config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
@@ -153,24 +156,22 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                                 </div>
                                             )}
 
-                                            {/* Title Actions */}
                                             {config.titleActions && (
-                                                <div className="flex items-center ml-1">
+                                                <div className="flex items-center">
                                                     {config.titleActions}
                                                 </div>
                                             )}
                                         </div>
-                                        
+
                                         {config.description && (
-                                            <p className="text-[11px] text-muted-foreground font-medium truncate max-w-[400px] mt-1 opacity-70">
+                                            <p className="text-[10px] text-muted-foreground font-medium truncate max-w-[360px] mt-0.5 opacity-60">
                                                 {config.description}
                                             </p>
                                         )}
                                     </div>
 
-                                    {/* Right Side Actions (the children of PageHeader) */}
                                     {config.children && (
-                                        <div className="flex items-center gap-2 ml-4 pl-4 border-l border-white/5">
+                                        <div className="flex items-center gap-2 ml-2 pl-3 border-l border-white/5 shrink-0">
                                             {config.children}
                                         </div>
                                     )}
@@ -178,13 +179,28 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                             )}
                         </AnimatePresence>
                     </div>
+
+                    {/* Right: UserActions — inline, same bar, consistent vertical center */}
+                    <div className="shrink-0 pr-4">
+                        <UserActions isInboxOpen={isInboxOpen} onInboxToggle={handleInboxToggle} />
+                    </div>
                 </div>
 
-                <main id="main-content" className="flex-1 bg-transparent border border-white/5 rounded-lg overflow-y-auto shadow-2xl custom-scrollbar relative backdrop-blur-sm registration-marks">
-                    <div className="w-full h-full">
-                        {children}
-                    </div>
-                </main>
+                {/* Page Content Wrapper — crop marks delimit this area, no border needed */}
+                <div className="relative flex-1 overflow-visible">
+                    {/* IndustryMark as layout delimiter: crop marks + registration symbols in bleed zone */}
+                    <IndustryMark variant="crop" showRegistration />
+
+                    {/* Scrollable content area — borderless by design */}
+                    <main
+                        id="main-content"
+                        className="absolute inset-0 overflow-y-auto custom-scrollbar bg-transparent backdrop-blur-sm"
+                    >
+                        <div className="w-full h-full">
+                            {children}
+                        </div>
+                    </main>
+                </div>
             </div>
 
             {/* Task Inbox Sidebar (Right) - Fixed position */}
@@ -192,13 +208,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 <TaskInboxSidebar
                     isOpen={isInboxOpen}
                     onClose={() => setIsInboxOpen(false)}
-                />
-            </div>
-            {/* User Avatar & Notifications - Top Right Preventive Space */}
-            <div className="fixed top-4 right-4 z-[60]">
-                <UserActions 
-                    isInboxOpen={isInboxOpen} 
-                    onInboxToggle={handleInboxToggle} 
                 />
             </div>
 

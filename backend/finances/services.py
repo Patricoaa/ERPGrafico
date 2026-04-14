@@ -267,22 +267,49 @@ class FinanceService:
     def get_cash_flow(start_date, end_date, comp_start=None, comp_end=None):
         """
         Returns Cash Flow Statement (Indirect Method) using CFCategory mapping.
-        Supports comparison periods if comp_start and comp_end are provided.
+        Integrates with Treasury (1.1.01 prefix) for baseline reconciliation.
         """
-        from accounting.models import CFCategory
+        from accounting.models import CFCategory, Account, AccountType
+        from decimal import Decimal
         
+        # 0. Identify Cash Pool (The source of truth for liquid assets)
+        CASH_PREFIX = '1.1.01'
+        cash_pool_accs = Account.objects.filter(code__startswith=CASH_PREFIX)
+        cash_pool_ids = set(cash_pool_accs.values_list('id', flat=True))
+        
+        def get_pool_balance(date):
+            if not date: return Decimal('0')
+            total = Decimal('0')
+            for acc in cash_pool_accs:
+                total += FinanceService._get_account_balance(acc, end_date=date)
+            return total
+
+        # Baseline Balances
+        beginning_cash = get_pool_balance(start_date)
+        ending_cash = get_pool_balance(end_date)
+        actual_net_increase = ending_cash - beginning_cash
+
+        # Comparison Baseline
+        beginning_cash_comp = Decimal('0')
+        ending_cash_comp = Decimal('0')
+        if comp_start and comp_end:
+            beginning_cash_comp = get_pool_balance(comp_start)
+            ending_cash_comp = get_pool_balance(comp_end)
+        
+        actual_net_increase_comp = ending_cash_comp - beginning_cash_comp
+
+        # 1. Activities Calculation (Indirect Method)
         is_report = FinanceService.get_income_statement(start_date, end_date)
         net_income = is_report['net_income']
         
-        # Get comparison net income if comparison dates provided
         net_income_comp = 0
         if comp_start and comp_end:
             is_report_comp = FinanceService.get_income_statement(comp_start, comp_end)
             net_income_comp = is_report_comp['net_income']
         
-        operating_activities = [{'name': 'Utilidad Neta', 'amount': net_income, 'amount_comp': net_income_comp}]
+        operating_activities = [{'name': 'Utilidad Neta', 'amount': float(net_income), 'amount_comp': float(net_income_comp)}]
         
-        # 1. Non-Cash Adjustments
+        # Adjustments to Net Income (Non-cash)
         dep_accs = Account.objects.filter(cf_category=CFCategory.DEP_AMORT)
         for acc in dep_accs:
             val = float(FinanceService._get_account_balance(acc, start_date, end_date))
@@ -290,30 +317,31 @@ class FinanceService:
             if comp_start and comp_end:
                 val_comp = float(FinanceService._get_account_balance(acc, comp_start, comp_end))
             if val != 0 or val_comp != 0:
-                operating_activities.append({'name': f"Más: {acc.name}", 'amount': val, 'amount_comp': val_comp})
+                operating_activities.append({'name': f"Depreciación/Amortización: {acc.name}", 'amount': val, 'amount_comp': val_comp})
 
-        # 2. Operating activities (WC Changes)
-        op_accs = [acc for acc in Account.objects.filter(cf_category=CFCategory.OPERATING)]
-        # Filter to only 'Mapping Roots' to avoid double counting
+        # Working Capital & Other Operating
+        op_accs = Account.objects.filter(cf_category=CFCategory.OPERATING).exclude(id__in=cash_pool_ids)
         op_roots = []
         for acc in op_accs:
-            # Manual fallback to find mapping roots
-            has_parent_mapped = False
+            has_parent = False
             curr = acc.parent
             while curr:
                 if curr.cf_category == CFCategory.OPERATING:
-                    has_parent_mapped = True
+                    has_parent = True
                     break
                 curr = curr.parent
-            if not has_parent_mapped:
+            if not has_parent:
                 op_roots.append(acc)
 
         for acc in op_roots:
+            # We use aggregated balance but ensuring we don't include cash pool internals
             val = float(FinanceService._get_aggregated_balance(acc, 'cf', CFCategory.OPERATING, start_date, end_date))
             val_comp = 0
             if comp_start and comp_end:
                 val_comp = float(FinanceService._get_aggregated_balance(acc, 'cf', CFCategory.OPERATING, comp_start, comp_end))
+            
             if val != 0 or val_comp != 0:
+                # Assets: Increase is use of cash (-) / Liabilities: Increase is source of cash (+)
                 amount = -val if acc.account_type == AccountType.ASSET else val
                 amount_comp = -val_comp if acc.account_type == AccountType.ASSET else val_comp
                 operating_activities.append({'name': f"Cambio en {acc.name}", 'amount': amount, 'amount_comp': amount_comp})
@@ -321,20 +349,10 @@ class FinanceService:
         total_operating = sum(item['amount'] for item in operating_activities)
         total_operating_comp = sum(item.get('amount_comp', 0) for item in operating_activities)
 
-        # 3. Investing Activities
+        # 2. Investing Activities
         investing_activities = []
-        inv_roots = []
-        all_inv = Account.objects.filter(cf_category=CFCategory.INVESTING)
-        for acc in all_inv:
-            has_parent = False
-            curr = acc.parent
-            while curr:
-                if curr.cf_category == CFCategory.INVESTING:
-                    has_parent = True
-                    break
-                curr = curr.parent
-            if not has_parent:
-                inv_roots.append(acc)
+        inv_accs = Account.objects.filter(cf_category=CFCategory.INVESTING).exclude(id__in=cash_pool_ids)
+        inv_roots = [acc for acc in inv_accs if not any(p.cf_category == CFCategory.INVESTING for p in acc.get_parents())]
 
         for acc in inv_roots:
             val = float(FinanceService._get_aggregated_balance(acc, 'cf', CFCategory.INVESTING, start_date, end_date))
@@ -344,24 +362,15 @@ class FinanceService:
             if val != 0 or val_comp != 0:
                 amount = -val if acc.account_type == AccountType.ASSET else val
                 amount_comp = -val_comp if acc.account_type == AccountType.ASSET else val_comp
-                investing_activities.append({'name': f"Cambio en {acc.name}", 'amount': amount, 'amount_comp': amount_comp})
+                investing_activities.append({'name': f"Actividad de Inversión: {acc.name}", 'amount': amount, 'amount_comp': amount_comp})
+        
         total_investing = sum(item['amount'] for item in investing_activities)
         total_investing_comp = sum(item.get('amount_comp', 0) for item in investing_activities)
 
-        # 4. Financing Activities
+        # 3. Financing Activities
         financing_activities = []
-        fin_roots = []
-        all_fin = Account.objects.filter(cf_category=CFCategory.FINANCING)
-        for acc in all_fin:
-            has_parent = False
-            curr = acc.parent
-            while curr:
-                if curr.cf_category == CFCategory.FINANCING:
-                    has_parent = True
-                    break
-                curr = curr.parent
-            if not has_parent:
-                fin_roots.append(acc)
+        fin_accs = Account.objects.filter(cf_category=CFCategory.FINANCING).exclude(id__in=cash_pool_ids)
+        fin_roots = [acc for acc in fin_accs if not any(p.cf_category == CFCategory.FINANCING for p in acc.get_parents())]
 
         for acc in fin_roots:
             val = float(FinanceService._get_aggregated_balance(acc, 'cf', CFCategory.FINANCING, start_date, end_date))
@@ -371,25 +380,47 @@ class FinanceService:
             if val != 0 or val_comp != 0:
                 amount = -val if acc.account_type == AccountType.ASSET else val
                 amount_comp = -val_comp if acc.account_type == AccountType.ASSET else val_comp
-                financing_activities.append({'name': f"Cambio en {acc.name}", 'amount': amount, 'amount_comp': amount_comp})
+                financing_activities.append({'name': f"Actividad de Financiamiento: {acc.name}", 'amount': amount, 'amount_comp': amount_comp})
+        
         total_financing = sum(item['amount'] for item in financing_activities)
         total_financing_comp = sum(item.get('amount_comp', 0) for item in financing_activities)
 
-        net_increase = total_operating + total_investing + total_financing
-        net_increase_comp = total_operating_comp + total_investing_comp + total_financing_comp
+        # 4. Reconciliation & Anomaly Detection
+        calculated_net_increase = total_operating + total_investing + total_financing
+        discrepancy = float(actual_net_increase) - calculated_net_increase
+        
+        culprit_accounts = []
+        if abs(discrepancy) > 0.01:
+            # Find accounts with movements that are NOT mapped and NOT in cash pool
+            unmapped_accs = Account.objects.filter(cf_category__isnull=True).exclude(code__startswith=CASH_PREFIX)
+            for acc in unmapped_accs:
+                if not acc.is_selectable: continue # parent accounts logic
+                variation = float(FinanceService._get_account_balance(acc, start_date, end_date))
+                if abs(variation) > 0.01:
+                    culprit_accounts.append({
+                        'code': acc.code,
+                        'name': acc.name,
+                        'variation': variation,
+                        'type': acc.account_type
+                    })
 
         return {
+            'beginning_cash': float(beginning_cash),
+            'ending_cash': float(ending_cash),
+            'beginning_cash_comp': float(beginning_cash_comp),
+            'ending_cash_comp': float(ending_cash_comp),
             'operating': operating_activities,
             'total_operating': total_operating,
-            'total_operating_comp': total_operating_comp,
             'investing': investing_activities,
             'total_investing': total_investing,
-            'total_investing_comp': total_investing_comp,
             'financing': financing_activities,
             'total_financing': total_financing,
-            'total_financing_comp': total_financing_comp,
-            'net_increase': net_increase,
-            'net_increase_comp': net_increase_comp
+            'net_increase': float(actual_net_increase),
+            'net_increase_comp': float(actual_net_increase_comp),
+            'calculated_net_increase': calculated_net_increase,
+            'discrepancy': discrepancy,
+            'culprit_accounts': culprit_accounts,
+            'is_balanced': abs(discrepancy) < 0.01
         }
 
     @staticmethod

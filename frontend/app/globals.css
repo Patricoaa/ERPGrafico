@@ -58,8 +58,8 @@
   --liability-foreground: var(--warning-foreground);
 
   /* GEOMETRY & TYPOGRAPHY */
-  --radius: 0.5rem;
-  /* Sharp Industrial look — 8px base aligns with 8pt grid and print-industry precision */
+  --radius: 0;
+  /* Zero Radius — Industrial Premium mandate: sharp 90° corners across all UI elements */
   --ring: oklch(0.65 0.25 301 / 0.4);
 
   --sidebar: oklch(0.10 0.02 240);
@@ -211,7 +211,7 @@
    * These tokens formalize the print-industry aesthetic that
    * differentiates ERPGrafico from generic ERP systems.
    */
-  --mark-color: oklch(0.12 0.02 240 / 0.20);
+  --mark-color: oklch(0.40 0.01 240 / 0.40);
   --mark-color-active: var(--primary);
   --grid-line-color: oklch(0.12 0.02 240 / 0.10);
   --grid-line-size: 80px;
@@ -332,22 +332,22 @@
   .registration-marks::before {
     content: '';
     position: absolute;
-    inset: 8px;
+    inset: -16px;
     pointer-events: none;
     z-index: 1;
     background:
       /* Top-Left */
-      linear-gradient(var(--mark-color), var(--mark-color)) 0 0 / 12px 2px no-repeat,
-      linear-gradient(var(--mark-color), var(--mark-color)) 0 0 / 2px 12px no-repeat,
+      linear-gradient(var(--mark-color), var(--mark-color)) 16px 0 / 3px 12px no-repeat,
+      linear-gradient(var(--mark-color), var(--mark-color)) 0 16px / 12px 3px no-repeat,
       /* Top-Right */
-      linear-gradient(var(--mark-color), var(--mark-color)) 100% 0 / 12px 2px no-repeat,
-      linear-gradient(var(--mark-color), var(--mark-color)) 100% 0 / 2px 12px no-repeat,
+      linear-gradient(var(--mark-color), var(--mark-color)) calc(100% - 16px) 0 / 3px 12px no-repeat,
+      linear-gradient(var(--mark-color), var(--mark-color)) 100% 16px / 12px 3px no-repeat,
       /* Bottom-Left */
-      linear-gradient(var(--mark-color), var(--mark-color)) 0 100% / 12px 2px no-repeat,
-      linear-gradient(var(--mark-color), var(--mark-color)) 0 100% / 2px 12px no-repeat,
+      linear-gradient(var(--mark-color), var(--mark-color)) 16px 100% / 3px 12px no-repeat,
+      linear-gradient(var(--mark-color), var(--mark-color)) 0 calc(100% - 16px) / 12px 3px no-repeat,
       /* Bottom-Right */
-      linear-gradient(var(--mark-color), var(--mark-color)) 100% 100% / 12px 2px no-repeat,
-      linear-gradient(var(--mark-color), var(--mark-color)) 100% 100% / 2px 12px no-repeat;
+      linear-gradient(var(--mark-color), var(--mark-color)) calc(100% - 16px) 100% / 3px 12px no-repeat,
+      linear-gradient(var(--mark-color), var(--mark-color)) 100% calc(100% - 16px) / 12px 3px no-repeat;
   }
 
   /*
