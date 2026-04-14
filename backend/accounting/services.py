@@ -236,6 +236,12 @@ class AccountingService:
             if parent_code:
                 parent = Account.objects.filter(code=parent_code).first()
             
+            # Propagate categories from parent if not explicitly set in coa_data
+            if parent:
+                if is_cat is None: is_cat = parent.is_category
+                if cf_cat is None: cf_cat = parent.cf_category
+                if bs_cat is None: bs_cat = parent.bs_category
+
             account, created = Account.objects.get_or_create(
                 code=code,
                 defaults={
@@ -251,7 +257,7 @@ class AccountingService:
             if created:
                 created_count += 1
             else:
-                # Update categories for existing accounts
+                # Update categories for existing accounts to ensure consistency with propagation
                 account.is_category = is_cat
                 account.cf_category = cf_cat
                 account.bs_category = bs_cat

@@ -8,6 +8,8 @@ interface MoneyDisplayProps {
     showZeroAsDash?: boolean
     className?: string
     digits?: number
+    inline?: boolean
+    colored?: boolean
 }
 
 export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
@@ -16,7 +18,9 @@ export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
     showColor = true,
     showZeroAsDash = false,
     className,
-    digits = 0
+    digits = 0,
+    inline = false,
+    colored = false,
 }) => {
     if (amount === null || amount === undefined || amount === "") {
         return <span className={cn("font-mono text-muted-foreground", className)}>-</span>
@@ -44,8 +48,9 @@ export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
         <span
             className={cn(
                 "font-bold font-mono tabular-nums tracking-tight",
-                showColor && isNegative && "text-destructive dark:text-destructive",
-                showColor && isPositive && "text-success",
+                inline ? "inline" : "inline-block",
+                (showColor || colored) && isNegative && "text-destructive",
+                (showColor || colored) && isPositive && "text-success",
                 className
             )}
         >

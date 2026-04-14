@@ -108,7 +108,7 @@ export function CollapsibleSheet({
             side={side}
             className={cn(
                 "p-0 flex flex-col shadow-2xl overflow-visible", // Removed transition-all to allow inline style only
-                "top-20 bottom-4 right-4 h-[calc(100vh-6rem)] border border-white/5 rounded-lg",
+                "top-20 bottom-4 right-4 h-[calc(100vh-6rem)] border border-white/5 rounded-none",
                 // Disable default Radix/Shadcn animations to avoid conflicting with custom high-performance transforms
                 "data-[state=open]:animate-none data-[state=closed]:animate-none duration-0 sm:duration-500",
                 (!open || isCollapsed) ? "border-primary/10" : "translate-x-0",

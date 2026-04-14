@@ -34,6 +34,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { CropFrame } from "@/components/shared/CropFrame"
 
 // Lazy load cost calculator
 const CostCalculatorModal = dynamic(
@@ -120,13 +121,15 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 <PermissionGuard permission="sales.view_dashboard_sales">
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Link 
-                                href="/pos" 
-                                target="_blank"
-                                className="p-2.5 rounded-xl text-primary hover:bg-primary/20 transition-all bg-primary/10 border border-primary/20 shadow-sm"
-                            >
-                                <Store className="h-5 w-5" />
-                            </Link>
+                        <CropFrame size={6} gap={2}>
+                                <Link 
+                                    href="/pos" 
+                                    target="_blank"
+                                    className="h-8 w-8 flex items-center justify-center rounded-none text-foreground/50 hover:text-primary transition-colors"
+                                >
+                                    <Store className="h-5 w-5" />
+                                </Link>
+                            </CropFrame>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border">
                             Punto de Venta (POS)
@@ -137,14 +140,15 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 {/* Calculator Action */}
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setIsCalculatorOpen(true)}
-                            className="p-2.5 rounded-xl text-primary hover:bg-primary/20 transition-all bg-primary/10 border border-primary/20 shadow-sm"
-                        >
-                            <Calculator className="h-5 w-5" />
-                        </motion.button>
+                        <CropFrame size={6} gap={2}>
+                            <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => setIsCalculatorOpen(true)}
+                                className="h-8 w-8 flex items-center justify-center rounded-none text-foreground/50 hover:text-primary transition-colors"
+                            >
+                                <Calculator className="h-5 w-5" />
+                            </motion.button>
+                        </CropFrame>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border">
                         Calculadora de Costos
@@ -154,24 +158,27 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 {/* Inbox Action */}
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={onInboxToggle}
-                            className={cn(
-                                "relative p-2.5 rounded-xl transition-all border shadow-sm",
-                                isInboxOpen 
-                                    ? "bg-primary text-primary-foreground border-primary/20 shadow-primary/20" 
-                                    : "text-primary bg-primary/10 border-primary/20 hover:bg-primary/20"
-                            )}
-                        >
-                            <Inbox className="h-5 w-5" />
-                            {pendingTasksCount > 0 && !isInboxOpen && (
-                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-white text-[9px] font-black rounded-full px-1 shadow-sm border-2 border-background">
-                                    {pendingTasksCount > 99 ? '99+' : pendingTasksCount}
-                                </span>
-                            )}
-                        </motion.button>
+                        <CropFrame size={6} gap={2}>
+                            <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                onClick={onInboxToggle}
+                                className={cn(
+                                    "relative h-8 w-8 flex items-center justify-center rounded-none transition-colors",
+                                    isInboxOpen
+                                        // Active: filled primary to signal open panel
+                                        ? "bg-primary text-primary-foreground"
+                                        // Rest: ghost, barely visible
+                                        : "text-foreground/50 hover:text-primary"
+                                )}
+                            >
+                                <Inbox className="h-5 w-5" />
+                                {pendingTasksCount > 0 && !isInboxOpen && (
+                                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-white text-[9px] font-black rounded-full px-1 shadow-sm border-2 border-background">
+                                        {pendingTasksCount > 99 ? '99+' : pendingTasksCount}
+                                    </span>
+                                )}
+                            </motion.button>
+                        </CropFrame>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border">
                         Bandeja de Entrada {pendingTasksCount > 0 && `(${pendingTasksCount})`}
@@ -185,19 +192,20 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
-                                <motion.button
-                                    whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.05)" }}
-                                    whileTap={{ scale: 0.95 }}
-                                    className="relative p-2.5 rounded-xl text-foreground/40 hover:text-foreground/70 transition-all bg-transparent border-none shadow-none"
-                                >
-                                    <Bell className="h-5 w-5" />
-                                    {unreadCount > 0 && (
-                                        <span className="absolute top-2 right-2 flex h-2 w-2">
-                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                                        </span>
-                                    )}
-                                </motion.button>
+                                <CropFrame size={6} gap={2}>
+                                    <motion.button
+                                        whileTap={{ scale: 0.95 }}
+                                        className="relative h-8 w-8 flex items-center justify-center rounded-none text-foreground/40 hover:text-foreground/70 transition-colors bg-transparent border-none shadow-none"
+                                    >
+                                        <Bell className="h-5 w-5" />
+                                        {unreadCount > 0 && (
+                                            <span className="absolute top-2 right-2 flex h-2 w-2">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                                            </span>
+                                        )}
+                                    </motion.button>
+                                </CropFrame>
                             </DropdownMenuTrigger>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border">
