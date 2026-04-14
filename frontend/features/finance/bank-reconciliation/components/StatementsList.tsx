@@ -10,7 +10,7 @@ import { StatementImportDialog } from "@/features/treasury"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 
@@ -146,22 +146,15 @@ export function StatementsList({ externalOpen = false }: { externalOpen?: boolea
                 </div>
             ),
         },
-        {
-            id: "actions",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
-                        onClick={() => router.push(`/treasury/reconciliation/${row.original.id}`)}
-                    >
-                        <Eye className="h-3.5 w-3.5 text-primary" />
-                    </Button>
-                </div>
-            ),
-        },
+        createActionsColumn<BankStatement>({
+            renderActions: (item) => (
+                <DataCell.Action
+                    icon={Eye}
+                    title="Ver"
+                    onClick={() => router.push(`/treasury/reconciliation/${item.id}`)}
+                />
+            )
+        })
     ]
 
     return (

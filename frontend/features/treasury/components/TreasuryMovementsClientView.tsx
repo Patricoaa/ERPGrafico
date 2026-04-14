@@ -10,7 +10,7 @@ import { cn, formatCurrency, formatPlainDate } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -289,23 +289,11 @@ export function TreasuryMovementsClientView({ externalOpen }: TreasuryMovementsC
                 </div>
             ),
         },
-        {
-            id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-primary"
-                        onClick={() => handleViewDetails(row.original.id)}
-                        title="Ver Detalle"
-                    >
-                        <Eye className="h-4 w-4" />
-                    </Button>
-                </div>
-            )
-        }
+        createActionsColumn<TreasuryMovement>({
+            renderActions: (item) => (
+                <DataCell.Action icon={Eye} title="Ver Detalle" onClick={() => handleViewDetails(item.id)} />
+            ),
+        })
     ]
 
     return (

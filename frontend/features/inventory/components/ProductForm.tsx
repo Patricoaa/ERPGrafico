@@ -14,8 +14,7 @@ import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { ProductInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
-import api from "@/lib/api"
-import { productSchema, type ProductFormValues } from "./product/schema"
+import api, { resolveMediaUrl } from "@/lib/api"
 import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, Layers, Factory, AlertCircle, Loader2 } from "lucide-react"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -24,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 
 // Import modular components
+import { productSchema, type ProductFormValues } from "./product/schema"
 import { ProductTypeSelector } from "./product/ProductTypeSelector"
 import { ProductImageUpload } from "./product/ProductImageUpload"
 import { ProductBasicInfo } from "./product/ProductBasicInfo"
@@ -72,6 +72,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
     const [activeTab, setActiveTab] = useState("general")
 
     const { isSheetCollapsed } = useGlobalModals()
+
 
     const windowWidth = useWindowWidth(150, open)
 
@@ -412,7 +413,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     expense_account: initialData.expense_account?.id?.toString() || initialData.expense_account?.toString() || "",
                     preferred_supplier: initialData.preferred_supplier?.id?.toString() || initialData.preferred_supplier?.toString() || "",
                 })
-                setImagePreview(initialData.image || null)
+                setImagePreview(resolveMediaUrl(initialData.image) || null)
             } else {
                 form.reset({
                     code: "",

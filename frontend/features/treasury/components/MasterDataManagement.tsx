@@ -8,7 +8,7 @@ import {
     Plus, Edit, Trash2, Loader2, CreditCard, Landmark, List, History, Tag, Pencil
 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -110,30 +110,23 @@ export function BankManagement({ externalOpen, onOpenChange }: BankManagementPro
                 </div>
             )
         },
-        {
-            id: "actions",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: ({ row }: any) => (
-                <div className="flex justify-center w-full gap-1.5">
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-md hover:bg-primary/10 hover:text-primary transition-colors" 
-                        onClick={() => openEdit(row.original)}
-                    >
-                        <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground/50 transition-colors" 
-                        onClick={() => handleDelete(row.original.id)}
-                    >
-                        <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                </div>
+        createActionsColumn<any>({
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action
+                        icon={Pencil}
+                        title="Editar"
+                        onClick={() => openEdit(item)}
+                    />
+                    <DataCell.Action
+                        icon={Trash2}
+                        title="Eliminar"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(item.id)}
+                    />
+                </>
             )
-        }
+        })
     ]
 
     return (
@@ -428,30 +421,23 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
                 </div>
             )
         },
-        {
-            id: "actions",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: ({ row }: any) => (
-                <div className="flex justify-center w-full gap-1.5">
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-md hover:bg-primary/10 hover:text-primary transition-colors" 
-                        onClick={() => openEdit(row.original)}
-                    >
-                        <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground/50 transition-colors" 
-                        onClick={() => handleDelete(row.original.id)}
-                    >
-                        <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                </div>
+        createActionsColumn<any>({
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action
+                        icon={Pencil}
+                        title="Editar"
+                        onClick={() => openEdit(item)}
+                    />
+                    <DataCell.Action
+                        icon={Trash2}
+                        title="Eliminar"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(item.id)}
+                    />
+                </>
             )
-        }
+        })
     ]
 
     return (
@@ -789,3 +775,5 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
         </BaseModal>
     )
 }
+
+

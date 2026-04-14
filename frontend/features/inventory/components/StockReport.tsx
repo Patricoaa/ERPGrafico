@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ProductInsightsDialog } from "@/features/inventory/components/ProductInsightsDialog"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { cn, formatCurrency } from "@/lib/utils"
 
@@ -140,31 +140,14 @@ export function StockReport() {
             },
         },
 
-        {
-            id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex gap-1 justify-center w-full">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110"
-                        onClick={() => setAdjustingProduct(row.original)}
-                    >
-                        <ArrowRightLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110"
-                        onClick={() => setInsightsProduct(row.original)}
-                    >
-                        <History className="h-4 w-4" />
-                    </Button>
-                </div>
+        createActionsColumn<any>({
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action icon={ArrowRightLeft} title="Ajustar Stock" onClick={() => setAdjustingProduct(item)} />
+                    <DataCell.Action icon={History} title="Ver Historial" onClick={() => setInsightsProduct(item)} />
+                </>
             ),
-            size: 80,
-        },
+        }),
     ], [setAdjustingProduct, setInsightsProduct])
 
     const globalFilterFields = useMemo(() => ["name", "code", "internal_code"], [])

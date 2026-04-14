@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo, useRef } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
@@ -235,89 +236,35 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose }
                 )
             }
         },
-        {
-            id: "actions",
-            header: () => <div className="text-center">Acciones</div>,
-            cell: ({ row }) => {
-                const dist = row.original
-                
-                // Only show action if it's not cancelled
+        createActionsColumn<any>({
+            renderActions: (dist) => {
                 if (dist.status === 'CANCELLED') return (
-                    <div className="flex justify-center gap-2">
-                        <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="text-muted-foreground h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                            onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))}
-                        >
-                            <Eye className="h-4 w-4" />
-                        </Button>
-                    </div>
+                    <DataCell.Action icon={Eye} title="Ver Detalle" onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))} />
                 )
 
                 return (
-                    <div className="flex justify-center gap-2">
-                        <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="text-muted-foreground h-8 w-8 hover:bg-primary/10 hover:text-primary transition-all"
-                            onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))}
-                            title="Ver Detalle"
-                        >
-                            <Eye className="h-4 w-4" />
-                        </Button>
+                    <>
+                        <DataCell.Action icon={Eye} title="Ver Detalle" onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))} />
 
-                        {(dist.status === 'DRAFT') && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-success hover:bg-success/10 h-8 w-8 transition-all"
-                                onClick={() => {
-                                    setState(prev => ({
-                                        ...prev,
-                                        selectedResolution: dist,
-                                        isFlowOpen: true
-                                    }))
-                                }}
-                                title="Retomar Proceso"
-                            >
-                                <Wand2 className="h-4 w-4" />
-                            </Button>
+                        {dist.status === 'DRAFT' && (
+                            <DataCell.Action icon={Wand2} title="Retomar Proceso" className="text-success" onClick={() => {
+                                setState(prev => ({ ...prev, selectedResolution: dist, isFlowOpen: true }))
+                            }} />
                         )}
 
                         {dist.status === 'APPROVED' && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-primary hover:bg-primary/10 h-8 w-8 transition-all"
-                                onClick={() => handleExecute(dist)}
-                                title="Ejecutar Contablemente"
-                            >
-                                <Play className="h-4 w-4 fill-current" />
-                            </Button>
+                            <DataCell.Action icon={Play} title="Ejecutar Contablemente" className="text-primary" onClick={() => handleExecute(dist)} />
                         )}
                         
                         {dist.status === 'EXECUTED' && (dist.lines?.some((l: any) => l.destination === 'DIVIDEND')) && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-primary hover:bg-primary/10 h-8 w-8 transition-all"
-                                onClick={() => {
-                                    setState(prev => ({
-                                        ...prev,
-                                        selectedResolution: dist,
-                                        isMassPaymentOpen: true
-                                    }))
-                                }}
-                                title="Pagar Dividendos"
-                            >
-                                <Wallet className="h-4 w-4" />
-                            </Button>
+                            <DataCell.Action icon={Wallet} title="Pagar Dividendos" className="text-primary" onClick={() => {
+                                setState(prev => ({ ...prev, selectedResolution: dist, isMassPaymentOpen: true }))
+                            }} />
                         )}
-                    </div>
+                    </>
                 )
             }
-        }
+        })
     ], [])
 
     return (

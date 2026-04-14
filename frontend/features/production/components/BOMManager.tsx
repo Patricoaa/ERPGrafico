@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
 import { BOM, ProductMinimal } from "../types"
 
@@ -237,44 +237,31 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 </div>
             )
         },
-        {
-            id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Opciones" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex items-center justify-center gap-1 w-full pr-2">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
+        createActionsColumn<any>({
+            headerLabel: "Opciones",
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action
+                        icon={Copy}
                         title="Clonar Receta"
-                        className="h-7 w-7 text-success hover:bg-success/10 rounded-sm"
-                        onClick={() => handleClone(row.original)}
-                    >
-                        <Copy className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
+                        className="text-success hover:text-success"
+                        onClick={() => handleClone(item)}
+                    />
+                    <DataCell.Action
+                        icon={Edit}
                         title="Editar"
-                        className="h-7 w-7 text-primary hover:bg-primary/5 rounded-sm"
-                        onClick={() => handleEdit(row.original)}
-                    >
-                        <Edit className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
+                        className="text-primary hover:text-primary"
+                        onClick={() => handleEdit(item)}
+                    />
+                    <DataCell.Action
+                        icon={Trash2}
                         title="Eliminar"
-                        className="h-7 w-7 text-destructive hover:bg-destructive/10 rounded-sm"
-                        onClick={() => handleDelete(row.original)}
-                    >
-                        <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                </div>
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(item)}
+                    />
+                </>
             )
-        }
+        })
     ]
 
     return (

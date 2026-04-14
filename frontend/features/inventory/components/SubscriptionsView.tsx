@@ -26,7 +26,7 @@ import { SubscriptionHistoryModal } from "@/features/inventory/components/Subscr
 import { ArchivingRestrictionsDialog } from "@/features/inventory/components/ArchivingRestrictionsDialog"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { Restriction } from "@/features/inventory/types"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -342,75 +342,54 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                 </div>
             ),
         },
-        {
-            id: "actions",
-            header: () => <div className="text-center">Acciones</div>,
-            cell: ({ row }) => {
-                const sub = row.original
-                return (
-                    <div className="flex gap-2 justify-center">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-[0.25rem] text-muted-foreground hover:text-foreground"
-                            onClick={() => openEditForm(sub.product)}
-                            title="Editar Producto"
-                        >
-                            <Pencil className="h-4 w-4" />
-                        </Button>
+        createActionsColumn<Subscription>({
+            renderActions: (sub) => (
+                <>
+                    <DataCell.Action
+                        icon={Pencil}
+                        title="Editar Producto"
+                        onClick={() => openEditForm(sub.product)}
+                    />
 
-                        {sub.status === "ACTIVE" && (
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 rounded-[0.25rem] text-warning hover:text-warning hover:bg-warning/10"
-                                onClick={() => handlePause(sub.id)}
-                                title="Pausar Suscripción"
-                            >
-                                <Pause className="h-4 w-4" />
-                            </Button>
-                        )}
-                        {sub.status === "PAUSED" && (
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 rounded-[0.25rem] text-success hover:text-success hover:bg-success/10"
-                                onClick={() => handleResume(sub.id)}
-                                title="Reanudar Suscripción"
-                            >
-                                <Play className="h-4 w-4" />
-                            </Button>
-                        )}
+                    {sub.status === "ACTIVE" && (
+                        <DataCell.Action
+                            icon={Pause}
+                            title="Pausar Suscripción"
+                            color="text-warning"
+                            onClick={() => handlePause(sub.id)}
+                        />
+                    )}
+                    {sub.status === "PAUSED" && (
+                        <DataCell.Action
+                            icon={Play}
+                            title="Reanudar Suscripción"
+                            color="text-success"
+                            onClick={() => handleResume(sub.id)}
+                        />
+                    )}
 
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-[0.25rem] text-primary hover:text-primary hover:bg-primary/10"
-                            onClick={() => {
-                                setCurrentHistorySubscriptionId(sub.id)
-                                setIsHistoryOpen(true)
-                            }}
-                            title="Ver Historial"
-                        >
-                            <History className="h-4 w-4" />
-                        </Button>
+                    <DataCell.Action
+                        icon={History}
+                        title="Ver Historial"
+                        color="text-primary"
+                        onClick={() => {
+                            setCurrentHistorySubscriptionId(sub.id)
+                            setIsHistoryOpen(true)
+                        }}
+                    />
 
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-[0.25rem] text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => {
-                                setCurrentArchivingProduct({ id: sub.product, name: sub.product_name })
-                                setIsConfirmModalOpen(true)
-                            }}
-                            title="Archivar Producto"
-                        >
-                            <Archive className="h-4 w-4" />
-                        </Button>
-                    </div>
-                )
-            },
-        },
+                    <DataCell.Action
+                        icon={Archive}
+                        title="Archivar Producto"
+                        className="text-destructive/70 hover:text-destructive"
+                        onClick={() => {
+                            setCurrentArchivingProduct({ id: sub.product, name: sub.product_name })
+                            setIsConfirmModalOpen(true)
+                        }}
+                    />
+                </>
+            ),
+        }),
     ], [handlePause, handleResume, openEditForm, handleArchive])
 
     const selectedSubscriptions = useMemo(() => {

@@ -22,6 +22,7 @@ import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
 interface LedgerMovement {
     id: number
@@ -175,37 +176,24 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                 )
             },
         },
-        {
-            id: "actions",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />
+        createActionsColumn<LedgerMovement>({
+            renderActions: (mov) => (
+                <>
+                    <DataCell.Action
+                        icon={Eye}
+                        title="Ver Asiento"
+                        color="text-primary"
+                        onClick={() => setViewingEntry({ id: mov.entry_id })}
+                    />
+                    <DataCell.Action
+                        icon={Trash2}
+                        title="Eliminar Asiento"
+                        className="text-destructive"
+                        onClick={() => handleDeleteEntry(mov.entry_id)}
+                    />
+                </>
             ),
-            cell: ({ row }) => {
-                const mov = row.original
-                return (
-                    <div className="flex items-center justify-center gap-1 w-full">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            onClick={() => setViewingEntry({ id: mov.entry_id })}
-                            title="Ver Asiento"
-                        >
-                            <Eye className="h-4 w-4 text-primary" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDeleteEntry(mov.entry_id)}
-                            title="Eliminar Asiento"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                    </div>
-                )
-            }
-        }
+        })
     ]
 
     return (

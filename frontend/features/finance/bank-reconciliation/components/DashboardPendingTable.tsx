@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Badge } from "@/components/ui/badge"
+import { useRouter } from "next/navigation"
+import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 
 interface DashboardPendingTableProps {
     data: DashboardPendingItem[]
@@ -17,6 +19,7 @@ interface DashboardPendingTableProps {
 }
 
 export function DashboardPendingTable({ data, loading }: DashboardPendingTableProps) {
+    const router = useRouter()
     const columns = useMemo<ColumnDef<DashboardPendingItem>[]>(() => [
         {
             accessorKey: "date",
@@ -75,17 +78,16 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
                 </Badge>
             ),
         },
-        {
-            id: "actions",
-            cell: ({ row }) => (
-                <Button variant="ghost" size="sm" className="h-7 px-3 text-[10px] font-black uppercase tracking-widest group" asChild>
-                    <Link href={`/treasury/reconciliation/${row.original.statement_id}/match`}>
-                        Resolver
-                        <ArrowRight className="ml-1.5 h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-                    </Link>
-                </Button>
-            ),
-        }
+        createActionsColumn<DashboardPendingItem>({
+            headerLabel: "",
+            renderActions: (item) => (
+                <DataCell.Action
+                    icon={ArrowRight}
+                    title="Resolver"
+                    onClick={() => router.push(`/treasury/reconciliation/${item.statement_id}/match`)}
+                />
+            )
+        })
     ], [])
 
     return (

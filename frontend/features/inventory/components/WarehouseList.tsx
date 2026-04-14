@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import api from "@/lib/api"
@@ -140,30 +140,14 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
                 </DataCell.Secondary>
             ),
         },
-        {
-            id: "actions",
-            cell: ({ row }) => (
-                <div className="flex justify-end gap-1">
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-muted-foreground hover:text-primary transition-colors" 
-                        onClick={() => { setEditingWarehouse(row.original); setIsFormOpen(true) }}
-                    >
-                        <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive transition-colors" 
-                        onClick={() => handleDelete(row.original)}
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
+        createActionsColumn<Warehouse>({
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => { setEditingWarehouse(item); setIsFormOpen(true) }} />
+                    <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item)} />
+                </>
             ),
-            size: 80,
-        },
+        }),
     ], [])
 
     const selectedWarehouses = useMemo(() => {

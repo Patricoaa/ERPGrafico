@@ -34,7 +34,7 @@ import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, Cl
 import { OrderCard } from "@/features/orders/components/OrderCard"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { Separator } from "@/components/ui/separator"
 import { DataTable } from "@/components/ui/data-table"
 import { OrderHubStatus } from "@/features/orders/components/OrderHubStatus"
@@ -672,27 +672,21 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                 return <OrderHubStatus order={row.original} />
             }
         },
-        {
-            id: "actions",
-            header: "Acciones",
-            cell: ({ row }) => (
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-3 text-[10px] font-bold rounded-lg text-primary hover:text-primary hover:bg-primary/10 border border-primary/10"
+        createActionsColumn<any>({
+            renderActions: (item) => (
+                <DataCell.Action
+                    icon={LayoutDashboard}
+                    title="Gestionar Documento"
                     onClick={() => {
                         if (type === 'work_order') {
-                            openWorkOrder(row.original.id)
+                            openWorkOrder(item.id)
                         } else {
-                            openHub({ orderId: row.original.id, type: type === 'purchase' ? 'purchase' : 'sale' })
+                            openHub({ orderId: item.id, type: type === 'purchase' ? 'purchase' : 'sale' })
                         }
                     }}
-                >
-                    <LayoutDashboard className="h-3 w-3 mr-1.5" />
-                    GESTIONAR
-                </Button>
+                />
             )
-        }
+        })
     ]
 
     return (

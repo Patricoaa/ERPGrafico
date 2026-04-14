@@ -135,7 +135,7 @@ Componente decorativo que agrega marcas de registro (crop/registration marks) pr
 - `active`: Boolean — usa `--mark-color-active` (primary) en vez del color sutil.
 
 **Variante `crop` (Actualización Técnica):**
-Esta variante emula las marcas de corte profesionales de imprenta. Posee un desplazamiento (offset) hacia el **exterior** del contenedor (gap de 4px) para encuadrar el contenido desde fuera. Sus líneas son segmentos independientes de **12px** de longitud, reforzando la identidad de precisión industrial.
+Esta variante emula las marcas de corte profesionales de imprenta. Posee un desplazamiento (offset) hacia el **exterior** del contenedor (gap de 2px a 4px) para encuadrar el contenido desde fuera. Sus líneas son segmentos independientes de **6px** a **12px** de longitud, reforzando la identidad de precisión industrial.
 
 **Reglas de Uso:**
 1. El contenedor padre **debe** tener `position: relative` (o usar la clase `.registration-marks` como alternativa CSS-only).
@@ -205,5 +205,54 @@ Componente de interacción dinámica diseñado específicamente para dar feedbac
 
 **Implementación Arquitectónica:**
 - Todos los usos interactivos de `<CropFrame>` deben ir acompañados de un `Tooltip` semántico.
+- Soporta variantes:
+    - `"default"`: (size=6, gap=2) - Equilibrio estándar para botones de acción.
+    - `"compact"`: (size=4, gap=1) - Tighter look para áreas de alta densidad (DataTables, MiniSidebar).
 - El componente `CropFrame` utiliza internamente dependencias de `framer-motion` y expone un `forwardRef`. Por esta razón, el componente debe envolver un elemento que *reenvíe explícitamente el ref* o se integrará directamente de forma correcta con `TooltipTrigger asChild`.
 - **Aviso de Overflow**: Contenedores anfitriones flotantes deben utilizar `overflow-x-hidden` si el efecto rebote (`spring`) del frame corre el riesgo de desbordar la caja global y provocar un salto de layout (layout shift por aparición de scrollbar horizontal).
+
+## 14. createActionsColumn (Columna de Acciones Reutilizable)
+
+Función factory que genera la columna estándar de acciones para cualquier `DataTable`. **Obligatorio** usar en lugar de definir manualmente `{ id: "actions", header: ..., cell: ... }`.
+
+**Ubicación:** `@/components/ui/data-table-cells` (exportación nombrada).
+
+**API:**
+```tsx
+createActionsColumn<TData>({
+  renderActions: (item: TData) => ReactNode,  // Obligatorio
+  headerLabel?: string,                        // Default: "Acciones"
+})
+```
+
+**Ejemplo de uso:**
+```tsx
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+
+const columns = [
+  // ...data columns,
+  createActionsColumn<Product>({
+    renderActions: (item) => (
+      <>
+        <DataCell.Action icon={Pencil} title="Editar" onClick={() => edit(item)} />
+        <DataCell.Action icon={Trash2} title="Eliminar" onClick={() => del(item)} />
+      </>
+    ),
+  }),
+]
+```
+
+**Lo que encapsula automáticamente:**
+- `id: "actions"` estandarizado.
+- Header con tipografía industrial (`text-[10px] font-bold uppercase tracking-widest`).
+- `<DataCell.ActionGroup>` como wrapper con `stopPropagation` integrado.
+- `enableSorting: false` y `enableHiding: false`.
+
+**Reglas:**
+1. **Uso Obligatorio**: Toda tabla que tenga acciones por fila **debe** usar `createActionsColumn`. Crear columnas de acciones manuales está **prohibido**.
+2. **Contenido de `renderActions`**: Solo debe contener componentes `<DataCell.Action>`. No mezclar con otros elementos.
+3. **Acciones Condicionales**: Se permiten expresiones condicionales (`{condition && <DataCell.Action ... />}`) dentro de `renderActions`.
+
+> [!IMPORTANT]
+> **Anti-patrón**: Definir `{ id: "actions", header: () => ..., cell: ({ row }) => ... }` manualmente en una tabla. Usar siempre `createActionsColumn`.
+

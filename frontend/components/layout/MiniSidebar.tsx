@@ -109,7 +109,7 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
                                     <PermissionGuard permission={item.permission || undefined} key={item.id}>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <CropFrame size={6} gap={2}>
+                                                <CropFrame variant="compact">
                                                     <motion.button
                                                         initial={{ opacity: 0, x: -10 }}
                                                         animate={{ opacity: 1, x: 0 }}

@@ -16,7 +16,7 @@ import { useTerminalBatches } from "@/features/treasury"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import type { DateRange } from "react-day-picker"
 
@@ -124,14 +124,9 @@ export function TerminalBatchesManagement({
                 title: "Estado"
             }
         },
-        {
-            id: "actions",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: () => (
-                <div className="flex justify-center gap-2">
-                </div>
-            )
-        }
+        createActionsColumn<any>({
+            renderActions: () => null // Vacío como en el original
+        })
     ], [])
 
     return (
@@ -209,4 +204,6 @@ function TerminalBatchDialog({ open, onOpenChange, onSuccess }: { open: boolean,
 }
 
 export default TerminalBatchesManagement
+
+
 

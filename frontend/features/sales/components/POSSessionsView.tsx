@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FileText, Lock } from "lucide-react"
 import api from "@/lib/api"
@@ -153,31 +153,20 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                 </div>
             ),
         },
-        {
-            id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: ({ row }) => {
-                const session = row.original
-                return (
-                    <div className="flex justify-center gap-2">
-                        {session.status === 'OPEN' ? (
-                            <>
-                                <Button variant="outline" size="sm" onClick={() => handleShowReport(session, "X")} title="Reporte X" className="h-8 w-8 p-0 rounded-lg hover:bg-info/10 hover:text-info border-info/20 shadow-sm">
-                                    <FileText className="h-3.5 w-3.5" />
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => { setSelectedSession(session); setCloseDialogOpen(true); }} title="Cerrar Caja" className="h-8 w-8 p-0 rounded-lg hover:bg-destructive/10 hover:text-destructive border-destructive/20 shadow-sm">
-                                    <Lock className="h-3.5 w-3.5" />
-                                </Button>
-                            </>
-                        ) : (
-                            <Button variant="outline" size="sm" onClick={() => handleShowReport(session, "Z")} title="Reporte Z" className="h-8 w-8 p-0 rounded-lg hover:bg-success/10 hover:text-success border-success/20 shadow-sm">
-                                <FileText className="h-3.5 w-3.5" />
-                            </Button>
-                        )}
-                    </div>
-                )
-            },
-        },
+        createActionsColumn<POSSession>({
+            renderActions: (session) => (
+                <>
+                    {session.status === 'OPEN' ? (
+                        <>
+                            <DataCell.Action icon={FileText} title="Reporte X" className="text-info" onClick={() => handleShowReport(session, "X")} />
+                            <DataCell.Action icon={Lock} title="Cerrar Caja" className="text-destructive" onClick={() => { setSelectedSession(session); setCloseDialogOpen(true); }} />
+                        </>
+                    ) : (
+                        <DataCell.Action icon={FileText} title="Reporte Z" className="text-success" onClick={() => handleShowReport(session, "Z")} />
+                    )}
+                </>
+            )
+        })
     ]
 
     return (
