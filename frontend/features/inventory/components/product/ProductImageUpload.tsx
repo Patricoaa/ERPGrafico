@@ -47,9 +47,7 @@ export function ProductImageUpload({ form, imagePreview, setImagePreview }: Prod
                                 </>
                             ) : (
                                 <label className="flex flex-col items-center gap-2 cursor-pointer p-4 text-center">
-                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                        <Plus className="h-6 w-6 text-primary" />
-                                    </div>
+                                    <Plus className="h-6 w-6 text-muted-foreground" />
                                     <span className="text-xs font-medium text-muted-foreground">Subir imagen</span>
                                     <input
                                         type="file"

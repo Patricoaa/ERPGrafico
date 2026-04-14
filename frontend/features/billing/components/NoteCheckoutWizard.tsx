@@ -405,9 +405,7 @@ export function NoteCheckoutWizard({
             contentClassName="p-0"
             title={
                 <div className="flex items-center gap-4">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <FileText className="h-5 w-5 text-primary" />
-                    </div>
+                    <FileText className="h-5 w-5 text-muted-foreground" />
                         <div className="flex items-center gap-2">
                             <span className="font-black tracking-tighter uppercase block text-lg">
                                 {title}

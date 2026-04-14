@@ -30,6 +30,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { BaseModal } from "@/components/shared/BaseModal"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const templateSchema = z.object({
     name: z.string().min(1, "Nombre requerido"),
@@ -107,10 +108,10 @@ export function CustomFieldTemplateForm({ open, onOpenChange, onSuccess }: Custo
                     <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
                         Cancelar
                     </Button>
-                    <Button type="submit" form="custom-field-template-form" disabled={loading}>
+                    <ActionSlideButton type="submit" form="custom-field-template-form" disabled={loading}>
                         {loading ? "Guardando..." : "Crear Plantilla"}
                         {!loading && <Save className="ml-2 h-4 w-4" />}
-                    </Button>
+                    </ActionSlideButton>
                 </div>
             }
         >

@@ -241,9 +241,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                     <AlertDialog open={showWriteOffDialog} onOpenChange={setShowWriteOffDialog}>
                                         <AlertDialogContent className="max-w-md">
                                             <AlertDialogHeader>
-                                                <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
-                                                    <ShieldAlert className="h-6 w-6" />
-                                                </div>
+                                                <ShieldAlert className="h-6 w-6" />
                                                 <AlertDialogTitle className="text-xl font-black">¿Confirmar Castigo de Deuda?</AlertDialogTitle>
                                                 <div className="space-y-3 pt-2">
                                                     <AlertDialogDescription>
@@ -364,9 +362,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                                     <AlertDialog open={!!showWriteOffDocDialog} onOpenChange={(o) => !o && setShowWriteOffDocDialog(null)}>
                                         <AlertDialogContent className="max-w-md">
                                             <AlertDialogHeader>
-                                                <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4 text-destructive">
-                                                    <ShieldAlert className="h-6 w-6" />
-                                                </div>
+                                                <ShieldAlert className="h-6 w-6" />
                                                 <AlertDialogTitle className="text-xl font-black">¿Castigar Documento NV-{showWriteOffDocDialog?.number}?</AlertDialogTitle>
                                                 <div className="space-y-3 pt-2">
                                                     <AlertDialogDescription>

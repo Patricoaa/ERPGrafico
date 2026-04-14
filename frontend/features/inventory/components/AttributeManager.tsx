@@ -358,9 +358,7 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
                 }}
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Tag className="h-5 w-5 text-primary" />
-                        </div>
+                        <Tag className="h-5 w-5 text-muted-foreground" />
                         <span>{selectedAttribute ? "Editar Atributo" : "Nuevo Atributo de Variante"}</span>
                     </div>
                 }
@@ -439,14 +437,12 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
 
                     {/* Right Side: Activity Sidebar */}
                     {selectedAttribute?.id && (
-                        <div className="w-[300px] border-l flex flex-col bg-muted/5 shrink-0 pt-4 hidden lg:flex">
-                            <ActivitySidebar
+                        <ActivitySidebar
                                 entityType="attribute"
                                 entityId={selectedAttribute.id}
                                 className="h-full border-none"
                                 title="Historial"
                             />
-                        </div>
                     )}
                 </div>
             </BaseModal>
@@ -457,9 +453,7 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
                 onOpenChange={setIsValueModalOpen}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <Plus className="h-5 w-5 text-primary" />
-                    </div>
+                    <Plus className="h-5 w-5 text-muted-foreground" />
                     <span>Añadir Valor a {selectedAttribute?.name}</span>
                 </div>
             }

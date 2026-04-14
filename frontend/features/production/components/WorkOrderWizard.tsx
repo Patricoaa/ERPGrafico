@@ -892,9 +892,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                 {order?.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced).map((m: WorkOrderMaterial) => (
                                                                     <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg bg-background group">
                                                                         <div className="flex items-center gap-3">
-                                                                            <div className="bg-primary/10 p-2 rounded-full">
-                                                                                <Truck className="h-4 w-4 text-primary" />
-                                                                            </div>
+                                                                            <Truck className="h-4 w-4 text-muted-foreground" />
                                                                             <div className="space-y-0.5">
                                                                                 <p className="text-sm font-bold">{m.component_name}</p>
                                                                                 <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
@@ -1108,9 +1106,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                     {order?.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced).map((m: WorkOrderMaterial) => (
                                                         <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg bg-background group">
                                                             <div className="flex items-center gap-3">
-                                                                <div className="bg-primary/10 p-2 rounded-full">
-                                                                    <Truck className="h-4 w-4 text-primary" />
-                                                                </div>
+                                                                <Truck className="h-4 w-4 text-muted-foreground" />
                                                                 <div className="space-y-0.5">
                                                                     <p className="text-sm font-bold">{m.component_name}</p>
                                                                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
@@ -1608,9 +1604,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         </table>
                     </div>
                     <div className="bg-primary/10 p-4 rounded-lg flex gap-3 border border-primary/10">
-                        <div className="bg-primary/10 p-2 rounded-full h-fit">
-                            <FileText className="h-4 w-4 text-primary" />
-                        </div>
+                        <FileText className="h-4 w-4 text-muted-foreground" />
                         <div className="text-xs text-primary leading-relaxed">
                             <p className="font-bold mb-1">Nota importante:</p>
                             <p>Las órdenes de compra se crearán en estado <span className="font-bold">Confirmado</span>. Deberá procesar la recepción desde el Hub de la OC para poder finalizar la OT posteriormente.</p>

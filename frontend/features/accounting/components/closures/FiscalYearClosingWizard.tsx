@@ -175,9 +175,7 @@ export function FiscalYearClosingWizard({
                         <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest px-1">Cuenta de Capital/Utilidades</label>
                         <div className="p-5 border-2 border-primary/30 bg-muted/20 rounded-sm flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-primary/10 rounded-sm flex items-center justify-center">
-                                    <Scale className="w-5 h-5 text-primary" />
-                                </div>
+                                <Scale className="w-5 h-5 text-muted-foreground" />
                                 {preview && (
                                 <div>
                                     <p className="text-lg font-mono font-bold">{preview.result_account_code}</p>
@@ -233,9 +231,7 @@ export function FiscalYearClosingWizard({
                 showCloseButton={false}
             >
                 <div className="flex flex-col items-center justify-center p-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
-                    <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mb-2">
-                        <ShieldCheck className="w-10 h-10 text-success" />
-                    </div>
+                    <ShieldCheck className="w-10 h-10 text-muted-foreground" />
                     <div>
                         <h3 className="text-2xl font-heading font-black uppercase tracking-tighter">¡Ejercicio {year} Cerrado!</h3>
                         <p className="text-sm text-muted-foreground mt-1 px-10">

@@ -159,9 +159,7 @@ export function PartnerSettingsTab() {
         <div className="space-y-6">
             <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                        <Building2 className="h-5 w-5" />
-                    </div>
+                    <Building2 className="h-5 w-5" />
                     <div>
                         <h3 className="font-bold text-sm tracking-tight text-foreground">Composición Societaria</h3>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
@@ -192,9 +190,7 @@ export function PartnerSettingsTab() {
                 <Card className="md:col-span-3 border-dashed border-2 bg-muted/20">
                     <CardContent className="p-4 flex flex-col md:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                                <Banknote className="h-5 w-5" />
-                            </div>
+                            <Banknote className="h-5 w-5" />
                             <div>
                                 <h4 className="font-bold text-sm">Configuración Contable</h4>
                                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">

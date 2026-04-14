@@ -28,6 +28,7 @@ interface TerminalManagementProps {
 }
 
 import { Skeleton } from "@/components/ui/skeleton"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 export function TerminalManagement({ externalOpen, onExternalOpenChange }: TerminalManagementProps) {
     const { terminals, toggleActive, deleteTerminal, refetch, isLoading } = useTerminals()
@@ -397,9 +398,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
             size={terminal ? "xl" : "lg"}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <MonitorSmartphone className="h-5 w-5 text-primary" />
-                    </div>
+                    <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
                     <span>{terminal ? "Ficha de Terminal" : "Nuevo Terminal"}</span>
                 </div>
             }
@@ -419,10 +418,10 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
             footer={
                 <>
                     <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button type="submit" form="terminal-form" disabled={loading}>
+                    <ActionSlideButton type="submit" form="terminal-form" disabled={loading}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Guardar Terminal
-                    </Button>
+                    </ActionSlideButton>
                 </>
             }
         >
@@ -510,14 +509,12 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
 
                 {/* Right Side: Activity Sidebar */}
                 {terminal?.id && (
-                    <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden hidden lg:flex">
-                        <ActivitySidebar
+                    <ActivitySidebar
                             entityType="terminal"
                             entityId={terminal.id}
                             className="h-full border-none"
                             title="Historial"
                         />
-                    </div>
                 )}
             </div>
         </BaseModal>

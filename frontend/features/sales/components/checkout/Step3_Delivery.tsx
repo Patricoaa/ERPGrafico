@@ -121,9 +121,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
     if (isOnlyService) {
         return (
             <div className="flex flex-col items-center justify-center py-10 text-center space-y-4">
-                <div className="p-4 rounded-full bg-success/10 text-success">
-                    <Info className="h-10 w-10" />
-                </div>
+                <Info className="h-10 w-10" />
                 <div className="space-y-1">
                     <h3 className="text-lg font-bold">Venta de Servicios</h3>
                     <p className="text-sm text-muted-foreground max-w-[300px]">

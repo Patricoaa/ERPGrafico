@@ -297,9 +297,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                         <div className="mt-4 bg-primary/5 p-5 rounded-md border-2 border-primary/20 shadow-sm transition-all hover:shadow-md animate-in fade-in slide-in-from-top-2 duration-500">
                             <div className="flex flex-col md:flex-row md:items-center gap-6">
                                 <div className="flex items-center gap-3 shrink-0">
-                                    <div className="p-2.5 bg-primary/10 rounded-sm">
-                                        <Layers className="h-5 w-5 text-primary" />
-                                    </div>
+                                    <Layers className="h-5 w-5 text-muted-foreground" />
                                     <div>
                                         <Label className="text-[11px] font-black uppercase tracking-widest text-primary leading-none">Contexto de Manufactura</Label>
                                         <p className="text-[9px] font-bold text-muted-foreground leading-none mt-1 uppercase tracking-tighter">Seleccione variante para configurar proceso propio.</p>

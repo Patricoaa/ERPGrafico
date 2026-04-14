@@ -54,6 +54,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const globalSettingsSchema = z.object({
     uf_current_value: z.string(),
@@ -533,9 +534,9 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                 description="Defina el comportamiento y la cuenta contable de este ítem de nómina."
                 footer={
                     <div className="flex w-full gap-3 justify-end pt-2 border-t">
-                        <Button type="submit" form="concept-form" disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px]">
+                        <ActionSlideButton type="submit" form="concept-form" disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px]">
                             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Validar y Guardar Cambios"}
-                        </Button>
+                        </ActionSlideButton>
                     </div>
                 }
             >
@@ -734,9 +735,9 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
                 description="Configure las tasas vigentes para las cotizaciones previsionales."
                 footer={
                     <div className="flex w-full gap-3 justify-end pt-2 border-t">
-                        <Button type="submit" form="afp-form" disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground">
+                        <ActionSlideButton type="submit" form="afp-form" disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground">
                             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Guardar Institución"}
-                        </Button>
+                        </ActionSlideButton>
                     </div>
                 }
             >

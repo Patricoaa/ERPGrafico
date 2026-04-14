@@ -284,9 +284,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                 size={currentUoM.id ? "lg" : "md"}
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Ruler className="h-5 w-5 text-primary" />
-                        </div>
+                        <Ruler className="h-5 w-5 text-muted-foreground" />
                         <span>{currentUoM.id ? "Editar Unidad de Medida" : "Nueva Unidad de Medida"}</span>
                     </div>
                 }
@@ -461,12 +459,10 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                     </div>
 
                     {currentUoM.id && (
-                        <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 shrink-0 hidden lg:flex">
-                            <ActivitySidebar
+                        <ActivitySidebar
                                 entityId={currentUoM.id}
                                 entityType="uom"
                             />
-                        </div>
                     )}
                 </div>
             </BaseModal>

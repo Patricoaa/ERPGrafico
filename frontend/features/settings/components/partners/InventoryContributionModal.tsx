@@ -243,9 +243,7 @@ export function InventoryContributionModal({
             size="lg"
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                        <Package className="h-5 w-5" />
-                    </div>
+                    <Package className="h-5 w-5" />
                     Aporte / Retiro de Bienes
                 </div>
             }

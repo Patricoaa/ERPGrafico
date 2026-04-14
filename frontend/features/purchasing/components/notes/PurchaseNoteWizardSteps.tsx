@@ -219,9 +219,7 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-muted/50 rounded-lg">
-                                                <Package className="h-4 w-4 text-muted-foreground" />
-                                            </div>
+                                            <Package className="h-4 w-4 text-muted-foreground" />
                                             <div>
                                                 <p className="font-bold text-sm text-foreground">{line.product_name}</p>
                                                 <p className="text-[10px] font-mono text-muted-foreground uppercase">{line.product_code || '-'}</p>
@@ -327,9 +325,7 @@ export function Step3_Review({
     return (
         <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="text-center space-y-2 mb-8">
-                <div className="inline-flex items-center justify-center p-4 bg-success/10 rounded-full mb-4">
-                    <CheckCircle2 className="h-8 w-8 text-success" />
-                </div>
+                <CheckCircle2 className="h-8 w-8 text-muted-foreground" />
                 <h2 className="text-2xl font-black tracking-tight">Confirmar Registro</h2>
                 <p className="text-muted-foreground">
                     Revisa los datos antes de procesar el documento.

@@ -30,7 +30,7 @@ Contrato visual para todas las vistas principales del sistema.
 - `activeValue`: El valor de la pestaña seleccionada.
 
 **Reglas de Diseño (Industrial Premium):**
-1. **Botones de Creación**: Deben ser circulares (`circular`), usar el icono `Plus` y tener fondo sólido `bg-primary` cuando se sitúan en `titleActions`.
+1. **Botones de Creación**: Se renderizan mediante el componente `ActionFoldButton` (un botón cuadrado de borde duro con esquina dinámica animada). **Prohibido** usar botones circulares.
 2. **Estilo de Pestañas**: Usar el estilo **Industrial Underline** (borde inferior de `2px` con color `primary` al estar activo). No usar píldoras redondeadas.
 3. **Contenedor**: Toda vista debe estar envuelta en `LAYOUT_TOKENS.view`.
 
@@ -73,15 +73,17 @@ Conjunto de tokens para elementos operativos que requieren precisión visual.
 
 - **Reglas Visuales**:
   - **Radio de Borde: CERO**. El mandato de "Industrial Premium" establece **zero-radius (bordes rectos de 90°)** en **todos** los elementos del sistema sin excepción. Esto aplica a botones, inputs, cards, modales, popovers y contenedores.
-  - La única excepción permitida son los botones circulares (`rounded-full`) de acciones flotantes como el botón `+` del `PageHeader`, por diseño intencional.
+  - Para botones de acción principal (como el `+` de creación), se utiliza el `ActionFoldButton`, el cual mantiene de forma estricta los bordes cuadrados pero añade un feedback kinético (un "doblez" o pliegue en la esquina superior derecha) en estado interactivo.
   - **Tipografía**: Labels en uppercase con extra-tracking.
 
 > [!IMPORTANT]
 > **Prohibido**: Usar `rounded-sm`, `rounded-md`, `rounded-lg` o cualquier variante diferente de `rounded-none` en componentes de negocio. El token CSS `--radius: 0` en `globals.css` es la fuente de verdad. No sobreescribir.
 
 - **Tokens**:
-  - `input`: `rounded-none` (6px no aplica), border-solid, h-10.
+  - `input`: `rounded-none`, border-solid, h-10.
   - `button`: `rounded-none`, transiciones suaves.
+  - **Botones Principales de Proceso**: Para acciones primarias ("Guardar", "Siguiente", "Ejecutar") en áreas transaccionales como Modales, Wizards o Sheets, se **exige** el uso del componente estandarizado `ActionSlideButton` (`components/shared/ActionSlideButton`). 
+    - Este botón utiliza una variante "Outline/Ghost" en reposo y aplica un deslizamiento táctico (Slide-Fill in) magnético desde la izquierda al apuntar, conservando el espíritu kinético sin añadir saturación estática.
   - `sectionHeader`: Industrial separator style. Puede usar `.die-cut-separator` como alternativa a bordes sólidos.
 
 ## 5. CONTRATO DE HOOKS (Data Fetching)
@@ -190,5 +192,18 @@ Componente que emula las barras de control de tinta CMYK (Cian, Magenta, Amarill
 - `className`: Estilos adicionales.
 
 **Reglas de Uso:**
-1. **Decorativo**: Es un elemento primordialmente de identidad. Se recomienda su uso en los bordes de cards de análisis, cabeceras de reportes o paneles laterales.
 2. **Proporción**: Debe mantenerse pequeño (`w-4` o `h-4`) para no distraer de la información operativa.
+
+## 13. CropFrame (Interacciones de Estado y Hover)
+
+Componente de interacción dinámica diseñado específicamente para dar feedback visual (hover/focus) mediante un "encuadre" animado. Funciona proyectando líneas de corte dinámicas hacia el exterior de un contenedor interactivo.
+
+**Reglas de Uso (Prevención de Saturación Visual):**
+1. **Ratio 1:1 Exclusivo (Botones Cuadrados)**: Su uso está **restringido** a elementos cuadrados cuyo contenido sea íntegramente de naturaleza iconográfica (ej: `w-8 h-8` o `w-10 h-10`). Ideal para barras de navegación laterales (`MiniSidebar`), acciones flotantes, y acciones globales del header (`UserActions`).
+2. **Prohibición en Botones Estándar**: **NO DEBE USARSE** en botones rectangulares o de texto extenso (ej. "Guardar", "Cancelar"). Aplicarlo a estos elementos deforma la escala de las marcas de corte y causa alta saturación visual. Para botones regulares, se deben usar cambios de color de fondo (`hover:bg-primary/90`) o flat Ghost buttons standard.
+3. **Restricción de Anidamiento Masivo**: Nunca debe iterarse dentro de listas muy densas de datos (por ejemplo, en celdas de un `DataTable` o un `ReportTable`). Para tablas o áreas de datos, la interacción principal es el subrayado (`hover:underline`) o color (`hover:text-primary`).
+
+**Implementación Arquitectónica:**
+- Todos los usos interactivos de `<CropFrame>` deben ir acompañados de un `Tooltip` semántico.
+- El componente `CropFrame` utiliza internamente dependencias de `framer-motion` y expone un `forwardRef`. Por esta razón, el componente debe envolver un elemento que *reenvíe explícitamente el ref* o se integrará directamente de forma correcta con `TooltipTrigger asChild`.
+- **Aviso de Overflow**: Contenedores anfitriones flotantes deben utilizar `overflow-x-hidden` si el efecto rebote (`spring`) del frame corre el riesgo de desbordar la caja global y provocar un salto de layout (layout shift por aparición de scrollbar horizontal).

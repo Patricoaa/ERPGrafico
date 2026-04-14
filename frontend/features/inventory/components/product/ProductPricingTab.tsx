@@ -33,9 +33,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
             <div className="space-y-4">
                 <div className={cn("flex items-center justify-between p-4 rounded-lg border bg-primary/5 border-primary/10 shadow-sm", FORM_STYLES.card)}>
                     <div className="flex gap-4 items-center">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                            <Info className="h-5 w-5 text-primary" />
-                        </div>
+                        <Info className="h-5 w-5 text-muted-foreground" />
                         <div>
                             <h3 className="font-semibold text-sm">Políticas de Precios Dinámicas</h3>
                             <p className="text-[10px] text-muted-foreground">Las reglas se aplican automáticamente según la cantidad y vigencia.</p>

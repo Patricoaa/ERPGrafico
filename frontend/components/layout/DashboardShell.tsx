@@ -126,12 +126,22 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                         </div>
                                     )}
 
-                                    <div className="flex flex-col min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <h1 className="text-base font-black tracking-tight font-heading uppercase text-foreground leading-none truncate">
+                                    {/* Texts & Icons Wrapper */}
+                                    <div className="flex items-start gap-5">
+                                        {/* Left: Text Container (Title forces width, Description wraps natively) */}
+                                        <div className="flex flex-col w-min">
+                                            <h1 className="text-base font-black tracking-tight font-heading uppercase text-foreground leading-none whitespace-nowrap">
                                                 {config.title}
                                             </h1>
+                                            {config.description && (
+                                                <p className="text-[10px] text-muted-foreground font-medium mt-[6px] opacity-60 leading-[1.2]">
+                                                    {config.description}
+                                                </p>
+                                            )}
+                                        </div>
 
+                                        {/* Right: Icons & Actions */}
+                                        <div className="flex items-center gap-2 mt-[-2px] shrink-0">
                                             {config.configHref && (
                                                 <Link href={config.configHref} className="pointer-events-auto shrink-0">
                                                     <motion.div
@@ -157,17 +167,11 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                             )}
 
                                             {config.titleActions && (
-                                                <div className="flex items-center">
+                                                <div className="flex items-center ml-1">
                                                     {config.titleActions}
                                                 </div>
                                             )}
                                         </div>
-
-                                        {config.description && (
-                                            <p className="text-[10px] text-muted-foreground font-medium truncate max-w-[360px] mt-0.5 opacity-60">
-                                                {config.description}
-                                            </p>
-                                        )}
                                     </div>
 
                                     {config.children && (

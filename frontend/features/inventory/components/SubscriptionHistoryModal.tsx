@@ -141,9 +141,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                 <div className="flex flex-col h-full overflow-hidden">
                     <div className="p-6 pb-2 border-b flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                <History className="h-5 w-5 text-primary" />
-                            </div>
+                            <History className="h-5 w-5 text-muted-foreground" />
                             <div>
                                 <h2 className="text-xl font-bold">Historial de Suscripción</h2>
                                 {data && (

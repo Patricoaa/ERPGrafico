@@ -20,6 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import api from "@/lib/api"
 import { FORM_STYLES } from "@/lib/styles"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 interface TerminalBatchFormProps {
     onSuccess: () => void
@@ -295,10 +296,10 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
             <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button type="button" variant="ghost" onClick={onCancel}>Cancelar</Button>
-                <Button type="submit" disabled={loading || !isValid || !paymentMethodId}>
+                <ActionSlideButton type="submit" disabled={loading || !isValid || !paymentMethodId}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Registrar Liquidación
-                </Button>
+                </ActionSlideButton>
             </div>
 
             <SaleSelectionModal

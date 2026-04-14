@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { Loader2, Users } from "lucide-react"
 import { FORM_STYLES } from "@/lib/styles"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -106,9 +107,7 @@ export function GroupForm({
                 size="sm"
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Users className="h-5 w-5 text-primary" />
-                        </div>
+                        <Users className="h-5 w-5 text-muted-foreground" />
                         <span>{initialData ? "Ficha de Grupo" : "Nuevo Grupo"}</span>
                     </div>
                 }
@@ -126,10 +125,10 @@ export function GroupForm({
                         >
                             Cancelar
                         </Button>
-                        <Button type="submit" form="group-form" disabled={isLoading}>
+                        <ActionSlideButton type="submit" form="group-form" disabled={isLoading}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Guardar
-                        </Button>
+                        </ActionSlideButton>
                     </div>
                 }
             >

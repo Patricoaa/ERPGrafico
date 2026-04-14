@@ -31,6 +31,7 @@ import { CreditContact } from "@/lib/credits/api"
 import { cn } from "@/lib/utils"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const creditSchema = z.object({
     credit_limit: z.coerce.number().min(0, "El límite debe ser mayor o igual a 0").nullable(),
@@ -243,9 +244,7 @@ export default function CreditAssignmentModal({
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel className="flex items-center gap-2">
-                                                <div className="bg-primary/10 p-1.5 rounded-lg">
-                                                    <Banknote className="h-4 w-4 text-primary" />
-                                                </div>
+                                                <Banknote className="h-4 w-4 text-muted-foreground" />
                                                 Límite de Crédito Autorizado ($)
                                             </FormLabel>
                                             <FormControl>
@@ -282,13 +281,13 @@ export default function CreditAssignmentModal({
                                     >
                                         Cancelar
                                     </Button>
-                                    <Button
+                                    <ActionSlideButton
                                         type="submit"
                                         className="flex-[2] h-12 font-bold shadow-lg shadow-primary/25"
                                         disabled={isUpdating}
                                     >
                                         {isUpdating ? "Guardando..." : "Confirmar Asignación"}
-                                    </Button>
+                                    </ActionSlideButton>
                                 </div>
                             </form>
                         </Form>

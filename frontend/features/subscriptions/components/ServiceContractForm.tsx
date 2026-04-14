@@ -17,6 +17,7 @@ import api from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Textarea } from "@/components/ui/textarea"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre es muy corto"),
@@ -382,7 +383,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                     </div>
 
                 </div>
-                <Button type="submit" size="lg">{initialData ? 'Actualizar Contrato' : 'Crear Contrato'}</Button>
+                <ActionSlideButton type="submit" size="lg">{initialData ? 'Actualizar Contrato' : 'Crear Contrato'}</ActionSlideButton>
             </form>
         </Form>
     )

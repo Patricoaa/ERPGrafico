@@ -33,6 +33,7 @@ import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactS
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { Loader2, CreditCard, Landmark, Wallet, ClipboardList } from "lucide-react"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 // schema and types remain the same
 const paymentSchema = z.object({
@@ -204,10 +205,10 @@ export function PaymentForm({
                 footer={
                     <div className="flex justify-end space-x-2 w-full">
                         <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                        <Button type="submit" form="payment-form" disabled={loading} className="px-8 shadow-lg">
+                        <ActionSlideButton type="submit" form="payment-form" disabled={loading} className="px-8 shadow-lg">
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {initialData ? "Actualizar" : "Registrar Pago"}
-                        </Button>
+                        </ActionSlideButton>
                     </div>
                 }
             >

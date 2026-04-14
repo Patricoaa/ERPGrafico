@@ -705,9 +705,7 @@ export function SalesCheckoutWizardContent({
                             <Alert className="mb-4 border border-warning/30 bg-warning/5 p-3 sm:py-2.5">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                                     <div className="flex items-center gap-3">
-                                        <div className="bg-warning/10 p-1.5 rounded-full shrink-0">
-                                            <FileWarning className="h-3.5 w-3.5 text-warning" />
-                                        </div>
+                                        <FileWarning className="h-3.5 w-3.5 text-muted-foreground" />
                                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                                             <span className="text-sm font-bold text-warning-foreground shrink-0">
                                                 Deudas Pendientes ({pendingDebts.length})

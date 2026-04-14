@@ -209,9 +209,7 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
                 size="lg"
                 title={
                     <div className="flex items-center gap-4">
-                        <div className="p-2.5 bg-primary/10 rounded-lg">
-                            <ArrowRightLeft className="h-6 w-6 text-primary" />
-                        </div>
+                        <ArrowRightLeft className="h-6 w-6 text-muted-foreground" />
                         <div className="flex flex-col">
                             <span className="text-xl font-black uppercase tracking-tight">Nuevo Ajuste de Inventario</span>
                             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Procedimiento táctico de rectificación</span>

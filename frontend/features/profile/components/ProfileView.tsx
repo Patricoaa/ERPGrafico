@@ -35,6 +35,7 @@ import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
 import { PartnerProfileTab } from "./PartnerProfileTab"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 // --- Schemas ---
 const passwordSchema = z.object({
@@ -188,9 +189,7 @@ function AccountTab({ user }: { user: MyProfile['user'] }) {
                 <Card className="border shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b bg-muted/30">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                                <User className="h-5 w-5" />
-                            </div>
+                            <User className="h-5 w-5" />
                             <div>
                                 <h3 className="text-sm font-bold tracking-tight">Información de la Cuenta</h3>
                                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Datos de acceso al sistema</p>
@@ -309,9 +308,7 @@ function PasswordChangeCard() {
         <Card className="border shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b bg-muted/30">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-warning/10 text-warning">
-                        <KeyRound className="h-5 w-5" />
-                    </div>
+                    <KeyRound className="h-5 w-5" />
                     <div>
                         <h3 className="text-sm font-bold tracking-tight">Cambiar Contraseña</h3>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Actualice sus credenciales de acceso</p>
@@ -354,11 +351,11 @@ function PasswordChangeCard() {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <Button type="submit" disabled={saving} className="rounded-lg text-xs font-bold gap-2">
+                            <ActionSlideButton type="submit" disabled={saving} className="rounded-lg text-xs font-bold gap-2">
                                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
                                 <KeyRound className="h-4 w-4" />
                                 Cambiar Contraseña
-                            </Button>
+                            </ActionSlideButton>
                         </div>
                     </form>
                 </Form>
@@ -619,9 +616,7 @@ function PersonalTab({
                         <Card className="border shadow-sm overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                                        <BadgeCheck className="h-5 w-5" />
-                                    </div>
+                                    <BadgeCheck className="h-5 w-5" />
                                     <div className="text-left">
                                         <h3 className="text-sm font-bold tracking-tight">Ficha de Empleado</h3>
                                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
@@ -688,9 +683,7 @@ function PersonalTab({
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center justify-between w-full">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-lg bg-success/10 text-success">
-                                            <FileText className="h-5 w-5" />
-                                        </div>
+                                        <FileText className="h-5 w-5" />
                                         <div className="text-left">
                                             <h3 className="text-sm font-bold tracking-tight">Historial de Liquidaciones</h3>
                                             <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
@@ -803,9 +796,7 @@ function PinChangeCard() {
         <Card className="border shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b bg-muted/30">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                        <Wallet className="h-5 w-5" />
-                    </div>
+                    <Wallet className="h-5 w-5" />
                     <div>
                         <h3 className="text-sm font-bold tracking-tight">Pin de Seguridad POS</h3>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Defina su PIN para operaciones en Punto de Venta</p>
@@ -864,11 +855,11 @@ function PinChangeCard() {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <Button type="submit" disabled={saving} className="rounded-lg text-xs font-bold gap-2">
+                            <ActionSlideButton type="submit" disabled={saving} className="rounded-lg text-xs font-bold gap-2">
                                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
                                 <Wallet className="h-4 w-4" />
                                 Guardar PIN
-                            </Button>
+                            </ActionSlideButton>
                         </div>
                     </form>
                 </Form>

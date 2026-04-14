@@ -102,9 +102,7 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
             onOpenChange={onOpenChange}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                        <FileSpreadsheet className="h-5 w-5" />
-                    </div>
+                    <FileSpreadsheet className="h-5 w-5" />
                     <span className="font-bold tracking-tight">Generar Facturas de Liquidación</span>
                 </div>
             }

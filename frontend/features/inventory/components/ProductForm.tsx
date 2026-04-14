@@ -40,6 +40,7 @@ import { PricingRuleForm } from "@/features/sales/components/PricingRuleForm"
 import { CategoryForm } from "./CategoryForm"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 interface ProductFormProps {
     auditSidebar?: React.ReactNode
@@ -905,9 +906,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                 <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50 shrink-0">
                     <div className="flex items-center justify-between w-full pr-12 text-left">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-primary/10 rounded-lg text-primary shadow-sm border border-primary/5 hidden sm:block">
-                                <Package className="h-6 w-6" />
-                            </div>
+                            <Package className="h-6 w-6" />
                             <div className="flex flex-col">
                                 <div className="flex items-center gap-3">
                                     <SheetTitle className="text-xl font-bold tracking-tight text-foreground">
@@ -940,7 +939,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     >
                         Cancelar
                     </Button>
-                    <Button
+                    <ActionSlideButton
                         form="product-form"
                         type="submit"
                         disabled={loading}
@@ -948,7 +947,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     >
                         {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
                         {initialData ? 'Guardar Cambios' : 'Crear Producto'}
-                    </Button>
+                    </ActionSlideButton>
                 </div>
         </CollapsibleSheet>
     )

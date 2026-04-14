@@ -168,9 +168,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                         <Card className="border shadow-sm overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                                        <Wallet className="h-5 w-5" />
-                                    </div>
+                                    <Wallet className="h-5 w-5" />
                                     <div className="text-left">
                                         <h3 className="text-sm font-bold tracking-tight">Resumen Patrimonial</h3>
                                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
@@ -212,9 +210,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                         <Card className="border shadow-sm overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                                        <Briefcase className="h-5 w-5" />
-                                    </div>
+                                    <Briefcase className="h-5 w-5" />
                                     <div className="text-left">
                                         <h3 className="text-sm font-bold tracking-tight">Información Societaria</h3>
                                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
@@ -251,9 +247,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                         <Card className="border shadow-sm overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-success/10 text-success">
-                                        <Activity className="h-5 w-5" />
-                                    </div>
+                                    <Activity className="h-5 w-5" />
                                     <div className="text-left">
                                         <h3 className="text-sm font-bold tracking-tight">Historial de Capital</h3>
                                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">

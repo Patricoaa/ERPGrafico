@@ -408,9 +408,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
         return (
             <BaseModal open={isOpen} onOpenChange={onOpenChange} size="xl" showCloseButton={false}>
                 <div className="flex flex-col items-center justify-center py-20 text-center space-y-8 animate-in zoom-in-95 duration-500">
-                    <div className="w-24 h-24 rounded-full bg-success/10 text-success flex items-center justify-center border-2 border-success/20 shadow-xl shadow-success/10">
-                        <CheckCircle2 className="h-12 w-12" />
-                    </div>
+                    <CheckCircle2 className="h-12 w-12" />
                     <div className="space-y-3">
                         <h3 className="text-3xl font-black uppercase tracking-tight">Ciclo Finalizado</h3>
                         <p className="text-muted-foreground text-sm max-w-md px-10">La declaración F29 del periodo ha sido registrada y el ciclo bloqueado para futuros cambios.</p>

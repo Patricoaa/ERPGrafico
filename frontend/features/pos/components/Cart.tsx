@@ -143,9 +143,7 @@ export function Cart({
                     {items.length === 0 ? (
                         /* Empty State ... */
                         <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-muted-foreground/60 gap-4 animate-in fade-in zoom-in duration-500">
-                            <div className="h-24 w-24 rounded-full bg-muted/30 flex items-center justify-center border-2 border-dashed border-muted-foreground/10 mb-2">
-                                <ShoppingCart className="h-12 w-12 text-muted-foreground/20" />
-                            </div>
+                            <ShoppingCart className="h-12 w-12 text-muted-foreground/20" />
                             <div className="space-y-1.5">
                                 <p className="font-bold text-lg text-muted-foreground/80 tracking-tight">El carrito está vacío</p>
                                 <p className="max-w-[280px] text-xs italic opacity-70 mx-auto leading-relaxed">

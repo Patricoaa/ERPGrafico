@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { IndustryMark } from "@/components/shared/IndustryMark";
 
 export interface ReportNode {
     id: number | string;
@@ -180,9 +179,6 @@ export const ReportTable: React.FC<ReportTableProps> = ({
 
     const tableContent = (
         <div className="relative group">
-            {/* Industry Registration Marks (decorativo) */}
-            <IndustryMark className="opacity-40 group-hover:opacity-100 transition-opacity" active />
-
             <Table>
                 <TableHeader className="bg-muted/30">
                     <TableRow className={cn(
@@ -236,7 +232,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     if (embedded) return tableContent;
 
     return (
-        <div className="rounded-none border bg-card shadow-sm overflow-hidden registration-marks">
+        <div className="rounded-none border bg-card shadow-sm overflow-hidden">
             {title && (
                 <div className="p-4 border-b bg-muted/30 flex justify-between items-center h-12">
                     <h3 className="font-bold uppercase tracking-widest text-xs text-muted-foreground animate-in slide-in-from-left-2">{title}</h3>
