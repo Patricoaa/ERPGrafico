@@ -195,9 +195,7 @@ export function PartnerLedgerModal({
                 <SheetHeader className="px-8 pb-2 space-y-0">
                     <SheetTitle>
                         <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                                <History className="h-5 w-5 text-primary" />
-                            </div>
+                            <History className="h-5 w-5 text-muted-foreground" />
                             <div className="flex flex-col">
                                 <span className="text-xl font-black tracking-tight text-foreground leading-none">Libro Auxiliar de Socio</span>
                                 <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-1 opacity-60">{partnerName}</span>

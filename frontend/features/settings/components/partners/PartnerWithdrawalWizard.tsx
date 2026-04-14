@@ -424,9 +424,7 @@ export function PartnerWithdrawalWizard({
             onOpenChange={onOpenChange}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded bg-destructive/10 text-destructive">
-                        <ArrowUpCircle className="h-5 w-5" />
-                    </div>
+                    <ArrowUpCircle className="h-5 w-5" />
                     <span>Asistente de Retiro de Capital / Utilidades</span>
                 </div>
             }

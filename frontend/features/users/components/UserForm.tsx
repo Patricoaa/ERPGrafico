@@ -157,9 +157,7 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
                 onOpenChange={setOpen}
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <User className="h-5 w-5 text-primary" />
-                        </div>
+                        <User className="h-5 w-5 text-muted-foreground" />
                         <span className="font-bold tracking-tight">Ficha de Usuario</span>
                     </div>
                 }

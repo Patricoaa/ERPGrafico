@@ -22,6 +22,7 @@ import { WorkOrderBasicInfo } from "./WorkOrderBasicInfo"
 import { WorkOrderMaterials } from "./WorkOrderMaterials"
 import { workOrderSchema, type WorkOrderFormValues, type WorkOrderInitialData } from "@/types/forms"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 interface WorkOrderFormProps {
     onSuccess?: () => void
@@ -366,13 +367,13 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                         >
                             Cancelar
                         </Button>
-                        <Button
+                        <ActionSlideButton
                             form="work-order-form"
                             type="submit"
                             disabled={loading || (otType === "NONE" && !form.watch('product_id') && !initialData)}
                         >
                             {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Orden"}
-                        </Button>
+                        </ActionSlideButton>
                     </div>
                 }
             >
@@ -393,9 +394,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                         className="h-16 justify-start px-4 gap-4 hover:border-primary hover:bg-primary/5 group transition-colors"
                                         onClick={() => setOtType("LINKED")}
                                     >
-                                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                                            <FileText className="h-5 w-5 text-primary" />
-                                        </div>
+                                        <FileText className="h-5 w-5 text-muted-foreground" />
                                         <div className="flex flex-col items-start overflow-hidden">
                                             <span className="font-bold text-sm">Vinculada a Venta</span>
                                             <span className="text-[10px] text-muted-foreground font-normal truncate">Productos vendidos en una Nota de Venta</span>
@@ -407,9 +406,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                         className="h-16 justify-start px-4 gap-4 hover:border-warning hover:bg-warning/10 group transition-colors"
                                         onClick={() => setOtType("NONE")}
                                     >
-                                        <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                                            <Plus className="h-5 w-5 text-warning" />
-                                        </div>
+                                        <Plus className="h-5 w-5 text-muted-foreground" />
                                         <div className="flex flex-col items-start overflow-hidden">
                                             <span className="font-bold text-sm">Producción Stock (Manual)</span>
                                             <span className="text-[10px] text-muted-foreground font-normal truncate">Fabricar para inventario o sin venta directa</span>

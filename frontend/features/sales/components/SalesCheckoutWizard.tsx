@@ -25,9 +25,7 @@ export function SalesCheckoutWizard({
             contentClassName="p-0"
             title={
                 <div className="flex items-center gap-4">
-                    <div className="p-3 bg-primary/10 rounded-lg">
-                        <ShoppingCart className="h-6 w-6 text-primary" />
-                    </div>
+                    <ShoppingCart className="h-6 w-6 text-muted-foreground" />
                     <div>
                         <span className="font-black tracking-tighter uppercase block">Cerrar Venta</span>
                         {initialDraftId && (

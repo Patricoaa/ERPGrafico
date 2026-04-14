@@ -207,9 +207,7 @@ export function MappingConfigSheet({
 
                 <div className="px-8 pb-4 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                            <FadersHorizontal className="h-5 w-5 text-primary" />
-                        </div>
+                        <FadersHorizontal className="h-5 w-5 text-muted-foreground" />
                         <div className="flex flex-col">
                             <span className="text-xl font-black tracking-tight text-foreground leading-none">{getTitle()}</span>
                             <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-1 opacity-60 flex items-center gap-1.5">

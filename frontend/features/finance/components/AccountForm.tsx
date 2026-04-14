@@ -33,6 +33,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { AccountPayload } from "@/features/accounting/types"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -163,9 +164,7 @@ export function AccountForm({
                 size={initialData ? "lg" : "md"}
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Tag className="h-5 w-5 text-primary" />
-                        </div>
+                        <Tag className="h-5 w-5 text-muted-foreground" />
                         <span>{initialData ? "Ficha de Cuenta" : "Nueva Cuenta Contable"}</span>
                     </div>
                 }
@@ -189,9 +188,9 @@ export function AccountForm({
                         >
                             Cancelar
                         </Button>
-                        <Button type="submit" form="account-form" disabled={loading}>
+                        <ActionSlideButton type="submit" form="account-form" disabled={loading}>
                             {loading ? (initialData ? "Guardando..." : "Creando...") : (initialData ? "Guardar Cambios" : "Crear Cuenta")}
-                        </Button>
+                        </ActionSlideButton>
                     </div>
                 }
             >

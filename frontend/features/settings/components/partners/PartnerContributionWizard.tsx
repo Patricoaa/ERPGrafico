@@ -442,9 +442,7 @@ export function PartnerContributionWizard({
             onOpenChange={onOpenChange}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded bg-success/10 text-success">
-                        <ArrowDownCircle className="h-5 w-5" />
-                    </div>
+                    <ArrowDownCircle className="h-5 w-5" />
                     <span>Asistente de Aporte de Capital</span>
                 </div>
             }

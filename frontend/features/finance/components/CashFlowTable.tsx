@@ -185,9 +185,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
             {!data.is_balanced && (
                 <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center justify-between animate-in fade-in slide-in-from-top-4">
                     <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-destructive/20 flex items-center justify-center text-destructive">
-                            <WarningCircle weight="fill" className="h-6 w-6" />
-                        </div>
+                        <WarningCircle weight="fill" className="h-6 w-6" />
                         <div>
                             <h4 className="font-black text-destructive uppercase tracking-tighter text-sm">Discrepancia detectada</h4>
                             <p className="text-xs text-muted-foreground">

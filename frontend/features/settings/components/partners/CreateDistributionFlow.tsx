@@ -461,9 +461,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             component: (
                 <div className="space-y-6 py-4">
                     <div className="flex flex-col items-center justify-center text-center space-y-4">
-                        <div className="h-16 w-16 bg-primary/10 text-primary rounded-full flex items-center justify-center">
-                            <Wallet className="h-8 w-8" />
-                        </div>
+                        <Wallet className="h-8 w-8" />
                         <div>
                             <h3 className="text-xl font-heading font-black uppercase tracking-tighter">Confirmación de Ejecución</h3>
                             <p className="text-sm text-muted-foreground max-w-md mt-2">

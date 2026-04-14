@@ -210,9 +210,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
                 size={currentCategory.id ? "lg" : "md"}
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Ruler className="h-5 w-5 text-primary" />
-                        </div>
+                        <Ruler className="h-5 w-5 text-muted-foreground" />
                         <span>{currentCategory.id ? "Editar Categoría de Medida" : "Nueva Categoría de Medida"}</span>
                     </div>
                 }
@@ -239,12 +237,10 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
                     </div>
 
                     {currentCategory.id && (
-                        <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 shrink-0 hidden lg:flex">
-                            <ActivitySidebar
+                        <ActivitySidebar
                                 entityId={currentCategory.id}
                                 entityType="uom_category"
                             />
-                        </div>
                     )}
                 </div>
             </BaseModal>

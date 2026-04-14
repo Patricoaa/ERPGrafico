@@ -197,9 +197,7 @@ function TerminalBatchDialog({ open, onOpenChange, onSuccess }: { open: boolean,
             size="xl"
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <Plus className="h-5 w-5 text-primary" />
-                    </div>
+                    <Plus className="h-5 w-5 text-muted-foreground" />
                     <span>Registrar Liquidación de Terminal</span>
                 </div>
             }
