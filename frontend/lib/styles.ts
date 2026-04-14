@@ -3,11 +3,11 @@ export const FORM_STYLES = {
     label: "text-[10px] font-black uppercase tracking-widest text-muted-foreground",
 
     // Inputs & Selects
-    input: "h-10 rounded-sm border bg-background focus-visible:ring-primary transition-all duration-200",
-    textarea: "min-h-[100px] rounded-sm border bg-background focus-visible:ring-primary transition-all duration-200 resize-none p-4",
+    input: "h-10 rounded-none border bg-background focus-visible:ring-primary transition-all duration-200",
+    textarea: "min-h-[100px] rounded-none border bg-background focus-visible:ring-primary transition-all duration-200 resize-none p-4",
 
     // Cards & Containers (Legacy/Base)
-    card: "rounded-sm border border-dashed p-8 bg-card/50",
+    card: "rounded-none border border-dashed p-8 bg-card/50",
 
     // Table Elements
     tableHeader: "px-3 py-2 font-black text-[10px] uppercase tracking-widest text-muted-foreground",
@@ -23,7 +23,7 @@ export const LAYOUT_TOKENS = {
 } as const;
 
 export const CARD_TOKENS = {
-    container: "rounded border transition-all duration-200",
+    container: "rounded-none border transition-all duration-200",
     standard: "border-dashed p-4 bg-card/50 shadow-sm",
     industrial: "shadow-2xl border-none ring-1 ring-border border-t-4 border-t-primary bg-card",
     list: "bg-card border border-border/50 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/10 transition-all cursor-pointer",

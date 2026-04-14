@@ -8,6 +8,7 @@ import { LucideIcon, Loader2, Check, CloudUpload, AlertCircle } from "lucide-rea
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
+import { ActionFoldButton } from "@/components/shared/ActionFoldButton"
 
 export type PageHeaderStatusType = 'synced' | 'saving' | 'error' | 'warning' | 'info'
 
@@ -124,13 +125,23 @@ interface PageHeaderButtonProps extends React.ComponentProps<typeof Button> {
  * Supports a "circular" variant for icon-only buttons.
  */
 export function PageHeaderButton({ icon: Icon, iconName, label, circular, href, className, title, ...props }: PageHeaderButtonProps) {
+    if (circular) {
+        const foldIcon = iconName ? (
+            <DynamicIcon name={iconName} className="h-5 w-5" />
+        ) : Icon ? (
+            <Icon className="h-5 w-5" />
+        ) : undefined;
+        
+        const btn = (
+            <ActionFoldButton icon={foldIcon} className={className} title={title} {...props} />
+        );
+        return href ? <Link href={href} scroll={false}>{btn}</Link> : btn;
+    }
+
     const button = (
         <Button
             className={cn(
-                "transition-all duration-300",
-                circular
-                    ? "rounded-full aspect-square p-0 w-10 h-10 shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-105 active:scale-95" 
-                    : "rounded-[0.25rem] px-4",
+                "transition-all duration-300 rounded-none px-4",
                 className
             )}
             title={title}

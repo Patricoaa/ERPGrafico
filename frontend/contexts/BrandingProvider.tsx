@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useMemo } from 'react'
 import { useCompanySettings } from '@/features/settings'
+import { resolveMediaUrl } from '@/lib/api'
 
 interface BrandingContextType {
     primaryColor: string
@@ -17,7 +18,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
 
     const primaryColor = settings?.primary_color || '#0f172a'
     const secondaryColor = settings?.secondary_color || '#3b82f6'
-    const logo = settings?.logo || null
+    const logo = resolveMediaUrl(settings?.logo)
 
     useEffect(() => {
         if (typeof window === 'undefined') return

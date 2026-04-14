@@ -7,6 +7,7 @@ import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Plus, Edit, Loader2, ChevronLeft, Users, UserPlus } from "lucide-react"
@@ -116,23 +117,19 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
                 />
             ),
         },
-        {
-            id: "actions",
-            header: () => <div className="text-right">Acciones</div>,
-            cell: ({ row }) => (
-                <div className="flex justify-end gap-2">
-                    <UserForm
-                        initialData={row.original}
-                        onSuccess={fetchUsers}
-                        trigger={
-                            <Button variant="ghost" size="icon">
-                                <Edit className="h-4 w-4" />
-                            </Button>
-                        }
-                    />
-                </div>
-            ),
-        },
+        createActionsColumn<any>({
+            renderActions: (user) => (
+                <UserForm
+                    initialData={user}
+                    onSuccess={fetchUsers}
+                    trigger={
+                        <div>
+                            <DataCell.Action icon={Edit} title="Editar" />
+                        </div>
+                    }
+                />
+            )
+        })
     ]
 
     useEffect(() => {

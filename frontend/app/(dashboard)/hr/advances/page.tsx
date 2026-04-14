@@ -29,10 +29,6 @@ import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
 import {
-    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
-} from "@/components/ui/alert-dialog"
-import {
     Plus, Pencil, Trash2, Loader2, WalletCards, CheckCircle2, Clock, History
 } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
@@ -40,7 +36,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
@@ -164,39 +160,29 @@ export default function AdvancesPage() {
                 </div>
             )
         },
-        {
-            id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex items-center gap-1 justify-center w-full">
-                    {!row.original.is_discounted && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
-                            onClick={() => { setEditingAdvance(row.original); setDialogOpen(true) }}>
-                            <Pencil className="h-3.5 w-3.5" />
-                        </Button>
+        createActionsColumn<SalaryAdvance>({
+            renderActions: (advance) => (
+                <>
+                    {!advance.is_discounted && (
+                        <DataCell.Action
+                            icon={Pencil}
+                            title="Editar"
+                            onClick={() => { setEditingAdvance(advance); setDialogOpen(true) }}
+                        />
                     )}
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md text-destructive hover:bg-destructive/10 transition-colors">
-                                <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>¿Eliminar anticipo?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Esta acción no se puede deshacer.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(row.original.id)}>Eliminar</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </div>
+                    <DataCell.Action
+                        icon={Trash2}
+                        title="Eliminar"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => {
+                            if (confirm("¿Eliminar anticipo? Esta acción no se puede deshacer.")) {
+                                handleDelete(advance.id)
+                            }
+                        }}
+                    />
+                </>
             )
-        }
+        })
     ]
 
     return (

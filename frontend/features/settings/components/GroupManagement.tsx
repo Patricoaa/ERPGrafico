@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { Plus, Edit, Trash2, Loader2, Users } from "lucide-react"
 import { GroupForm } from "@/features/users/components/GroupForm"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -76,31 +77,27 @@ export function GroupManagement({ externalOpen, onExternalOpenChange }: GroupMan
             ),
             cell: ({ row }) => <div className="pl-4 text-xs">{row.getValue("user_count")}</div>,
         },
-        {
-            id: "actions",
-            header: () => <div className="text-right">Acciones</div>,
-            cell: ({ row }) => (
-                <div className="flex justify-end gap-2">
+        createActionsColumn<any>({
+            renderActions: (group) => (
+                <>
                     <GroupForm
-                        initialData={row.original}
+                        initialData={group}
                         onSuccess={fetchGroups}
                         trigger={
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <Edit className="h-4 w-4" />
-                            </Button>
+                            <div>
+                                <DataCell.Action icon={Edit} title="Editar" />
+                            </div>
                         }
                     />
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        onClick={() => setDeleteId(row.original.id)}
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-            ),
-        },
+                    <DataCell.Action 
+                        icon={Trash2} 
+                        title="Eliminar" 
+                        className="text-destructive hover:text-destructive" 
+                        onClick={() => setDeleteId(group.id)} 
+                    />
+                </>
+            )
+        })
     ]
 
     return (

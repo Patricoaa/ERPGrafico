@@ -22,6 +22,7 @@ import { cn, formatCurrency } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
@@ -423,20 +424,17 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             },
             size: 100,
         },
-        {
-            id: "actions",
-            cell: ({ row }) => (
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                    onClick={(e) => { e.stopPropagation(); setActionDialog({ open: true, type: 'exclude', lineId: row.original.id }) }}
-                >
-                    <Ban className="h-3.5 w-3.5" />
-                </Button>
-            ),
-            size: 40,
-        }
+        createActionsColumn<BankStatementLine>({
+            headerLabel: "",
+            renderActions: (item) => (
+                <DataCell.Action
+                    icon={Ban}
+                    title="Excluir"
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={(e) => { e.stopPropagation(); setActionDialog({ open: true, type: 'exclude', lineId: item.id }) }}
+                />
+            )
+        })
     ], [lineSuggestions])
 
     const paymentColumns = useMemo<ColumnDef<ReconciliationSystemItem>[]>(() => [

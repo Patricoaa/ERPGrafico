@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 export interface Terminal {
     id: number
@@ -203,9 +204,7 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
             size={terminal ? "lg" : "md"}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <MonitorSmartphone className="h-5 w-5 text-primary" />
-                    </div>
+                    <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
                     <span>{terminal ? "Ficha de Terminal" : "Nuevo Terminal"}</span>
                 </div>
             }
@@ -225,10 +224,10 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                     <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
                         Cancelar
                     </Button>
-                    <Button type="submit" form="terminal-form" disabled={loading}>
+                    <ActionSlideButton type="submit" form="terminal-form" disabled={loading}>
                         {loading && <Loader2 className="h-3 w-3 mr-2 animate-spin" />}
                         {terminal ? "Guardar Cambios" : "Crear Terminal"}
-                    </Button>
+                    </ActionSlideButton>
                 </div>
             }
         >
@@ -471,12 +470,10 @@ export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: 
                 </div>
 
                 {terminal?.id && (
-                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                        <ActivitySidebar
+                    <ActivitySidebar
                             entityId={terminal.id}
                             entityType="terminal"
                         />
-                    </div>
                 )}
             </div>
         </BaseModal>

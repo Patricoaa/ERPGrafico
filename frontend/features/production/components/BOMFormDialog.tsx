@@ -33,6 +33,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { FORM_STYLES } from "@/lib/styles"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 // Schema for material lines (stock components)
 const materialLineSchema = z.object({
@@ -338,9 +339,7 @@ export function BOMFormDialog({
             className="max-w-[1200px]"
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary shadow-sm border border-primary/5">
-                        <Workflow className="h-5 w-5" />
-                    </div>
+                    <Workflow className="h-5 w-5" />
                     <span className="font-bold tracking-tight">
                         {bomToEdit ? "Editar Lista de Materiales" : "Nueva Lista de Materiales"}
                     </span>
@@ -364,7 +363,7 @@ export function BOMFormDialog({
                     <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5">
                         Cancelar
                     </Button>
-                    <Button
+                    <ActionSlideButton
                         form="bom-form"
                         type="submit"
                         disabled={form.formState.isSubmitting}
@@ -376,7 +375,7 @@ export function BOMFormDialog({
                             <Save className="mr-2 h-3.5 w-3.5" />
                         )}
                         {bomToEdit ? "Guardar Cambios" : "Crear Receta"}
-                    </Button>
+                    </ActionSlideButton>
                 </div>
             }
         >
@@ -592,9 +591,7 @@ export function BOMFormDialog({
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
                             <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg border border-border/50">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-primary/10 rounded-lg">
-                                        <Package className="h-4 w-4 text-primary" />
-                                    </div>
+                                    <Package className="h-4 w-4 text-muted-foreground" />
                                     <div>
                                         <h3 className="text-xs font-black uppercase tracking-widest text-foreground/80">
                                             Materias Primas y Componentes
@@ -823,9 +820,7 @@ export function BOMFormDialog({
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
                             <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg border border-border/50">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-primary/10 rounded-lg">
-                                        <Truck className="h-4 w-4 text-primary" />
-                                    </div>
+                                    <Truck className="h-4 w-4 text-muted-foreground" />
                                     <div>
                                         <h3 className="text-xs font-black uppercase tracking-widest text-foreground/80">
                                             Servicios Tercerizados

@@ -3,6 +3,7 @@ import React from "react"
 import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { CARD_TOKENS } from "@/lib/styles"
+import { IndustryMark } from "./IndustryMark"
 
 interface IndustrialCardProps extends React.ComponentProps<typeof Card> {
     variant?: "standard" | "industrial" | "glass" | "list"
@@ -25,9 +26,10 @@ export function IndustrialCard({
     
     return (
         <Card 
-            className={cn(CARD_TOKENS.container, variantClass, className)} 
+            className={cn(CARD_TOKENS.container, "relative overflow-visible", variantClass, className)} 
             {...props}
         >
+            <IndustryMark variant="crop" />
             {children}
         </Card>
     )

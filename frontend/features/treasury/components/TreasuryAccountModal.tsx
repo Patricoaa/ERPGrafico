@@ -20,6 +20,7 @@ import { UserSelector } from "@/components/selectors/UserSelector"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 interface TreasuryAccountModalProps {
     open: boolean
@@ -138,9 +139,7 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
             size={accountId ? "xl" : "lg"}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <Landmark className="h-5 w-5 text-primary" />
-                    </div>
+                    <Landmark className="h-5 w-5 text-muted-foreground" />
                     <span>{accountId ? "Ficha de Cuenta" : "Nueva Cuenta"}</span>
                 </div>
             }
@@ -150,10 +149,10 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
             footer={
                 <>
                     <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button type="submit" form="account-form" disabled={isSubmitting || loading}>
+                    <ActionSlideButton type="submit" form="account-form" disabled={isSubmitting || loading}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {accountId ? "Guardar Cambios" : "Crear Cuenta"}
-                    </Button>
+                    </ActionSlideButton>
                 </>
             }
         >
@@ -274,14 +273,12 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                 </div>
 
                 {accountId && (
-                    <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden hidden lg:flex">
-                        <ActivitySidebar
+                    <ActivitySidebar
                             entityType="treasuryaccount"
                             entityId={accountId}
                             className="h-full border-none"
                             title="Historial de Cambios"
                         />
-                    </div>
                 )}
             </div>
         </BaseModal>

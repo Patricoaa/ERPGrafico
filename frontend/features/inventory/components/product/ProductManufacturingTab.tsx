@@ -349,9 +349,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                     ))}
                                     {bomFields.length === 0 && (
                                         <div className="py-12 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-center px-6 bg-muted/5 group hover:bg-muted/10 transition-colors">
-                                            <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                                <Layers className="h-8 w-8 text-primary" />
-                                            </div>
+                                            <Layers className="h-8 w-8 text-muted-foreground" />
                                             <h4 className="font-bold text-muted-foreground">Sin recetas definidas</h4>
                                             <p className="text-xs text-muted-foreground/60 max-w-xs mt-1">Haga clic en el botón superior para añadir su primera lista de materiales.</p>
                                         </div>

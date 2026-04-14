@@ -68,9 +68,7 @@ export function FiscalYearCard({
             {/* Header / Annual Status */}
             <div className="bg-muted/20 border-b border-border/50 p-5 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <div className="bg-primary/10 p-3 rounded-lg">
-                        <CalendarRange className="w-6 h-6 text-primary" />
-                    </div>
+                    <CalendarRange className="w-6 h-6 text-muted-foreground" />
                     <div>
                         <h3 className="font-heading font-extrabold text-2xl uppercase tracking-tighter flex items-center gap-3">
                             Ejercicio {year}

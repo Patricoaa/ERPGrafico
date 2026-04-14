@@ -148,10 +148,15 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                 const isSelected = hubConfig?.orderId === item.id
                 return (
                     <div className="flex justify-end pr-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-transparent"
+                        <DataCell.Action
+                            icon={isSelected && isHubOpen ? ArrowLeft : ArrowRight}
+                            title={isSelected && isHubOpen ? "Cerrar Panel" : "Abrir Panel"}
+                            className={cn(
+                                "transition-all",
+                                isSelected && isHubOpen 
+                                    ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300" 
+                                    : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5"
+                            )}
                             onClick={() => {
                                 if (isSelected) {
                                     closeHub()
@@ -159,13 +164,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                                     openHub({ orderId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
                                 }
                             }}
-                        >
-                            {isSelected && isHubOpen ? (
-                                <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
-                            ) : (
-                                <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                            )}
-                        </Button>
+                        />
                     </div>
                 )
             },
@@ -215,10 +214,15 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                 const isSelected = hubConfig?.invoiceId === item.id
                 return (
                     <div className="flex justify-end pr-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-transparent"
+                        <DataCell.Action
+                            icon={isSelected && isHubOpen ? ArrowLeft : ArrowRight}
+                            title={isSelected && isHubOpen ? "Cerrar Panel" : "Abrir Panel"}
+                            className={cn(
+                                "transition-all",
+                                isSelected && isHubOpen 
+                                    ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300" 
+                                    : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5"
+                            )}
                             onClick={() => {
                                 if (isSelected) {
                                     closeHub()
@@ -226,13 +230,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                                     openHub({ orderId: null, invoiceId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
                                 }
                             }}
-                        >
-                            {isSelected && isHubOpen ? (
-                                <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
-                            ) : (
-                                <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                            )}
-                        </Button>
+                        />
                     </div>
                 )
             },

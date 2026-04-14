@@ -196,9 +196,7 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
                 component: (
                     <div className="space-y-6 py-4">
                         <div className="flex flex-col items-center justify-center text-center space-y-4">
-                            <div className="h-16 w-16 bg-success/10 text-success rounded-full flex items-center justify-center">
-                                <Banknote className="h-8 w-8" />
-                            </div>
+                            <Banknote className="h-8 w-8" />
                             <div>
                                 <h3 className="text-xl font-heading font-black uppercase tracking-tighter">Ejecutar Pagos Masivos</h3>
                                 <p className="text-sm text-muted-foreground max-w-md mt-2">

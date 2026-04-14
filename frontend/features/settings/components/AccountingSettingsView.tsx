@@ -30,7 +30,7 @@ const accountingSchema = z.object({
 })
 
 const taxSchema = z.object({
-    default_vat_rate: z.number().min(0).max(100),
+    default_tax_rate: z.number().min(0).max(100),
     vat_payable_account: z.string().nullable(),
     vat_carryforward_account: z.string().nullable(),
     withholding_tax_account: z.string().nullable(),
@@ -259,7 +259,7 @@ function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) =>
     const form = useForm<TaxFormValues>({
         resolver: zodResolver(taxSchema),
         defaultValues: {
-            default_vat_rate: 19.00,
+            default_tax_rate: 19.00,
             vat_payable_account: null,
             vat_carryforward_account: null,
             withholding_tax_account: null,
@@ -282,8 +282,8 @@ function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) =>
                 fields.forEach((key: any) => {
                     const val = settings[key]
                     if (val === null || val === undefined) {
-                        formattedSettings[key] = (key === 'default_vat_rate' ? 19.00 : null)
-                    } else if (key === 'default_vat_rate') {
+                        formattedSettings[key] = (key === 'default_tax_rate' ? 19.00 : null)
+                    } else if (key === 'default_tax_rate') {
                         formattedSettings[key] = parseFloat(val.toString())
                     } else {
                         formattedSettings[key] = val.toString()
@@ -339,7 +339,7 @@ function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) =>
                         <CardContent>
                             <FormField
                                 control={form.control}
-                                name="default_vat_rate"
+                                name="default_tax_rate"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest">IVA Chile (%)</FormLabel>

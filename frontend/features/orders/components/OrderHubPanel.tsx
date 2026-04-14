@@ -128,9 +128,7 @@ export function OrderHubPanel({
                 <div className="flex items-center justify-between gap-3 shrink-0 px-4 pt-1 pb-4 border-b border-white/5 bg-sidebar backdrop-blur-md">
                     <div className="flex items-center gap-3 min-w-0">
                         {/* Unified Minimalist Icon Container */}
-                        <div className="p-2 bg-muted/50 rounded-md border border-border/50 shadow-sm shadow-black/5 shrink-0">
-                            <TopLeftIcon className="h-5 w-5 text-muted-foreground" />
-                        </div>
+                        <TopLeftIcon className="h-5 w-5 text-muted-foreground" />
                         
                         <div className="flex flex-col gap-0.5 min-w-0">
                             <div className="flex items-center gap-2">

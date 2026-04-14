@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { FORM_STYLES } from "@/lib/styles"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const schema = z.object({
     transaction_number: z.string().optional(),
@@ -88,9 +89,9 @@ export function TransactionNumberForm({
                     >
                         Cancelar
                     </Button>
-                    <Button type="submit" form="transaction-number-form" disabled={loading}>
+                    <ActionSlideButton type="submit" form="transaction-number-form" disabled={loading}>
                         {loading ? "Guardando..." : "Guardar"}
-                    </Button>
+                    </ActionSlideButton>
                 </>
             }
         >

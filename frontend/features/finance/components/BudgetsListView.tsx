@@ -16,6 +16,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { BudgetEditor } from "@/features/finance/components/BudgetEditor"
+import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 
 import { useSearchParams, usePathname } from "next/navigation"
 
@@ -141,39 +142,27 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange }: BudgetsL
                 </div>
             ),
         },
-        {
-            id: "actions",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center gap-2 w-full">
-                    <Button
-                        variant="ghost"
-                        size="sm"
+        createActionsColumn<Budget>({
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action
+                        icon={Pencil}
+                        title="Editar Montos"
                         onClick={() => {
-                            setBudgetToEdit(row.original)
+                            setBudgetToEdit(item)
                             setIsEditorOpen(true)
                         }}
-                        className="h-8 text-muted-foreground hover:text-primary"
-                    >
-                        <Pencil className="h-4 w-4 mr-2" />
-                        Editar Montos
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        asChild
-                        className="h-8"
-                    >
-                        <Link href={`/finances/budgets/${row.original.id}`}>
-                            <FileText className="h-4 w-4 mr-2" />
-                            Ver Ejecución
-                        </Link>
-                    </Button>
-                </div>
-            ),
-        },
+                    />
+                    <DataCell.Action
+                        icon={FileText}
+                        title="Ver Ejecución"
+                        onClick={() => {
+                            router.push(`/finances/budgets/${item.id}`)
+                        }}
+                    />
+                </>
+            )
+        }),
     ]
 
     return (

@@ -381,7 +381,10 @@ class TreasuryAccount(models.Model):
     account = models.ForeignKey(
         Account, 
         on_delete=models.PROTECT, 
-        limit_choices_to={'account_type': AccountType.ASSET},
+        limit_choices_to={
+            'account_type': AccountType.ASSET,
+            'code__startswith': '1.1.01'
+        },
         related_name='treasury_accounts',
         verbose_name=_("Cuenta Contable")
     )
@@ -456,14 +459,26 @@ class TreasuryAccount(models.Model):
         """
         from django.core.exceptions import ValidationError
         
-        if self.account_type == self.Type.CASH and self.account:
-            # Check if any other TreasuryAccount uses this same account
+        if self.account:
+            # 1. Leaf account validation
+            if not self.account.is_selectable:
+                raise ValidationError({
+                    'account': _("La cuenta contable debe ser una cuenta auxiliar (hoja) sin subcuentas.")
+                })
+            
+            # 2. Cash prefix validation (Strictly 1.1.01 as per user request)
+            if not self.account.code.startswith('1.1.01'):
+                raise ValidationError({
+                    'account': _("La cuenta contable debe pertenecer al grupo de 'Efectivo y Equivalentes' (Prefijo 1.1.01).")
+                })
+
+            # 3. Duplicate usage validation (already exists but refined)
             duplicates = TreasuryAccount.objects.filter(account=self.account).exclude(id=self.id)
             if duplicates.exists():
                 dup_names = ", ".join([t.name for t in duplicates])
                 raise ValidationError({
                     'account': _(f"La cuenta contable '{self.account.code}' ya está en uso por: {dup_names}. "
-                                 "Las cuentas de tipo Efectivo deben tener una cuenta contable exclusiva.")
+                                 "Cada cuenta de tesorería debe tener una cuenta contable exclusiva.")
                 })
         
         # Validate CHECKING accounts

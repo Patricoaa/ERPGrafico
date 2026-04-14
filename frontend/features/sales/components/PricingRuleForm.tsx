@@ -33,6 +33,7 @@ import { toast } from "sonner"
 import { Plus, Tags } from "lucide-react"
 import { PricingUtils } from "@/lib/pricing"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 // schemas and types remain the same
 const formSchema = z.object({
@@ -186,9 +187,7 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
             size={initialData ? "xl" : "lg"}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <Tags className="h-5 w-5 text-primary" />
-                    </div>
+                    <Tags className="h-5 w-5 text-muted-foreground" />
                     <span>{initialData ? "Ficha de Regla de Precio" : "Nueva Regla de Precio"}</span>
                 </div>
             }
@@ -205,9 +204,9 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
             }
             footer={
                 <div className="flex justify-end space-x-2 w-full">
-                    <Button type="submit" form="pricing-rule-form">
+                    <ActionSlideButton type="submit" form="pricing-rule-form">
                         {initialData ? "Actualizar" : "Crear"} Regla
-                    </Button>
+                    </ActionSlideButton>
                 </div>
             }
         >

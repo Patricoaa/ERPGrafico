@@ -2,6 +2,7 @@
 import React from "react"
 import { LucideIcon, Inbox, SearchX, Receipt, Package, Users, Database } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { IndustryMark } from "@/components/shared/IndustryMark"
 
 export type EmptyStateContext = 'search' | 'inventory' | 'finance' | 'users' | 'generic' | 'database'
 export type EmptyStateVariant = 'full' | 'compact' | 'minimal'
@@ -79,12 +80,15 @@ export function EmptyState({
         >
             {/* Precision Icon Container */}
             <div className={cn(
-                "relative flex items-center justify-center rounded-md border border-border/40 bg-muted/10 mb-6",
+                "relative flex items-center justify-center rounded-none border border-border/40 bg-muted/10 mb-6",
                 variant === 'full' ? "h-20 w-20" : "h-14 w-14"
             )}>
                 {/* Decorative corners */}
-                <div className="absolute top-0 left-0 w-2 h-2 border-t border-l border-primary/40 -translate-x-1 -translate-y-1" />
-                <div className="absolute bottom-0 right-0 w-2 h-2 border-b border-r border-primary/40 translate-x-1 translate-y-1" />
+                <IndustryMark 
+                    positions={['top-left', 'bottom-right']} 
+                    active 
+                    className="opacity-40" 
+                />
                 
                 <Icon className={cn(
                     "text-muted-foreground/40",

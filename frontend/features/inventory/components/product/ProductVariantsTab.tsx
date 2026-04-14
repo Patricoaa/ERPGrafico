@@ -271,9 +271,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         <div className="flex flex-col h-full p-6 sm:p-8">
                             <SheetHeader className="mb-6 shrink-0">
                                 <SheetTitle className="flex items-center gap-3 text-xl font-bold">
-                                    <div className="p-2.5 rounded-lg bg-primary/10">
-                                        <Wand2 className="h-6 w-6 text-primary" />
-                                    </div>
+                                    <Wand2 className="h-6 w-6 text-muted-foreground" />
                                     GENERAR COMBINACIONES
                                 </SheetTitle>
                             </SheetHeader>

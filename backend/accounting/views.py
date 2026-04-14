@@ -247,6 +247,26 @@ class BudgetViewSet(viewsets.ModelViewSet):
     queryset = Budget.objects.all()
     serializer_class = BudgetSerializer
 
+    @action(detail=True, methods=['get'])
+    def variance(self, request, pk=None):
+        budget = self.get_object()
+        month = request.query_params.get('month')
+        year = request.query_params.get('year')
+        
+        if not month or not year:
+            # Default to current month/year if not specified, 
+            # as long as they are within budget bounds
+            from django.utils import timezone
+            now = timezone.now()
+            month = int(month) if month else now.month
+            year = int(year) if year else now.year
+            
+        try:
+            tree = BudgetService.get_variance_report(budget, int(year), int(month))
+            return Response(tree)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=True, methods=['post'])
     def set_items(self, request, pk=None):
         """

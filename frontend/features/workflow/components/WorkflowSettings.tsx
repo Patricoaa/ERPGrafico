@@ -300,17 +300,11 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                                 {/* Status Badge (Compact) */}
                                 <div className="shrink-0 flex items-center">
                                     {rule?.assigned_user ? (
-                                        <div className="h-8 w-8 flex items-center justify-center rounded-full bg-success/10 text-success border border-success/20" title={`Asignado a: ${rule.assigned_user_data?.username}`}>
-                                            <CheckCircle2 className="h-4 w-4" />
-                                        </div>
+                                        <CheckCircle2 className="h-4 w-4" />
                                     ) : rule?.assigned_group ? (
-                                        <div className="h-8 w-8 flex items-center justify-center rounded-full bg-info/10 text-info border border-info/20" title={`Grupo: ${rule.assigned_group}`}>
-                                            <Users className="h-4 w-4" />
-                                        </div>
+                                        <Users className="h-4 w-4" />
                                     ) : (
-                                        <div className="h-8 w-8 flex items-center justify-center rounded-full bg-warning/10 text-warning border border-warning/20" title="Sin asignar">
-                                            <AlertCircle className="h-4 w-4" />
-                                        </div>
+                                        <AlertCircle className="h-4 w-4" />
                                     )}
                                 </div>
                             </div>
@@ -331,9 +325,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                     <div key={type.id} className="group relative bg-card border rounded-lg p-4 hover:shadow-md transition-all">
                         <div className="flex flex-col md:flex-row md:items-center gap-6">
                             <div className="flex items-center gap-4 min-w-[250px] flex-1">
-                                <div className="p-3 bg-primary/5 rounded-lg group-hover:bg-primary/10 transition-colors">
-                                    <BellRing className="h-5 w-5 text-primary/70" />
-                                </div>
+                                <BellRing className="h-5 w-5 text-muted-foreground/70" />
                                 <div className="space-y-1">
                                     <h3 className="text-sm font-bold leading-none">{type.name}</h3>
                                     <p className="text-xs text-muted-foreground line-clamp-1">{type.description}</p>

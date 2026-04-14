@@ -3,10 +3,19 @@ import { cn, formatCurrency, translateStatus, formatPlainDate, formatDocumentId 
 import { ExternalLink, LucideIcon } from "lucide-react"
 import Link from "next/link"
 import { ReactNode, HTMLAttributes } from "react"
+import type { ColumnDef } from "@tanstack/react-table"
 
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { CropFrame } from "@/components/shared/CropFrame"
+import { Button } from "@/components/ui/button"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface BaseCellProps extends HTMLAttributes<HTMLDivElement> {
     children?: ReactNode
@@ -239,5 +248,122 @@ export const DataCell = {
         <div className={cn("p-1 rounded-full bg-secondary/50 flex flex-col justify-center items-center", className)} {...props}>
             <Icon className={cn("h-3.5 w-3.5", color)} />
         </div>
+    ),
+
+    /** 
+     * Standardized Row Action 
+     * Incorporates CropFrame and a Ghost Button.
+     * - hover:bg-transparent overrides ghost default accent fill; CropFrame is the sole hover feedback.
+     * - Tooltip uses the dark sidebar palette for visual consistency.
+     * Enforces rounded-none for Industrial Premium compliance.
+     */
+    Action: ({ 
+        icon: Icon, 
+        onClick, 
+        title, 
+        className, 
+        color, 
+        variant = "ghost", 
+        compact = false, // New prop
+        ...props 
+    }: { 
+        icon: any, 
+        onClick?: (e: React.MouseEvent) => void, 
+        title?: string, 
+        className?: string, 
+        color?: string, 
+        variant?: any,
+        compact?: boolean
+    } & HTMLAttributes<HTMLButtonElement>) => (
+        <TooltipProvider delayDuration={400}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div className="flex justify-center items-center">
+                        <CropFrame variant={compact ? "compact" : "default"} thickness={1}>
+                            <Button
+                                variant={variant}
+                                size="icon"
+                                className={cn("h-7 w-7 rounded-none transition-all duration-300 hover:bg-transparent hover:scale-105 active:scale-95", className)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onClick?.(e);
+                                }}
+                                {...props}
+                            >
+                                <Icon className={cn("h-4 w-4", color)} />
+                            </Button>
+                        </CropFrame>
+                    </div>
+                </TooltipTrigger>
+                {title && (
+                    <TooltipContent 
+                        side="top" 
+                        className="text-[9px] font-black uppercase tracking-[0.2em] bg-sidebar text-sidebar-foreground border-sidebar-border px-2 py-1 shadow-xl rounded-none animate-in fade-in zoom-in-95 duration-200"
+                    >
+                        {title}
+                    </TooltipContent>
+                )}
+            </Tooltip>
+        </TooltipProvider>
+    ),
+
+    /** Container for multiple row actions to ensure proper spacing and alignment */
+    ActionGroup: ({ children, className, ...props }: { children: ReactNode, className?: string } & HTMLAttributes<HTMLDivElement>) => (
+        <div className={cn("flex justify-center items-center gap-1.5", className)} onClick={(e) => e.stopPropagation()} {...props}>
+            {children}
+        </div>
     )
+}
+
+// ─── Reusable Actions Column Factory ──────────────────────────────────────────
+// Generates a standardized actions column for DataTable.
+// Tables only provide a renderActions function; all boilerplate is encapsulated.
+// ──────────────────────────────────────────────────────────────────────────────
+
+interface ActionsColumnConfig<TData> {
+    /** Function receiving the row data, must return DataCell.Action elements */
+    renderActions: (item: TData) => ReactNode
+    /** Override the column header label. Default: "Acciones" */
+    headerLabel?: string
+}
+
+/**
+ * createActionsColumn — Standard factory for the actions column.
+ * 
+ * @contract component-contracts.md §14
+ * 
+ * Usage:
+ * ```tsx
+ * const columns = [
+ *   // ...data columns,
+ *   createActionsColumn<Product>({
+ *     renderActions: (item) => (
+ *       <>
+ *         <DataCell.Action icon={Pencil} title="Editar" onClick={() => edit(item)} />
+ *         <DataCell.Action icon={Trash2} title="Eliminar" onClick={() => del(item)} />
+ *       </>
+ *     ),
+ *   }),
+ * ]
+ * ```
+ */
+export function createActionsColumn<TData>({
+    renderActions,
+    headerLabel = "Acciones",
+}: ActionsColumnConfig<TData>): ColumnDef<TData, unknown> {
+    return {
+        id: "actions",
+        header: () => (
+            <div className="text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                {headerLabel}
+            </div>
+        ),
+        cell: ({ row }) => (
+            <DataCell.ActionGroup>
+                {renderActions(row.original)}
+            </DataCell.ActionGroup>
+        ),
+        enableSorting: false,
+        enableHiding: false,
+    }
 }

@@ -8,7 +8,7 @@ import {
     Plus, Edit, Trash2, Loader2, CreditCard, Landmark, List, History, Tag, Pencil
 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -25,6 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 // --- Bank Management ---
 
@@ -109,30 +110,23 @@ export function BankManagement({ externalOpen, onOpenChange }: BankManagementPro
                 </div>
             )
         },
-        {
-            id: "actions",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: ({ row }: any) => (
-                <div className="flex justify-center w-full gap-1.5">
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-md hover:bg-primary/10 hover:text-primary transition-colors" 
-                        onClick={() => openEdit(row.original)}
-                    >
-                        <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground/50 transition-colors" 
-                        onClick={() => handleDelete(row.original.id)}
-                    >
-                        <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                </div>
+        createActionsColumn<any>({
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action
+                        icon={Pencil}
+                        title="Editar"
+                        onClick={() => openEdit(item)}
+                    />
+                    <DataCell.Action
+                        icon={Trash2}
+                        title="Eliminar"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(item.id)}
+                    />
+                </>
             )
-        }
+        })
     ]
 
     return (
@@ -231,9 +225,7 @@ function BankDialog({ open, onOpenChange, bank, onSuccess }: any) {
             size={bank ? "xl" : "md"}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <Landmark className="h-5 w-5 text-primary" />
-                    </div>
+                    <Landmark className="h-5 w-5 text-muted-foreground" />
                     <span>{bank ? "Ficha de Banco" : "Nuevo Banco"}</span>
                 </div>
             }
@@ -243,10 +235,10 @@ function BankDialog({ open, onOpenChange, bank, onSuccess }: any) {
             footer={
                 <>
                     <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button type="submit" form="bank-form" disabled={loading}>
+                    <ActionSlideButton type="submit" form="bank-form" disabled={loading}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {bank ? "Actualizar" : "Crear"}
-                    </Button>
+                    </ActionSlideButton>
                 </>
             }
         >
@@ -283,14 +275,12 @@ function BankDialog({ open, onOpenChange, bank, onSuccess }: any) {
 
                 {/* Right Side: Activity Sidebar */}
                 {bank?.id && (
-                    <div className="w-[320px] flex flex-col bg-muted/10 border-l overflow-hidden hidden lg:flex">
-                        <ActivitySidebar
+                    <ActivitySidebar
                             entityType="bank"
                             entityId={bank.id}
                             className="h-full border-none"
                             title="Historial"
                         />
-                    </div>
                 )}
             </div>
         </BaseModal>
@@ -377,9 +367,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
             cell: ({ row }: any) => (
                 <div className="flex items-center justify-center gap-2 w-full">
                     {row.original.is_terminal ? (
-                        <div className="bg-primary/10 p-1 rounded-sm" title="Terminal de Cobro">
-                            <CreditCard className="h-4 w-4 text-primary" />
-                        </div>
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
                     ) : (
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
                     )}
@@ -433,30 +421,23 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
                 </div>
             )
         },
-        {
-            id: "actions",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: ({ row }: any) => (
-                <div className="flex justify-center w-full gap-1.5">
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-md hover:bg-primary/10 hover:text-primary transition-colors" 
-                        onClick={() => openEdit(row.original)}
-                    >
-                        <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground/50 transition-colors" 
-                        onClick={() => handleDelete(row.original.id)}
-                    >
-                        <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                </div>
+        createActionsColumn<any>({
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action
+                        icon={Pencil}
+                        title="Editar"
+                        onClick={() => openEdit(item)}
+                    />
+                    <DataCell.Action
+                        icon={Trash2}
+                        title="Eliminar"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(item.id)}
+                    />
+                </>
             )
-        }
+        })
     ]
 
     return (
@@ -624,9 +605,7 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
             size={method ? "xl" : "lg"}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <CreditCard className="h-5 w-5 text-primary" />
-                    </div>
+                    <CreditCard className="h-5 w-5 text-muted-foreground" />
                     <span>{method ? "Ficha de Método de Pago" : "Nuevo Método de Pago"}</span>
                 </div>
             }
@@ -636,10 +615,10 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
             footer={
                 <>
                     <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button type="submit" form="method-form" disabled={loading}>
+                    <ActionSlideButton type="submit" form="method-form" disabled={loading}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {method ? "Actualizar" : "Crear"}
-                    </Button>
+                    </ActionSlideButton>
                 </>
             }
         >
@@ -785,16 +764,16 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
 
                 {/* Right Side: Activity Sidebar */}
                 {method?.id && (
-                    <div className="w-[350px] flex flex-col bg-muted/10 border-l overflow-hidden hidden lg:flex">
-                        <ActivitySidebar
+                    <ActivitySidebar
                             entityType="paymentmethod"
                             entityId={method.id}
                             className="h-full border-none"
                             title="Historial"
                         />
-                    </div>
                 )}
             </div>
         </BaseModal>
     )
 }
+
+

@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.contrib.auth.hashers import make_password
 from decimal import Decimal
 import random
-from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem, BSCategory
+from accounting.models import Account, AccountType, AccountingSettings, JournalEntry, JournalItem, Budget, BudgetItem, BSCategory, ISCategory
 from accounting.services import AccountingService
 from inventory.models import (
     ProductCategory, Product, Warehouse, StockMove, UoMCategory, UoM, 
@@ -121,6 +121,9 @@ class Command(BaseCommand):
 
             self.stdout.write('Initializing Workflow Settings...')
             self._initialize_workflow_settings()
+
+            self.stdout.write('Creating Demo Budget...')
+            self._create_demo_budget(accounts)
 
         self.stdout.write(self.style.SUCCESS('Successfully seeded demo data for Graphic Industry!'))
 
@@ -385,7 +388,10 @@ class Command(BaseCommand):
                     'name': name,
                     'account_type': parent.account_type,
                     'parent': parent,
-                    'is_reconcilable': True
+                    'is_reconcilable': True,
+                    'bs_category': parent.bs_category, # Inherit BS category for reports
+                    'is_category': parent.is_category,
+                    'cf_category': parent.cf_category,
                 }
             )
             return acc
@@ -1085,9 +1091,10 @@ class Command(BaseCommand):
                 code=code,
                 defaults={
                     'name': name,
-                    'account_type': AccountType.ASSET, # or LIQUIDITY
+                    'account_type': AccountType.ASSET,
                     'parent': cash_parent,
-                    'is_reconcilable': True
+                    'is_reconcilable': True,
+                    'bs_category': BSCategory.CURRENT_ASSET # Explicitly for Liquidity Ratio
                 }
             )
             return acc
@@ -1692,3 +1699,76 @@ class Command(BaseCommand):
             rule_data['notification_type'] = notification_type  # restore for logging
 
         self.stdout.write(f"    ✓ {len(notification_rules)} NotificationRules configured ({created_count} new).")
+
+    def _create_demo_budget(self, accounts):
+        """Creates a realistic operational budget for the current year."""
+        current_year = timezone.now().year
+        
+        budget, _ = Budget.objects.get_or_create(
+            name=f"Presupuesto Operativo {current_year}",
+            defaults={
+                'start_date': timezone.now().date().replace(month=1, day=1),
+                'end_date': timezone.now().date().replace(month=12, day=31),
+                'description': "Presupuesto base para la operación de la imprenta.",
+            }
+        )
+
+        # Budget targets (Monthly)
+        # Revenue: 7.5M CLP monthly (~90M annual)
+        # COGS: 3.5M CLP monthly (incl. materials)
+        # OPEX Salaries: 1.5M CLP monthly
+        # OPEX Rent/Admin: 1.0M CLP monthly
+        # Target EBITDA: 1.5M CLP monthly
+        
+        targets = [
+            # Revenue (4.1.01)
+            {
+                'account': Account.objects.get(code='4.1.01'),
+                'monthly_amount': Decimal('7500000'),
+                'label': "Ventas Proyectadas Imprenta"
+            },
+            # Cost of Sales (5.1.01)
+            {
+                'account': Account.objects.get(code='5.1.01'),
+                'monthly_amount': Decimal('3500000'),
+                'label': "Insumos y Materiales Proyectados"
+            },
+            # Salaries (5.2.01.01)
+            {
+                'account': Account.objects.get(code='5.2.01.01'),
+                'monthly_amount': Decimal('1500000'),
+                'label': "Planilla Mensual Proyectada"
+            },
+            # Rent (5.2.02)
+            {
+                'account': Account.objects.get(code='5.2.02'),
+                'monthly_amount': Decimal('800000'),
+                'label': "Arriendo Planta y Oficinas"
+            },
+            # General Expense (5.2.06) - Admin/Misc
+            {
+                'account': Account.objects.get(code='5.2.06'),
+                'monthly_amount': Decimal('200000'),
+                'label': "Gastos Varios Oficina"
+            }
+        ]
+
+        total_items = 0
+        for target in targets:
+            for month in range(1, 13):
+                # Add slight seasonal variation (+/- 10%)
+                variation = Decimal(str(random.uniform(0.9, 1.1)))
+                adjusted_amount = (target['monthly_amount'] * variation).quantize(Decimal('1'))
+                
+                BudgetItem.objects.update_or_create(
+                    budget=budget,
+                    account=target['account'],
+                    year=current_year,
+                    month=month,
+                    defaults={
+                        'amount': adjusted_amount,
+                    }
+                )
+                total_items += 1
+
+        self.stdout.write(f"    ✓ Budget '{budget.name}' created/updated with {total_items} monthly items.")

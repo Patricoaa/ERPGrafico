@@ -45,6 +45,7 @@ import { PricingUtils } from "@/lib/pricing"
 import { useStockValidation } from "@/hooks/useStockValidation"
 import { SaleOrder, SaleOrderLine, SaleOrderPayload } from "../../types"
 import { Product } from "@/features/inventory/types"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 interface UoM {
     id: number
@@ -342,9 +343,9 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                         >
                             Cancelar
                         </Button>
-                        <Button type="submit" form="sale-order-form" disabled={loading}>
+                        <ActionSlideButton type="submit" form="sale-order-form" disabled={loading}>
                             {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Confirmar Venta"}
-                        </Button>
+                        </ActionSlideButton>
                     </>
                 }
             >
