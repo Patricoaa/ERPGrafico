@@ -55,6 +55,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
 const globalSettingsSchema = z.object({
     uf_current_value: z.string(),
@@ -231,21 +232,21 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
                 </div>
             )
         },
-        {
-            id: "actions",
-            header: () => <div className="text-right pr-4">Acciones</div>,
-            cell: ({ row }) => (
-                <div className="flex justify-end gap-1 pr-2">
-                    <ConceptDialog concept={row.original} onSaved={fetchData} />
-                    {!row.original.is_system && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive/10 rounded-sm"
-                            onClick={() => conceptDeleteConfirm.requestConfirm(row.original.id)}>
-                            <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+        createActionsColumn<PayrollConcept>({
+            renderActions: (concept) => (
+                <>
+                    <ConceptDialog concept={concept} onSaved={fetchData} />
+                    {!concept.is_system && (
+                        <DataCell.Action 
+                            icon={Trash2} 
+                            title="Eliminar" 
+                            className="text-destructive h-8 w-8 hover:bg-destructive/10 hover:text-destructive" 
+                            onClick={() => conceptDeleteConfirm.requestConfirm(concept.id)} 
+                        />
                     )}
-                </div>
+                </>
             )
-        }
+        })
     ]
 
     if (loading) {
@@ -513,9 +514,7 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
     return (
         <>
             {concept ? (
-                <Button variant="ghost" size="icon" className="h-7 w-7 hover:bg-primary/5 rounded-sm" onClick={() => setOpen(true)}>
-                    <Settings2 className="h-3.5 w-3.5" />
-                </Button>
+                <DataCell.Action icon={Settings2} title="Configurar" onClick={() => setOpen(true)} />
             ) : (
                 <Button variant="outline" className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-primary/30 text-primary hover:bg-primary/10 transition-all rounded-full shadow-none" onClick={() => setOpen(true)}>
                     <Plus className="h-3.5 w-3.5 mr-2" /> Nuevo Concepto

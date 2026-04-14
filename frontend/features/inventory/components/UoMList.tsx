@@ -9,7 +9,7 @@ import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Plus, Pencil, Trash2, Search, ChevronsUpDown, Check, Ruler } from "lucide-react"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -201,20 +201,14 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                 />
             ),
         },
-        {
-            id: "actions",
-            header: () => <div className="text-center">Acciones</div>,
-            cell: ({ row }) => (
-                <div className="flex justify-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setCurrentUoM(row.original); setIsUoMModalOpen(true) }}>
-                        <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(row.original.id)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
+        createActionsColumn<UoM>({
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => { setCurrentUoM(item); setIsUoMModalOpen(true) }} />
+                    <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item.id)} />
+                </>
             ),
-        },
+        }),
     ], [])
 
     const selectedUoMs = useMemo(() => {

@@ -57,6 +57,7 @@ import { PartnerLedgerModal } from "@/features/settings/components/partners/Part
 import { EquityStatsSheet } from "@/features/settings/components/partners/EquityStatsSheet"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
 export function EquityCompositionTab({
     initialAddPartnerOpen = false,
@@ -256,21 +257,18 @@ export function EquityCompositionTab({
                 </div>
             )
         },
-        {
-            id: "actions",
-            header: () => <div className="text-center">Acciones</div>,
-            cell: ({ row }) => {
-                const partner = row.original
+        createActionsColumn<any>({
+            renderActions: (partner) => {
                 const hasEarnings = parseFloat(partner.partner_earnings_balance) > 0
                 const hasDividends = parseFloat(partner.partner_dividends_payable_balance) > 0
 
                 return (
-                    <div className="flex justify-center gap-1">
+                    <>
                         {parseFloat(partner.partner_excess_capital) > 0 && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-warning hover:bg-warning/10 transition-all"
+                            <DataCell.Action
+                                icon={TrendingUp}
+                                title="Formalizar Exceso de Capital"
+                                className="text-warning"
                                 onClick={() => {
                                     setSubModalParams({
                                         partnerId: partner.id.toString(),
@@ -278,62 +276,42 @@ export function EquityCompositionTab({
                                     })
                                     setIsSubscriptionOpen(true)
                                 }}
-                                title="Formalizar Exceso de Capital"
-                            >
-                                <TrendingUp className="h-4 w-4" />
-                            </Button>
+                            />
                         )}
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className={cn(
-                                "h-8 w-8 transition-all hover:bg-primary/10",
-                                hasDividends ? "text-primary" : "text-muted-foreground/30"
-                            )}
+                        <DataCell.Action
+                            icon={Banknote}
+                            title="Pagar Dividendos"
+                            className={hasDividends ? "text-primary" : "text-muted-foreground/30"}
                             disabled={!hasDividends}
                             onClick={() => {
                                 setSelectedPartnerId(partner.id)
                                 setIsDividendOpen(true)
                             }}
-                            title="Pagar Dividendos"
-                        >
-                            <Banknote className="h-4 w-4" />
-                        </Button>
-
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className={cn(
-                                "h-8 w-8 transition-all hover:bg-primary/10",
-                                hasEarnings ? "text-primary/70" : "text-muted-foreground/30"
-                            )}
+                        />
+                        <DataCell.Action
+                            icon={ArrowRightLeft}
+                            title="Distribuir Utilidades Retenidas"
+                            className={hasEarnings ? "text-primary/70" : "text-muted-foreground/30"}
                             disabled={!hasEarnings}
                             onClick={() => {
                                 setSelectedPartnerId(partner.id)
                                 setIsMobilizeOpen(true)
                             }}
-                            title="Distribuir Utilidades Retenidas"
-                        >
-                            <ArrowRightLeft className="h-4 w-4" />
-                        </Button>
-
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-primary hover:bg-primary/10 transition-all font-black"
+                        />
+                        <DataCell.Action
+                            icon={History}
+                            title="Ver Libro Auxiliar"
+                            className="text-primary font-black"
                             onClick={() => {
                                 setSelectedPartnerId(partner.id)
                                 setSelectedPartnerName(partner.name)
                                 setIsLedgerOpen(true)
                             }}
-                            title="Ver Libro Auxiliar"
-                        >
-                            <History className="h-4 w-4" />
-                        </Button>
-                    </div>
+                        />
+                    </>
                 )
             }
-        }
+        })
     ]
 
     return (

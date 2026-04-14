@@ -28,13 +28,13 @@
   /* 10% - ACCENT & PRIMARY (Critical Actions & Highlights) */
   --primary: oklch(62.074% 0.24412 301.865);
   --primary-foreground: oklch(0.99 0.01 310);
-  --accent: oklch(0.72 0.14 55);
+  --accent: oklch(55.718% 0.14522 258.375);
   --accent-foreground: oklch(0.15 0.03 55);
 
   /* SYSTEM STATES */
   --destructive: oklch(46.933% 0.18444 22.356);
   --destructive-foreground: oklch(0.99 0.01 25);
-  --success: oklch(0.65 0.20 145);
+  --success: var(--primary);
   --success-foreground: oklch(0.99 0.01 145);
   --warning: oklch(0.75 0.20 85);
   --warning-foreground: oklch(0.99 0.01 85);
@@ -97,7 +97,7 @@
   --input: oklch(1 0 0 / 0.1);
   --ring: oklch(0.65 0.24 301 / 0.5);
 
-  --success: oklch(0.65 0.20 145);
+  --success: var(--primary);
   --success-foreground: oklch(0.10 0.02 145);
   --warning: oklch(0.75 0.20 85);
   --warning-foreground: oklch(0.10 0.02 85);
@@ -107,8 +107,10 @@
   --neutral: oklch(0.55 0.02 240);
   --neutral-foreground: oklch(0.10 0.02 240);
 
-  --high-contrast-bg: oklch(0.99 0 0); /* Still white for barcodes */
-  --high-contrast-fg: oklch(0.01 0 0); /* Still black for barcodes */
+  --high-contrast-bg: oklch(0.99 0 0);
+  /* Still white for barcodes */
+  --high-contrast-fg: oklch(0.01 0 0);
+  /* Still black for barcodes */
 
   /* FINANCIAL NATURES (Semantic Expansion) */
   --income: var(--success);

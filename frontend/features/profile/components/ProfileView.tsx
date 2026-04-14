@@ -33,7 +33,7 @@ import {
 import { EmptyState } from "@/components/shared/EmptyState"
 import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
 import { PartnerProfileTab } from "./PartnerProfileTab"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
@@ -527,46 +527,35 @@ function PersonalTab({
                 )
             }
         },
-        {
-            id: "actions",
-            cell: ({ row }) => {
-                const p = row.original
-                return (
-                    <div className="flex items-center gap-1 justify-end">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            title="Ver detalle"
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                setPreviewPayrollId(p.id)
-                                setPreviewOpen(true)
-                            }}
-                        >
-                            <Eye className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-primary hover:text-primary hover:bg-primary/10"
-                            title="Descargar PDF"
-                            onClick={async (e) => {
-                                e.stopPropagation()
-                                try {
-                                    await downloadPayrollPdf(p.id, `${p.display_id}_${(p as any).period_label?.replace(' ', '_')}.pdf`)
-                                    toast.success("Liquidación descargada")
-                                } catch {
-                                    toast.error("Error al descargar")
-                                }
-                            }}
-                        >
-                            <FileDown className="h-3.5 w-3.5" />
-                        </Button>
-                    </div>
-                )
-            },
-        },
+        createActionsColumn<Payroll>({
+            renderActions: (p) => (
+                <>
+                    <DataCell.Action
+                        icon={Eye}
+                        title="Ver detalle"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            setPreviewPayrollId(p.id)
+                            setPreviewOpen(true)
+                        }}
+                    />
+                    <DataCell.Action
+                        icon={FileDown}
+                        title="Descargar PDF"
+                        className="text-primary hover:text-primary hover:bg-primary/10"
+                        onClick={async (e) => {
+                            e.stopPropagation()
+                            try {
+                                await downloadPayrollPdf(p.id, `${p.display_id}_${(p as any).period_label?.replace(' ', '_')}.pdf`)
+                                toast.success("Liquidación descargada")
+                            } catch {
+                                toast.error("Error al descargar")
+                            }
+                        }}
+                    />
+                </>
+            )
+        }),
     ]
 
     // Unified Payment columns

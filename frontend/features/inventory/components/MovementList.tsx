@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -146,22 +146,16 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
             },
             size: 100,
         },
-        {
-            id: "actions",
-            cell: ({ row }) => (
-                <div className="flex justify-end pr-2">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-primary transition-all duration-300 hover:rotate-12"
-                        onClick={() => setViewingTransaction({ type: 'inventory', id: row.original.id })}
-                    >
-                        <Eye className="h-4 w-4" />
-                    </Button>
-                </div>
+        createActionsColumn<StockMove>({
+            renderActions: (item) => (
+                <DataCell.Action
+                    icon={Eye}
+                    title="Ver Detalles"
+                    color="text-primary"
+                    onClick={() => setViewingTransaction({ type: 'inventory', id: item.id })}
+                />
             ),
-            size: 60,
-        },
+        }),
     ], [])
 
     return (

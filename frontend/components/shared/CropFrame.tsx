@@ -20,18 +20,23 @@ import React from "react"
 interface CropFrameProps {
     children: React.ReactNode
     className?: string
-    /** Length of each tick line in px. Default: 8 */
+    /** Length of each tick line in px. Default: 6 (variant="default") */
     size?: number
     /** Line thickness in px. Default: 1 */
     thickness?: number
     /**
      * Gap between the button edge and the start of the mark.
-     * Equivalent to the "bleed zone" offset in IndustryMark.
-     * Default: 4
+     * Default: 2 (variant="default")
      */
     gap?: number
     /** CSS color value. Default: var(--primary) */
     color?: string
+    /**
+     * Predefined size standard.
+     * - "default": size=6, gap=2 (standard button balance)
+     * - "compact": size=4, gap=1 (micro-interactions)
+     */
+    variant?: "default" | "compact"
 }
 
 // ─── Geometry ─────────────────────────────────────────────────────────────────
@@ -124,7 +129,19 @@ const CORNERS: Corner[] = ["tl", "tr", "bl", "br"]
 const DIRS: Dir[] = ["h", "v"]
 
 export const CropFrame = React.forwardRef<HTMLDivElement, CropFrameProps>(
-    ({ children, className, size = 8, thickness = 1, gap = 4, color = "var(--primary)" }, ref) => {
+    ({ 
+        children, 
+        className, 
+        variant = "default",
+        size, 
+        thickness = 1, 
+        gap, 
+        color = "var(--primary)" 
+    }, ref) => {
+        // Apply variant defaults if specific props are missing
+        const finalSize = size ?? (variant === "compact" ? 4 : 6)
+        const finalGap = gap ?? (variant === "compact" ? 1 : 2)
+
         return (
             <motion.div
                 ref={ref}
@@ -136,7 +153,7 @@ export const CropFrame = React.forwardRef<HTMLDivElement, CropFrameProps>(
             {/* 4 corners × 2 directions = 8 animated ticks */}
             {CORNERS.map((corner) =>
                 DIRS.map((dir) => {
-                    const style = getTickStyle(corner, dir, size, thickness, gap)
+                    const style = getTickStyle(corner, dir, finalSize, thickness, finalGap)
                     const { transformOrigin, ...posStyle } = style
                     const isH = dir === "h"
 

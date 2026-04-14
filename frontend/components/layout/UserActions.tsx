@@ -121,7 +121,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 <PermissionGuard permission="sales.view_dashboard_sales">
                     <Tooltip>
                         <TooltipTrigger asChild>
-                        <CropFrame size={6} gap={2}>
+                        <CropFrame variant="compact">
                                 <Link 
                                     href="/pos" 
                                     target="_blank"
@@ -140,7 +140,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 {/* Calculator Action */}
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <CropFrame size={6} gap={2}>
+                        <CropFrame variant="compact">
                             <motion.button
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => setIsCalculatorOpen(true)}
@@ -158,7 +158,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 {/* Inbox Action */}
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <CropFrame size={6} gap={2}>
+                        <CropFrame variant="compact">
                             <motion.button
                                 whileTap={{ scale: 0.95 }}
                                 onClick={onInboxToggle}
@@ -192,7 +192,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
-                                <CropFrame size={6} gap={2}>
+                                <CropFrame variant="compact">
                                     <motion.button
                                         whileTap={{ scale: 0.95 }}
                                         className="relative h-8 w-8 flex items-center justify-center rounded-none text-foreground/40 hover:text-foreground/70 transition-colors bg-transparent border-none shadow-none"
@@ -244,17 +244,20 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 <DropdownMenu>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <DropdownMenuTrigger asChild>
-                                <motion.div whileHover={{ scale: 1.05 }} className="cursor-pointer">
-                                    <Button variant="ghost" className="p-0 rounded-xl h-10 w-10 overflow-hidden group bg-transparent border-none shadow-none hover:bg-white/5">
-                                        <Avatar className="h-full w-full border border-white/10 bg-muted/20">
-                                            <AvatarFallback className="bg-primary/5 text-primary font-black text-xs">
-                                                {user?.username?.substring(0, 2).toUpperCase() || 'US'}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                    </Button>
-                                </motion.div>
-                            </DropdownMenuTrigger>
+                                <CropFrame size={6} gap={2}>
+                                    <DropdownMenuTrigger asChild>
+                                        <motion.button 
+                                            whileTap={{ scale: 0.95 }}
+                                            className="relative h-8 w-8 flex items-center justify-center rounded-none text-foreground/50 hover:text-primary transition-colors bg-transparent border-none shadow-none"
+                                        >
+                                            <Avatar className="h-full w-full rounded-none bg-transparent">
+                                                <AvatarFallback className="bg-transparent text-current font-heading font-black text-[10px] rounded-none">
+                                                    {user?.username?.substring(0, 2).toUpperCase() || 'US'}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                        </motion.button>
+                                    </DropdownMenuTrigger>
+                                </CropFrame>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="font-bold text-[10px] uppercase bg-sidebar text-sidebar-foreground border-sidebar-border">
                             {user?.username || 'Usuario'}

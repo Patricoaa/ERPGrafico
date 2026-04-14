@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import api from "@/lib/api"
 import { CategoryForm } from "./CategoryForm"
@@ -120,20 +120,14 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
             header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría Padre" className="justify-center" />,
             cell: ({ row }) => <DataCell.Secondary className="text-[10px] uppercase font-bold text-muted-foreground opacity-60 text-center w-full">{row.getValue("parent_name") || "-"}</DataCell.Secondary>,
         },
-        {
-            id: "actions",
-            header: () => <div className="text-center font-bold">Acciones</div>,
-            cell: ({ row }) => (
-                <div className="flex justify-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => { setEditingCategory(row.original); setIsFormOpen(true) }}>
-                        <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive" onClick={() => handleDelete(row.original)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
+        createActionsColumn<Category>({
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => { setEditingCategory(item); setIsFormOpen(true) }} />
+                    <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item)} />
+                </>
             ),
-        },
+        }),
     ], [handleDelete])
 
 

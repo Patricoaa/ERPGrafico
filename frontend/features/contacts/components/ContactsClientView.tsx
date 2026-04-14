@@ -9,7 +9,7 @@ import { formatRUT } from "@/lib/utils/format"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useContacts, type Contact } from "@/features/contacts"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -165,37 +165,28 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
             header: ({ column }) => <DataTableColumnHeader column={column} title="Teléfono" className="justify-center" />,
             cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Secondary>{row.getValue("phone") || "-"}</DataCell.Secondary></div>,
         },
-        {
-            id: "actions",
-            header: () => <div className="text-center">Acciones</div>,
-            cell: ({ row }) => {
-                const contact = row.original
-                return (
-                    <div className="flex justify-center space-x-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                                setSelectedContact(contact)
-                                setModalOpen(true)
-                            }}
-                        >
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                        {!contact.is_default_customer && !contact.is_default_vendor && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:text-destructive"
-                                onClick={() => handleDelete(contact)}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        )}
-                    </div>
-                )
-            },
-        },
+        createActionsColumn<Contact>({
+            renderActions: (contact) => (
+                <>
+                    <DataCell.Action
+                        icon={Edit}
+                        title="Editar"
+                        onClick={() => {
+                            setSelectedContact(contact)
+                            setModalOpen(true)
+                        }}
+                    />
+                    {!contact.is_default_customer && !contact.is_default_vendor && (
+                        <DataCell.Action
+                            icon={Trash2}
+                            title="Eliminar"
+                            className="text-destructive"
+                            onClick={() => handleDelete(contact)}
+                        />
+                    )}
+                </>
+            ),
+        }),
     ]
 
     return (

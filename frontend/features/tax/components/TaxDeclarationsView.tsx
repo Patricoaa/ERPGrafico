@@ -22,7 +22,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TaxPeriod, TaxDeclaration } from "../types"
@@ -251,64 +251,34 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                 )
             }
         },
-        {
-            id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: ({ row }) => {
-                const period = row.original
+        createActionsColumn<TaxPeriod>({
+            renderActions: (period) => {
                 const summary = period.declaration_summary
                 const isFullyPaid = summary?.is_fully_paid
                 const showPaymentButton = !!summary || period.status === 'CLOSED'
                 const canOpenChecklist = period.status === 'OPEN'
 
                 return (
-                    <div className="flex justify-center gap-2 w-full">
+                    <>
                         {showPaymentButton && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className={cn(
-                                    "h-8 rounded-lg",
-                                    isFullyPaid
-                                        ? "border-success/30 text-success bg-success/5 hover:bg-success/10"
-                                        : "border-success/50 text-success bg-success/5 hover:bg-success/10"
-                                )}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenPayment(period);
-                                }}
-                            >
-                                {isFullyPaid ? (
-                                    <>
-                                        <HistoryIcon className="h-4 w-4 mr-2" />
-                                        Ver Pagos
-                                    </>
-                                ) : (
-                                    <>
-                                        <DollarSign className="h-4 w-4 mr-2" />
-                                        Pagar
-                                    </>
-                                )}
-                            </Button>
+                            <DataCell.Action 
+                                icon={isFullyPaid ? HistoryIcon : DollarSign} 
+                                title={isFullyPaid ? "Ver Pagos" : "Pagar"} 
+                                onClick={(e) => { e.stopPropagation(); handleOpenPayment(period); }}
+                                className={isFullyPaid ? "text-success" : "text-success"}
+                            />
                         )}
                         {canOpenChecklist && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOpenWizard(period);
-                                }}
-                                title="Iniciar declaración/cierre F29"
-                            >
-                                <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                            </Button>
+                            <DataCell.Action 
+                                icon={ArrowRight} 
+                                title="Iniciar declaración/cierre F29" 
+                                onClick={(e) => { e.stopPropagation(); handleOpenWizard(period); }} 
+                            />
                         )}
-                    </div>
+                    </>
                 )
             }
-        }
+        })
     ]
 
     return (

@@ -14,12 +14,13 @@ import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn, translateProductType, formatCurrency } from "@/lib/utils"
+import { resolveMediaUrl } from "@/lib/api"
 import { PricingUtils } from "@/lib/pricing"
 import { Checkbox } from "@/components/ui/checkbox"
 import { LayoutGrid, List, Download, Trash2, Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsDialog } from "./ArchivingRestrictionsDialog"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { Product, Restriction } from "@/features/inventory/types"
 
@@ -218,7 +219,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                         {isChild && <div className="h-4 w-4 border-l-2 border-b-2 border-muted-foreground/30 rounded-bl-lg -mt-2" />}
                         {product.image_thumbnail && !isChild && (
                             <Avatar className="h-7 w-7 rounded border bg-muted shrink-0">
-                                <AvatarImage src={product.image_thumbnail} alt={product.name} className="object-cover" />
+                                <AvatarImage src={resolveMediaUrl(product.image_thumbnail) || undefined} alt={product.name} className="object-cover" />
                                 <AvatarFallback className="rounded bg-muted text-[8px]"></AvatarFallback>
                             </Avatar>
                         )}
@@ -353,31 +354,23 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 </div>
             ),
         },
-        {
-            id: "actions",
-            header: () => <div className="text-center">Acciones</div>,
-            cell: ({ row }) => (
-                <div className="flex justify-center gap-1">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-lg"
-                        onClick={() => { setEditingProduct(row.original); setIsFormOpen(true); }}
-                    >
-                        <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn("h-8 w-8 rounded-lg", row.original.active ? "text-destructive" : "text-success")}
-                        onClick={() => handleArchive(row.original)}
-                        title={row.original.active ? "Archivar" : "Restaurar"}
-                    >
-                        {row.original.active ? <Archive className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                    </Button>
-                </div>
+        createActionsColumn<Product>({
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action
+                        icon={Pencil}
+                        title="Editar"
+                        onClick={() => { setEditingProduct(item); setIsFormOpen(true); }}
+                    />
+                    <DataCell.Action
+                        icon={item.active ? Archive : Plus}
+                        title={item.active ? "Archivar" : "Restaurar"}
+                        className={item.active ? "text-destructive" : "text-success"}
+                        onClick={() => handleArchive(item)}
+                    />
+                </>
             ),
-        },
+        }),
     ], [expandedTemplates])
 
     const globalFilterFields = useMemo(() => ["name", "code", "internal_code"], [])

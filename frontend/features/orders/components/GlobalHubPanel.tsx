@@ -9,6 +9,7 @@ import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { motion, AnimatePresence } from "framer-motion"
+import { cn } from "@/lib/utils"
 
 export function GlobalHubPanel() {
     const { isHubOpen, hubConfig, closeHub, actionEngineRef, isHubEffectivelyOpen } = useHubPanel()
@@ -20,6 +21,17 @@ export function GlobalHubPanel() {
         type: hubConfig?.type || 'sale', 
         enabled: isHubOpen 
     })
+
+    // Tracking Inbox state to push Hub left if they sit side-by-side
+    const [isInboxOpen, setIsInboxOpen] = React.useState(false)
+    React.useEffect(() => {
+        setIsInboxOpen(document.body.hasAttribute('data-inbox-open'))
+        const observer = new MutationObserver(() => {
+            setIsInboxOpen(document.body.hasAttribute('data-inbox-open'))
+        })
+        observer.observe(document.body, { attributes: true, attributeFilter: ['data-inbox-open'] })
+        return () => observer.disconnect()
+    }, [])
 
     // Derived: check modal as well to hide UI (but keep engine alive)
     const showPanel = isHubEffectivelyOpen && !isSubModalActive
@@ -58,7 +70,10 @@ export function GlobalHubPanel() {
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: "120%", opacity: 0 }}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        className="fixed top-20 right-4 h-[calc(100vh-6rem)] w-[360px] max-w-[calc(100vw-2rem)] z-[60] border border-white/5 bg-sidebar dark flex flex-col pointer-events-auto rounded-lg shadow-2xl overflow-hidden"
+                        className={cn(
+                            "fixed top-20 h-[calc(100vh-6rem)] w-[360px] max-w-[calc(100vw-2rem)] z-[60] border border-white/5 bg-sidebar dark flex flex-col pointer-events-auto rounded-lg shadow-2xl overflow-hidden transition-all duration-500 ease-[var(--ease-premium)]",
+                            isInboxOpen ? "right-[calc(320px+2rem)]" : "right-4"
+                        )}
                     >
                         {hubConfig && (
                             <OrderHubPanel

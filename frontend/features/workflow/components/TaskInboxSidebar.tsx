@@ -19,8 +19,8 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
             className={cn(
                 "fixed top-20 h-[calc(100vh-6rem)] w-[320px] bg-sidebar dark border border-white/5 flex flex-col will-change-transform overflow-hidden z-50 shadow-2xl rounded-lg",
                 "transition-all duration-500 ease-[var(--ease-premium)]",
-                // Horizontal position: pushed left by Hub panel when hub is open
-                isHubEffectivelyOpen ? "right-[calc(360px+2rem)]" : "right-4",
+                // Horizontal position: always fixed on the right
+                "right-4",
                 // Vertical slide-in: move off-screen to the right when closed
                 isOpen ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0 pointer-events-none"
             )}
