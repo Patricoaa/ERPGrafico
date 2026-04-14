@@ -44,5 +44,13 @@ export const accountingApi = {
     getFiscalYears: async (params?: any): Promise<any[]> => {
         const { data } = await api.get<{ results: any[] }>('/accounting/fiscal-years/', { params })
         return data.results || data
+    },
+
+    updateAccountMappings: async (updates: Array<{ id: number; field: string; value: string | null }>): Promise<void> => {
+        await Promise.all(
+            updates.map(({ id, field, value }) =>
+                api.patch(`/accounting/accounts/${id}/`, { [field]: value })
+            )
+        )
     }
 }

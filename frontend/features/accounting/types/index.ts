@@ -9,6 +9,11 @@ export interface Account {
     credit_total: string
     balance: string
     is_selectable: boolean
+    is_reconcilable: boolean
+    is_category: string | null
+    cf_category: string | null
+    bs_category: string | null
+    bs_category_display: string | null
 }
 
 export interface AccountFilters {
@@ -16,6 +21,31 @@ export interface AccountFilters {
     name?: string
     account_type?: string
 }
+
+export const IS_CATEGORIES = [
+    { value: 'REVENUE', label: 'Ingresos Operacionales' },
+    { value: 'COST_OF_SALES', label: 'Costo de Ventas' },
+    { value: 'OPERATING_EXPENSE', label: 'Gastos Operacionales' },
+    { value: 'NON_OPERATING_REVENUE', label: 'Ingresos No Operacionales' },
+    { value: 'NON_OPERATING_EXPENSE', label: 'Gastos No Operacionales' },
+    { value: 'TAX_EXPENSE', label: 'Impuesto a la Renta' },
+] as const
+
+export const CF_CATEGORIES = [
+    { value: 'OPERATING', label: 'Actividades de Operación' },
+    { value: 'INVESTING', label: 'Actividades de Inversión' },
+    { value: 'FINANCING', label: 'Actividades de Financiación' },
+    { value: 'DEP_AMORT', label: 'Depreciación y Amortización' },
+] as const
+
+export const BS_CATEGORIES = [
+    { value: 'CURRENT_ASSET', label: 'Activo Corriente' },
+    { value: 'INVENTORY', label: 'Inventario' },
+    { value: 'NON_CURRENT_ASSET', label: 'Activo No Corriente' },
+    { value: 'CURRENT_LIABILITY', label: 'Pasivo Corriente' },
+    { value: 'NON_CURRENT_LIABILITY', label: 'Pasivo No Corriente' },
+    { value: 'EQUITY', label: 'Patrimonio' },
+] as const
 
 export interface AccountPayload {
     code: string

@@ -95,20 +95,24 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
             period: 'Anterior',
             liquidez: compData.liquidity.current_ratio,
             endeudamiento: compData.structure.debt_to_equity,
-            solvencia: compData.solvency.solvency_ratio
+            solvencia: compData.solvency.solvency_ratio,
+            mrgn_bruto: (compData.profitability?.gross_margin || 0) * 100,
+            mrgn_neto: (compData.profitability?.net_margin || 0) * 100
         },
         {
             period: 'Actual',
             liquidez: data.liquidity.current_ratio,
             endeudamiento: data.structure.debt_to_equity,
-            solvencia: data.solvency.solvency_ratio
+            solvencia: data.solvency.solvency_ratio,
+            mrgn_bruto: (data.profitability?.gross_margin || 0) * 100,
+            mrgn_neto: (data.profitability?.net_margin || 0) * 100
         }
     ] : null;
 
     return (
         <div className={LAYOUT_TOKENS.view}>
             {/* Key Metrics Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <IndustrialCard variant="industrial">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-sm font-medium text-muted-foreground text-primary/70">Ratio de Liquidez</CardTitle>
@@ -163,6 +167,51 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                             {(data.liquidity.current_assets - data.liquidity.current_liabilities).toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">Activo Corriente - Pasivo Corriente</p>
+                    </CardContent>
+                </IndustrialCard>
+
+                <IndustrialCard variant="industrial" className="border-t-primary">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium text-muted-foreground text-primary/70">Prueba Ácida</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-primary">{(data.liquidity.acid_test || 0).toFixed(2)}</div>
+                        {showComparison && compData && (
+                            <div className="mt-2 text-xs text-muted-foreground">
+                                vs {(compData.liquidity.acid_test || 0).toFixed(2)} ({compData.liquidity.acid_test ? (((data.liquidity.acid_test - compData.liquidity.acid_test) / compData.liquidity.acid_test) * 100).toFixed(1) : 0}%)
+                            </div>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-2">(Activo Cte. - Inventario) / Pasivo Cte.</p>
+                    </CardContent>
+                </IndustrialCard>
+
+                <IndustrialCard variant="industrial" className="border-t-accent">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium text-muted-foreground text-accent/70">Margen Bruto</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-accent">{((data.profitability?.gross_margin || 0) * 100).toFixed(1)}%</div>
+                        {showComparison && compData && (
+                            <div className="mt-2 text-xs text-muted-foreground">
+                                vs {((compData.profitability?.gross_margin || 0) * 100).toFixed(1)}%
+                            </div>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-2">Utilidad Bruta / Ingresos Operac.</p>
+                    </CardContent>
+                </IndustrialCard>
+
+                <IndustrialCard variant="industrial" className="border-t-info">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium text-muted-foreground text-info/70">Margen Neto</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-info">{((data.profitability?.net_margin || 0) * 100).toFixed(1)}%</div>
+                        {showComparison && compData && (
+                            <div className="mt-2 text-xs text-muted-foreground">
+                                vs {((compData.profitability?.net_margin || 0) * 100).toFixed(1)}%
+                            </div>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-2">Utilidad Neta / Ingresos Operac.</p>
                     </CardContent>
                 </IndustrialCard>
             </div>
@@ -247,6 +296,8 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                     <Line type="monotone" dataKey="liquidez" stroke={COLORS[0]} strokeWidth={2} name="Ratio Liquidez" />
                                     <Line type="monotone" dataKey="endeudamiento" stroke={COLORS[1]} strokeWidth={2} name="D/E Ratio" />
                                     <Line type="monotone" dataKey="solvencia" stroke={COLORS[2]} strokeWidth={2} name="Solvencia" />
+                                    <Line type="monotone" dataKey="mrgn_bruto" stroke={COLORS[3]} strokeWidth={2} name="Margen Bruto (%)" />
+                                    <Line type="monotone" dataKey="mrgn_neto" stroke={COLORS[4]} strokeWidth={2} name="Margen Neto (%)" />
                                 </LineChart>
                             </ResponsiveContainer>
                         </CardContent>

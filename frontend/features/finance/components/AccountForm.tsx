@@ -33,16 +33,13 @@ import { FORM_STYLES } from "@/lib/styles"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { AccountPayload } from "@/features/accounting/types"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
     name: z.string().min(1, "El nombre es requerido"),
     account_type: z.enum(["ASSET", "LIABILITY", "EQUITY", "INCOME", "EXPENSE"]),
     parent: z.string().optional().or(z.literal("")),
-    is_category: z.string().optional().nullable().or(z.literal("")),
-    cf_category: z.string().optional().nullable().or(z.literal("")),
-    bs_category: z.string().optional().nullable().or(z.literal("")),
-    is_reconcilable: z.boolean(),
 })
 
 type AccountFormValues = z.infer<typeof accountSchema>
@@ -82,28 +79,10 @@ export function AccountForm({
             name: initialData?.name || "",
             account_type: (initialData?.account_type as any) || "ASSET",
             parent: initialData?.parent || undefined,
-            is_category: (initialData as any)?.is_category || "",
-            cf_category: (initialData as any)?.cf_category || "",
-            bs_category: (initialData as any)?.bs_category || "",
-            is_reconcilable: initialData?.is_reconcilable || false,
         },
     })
 
-    // Helper to find inherited category
-    const getInheritedCategory = (parentId: string | undefined, type: 'is_category' | 'cf_category' | 'bs_category'): string | null => {
-        if (!parentId || parentId === "__none__" || parentId === "none") return null;
-        const parent = accounts.find(a => a.id.toString() === parentId);
-        if (!parent) return null;
-        if (parent[type]) return parent[type];
-        return getInheritedCategory(parent.parent?.toString(), type);
-    };
-
-    const inheritedIsCategory = getInheritedCategory(form.watch("parent"), 'is_category');
-    const inheritedCfCategory = getInheritedCategory(form.watch("parent"), 'cf_category');
-    const inheritedBsCategory = getInheritedCategory(form.watch("parent"), 'bs_category');
-
     const accountType = form.watch("account_type");
-    const isPLAccount = accountType === "INCOME" || accountType === "EXPENSE";
 
     // Reset form when opening or initialData changes
     useEffect(() => {
@@ -114,10 +93,6 @@ export function AccountForm({
                     name: initialData.name,
                     account_type: initialData.account_type as any,
                     parent: initialData.parent || undefined,
-                    is_category: (initialData as any).is_category || "",
-                    cf_category: (initialData as any).cf_category || "",
-                    bs_category: (initialData as any).bs_category || "",
-                    is_reconcilable: initialData.is_reconcilable || false,
                 })
             } else {
                 form.reset({
@@ -125,10 +100,6 @@ export function AccountForm({
                     name: "",
                     account_type: "ASSET",
                     parent: undefined,
-                    is_category: "",
-                    cf_category: "",
-                    bs_category: "",
-                    is_reconcilable: false,
                 })
             }
         }
@@ -143,17 +114,6 @@ export function AccountForm({
         if (parent) {
             // Force account_type to match parent
             form.setValue("account_type", parent.account_type);
-            
-            // Suggest categories based on parent
-            if (parent.is_category && !form.getValues("is_category")) {
-                form.setValue("is_category", parent.is_category);
-            }
-            if (parent.cf_category && !form.getValues("cf_category")) {
-                form.setValue("cf_category", parent.cf_category);
-            }
-            if (parent.bs_category && !form.getValues("bs_category")) {
-                form.setValue("bs_category", parent.bs_category);
-            }
         }
     }, [parentId, accounts, form])
 
@@ -165,21 +125,12 @@ export function AccountForm({
                 name: data.name,
                 account_type: data.account_type,
                 parent: (data.parent && data.parent !== "__none__" && data.parent !== "none") ? Number(data.parent) : null,
-                is_selectable: true, // Defaulting to true as it wasn't in schema explicitely but required by type
-            }
-
-            const extendedPayload = {
-                ...payload,
-                is_category: data.is_category || null,
-                cf_category: data.cf_category || null,
-                bs_category: data.bs_category || null,
-                is_reconcilable: data.is_reconcilable
-            }
+            };
 
             if (initialData?.id) {
-                await updateAccount({ id: initialData.id, payload: extendedPayload as any })
+                await updateAccount({ id: initialData.id, payload: payload as any })
             } else {
-                await createAccount(extendedPayload as any)
+                await createAccount(payload as any)
             }
 
             form.reset()
@@ -213,9 +164,7 @@ export function AccountForm({
                 size={initialData ? "lg" : "md"}
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Tag className="h-5 w-5 text-primary" />
-                        </div>
+                        <Tag className="h-5 w-5 text-muted-foreground" />
                         <span>{initialData ? "Ficha de Cuenta" : "Nueva Cuenta Contable"}</span>
                     </div>
                 }
@@ -239,9 +188,9 @@ export function AccountForm({
                         >
                             Cancelar
                         </Button>
-                        <Button type="submit" form="account-form" disabled={loading}>
+                        <ActionSlideButton type="submit" form="account-form" disabled={loading}>
                             {loading ? (initialData ? "Guardando..." : "Creando...") : (initialData ? "Guardar Cambios" : "Crear Cuenta")}
-                        </Button>
+                        </ActionSlideButton>
                     </div>
                 }
             >
@@ -338,128 +287,8 @@ export function AccountForm({
                         />
                                 </div>
 
-                        <div className="flex items-center gap-2 pt-2">
-                            <div className="flex-1 h-px bg-border" />
-                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Mapeo Financiero</span>
-                            <div className="flex-1 h-px bg-border" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="is_category"
-                                render={({ field }) => (
-                                    <FormItem className={cn(!isPLAccount && "opacity-50 pointer-events-none")}>
-                                        <FormLabel className={FORM_STYLES.label + " flex justify-between"}>
-                                            <span>Mapeo EERR</span>
-                                            {!isPLAccount && <span className="text-[10px] text-warning font-normal">Solo Ingresos/Gastos</span>}
-                                        </FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            value={field.value || ""}
-                                            disabled={!isPLAccount}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger className={cn(FORM_STYLES.input, !field.value && inheritedIsCategory && "ring-1 ring-success/30 bg-success/10")}>
-                                                    <SelectValue placeholder={inheritedIsCategory ? `Heredado (${inheritedIsCategory === 'REVENUE' ? 'Ingresos' : 'Ventas...'})` : "Sin mapeo"} />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="none">Sin mapeo</SelectItem>
-                                                <SelectItem value="REVENUE">Ingresos Operacionales</SelectItem>
-                                                <SelectItem value="COST_OF_SALES">Costo de Ventas</SelectItem>
-                                                <SelectItem value="OPERATING_EXPENSE">Gastos Operacionales</SelectItem>
-                                                <SelectItem value="NON_OPERATING_REVENUE">Ingresos No Operacionales</SelectItem>
-                                                <SelectItem value="NON_OPERATING_EXPENSE">Gastos No Operacionales</SelectItem>
-                                                <SelectItem value="TAX_EXPENSE">Impuesto a la Renta</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        {!field.value && inheritedIsCategory && (
-                                            <p className="text-[10px] text-success italic mt-1">Heredado del padre</p>
-                                        )}
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="cf_category"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Mapeo Flujo Caja</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value || ""}>
-                                            <FormControl>
-                                                <SelectTrigger className={cn(FORM_STYLES.input, !field.value && inheritedCfCategory && "ring-1 ring-success/30 bg-success/10")}>
-                                                    <SelectValue placeholder={inheritedCfCategory ? "Heredado del padre" : "Sin mapeo"} />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="none">Sin mapeo</SelectItem>
-                                                <SelectItem value="OPERATING">Actividades Operativas</SelectItem>
-                                                <SelectItem value="INVESTING">Actividades Inversión</SelectItem>
-                                                <SelectItem value="FINANCING">Actividades Financiamiento</SelectItem>
-                                                <SelectItem value="DEP_AMORT">Depreciación (Ajuste)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        {!field.value && inheritedCfCategory && (
-                                            <p className="text-[10px] text-success italic mt-1">Heredado del padre</p>
-                                        )}
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-
-                        <FormField
-                            control={form.control}
-                            name="bs_category"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Mapeo Balance (Ratios)</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                                        <FormControl>
-                                            <SelectTrigger className={cn(FORM_STYLES.input, !field.value && inheritedBsCategory && "ring-1 ring-success/30 bg-success/10")}>
-                                                <SelectValue placeholder={inheritedBsCategory ? "Heredado del padre" : "Sin mapeo"} />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="none">Sin mapeo</SelectItem>
-                                            <SelectItem value="CURRENT_ASSET">Activo Corriente</SelectItem>
-                                            <SelectItem value="NON_CURRENT_ASSET">Activo No Corriente</SelectItem>
-                                            <SelectItem value="CURRENT_LIABILITY">Pasivo Corriente</SelectItem>
-                                            <SelectItem value="NON_CURRENT_LIABILITY">Pasivo No Corriente</SelectItem>
-                                            <SelectItem value="EQUITY">Patrimonio</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    {!field.value && inheritedBsCategory && (
-                                        <p className="text-[10px] text-success italic mt-1">Heredado del padre</p>
-                                    )}
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="is_reconcilable"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/50">
-                                    <div className="space-y-0.5">
-                                        <FormLabel className={FORM_STYLES.label}>Conciliable</FormLabel>
-                                        <p className="text-[10px] text-muted-foreground">
-                                            Permite conciliar movimientos bancarios o de caja con esta cuenta.
-                                        </p>
-                                    </div>
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-                    </form>
-                </Form>
+                             </form>
+                         </Form>
                     </div>
 
                     {initialData?.id && (

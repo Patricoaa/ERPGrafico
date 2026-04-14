@@ -41,6 +41,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const purchaseLineSchema = z.object({
     id: z.number().optional(),
@@ -203,9 +204,9 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                     >
                         Cancelar
                     </Button>
-                    <Button type="submit" form="purchase-order-form" disabled={loading}>
+                    <ActionSlideButton type="submit" form="purchase-order-form" disabled={loading}>
                         {loading ? "Guardando..." : "Guardar Cambios"}
-                    </Button>
+                    </ActionSlideButton>
                 </>
             }
         >

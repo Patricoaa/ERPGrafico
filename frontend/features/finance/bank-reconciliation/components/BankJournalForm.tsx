@@ -27,6 +27,7 @@ import api from "@/lib/api"
 import { FORM_STYLES } from "@/lib/styles"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { WalletCards } from "lucide-react"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const journalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -110,9 +111,7 @@ export function BankJournalForm({ auditSidebar,  onSuccess, initialData, open: o
             size={initialData ? "lg" : "md"}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <WalletCards className="h-5 w-5 text-primary" />
-                    </div>
+                    <WalletCards className="h-5 w-5 text-muted-foreground" />
                     <span>{initialData ? "Ficha de Caja/Banco" : "Crear Caja o Banco"}</span>
                 </div>
             }
@@ -136,9 +135,9 @@ export function BankJournalForm({ auditSidebar,  onSuccess, initialData, open: o
                     >
                         Cancelar
                     </Button>
-                    <Button type="submit" form="bank-journal-form" disabled={loading}>
+                    <ActionSlideButton type="submit" form="bank-journal-form" disabled={loading}>
                         {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Caja/Banco"}
-                    </Button>
+                    </ActionSlideButton>
                 </div>
             }
         >

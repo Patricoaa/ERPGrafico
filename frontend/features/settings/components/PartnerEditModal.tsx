@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, UserCog } from "lucide-react"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const partnerSetupSchema = z.object({
     is_partner: z.boolean(),
@@ -88,10 +89,10 @@ export function PartnerEditModal({ open, onOpenChange, contact, onSuccess }: Pro
                     <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
                         Cancelar
                     </Button>
-                    <Button type="submit" form="partner-edit-form" disabled={submitting} className="font-bold">
+                    <ActionSlideButton type="submit" form="partner-edit-form" disabled={submitting} className="font-bold">
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Guardar Cambios
-                    </Button>
+                    </ActionSlideButton>
                 </div>
             }
         >

@@ -15,7 +15,7 @@ import { BankManagement, PaymentMethodManagement } from "@/features/treasury"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
@@ -195,37 +195,14 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             header: "Tipo",
             enableHiding: true,
         },
-        {
-            id: "actions",
-            header: ({ column }: { column: any }) => (
-                <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />
+        createActionsColumn<TreasuryAccount>({
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => handleEdit(item)} />
+                    <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item.id)} />
+                </>
             ),
-            cell: ({ row }: { row: any }) => {
-                const acc = row.original
-                return (
-                    <div className="flex items-center justify-center gap-1.5 w-full">
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => handleEdit(acc)} 
-                            className="h-8 w-8 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
-                            title="Editar"
-                        >
-                            <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground/50 transition-colors"
-                            onClick={() => handleDelete(acc.id)} 
-                            title="Eliminar"
-                        >
-                            <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                    </div>
-                )
-            },
-        },
+        }),
     ]
 
     return (

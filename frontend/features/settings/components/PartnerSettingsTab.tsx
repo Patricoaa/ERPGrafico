@@ -5,7 +5,7 @@ import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Building2, Plus, ArrowUpRight, ArrowDownRight, Wallet, Users, Banknote, Edit2, Search, TrendingUp, TrendingDown, Loader2 } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table"
@@ -106,62 +106,30 @@ export function PartnerSettingsTab() {
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-end" title="Saldo Particular (Neto)" />,
             cell: ({ row }) => <DataCell.Currency className="font-bold text-foreground" value={row.getValue("partner_balance")} />,
         },
-        {
-            id: "actions",
-            cell: ({ row }) => {
-                const p = row.original
-                return (
-                    <div className="flex justify-end pr-4 gap-2">
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            className="h-8 gap-2 text-xs"
-                            onClick={() => handleEditPartnerClick(p)}
-                        >
-                            <Edit2 className="h-3.5 w-3.5" />
-                            Ajustar %
-                        </Button>
-                        <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 rounded-lg gap-1 border-success/30 text-success hover:bg-success/10 hover:text-success/90"
-                                onClick={() => {
-                                    setSelectedPartner({ id: p.id, name: p.name })
-                                    setFixedMoveType('CAPITAL_CONTRIBUTION')
-                                    setIsCashMovementModalOpen(true)
-                                }}
-                            >
-                                <TrendingUp className="h-3.5 w-3.5" />
-                                Aporte
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 rounded-lg gap-1 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive/90"
-                                onClick={() => {
-                                    setSelectedPartner({ id: p.id, name: p.name })
-                                    setFixedMoveType('PARTNER_WITHDRAWAL')
-                                    setIsCashMovementModalOpen(true)
-                                }}
-                            >
-                                <TrendingDown className="h-3.5 w-3.5" />
-                                Retiro
-                            </Button>
-                        </div>
-                    </div>
-                )
-            }
-        }
+        createActionsColumn<any>({
+            renderActions: (p) => (
+                <>
+                    <DataCell.Action icon={Edit2} title="Ajustar %" onClick={() => handleEditPartnerClick(p)} />
+                    <DataCell.Action icon={TrendingUp} title="Aporte" className="text-success" onClick={() => {
+                        setSelectedPartner({ id: p.id, name: p.name })
+                        setFixedMoveType('CAPITAL_CONTRIBUTION')
+                        setIsCashMovementModalOpen(true)
+                    }} />
+                    <DataCell.Action icon={TrendingDown} title="Retiro" className="text-destructive" onClick={() => {
+                        setSelectedPartner({ id: p.id, name: p.name })
+                        setFixedMoveType('PARTNER_WITHDRAWAL')
+                        setIsCashMovementModalOpen(true)
+                    }} />
+                </>
+            )
+        })
     ]
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                        <Building2 className="h-5 w-5" />
-                    </div>
+                    <Building2 className="h-5 w-5" />
                     <div>
                         <h3 className="font-bold text-sm tracking-tight text-foreground">Composición Societaria</h3>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
@@ -192,9 +160,7 @@ export function PartnerSettingsTab() {
                 <Card className="md:col-span-3 border-dashed border-2 bg-muted/20">
                     <CardContent className="p-4 flex flex-col md:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                                <Banknote className="h-5 w-5" />
-                            </div>
+                            <Banknote className="h-5 w-5" />
                             <div>
                                 <h4 className="font-bold text-sm">Configuración Contable</h4>
                                 <p className="text-[10px] text-muted-foreground uppercase tracking-widest">

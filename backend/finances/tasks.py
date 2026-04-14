@@ -48,9 +48,9 @@ def generate_report_task(self, report_type, **kwargs):
             return FinanceService.get_cash_flow(start_date, end_date, comp_start, comp_end)
             
         elif report_type == 'financial_analysis':
-            year = kwargs.get('year')
-            month = kwargs.get('month')
-            return FinanceService.get_financial_analysis(year, month)
+            end_date = _to_date(kwargs.get('end_date'))
+            start_date = _to_date(kwargs.get('start_date'))
+            return FinanceService.get_financial_analysis(start_date, end_date)
             
         elif report_type == 'bi_analytics':
             return FinanceService.get_bi_analytics()

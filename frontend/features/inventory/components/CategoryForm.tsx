@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { FORM_STYLES } from "@/lib/styles"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const ICON_OPTIONS = [
     // Imprenta y Diseño
@@ -289,9 +290,7 @@ export function CategoryForm({
                 size={initialData ? "lg" : "md"}
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <LucideIcons.Tag className="h-5 w-5 text-primary" />
-                        </div>
+                        <LucideIcons.Tag className="h-5 w-5 text-muted-foreground" />
                         <span>{initialData ? "Ficha de Categoría" : "Crear Categoría"}</span>
                     </div>
                 }
@@ -315,9 +314,9 @@ export function CategoryForm({
                         >
                             Cancelar
                         </Button>
-                        <Button type="submit" form="category-form" disabled={loading}>
+                        <ActionSlideButton type="submit" form="category-form" disabled={loading}>
                             {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Categoría"}
-                        </Button>
+                        </ActionSlideButton>
                     </div>
                 }
             >

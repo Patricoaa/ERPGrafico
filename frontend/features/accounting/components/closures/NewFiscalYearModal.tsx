@@ -57,9 +57,7 @@ export function NewFiscalYearModal({
             onOpenChange={(open) => !open && onClose()}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-lg bg-primary/10 text-primary shadow-sm">
-                        <Calendar className="h-5 w-5" />
-                    </div>
+                    <Calendar className="h-5 w-5" />
                     <div>
                         <h2 className="text-xl font-black tracking-tight uppercase">Inicializar Año Fiscal</h2>
                         <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-70">

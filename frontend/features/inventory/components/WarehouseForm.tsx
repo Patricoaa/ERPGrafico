@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { FORM_STYLES } from "@/lib/styles"
 import { List, Warehouse } from "lucide-react"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const warehouseSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -99,9 +100,7 @@ export function WarehouseForm({ auditSidebar,  onSuccess, initialData, open: ope
                 size={initialData ? "lg" : "md"}
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <List className="h-5 w-5 text-primary" />
-                        </div>
+                        <List className="h-5 w-5 text-muted-foreground" />
                         <span>{initialData ? "Editar Almacén" : "Nuevo Almacén"}</span>
                     </div>
                 }
@@ -125,9 +124,9 @@ export function WarehouseForm({ auditSidebar,  onSuccess, initialData, open: ope
                         >
                             Cancelar
                         </Button>
-                        <Button form="warehouse-form" type="submit" disabled={loading}>
+                        <ActionSlideButton form="warehouse-form" type="submit" disabled={loading}>
                             {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Almacén"}
-                        </Button>
+                        </ActionSlideButton>
                     </div>
                 }
             >

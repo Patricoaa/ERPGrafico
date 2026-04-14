@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import * as React from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
@@ -217,61 +217,45 @@ export default function WorkOrdersPage() {
             ),
             cell: ({ row }) => <div className="flex justify-center"><DataCell.Date value={row.getValue("due_date")} /></div>,
         },
-        {
-            id: "actions",
-            header: () => <div className="text-center">Acciones</div>,
-            cell: ({ row }) => (
-                <div className="flex justify-center space-x-1">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-primary"
-                        onClick={() => setActiveWizardId(row.original.id)}
+        createActionsColumn<WorkOrder>({
+            renderActions: (order) => (
+                <>
+                    <DataCell.Action
+                        icon={Settings}
                         title="Gestionar Workflow"
-                    >
-                        <Settings className="h-4 w-4" />
-                    </Button>
-                    {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(row.original.current_stage) && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
+                        onClick={() => setActiveWizardId(order.id)}
+                    />
+                    {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order.current_stage) && (
+                        <DataCell.Action
+                            icon={Pencil}
+                            title="Editar"
                             onClick={() => {
-                                setEditingOrder(row.original)
+                                setEditingOrder(order)
                                 setIsFormOpen(true)
                             }}
-                            title="Editar"
-                        >
-                            <Pencil className="h-4 w-4" />
-                        </Button>
+                        />
                     )}
 
-                    {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(row.original.current_stage) && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => handleDelete(row.original.id)}
+                    {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order.current_stage) && (
+                        <DataCell.Action
+                            icon={Trash2}
                             title="Eliminar"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(order.id)}
+                        />
                     )}
 
-                    {!['DRAFT', 'FINISHED', 'CANCELLED'].includes(row.original.status) && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-warning hover:text-warning"
-                            onClick={() => handleCancel(row.original.id)}
+                    {!['DRAFT', 'FINISHED', 'CANCELLED'].includes(order.status) && (
+                        <DataCell.Action
+                            icon={Ban}
                             title="Anular"
-                        >
-                            <Ban className="h-4 w-4" />
-                        </Button>
+                            className="text-warning hover:text-warning"
+                            onClick={() => handleCancel(order.id)}
+                        />
                     )}
-                </div>
-            ),
-        },
+                </>
+            )
+        }),
     ], [])
 
     const renderKanbanView = useCallback((table: any) => (

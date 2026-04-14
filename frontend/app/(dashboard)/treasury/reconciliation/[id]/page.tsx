@@ -27,7 +27,8 @@ import { formatCurrency } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { parseISO } from "date-fns"
+import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
 import { ReconciliationPanel } from "@/features/finance/bank-reconciliation/components"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -237,30 +238,21 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 </span>
             ),
         },
-        {
-            id: "actions",
-            header: "Acción",
-            cell: ({ row }) => {
-                const state = row.original.reconciliation_state
+        createActionsColumn<BankStatementLine>({
+            renderActions: (line) => {
+                const state = line.reconciliation_state
                 const canUnmatch = ['MATCHED', 'RECONCILED', 'EXCLUDED'].includes(state) && statement?.state !== 'CONFIRMED'
 
-                return (
-                    <div className="flex justify-center">
-                        {canUnmatch && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                onClick={() => setUnmatchDialog({ open: true, lineId: row.original.id })}
-                                title="Deshacer reconciliación"
-                            >
-                                <Undo2 className="h-4 w-4" />
-                            </Button>
-                        )}
-                    </div>
-                )
-            },
-        },
+                return canUnmatch ? (
+                    <DataCell.Action
+                        icon={Undo2}
+                        title="Deshacer reconciliación"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => setUnmatchDialog({ open: true, lineId: line.id })}
+                    />
+                ) : <></>
+            }
+        }),
     ]
 
     if (loading) {

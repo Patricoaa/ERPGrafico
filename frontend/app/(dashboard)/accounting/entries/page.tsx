@@ -10,11 +10,11 @@ import { StatusBadge } from "@/components/shared"
 import { JournalEntryForm } from "@/features/accounting/components/JournalEntryForm"
 import api from "@/lib/api"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { Trash2, CheckCircle, Eye } from "lucide-react"
+import { Trash2, CheckCircle, Eye, Pencil } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { formatPlainDate, cn } from "@/lib/utils"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 interface JournalEntry {
@@ -195,59 +195,38 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
                 </div>
             ),
         },
-        {
-            id: "actions",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const entry = row.original
-                return (
-                    <div className="flex items-center justify-center gap-1 w-full">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
-                            onClick={() => setViewingTransaction({ type: 'journal_entry', id: entry.id })}
-                            title="Ver Detalle"
-                        >
-                            <Eye className="h-3.5 w-3.5" />
-                        </Button>
-                        {entry.state === 'DRAFT' && (
-                            <>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
-                                    onClick={() => handleEditEntry(entry)}
-                                    title="Editar"
-                                >
-                                    <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-xl hover:bg-success/10 hover:text-success transition-colors group"
-                                    onClick={() => handlePost(entry.id)}
-                                    title="Publicar"
-                                >
-                                    <CheckCircle className="h-4 w-4 text-muted-foreground/30 group-hover:text-success transition-colors" />
-                                </Button>
-                            </>
-                        )}
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-xl hover:bg-destructive/10 hover:text-destructive text-muted-foreground/30 transition-colors"
-                            onClick={() => handleDelete(entry.id)}
-                            title="Eliminar"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                    </div>
-                )
-            },
-        },
+        createActionsColumn<JournalEntry>({
+            renderActions: (entry) => (
+                <>
+                    <DataCell.Action
+                        icon={Eye}
+                        title="Ver Detalle"
+                        onClick={() => setViewingTransaction({ type: 'journal_entry', id: entry.id })}
+                    />
+                    {entry.state === 'DRAFT' && (
+                        <>
+                            <DataCell.Action
+                                icon={Pencil}
+                                title="Editar"
+                                onClick={() => handleEditEntry(entry)}
+                            />
+                            <DataCell.Action
+                                icon={CheckCircle}
+                                title="Publicar"
+                                className="text-muted-foreground hover:text-success"
+                                onClick={() => handlePost(entry.id)}
+                            />
+                        </>
+                    )}
+                    <DataCell.Action
+                        icon={Trash2}
+                        title="Eliminar"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={() => handleDelete(entry.id)}
+                    />
+                </>
+            )
+        }),
     ], [accounts])
 
 

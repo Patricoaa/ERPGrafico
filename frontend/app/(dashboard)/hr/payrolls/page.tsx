@@ -13,7 +13,7 @@ import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -259,90 +259,77 @@ export default function PayrollsPage() {
                 </div>
             )
         },
-        {
-            id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: ({ row }) => {
-                const p = row.original;
-                return (
-                    <div className="flex items-center gap-1 justify-center w-full">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-md transition-colors" onClick={(e) => { e.stopPropagation(); openDetail(p.id) }}>
-                            <Eye className="h-3.5 w-3.5" />
-                        </Button>
- 
-                        {p.status === 'DRAFT' && (
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                title="Registrar Anticipo"
-                                className="h-8 w-8 rounded-md text-primary hover:text-primary hover:bg-primary/10 transition-colors"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedPayroll(p);
-                                    setPaymentMode('ADVANCE');
-                                }}
-                            >
-                                <Wallet className="h-3.5 w-3.5" />
-                            </Button>
-                        )}
- 
-                        {p.status === 'POSTED' && (row.original as any).remuneration_paid_status !== 'PAID' && (
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                title="Registrar Pago Sueldo"
-                                className="h-8 w-8 rounded-md text-success hover:text-success hover:bg-success/10 transition-colors"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedPayroll(p);
-                                    setPaymentMode('SALARY');
-                                }}
-                            >
-                                <Coins className="h-3.5 w-3.5" />
-                            </Button>
-                        )}
- 
-                        {p.status === 'POSTED' && (row.original as any).previred_paid_status !== 'PAID' && (
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                title="Pagar Previred"
-                                className="h-8 w-8 rounded-md text-warning hover:text-warning hover:bg-warning/10 transition-colors"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedPayroll(p);
-                                    setPaymentMode('PREVIRED');
-                                }}
-                            >
-                                <CreditCard className="h-3.5 w-3.5" />
-                            </Button>
-                        )}
- 
-                        {p.status === 'DRAFT' && (
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 rounded-md text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
-                                onClick={async (e) => {
-                                    e.stopPropagation();
-                                    if (confirm("¿Eliminar borrador?")) {
-                                        try {
-                                            await deletePayroll(p.id);
-                                            toast.success("Borrador eliminado");
-                                            fetchPayrolls();
-                                        } catch {
-                                            toast.error("Error al eliminar");
-                                        }
+        createActionsColumn<Payroll>({
+            headerLabel: "Acciones",
+            renderActions: (p) => (
+                <>
+                    <DataCell.Action
+                        icon={Eye}
+                        title="Ver Detalle"
+                        onClick={(e) => { e.stopPropagation(); openDetail(p.id) }}
+                    />
+
+                    {p.status === 'DRAFT' && (
+                        <DataCell.Action
+                            icon={Wallet}
+                            title="Registrar Anticipo"
+                            className="text-primary hover:text-primary"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedPayroll(p);
+                                setPaymentMode('ADVANCE');
+                            }}
+                        />
+                    )}
+
+                    {p.status === 'POSTED' && (p as any).remuneration_paid_status !== 'PAID' && (
+                        <DataCell.Action
+                            icon={Coins}
+                            title="Registrar Pago Sueldo"
+                            className="text-success hover:text-success"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedPayroll(p);
+                                setPaymentMode('SALARY');
+                            }}
+                        />
+                    )}
+
+                    {p.status === 'POSTED' && (p as any).previred_paid_status !== 'PAID' && (
+                        <DataCell.Action
+                            icon={CreditCard}
+                            title="Pagar Previred"
+                            className="text-warning hover:text-warning"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedPayroll(p);
+                                setPaymentMode('PREVIRED');
+                            }}
+                        />
+                    )}
+
+                    {p.status === 'DRAFT' && (
+                        <DataCell.Action
+                            icon={Trash2}
+                            title="Eliminar borrador"
+                            className="text-destructive hover:text-destructive"
+                            onClick={async (e) => {
+                                e.stopPropagation();
+                                if (confirm("¿Eliminar borrador?")) {
+                                    try {
+                                        await deletePayroll(p.id);
+                                        toast.success("Borrador eliminado");
+                                        fetchPayrolls();
+                                    } catch {
+                                        toast.error("Error al eliminar");
                                     }
-                                }}
-                            >
-                                <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                        )}
-                    </div>
-                );
-            },
-        },
+                                }
+                            }}
+                        />
+                    )}
+                </>
+            )
+        }),
     ]
 
     return (

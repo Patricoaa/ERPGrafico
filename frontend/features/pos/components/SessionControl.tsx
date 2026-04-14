@@ -478,9 +478,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 }}
                                 disabled={terminals.filter(t => !availableSessions.some(s => s.terminal === t.id)).length === 0}
                             >
-                                <div className="p-3 rounded-full bg-success/10 text-success group-hover:scale-110 transition-transform">
-                                    <Unlock className="h-6 w-6" />
-                                </div>
+                                <Unlock className="h-6 w-6" />
                                 <div className="text-center">
                                     <span className="font-bold text-lg block">Abrir Nueva Terminal</span>
                                     <span className="text-xs text-muted-foreground">
@@ -495,9 +493,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                 disabled={availableSessions.length === 0}
                                 onClick={() => setWizardStep(10)} // 10 is Join Session Flow
                             >
-                                <div className="p-3 rounded-full bg-primary/10 text-primary group-hover:scale-110 transition-transform">
-                                    <Users className="h-6 w-6" />
-                                </div>
+                                <Users className="h-6 w-6" />
                                 <div className="text-center">
                                     <span className="font-bold text-lg block">Unirse a Terminal</span>
                                     <span className="text-xs text-muted-foreground">
@@ -602,9 +598,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                         <div className="text-center">
-                            <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                                <Unlock className="h-6 w-6 text-primary" />
-                            </div>
+                            <Unlock className="h-6 w-6 text-muted-foreground" />
                             <h3 className="font-bold text-xl">Confirmar Apertura</h3>
                             <p className="text-muted-foreground">{term?.name}</p>
                         </div>

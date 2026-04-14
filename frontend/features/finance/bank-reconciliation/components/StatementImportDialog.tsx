@@ -261,9 +261,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
             size={step === 'MAPPING' ? "full" : "lg"}
             title={
                 <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-lg bg-warning/10 text-warning shadow-sm border border-warning/5">
-                        <Upload className="h-6 w-6" />
-                    </div>
+                    <Upload className="h-6 w-6" />
                     <div className="space-y-1">
                         <div className="text-2xl font-black tracking-tight text-foreground/90 uppercase">Importar Cartola</div>
                         <div className="flex items-center gap-2">

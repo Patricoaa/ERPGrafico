@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import api from "@/lib/api"
 import { PricingRuleForm } from "@/features/sales/components/PricingRuleForm"
@@ -214,20 +214,14 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
                 </div>
             ),
         },
-        {
-            id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => { setEditingRule(row.original); setIsFormOpen(true) }}>
-                        <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:text-destructive" onClick={() => handleDelete(row.original.id)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
+        createActionsColumn<PricingRule>({
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => { setEditingRule(item); setIsFormOpen(true) }} />
+                    <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item.id)} />
+                </>
             ),
-        },
+        }),
     ], [])
 
 

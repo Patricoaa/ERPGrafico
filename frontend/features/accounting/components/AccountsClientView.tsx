@@ -6,22 +6,18 @@ import {
 } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { Trash2, Pencil, Plus } from "lucide-react"
+import { Book, Trash2, Pencil, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { toast } from "sonner"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+
 import { AccountForm } from "@/features/finance/components/AccountForm"
 import { LedgerModal } from "@/features/accounting/components/LedgerModal"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { Account } from "@/features/accounting/types"
-import { DataCell } from "@/components/ui/data-table-cells"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import api from "@/lib/api"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ChevronRight, ChevronDown } from "lucide-react"
 import { buildAccountTree } from "../utils/accountTree"
-import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 
 interface AccountsClientViewProps {
@@ -60,7 +56,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
         setEditingAccount(null)
         setFormParentId(null)
         onExternalOpenChange?.(false)
-        
+
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
@@ -112,9 +108,9 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
             cell: ({ row }) => {
                 const canExpand = row.getCanExpand()
                 const isExpanded = row.getIsExpanded()
-                
+
                 return (
-                    <div 
+                    <div
                         className="flex items-center w-full"
                         style={{ paddingLeft: `${row.depth * 1.5}rem` }}
                     >
@@ -158,9 +154,9 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <StatusBadge 
-                        status={row.original.account_type} 
-                        label={row.original.account_type_display} 
+                    <StatusBadge
+                        status={row.original.account_type}
+                        label={row.original.account_type_display}
                     />
                 </div>
             ),
@@ -172,8 +168,8 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Currency 
-                        value={parseFloat(row.getValue("debit_total") || "0")} 
+                    <DataCell.Currency
+                        value={parseFloat(row.getValue("debit_total") || "0")}
                         className="text-muted-foreground font-normal"
                     />
                 </div>
@@ -186,8 +182,8 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Currency 
-                        value={parseFloat(row.getValue("credit_total") || "0")} 
+                    <DataCell.Currency
+                        value={parseFloat(row.getValue("credit_total") || "0")}
                         className="text-muted-foreground font-normal"
                     />
                 </div>
@@ -200,51 +196,44 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Currency 
-                        value={parseFloat(row.getValue("balance") || "0")} 
+                    <DataCell.Currency
+                        value={parseFloat(row.getValue("balance") || "0")}
                         className="font-bold"
                     />
                 </div>
             ),
         },
-        {
-            id: "actions",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />
+        createActionsColumn<Account>({
+            renderActions: (account) => (
+                <>
+                    {account.is_selectable && (
+                        <LedgerModal
+                            accountId={account.id}
+                            accountName={account.name}
+                            accountCode={account.code}
+                            trigger={
+                                <DataCell.Action
+                                    icon={Book}
+                                    title="Ver Libro Mayor"
+                                    color="text-primary"
+                                />
+                            }
+                        />
+                    )}
+                    <DataCell.Action
+                        icon={Pencil}
+                        title="Editar"
+                        onClick={() => handleEditAccount(account)}
+                    />
+                    <DataCell.Action
+                        icon={Trash2}
+                        title="Eliminar"
+                        className="text-muted-foreground/30 hover:text-destructive"
+                        onClick={() => handleDelete(account.id)}
+                    />
+                </>
             ),
-            cell: ({ row }) => {
-                const account = row.original
-                return (
-                    <div className="flex justify-center items-center gap-1 w-full" onClick={(e) => e.stopPropagation()}>
-                        {account.is_selectable && (
-                            <LedgerModal
-                                accountId={account.id}
-                                accountName={account.name}
-                                accountCode={account.code}
-                            />
-                        )}
-                        <Button
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
-                            onClick={() => handleEditAccount(account)}
-                            title="Editar"
-                        >
-                            <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-xl hover:bg-destructive/10 hover:text-destructive text-muted-foreground/30 transition-colors"
-                            onClick={() => handleDelete(account.id)}
-                            title="Eliminar"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                    </div>
-                )
-            },
-        },
+        }),
     ], [])
 
     return (
@@ -277,14 +266,14 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
                 rightAction={null}
             />
 
-            <AccountForm 
-                accounts={flatAccounts} 
+            <AccountForm
+                accounts={flatAccounts}
                 initialData={editingAccount as any}
                 parentId={formParentId || undefined}
                 onSuccess={() => {
                     refetch()
                     handleCloseModal()
-                }} 
+                }}
                 open={isFormOpen}
                 onOpenChange={(open) => {
                     if (!open) {

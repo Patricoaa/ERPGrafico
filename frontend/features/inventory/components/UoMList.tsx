@@ -9,7 +9,7 @@ import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Plus, Pencil, Trash2, Search, ChevronsUpDown, Check, Ruler } from "lucide-react"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -201,20 +201,14 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                 />
             ),
         },
-        {
-            id: "actions",
-            header: () => <div className="text-center">Acciones</div>,
-            cell: ({ row }) => (
-                <div className="flex justify-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setCurrentUoM(row.original); setIsUoMModalOpen(true) }}>
-                        <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(row.original.id)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
+        createActionsColumn<UoM>({
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => { setCurrentUoM(item); setIsUoMModalOpen(true) }} />
+                    <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item.id)} />
+                </>
             ),
-        },
+        }),
     ], [])
 
     const selectedUoMs = useMemo(() => {
@@ -284,9 +278,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                 size={currentUoM.id ? "lg" : "md"}
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Ruler className="h-5 w-5 text-primary" />
-                        </div>
+                        <Ruler className="h-5 w-5 text-muted-foreground" />
                         <span>{currentUoM.id ? "Editar Unidad de Medida" : "Nueva Unidad de Medida"}</span>
                     </div>
                 }
@@ -461,12 +453,10 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                     </div>
 
                     {currentUoM.id && (
-                        <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 shrink-0 hidden lg:flex">
-                            <ActivitySidebar
+                        <ActivitySidebar
                                 entityId={currentUoM.id}
                                 entityType="uom"
                             />
-                        </div>
                     )}
                 </div>
             </BaseModal>

@@ -35,7 +35,7 @@ import { Button } from "@/components/ui/button"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import api from "@/lib/api"
+import api, { resolveMediaUrl } from "@/lib/api"
 import { CompanySettings } from "@/features/settings/types"
 import { contactsApi } from "@/features/contacts/api/contactsApi"
 import { PartnerSettingsTab } from "./PartnerSettingsTab"
@@ -483,7 +483,7 @@ export function CompanySettingsView({
                                         ) : settings?.logo ? (
                                             <div className="relative w-full h-full">
                                                 <img 
-                                                    src={settings.logo} 
+                                                    src={resolveMediaUrl(settings.logo) || undefined} 
                                                     alt="Logo" 
                                                     className="max-h-full max-w-full object-contain p-2 w-full h-full" 
                                                 />

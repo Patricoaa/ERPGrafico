@@ -16,6 +16,7 @@ import { Plus, Trash2, Edit, Wand2, CheckCircle2 } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { useReconciliation } from "../hooks/useReconciliation"
 import type { ReconciliationRule, TreasuryAccount as Account } from "../types"
 import { SimulationResults } from "./SimulationResults"
@@ -145,30 +146,22 @@ export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }
                 </div>
             ),
         },
-        {
-            id: "actions",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Acciones" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex items-center justify-center gap-1 w-full">
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
-                        onClick={() => { setEditingRule(row.original); setOpenDialog(true) }}
-                    >
-                        <Edit className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground/50 transition-colors"
-                    >
-                        <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                </div>
-            ),
-            enableSorting: false,
-        },
+        createActionsColumn<RuleRow>({
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action
+                        icon={Edit}
+                        title="Editar"
+                        onClick={() => { setEditingRule(item); setOpenDialog(true) }}
+                    />
+                    <DataCell.Action
+                        icon={Trash2}
+                        title="Eliminar"
+                        className="text-destructive"
+                    />
+                </>
+            )
+        })
     ], [])
 
     return (

@@ -6,8 +6,8 @@ import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
-import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { 
     Activity, 
     CalendarDays, 
@@ -120,30 +120,22 @@ export function PartnerProfileTab({ contactId }: Props) {
                 )
             },
         },
-        {
-            id: "actions",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Acciones" />,
-            cell: ({ row }) => {
-                const movementId = row.original.treasury_movement
+        createActionsColumn<PartnerTransaction>({
+            renderActions: (tx) => {
+                const movementId = tx.treasury_movement
                 return (
-                    <div className="flex justify-center w-full">
-                        {movementId ? (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                onClick={() => handleViewDetails(movementId)}
-                                title="Ver Detalle Transaccional"
-                            >
-                                <Eye className="h-4 w-4" />
-                            </Button>
-                        ) : (
-                            <span className="text-[10px] text-muted-foreground italic">No vinculado</span>
-                        )}
-                    </div>
+                    movementId ? (
+                        <DataCell.Action
+                            icon={Eye}
+                            title="Ver Detalle Transaccional"
+                            onClick={() => handleViewDetails(movementId)}
+                        />
+                    ) : (
+                        <span className="text-[10px] text-muted-foreground italic">No vinculado</span>
+                    )
                 )
             }
-        }
+        })
     ]
 
     if (loading) {
@@ -168,9 +160,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                         <Card className="border shadow-sm overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                                        <Wallet className="h-5 w-5" />
-                                    </div>
+                                    <Wallet className="h-5 w-5" />
                                     <div className="text-left">
                                         <h3 className="text-sm font-bold tracking-tight">Resumen Patrimonial</h3>
                                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
@@ -212,9 +202,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                         <Card className="border shadow-sm overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                                        <Briefcase className="h-5 w-5" />
-                                    </div>
+                                    <Briefcase className="h-5 w-5" />
                                     <div className="text-left">
                                         <h3 className="text-sm font-bold tracking-tight">Información Societaria</h3>
                                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
@@ -251,9 +239,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                         <Card className="border shadow-sm overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-lg bg-success/10 text-success">
-                                        <Activity className="h-5 w-5" />
-                                    </div>
+                                    <Activity className="h-5 w-5" />
                                     <div className="text-left">
                                         <h3 className="text-sm font-bold tracking-tight">Historial de Capital</h3>
                                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">

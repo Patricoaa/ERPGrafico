@@ -13,6 +13,7 @@ import { Product, Category, StockLimits } from '@/types/pos'
 import { Plus, Heart } from 'lucide-react'
 import { memo } from 'react'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { resolveMediaUrl } from '@/lib/api'
 
 interface ProductGridProps {
     products: Product[]
@@ -104,7 +105,7 @@ function ProductGridComponent({
                             isTouchPOS && "min-h-[120px]"
                         )}>
                             {product.image ? (
-                                <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                <img src={resolveMediaUrl(product.image)} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                             ) : (
                                 <DynamicIcon
                                     name={categoryIcon || "Package"}

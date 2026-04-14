@@ -38,6 +38,7 @@ import api from "@/lib/api"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { validateAccountingPeriod } from "@/lib/actions/accounting-actions"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 interface Warehouse {
     id: number
@@ -527,7 +528,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                     {onCancel && (
                         <Button type="button" variant="outline" onClick={onCancel} className="border-primary/20 hover:bg-primary/5 rounded-lg text-xs font-bold">Cancelar</Button>
                     )}
-                    <Button
+                    <ActionSlideButton
                         type="submit"
                         disabled={isLoading}
                         className={cn("rounded-lg text-xs font-bold", moveType === 'IN' ? 'bg-success hover:bg-success' : 'bg-destructive hover:bg-destructive/90')}
@@ -537,7 +538,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                                 {moveType === 'IN' ? "Registrar Entrada" : "Registrar Salida"}
                             </>
                         )}
-                    </Button>
+                    </ActionSlideButton>
                 </div>
             </form>
         </Form>

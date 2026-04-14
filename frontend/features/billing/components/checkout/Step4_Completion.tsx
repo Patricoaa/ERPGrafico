@@ -39,9 +39,7 @@ export function Step4_Completion({
     return (
         <div className="space-y-8 animate-in fade-in zoom-in duration-500 max-w-2xl mx-auto">
             <div className="text-center space-y-4">
-                <div className="inline-flex items-center justify-center p-4 bg-success/10 text-success rounded-full mb-2">
-                    <CheckCircle2 className="h-10 w-10" />
-                </div>
+                <CheckCircle2 className="h-10 w-10" />
                 <h3 className="text-2xl font-black tracking-tight">¡Todo Listo para Finalizar!</h3>
                 <p className="text-muted-foreground text-sm max-w-md mx-auto">
                     La {invoice.dte_type_display} ha sido registrada con el folio <strong>#{invoice.number}</strong>.

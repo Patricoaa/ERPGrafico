@@ -46,6 +46,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import { useServerDate } from "@/hooks/useServerDate"
 import { validateAccountingPeriod } from "@/lib/actions/accounting-actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -297,9 +298,7 @@ export function JournalEntryForm({
                 size={initialData ? "xl" : "lg"}
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <BookOpen className="h-5 w-5 text-primary" />
-                        </div>
+                        <BookOpen className="h-5 w-5 text-muted-foreground" />
                         <span>{initialData ? "Editar Asiento" : "Nuevo Asiento Contable"}</span>
                     </div>
                 }
@@ -323,9 +322,9 @@ export function JournalEntryForm({
                         >
                             Cancelar
                         </Button>
-                        <Button type="submit" form="journal-entry-form" disabled={loading}>
+                        <ActionSlideButton type="submit" form="journal-entry-form" disabled={loading}>
                             {loading ? "Guardando..." : (initialData ? "Actualizar Asiento" : "Crear Asiento")}
-                        </Button>
+                        </ActionSlideButton>
                     </div>
                 }
             >

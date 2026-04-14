@@ -40,6 +40,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const itemSchema = z.object({
     concept: z.string().min(1, "Concepto requerido"),
@@ -211,9 +212,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                         </Button>
                     )}
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-primary/10 rounded-lg text-primary shadow-sm border border-primary/5 hidden sm:block">
-                            <FileText className="h-6 w-6" />
-                        </div>
+                        <FileText className="h-6 w-6" />
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2">
                                 <h1 className={cn("font-bold tracking-tight text-foreground", isSheet ? "text-xl" : "text-2xl")}>
@@ -462,9 +461,7 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
             onOpenChange={(o) => { setOpen(o); if (!o) onEditCleared() }}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                        <Sparkles className="h-5 w-5" />
-                    </div>
+                    <Sparkles className="h-5 w-5" />
                     <div className="flex flex-col text-left">
                         <span className="text-lg font-bold tracking-tight">
                             {item ? "Editar Línea" : "Nueva Línea"}
@@ -485,7 +482,7 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
                     >
                         Cancelar
                     </Button>
-                    <Button
+                    <ActionSlideButton
                         form="payroll-item-form"
                         type="submit"
                         disabled={saving}
@@ -493,7 +490,7 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
                     >
                         {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {item ? "Actualizar Item" : "Añadir a Liquidación"}
-                    </Button>
+                    </ActionSlideButton>
                 </div>
             }
         >

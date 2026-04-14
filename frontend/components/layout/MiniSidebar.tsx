@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/tooltip"
 import { motion, AnimatePresence } from "framer-motion"
 import { useBranding } from "@/contexts/BrandingProvider"
+import { CropFrame } from "@/components/shared/CropFrame"
 
 interface MiniSidebarProps {
     activeCategory: string | null
@@ -48,23 +49,31 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
         setIsOpen(false) // Auto-close on selection
     }
 
+    const getInitials = () => {
+        // Assume user might have a tenant/company name, fallback to "SD"
+        const companyName = (user as any)?.tenant_name || (user as any)?.company_name;
+        if (companyName) {
+            return companyName.substring(0, 2).toUpperCase()
+        }
+        return "SD"
+    }
+
     return (
         <>
-            {/* 1. Logo Trigger Button - Fixed Top Left */}
-            <div className="fixed top-4 left-4 z-[60]">
+            {/* 1. Logo Trigger Button - Fixed Top Left, aligned to 64px topbar */}
+            <div className="fixed top-[8px] left-4 z-[60]">
                 <motion.div
                     initial={{ rotate: -10, scale: 0.9 }}
                     animate={{ rotate: isOpen ? 90 : 0, scale: 1 }}
-                    whileHover={{ rotate: isOpen ? 0 : 90, scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                     className="cursor-pointer"
                     onClick={() => setIsOpen(!isOpen)}
                 >
-                    <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-black text-xl shadow-[0_8px_16px_rgba(var(--primary),0.3)] overflow-hidden border border-white/10">
+                    <div className="w-12 h-12 rounded-none bg-primary flex items-center justify-center text-primary-foreground font-black text-xl shadow-none overflow-hidden transition-colors hover:bg-primary/90">
                         {logo ? (
                             <img src={logo} alt="Logo" className="w-full h-full object-cover" />
                         ) : (
-                            "ES"
+                            getInitials()
                         )}
                     </div>
                 </motion.div>
@@ -91,7 +100,7 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -20, scale: 0.95 }}
                         transition={{ type: "spring", damping: 20, stiffness: 300 }}
-                        className="fixed top-20 left-4 w-[65px] flex flex-col items-center py-4 gap-4 bg-sidebar border border-sidebar-border/50 rounded-lg z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] max-h-[calc(100vh-100px)] overflow-y-auto no-scrollbar"
+                        className="fixed top-20 left-4 w-12 flex flex-col items-center py-4 gap-4 bg-sidebar border border-sidebar-border/50 rounded-none z-50 shadow-2xl max-h-[calc(100vh-100px)] overflow-y-auto overflow-x-hidden scrollbar-hide"
                     >
                         <TooltipProvider delayDuration={0}>
                             {/* Main Navigation Items */}
@@ -100,29 +109,23 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
                                     <PermissionGuard permission={item.permission || undefined} key={item.id}>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <motion.button
-                                                    initial={{ opacity: 0, x: -10 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    transition={{ delay: index * 0.03 }}
-                                                    whileHover={{ scale: 1.1, x: 2 }}
-                                                    whileTap={{ scale: 0.95 }}
-                                                    onClick={() => handleCategoryClick(item.id)}
-                                                    className={cn(
-                                                        "p-3.5 rounded-xl transition-all duration-300 group relative flex items-center justify-center",
-                                                        activeCategory === item.id
-                                                            ? "bg-primary text-primary-foreground shadow-[0_10px_20px_rgba(var(--primary),0.3)]"
-                                                            : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                                                    )}
-                                                >
-                                                    <item.icon className={cn("h-5 w-5 transition-transform duration-300", activeCategory === item.id ? "scale-110" : "group-hover:scale-110")} />
-                                                    
-                                                    {activeCategory === item.id && (
-                                                        <motion.span
-                                                            layoutId="active-dot"
-                                                            className="absolute -right-1 w-1 h-4 bg-primary rounded-full"
-                                                        />
-                                                    )}
-                                                </motion.button>
+                                                <CropFrame variant="compact">
+                                                    <motion.button
+                                                        initial={{ opacity: 0, x: -10 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        transition={{ delay: index * 0.03 }}
+                                                        whileTap={{ scale: 0.95 }}
+                                                        onClick={() => handleCategoryClick(item.id)}
+                                                        className={cn(
+                                                            "h-8 w-8 relative flex items-center justify-center rounded-none transition-colors",
+                                                            activeCategory === item.id
+                                                                ? "bg-primary text-primary-foreground"
+                                                                : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                                                        )}
+                                                    >
+                                                        <item.icon className="h-5 w-5" />
+                                                    </motion.button>
+                                                </CropFrame>
                                             </TooltipTrigger>
                                             <TooltipContent side="right" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border px-3 py-1.5 shadow-xl">
                                                 {item.label}

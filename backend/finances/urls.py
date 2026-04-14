@@ -1,7 +1,5 @@
 from django.urls import path
 from .views import (
-    balance_sheet_view, 
-    income_statement_view,
     get_balance_sheet_data,
     get_income_statement_data,
     get_cash_flow_data,
@@ -12,10 +10,7 @@ from .views import (
 )
 
 urlpatterns = [
-    # Legacy PDF Downloads
-    path('balance-sheet/', balance_sheet_view, name='balance-sheet-pdf'),
-    path('income-statement/', income_statement_view, name='income-statement-pdf'),
-    
+
     # API Data
     path('api/balance-sheet/', get_balance_sheet_data, name='api-balance-sheet'),
     path('api/trial-balance/', get_trial_balance_data, name='api-trial-balance'),

@@ -11,7 +11,7 @@ import { toast } from "sonner"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
@@ -270,36 +270,28 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
                 )
             },
         },
-        {
-            id: "actions",
-            header: () => <div className="text-center">Acciones</div>,
-            cell: ({ row }) => (
-                <div className="flex justify-center gap-2">
-                    <Button
-                        variant="ghost"
-                        size="icon"
+        createActionsColumn<ProductAttribute>({
+            renderActions: (item) => (
+                <>
+                    <DataCell.Action
+                        icon={Eye}
+                        title="Ver/Editar Atributo"
+                        color="text-primary"
                         onClick={() => {
-                            setSelectedAttribute(row.original)
-                            setNewAttrName(row.original.name)
+                            setSelectedAttribute(item)
+                            setNewAttrName(item.name)
                             setIsAttrModalOpen(true)
                         }}
-                        className="h-8 w-8 text-primary hover:text-primary hover:bg-primary/10"
-                        title="Ver/Editar Atributo"
-                    >
-                        <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteAttribute(row.original.id)}
-                        className="h-8 w-8 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                    />
+                    <DataCell.Action
+                        icon={Trash2}
                         title="Eliminar Atributo"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
+                        className="text-destructive"
+                        onClick={() => handleDeleteAttribute(item.id)}
+                    />
+                </>
             ),
-        },
+        }),
     ], [])
 
     const selectedAttributes = useMemo(() => {
@@ -358,9 +350,7 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
                 }}
                 title={
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                            <Tag className="h-5 w-5 text-primary" />
-                        </div>
+                        <Tag className="h-5 w-5 text-muted-foreground" />
                         <span>{selectedAttribute ? "Editar Atributo" : "Nuevo Atributo de Variante"}</span>
                     </div>
                 }
@@ -439,14 +429,12 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
 
                     {/* Right Side: Activity Sidebar */}
                     {selectedAttribute?.id && (
-                        <div className="w-[300px] border-l flex flex-col bg-muted/5 shrink-0 pt-4 hidden lg:flex">
-                            <ActivitySidebar
+                        <ActivitySidebar
                                 entityType="attribute"
                                 entityId={selectedAttribute.id}
                                 className="h-full border-none"
                                 title="Historial"
                             />
-                        </div>
                     )}
                 </div>
             </BaseModal>
@@ -457,9 +445,7 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
                 onOpenChange={setIsValueModalOpen}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                        <Plus className="h-5 w-5 text-primary" />
-                    </div>
+                    <Plus className="h-5 w-5 text-muted-foreground" />
                     <span>Añadir Valor a {selectedAttribute?.name}</span>
                 </div>
             }

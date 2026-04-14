@@ -17,9 +17,7 @@ export function Step0_Customer({
 }: Step0_CustomerProps) {
     return (
         <div className="space-y-6 flex flex-col items-center justify-center h-full max-w-2xl mx-auto">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-2">
-                <User className="h-8 w-8 text-primary" />
-            </div>
+            <User className="h-8 w-8 text-muted-foreground" />
 
             <div className="text-center space-y-2">
                 <h3 className="text-lg font-bold">Seleccionar Cliente</h3>

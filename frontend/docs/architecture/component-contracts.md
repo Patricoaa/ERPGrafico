@@ -30,7 +30,7 @@ Contrato visual para todas las vistas principales del sistema.
 - `activeValue`: El valor de la pestaña seleccionada.
 
 **Reglas de Diseño (Industrial Premium):**
-1. **Botones de Creación**: Deben ser circulares (`circular`), usar el icono `Plus` y tener fondo sólido `bg-primary` cuando se sitúan en `titleActions`.
+1. **Botones de Creación**: Se renderizan mediante el componente `ActionFoldButton` (un botón cuadrado de borde duro con esquina dinámica animada). **Prohibido** usar botones circulares.
 2. **Estilo de Pestañas**: Usar el estilo **Industrial Underline** (borde inferior de `2px` con color `primary` al estar activo). No usar píldoras redondeadas.
 3. **Contenedor**: Toda vista debe estar envuelta en `LAYOUT_TOKENS.view`.
 
@@ -63,19 +63,27 @@ Contenedores unificados que definen la jerarquía visual del sistema.
   - `list`: Variante minimalista para listados, con **sombra 2xl solo en hover**.
   - `standard`: Card con borde discontinuo para estados secundarios.
 - **Reglas Visuales**:
-  - **Radio de Borde**: Debe usar **`rounded-md`** (8px) vía el token `CARD_TOKENS.container`. Prohibido usar `rounded-2xl` o `rounded-xl` en cards estándar.
+  - **Radio de Borde**: **`rounded-none`** siempre. El sistema es zero-radius.
+  - **Marcas de Corte**: `IndustrialCard` incluye `<IndustryMark variant="crop" />` de forma nativa. El contenedor usa `overflow-visible` para permitir la proyección externa de las marcas.
   - **Sombras**: Utilizar sombras pronunciadas (`shadow-xl` o `shadow-2xl`) para elevar los contenedores sobre el fondo.
-  - **Registration Marks**: Para cards de alto impacto (dashboards, landing sections), se puede agregar `IndustryMark` como child o la clase CSS `.registration-marks`.
+  - **Requiere `overflow-visible`**: Si el contenedor padre tiene `overflow-hidden`, las marcas de corte serán recortadas. Asegurarse de que ninguna ancestro corte el overflow.
 
 ## 4. FORM_STYLES & Acciones
 Conjunto de tokens para elementos operativos que requieren precisión visual.
 
 - **Reglas Visuales**:
-  - **Radio de Borde**: Debe ser estrictamente **`rounded-sm`** (6px) para botones, inputs y selectores. Refuerza la precisión industrial.
+  - **Radio de Borde: CERO**. El mandato de "Industrial Premium" establece **zero-radius (bordes rectos de 90°)** en **todos** los elementos del sistema sin excepción. Esto aplica a botones, inputs, cards, modales, popovers y contenedores.
+  - Para botones de acción principal (como el `+` de creación), se utiliza el `ActionFoldButton`, el cual mantiene de forma estricta los bordes cuadrados pero añade un feedback kinético (un "doblez" o pliegue en la esquina superior derecha) en estado interactivo.
   - **Tipografía**: Labels en uppercase con extra-tracking.
+
+> [!IMPORTANT]
+> **Prohibido**: Usar `rounded-sm`, `rounded-md`, `rounded-lg` o cualquier variante diferente de `rounded-none` en componentes de negocio. El token CSS `--radius: 0` en `globals.css` es la fuente de verdad. No sobreescribir.
+
 - **Tokens**:
-  - `input`: Rounded-sm (6px), border-solid, h-10.
-  - `button`: Rounded-sm (6px), transiciones suaves.
+  - `input`: `rounded-none`, border-solid, h-10.
+  - `button`: `rounded-none`, transiciones suaves.
+  - **Botones Principales de Proceso**: Para acciones primarias ("Guardar", "Siguiente", "Ejecutar") en áreas transaccionales como Modales, Wizards o Sheets, se **exige** el uso del componente estandarizado `ActionSlideButton` (`components/shared/ActionSlideButton`). 
+    - Este botón utiliza una variante "Outline/Ghost" en reposo y aplica un deslizamiento táctico (Slide-Fill in) magnético desde la izquierda al apuntar, conservando el espíritu kinético sin añadir saturación estática.
   - `sectionHeader`: Industrial separator style. Puede usar `.die-cut-separator` como alternativa a bordes sólidos.
 
 ## 5. CONTRATO DE HOOKS (Data Fetching)
@@ -116,17 +124,18 @@ La visualización de celdas en el `DataTable` debe seguir estrictamente la regla
 - **`DataCell.ContactLink`**: `font-sans text-sm font-medium text-primary hover:underline cursor-pointer flex justify-center items-center`. Convierte la identidad humana en interactiva. **Incluye obligatoriamente un icono `ExternalLink` (h-3 w-3) a su derecha** para otorgar feedback visual rápido de que es un ancla. Detiene la propagación (`e.stopPropagation()`) de la fila al ser presionado.
 - **`DataCell.Date`**: `tabular-nums text-sm text-foreground/80 flex justify-center items-center`.
 - **`DataCell.Currency`** (vía `MoneyDisplay`): El dinero debe ir centrado como norma general de balance horizontal o derecha financiera, sin prop `showColor=true` salvo para riesgo comercial o deudas.
-- **Atributos de Categoría (e.g., Tipos DTE)**: Despojados de fondos de color. Deben renderizarse `font-bold text-[10px] uppercase text-muted-foreground ml-2` acompañados del ícono `text-muted-foreground/70`.
-- **`StatusBadge`**: Es el **único** elemento de la columna con permiso para inyectar fondos de color (`primary`, `warning`, `destructive`, `success`) basados en `BUSINESS_STATES.md`.
 
 ## 9. IndustryMark («Marcas de Registro»)
 
 Componente decorativo que agrega marcas de registro (crop/registration marks) propias de la industria gráfica a cualquier contenedor.
 
-**Props:**
+**Props**:
 - `positions`: Array de `'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'` (default: all 4).
-- `variant`: `'corner'` (L-shaped) | `'crosshair'` (cruceta) | `'target'` (círculo) (default: `'corner'`).
+- `variant`: `'crop'` (abiertas, default) | `'corner'` (cerradas, legacy) | `'crosshair'` (cruceta) | `'target'` (círculo).
 - `active`: Boolean — usa `--mark-color-active` (primary) en vez del color sutil.
+
+**Variante `crop` (Actualización Técnica):**
+Esta variante emula las marcas de corte profesionales de imprenta. Posee un desplazamiento (offset) hacia el **exterior** del contenedor (gap de 2px a 4px) para encuadrar el contenido desde fuera. Sus líneas son segmentos independientes de **6px** a **12px** de longitud, reforzando la identidad de precisión industrial.
 
 **Reglas de Uso:**
 1. El contenedor padre **debe** tener `position: relative` (o usar la clase `.registration-marks` como alternativa CSS-only).
@@ -136,14 +145,8 @@ Componente decorativo que agrega marcas de registro (crop/registration marks) pr
 
 **Ejemplo:**
 ```tsx
-// Con componente (más control):
 <div className="relative">
-  <IndustryMark variant="corner" />
-  {children}
-</div>
-
-// Con clase CSS (cero JS):
-<div className="registration-marks">
+  <IndustryMark />
   {children}
 </div>
 ```
@@ -158,6 +161,7 @@ Estos elementos formalizan la identidad visual que conecta al ERP con el mundo d
 | Guías de sangrado | `.bleed-guides` | Grilla decorativa 80px | Paneles de fondo, vistas vacías |
 | Separador die-cut | `.die-cut-separator` | Línea punteada | Separadores de secciones |
 | Textura de ruido | `body` background (globals.css) | SVG noise fractal | Solo a nivel body, no replicar |
+| Barras de color CMYK | `ColorBar` (Componente) | Tira de control de densidades | Márgenes, informes, dashboards técnicos |
 
 **Regla de proporcionalidad:** El vocabulario gráfico es decorativo y sutil (opacidades del 3-8%). No debe competir con el contenido funcional. Si un usuario no nota conscientemente las marcas, están funcionando correctamente.
 
@@ -177,3 +181,78 @@ El cierre estandarizado para Sheets y Modales de alta gama. Este componente sust
 2. **Posición**: Top-right con suficiente padding (normalmente `top-4 right-4` o dentro de un `flex` header).
 3. **Consistencia**: No usar variantes de color (`destructive`, `primary`) para el botón de cierre. Debe ser siempre neutral (`text-muted-foreground`).
 4. **Accesibilidad**: Incluir siempre un `span.sr-only` con el texto "Cerrar".
+
+## 12. ColorBar
+
+Componente que emula las barras de control de tinta CMYK (Cian, Magenta, Amarillo, Negro) fundamentales en la industria gráfica.
+
+**Props:**
+- `orientation`: `'horizontal' | 'vertical'`.
+- `showScales`: `boolean` (muestra la gradación de densidades 100% a 0%).
+- `className`: Estilos adicionales.
+
+**Reglas de Uso:**
+2. **Proporción**: Debe mantenerse pequeño (`w-4` o `h-4`) para no distraer de la información operativa.
+
+## 13. CropFrame (Interacciones de Estado y Hover)
+
+Componente de interacción dinámica diseñado específicamente para dar feedback visual (hover/focus) mediante un "encuadre" animado. Funciona proyectando líneas de corte dinámicas hacia el exterior de un contenedor interactivo.
+
+**Reglas de Uso (Prevención de Saturación Visual):**
+1. **Ratio 1:1 Exclusivo (Botones Cuadrados)**: Su uso está **restringido** a elementos cuadrados cuyo contenido sea íntegramente de naturaleza iconográfica (ej: `w-8 h-8` o `w-10 h-10`). Ideal para barras de navegación laterales (`MiniSidebar`), acciones flotantes, y acciones globales del header (`UserActions`).
+2. **Prohibición en Botones Estándar**: **NO DEBE USARSE** en botones rectangulares o de texto extenso (ej. "Guardar", "Cancelar"). Aplicarlo a estos elementos deforma la escala de las marcas de corte y causa alta saturación visual. Para botones regulares, se deben usar cambios de color de fondo (`hover:bg-primary/90`) o flat Ghost buttons standard.
+3. **Restricción de Anidamiento Masivo**: Nunca debe iterarse dentro de listas muy densas de datos (por ejemplo, en celdas de un `DataTable` o un `ReportTable`). Para tablas o áreas de datos, la interacción principal es el subrayado (`hover:underline`) o color (`hover:text-primary`).
+
+**Implementación Arquitectónica:**
+- Todos los usos interactivos de `<CropFrame>` deben ir acompañados de un `Tooltip` semántico.
+- Soporta variantes:
+    - `"default"`: (size=6, gap=2) - Equilibrio estándar para botones de acción.
+    - `"compact"`: (size=4, gap=1) - Tighter look para áreas de alta densidad (DataTables, MiniSidebar).
+- El componente `CropFrame` utiliza internamente dependencias de `framer-motion` y expone un `forwardRef`. Por esta razón, el componente debe envolver un elemento que *reenvíe explícitamente el ref* o se integrará directamente de forma correcta con `TooltipTrigger asChild`.
+- **Aviso de Overflow**: Contenedores anfitriones flotantes deben utilizar `overflow-x-hidden` si el efecto rebote (`spring`) del frame corre el riesgo de desbordar la caja global y provocar un salto de layout (layout shift por aparición de scrollbar horizontal).
+
+## 14. createActionsColumn (Columna de Acciones Reutilizable)
+
+Función factory que genera la columna estándar de acciones para cualquier `DataTable`. **Obligatorio** usar en lugar de definir manualmente `{ id: "actions", header: ..., cell: ... }`.
+
+**Ubicación:** `@/components/ui/data-table-cells` (exportación nombrada).
+
+**API:**
+```tsx
+createActionsColumn<TData>({
+  renderActions: (item: TData) => ReactNode,  // Obligatorio
+  headerLabel?: string,                        // Default: "Acciones"
+})
+```
+
+**Ejemplo de uso:**
+```tsx
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+
+const columns = [
+  // ...data columns,
+  createActionsColumn<Product>({
+    renderActions: (item) => (
+      <>
+        <DataCell.Action icon={Pencil} title="Editar" onClick={() => edit(item)} />
+        <DataCell.Action icon={Trash2} title="Eliminar" onClick={() => del(item)} />
+      </>
+    ),
+  }),
+]
+```
+
+**Lo que encapsula automáticamente:**
+- `id: "actions"` estandarizado.
+- Header con tipografía industrial (`text-[10px] font-bold uppercase tracking-widest`).
+- `<DataCell.ActionGroup>` como wrapper con `stopPropagation` integrado.
+- `enableSorting: false` y `enableHiding: false`.
+
+**Reglas:**
+1. **Uso Obligatorio**: Toda tabla que tenga acciones por fila **debe** usar `createActionsColumn`. Crear columnas de acciones manuales está **prohibido**.
+2. **Contenido de `renderActions`**: Solo debe contener componentes `<DataCell.Action>`. No mezclar con otros elementos.
+3. **Acciones Condicionales**: Se permiten expresiones condicionales (`{condition && <DataCell.Action ... />}`) dentro de `renderActions`.
+
+> [!IMPORTANT]
+> **Anti-patrón**: Definir `{ id: "actions", header: () => ..., cell: ({ row }) => ... }` manualmente en una tabla. Usar siempre `createActionsColumn`.
+

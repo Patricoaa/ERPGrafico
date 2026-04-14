@@ -163,9 +163,7 @@ export function PayrollCard({
                 <div className="flex justify-between items-start gap-8">
                     <div className="space-y-4 flex-1">
                         <div className="flex items-center gap-4">
-                            <div className="p-2.5 bg-primary/10 rounded-lg text-primary shadow-sm border border-primary/5">
-                                <Sparkles className="h-7 w-7" />
-                            </div>
+                            <Sparkles className="h-7 w-7" />
                             <div>
                                 <h1 className="text-2xl font-bold text-foreground tracking-tight leading-none">
                                     Liquidación de Sueldo
@@ -398,9 +396,7 @@ export function PayrollCard({
                         {isPosted && isSalaryPaid && (
                             <div className="p-5 rounded-lg bg-success/10 border border-success/10 flex items-center justify-between transition-all hover:shadow-md">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-success/10 rounded-lg">
-                                        <CheckCircle2 className="h-4 w-4 text-success" />
-                                    </div>
+                                    <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
                                     <div className="flex flex-col">
                                         <span className="text-[10px] font-black uppercase tracking-widest text-success">Remuneración Pagada</span>
                                     </div>

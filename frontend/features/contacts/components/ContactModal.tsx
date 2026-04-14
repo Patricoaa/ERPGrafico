@@ -34,7 +34,7 @@ import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, Cl
 import { OrderCard } from "@/features/orders/components/OrderCard"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { Separator } from "@/components/ui/separator"
 import { DataTable } from "@/components/ui/data-table"
 import { OrderHubStatus } from "@/features/orders/components/OrderHubStatus"
@@ -267,9 +267,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
                 <div className="flex items-center justify-between w-full pr-12 text-left">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-primary/10 rounded-lg text-primary shadow-sm border border-primary/5 hidden sm:block">
-                            <User className="h-6 w-6" />
-                        </div>
+                        <User className="h-6 w-6" />
                         <div className="flex flex-col">
                             <div className="flex items-center gap-3">
                                 <SheetTitle className="text-xl font-bold tracking-tight text-foreground">
@@ -522,9 +520,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 
 
                             {contact?.id && (
-                                <div className="w-72 flex flex-col bg-muted/5 border-l overflow-hidden hidden lg:flex">
-                                    <ActivitySidebar entityId={contact.id} entityType="contact" />
-                                </div>
+                                <ActivitySidebar entityId={contact.id} entityType="contact" />
                             )}
                         </div>
                     </Tabs>
@@ -676,27 +672,21 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                 return <OrderHubStatus order={row.original} />
             }
         },
-        {
-            id: "actions",
-            header: "Acciones",
-            cell: ({ row }) => (
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-3 text-[10px] font-bold rounded-lg text-primary hover:text-primary hover:bg-primary/10 border border-primary/10"
+        createActionsColumn<any>({
+            renderActions: (item) => (
+                <DataCell.Action
+                    icon={LayoutDashboard}
+                    title="Gestionar Documento"
                     onClick={() => {
                         if (type === 'work_order') {
-                            openWorkOrder(row.original.id)
+                            openWorkOrder(item.id)
                         } else {
-                            openHub({ orderId: row.original.id, type: type === 'purchase' ? 'purchase' : 'sale' })
+                            openHub({ orderId: item.id, type: type === 'purchase' ? 'purchase' : 'sale' })
                         }
                     }}
-                >
-                    <LayoutDashboard className="h-3 w-3 mr-1.5" />
-                    GESTIONAR
-                </Button>
+                />
             )
-        }
+        })
     ]
 
     return (
@@ -713,9 +703,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider mb-1">Total</p>
                             <p className="text-2xl font-bold">{metrics.total}</p>
                         </div>
-                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Icon className="h-4 w-4 text-primary" />
-                        </div>
+                        <Icon className="h-4 w-4 text-muted-foreground" />
                     </CardContent>
                 </Card>
 
@@ -739,9 +727,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                                         {metrics.pendingPaymentCount} documentos
                                     </p>
                                 </div>
-                                <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center">
-                                    <Banknote className="h-4 w-4 text-destructive" />
-                                </div>
+                                <Banknote className="h-4 w-4 text-muted-foreground" />
                             </CardContent>
                         </Card>
 
@@ -759,9 +745,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                                         {metrics.pendingLogisticsCount}
                                     </p>
                                 </div>
-                                <div className="h-8 w-8 rounded-full bg-warning/10 flex items-center justify-center">
-                                    <Truck className="h-4 w-4 text-warning" />
-                                </div>
+                                <Truck className="h-4 w-4 text-muted-foreground" />
                             </CardContent>
                         </Card>
 
@@ -779,9 +763,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                                         {metrics.pendingBillingCount}
                                     </p>
                                 </div>
-                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                    <Receipt className="h-4 w-4 text-primary" />
-                                </div>
+                                <Receipt className="h-4 w-4 text-muted-foreground" />
                             </CardContent>
                         </Card>
                     </>
@@ -802,9 +784,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                                     {metrics.pendingWOCount}
                                 </p>
                             </div>
-                            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                <ClipboardList className="h-4 w-4 text-primary" />
-                            </div>
+                            <ClipboardList className="h-4 w-4 text-muted-foreground" />
                         </CardContent>
                     </Card>
                 )}

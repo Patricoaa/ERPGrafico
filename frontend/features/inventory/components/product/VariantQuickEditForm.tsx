@@ -95,9 +95,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
     <div className="flex flex-col h-full bg-card rounded-lg border shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
       <div className="flex items-center justify-between p-4 border-b bg-muted/10">
         <div className="flex items-center gap-3">
-           <div className="p-2 rounded-lg bg-primary/10">
-             <Layers className="h-4 w-4 text-primary" />
-           </div>
+           <Layers className="h-4 w-4 text-muted-foreground" />
            <div>
                <span className="block mb-1 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border bg-muted/30 border-border/50 text-muted-foreground font-mono w-fit">
                   {variant.internal_code || 'SIN SKU'}
