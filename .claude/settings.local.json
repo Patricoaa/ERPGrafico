@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(docker exec erpgrafico-backend-1 *)",
+      "Bash(grep -l \"^import requests\\\\|^from requests\" backend/*/*.py)"
+    ]
+  }
+}

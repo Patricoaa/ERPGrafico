@@ -230,6 +230,13 @@ CACHES = {
     }
 }
 
+# TUU Remote Payment Gateway — ver ADR 002
+# 'fake' por default; producción debe setear TUU_GATEWAY_MODE=live explícitamente.
+TUU_GATEWAY_MODE = os.environ.get('TUU_GATEWAY_MODE', 'fake').lower()
+# Clave Fernet para cifrar credenciales de gateway (API keys).
+# Si no se define, core.crypto deriva una clave desde SECRET_KEY (solo dev).
+TUU_ENCRYPTION_KEY = os.environ.get('TUU_ENCRYPTION_KEY', '')
+
 # Celery Configuration
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', f'{REDIS_URL}/0')
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', f'{REDIS_URL}/1')

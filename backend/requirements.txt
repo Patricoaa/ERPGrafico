@@ -23,3 +23,5 @@ pyxlsb>=1.0.10
 whitenoise
 django-storages[boto3]>=1.14.2
 django-imagekit
+cryptography>=42.0.0
+requests>=2.31.0
