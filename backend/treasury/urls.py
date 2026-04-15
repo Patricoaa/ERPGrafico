@@ -9,6 +9,7 @@ from .views import (
     BankViewSet, PaymentMethodViewSet, TerminalBatchViewSet,
     PaymentTerminalProviderViewSet, PaymentTerminalDeviceViewSet
 )
+from .payment_request_views import PaymentRequestViewSet
 
 
 router = DefaultRouter()
@@ -30,6 +31,7 @@ router.register(r'reconciliation-rules', ReconciliationRuleViewSet)
 router.register(r'reconciliation-reports', ReconciliationReportsViewSet, basename='reconciliation-reports')
 
 router.register(r'pos-sessions', POSSessionViewSet, basename='possession')
+router.register(r'payment-requests', PaymentRequestViewSet, basename='payment-request')
 router.register(r'dashboard', TreasuryDashboardViewSet, basename='treasury-dashboard')
 
 urlpatterns = [

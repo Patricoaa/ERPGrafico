@@ -6,33 +6,20 @@ Este documento define la API pública, estilos y comportamientos esperados para 
 Componente central para la representación de estados de entidades (pedidos, pagos, tareas).
 
 - **Props**:
-  - `status`: String (slug del estado).
-  - `type`: 'order' | 'payment' | 'generic'.
-  - `showLabel`: Boolean (default true).
+  - `status`: String (slug del estado, ej. `'DRAFT'`, `'PAID'`, `'CANCELLED'`). Case-insensitive.
+  - `variant`: `'default' | 'hub' | 'dot'` (default: `'default'`).
+    - `'default'`: Badge estándar con etiqueta de texto.
+    - `'hub'`: Círculo con icono para dashboards (requiere prop `icon`).
+    - `'dot'`: Punto pulsante + etiqueta compacta.
+  - `label`: String (override de etiqueta automática, opcional).
+  - `icon`: LucideIcon (requerido para `variant='hub'`).
+  - `tooltip`: String (solo para `variant='hub'`, muestra Tooltip al hover).
+  - `size`: `'sm' | 'md' | 'lg'` (default: `'md'`).
+  - `className`: String (clases CSS adicionales).
 - **Reglas**:
   - Debe mapear los estados a tokens semánticos: `success`, `warning`, `destructive`, `info`.
   - Nunca usar colores Tailwind hardcoded.
   - Ver [Inventario de Estados de Negocio](BUSINESS_STATES.md) para los valores aceptados por `status`.
-
-### 7. PageHeader y PageLayout (`shared/PageHeader`, `shared/PageTabs`)
-
-Contrato visual para todas las vistas principales del sistema.
-
-**PageHeader Props:**
-- `title`: String principal.
-- `description`: Subtítulo explicativo.
-- `variant`: `default` | `minimal` (minimal quita padding inferior para integrarse con tabs).
-- `isLoading`: Muestra esqueletos de carga.
-- `titleActions`: Espacio para botones de acción al lado del título (ej: botón Plus circular).
-
-**PageTabs Props:**
-- `tabs`: Array de `{ label, value, iconName, href }`.
-- `activeValue`: El valor de la pestaña seleccionada.
-
-**Reglas de Diseño (Industrial Premium):**
-1. **Botones de Creación**: Se renderizan mediante el componente `ActionFoldButton` (un botón cuadrado de borde duro con esquina dinámica animada). **Prohibido** usar botones circulares.
-2. **Estilo de Pestañas**: Usar el estilo **Industrial Underline** (borde inferior de `2px` con color `primary` al estar activo). No usar píldoras redondeadas.
-3. **Contenedor**: Toda vista debe estar envuelta en `LAYOUT_TOKENS.view`.
 
 ## 2. EmptyState
 Visualización estándar para listados, búsquedas y estados vacíos en cualquier parte de la interfaz.
@@ -41,11 +28,12 @@ Visualización estándar para listados, búsquedas y estados vacíos en cualquie
   - `icon`: LucideIcon (opcional, asignado automáticamente por `context`).
   - `title`: String (opcional, tiene valor por defecto según `context`).
   - `description`: String (opcional).
-  - `context`: 'search' | 'inventory' | 'finance' | 'users' | 'generic' (default 'generic').
+  - `context`: 'search' | 'inventory' | 'finance' | 'users' | 'generic' | 'database' | 'production' (default 'generic').
   - `variant`: 'full' | 'compact' | 'minimal' (default 'full').
   - `entityName`: String (ej. "Orden #1234").
   - `action`: ReactNode (Primario).
   - `secondaryAction`: ReactNode (Secundario).
+  - `className`: String (clases CSS adicionales para el contenedor).
 - **Reglas**:
   - **Uso Obligatorio**: Debe usarse en lugar de cualquier `div` o `p` con mensajes "No hay datos".
   - **Contexto**:
@@ -62,11 +50,34 @@ Contenedores unificados que definen la jerarquía visual del sistema.
   - `industrial`: Card con stripe superior y **sombra profunda (shadow-2xl)**.
   - `list`: Variante minimalista para listados, con **sombra 2xl solo en hover**.
   - `standard`: Card con borde discontinuo para estados secundarios.
+  - `glass`: Variante translúcida con efecto glassmorphism, para overlays y paneles flotantes.
 - **Reglas Visuales**:
   - **Radio de Borde**: **`rounded-none`** siempre. El sistema es zero-radius.
   - **Marcas de Corte**: `IndustrialCard` incluye `<IndustryMark variant="crop" />` de forma nativa. El contenedor usa `overflow-visible` para permitir la proyección externa de las marcas.
   - **Sombras**: Utilizar sombras pronunciadas (`shadow-xl` o `shadow-2xl`) para elevar los contenedores sobre el fondo.
   - **Requiere `overflow-visible`**: Si el contenedor padre tiene `overflow-hidden`, las marcas de corte serán recortadas. Asegurarse de que ninguna ancestro corte el overflow.
+
+### BaseModal — Props Completas
+
+| Prop | Tipo | Default | Descripción |
+|------|------|---------|-------------|
+| `open` | boolean | — | Requerido |
+| `onOpenChange` | `(open: boolean) => void` | — | Requerido |
+| `title` | `string \| ReactNode` | — | Requerido |
+| `description` | `string \| ReactNode` | — | Opcional |
+| `children` | ReactNode | — | Requerido |
+| `footer` | ReactNode | — | Área de botones inferior |
+| `headerActions` | ReactNode | — | Acciones en el header |
+| `size` | string | `'default'` | Vía `dialogContentVariants` |
+| `variant` | `'default' \| 'transaction' \| 'wizard' \| 'raw'` | `'default'` | Estilo visual |
+| `showCloseButton` | boolean | `true` | Muestra X de cierre |
+| `hideScrollArea` | boolean | `false` | Desactiva scroll interno |
+
+**Variantes de BaseModal:**
+- `'default'`: Header con borde inferior, fondo estándar.
+- `'transaction'`: Header `bg-primary text-primary-foreground`, sin borde, sombra `shadow-2xl`.
+- `'wizard'`: Header con borde inferior más delgado.
+- `'raw'`: Sin bordes en header/footer, sin scroll-area automático.
 
 ## 4. FORM_STYLES & Acciones
 Conjunto de tokens para elementos operativos que requieren precisión visual.
@@ -86,25 +97,187 @@ Conjunto de tokens para elementos operativos que requieren precisión visual.
     - Este botón utiliza una variante "Outline/Ghost" en reposo y aplica un deslizamiento táctico (Slide-Fill in) magnético desde la izquierda al apuntar, conservando el espíritu kinético sin añadir saturación estática.
   - `sectionHeader`: Industrial separator style. Puede usar `.die-cut-separator` como alternativa a bordes sólidos.
 
-## 5. CONTRATO DE HOOKS (Data Fetching)
-Todo hook de feature debe seguir este patrón:
+## 5. CONTRATO DE HOOKS — Patrones de Data Fetching
 
-- **Naming**: `use[Entity][Action]` (ej. `useProductSearch`, `useOrderDetails`).
-- **Retorno Obligatorio**: 
-  - `data`: El resultado tipado (vía Zod).
-  - `isLoading`: Estado de carga inicial.
-  - `error`: Error formateado vía `showApiError`.
-- **Regla**: Prohibido usar `useQuery` directamente en componentes UI; siempre envolver en un hook de feature.
+Existen 3 patrones según el contexto. Elegir el patrón correcto según el caso de uso.
+
+### Patrón A — `useSuspenseQuery` (TanStack Query) — PREFERIDO para listas
+
+Usar cuando el componente se envuelve en un `<Suspense>` boundary (lo cual es obligatorio en toda page route).
+
+```tsx
+function useOrders(filters?: OrderFilters) {
+  const { data: orders, refetch } = useSuspenseQuery({
+    queryKey: [...ORDERS_QUERY_KEY, filters],
+    queryFn: () => ordersApi.getOrders(filters),
+  })
+
+  const createMutation = useMutation({
+    mutationFn: ordersApi.createOrder,
+    onSuccess: () => refetch(),
+    onError: showApiError,   // ← errores como toast, no como estado
+  })
+
+  return {
+    orders,                                  // T[] directamente
+    refetch,
+    createOrder: createMutation.mutateAsync, // acción nombrada
+    isCreating: createMutation.isPending,    // isPending → isCreating
+  }
+}
+```
+
+**Retorno estándar Patrón A:**
+- `[entities]`: Array de la entidad (nunca `data`)
+- `refetch`: Función de recarga
+- `[verbEntity]`: Mutaciones como `createOrder`, `updateOrder`, `deleteOrder`
+- `is[Verbing]`: Flags `isCreating`, `isUpdating`, `isDeleting`, `isAnnulling`
+- **Sin `isLoading`** (lo maneja Suspense)
+- **Sin `error`** (se despacha como toast internamente)
+
+---
+
+### Patrón B — `useQuery` regular — Para datos opcionales / con fallback
+
+Usar cuando el componente NO tiene Suspense boundary, o cuando el dato puede estar ausente sin bloquear el render.
+
+```tsx
+function useTreasuryAccounts(): UseTreasuryAccountsReturn {
+  const { data: accounts = [], isLoading, refetch } = useQuery({ ... })
+  return { accounts, isLoading, refetch, createAccount, isCreating }
+}
+```
+
+**Retorno estándar Patrón B:**
+- `[entities]`: Array con default `[]` en destructuring
+- `isLoading`: Boolean
+- `refetch`
+- Mutaciones y flags de mutación
+
+---
+
+### Patrón C — `useState` + fetch manual — Para reportes y operaciones complejas
+
+Usar para reportes on-demand, operaciones con lógica de negocio compleja, o fetch que no es automático al montar.
+
+```tsx
+function useTrialBalance() {
+  const [data, setData] = useState<TrialBalanceReport | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const fetchTrialBalance = async (params: TrialBalanceParams) => {
+    try {
+      setIsLoading(true)
+      const res = await accountingApi.getTrialBalance(params)
+      setData(res.data)
+    } catch (error) {
+      showApiError(error)  // ← toast, no estado
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return { data, isLoading, fetchTrialBalance }
+}
+```
+
+---
+
+### Regla de Errores (Todos los Patrones)
+
+**Los hooks NUNCA exponen `error` como campo del return.**
+
+- Los errores se manejan internamente con `showApiError(error)` de `lib/errors.ts`.
+- `showApiError()` dispara un toast de error automáticamente.
+- El componente consumidor no necesita manejar errores del hook.
+- Para errores críticos que deban bloquear el render, usar un `ErrorBoundary`.
+
+### Naming Convention
+
+```
+use[Entity][Action]  →  useProductSearch, useOrderDetails
+use[Entity]s         →  useOrders, useInvoices, useProducts
+```
 
 ## 6. CONTRATO DE FORMULARIOS
-- **Biblioteca**: `react-hook-form` + `zod`.
-- **Estructura**:
-  - Carpeta `[Feature]/components/forms/`.
-  - Archivo `schema.ts`: Definición única del Zod schema y el Type derivado.
-- **Props Estándar**:
-  - `initialData?: T`: Datos para modo edición.
-  - `onSuccess: (data: T) => void`: Callback tras guardado exitoso.
-  - `onCancel: () => void`: Cerrar modal o volver atrás.
+
+### Patrón A — react-hook-form + Zod (formularios complejos)
+
+El schema Zod se define **inline** en el archivo del componente (no en `schema.ts` separado).
+
+**Estructura:**
+```tsx
+// Schema + Type derivado (en el mismo archivo)
+const orderSchema = z.object({
+  customer_id: z.string().min(1, "Requerido"),
+  lines: z.array(lineSchema).min(1, "Al menos un item"),
+})
+type OrderFormValues = z.infer<typeof orderSchema>
+
+// Props estándar
+interface CreateOrderFormProps {
+  initialData?: Partial<OrderFormValues>
+  onSuccess?: (data: OrderFormValues) => void
+  onCancel: () => void
+}
+
+// Form
+const form = useForm<OrderFormValues>({
+  resolver: zodResolver(orderSchema) as any,
+  defaultValues: initialData ?? { lines: [defaultLine] },
+})
+
+// Estado de carga — usar useState local, NO form.formState.isSubmitting
+const [loading, setLoading] = useState(false)
+
+const onSubmit = async (data: OrderFormValues) => {
+  try {
+    setLoading(true)
+    await createOrderMutation(data)
+    form.reset()
+    onSuccess?.(data)
+  } catch (error) {
+    showApiError(error)
+  } finally {
+    setLoading(false)
+  }
+}
+```
+
+**Reglas:**
+- Tipo derivado con `z.infer<typeof schema>` — PROHIBIDO tipado manual.
+- Estado de carga con `useState`, no `form.formState.isSubmitting`.
+- `form.reset()` después del éxito.
+- Errores de red vía `showApiError()` (toast), no `form.setError`.
+
+### Patrón B — Estado local (formularios simples)
+
+Para formularios de 2–4 campos sin validación compleja:
+
+```tsx
+const [amount, setAmount] = useState("")
+const [loading, setLoading] = useState(false)
+
+const handleSubmit = async () => {
+  if (!amount) return
+  try {
+    setLoading(true)
+    await createRecord({ amount: Number(amount) })
+    onSuccess()
+  } catch (error) {
+    showApiError(error)
+  } finally {
+    setLoading(false)
+  }
+}
+```
+
+**Cuándo usar cada patrón:**
+
+| Patrón | Cuándo Usar |
+|--------|------------|
+| rhf + Zod | Formularios con 4+ campos, validación cruzada, arrays dinámicos |
+| Estado local | Formularios de 2-3 campos, confirmaciones, inputs numéricos simples |
 
 ## 7. CONTRATO DE SKELETONS Y ESTADOS DE CARGA
 La experiencia "Industrial Premium" exige que no existan saltos visuales bruscos.
@@ -117,13 +290,33 @@ La experiencia "Industrial Premium" exige que no existan saltos visuales bruscos
 - **Regla de Oro**: El esqueleto debe aproximar la altura y estructura del contenido final para minimizar el Layout Shift (CLS).
 
 ## 8. CONTRATO DE DATA-CELLS (DataTables)
-La visualización de celdas en el `DataTable` debe seguir estrictamente la regla 60-30-10 de *Industrial Premium*, evitando la "saturación de badges". Todas las celdas y headers deben estar alineados usando `flex justify-center items-center` para mantener un balance armónico.
 
-- **`DataCell.Text`**: `font-sans text-sm font-medium text-foreground truncate flex justify-center items-center`. Para texto general.
-- **`DataCell.DocumentId`**: `font-mono text-xs uppercase tracking-wider text-muted-foreground hover:text-primary flex justify-center items-center transition-colors`. Sin fondos de colores.
-- **`DataCell.ContactLink`**: `font-sans text-sm font-medium text-primary hover:underline cursor-pointer flex justify-center items-center`. Convierte la identidad humana en interactiva. **Incluye obligatoriamente un icono `ExternalLink` (h-3 w-3) a su derecha** para otorgar feedback visual rápido de que es un ancla. Detiene la propagación (`e.stopPropagation()`) de la fila al ser presionado.
-- **`DataCell.Date`**: `tabular-nums text-sm text-foreground/80 flex justify-center items-center`.
-- **`DataCell.Currency`** (vía `MoneyDisplay`): El dinero debe ir centrado como norma general de balance horizontal o derecha financiera, sin prop `showColor=true` salvo para riesgo comercial o deudas.
+Todos los sub-componentes están en `@/components/ui/data-table-cells` como el objeto `DataCell`.
+
+La visualización de celdas debe seguir estrictamente la regla 60-30-10 de *Industrial Premium*, evitando la "saturación de badges". Todas las celdas y headers deben estar alineados usando `flex justify-center items-center` para mantener un balance armónico.
+
+| Sub-componente | Props Clave | Uso |
+|---|---|---|
+| `DataCell.Text` | `children`, `className` | Texto general, truncado, centrado |
+| `DataCell.Secondary` | `children` | Texto secundario `text-xs text-muted-foreground` |
+| `DataCell.Code` | `children` | Monoespaciado `font-mono`, fallback a "-" |
+| `DataCell.DocumentId` | `type?`, `number`, `className` | Folio formateado vía `formatDocumentId()` |
+| `DataCell.ContactLink` | `children`, `contactId?`, `onClick?` | Nombre clickeable con `ExternalLink`. Abre `GlobalModals`. |
+| `DataCell.Link` | `children`, `href?`, `onClick?`, `external?` | Enlace de documento |
+| `DataCell.Number` | `value`, `suffix?`, `prefix?`, `decimals?` | Número con separadores de locale |
+| `DataCell.Currency` | `value`, `currency?` (default CLP), `digits?` | Wrapper de `MoneyDisplay`, centrado |
+| `DataCell.Variance` | `value`, `currency?` | Como Currency con `showColor=true` (rojo/verde) |
+| `DataCell.NumericFlow` | `value`, `unit?`, `showSign?` | Flujo +/-, `font-mono font-black` |
+| `DataCell.Progress` | `value`, `max?` (default 100), `label?` | Barra de progreso con etiqueta |
+| `DataCell.Date` | `value`, `showTime?` (default false) | Fecha vía `formatPlainDate()`, `tabular-nums` |
+| `DataCell.Status` | `status`, `label?`, `map?`, `variant?` | Wrapper de `StatusBadge` |
+| `DataCell.Badge` | `children`, `variant?` | Label informacional (no estado) |
+| `DataCell.Icon` | `icon`, `color?` | Icono con fondo circular muted |
+| `DataCell.Action` | `icon`, `onClick?`, `title?`, `compact?` | Botón con `CropFrame` + `Tooltip` |
+| `DataCell.ActionGroup` | `children` | Contenedor con `stopPropagation` |
+
+> [!WARNING]
+> `DataCell.Status` acepta `variant="subtle"` que **no existe en StatusBadge**. Evitar ese valor hasta que se implemente en StatusBadge.
 
 ## 9. IndustryMark («Marcas de Registro»)
 
@@ -255,4 +448,68 @@ const columns = [
 
 > [!IMPORTANT]
 > **Anti-patrón**: Definir `{ id: "actions", header: () => ..., cell: ({ row }) => ... }` manualmente en una tabla. Usar siempre `createActionsColumn`.
+
+---
+
+## 15. PageHeader — Encabezado de Página (HeaderProvider)
+
+**Arquitectura:** `PageHeader` **retorna null**. Sincroniza su estado al `HeaderProvider` global vía `useHeader()`. El render visible ocurre en `DashboardShell`. Esto permite actualizar el header desde cualquier profundidad del árbol de componentes sin teleportación de DOM.
+
+**Props:**
+- `title`: String — requerido.
+- `description`: String — subtítulo opcional.
+- `icon`: LucideIcon — icono a la izquierda del título (opcional).
+- `iconName`: String — nombre de icono vía `DynamicIcon` (alternativa a `icon`).
+- `titleActions`: ReactNode — acciones junto al título (usar `ActionFoldButton` para el botón "+").
+- `isLoading`: Boolean — esqueletos en el header.
+- `status`: `PageHeaderStatus` — indicador de estado de sincronización.
+  - Tipo: `{ label: string; type?: 'synced' | 'saving' | 'error' | 'warning' | 'info'; icon?: LucideIcon; iconName?: string }`
+- `variant`: `'default' | 'minimal'` — `minimal` elimina borde inferior (para integración con tabs).
+- `children`: ReactNode — controles del área derecha (exportar, filtrar, etc.).
+- `configHref`: String — URL de configuración; agrega ícono de engranaje automáticamente.
+- `className`: String — clases adicionales.
+
+**Reglas:**
+1. Usar `variant='minimal'` cuando la página integra `PageTabs` debajo del header.
+2. Usar `titleActions` con `ActionFoldButton` para botones de creación.
+3. Usar `status` para autosave o cambios pendientes.
+4. `PageHeaderButton` con `circular=true` renderiza `ActionFoldButton`. Sin `circular`, renderiza un `Button` estándar `rounded-none`.
+
+---
+
+## 16. Modales — Dialog vs. Sheet
+
+| Criterio | Dialog | Sheet |
+|---------|--------|-------|
+| Complejidad | Confirmaciones, alerts, selección simple | Formularios, análisis, configuración |
+| Bloqueo | Sí (modal blocking) | No (puede coexistir) |
+| Ancho | `max-w-xs` a `max-w-lg` | `w-[400px]` a `w-[600px]` |
+| Scroll | No (contenido debe ser corto) | Sí (contenido largo nativo) |
+
+**Cierres en Sheet:** Siempre usar `SheetCloseButton` (ver Sección 11).
+
+**Tamaños estándar para Dialog:**
+- `max-w-xs` (280px): confirmaciones breves
+- `max-w-sm` (384px): alertas
+- `max-w-md` (448px): formularios simples
+- `max-w-lg` (512px): formularios complejos
+
+**Anchos estándar para Sheet:**
+- `w-[400px]`: compacto
+- `w-[480px]`: estándar (DEFAULT)
+- `w-[600px]`: análisis amplio
+
+---
+
+## 17. Selectores — Select vs. ComboBox
+
+| Tipo | Ítems | Búsqueda | Cuándo Usar |
+|------|-------|---------|-------------|
+| `Select` (shadcn) | 5–20 | No | Opciones estáticas (tipo de doc, método de pago) |
+| ComboBox (Popover + Input) | 20–500 | Local | Listas medianas cargadas al montar |
+| ComboBox Async | Ilimitado | Servidor | Clientes, proveedores, productos (grandes catálogos) |
+
+**Patrón ComboBox Async:** Debounce 300–500ms, máximo 20 resultados, loading skeleton mientras busca.
+
+**Restricción:** Nunca usar `Select` para opciones que puedan crecer indefinidamente en producción.
 
