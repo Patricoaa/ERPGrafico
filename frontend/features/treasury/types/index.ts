@@ -1,4 +1,3 @@
-// Terminal types
 export interface Terminal {
     id: number
     name: string
@@ -6,6 +5,7 @@ export interface Terminal {
     location: string
     is_active: boolean
     allowed_payment_methods: PaymentMethod[]
+    payment_terminal_device?: number
     default_treasury_account_name?: string
     serial_number?: string
     ip_address?: string
@@ -17,6 +17,7 @@ export interface TerminalCreatePayload {
     location: string
     is_active: boolean
     allowed_payment_methods: number[]
+    payment_terminal_device?: number | null
     default_treasury_account?: number | null
     serial_number?: string
     ip_address?: string
@@ -64,7 +65,6 @@ export interface TreasuryAccountCreatePayload {
 
 export interface TreasuryAccountUpdatePayload extends Partial<TreasuryAccountCreatePayload> { }
 
-// Payment Method types
 export interface PaymentMethod {
     id: number
     name: string
@@ -73,8 +73,49 @@ export interface PaymentMethod {
     treasury_account: number
     treasury_account_name: string
     is_active: boolean
-    is_terminal: boolean
     allow_for_sales: boolean
+}
+
+// New Terminal Provider Types
+export interface PaymentTerminalProvider {
+    id: number
+    name: string
+    provider_type: 'TUU' | 'TRANSBANK' | 'MERCADOPAGO' | 'FINTOC' | 'FLOW' | 'MANUAL'
+    supplier: number
+    supplier_name?: string
+    commission_expense_account: number
+    commission_expense_account_name?: string
+    commission_iva_account: number
+    commission_iva_account_name?: string
+    receivable_account: number
+    receivable_account_name?: string
+    config?: Record<string, unknown>
+    is_active: boolean
+}
+
+export interface PaymentTerminalDevice {
+    id: number
+    name: string
+    provider: number
+    provider_name?: string
+    serial_number: string
+    model?: string
+    is_active: boolean
+}
+
+// Terminal Batch Types
+export interface TerminalBatch {
+    id: number
+    provider: number
+    provider_name?: string
+    batch_number: string
+    opened_at: string
+    closed_at?: string
+    is_settled: boolean
+    gross_amount: number
+    commission_amount: number
+    net_amount: number
+    transaction_count: number
 }
 
 export type PaymentMethodType =
@@ -84,7 +125,8 @@ export type PaymentMethodType =
     | 'CHECK'
     | 'CREDIT'
     | 'OTHER'
-    | 'CARD_TERMINAL'
+    | 'DEBIT_CARD'
+    | 'CREDIT_CARD'
 
 // Payment types
 export interface PaymentCreatePayload {

@@ -76,6 +76,14 @@ export function getErrorMessage(error: unknown): string {
         }
     }
 
+    // ApiError shape from lib/result.ts (often returned by API wrappers)
+    if (typeof error === "object" && error !== null) {
+        const errObj = error as Record<string, unknown>
+        if (typeof errObj.message === "string" && "code" in errObj) {
+            return errObj.message
+        }
+    }
+
     if (isApiError(error)) {
         return error.detail ?? error.message
     }

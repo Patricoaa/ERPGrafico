@@ -38,7 +38,7 @@ import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 // schema and types remain the same
 const paymentSchema = z.object({
     payment_type: z.enum(["INBOUND", "OUTBOUND"]),
-    payment_method: z.enum(["CASH", "DEBIT_CARD", "CREDIT_CARD", "CARD_TERMINAL", "TRANSFER", "CHECK"]),
+    payment_method: z.enum(["CASH", "DEBIT_CARD", "CREDIT_CARD", "TRANSFER", "CHECK"]),
     treasury_account: z.string().optional().nullable(),
     amount: z.number().min(0.01, "El monto debe ser mayor a 0"),
     customer_id: z.string().optional().or(z.literal("")),

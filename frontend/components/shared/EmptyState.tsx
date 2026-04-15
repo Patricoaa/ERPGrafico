@@ -4,7 +4,7 @@ import { LucideIcon, Inbox, SearchX, Receipt, Package, Users, Database } from "l
 import { cn } from "@/lib/utils"
 import { IndustryMark } from "@/components/shared/IndustryMark"
 
-export type EmptyStateContext = 'search' | 'inventory' | 'finance' | 'users' | 'generic' | 'database'
+export type EmptyStateContext = 'search' | 'inventory' | 'finance' | 'users' | 'generic' | 'database' | 'production'
 export type EmptyStateVariant = 'full' | 'compact' | 'minimal'
 
 interface EmptyStateProps {
@@ -35,6 +35,7 @@ const CONTEXT_CONFIG: Record<EmptyStateContext, { icon: LucideIcon; title: strin
     finance: { icon: Receipt, title: "Sin movimientos registrados" },
     users: { icon: Users, title: "Sin contactos o usuarios" },
     database: { icon: Database, title: "Error de conexión o base vacía" },
+    production: { icon: Package, title: "Sin órdenes o procesos activos" },
 }
 
 /**
@@ -56,7 +57,7 @@ export function EmptyState({
     secondaryAction,
     className,
 }: EmptyStateProps) {
-    const config = CONTEXT_CONFIG[context]
+    const config = CONTEXT_CONFIG[context] || CONTEXT_CONFIG.generic
     const Icon = icon || config.icon
     const displayTitle = title || (entityName ? `No hay ${config.title.toLowerCase()} para ${entityName}` : config.title)
 

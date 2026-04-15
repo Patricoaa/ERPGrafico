@@ -883,6 +883,19 @@ class AccountingSettings(models.Model):
         help_text=_("Tipos de documentos electrónicos seleccionables en el flujo de compras.")
     )
 
+    # Billing Compliance Model
+    class BillingModel(models.TextChoices):
+        ALWAYS_BOLETA = 'ALWAYS_BOLETA', _('Modelo A: Siempre emitir boleta (Incluso con pago electrónico)')
+        TERMINAL_AS_BOLETA = 'TERMINAL_AS_BOLETA', _('Modelo B: Terminal reemplaza boleta (No emitir DTE 39/41 si hay comprobante DTE 48)')
+
+    billing_model = models.CharField(
+        _("Modelo de Emisión POS"),
+        max_length=20,
+        choices=BillingModel.choices,
+        default=BillingModel.ALWAYS_BOLETA,
+        help_text=_("Determina si se debe emitir boleta cuando se recibe un comprobante de pago electrónico de máquina en el POS.")
+    )
+
     # Code Format & Hierarchy
     hierarchy_levels = models.PositiveSmallIntegerField(_("Niveles de Jerarquía"), default=4, help_text=_("Cantidad total de niveles (2-5)."))
     code_separator = models.CharField(_("Separador"), max_length=1, default=".", help_text=_("Símbolo usado para separar niveles."))

@@ -29,10 +29,12 @@ interface TerminalBatchFormProps {
 
 export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProps) {
     const [loading, setLoading] = useState(false)
-    const [terminals, setTerminals] = useState<any[]>([])
+    const [providers, setProviders] = useState<any[]>([])
+    const [paymentMethods, setPaymentMethods] = useState<any[]>([])
 
     // Form State
-    const [paymentMethodId, setPaymentMethodId] = useState<string>("")
+    const [providerId, setProviderId] = useState<string>("")
+    const [depositMethodId, setDepositMethodId] = useState<string>("")
     const { serverDate } = useServerDate()
     const [date, setDate] = useState<Date | undefined>(undefined)
 
@@ -55,18 +57,24 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     const [isValid, setIsValid] = useState(true)
     const [diff, setDiff] = useState(0)
 
-    // Load terminals
+    // Load providers and deposit methods
     useEffect(() => {
         let isMounted = true
-        const fetchTerminals = async () => {
+        const fetchData = async () => {
             try {
-                const res = await api.get('/treasury/payment-methods/?method_type=CARD_TERMINAL')
-                if (isMounted) setTerminals(res.data)
+                const [provRes, methRes] = await Promise.all([
+                    api.get('/treasury/terminal-providers/'),
+                    api.get('/treasury/payment-methods/')
+                ])
+                if (isMounted) {
+                    setProviders(provRes.data.results || provRes.data)
+                    setPaymentMethods(methRes.data.results || methRes.data)
+                }
             } catch (error) {
-                if (isMounted) toast.error("Error al cargar terminales")
+                if (isMounted) toast.error("Error al cargar datos")
             }
         }
-        fetchTerminals()
+        fetchData()
         return () => { isMounted = false }
     }, [])
 
@@ -83,8 +91,8 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
 
     const handleAutoCalculate = async () => {
-        if (!paymentMethodId || !date) {
-            toast.error("Seleccione terminal y fecha")
+        if (!providerId || !date) {
+            toast.error("Seleccione proveedor y fecha")
             return
         }
         setOpenSelection(true)
@@ -100,7 +108,8 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
         setLoading(true)
         try {
             const payload = {
-                payment_method: paymentMethodId,
+                provider: providerId,
+                payment_method: depositMethodId,
                 sales_date: date ? format(date, "yyyy-MM-dd") : null,
                 gross_amount: parseFloat(grossAmount),
                 commission_base: parseFloat(commissionNet),
@@ -125,7 +134,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
             <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-4">
                     <div className="grid gap-2">
-                        <Label className={FORM_STYLES.label}>Terminal de Cobro</Label>
+                        <Label className={FORM_STYLES.label}>Proveedor de Pago</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
@@ -133,9 +142,9 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                     role="combobox"
                                     className={cn(FORM_STYLES.input, "w-full justify-between font-normal")}
                                 >
-                                    {paymentMethodId
-                                        ? terminals.find(t => t.id.toString() === paymentMethodId)?.name
-                                        : "Seleccione terminal..."}
+                                    {providerId
+                                        ? providers.find(p => p.id.toString() === providerId)?.name
+                                        : "Seleccione proveedor..."}
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                             </PopoverTrigger>
@@ -160,26 +169,26 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                         />
                                     </div>
                                     <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                        {terminals.map((t) => (
+                                        {providers.map((p) => (
                                             <div
-                                                key={t.id}
+                                                key={p.id}
                                                 className={cn(
                                                     "terminal-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                    paymentMethodId === t.id.toString() && "bg-accent"
+                                                    providerId === p.id.toString() && "bg-accent"
                                                 )}
                                                 onClick={() => {
-                                                    setPaymentMethodId(t.id.toString())
+                                                    setProviderId(p.id.toString())
                                                     document.body.click()
                                                 }}
                                             >
-                                                <span>{t.name}</span>
-                                                {paymentMethodId === t.id.toString() && (
+                                                <span>{p.name}</span>
+                                                {providerId === p.id.toString() && (
                                                     <Check className="ml-auto h-4 w-4 opacity-100" />
                                                 )}
                                             </div>
                                         ))}
-                                        {terminals.length === 0 && (
-                                            <EmptyState context="generic" variant="minimal" description="No hay terminales disponibles" />
+                                        {providers.length === 0 && (
+                                            <EmptyState context="generic" variant="minimal" description="No hay proveedores disponibles" />
                                         )}
                                     </div>
                                 </div>
@@ -212,6 +221,23 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                 />
                             </PopoverContent>
                         </Popover>
+                    </div>
+
+
+
+                    <div className="grid gap-2">
+                        <Label className={FORM_STYLES.label}>Método de Depósito (Hacia Banco)</Label>
+                        <Select value={depositMethodId} onValueChange={setDepositMethodId}>
+                            <SelectTrigger className={FORM_STYLES.input}>
+                                <SelectValue placeholder="Seleccione método de abono..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {paymentMethods.filter(m => m.allow_for_sales).map(meth => (
+                                    <SelectItem key={meth.id} value={meth.id.toString()}>{meth.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <p className="text-[10px] text-muted-foreground">Método que el banco usa para registrar el abono neto.</p>
                     </div>
 
                     <div className="grid gap-2">
@@ -296,7 +322,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
             <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button type="button" variant="ghost" onClick={onCancel}>Cancelar</Button>
-                <ActionSlideButton type="submit" disabled={loading || !isValid || !paymentMethodId}>
+                <ActionSlideButton type="submit" disabled={loading || !isValid || !providerId || !depositMethodId}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Registrar Liquidación
                 </ActionSlideButton>
@@ -305,7 +331,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
             <SaleSelectionModal
                 open={openSelection}
                 onOpenChange={setOpenSelection}
-                paymentMethodId={paymentMethodId}
+                providerId={providerId}
                 date={date}
                 initialSelectedIds={selectedIds}
                 onConfirm={(movements, ids) => {
@@ -320,10 +346,10 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     )
 }
 
-function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfirm, initialSelectedIds }: {
+function SaleSelectionModal({ open, onOpenChange, providerId, date, onConfirm, initialSelectedIds }: {
     open: boolean,
     onOpenChange: (open: boolean) => void,
-    paymentMethodId: string,
+    providerId: string,
     date: Date | undefined,
     onConfirm: (movements: any[], ids: Set<number>) => void,
     initialSelectedIds: Set<number>
@@ -334,13 +360,12 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
 
     useEffect(() => {
         let isMounted = true
-        if (open && paymentMethodId && date) {
+        if (open && providerId && date) {
             setLoading(true)
             const dateStr = format(date, "yyyy-MM-dd")
             api.get(`/treasury/movements/`, {
                 params: {
-                    payment_method_new: paymentMethodId,
-                    // Remove date filter to show all pending
+                    terminal_provider: providerId,
                     movement_type: 'INBOUND',
                     terminal_batch__isnull: 'True'
                 }
@@ -374,7 +399,7 @@ function SaleSelectionModal({ open, onOpenChange, paymentMethodId, date, onConfi
             })
         }
         return () => { isMounted = false }
-    }, [open, paymentMethodId, date])
+    }, [open, providerId, date])
 
     const toggleAll = () => {
         if (selectedIds.size === movements.length) {

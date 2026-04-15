@@ -30,36 +30,51 @@ interface PageProps {
 export default async function SalesPage({ searchParams }: PageProps) {
     const { view, sub, modal, tab } = await searchParams
     const configTab = tab || "income"
-    const viewMode = (view as 'orders' | 'terminals' | 'credits') || 'orders'
-    const subView = sub || (viewMode === 'orders' ? 'orders' : viewMode === 'terminals' ? 'terminals' : 'portfolio')
+    const viewMode = (view as 'orders' | 'pos' | 'hardware' | 'credits') || 'orders'
+    const subView = sub || (
+        viewMode === 'orders' ? 'orders' :
+            viewMode === 'pos' ? 'pos-terminals' :
+                viewMode === 'hardware' ? 'batches' :
+                    'portfolio'
+    )
     const isModalOpen = !!modal
 
     const tabs = [
-        { 
-            value: "orders", 
-            label: "Órdenes", 
-            iconName: "shopping-cart", 
+        {
+            value: "orders",
+            label: "Órdenes",
+            iconName: "shopping-cart",
             href: "/sales?view=orders",
             subTabs: [
                 { value: "orders", label: "Notas de Venta", href: "/sales?view=orders&sub=orders" },
                 { value: "notes", label: "Ajustes (N/C N/D)", href: "/sales?view=orders&sub=notes" },
             ]
         },
-        { 
-            value: "terminals", 
-            label: "Terminales", 
-            iconName: "banknote", 
-            href: "/sales?view=terminals",
+        {
+            value: "pos",
+            label: "POS",
+            iconName: "banknote",
+            href: "/sales?view=pos",
             subTabs: [
-                { value: "terminals", label: "Terminales", href: "/sales?view=terminals&sub=terminals" },
-                { value: "batches", label: "Lotes", href: "/sales?view=terminals&sub=batches" },
-                { value: "sessions", label: "Sesiones", href: "/sales?view=terminals&sub=sessions" },
+                { value: "pos-terminals", label: "CAJA/POS", href: "/sales?view=pos&sub=pos-terminals" },
+                { value: "sessions", label: "Sesiones", href: "/sales?view=pos&sub=sessions" },
             ]
         },
-        { 
-            value: "credits", 
-            label: "Cartera", 
-            iconName: "pie-chart", 
+        {
+            value: "hardware",
+            label: "Terminal de Cobro",
+            iconName: "cpu",
+            href: "/sales?view=hardware",
+            subTabs: [
+                { value: "providers", label: "Proveedor de dispositivos", href: "/sales?view=hardware&sub=providers" },
+                { value: "devices", label: "Dispositivos", href: "/sales?view=hardware&sub=devices" },
+                { value: "batches", label: "Lotes de Pago", href: "/sales?view=hardware&sub=batches" },
+            ]
+        },
+        {
+            value: "credits",
+            label: "Cartera",
+            iconName: "pie-chart",
             href: "/sales?view=credits",
             subTabs: [
                 { value: "portfolio", label: "Cartera", href: "/sales?view=credits&sub=portfolio" },
@@ -78,23 +93,14 @@ export default async function SalesPage({ searchParams }: PageProps) {
                 showAction: false
             }
         }
-        if (viewMode === 'terminals') {
-            if (subView === 'terminals') {
+        if (viewMode === 'pos') {
+            if (subView === 'pos-terminals') {
                 return {
                     title: "Terminales POS",
                     description: "Administre los puntos de venta y sus métodos de pago autorizados.",
                     iconName: "banknote" as const,
                     actionTitle: "Nuevo Terminal",
-                    actionHref: "/sales?view=terminals&sub=terminals&modal=new-terminal",
-                    showAction: true
-                }
-            } else if (subView === 'batches') {
-                return {
-                    title: "Lotes de Liquidación",
-                    description: "Registre liquidaciones y comisiones de terminales de cobro.",
-                    iconName: "banknote" as const,
-                    actionTitle: "Registrar Liquidación",
-                    actionHref: "/sales?view=terminals&sub=batches&modal=new-batch",
+                    actionHref: "/sales?view=pos&sub=pos-terminals&modal=new-terminal",
                     showAction: true
                 }
             } else {
@@ -103,6 +109,36 @@ export default async function SalesPage({ searchParams }: PageProps) {
                     description: "Registro cronológico de aperturas y cierres de terminales POS.",
                     iconName: "banknote" as const,
                     showAction: false
+                }
+            }
+        }
+        if (viewMode === 'hardware') {
+            if (subView === 'batches') {
+                return {
+                    title: "Lotes de Pago",
+                    description: "Gestión de cierres diarios y liquidaciones de tarjetas.",
+                    iconName: "cpu" as const,
+                    actionTitle: "Nuevo Lote",
+                    actionHref: "/sales?view=hardware&sub=batches&modal=new-batch",
+                    showAction: true
+                }
+            } else if (subView === 'devices') {
+                return {
+                    title: "Hardware de Pago",
+                    description: "Gestione los dispositivos físicos y su vinculación con el sistema.",
+                    iconName: "cpu" as const,
+                    actionTitle: "Nuevo Dispositivo",
+                    actionHref: "/sales?view=hardware&sub=devices&modal=new-device",
+                    showAction: true
+                }
+            } else {
+                return {
+                    title: "Proveedores de Pago",
+                    description: "Configuración de cuentas y comisiones por proveedor (TUU, Transbank, etc.).",
+                    iconName: "cpu" as const,
+                    actionTitle: "Nuevo Proveedor",
+                    actionHref: "/sales?view=hardware&sub=providers&modal=new-provider",
+                    showAction: true
                 }
             }
         }
@@ -164,14 +200,14 @@ export default async function SalesPage({ searchParams }: PageProps) {
                 <Suspense fallback={<LoadingFallback />}>
                     {viewMode === 'orders' && (
                         <div className="pt-2">
-                            <SalesOrdersClientView 
-                                viewMode={subView === 'orders' ? 'orders' : 'notes'} 
+                            <SalesOrdersClientView
+                                viewMode={subView === 'orders' ? 'orders' : 'notes'}
                                 isCreateModalOpen={modal === 'new'}
                             />
                         </div>
                     )}
 
-                    {viewMode === 'terminals' && (
+                    {(viewMode === 'pos' || viewMode === 'hardware') && (
                         <div className="pt-2">
                             <SalesTerminalsView activeTab={subView} modal={modal} />
                         </div>
@@ -182,9 +218,9 @@ export default async function SalesPage({ searchParams }: PageProps) {
                             {subView === 'blacklist' ? (
                                 <BlacklistView />
                             ) : (
-                                <CreditPortfolioView 
-                                    activeTab={subView as 'portfolio' | 'history'} 
-                                    externalOpen={modal === 'new'} 
+                                <CreditPortfolioView
+                                    activeTab={subView as 'portfolio' | 'history'}
+                                    externalOpen={modal === 'new'}
                                 />
                             )}
                         </div>

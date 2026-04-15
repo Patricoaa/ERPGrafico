@@ -278,13 +278,15 @@ class TreasuryService:
             # Debit ToAccount (Treasury or Card Provider Receivable)
             debit_acc = to_acc
             
-            # If it's a terminal-based payment, the money is in transit with the provider
-            # If it's a terminal-based payment, the money is in transit with the provider
-            # Stage 1: Record to Terminal Receivable Account
-            is_terminal = getattr(movement.payment_method_new, 'is_terminal', False)
-            if is_terminal:
-                 if movement.payment_method_new.terminal_receivable_account:
-                     debit_acc = movement.payment_method_new.terminal_receivable_account
+            # Stage 1: Record to Terminal Receivable Account if it's a terminal-based payment
+            processes_via_terminal = getattr(movement.payment_method_new, 'processes_via_terminal', False)
+            if processes_via_terminal and movement.terminal_device:
+                 provider = movement.terminal_device.provider
+                 if provider.receivable_account:
+                     debit_acc = provider.receivable_account
+            elif processes_via_terminal:
+                 # Logic fallback if no device is set but should have one
+                 pass
             
             if debit_acc:
                 JournalItem.objects.create(entry=entry, account=debit_acc, debit=movement.amount, credit=0)
@@ -433,15 +435,12 @@ class TreasuryService:
 class TerminalBatchService:
     @staticmethod
     @transaction.atomic
-    def create_batch(payment_method, sales_date, gross_amount, commission_base, commission_tax, net_amount, terminal_reference='', supplier=None, user=None, movement_ids=None):
+    def create_batch(provider, sales_date, gross_amount, commission_base, commission_tax, net_amount, terminal_reference='', user=None, movement_ids=None):
         """
         Create a TerminalBatch and its accounting entries.
         Stage 2 of the Terminal accounting flow.
         """
         # 1. Validation
-        if not payment_method.is_terminal:
-             raise ValidationError("El método de pago debe ser un terminal.")
-        
         commission_total = commission_base + commission_tax
         expected_net = gross_amount - commission_total
         
@@ -449,38 +448,24 @@ class TerminalBatchService:
              raise ValidationError(f"El monto neto no coincide con Bruto - Comisión. Esperado: {expected_net}")
 
         # Accounts Validation
-        receivable_acc = payment_method.terminal_receivable_account
-        expense_acc = payment_method.commission_expense_account
-        bank_acc = payment_method.treasury_account.account if payment_method.treasury_account else None
+        receivable_acc = provider.receivable_account
+        expense_acc = provider.commission_expense_account
+        bank_acc = provider.bank_treasury_account.account if provider.bank_treasury_account else None
 
         if not (receivable_acc and expense_acc and bank_acc):
-             raise ValidationError("El método de pago debe tener configuradas las cuentas: Por Cobrar, Gasto Comisión y Tesorería.")
+             raise ValidationError("El proveedor de terminal debe tener configuradas las cuentas: Por Cobrar, Gasto Comisión y Tesorería.")
 
         # 2. Identify Payments
         if movement_ids:
             payments = TreasuryMovement.objects.filter(
                 id__in=movement_ids,
-                payment_method_new=payment_method,
-                terminal_batch__isnull=True
-            )
-            if len(payments) != len(movement_ids):
-                raise ValidationError("Algunos de los pagos seleccionados no existen, ya fueron loteados o no pertenecen a este terminal.")
-        else:
-            # Fallback: Find payments from the sales_date with this payment_method that are not yet batched
-            payments = TreasuryMovement.objects.filter(
-                date=sales_date, # Fixed: date is a DateField
-                payment_method_new=payment_method,
-                movement_type=TreasuryMovement.Type.INBOUND,
-                terminal_batch__isnull=True
-            )
-        
-        # Optional: Validate total gross amount matches sum of payments?
-        # In real world, they might differ slightly due to timing/cutoffs. Usually we batch what we find.
-        # But for stricter control we could warn. For now let's just batch them.
+            payment_method_new__processes_via_terminal=True,
+            terminal_device__provider=provider,
+            terminal_batch__isnull=True
+        )
         
         batch = TerminalBatch.objects.create(
-            payment_method=payment_method,
-            supplier=supplier or payment_method.supplier,
+            provider=provider,
             sales_date=sales_date,
             settlement_date=timezone.now().date(), # Or passed as arg
             deposit_date=timezone.now().date(), # Assuming deposit happens on settlement report
@@ -498,8 +483,8 @@ class TerminalBatchService:
         payments.update(terminal_batch=batch)
         
         # 3. Create Accounting Entry (Settlement)
-        # Description: Liquidación Terminal [Method] - [Date]
-        description = f"Liq. {payment_method.name} - {sales_date}"
+        # Description: Liquidación Terminal [Provider] - [Date]
+        description = f"Liq. {provider.name} - {sales_date}"
         entry = JournalEntry.objects.create(
             date=batch.settlement_date,
             description=description,
@@ -557,21 +542,14 @@ class TerminalBatchService:
 
     @staticmethod
     @transaction.atomic
-    def generate_monthly_invoice(supplier, year, month, user=None, number=None, date=None, document_attachment=None):
+    def generate_monthly_invoice(provider, year, month, user=None, number=None, date=None, document_attachment=None):
         """
-        Aggregates SETTLED batches for a month/supplier and generates a Supplier Invoice.
+        Aggregates SETTLED batches for a month/provider and generates a Supplier Invoice.
         Status -> INVOICED.
-        
-        NEW FLOW:
-        1. Find Commission Product from Supplier's Payment Method
-        2. Create Purchase Order (Service)
-        3. Confirm Purchase Order
-        4. Generate Invoice from Purchase Order
-        5. Link Batches to Invoice
         """
         # Find batches
         batches = TerminalBatch.objects.filter(
-            supplier=supplier,
+            provider=provider,
             sales_date__year=year,
             sales_date__month=month,
             status=TerminalBatch.Status.SETTLED,
@@ -583,21 +561,12 @@ class TerminalBatchService:
             
         total_commission_net = sum(b.commission_base for b in batches)
         
-        # 1. Find Commission Product
-        from .models import PaymentMethod
-        # Assuming supplier has at least one active terminal payment method used in these batches
-        # We try to get the product from the method associated with the batches, or the first one found for the supplier
-        payment_method = PaymentMethod.objects.filter(
-            supplier=supplier, 
-            is_terminal=True, 
-            is_active=True
-        ).first()
-        
-        commission_product = payment_method.commission_product if payment_method else None
+        supplier = provider.supplier
+        commission_product = provider.commission_product
         
         if not commission_product:
             from django.core.exceptions import ValidationError
-            raise ValidationError(f"El proveedor {supplier.name} no tiene un método de pago terminal con 'Producto de Comisión' configurado.")
+            raise ValidationError(f"El proveedor {provider.name} no tiene un 'Producto de Comisión' configurado.")
 
         # 2. Create Purchase Order
         from purchasing.models import PurchaseOrder, PurchaseLine

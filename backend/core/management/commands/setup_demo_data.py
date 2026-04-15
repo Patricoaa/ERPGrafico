@@ -1153,7 +1153,7 @@ class Command(BaseCommand):
             name="Tarjeta Transbank POS 01",
             treasury_account=till1,
             defaults={
-                'method_type': PaymentMethod.Type.CARD_TERMINAL,
+                'method_type': PaymentMethod.Type.CARD,
                 'allow_for_sales': True,
                 'allow_for_purchases': False, # POS usually only for sales
                 'is_terminal': True,
@@ -1294,7 +1294,7 @@ class Command(BaseCommand):
             name="Webpay / Transbank",
             treasury_account=bco01,
             defaults={
-                'method_type': PaymentMethod.Type.CARD_TERMINAL,
+                'method_type': PaymentMethod.Type.CARD,
                 'allow_for_sales': True,
                 'allow_for_purchases': False,
                 'is_terminal': True,
@@ -1321,7 +1321,7 @@ class Command(BaseCommand):
             name="Tarjeta Transbank POS 01",
             treasury_account=till1,
             defaults={
-                'method_type': PaymentMethod.Type.CARD_TERMINAL,
+                'method_type': PaymentMethod.Type.CARD,
                 'allow_for_sales': True,
                 'allow_for_purchases': False,
                 'is_terminal': True,

@@ -1,11 +1,13 @@
 from django.contrib import admin
-from .models import TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine, ReconciliationRule, TerminalBatch
+from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine, 
+                     ReconciliationRule, TerminalBatch, PaymentTerminalProvider, 
+                     PaymentTerminalDevice, POSTerminal, PaymentMethod)
 
 
 @admin.register(TreasuryMovement)
 class TreasuryMovementAdmin(admin.ModelAdmin):
-    list_display = ['display_id', 'movement_type', 'payment_method', 'amount', 'date', 'is_reconciled']
-    list_filter = ['movement_type', 'payment_method', 'is_reconciled', 'date']
+    list_display = ['display_id', 'movement_type', 'payment_method', 'terminal_device', 'amount', 'date', 'is_reconciled']
+    list_filter = ['movement_type', 'payment_method', 'terminal_device', 'is_reconciled', 'date']
     search_fields = ['reference', 'transaction_number', 'contact__name']
     readonly_fields = ['created_at', 'reconciled_at', 'reconciled_by']
     
@@ -14,7 +16,7 @@ class TreasuryMovementAdmin(admin.ModelAdmin):
             'fields': ('movement_type', 'payment_method', 'amount', 'date', 'reference', 'justify_reason')
         }),
         ('Tesorería y Contabilidad', {
-            'fields': ('from_account', 'to_account', 'treasury_account', 'journal_entry', 'transaction_number', 'is_pending_registration')
+            'fields': ('from_account', 'to_account', 'treasury_account', 'journal_entry', 'terminal_device', 'transaction_number', 'is_pending_registration')
         }),
         ('Asignación', {
             'fields': ('contact', 'invoice', 'sale_order', 'purchase_order')
@@ -116,16 +118,29 @@ class ReconciliationRuleAdmin(admin.ModelAdmin):
     )
 
 
+
+@admin.register(PaymentTerminalProvider)
+class PaymentTerminalProviderAdmin(admin.ModelAdmin):
+    list_display = ['name', 'provider_type', 'supplier', 'is_active']
+    list_filter = ['provider_type', 'is_active']
+    search_fields = ['name']
+
+@admin.register(PaymentTerminalDevice)
+class PaymentTerminalDeviceAdmin(admin.ModelAdmin):
+    list_display = ['name', 'provider', 'serial_number', 'status']
+    list_filter = ['status', 'provider']
+    search_fields = ['name', 'serial_number']
+
 @admin.register(TerminalBatch)
 class TerminalBatchAdmin(admin.ModelAdmin):
-    list_display = ['display_id', 'payment_method', 'supplier', 'sales_date', 'gross_amount', 'commission_total', 'net_amount', 'status', 'payment_count']
-    list_filter = ['status', 'payment_method', 'supplier', 'sales_date']
+    list_display = ['display_id', 'provider', 'sales_date', 'gross_amount', 'commission_total', 'net_amount', 'status', 'payment_count']
+    list_filter = ['status', 'provider', 'sales_date']
     search_fields = ['terminal_reference', 'notes']
     readonly_fields = ['display_id', 'payment_count', 'created_at', 'created_by']
     
     fieldsets = (
         ('Información Básica', {
-            'fields': ('payment_method', 'supplier', 'terminal_reference', 'status')
+            'fields': ('provider', 'terminal_reference', 'status')
         }),
         ('Fechas', {
             'fields': ('sales_date', 'settlement_date', 'deposit_date')

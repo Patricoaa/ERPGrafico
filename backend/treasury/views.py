@@ -6,14 +6,16 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine, 
                      ReconciliationRule, POSTerminal, TerminalBatch,
-                     POSSession, POSSessionAudit, Bank, PaymentMethod)
+                     POSSession, POSSessionAudit, Bank, PaymentMethod,
+                     PaymentTerminalProvider, PaymentTerminalDevice)
 from .serializers import (
     TreasuryMovementSerializer, TreasuryAccountSerializer,
     BankStatementSerializer, BankStatementListSerializer,
     BankStatementLineSerializer, ReconciliationRuleSerializer,
     POSTerminalSerializer,
     POSSessionSerializer, POSSessionAuditSerializer,
-    BankSerializer, PaymentMethodSerializer, TerminalBatchSerializer
+    BankSerializer, PaymentMethodSerializer, TerminalBatchSerializer,
+    PaymentTerminalProviderSerializer, PaymentTerminalDeviceSerializer
 )
 from .services import TreasuryService, TerminalBatchService
 from .reconciliation_service import ReconciliationService
@@ -50,9 +52,7 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if for_purchases == 'true':
             qs = qs.filter(allow_for_purchases=True)
 
-        is_terminal = self.request.query_params.get('is_terminal')
-        if is_terminal == 'true':
-            qs = qs.filter(is_terminal=True)
+        # DEPRECATED: is_terminal filter removed — hardware is inferred from POSTerminal device linkage
 
         method_type = self.request.query_params.get('method_type')
         if method_type:
@@ -86,6 +86,15 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             
         return qs
 
+
+class PaymentTerminalProviderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    queryset = PaymentTerminalProvider.objects.all().order_by('name')
+    serializer_class = PaymentTerminalProviderSerializer
+
+class PaymentTerminalDeviceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    queryset = PaymentTerminalDevice.objects.all().order_by('name')
+    serializer_class = PaymentTerminalDeviceSerializer
+    filterset_fields = ['provider', 'status']
 
 class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     """
@@ -1498,7 +1507,7 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
     """
     queryset = TerminalBatch.objects.all().order_by('-sales_date', '-created_at')
     serializer_class = TerminalBatchSerializer
-    filterset_fields = ['status', 'payment_method', 'supplier', 'sales_date']
+    filterset_fields = ['status', 'provider', 'sales_date']
     
     def get_queryset(self):
         qs = super().get_queryset()
@@ -1520,28 +1529,25 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
         """
         try:
             data = request.data
-            payment_method_id = data.get('payment_method')
+            provider_id = data.get('provider')
             sales_date = data.get('sales_date')
             gross_amount = Decimal(str(data.get('gross_amount')))
             commission_base = Decimal(str(data.get('commission_base', 0)))
             commission_tax = Decimal(str(data.get('commission_tax', 0)))
             net_amount = Decimal(str(data.get('net_amount')))
             terminal_reference = data.get('terminal_reference', '')
-            supplier_id = data.get('supplier')
             
-            payment_method = PaymentMethod.objects.get(pk=payment_method_id)
-            supplier = Contact.objects.get(pk=supplier_id) if supplier_id else None
+            provider = PaymentTerminalProvider.objects.get(pk=provider_id)
             movement_ids = data.get('movement_ids', None)
             
             batch = TerminalBatchService.create_batch(
-                payment_method=payment_method,
+                provider=provider,
                 sales_date=sales_date,
                 gross_amount=gross_amount,
                 commission_base=commission_base,
                 commission_tax=commission_tax,
                 net_amount=net_amount,
                 terminal_reference=terminal_reference,
-                supplier=supplier,
                 user=request.user,
                 movement_ids=movement_ids
             )
@@ -1564,14 +1570,14 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
         Generate supplier invoice for settled batches.
         """
         try:
-            supplier_id = request.data.get('supplier_id')
+            provider_id = request.data.get('provider_id')
             year = int(request.data.get('year'))
             month = int(request.data.get('month'))
             
-            supplier = Contact.objects.get(pk=supplier_id)
+            provider = PaymentTerminalProvider.objects.get(pk=provider_id)
             
             invoice = TerminalBatchService.generate_monthly_invoice(
-                supplier=supplier,
+                provider=provider,
                 year=year,
                 month=month,
                 user=request.user,

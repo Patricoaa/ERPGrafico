@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine,  
                      ReconciliationRule, POSTerminal, 
-                     POSSessionAudit, Bank, PaymentMethod)
+                     POSSessionAudit, Bank, PaymentMethod,
+                     PaymentTerminalProvider, PaymentTerminalDevice)
 # Remove top-level import to avoid circular dependency
 # from accounting.serializers import JournalEntrySerializer
 
@@ -106,6 +107,12 @@ class POSTerminalSerializer(serializers.ModelSerializer):
         allow_null=True
     )
     
+    payment_terminal_device_name = serializers.CharField(
+        source='payment_terminal_device.name',
+        read_only=True,
+        allow_null=True
+    )
+    
     class Meta:
         model = POSTerminal
         fields = [
@@ -117,6 +124,7 @@ class POSTerminalSerializer(serializers.ModelSerializer):
             'allowed_payment_methods',  # Read (full objects)
             'allowed_payment_method_ids', # Write (only IDs)
             'allowed_payment_method_types',  # Computed types
+            'payment_terminal_device', 'payment_terminal_device_name',
             'serial_number', 'ip_address',
             'created_at', 'updated_at'
         ]
@@ -369,6 +377,7 @@ class POSSessionSerializer(serializers.ModelSerializer):
     
     user_name = serializers.SerializerMethodField()
     terminal_name = serializers.CharField(source='terminal.name', read_only=True, allow_null=True)
+    terminal_details = POSTerminalSerializer(source='terminal', read_only=True)
     treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True, allow_null=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     expected_cash = serializers.DecimalField(read_only=True, max_digits=12, decimal_places=2)
@@ -460,12 +469,34 @@ class ReconciliationRuleSerializer(serializers.ModelSerializer):
 
 
 
+
+
+class PaymentTerminalProviderSerializer(serializers.ModelSerializer):
+    supplier_name = serializers.CharField(source='supplier.name', read_only=True)
+    receivable_account_name = serializers.CharField(source='receivable_account.name', read_only=True)
+    commission_expense_account_name = serializers.CharField(source='commission_expense_account.name', read_only=True)
+    commission_iva_account_name = serializers.CharField(source='commission_iva_account.name', read_only=True)
+    bank_treasury_account_name = serializers.CharField(source='bank_treasury_account.name', read_only=True)
+    provider_type_display = serializers.CharField(source='get_provider_type_display', read_only=True)
+
+    class Meta:
+        model = PaymentTerminalProvider
+        fields = '__all__'
+
+
+class PaymentTerminalDeviceSerializer(serializers.ModelSerializer):
+    provider_name = serializers.CharField(source='provider.name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = PaymentTerminalDevice
+        fields = '__all__'
+
 class TerminalBatchSerializer(serializers.ModelSerializer):
     """Serializer for Terminal Batch settlement information"""
     
     # Display fields
-    payment_method_name = serializers.CharField(source='payment_method.name', read_only=True)
-    supplier_name = serializers.CharField(source='supplier.name', read_only=True)
+    provider_name = serializers.CharField(source='provider.name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     display_id = serializers.CharField(read_only=True)
     payment_count = serializers.IntegerField(read_only=True)
@@ -476,19 +507,16 @@ class TerminalBatchSerializer(serializers.ModelSerializer):
     supplier_invoice_data = serializers.SerializerMethodField()
     
     # Writable fields
-    payment_method = serializers.PrimaryKeyRelatedField(
-        queryset=PaymentMethod.objects.filter(is_terminal=True)
-    )
-    supplier = serializers.PrimaryKeyRelatedField(
-        queryset=PaymentMethod.objects.none()  # Placeholder to satisfy DRF, will be set in __init__
+    provider = serializers.PrimaryKeyRelatedField(
+        queryset=PaymentTerminalProvider.objects.all()
     )
     
     class Meta:
         from .models import TerminalBatch
         model = TerminalBatch
         fields = [
-            'id', 'display_id', 'payment_method', 'payment_method_name',
-            'supplier', 'supplier_name', 'sales_date', 'settlement_date', 'deposit_date',
+            'id', 'display_id', 'provider', 'provider_name',
+            'sales_date', 'settlement_date', 'deposit_date',
             'gross_amount', 'commission_base', 'commission_tax', 'commission_total', 'net_amount',
             'terminal_reference', 'status', 'status_display', 'payment_count',
             'settlement_journal_entry', 'settlement_journal_entry_data',
@@ -497,12 +525,6 @@ class TerminalBatchSerializer(serializers.ModelSerializer):
             'notes', 'created_at', 'created_by'
         ]
         read_only_fields = ['created_at', 'created_by', 'settlement_journal_entry', 'bank_statement_line', 'supplier_invoice']
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Allow any Contact as supplier
-        from contacts.models import Contact
-        self.fields['supplier'].queryset = Contact.objects.all()
     
     def get_settlement_journal_entry_data(self, obj):
         if obj.settlement_journal_entry:

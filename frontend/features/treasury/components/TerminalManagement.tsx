@@ -12,13 +12,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, History, MonitorSmartphone } from "lucide-react"
+import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, History, MonitorSmartphone, Smartphone } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 
 
@@ -198,6 +199,12 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                         {terminal.location}
                     </div>
                 )}
+                {terminal.payment_terminal_device && (
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-primary mt-1 px-2 py-0.5 bg-primary/5 border border-primary/10 rounded">
+                        <Smartphone className="h-3.5 w-3.5" />
+                        {terminal.payment_terminal_device_name || "Dispositivo Vinculado"}
+                    </div>
+                )}
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -253,6 +260,8 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
     const [location, setLocation] = useState("")
     const [serialNumber, setSerialNumber] = useState("")
     const [ipAddress, setIpAddress] = useState("")
+    const [deviceId, setDeviceId] = useState<string>("")
+    const [allDevices, setAllDevices] = useState<any[]>([])
 
     // Payment Methods State
     const [allMethods, setAllMethods] = useState<PaymentMethod[]>([])
@@ -267,6 +276,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                 setLocation(terminal.location || "")
                 setSerialNumber(terminal.serial_number || "")
                 setIpAddress(terminal.ip_address || "")
+                setDeviceId(terminal.payment_terminal_device?.toString() || "")
                 setSelectedMethodIds(terminal.allowed_payment_methods.map(m => m.id))
             } else {
                 setName("")
@@ -274,25 +284,32 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                 setLocation("")
                 setSerialNumber("")
                 setIpAddress("")
+                setDeviceId("")
                 setSelectedMethodIds([])
             }
+            fetchDevices()
         }
     }, [open, terminal])
 
     const fetchMethods = async () => {
         try {
             const res = await api.get('/treasury/payment-methods/')
-            // Only active methods AND only those suitable for a Terminal (Collection)
-            const methods = (res.data.results || res.data).filter((m: PaymentMethod) => m.is_active)
-
-            // Refined filter: terminals should only handle collection methods
-            const collectionMethods = methods.filter((m: PaymentMethod) =>
-                ['CARD_TERMINAL', 'CASH', 'TRANSFER', 'CHECK'].includes(m.method_type) && m.allow_for_sales === true
-            )
-
+            const methods = (res.data.results || res.data).filter((m: any) => m.is_active)
+            
+            // Allow if it's for sales
+            const collectionMethods = methods.filter((m: any) => m.allow_for_sales === true)
             setAllMethods(collectionMethods)
         } catch (error) {
             console.error("Error fetching methods", error)
+        }
+    }
+
+    const fetchDevices = async () => {
+        try {
+            const res = await api.get('/treasury/terminal-devices/')
+            setAllDevices(res.data.results || res.data)
+        } catch (error) {
+            console.error("Error fetching devices", error)
         }
     }
 
@@ -314,16 +331,6 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                     }
                 }
 
-                // Validation: Max 1 CARD_TERMINAL method
-                if (methodToAdd?.method_type === 'CARD_TERMINAL') {
-                    const existingTerminal = allMethods.find(m =>
-                        prev.includes(m.id) && m.method_type === 'CARD_TERMINAL'
-                    )
-                    if (existingTerminal) {
-                        toast.warning("Solo se puede seleccionar 1 TERMINAL DE COBRO por terminal POS.")
-                        return prev
-                    }
-                }
                 return [...prev, methodId]
             }
         })
@@ -343,8 +350,9 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
             name,
             code,
             location,
-            serial_number: serialNumber || "", // Use empty string for CharField
-            ip_address: ipAddress || null,     // null is fine for GenericIPAddressField
+            serial_number: serialNumber || "",
+            ip_address: ipAddress || null,
+            payment_terminal_device: (deviceId === "none" || !deviceId) ? null : Number(deviceId),
             allowed_payment_method_ids: selectedMethodIds,
             default_treasury_account: defaultAccount
         }
@@ -368,28 +376,30 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
         }
     }
 
-    // Group methods for the UI form
-    const methodsGrouped = allMethods.reduce((acc, method) => {
-        const type = method.method_type
-        if (!acc[type]) acc[type] = []
-        acc[type].push(method)
-        return acc
-    }, {} as Record<string, PaymentMethod[]>)
-
-    // Order of groups
-    const typeOrder = ['CASH', 'CARD_TERMINAL', 'CARD', 'TRANSFER', 'CHECK', 'OTHER']
+    const typeOrder = ['CASH', 'CARD', 'TRANSFER', 'CHECK', 'OTHER']
 
     const getTypeLabel = (type: string) => {
         const labels: Record<string, string> = {
             'CASH': 'Efectivo (Cajas)',
-            'CARD': 'Tarjetas Propias',
-            'CARD_TERMINAL': 'Terminales de Cobro (Transbank/Otros)',
+            'CARD': 'Tarjetas (Débito / Crédito)',
             'TRANSFER': 'Transferencias',
             'CHECK': 'Cheques',
             'OTHER': 'Otros'
         }
         return labels[type] || type
     }
+
+    // Group methods by simplified type (CARD includes DEBIT_CARD and CREDIT_CARD)
+    const methodsGrouped = allMethods.reduce((acc, method) => {
+        let type = method.method_type
+        // Group DEBIT_CARD and CREDIT_CARD under 'CARD'
+        if (type === 'DEBIT_CARD' || type === 'CREDIT_CARD') {
+            type = 'CARD'
+        }
+        if (!acc[type]) acc[type] = []
+        acc[type].push(method)
+        return acc
+    }, {} as Record<string, any[]>)
 
     return (
         <BaseModal
@@ -448,6 +458,31 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                             </div>
                         </div>
 
+                        <div className="space-y-2 border-l-2 border-primary/30 pl-4 py-1">
+                            <Label className={cn(FORM_STYLES.label, "flex items-center gap-2")}>
+                                <Smartphone className="h-4 w-4 text-primary" />
+                                Integración con Hardware
+                            </Label>
+                            <div className="grid gap-2">
+                                <Select value={deviceId} onValueChange={setDeviceId}>
+                                    <SelectTrigger className={FORM_STYLES.input}>
+                                        <SelectValue placeholder="Sin dispositivo integrado" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">Ninguno (Manual)</SelectItem>
+                                        {allDevices.map(dev => (
+                                            <SelectItem key={dev.id} value={dev.id.toString()}>
+                                                {dev.name} ({dev.provider_name})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <p className="text-[10px] text-muted-foreground italic">
+                                    Vincule este Terminal POS a una maquinita física para automatizar el envío de montos.
+                                </p>
+                            </div>
+                        </div>
+
                         <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
                             <div className="flex justify-between items-center">
                                 <Label className={cn(FORM_STYLES.label, "mb-0")}>Métodos de Pago Permitidos</Label>
@@ -465,6 +500,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                                         <div key={type} className="space-y-2">
                                             <h4 className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2 border-b pb-1">
                                                 {type === 'CASH' && <Banknote className="h-3.5 w-3.5" />}
+                                                {type === 'TERMINAL' && <Smartphone className="h-3.5 w-3.5 text-primary" />}
                                                 {type === 'CARD' && <CreditCard className="h-3.5 w-3.5" />}
                                                 {type === 'TRANSFER' && <Landmark className="h-3.5 w-3.5 text-info" />}
                                                 {getTypeLabel(type)}

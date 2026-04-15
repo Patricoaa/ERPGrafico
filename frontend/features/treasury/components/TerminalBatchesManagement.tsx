@@ -6,7 +6,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import type { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Plus, FileText, CreditCard, Calendar } from "lucide-react"
+import { Plus, FileText, CreditCard, Calendar, Building2 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { format, subDays } from "date-fns"
@@ -75,16 +75,16 @@ export function TerminalBatchesManagement({
             )
         },
         {
-            accessorKey: "payment_method_name",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Terminal" className="justify-center" />,
+            accessorKey: "provider_name",
+            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Proveedor" className="justify-center" />,
             cell: ({ row }: any) => (
                 <div className="flex flex-col items-center">
                     <span className="font-bold flex items-center justify-center gap-1.5 text-center w-full">
-                        <CreditCard className="h-3.5 w-3.5 text-primary" />
-                        {row.original.payment_method_name}
+                        <Building2 className="h-3.5 w-3.5 text-primary" />
+                        {row.original.provider_name}
                     </span>
                     <span className="text-[10px] text-muted-foreground uppercase tracking-wide text-center">
-                        {row.original.supplier_name}
+                        {row.original.payment_method_name} (Depósito)
                     </span>
                 </div>
             )
