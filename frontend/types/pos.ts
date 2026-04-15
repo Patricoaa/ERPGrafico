@@ -82,6 +82,12 @@ export interface POSSession {
     id: number
     terminal: number
     terminal_name?: string
+    terminal_details?: {
+        id: number
+        name: string
+        payment_terminal_device?: number
+        payment_terminal_device_name?: string
+    } | null
     treasury_account: number
     treasury_account_name: string
     user: number

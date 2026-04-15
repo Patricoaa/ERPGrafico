@@ -11,6 +11,7 @@ import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Numpad } from "@/components/ui/numpad"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { usePOS } from "@/features/pos/contexts/POSContext"
 
 export interface PaymentData {
     method: 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK' | 'CREDIT_BALANCE' | null
@@ -74,7 +75,7 @@ export function PaymentMethodCardSelector({
             case 'CASH':
                 return allowedMethods.some(m => m.method_type === 'CASH')
             case 'CARD':
-                return allowedMethods.some(m => ['CREDIT_CARD', 'DEBIT_CARD', 'CARD_TERMINAL'].includes(m.method_type))
+                return allowedMethods.some(m => ['CREDIT_CARD', 'DEBIT_CARD', 'CARD'].includes(m.method_type))
             case 'TRANSFER':
                 return allowedMethods.some(m => m.method_type === 'TRANSFER')
             case 'CHECK':
@@ -131,7 +132,7 @@ export function PaymentMethodCardSelector({
     const methodsForType = useMemo<PaymentMethod[]>(() => {
         return allowedMethods.filter(m => {
             if (paymentData.method === 'CASH') return m.method_type === 'CASH'
-            if (paymentData.method === 'CARD') return ['CREDIT_CARD', 'DEBIT_CARD', 'CARD_TERMINAL'].includes(m.method_type)
+            if (paymentData.method === 'CARD') return ['CREDIT_CARD', 'DEBIT_CARD', 'CARD'].includes(m.method_type)
             if (paymentData.method === 'TRANSFER') return m.method_type === 'TRANSFER'
             if (paymentData.method === 'CHECK') return m.method_type === 'CHECK'
             if (paymentData.method === 'CREDIT_BALANCE') return false // Doesn't need a treasury account
@@ -158,15 +159,15 @@ export function PaymentMethodCardSelector({
         }
     }, [methodsForType, paymentData.method])
 
-    const terminalHasCardTerminal = useMemo(() => {
-        return allowedMethods.some(m => m.method_type === 'CARD_TERMINAL')
-    }, [allowedMethods])
+    const { currentSession } = usePOS()
+    const terminalHasCardTerminal = !!currentSession?.terminal_details?.payment_terminal_device 
+
 
     const methods = useMemo(() => {
         const availableMethods = [
             {
                 id: 'CASH',
-                label: 'Efectivo',
+                label: `Efectivo${terminalHasCardTerminal && operation === 'sales' ? ' (terminal de cobro)' : ''}`,
                 icon: Banknote,
                 color: 'text-success',
                 isAllowed: isMethodAllowed('CASH')

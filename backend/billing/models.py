@@ -20,6 +20,7 @@ class Invoice(models.Model):
         PURCHASE_INV = 'PURCHASE_INV', _('Factura de Compra')
         NOTA_CREDITO = 'NOTA_CREDITO', _('Nota de Crédito')
         NOTA_DEBITO = 'NOTA_DEBITO', _('Nota de Débito')
+        COMPROBANTE_PAGO = 'COMPROBANTE_PAGO', _('Comprobante de Pago Electrónico')
 
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
@@ -44,6 +45,7 @@ class Invoice(models.Model):
             (34, 'Factura Exenta'),
             (39, 'Boleta Electrónica'),
             (41, 'Boleta Exenta'),
+            (48, 'Comprobante de Pago Electrónico'),
             (56, 'Nota de Débito'),
             (61, 'Nota de Crédito'),
         ],
@@ -122,6 +124,7 @@ class Invoice(models.Model):
             'FACTURA_EXENTA': 34,
             'BOLETA': 39,
             'BOLETA_EXENTA': 41,
+            'COMPROBANTE_PAGO': 48,
             'NOTA_DEBITO': 56,
             'NOTA_CREDITO': 61,
             'PURCHASE_INV': 33,  # Asumir factura afecta por defecto
@@ -145,6 +148,7 @@ class Invoice(models.Model):
         elif self.dte_type == 'BOLETA': prefix = 'BOL'
         elif self.dte_type == 'BOLETA_EXENTA': prefix = 'BE'
         elif self.dte_type == 'FACTURA_EXENTA': prefix = 'FAC-EX'
+        elif self.dte_type == 'COMPROBANTE_PAGO': prefix = 'CPE'
         return f"{prefix}-{self.number or 'Draft'}"
 
     @property

@@ -128,6 +128,14 @@ class TreasuryMovement(models.Model):
         related_name='movements',
         verbose_name=_("Método de Pago (Nuevo)")
     )
+    terminal_device = models.ForeignKey(
+        'PaymentTerminalDevice',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='movements',
+        verbose_name=_("Dispositivo de Terminal"),
+        help_text=_("Hardware usado para el cobro (si corresponde)")
+    )
 
     # Legacy/Convenience access to the "Main" financial account involved (Snapshot)
     # Usually matches from_account.account (if OUTBOUND) or to_account.account (if INBOUND)
@@ -222,6 +230,14 @@ class TreasuryMovement(models.Model):
         blank=True,
         null=True,
         help_text=_("Código de justificación para movimientos manuales")
+    )
+
+    terminal_provider = models.ForeignKey(
+        'PaymentTerminalProvider',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='movements',
+        verbose_name=_("Proveedor Terminal")
     )
 
     # Terminal batch linkage (for terminal payments)
@@ -581,6 +597,15 @@ class POSTerminal(models.Model):
         help_text=_("Cuenta predeterminada al iniciar sesión")
     )
     
+    payment_terminal_device = models.ForeignKey(
+        'PaymentTerminalDevice',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='pos_terminals',
+        verbose_name=_("Dispositivo de Cobro Asociado"),
+        help_text=_("La maquinita física amarrada a esta caja del sistema")
+    )
+    
     # Hardware information (optional)
     serial_number = models.CharField(
         _("Número de Serie"),
@@ -592,6 +617,10 @@ class POSTerminal(models.Model):
         null=True,
         blank=True
     )
+    
+    @property
+    def payment_terminal_device_name(self):
+        return self.payment_terminal_device.name if self.payment_terminal_device else None
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -610,13 +639,15 @@ class POSTerminal(models.Model):
     def allowed_payment_method_types(self):
         """
         Tipos de métodos de pago permitidos en este terminal.
-        
-        Returns:
-            list[str]: Lista de tipos permitidos ('CASH', 'CARD', 'TRANSFER')
+        Sustituye DEBIT_CARD y CREDIT_CARD por 'CARD' para agrupar en la UI.
         """
-        return sorted(list(set(
-            self.allowed_payment_methods.values_list('method_type', flat=True)
-        )))
+        types = set()
+        for mt in self.allowed_payment_methods.values_list('method_type', flat=True):
+            if mt in ['DEBIT_CARD', 'CREDIT_CARD', 'CARD_TERMINAL']:
+                types.add('CARD')
+            else:
+                types.add(mt)
+        return sorted(list(types))
     
     def get_accounts_for_method(self, payment_method):
         """
@@ -629,10 +660,9 @@ class POSTerminal(models.Model):
             QuerySet[TreasuryAccount]: Cuentas compatibles con el método
         """
         # Mapping from generic payment buttons to specific backend types
-        # Note: 'CARD' button should find both native cards AND terminals
         method_types = {
             'CASH': ['CASH'],
-            'CARD': ['DEBIT_CARD', 'CREDIT_CARD', 'CARD_TERMINAL'],
+            'CARD': ['DEBIT_CARD', 'CREDIT_CARD'],
             'TRANSFER': ['TRANSFER'],
             'CHECK': ['CHECK'],
         }.get(payment_method, [payment_method])
@@ -1002,13 +1032,125 @@ class Bank(models.Model):
         return self.name
 
 
+
+
+class PaymentTerminalProvider(models.Model):
+    """
+    Proveedor de terminal de cobro (Transbank, TUU, etc.).
+    Encapsula la configuración contable, comisiones y gateway.
+    """
+    class ProviderType(models.TextChoices):
+        TRANSBANK = 'TRANSBANK', _('Transbank')
+        TUU = 'TUU', _('TUU / Haulmer')
+        MERCADOPAGO = 'MERCADOPAGO', _('MercadoPago')
+        FINTOC = 'FINTOC', _('Fintoc')
+        FLOW = 'FLOW', _('Flow')
+        MANUAL = 'MANUAL', _('Manual en Máquina (Genérico)')
+
+    name = models.CharField(_("Nombre"), max_length=100)
+    provider_type = models.CharField(
+        _("Tipo de Proveedor"), max_length=20,
+        choices=ProviderType.choices, default=ProviderType.MANUAL
+    )
+    supplier = models.ForeignKey(
+        'contacts.Contact', on_delete=models.PROTECT,
+        related_name='terminal_providers',
+        verbose_name=_("Proveedor (Contacto)")
+    )
+    is_active = models.BooleanField(_("Activo"), default=True)
+    notes = models.TextField(_("Notas"), blank=True)
+
+    # Configuración Contable
+    receivable_account = models.ForeignKey(
+        'accounting.Account', on_delete=models.PROTECT,
+        related_name='terminal_provider_receivable',
+        verbose_name=_("Cuenta Por Cobrar Terminal")
+    )
+    commission_expense_account = models.ForeignKey(
+        'accounting.Account', on_delete=models.PROTECT,
+        related_name='terminal_provider_commission',
+        verbose_name=_("Cuenta Gasto Comisión")
+    )
+    commission_iva_account = models.ForeignKey(
+        'accounting.Account', on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='terminal_provider_iva',
+        verbose_name=_("Cuenta IVA Comisión")
+    )
+    commission_product = models.ForeignKey(
+        'inventory.Product', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='terminal_commission_providers',
+        verbose_name=_("Producto Servicio Comisión")
+    )
+    bank_treasury_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.PROTECT,
+        related_name='terminal_providers',
+        verbose_name=_("Cuenta Destino Liquidación")
+    )
+
+    gateway_config = models.JSONField(
+        _("Configuración de Gateway"), default=dict, blank=True
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Proveedor de Terminal")
+        verbose_name_plural = _("Proveedores de Terminal")
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} ({self.get_provider_type_display()})"
+
+
+class PaymentTerminalDevice(models.Model):
+    """
+    Representa el hardware/dispositivo físico de cobro (la 'maquinita').
+    Distingue la máquina de transbank/TUU separada del POS del ERP.
+    """
+    class Status(models.TextChoices):
+        ACTIVE = 'ACTIVE', _('Activo')
+        INACTIVE = 'INACTIVE', _('Inactivo')
+        MAINTENANCE = 'MAINTENANCE', _('En Mantención')
+
+    name = models.CharField(_("Nombre / Alias"), max_length=100, help_text=_("Ej: Terminal Barra 1"))
+    provider = models.ForeignKey(
+        PaymentTerminalProvider, on_delete=models.CASCADE,
+        related_name='devices',
+        verbose_name=_("Proveedor")
+    )
+    serial_number = models.CharField(
+        _("Número de Serie Interno / ID Dispositivo"), 
+        max_length=100, 
+        help_text=_("ID único que el proveedor asigna a este dispositivo físico (ej: TU1245)")
+    )
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.ACTIVE)
+    notes = models.TextField(_("Notas"), blank=True)
+    
+    device_config = models.JSONField(_("Configuración del Dispositivo"), default=dict, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Dispositivo de Terminal")
+        verbose_name_plural = _("Dispositivos de Terminal")
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} ({self.serial_number})"
+
 class PaymentMethod(models.Model):
     """Métodos de pago específicos asociados a una cuenta de tesorería"""
     class Type(models.TextChoices):
         CASH = 'CASH', _('Efectivo')
+        CARD = 'CARD', _('Tarjeta')
         DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito')
         CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito')
-        CARD_TERMINAL = 'CARD_TERMINAL', _('Terminal de Cobros')
         TRANSFER = 'TRANSFER', _('Transferencia')
         CHECK = 'CHECK', _('Cheque')
 
@@ -1021,57 +1163,20 @@ class PaymentMethod(models.Model):
         verbose_name=_("Cuenta de Tesorería")
     )
     is_active = models.BooleanField(_("Activo"), default=True)
+    # DEPRECATED: El procesamiento vía terminal se infiere del vínculo POSTerminal → PaymentTerminalDevice.
+    # Se mantienen los campos para compatibilidad con datos existentes.
+    process_via_terminal = models.BooleanField(
+        _("Procesa Vía Terminal"), 
+        default=False,
+        help_text=_("DEPRECATED: Se infiere del hardware vinculado a la caja POS.")
+    )
     is_terminal = models.BooleanField(
         _("Es Terminal de Cobro"), 
         default=False,
-        help_text=_("Indica si es un terminal de terceros (Transbank, etc.) para recaudar ventas. "
-                  "Si es Falso, se considera un medio de pago de la empresa (Caja, Tarjeta Propia, etc.).")
+        help_text=_("DEPRECATED: Campo legacy, usar PaymentTerminalDevice.")
     )
     allow_for_sales = models.BooleanField(_("Permitir en Ventas"), default=True)
     allow_for_purchases = models.BooleanField(_("Permitir en Compras"), default=True)
-    
-    # Terminal commission configuration
-    supplier = models.ForeignKey(
-        'contacts.Contact',
-        on_delete=models.PROTECT,
-        null=True, blank=True,
-        related_name='terminal_payment_methods',
-        verbose_name=_("Proveedor del Terminal"),
-        help_text=_("Proveedor que retiene comisiones (ej: Transbank, Mercado Pago)")
-    )
-    
-    terminal_receivable_account = models.ForeignKey(
-        'accounting.Account',
-        on_delete=models.PROTECT,
-        null=True, blank=True,
-        related_name='terminal_receivables',
-        verbose_name=_("Cuenta Por Cobrar Terminal"),
-        help_text=_(
-            "Cuenta transitoria donde se registran ventas hasta recibir liquidación. "
-            "Ejemplo: '1-1-004 Por Cobrar Transbank' o '1-1-005 Por Cobrar Mercado Pago'"
-        )
-    )
-    
-    commission_expense_account = models.ForeignKey(
-        'accounting.Account',
-        on_delete=models.PROTECT,
-        null=True, blank=True,
-        related_name='terminal_commission_expenses',
-        verbose_name=_("Cuenta Gasto Comisión"),
-        help_text=_(
-            "Cuenta de gasto donde se registran las comisiones. "
-            "Ejemplo: '5-1-003 Comisiones Transbank' o '5-1-004 Comisiones Mercado Pago'"
-        )
-    )
-
-    commission_product = models.ForeignKey(
-        'inventory.Product',
-        on_delete=models.PROTECT,
-        null=True, blank=True,
-        related_name='payment_methods',
-        verbose_name=_("Producto de Servicio (Comisión)"),
-        help_text=_("Producto de servicio utilizado para facturar las comisiones en la factura mensual.")
-    )
     
     # Optional settings per method
     requires_reference = models.BooleanField(_("Requiere Referencia"), default=False)
@@ -1092,7 +1197,6 @@ class PaymentMethod(models.Model):
         Type.CASH: [TreasuryAccount.Type.CASH],
         Type.DEBIT_CARD: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
         Type.CREDIT_CARD: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
-        Type.CARD_TERMINAL: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING, TreasuryAccount.Type.CASH],
         Type.TRANSFER: [TreasuryAccount.Type.CHECKING],
         Type.CHECK: [TreasuryAccount.Type.CHECKING, TreasuryAccount.Type.CHECKBOOK],
     }
@@ -1104,37 +1208,6 @@ class PaymentMethod(models.Model):
         """Validar compatibilidad entre método y tipo de cuenta"""
         from django.core.exceptions import ValidationError
         super().clean()
-        
-        # Auto-enforce terminal settings and operation restrictions
-        if self.method_type == self.Type.CARD_TERMINAL:
-            self.is_terminal = True
-            self.allow_for_sales = True
-            self.allow_for_purchases = False
-            
-            # Validate terminal-specific fields
-            errors = {}
-            if not self.supplier:
-                errors['supplier'] = _("Los terminales de cobro requieren un proveedor configurado")
-            if not self.terminal_receivable_account:
-                errors['terminal_receivable_account'] = _(
-                    "Los terminales de cobro requieren una cuenta por cobrar terminal configurada"
-                )
-            if not self.commission_expense_account:
-                errors['commission_expense_account'] = _(
-                    "Los terminales de cobro requieren una cuenta de gasto comisión configurada"
-                )
-            if errors:
-                raise ValidationError(errors)
-                
-        elif self.method_type in [self.Type.DEBIT_CARD, self.Type.CREDIT_CARD]:
-            self.is_terminal = False
-            self.allow_for_sales = False
-            self.allow_for_purchases = True
-        else:
-            self.is_terminal = False
-            # CASH, TRANSFER, CHECK are usually flexible, 
-            # but we can set sensible defaults if needed.
-            # Leaving them as they are or defaulting to True.
         
         if not self.treasury_account:
             return
@@ -1173,18 +1246,19 @@ class TerminalBatch(models.Model):
         INVOICED = 'INVOICED', _('Facturado')
     
     # Identificación
+    provider = models.ForeignKey(
+        'PaymentTerminalProvider',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='batches',
+        verbose_name=_("Proveedor de Terminal")
+    )
+    
     payment_method = models.ForeignKey(
         'PaymentMethod',
         on_delete=models.PROTECT,
         related_name='batches',
         verbose_name=_("Método de Pago (Terminal)")
-    )
-    
-    supplier = models.ForeignKey(
-        'contacts.Contact',
-        on_delete=models.PROTECT,
-        related_name='terminal_batches',
-        verbose_name=_("Proveedor Terminal")
     )
     
     # Fechas
@@ -1301,15 +1375,14 @@ class TerminalBatch(models.Model):
         verbose_name = _("Lote Terminal")
         verbose_name_plural = _("Lotes Terminal")
         ordering = ['-sales_date', '-id']
-        unique_together = [['payment_method', 'sales_date', 'terminal_reference']]
+        unique_together = [['provider', 'sales_date', 'terminal_reference']]
         indexes = [
-            models.Index(fields=['payment_method', 'sales_date']),
+            models.Index(fields=['provider', 'sales_date']),
             models.Index(fields=['status']),
-            models.Index(fields=['supplier', 'sales_date']),
         ]
     
     def __str__(self):
-        return f"{self.payment_method.name} - {self.sales_date} (${self.gross_amount})"
+        return f"{self.provider.name} - {self.sales_date} (${self.gross_amount})"
     
     @property
     def payment_count(self):

@@ -47,7 +47,7 @@ export function PaymentMethodSelector({
 
         allowedMethods.forEach(m => {
             if (m.method_type === 'CASH') groups.CASH.push(m)
-            else if (['CREDIT_CARD', 'DEBIT_CARD', 'CARD_TERMINAL'].includes(m.method_type)) groups.CARD.push(m)
+            else if (['CREDIT_CARD', 'DEBIT_CARD', 'CARD'].includes(m.method_type)) groups.CARD.push(m)
             else if (m.method_type === 'TRANSFER') groups.TRANSFER.push(m)
             else if (['CHECK', 'CHECKBOOK'].includes(m.method_type)) groups.CHECK.push(m)
         })

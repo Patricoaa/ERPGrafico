@@ -300,13 +300,7 @@ interface PaymentMethod {
     requires_reference: boolean
     allow_for_sales: boolean
     allow_for_purchases: boolean
-    is_terminal: boolean
-    supplier: number | null
-    supplier_name: string | null
-    terminal_receivable_account: number | null
-    terminal_receivable_account_name: string | null
-    commission_expense_account: number | null
-    commission_expense_account_name: string | null
+
 }
 
 interface PaymentMethodManagementProps {
@@ -366,21 +360,10 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
             cell: ({ row }: any) => (
                 <div className="flex items-center justify-center gap-2 w-full">
-                    {row.original.is_terminal ? (
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                    )}
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />
                     <div className="flex flex-col items-center">
                         <DataCell.Text className="font-medium text-center">{row.original.name}</DataCell.Text>
-                        {row.original.is_terminal && (
-                            <DataCell.Badge 
-                                variant="outline" 
-                                className="text-[8px] font-black uppercase tracking-widest text-primary bg-primary/5 border-primary/20 mt-0.5"
-                            >
-                                Terminal
-                            </DataCell.Badge>
-                        )}
+
                     </div>
                 </div>
             )
@@ -504,22 +487,13 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
     const [allowPurchases, setAllowPurchases] = useState(true)
     const [loading, setLoading] = useState(false)
     const [accounts, setAccounts] = useState<any[]>([])
-    const [cardProviders, setCardProviders] = useState<any[]>([])
-    const [cardProviderId, setCardProviderId] = useState<string | null>(null)
-    const [isTerminal, setIsTerminal] = useState(false)
-    const [terminalReceivableAccount, setTerminalReceivableAccount] = useState<string | null>(null)
-    const [commissionExpenseAccount, setCommissionExpenseAccount] = useState<string | null>(null)
-    const [commissionProductId, setCommissionProductId] = useState<string | null>(null)
+
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [accRes, contactRes] = await Promise.all([
-                    api.get("/treasury/accounts/"),
-                    api.get("/contacts/?is_supplier=true")
-                ])
-                setAccounts(accRes.data)
-                setCardProviders(contactRes.data)
+                const response = await api.get("/treasury/accounts/")
+                setAccounts(response.data)
             } catch (err) { }
         }
         fetchData()
@@ -537,29 +511,12 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
             setRequiresRef(method?.requires_reference || false)
             setAllowSales(method?.allow_for_sales ?? true)
             setAllowPurchases(method?.allow_for_purchases ?? true)
-            setCardProviderId(method?.contact_id?.toString() || (method as any)?.supplier?.toString() || null)
-            setIsTerminal(method?.is_terminal || false)
-            setTerminalReceivableAccount(method?.terminal_receivable_account ? method.terminal_receivable_account.toString() : null)
-            setCommissionExpenseAccount(method?.commission_expense_account ? method.commission_expense_account.toString() : null)
-            setCommissionProductId(method?.commission_product ? method.commission_product.toString() : null)
+
         }
     }, [open, method])
 
-    // Logic for auto-setting terminal when type is CARD_TERMINAL
     const handleTypeChange = (newType: string) => {
         setType(newType)
-        if (newType === 'CARD_TERMINAL') {
-            setIsTerminal(true)
-            setAllowSales(true)
-            setAllowPurchases(false)
-        } else if (newType === 'DEBIT_CARD' || newType === 'CREDIT_CARD') {
-            setIsTerminal(false)
-            setAllowSales(false)
-            setAllowPurchases(true)
-        } else {
-            // CASH, TRANSFER, CHECK
-            setIsTerminal(false)
-        }
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -577,11 +534,7 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                 requires_reference: requiresRef,
                 allow_for_sales: allowSales,
                 allow_for_purchases: allowPurchases,
-                is_terminal: isTerminal,
-                supplier: isTerminal ? cardProviderId : null,
-                terminal_receivable_account: isTerminal ? terminalReceivableAccount : null,
-                commission_expense_account: isTerminal ? commissionExpenseAccount : null,
-                commission_product: isTerminal ? commissionProductId : null
+
             }
             if (method) {
                 await api.patch(`/treasury/payment-methods/${method.id}/`, payload)
@@ -640,7 +593,6 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="CASH">Efectivo</SelectItem>
-                                            <SelectItem value="CARD_TERMINAL" className="font-bold text-primary">Terminal de Cobros</SelectItem>
                                             <SelectItem value="DEBIT_CARD">Tarjeta de Débito</SelectItem>
                                             <SelectItem value="CREDIT_CARD">Tarjeta de Crédito</SelectItem>
                                             <SelectItem value="TRANSFER">Transferencia</SelectItem>
@@ -664,101 +616,16 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
                             </div>
                             <div className="grid grid-cols-2 gap-3 p-3 rounded-lg border bg-muted/20">
                                 <div className="flex items-center space-x-2">
-                                    <Checkbox id="allow-sales" checked={allowSales} onCheckedChange={(v) => {
-                                        if (type === 'DEBIT_CARD' || type === 'CREDIT_CARD') {
-                                            toast.error("Tarjetas propias son solo para compras")
-                                            return
-                                        }
-                                        setAllowSales(!!v)
-                                    }} />
+                                    <Checkbox id="allow-sales" checked={allowSales} onCheckedChange={(v) => setAllowSales(!!v)} />
                                     <Label htmlFor="allow-sales" className="text-sm cursor-pointer">Permitir para ventas</Label>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                    <Checkbox id="allow-purchases" checked={allowPurchases} onCheckedChange={(v) => {
-                                        if (type === 'CARD_TERMINAL') {
-                                            toast.error("Terminales de cobro son solo para ventas")
-                                            return
-                                        }
-                                        setAllowPurchases(!!v)
-                                    }} />
+                                    <Checkbox id="allow-purchases" checked={allowPurchases} onCheckedChange={(v) => setAllowPurchases(!!v)} />
                                     <Label htmlFor="allow-purchases" className="text-sm cursor-pointer">Permitir para compras</Label>
-                                </div>
-                                <div className="flex items-center space-x-2 col-span-2 pt-2 border-t mt-1 hidden">
-                                    <Checkbox id="req-ref" checked={requiresRef} onCheckedChange={(v) => setRequiresRef(!!v)} />
-                                    <Label htmlFor="req-ref" className="text-sm cursor-pointer">¿Requiere N° Transacción?</Label>
                                 </div>
                             </div>
                         </div>
-                        {type === 'CARD_TERMINAL' && (
-                            <div className="mt-4 p-4 rounded-lg border-2 border-primary/20 bg-primary/5 space-y-3 animate-in fade-in zoom-in-95 duration-200">
-                                <div className="flex items-center gap-2 text-primary font-bold">
-                                    <CreditCard className="h-4 w-4" /> Configuración de Recaudación
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label className="text-xs">Proveedor (Contacto)</Label>
-                                    <Select value={cardProviderId || ""} onValueChange={setCardProviderId}>
-                                        <SelectTrigger className={cn(FORM_STYLES.input, "bg-white")}>
-                                            <SelectValue placeholder="Seleccionar contacto del proveedor..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {cardProviders.map(prov => (
-                                                <SelectItem key={prov.id} value={prov.id.toString()}>{prov.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-[10px] text-muted-foreground">
-                                        Entidad que procesa los pagos (ej: Transbank, Mercado Pago).
-                                    </p>
-                                </div>
 
-                                <div className="grid gap-2">
-                                    <Label className="text-xs">Cuenta Por Cobrar Terminal</Label>
-                                    <AccountSelector
-                                        value={terminalReceivableAccount}
-                                        onChange={(val) => setTerminalReceivableAccount(val)}
-                                        accountType="ASSET"
-                                        isReconcilable={true}
-                                        placeholder="Seleccione cuenta transitoria..."
-                                    />
-                                    <p className="text-[10px] text-muted-foreground">
-                                        Cuenta transitoria donde se acumulan las ventas hasta que el proveedor liquida.
-                                        (Ej: 1-1-004 Por Cobrar Transbank)
-                                    </p>
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label className="text-xs">Cuenta Gasto Comisión</Label>
-                                    <AccountSelector
-                                        value={commissionExpenseAccount}
-                                        onChange={(val) => setCommissionExpenseAccount(val)}
-                                        accountType="EXPENSE"
-                                        placeholder="Seleccione cuenta de gasto..."
-                                    />
-                                    <p className="text-[10px] text-muted-foreground">
-                                        Cuenta de gasto donde se registrarán las comisiones.
-                                        (Ej: 5-1-003 Comisiones Transbank)
-                                    </p>
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label className="text-xs">Producto de Servicio (Comisión)</Label>
-                                    <ProductSelector
-                                        value={commissionProductId}
-                                        onChange={(val) => setCommissionProductId(val)}
-                                        placeholder="Seleccione servicio de comisión..."
-                                        productType="SERVICE"
-                                    />
-                                    <p className="text-[10px] text-muted-foreground">
-                                        Servicio utilizado para facturar las comisiones en la factura mensual.
-                                    </p>
-                                </div>
-
-                                <p className="text-[10px] text-muted-foreground leading-relaxed italic border-t border-primary/10 pt-2 mt-2">
-                                    * Al ser un terminal, los pagos no se reflejarán inmediatamente en el saldo bancario,
-                                    sino como cuentas por cobrar al proveedor hasta su liquidación.
-                                </p>
-                            </div>
-                        )}
                     </form>
                 </div>
 

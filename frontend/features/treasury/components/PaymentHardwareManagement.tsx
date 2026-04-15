@@ -1,0 +1,561 @@
+"use client"
+
+import React, { useState, useEffect } from "react"
+import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { BaseModal } from "@/components/shared/BaseModal"
+import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import {
+    Plus,
+    Settings,
+    Trash2,
+    Loader2,
+    Cpu,
+    Building2,
+    ShieldCheck,
+    Activity,
+    Smartphone,
+    CreditCard,
+    Link as LinkIcon,
+    User as UserIcon
+} from "lucide-react"
+import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+import { FORM_STYLES } from "@/lib/styles"
+import { cn } from "@/lib/utils"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+
+interface PaymentHardwareManagementProps {
+    externalDeviceOpen?: boolean
+    onExternalDeviceOpenChange?: (open: boolean) => void
+    externalProviderOpen?: boolean
+    onExternalProviderOpenChange?: (open: boolean) => void
+    activeTab?: "providers" | "devices"
+}
+
+export function PaymentHardwareManagement({
+    externalDeviceOpen,
+    onExternalDeviceOpenChange,
+    externalProviderOpen,
+    onExternalProviderOpenChange,
+    activeTab: externalActiveTab
+}: PaymentHardwareManagementProps) {
+    const [activeTab, setActiveTab] = useState<"providers" | "devices">("devices")
+
+    useEffect(() => {
+        if (externalActiveTab) {
+            setActiveTab(externalActiveTab)
+        }
+    }, [externalActiveTab])
+
+    useEffect(() => {
+        if (externalDeviceOpen) {
+            handleCreateDevice()
+        }
+    }, [externalDeviceOpen])
+
+    useEffect(() => {
+        if (externalProviderOpen) {
+            handleCreateProvider()
+        }
+    }, [externalProviderOpen])
+
+    const { providers, isLoading: loadingProviders, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
+    const { devices, isLoading: loadingDevices, refetch: refetchDevices, deleteDevice } = useTerminalDevices()
+
+    const [providerDialogOpen, setProviderDialogOpen] = useState(false)
+    const [editingProvider, setEditingProvider] = useState<PaymentTerminalProvider | null>(null)
+
+    const [deviceDialogOpen, setDeviceDialogOpen] = useState(false)
+    const [editingDevice, setEditingDevice] = useState<PaymentTerminalDevice | null>(null)
+
+    useEffect(() => {
+        if (externalDeviceOpen) {
+            handleCreateDevice()
+        }
+    }, [externalDeviceOpen])
+
+    const handleCreateProvider = () => {
+        setEditingProvider(null)
+        setProviderDialogOpen(true)
+    }
+
+    const handleEditProvider = (provider: PaymentTerminalProvider) => {
+        setEditingProvider(provider)
+        setProviderDialogOpen(true)
+    }
+
+    const handleCreateDevice = () => {
+        setEditingDevice(null)
+        setDeviceDialogOpen(true)
+        onExternalDeviceOpenChange?.(false)
+    }
+
+    const handleEditDevice = (device: PaymentTerminalDevice) => {
+        setEditingDevice(device)
+        setDeviceDialogOpen(true)
+    }
+
+    const deleteProviderConfirm = useConfirmAction<PaymentTerminalProvider>(async (provider) => {
+        try {
+            await deleteProvider.mutateAsync(provider.id)
+            refetchProviders()
+        } catch (error) { }
+    })
+
+    const deleteDeviceConfirm = useConfirmAction<PaymentTerminalDevice>(async (device) => {
+        try {
+            await deleteDevice.mutateAsync(device.id)
+            refetchDevices()
+        } catch (error) { }
+    })
+
+    const isLoading = loadingProviders || loadingDevices
+
+    return (
+        <div className="space-y-6">
+            {activeTab === "providers" ? (
+                <div className="m-0 outline-none">
+                    {loadingProviders ? (
+                        <div className="flex items-center justify-center p-12">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground opacity-20" />
+                        </div>
+                    ) : providers.length === 0 ? (
+                        <EmptyState
+                            context="finance"
+                            title="No hay proveedores configurados"
+                            description="Configure los proveedores de pago (TUU, Transbank, etc.) para procesar transacciones."
+                            action={<Button onClick={handleCreateProvider} variant="outline" size="sm">Configurar primer proveedor</Button>}
+                        />
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {providers.map(provider => (
+                                <ProviderCard
+                                    key={provider.id}
+                                    provider={provider}
+                                    onEdit={() => handleEditProvider(provider)}
+                                    onDelete={() => deleteProviderConfirm.requestConfirm(provider)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <div className="m-0 outline-none">
+                    {loadingDevices ? (
+                        <div className="flex items-center justify-center p-12">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground opacity-20" />
+                        </div>
+                    ) : devices.length === 0 ? (
+                        <EmptyState
+                            context="production"
+                            title="No hay dispositivos registrados"
+                            description="Registre las terminales físicas (maquinitas) y vincúlelas a un proveedor de pago."
+                            action={<Button onClick={handleCreateDevice} variant="outline" size="sm">Registrar dispositivo</Button>}
+                        />
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {devices.map(device => (
+                                <DeviceCard
+                                    key={device.id}
+                                    device={device}
+                                    onEdit={() => handleEditDevice(device)}
+                                    onDelete={() => deleteDeviceConfirm.requestConfirm(device)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Dialogs */}
+            <ProviderDialog
+                open={providerDialogOpen}
+                onOpenChange={(v) => {
+                    setProviderDialogOpen(v)
+                    if (!v) onExternalProviderOpenChange?.(false)
+                }}
+                provider={editingProvider}
+                onSuccess={refetchProviders}
+            />
+
+            <DeviceDialog
+                open={deviceDialogOpen}
+                onOpenChange={(v) => {
+                    setDeviceDialogOpen(v)
+                    if (!v) onExternalDeviceOpenChange?.(false)
+                }}
+                device={editingDevice}
+                providers={providers}
+                onSuccess={refetchDevices}
+            />
+
+            {/* Confirmation Modals */}
+            <ActionConfirmModal
+                open={deleteProviderConfirm.isOpen}
+                onOpenChange={(v) => !v && deleteProviderConfirm.cancel()}
+                onConfirm={deleteProviderConfirm.confirm}
+                title="Eliminar Proveedor"
+                description="¿Está seguro de eliminar este proveedor? Se perderá la configuración contable."
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={deleteDeviceConfirm.isOpen}
+                onOpenChange={(v) => !v && deleteDeviceConfirm.cancel()}
+                onConfirm={deleteDeviceConfirm.confirm}
+                title="Eliminar Dispositivo"
+                description="¿Está seguro de eliminar este hardware? Se perderá el vínculo con las terminales POS."
+                variant="destructive"
+            />
+        </div>
+    )
+}
+
+function ProviderCard({ provider, onEdit, onDelete }: { provider: PaymentTerminalProvider, onEdit: () => void, onDelete: () => void }) {
+    return (
+        <Card className="bg-background hover:shadow-md transition-all border-2">
+            <CardHeader className="p-4 pb-2">
+                <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-primary" />
+                            <CardTitle className="text-sm">{provider.name}</CardTitle>
+                        </div>
+                        <div className="flex flex-col gap-1.5 p-3 rounded-sm bg-muted/30 border border-muted/50">
+                            <div className="flex items-center gap-2">
+                                <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
+                                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">Recaudación:</span>
+                                <span className="text-[11px] font-medium ml-auto">{provider.receivable_account_name}</span>
+                            </div>
+                            {provider.supplier_name && (
+                                <div className="flex items-center gap-2 pt-1.5 border-t border-muted/30">
+                                    <UserIcon className="w-3.5 h-3.5 text-primary/60" />
+                                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">Contacto:</span>
+                                    <span className="text-[11px] font-medium ml-auto text-primary/80">{provider.supplier_name}</span>
+                                </div>
+                            )}
+                        </div>
+                        <StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />
+                    </div>
+                    <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={onEdit} className="h-7 w-7"><Settings className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" onClick={onDelete} className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
+                </div>
+            </CardHeader>
+        </Card>
+    )
+}
+
+function DeviceCard({ device, onEdit, onDelete }: { device: PaymentTerminalDevice, onEdit: () => void, onDelete: () => void }) {
+    return (
+        <Card className="bg-background hover:shadow-md transition-all border-2">
+            <CardHeader className="p-4 pb-2">
+                <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                            <Smartphone className="h-4 w-4 text-info" />
+                            <CardTitle className="text-sm">{device.name}</CardTitle>
+                        </div>
+                        <StatusBadge status={device.is_active ? "active" : "inactive"} size="sm" />
+                    </div>
+                    <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={onEdit} className="h-7 w-7"><Settings className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" onClick={onDelete} className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-2 space-y-3">
+                <div className="grid grid-cols-1 gap-2 text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                    <div className="flex justify-between">
+                        <span>Proveedor:</span>
+                        <span className="text-foreground">{device.provider_name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                        <span>N° Serie:</span>
+                        <span className="text-foreground font-mono">{device.serial_number}</span>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
+/**
+ * Dialog for creating/editing Providers
+ */
+function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
+    open: boolean,
+    onOpenChange: (v: boolean) => void,
+    provider: PaymentTerminalProvider | null,
+    onSuccess: () => void
+}) {
+    const { createProvider, updateProvider } = useTerminalProviders()
+    const [name, setName] = useState("")
+    const [type, setType] = useState("MANUAL")
+    const [supplierId, setSupplierId] = useState<number | null>(null)
+    const [receivableAccount, setReceivableAccount] = useState<number | null>(null)
+    const [expenseAccount, setExpenseAccount] = useState<number | null>(null)
+    const [ivaAccount, setIvaAccount] = useState<number | null>(null)
+    const [loading, setLoading] = useState(false)
+
+    useEffect(() => {
+        if (open) {
+            if (provider) {
+                setName(provider.name)
+                setType(provider.provider_type)
+                setSupplierId(provider.supplier)
+                setReceivableAccount(provider.receivable_account)
+                setExpenseAccount(provider.commission_expense_account)
+                setIvaAccount(provider.commission_iva_account || null)
+            } else {
+                setName("")
+                setType("MANUAL")
+                setSupplierId(null)
+                setReceivableAccount(null)
+                setExpenseAccount(null)
+                setIvaAccount(null)
+            }
+        }
+    }, [open, provider])
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLoading(true)
+        try {
+            const data = {
+                name: name.trim() || undefined, // Send undefined if empty to let backend handle it? No, backend needs a name.
+                // We'll ensure name is set before sending.
+                provider_type: type,
+                supplier: supplierId,
+                receivable_account: receivableAccount ? Number(receivableAccount) : undefined,
+                commission_expense_account: expenseAccount ? Number(expenseAccount) : undefined,
+                commission_iva_account: ivaAccount ? Number(ivaAccount) : undefined,
+                is_active: true
+            }
+
+            // Fallback: If name is still empty, we use the contact name
+            // But we don't have the contact object here unless we store it.
+            // Actually, we can just ensure the form doesn't submit without a name, or auto-fill it.
+            
+            if (!data.name) {
+                toast.error("Por favor, asigne un nombre o seleccione un contacto.")
+                setLoading(false)
+                return
+            }
+
+            if (provider) {
+                await updateProvider.mutateAsync({ id: provider.id, data })
+            } else {
+                await createProvider.mutateAsync(data)
+            }
+            onSuccess()
+            onOpenChange(false)
+        } catch (error) {
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            title={provider ? "Editar Proveedor" : "Nuevo Proveedor de Pago"}
+            description="Configure las cuentas contables para recaudación y comisiones."
+            footer={
+                <div className="flex justify-end gap-2">
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button onClick={handleSubmit} disabled={loading}>
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {provider ? "Guardar Cambios" : "Crear Proveedor"}
+                    </Button>
+                </div>
+            }
+        >
+            <form className="space-y-4 py-2">
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label className={FORM_STYLES.label}>Contacto / Entidad (Proveedor)</Label>
+                        <AdvancedContactSelector
+                            value={supplierId}
+                            onChange={setSupplierId}
+                            onSelectContact={(contact) => {
+                                if (!name) setName(contact.name)
+                            }}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className={FORM_STYLES.label}>Nombre / Alias</Label>
+                        <Input 
+                            value={name} 
+                            onChange={e => setName(e.target.value)} 
+                            placeholder="Ej: Transbank Local Primary" 
+                        />
+                        <p className="text-[10px] text-muted-foreground italic">Identificador visual para reportes y POS.</p>
+                    </div>
+                </div>
+
+                <Separator className="my-4" />
+                <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">Configuración Contable</h4>
+
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <Label className={FORM_STYLES.label}>Cuenta Puente Recaudación (Activo)</Label>
+                        <AccountSelector
+                            value={receivableAccount}
+                            onChange={setReceivableAccount}
+                            accountType="ASSET"
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label className={FORM_STYLES.label}>Cuenta Gasto Comisiones</Label>
+                            <AccountSelector
+                                value={expenseAccount}
+                                onChange={setExpenseAccount}
+                                accountType="EXPENSE"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className={FORM_STYLES.label}>Cuenta IVA Comisiones (Activo)</Label>
+                            <AccountSelector
+                                value={ivaAccount}
+                                onChange={setIvaAccount}
+                                accountType="ASSET"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </BaseModal>
+    )
+}
+
+/**
+ * Dialog for creating/editing Devices
+ */
+function DeviceDialog({ open, onOpenChange, device, providers, onSuccess }: {
+    open: boolean,
+    onOpenChange: (v: boolean) => void,
+    device: PaymentTerminalDevice | null,
+    providers: PaymentTerminalProvider[],
+    onSuccess: () => void
+}) {
+    const { createDevice, updateDevice } = useTerminalDevices()
+    const [name, setName] = useState("")
+    const [providerId, setProviderId] = useState<string>("")
+    const [serialNumber, setSerialNumber] = useState("")
+    const [model, setModel] = useState("")
+    const [loading, setLoading] = useState(false)
+
+    useEffect(() => {
+        if (open) {
+            if (device) {
+                setName(device.name)
+                setProviderId(device.provider.toString())
+                setSerialNumber(device.serial_number)
+                setModel(device.model || "")
+            } else {
+                setName("")
+                setProviderId("")
+                setSerialNumber("")
+                setModel("")
+            }
+        }
+    }, [open, device])
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!providerId) {
+            toast.error("Seleccione un proveedor")
+            return
+        }
+        setLoading(true)
+        try {
+            const data = {
+                name,
+                provider: parseInt(providerId),
+                serial_number: serialNumber,
+                model: model || undefined,
+                is_active: true
+            }
+
+            if (device) {
+                await updateDevice.mutateAsync({ id: device.id, data })
+            } else {
+                await createDevice.mutateAsync(data)
+            }
+            onSuccess()
+            onOpenChange(false)
+        } catch (error) {
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    return (
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            title={device ? "Editar Dispositivo" : "Registrar Nuevo Hardware"}
+            description="Vincule una terminal física con un proveedor de servicios."
+            footer={
+                <div className="flex justify-end gap-2">
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                    <Button onClick={handleSubmit} disabled={loading}>
+                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {device ? "Guardar Cambios" : "Registrar"}
+                    </Button>
+                </div>
+            }
+        >
+            <form className="space-y-4 py-2">
+                <div className="space-y-2">
+                    <Label className={FORM_STYLES.label}>Nombre descriptivo</Label>
+                    <Input value={name} onChange={e => setName(e.target.value)} required placeholder="Ej: Maquinita TUU 01" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label className={FORM_STYLES.label}>Proveedor</Label>
+                        <select
+                            className={cn(FORM_STYLES.input, "appearance-none")}
+                            value={providerId}
+                            onChange={e => setProviderId(e.target.value)}
+                            required
+                        >
+                            <option value="">Seleccione...</option>
+                            {providers.map(p => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label className={FORM_STYLES.label}>Número de Serie / TID</Label>
+                        <Input value={serialNumber} onChange={e => setSerialNumber(e.target.value)} required placeholder="Número serie físico" />
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <Label className={FORM_STYLES.label}>Modelo (Opcional)</Label>
+                    <Input value={model} onChange={e => setModel(e.target.value)} placeholder="Ej: Pax A920" />
+                </div>
+            </form>
+        </BaseModal>
+    )
+}
+
+function Separator({ className }: { className?: string }) {
+    return <div className={cn("h-px bg-border", className)} />
+}
+
+export default PaymentHardwareManagement
