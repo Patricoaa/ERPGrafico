@@ -93,6 +93,7 @@ def _apply_response(pr, new_status, response):
     if new_status in ("COMPLETED", "FAILED", "CANCELED"):
         pr.completed_at = timezone.now()
     pr.save()
+    _sync_sale_order(pr)
 
 
 def _mark_timeout(pr):
@@ -100,6 +101,7 @@ def _mark_timeout(pr):
     pr.failure_reason = "TIMEOUT"
     pr.completed_at = timezone.now()
     pr.save(update_fields=["status", "failure_reason", "completed_at"])
+    _sync_sale_order(pr)
 
 
 def _mark_failed(pr, reason: str):
@@ -107,3 +109,9 @@ def _mark_failed(pr, reason: str):
     pr.failure_reason = reason[:64]
     pr.completed_at = timezone.now()
     pr.save(update_fields=["status", "failure_reason", "completed_at"])
+    _sync_sale_order(pr)
+
+
+def _sync_sale_order(pr):
+    from treasury.payment_request_service import sync_sale_order_from_payment_request
+    sync_sale_order_from_payment_request(pr)
