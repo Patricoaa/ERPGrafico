@@ -36,6 +36,39 @@ class InitiateResult:
     created: bool
 
 
+def sync_sale_order_from_payment_request(pr: PaymentRequest) -> None:
+    """
+    Sincroniza el estado del SaleOrder ligado a una PaymentRequest. Ver ADR 002 §D7.
+
+    - SENT/PROCESSING        → SaleOrder.PAYMENT_PENDING (si estaba CONFIRMED o DRAFT).
+    - COMPLETED              → SaleOrder.PAID.
+    - FAILED/CANCELED        → vuelve a CONFIRMED para reintentar el cobro.
+    """
+    from sales.models import SaleOrder
+
+    so = pr.sale_order
+    if so is None:
+        return
+
+    non_terminal_active = {PaymentRequest.Status.SENT, PaymentRequest.Status.PROCESSING}
+    if pr.status in non_terminal_active and so.status in (
+        SaleOrder.Status.DRAFT, SaleOrder.Status.CONFIRMED,
+    ):
+        so.status = SaleOrder.Status.PAYMENT_PENDING
+        so.save(update_fields=["status"])
+        return
+
+    if pr.status == PaymentRequest.Status.COMPLETED:
+        so.status = SaleOrder.Status.PAID
+        so.save(update_fields=["status"])
+        return
+
+    if pr.status in (PaymentRequest.Status.FAILED, PaymentRequest.Status.CANCELED):
+        if so.status == SaleOrder.Status.PAYMENT_PENDING:
+            so.status = SaleOrder.Status.CONFIRMED
+            so.save(update_fields=["status"])
+
+
 class PaymentRequestService:
     @staticmethod
     def initiate(
@@ -92,6 +125,7 @@ class PaymentRequestService:
                 pr.status = PaymentRequest.Status.SENT
                 pr.raw_last_response = response.raw or {}
                 pr.save(update_fields=["status", "raw_last_response"])
+                sync_sale_order_from_payment_request(pr)
         except Exception:
             release_create_slot(device.id)
             raise
@@ -122,6 +156,7 @@ class PaymentRequestService:
         pr.failure_reason = "USER-CANCELED"
         pr.completed_at = timezone.now()
         pr.save(update_fields=["status", "failure_reason", "completed_at"])
+        sync_sale_order_from_payment_request(pr)
         return pr
 
     @staticmethod

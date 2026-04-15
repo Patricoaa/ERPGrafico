@@ -30,6 +30,16 @@ from treasury.payment_request_service import PaymentRequestService
 from treasury.tasks import poll_payment_request
 
 
+def _make_sale_order(customer, number="NV-X-001"):
+    from sales.models import SaleOrder
+    return SaleOrder.objects.create(
+        customer=customer, number=number,
+        status=SaleOrder.Status.CONFIRMED,
+        payment_method=SaleOrder.PaymentMethod.CARD,
+        channel=SaleOrder.Channel.POS,
+    )
+
+
 def _fixture():
     AccountingService.populate_ifrs_coa()
     supplier = Contact.objects.create(name="TUU Haulmer", tax_id="76.000.000-2")
@@ -256,6 +266,70 @@ class EndpointsTests(TestCase):
             f"/api/treasury/payment-requests/{pr.idempotency_key}/cancel/"
         )
         self.assertEqual(resp.status_code, 409)
+
+    def test_sale_order_syncs_on_initiate_and_complete(self):
+        from sales.models import SaleOrder
+        customer = Contact.objects.create(name="Cliente 1", tax_id="11.111.111-1")
+        so = _make_sale_order(customer, number="NV-SYNC-1")
+        with mock.patch("treasury.payment_request_service.poll_payment_request.apply_async") as m:
+            m.return_value = mock.Mock(id="t")
+            result = PaymentRequestService.initiate(
+                device=self.device, amount=1600, sale_order=so,
+            )
+        so.refresh_from_db()
+        self.assertEqual(so.status, SaleOrder.Status.PAYMENT_PENDING)
+
+        # Simular COMPLETED vía polling
+        from treasury.gateways.base import GatewayResponse
+        pr = result.payment_request
+        with mock.patch("treasury.gateways.fake.FakeTuuGateway.fetch_status") as fs:
+            fs.return_value = GatewayResponse(
+                status="Completed", sequence_number="000000099",
+                raw={"status": "Completed"},
+            )
+            poll_payment_request.apply(args=[pr.pk])
+        pr.refresh_from_db()
+        so.refresh_from_db()
+        self.assertEqual(pr.status, PaymentRequest.Status.COMPLETED)
+        self.assertEqual(so.status, SaleOrder.Status.PAID)
+
+    def test_sale_order_reverts_to_confirmed_on_failure(self):
+        from sales.models import SaleOrder
+        customer = Contact.objects.create(name="Cliente 2", tax_id="22.222.222-2")
+        so = _make_sale_order(customer, number="NV-SYNC-2")
+        with mock.patch("treasury.payment_request_service.poll_payment_request.apply_async") as m:
+            m.return_value = mock.Mock(id="t")
+            result = PaymentRequestService.initiate(
+                device=self.device, amount=1600, sale_order=so,
+            )
+        so.refresh_from_db()
+        self.assertEqual(so.status, SaleOrder.Status.PAYMENT_PENDING)
+
+        pr = result.payment_request
+        with mock.patch("treasury.gateways.fake.FakeTuuGateway.fetch_status") as fs:
+            fs.side_effect = GatewayError("bad key", code="KEY-003")
+            poll_payment_request.apply(args=[pr.pk])
+        pr.refresh_from_db()
+        so.refresh_from_db()
+        self.assertEqual(pr.status, PaymentRequest.Status.FAILED)
+        self.assertEqual(so.status, SaleOrder.Status.CONFIRMED)
+
+    def test_cancel_reverts_sale_order(self):
+        from sales.models import SaleOrder
+        customer = Contact.objects.create(name="Cliente 3", tax_id="33.333.333-3")
+        so = _make_sale_order(customer, number="NV-SYNC-3")
+        # PR en PENDING simulando justo antes de create
+        pr = PaymentRequest.objects.create(
+            idempotency_key="pending-sync", amount=1000,
+            device=self.device, provider=self.provider,
+            status=PaymentRequest.Status.PENDING, sale_order=so,
+        )
+        so.status = SaleOrder.Status.PAYMENT_PENDING
+        so.save(update_fields=["status"])
+
+        PaymentRequestService.cancel(pr.idempotency_key)
+        so.refresh_from_db()
+        self.assertEqual(so.status, SaleOrder.Status.CONFIRMED)
 
     def test_rate_limit_returns_429(self):
         with mock.patch("treasury.payment_request_service.poll_payment_request.apply_async") as m:

@@ -14,6 +14,7 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
         CONFIRMED = 'CONFIRMED', _('Confirmado')
+        PAYMENT_PENDING = 'PAYMENT_PENDING', _('Cobro en Terminal')
         INVOICED = 'INVOICED', _('Facturado')
         PAID = 'PAID', _('Pagado')
         CANCELLED = 'CANCELLED', _('Anulado')
