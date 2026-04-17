@@ -14,12 +14,14 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { usePOS } from "@/features/pos/contexts/POSContext"
 
 export interface PaymentData {
-    method: 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK' | 'CREDIT_BALANCE' | null
+    method: 'CASH' | 'CARD' | 'CARD_TERMINAL' | 'TRANSFER' | 'CHECK' | 'CREDIT_BALANCE' | null
     amount: number
     treasuryAccountId: string | null
     paymentMethodId: number | null
     transactionNumber?: string
     isPending?: boolean
+    /** true cuando el método es CARD_TERMINAL — activa flujo TUU automatizado */
+    isTerminalIntegration?: boolean
 }
 
 interface PaymentMethodCardSelectorProps {
@@ -75,7 +77,10 @@ export function PaymentMethodCardSelector({
             case 'CASH':
                 return allowedMethods.some(m => m.method_type === 'CASH')
             case 'CARD':
-                return allowedMethods.some(m => ['CREDIT_CARD', 'DEBIT_CARD', 'CARD'].includes(m.method_type))
+                // Solo métodos CARD genéricos (no CARD_TERMINAL, no DEBIT_CARD/CREDIT_CARD ya filtrados por allow_for_sales)
+                return allowedMethods.some(m => m.method_type === 'CARD')
+            case 'CARD_TERMINAL':
+                return allowedMethods.some(m => m.method_type === 'CARD_TERMINAL' && m.is_terminal_integration)
             case 'TRANSFER':
                 return allowedMethods.some(m => m.method_type === 'TRANSFER')
             case 'CHECK':
@@ -93,7 +98,12 @@ export function PaymentMethodCardSelector({
 
     const handleMethodChange = (val: string) => {
         const isReClick = paymentData.method === val
-        onPaymentDataChange({ ...paymentData, method: val as PaymentData['method'] })
+        const isTerminalIntegration = val === 'CARD_TERMINAL'
+        onPaymentDataChange({
+            ...paymentData,
+            method: val as PaymentData['method'],
+            isTerminalIntegration,
+        })
         if (isReClick) {
             openAmountModal()
         } else {
@@ -132,7 +142,8 @@ export function PaymentMethodCardSelector({
     const methodsForType = useMemo<PaymentMethod[]>(() => {
         return allowedMethods.filter(m => {
             if (paymentData.method === 'CASH') return m.method_type === 'CASH'
-            if (paymentData.method === 'CARD') return ['CREDIT_CARD', 'DEBIT_CARD', 'CARD'].includes(m.method_type)
+            if (paymentData.method === 'CARD') return m.method_type === 'CARD'
+            if (paymentData.method === 'CARD_TERMINAL') return m.method_type === 'CARD_TERMINAL'
             if (paymentData.method === 'TRANSFER') return m.method_type === 'TRANSFER'
             if (paymentData.method === 'CHECK') return m.method_type === 'CHECK'
             if (paymentData.method === 'CREDIT_BALANCE') return false // Doesn't need a treasury account
@@ -160,24 +171,31 @@ export function PaymentMethodCardSelector({
     }, [methodsForType, paymentData.method])
 
     const { currentSession } = usePOS()
-    const terminalHasCardTerminal = !!currentSession?.terminal_details?.payment_terminal_device 
+    const terminalHasCardTerminal = !!currentSession?.terminal_details?.payment_terminal_device
 
 
     const methods = useMemo(() => {
         const availableMethods = [
             {
                 id: 'CASH',
-                label: `Efectivo${terminalHasCardTerminal && operation === 'sales' ? ' (terminal de cobro)' : ''}`,
+                label: 'Efectivo',
                 icon: Banknote,
                 color: 'text-success',
                 isAllowed: isMethodAllowed('CASH')
             },
             {
                 id: 'CARD',
-                label: `Tarjeta${terminalHasCardTerminal && operation === 'sales' ? ' (terminal de cobro)' : ''}`,
+                label: 'Tarjeta',
                 icon: CreditCard,
                 color: 'text-primary',
                 isAllowed: isMethodAllowed('CARD')
+            },
+            {
+                id: 'CARD_TERMINAL',
+                label: 'Tarjeta TUU',
+                icon: CreditCard,
+                color: 'text-primary',
+                isAllowed: isMethodAllowed('CARD_TERMINAL')
             },
             {
                 id: 'TRANSFER',

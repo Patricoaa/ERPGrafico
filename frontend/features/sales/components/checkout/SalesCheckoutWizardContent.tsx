@@ -4,7 +4,7 @@ import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { PricingUtils } from "@/lib/pricing"
 import { Button } from "@/components/ui/button"
-import { Step1_DTE } from "./Step1_DTE"
+import { Step1_CustomerDTE } from "./Step1_CustomerDTE"
 import { Step2_Payment } from "./Step2_Payment"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useAllowedPaymentMethods } from "@/hooks/useAllowedPaymentMethods"
@@ -16,7 +16,6 @@ import { ProcessSummarySidebar } from "./ProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
 
-import { Step0_Customer } from "./Step0_Customer"
 import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, AlertTriangle, ShieldAlert, CheckCircle2, FileWarning, Printer } from "lucide-react"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useAuth } from "@/contexts/AuthContext"
@@ -30,9 +29,13 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useServerDate } from "@/hooks/useServerDate"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { PINPadModal } from "@/features/pos/components/PINPadModal"
 import { SaleOrder, SaleOrderLine, CheckoutDTEData, CheckoutPaymentData, CheckoutDeliveryData } from "../../types"
 import { Product } from "@/features/inventory/types"
+import { TerminalPaymentWizard } from "@/features/treasury/components/TerminalPaymentWizard"
+import { ManualTerminalNotice, type ManualTerminalReason } from "@/features/treasury/components/ManualTerminalNotice"
+import type { PaymentRequest } from "@/features/treasury/types"
 
 export interface SalesCheckoutWizardContentProps {
     order: SaleOrder | null
@@ -48,6 +51,7 @@ export interface SalesCheckoutWizardContentProps {
     channel?: string
     posSessionId?: number | null
     terminalId?: number
+    terminalDeviceId?: number | null
     quickSale?: boolean
     initialStep?: number
     initialDteData?: CheckoutDTEData
@@ -75,6 +79,7 @@ export function SalesCheckoutWizardContent({
     channel = "POS",
     posSessionId = null,
     terminalId,
+    terminalDeviceId = null,
     quickSale = false,
     initialStep,
     initialDteData,
@@ -92,14 +97,33 @@ export function SalesCheckoutWizardContent({
     const { openHub, isHubOpen } = useHubPanel()
     const { hasPermission } = useAuth()
     
+    const [currentOrderLines, setCurrentOrderLines] = useState<SaleOrderLine[]>(initialOrderLines)
+    const [step, setStep] = useState(initialStep || 1)
+    const [loading, setLoading] = useState(false)
+
     const hasManufacturing = useMemo(() => initialOrderLines.some((line: SaleOrderLine) =>
         line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
     ), [initialOrderLines]);
 
-    const [step, setStep] = useState(initialStep || (hasManufacturing ? 2 : 1))
-    const [showSuspendDialog, setShowSuspendDialog] = useState(false)
-    const [loading, setLoading] = useState(false)
-    const [currentOrderLines, setCurrentOrderLines] = useState<SaleOrderLine[]>(initialOrderLines)
+    const isOnlyService = currentOrderLines.every((line: SaleOrderLine) => line.product_type === 'SERVICE');
+
+    const steps = useMemo(() => {
+        const s: { id: string; label: string }[] = [
+            { id: 'customer_dte', label: 'Cliente & Doc' },
+        ]
+        if (hasManufacturing) {
+            s.push({ id: 'manufacturing', label: 'Fabricación' })
+        }
+        if (!isOnlyService) {
+            s.push({ id: 'delivery', label: 'Entrega' })
+        }
+        s.push({ id: 'payment', label: 'Pago' })
+        return s
+    }, [hasManufacturing, isOnlyService])
+
+    const totalSteps = steps.length;
+
+
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
     const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)
     const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
@@ -137,22 +161,16 @@ export function SalesCheckoutWizardContent({
             didHydrateRef.current = true
             setCurrentOrderLines(initialOrderLines)
             
-            if (quickSale) {
-                const currentIsOnlyService = initialOrderLines.every((line: any) => line.product_type === 'SERVICE');
-                const hasMfg = initialOrderLines.some((line: any) =>
-                    line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
-                );
-                const lastStep = (currentIsOnlyService ? 3 : 4) + (hasMfg ? 1 : 0);
-                const jumpStep = (initialStep && initialStep > 1) ? initialStep : lastStep
-                setStep(jumpStep)
+            if (quickSale && currentOrderLines.length > 0) {
                 if (initialCustomerId) setSelectedCustomerId(initialCustomerId)
+                setStep(totalSteps)
+            } else if (initialStep && initialStep > 1 && !quickSale) {
+                setStep(initialStep)
             } else {
-                setStep(initialStep ?? (currentOrderLines.some((line: any) =>
-                    line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
-                ) ? 2 : 1))
+                setStep(initialStep ?? 1)
             }
         }
-    }, [initialStep, quickSale]) 
+    }, [initialStep, quickSale, totalSteps, currentOrderLines.length]) 
 
     useEffect(() => {
         if (dateString && !initialDteData) {
@@ -195,6 +213,15 @@ export function SalesCheckoutWizardContent({
     const [salesSettings, setSalesSettings] = useState<any>(null)
     const [pendingDebts, setPendingDebts] = useState<any[] | null>(null)
     const [loadingDebts, setLoadingDebts] = useState(false)
+    const [showTerminalWizard, setShowTerminalWizard] = useState(false)
+    const [manualTerminalReason, setManualTerminalReason] = useState<ManualTerminalReason | null>(null)
+    const [manualTerminalFailureReason, setManualTerminalFailureReason] = useState<string | null>(null)
+    const [showInvoiceReminder, setShowInvoiceReminder] = useState(false)
+    const [checkoutResponse, setCheckoutResponse] = useState<any>(null)
+    // Tracks whether the last completed step was a TUU terminal card payment
+    const wasTerminalCardRef = useRef(false)
+    // Idempotency key of the completed PaymentRequest — used to link TreasuryMovement
+    const terminalPaymentKeyRef = useRef<string | null>(null)
 
 
     const refreshDebts = useCallback(() => {
@@ -244,9 +271,6 @@ export function SalesCheckoutWizardContent({
         }
     }, [selectedCustomerId])
 
-    const isOnlyService = currentOrderLines.every((line: SaleOrderLine) => line.product_type === 'SERVICE');
-    const totalSteps = useMemo(() => (isOnlyService ? 3 : 4) + (hasManufacturing ? 1 : 0), [isOnlyService, hasManufacturing]);
-
     useEffect(() => {
         if (onStateChange) {
             onStateChange({
@@ -278,68 +302,74 @@ export function SalesCheckoutWizardContent({
     })
 
     const renderStep = () => {
-        let currentStepNum = 1;
-        if (step === currentStepNum) {
-            return (
-                <Step0_Customer
-                    selectedCustomerId={selectedCustomerId}
-                    setSelectedCustomerId={(id) => setSelectedCustomerId(id || "")}
-                    setSelectedCustomerName={setSelectedCustomerName}
-                />
-            )
-        }
-        currentStepNum++;
-        if (hasManufacturing) {
-            if (step === currentStepNum) {
+        const currentStepDef = steps[step - 1];
+        if (!currentStepDef) return null;
+
+        switch (currentStepDef.id) {
+            case 'customer_dte':
+                return (
+                    <Step1_CustomerDTE
+                        selectedCustomerId={selectedCustomerId}
+                        setSelectedCustomerId={(id) => setSelectedCustomerId(id || "")}
+                        setSelectedCustomerName={setSelectedCustomerName}
+                        dteData={dteData}
+                        setDteData={setDteData}
+                        isDefaultCustomer={!!selectedCustomer?.is_default_customer}
+                        onValidityChange={(isValid) => setIsFolioValid(isValid)}
+                        onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
+                        pendingDebts={pendingDebts}
+                        onDebtClick={(debt) => openHub({ orderId: debt.id, type: 'sale', onActionSuccess: refreshDebts })}
+                    />
+                )
+            case 'manufacturing':
                 return (
                     <Step2_ManufacturingDetails
                         orderLines={currentOrderLines}
                         setOrderLines={setCurrentOrderLines}
                     />
                 )
-            }
-            currentStepNum++;
+            case 'delivery':
+                return <Step3_Delivery deliveryData={deliveryData} setDeliveryData={setDeliveryData} orderLines={currentOrderLines} />
+            case 'payment':
+                return <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} customerCreditBalance={Number(selectedCustomer?.credit_balance || 0)} />
+            default:
+                return null;
         }
-        if (step === currentStepNum) {
-            return (
-                <Step1_DTE
-                    dteData={dteData}
-                    setDteData={setDteData}
-                    isDefaultCustomer={!!selectedCustomer?.is_default_customer}
-                    onValidityChange={(isValid) => setIsFolioValid(isValid)}
-                    onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
-                />
-            )
-        }
-        currentStepNum++;
-        if (!isOnlyService && step === currentStepNum) {
-            return <Step3_Delivery deliveryData={deliveryData} setDeliveryData={setDeliveryData} orderLines={currentOrderLines} />
-        }
-        if (!isOnlyService) currentStepNum++;
-        if (step === currentStepNum) {
-            return <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} customerCreditBalance={Number(selectedCustomer?.credit_balance || 0)} />
-        }
-        return null;
     }
 
     const validateCurrentStep = async (): Promise<{ isValid: boolean, requireApproval?: boolean }> => {
         try {
             setCreditApprovalRequired(false)
-            let currentStepNum = 1;
-            if (step === currentStepNum) {
-                if (!selectedCustomerId) {
-                    toast.error("Debe seleccionar un cliente para continuar.")
-                    return { isValid: false }
-                }
-                if (hasManufacturing && selectedCustomer?.is_default_customer) {
-                    toast.error("No se puede utilizar el cliente por defecto para productos con fabricación avanzada.")
-                    return { isValid: false }
-                }
-                return { isValid: true }
-            }
-            currentStepNum++;
-            if (hasManufacturing) {
-                if (step === currentStepNum) {
+            const currentStepDef = steps[step - 1];
+            if (!currentStepDef) return { isValid: false };
+
+            switch (currentStepDef.id) {
+                case 'customer_dte':
+                    if (!selectedCustomerId) {
+                        toast.error("Debe seleccionar un cliente para continuar.")
+                        return { isValid: false }
+                    }
+                    if (hasManufacturing && selectedCustomer?.is_default_customer) {
+                        toast.error("No se puede utilizar el cliente por defecto para productos con fabricación avanzada.")
+                        return { isValid: false }
+                    }
+                    if (dteData.type !== 'BOLETA' && !dteData.isPending) {
+                        if (!dteData.number || !dteData.date || !dteData.attachment) {
+                            toast.error("Faltan datos obligatorios del documento DTE.")
+                            return { isValid: false }
+                        }
+                    }
+
+                    // Tax Period Validation (Handled visually in live, but enforced here)
+                    if (!dteData.isPending && dteData.date) {
+                        if (!isPeriodValid) {
+                            toast.error(`No se puede continuar. El periodo ya se encuentra cerrado.`)
+                            return { isValid: false }
+                        }
+                    }
+                    return { isValid: true }
+                
+                case 'manufacturing':
                     const pendingItems = currentOrderLines.filter((line: any) =>
                         line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing && !line.manufacturing_data
                     )
@@ -348,55 +378,38 @@ export function SalesCheckoutWizardContent({
                         return { isValid: false }
                     }
                     return { isValid: true }
-                }
-                currentStepNum++;
-            }
-            if (step === currentStepNum) {
-                if (dteData.type !== 'BOLETA' && !dteData.isPending) {
-                    if (!dteData.number || !dteData.date || !dteData.attachment) {
-                        toast.error("Faltan datos obligatorios del documento DTE.")
+                
+                case 'delivery':
+                    return { isValid: true }
+                
+                case 'payment':
+                    if (!paymentData.method) {
+                        toast.error("Debe seleccionar un método de pago.")
                         return { isValid: false }
                     }
-                }
-
-                // Tax Period Validation (Handled visually in live, but enforced here)
-                if (!dteData.isPending && dteData.date) {
-                    if (!isPeriodValid) {
-                        toast.error(`No se puede continuar. El periodo ya se encuentra cerrado.`)
-                        return { isValid: false }
-                    }
-                }
-                return { isValid: true }
-            }
-            currentStepNum++;
-            if (!isOnlyService && step === currentStepNum) return { isValid: true }
-            if (!isOnlyService) currentStepNum++;
-            if (step === currentStepNum) {
-                if (!paymentData.method) {
-                    toast.error("Debe seleccionar un método de pago.")
-                    return { isValid: false }
-                }
-                if (paymentData.method !== 'CREDIT' && paymentData.method !== 'CREDIT_BALANCE' && paymentData.amount > 0) {
-                    if (!paymentData.treasuryAccountId) {
-                        toast.error("Debe seleccionar una cuenta de destino.")
-                        return { isValid: false }
-                    }
-                }
-                if (!approvalTaskId && !isApproved) {
-                    const amountPaid = paymentData.amount || 0;
-                    if (amountPaid < currentTotal) {
-                        const requiredCredit = currentTotal - amountPaid;
-                        const creditAvailable = Number(selectedCustomer?.credit_available || 0);
-                        if (requiredCredit > creditAvailable) {
-                            setCreditApprovalReason(`Crédito insuficiente (Disponible: $${creditAvailable.toLocaleString()}).`);
-                            setCreditApprovalRequired(true);
-                            return { isValid: false, requireApproval: true };
+                    if (paymentData.method !== 'CREDIT' && paymentData.method !== 'CREDIT_BALANCE' && paymentData.amount > 0) {
+                        if (!paymentData.treasuryAccountId) {
+                            toast.error("Debe seleccionar una cuenta de destino.")
+                            return { isValid: false }
                         }
                     }
-                }
-                return { isValid: true }
+                    if (!approvalTaskId && !isApproved) {
+                        const amountPaid = paymentData.amount || 0;
+                        if (amountPaid < currentTotal) {
+                            const requiredCredit = currentTotal - amountPaid;
+                            const creditAvailable = Number(selectedCustomer?.credit_available || 0);
+                            if (requiredCredit > creditAvailable) {
+                                setCreditApprovalReason(`Crédito insuficiente (Disponible: $${creditAvailable.toLocaleString()}).`);
+                                setCreditApprovalRequired(true);
+                                return { isValid: false, requireApproval: true };
+                            }
+                        }
+                    }
+                    return { isValid: true }
+                    
+                default:
+                    return { isValid: true }
             }
-            return { isValid: true }
         } catch (error) {
             console.error("Error en validación de checkout:", error)
             toast.error("Ocurrió un error inesperado al validar la venta.")
@@ -409,16 +422,12 @@ export function SalesCheckoutWizardContent({
         const validation = await validateCurrentStep()
         if (!validation.isValid) return
 
-        // New folio validation check
-        if (step === (hasManufacturing ? 3 : 2) && !isFolioValid) {
+        const currentStepDef = steps[step - 1];
+        if (currentStepDef.id === 'customer_dte' && !isFolioValid && !dteData.isPending) {
             toast.error("El número de folio ya ha sido utilizado. Ingrese uno válido para continuar.")
             return
         }
 
-        if (step === totalSteps - 1) {
-            setShowSuspendDialog(true)
-            return
-        }
         setStep(prev => prev + 1)
     }
 
@@ -431,7 +440,7 @@ export function SalesCheckoutWizardContent({
     }
 
     // Checkout handlers
-    const executeCheckout = async (pin?: string) => {
+    const executeCheckout = async (pin?: string, wasTerminalCard = false, terminalPaymentKey?: string) => {
         setLoading(true)
         try {
             const formData = new FormData()
@@ -439,6 +448,7 @@ export function SalesCheckoutWizardContent({
             const payloadOrder = order ? { id: order.id } : {
                 customer: selectedCustomerId ? parseInt(selectedCustomerId) : null,
                 payment_method: paymentData.method,
+                payment_method_id: paymentData.paymentMethodId ?? null,
                 channel: channel,
                 total_discount_amount: totalDiscountAmount,
                 lines: currentOrderLines.map((l: SaleOrderLine) => {
@@ -480,12 +490,16 @@ export function SalesCheckoutWizardContent({
                 }
             })
 
-            formData.append('dte_type', dteData.type)
-            formData.append('is_pending_registration', dteData.isPending.toString())
+            // wasTerminalCard=true → TUU completó el pago, forzar dte_type=COMPROBANTE_PAGO
+            const effectiveDteType = wasTerminalCard ? 'COMPROBANTE_PAGO' : dteData.type
+            formData.append('dte_type', effectiveDteType)
+            // is_pending_registration solo aplica a DTE local (backend lo ignora en ruta COMPROBANTE_PAGO).
+            if (!wasTerminalCard) {
+                formData.append('is_pending_registration', dteData.isPending.toString())
+            }
             if (dteData.number) formData.append('document_number', dteData.number)
             if (dteData.date) formData.append('document_date', dteData.date)
             if (dteData.attachment) formData.append('document_attachment', dteData.attachment)
-
             const finalPaymentMethod = paymentData.amount === 0 ? 'CREDIT' : (paymentData.method || "NOT_SET")
             formData.append('payment_method', finalPaymentMethod)
             if (paymentData.paymentMethodId && paymentData.amount > 0) {
@@ -514,6 +528,11 @@ export function SalesCheckoutWizardContent({
                 formData.append('pos_session_id', posSessionId.toString())
             }
 
+            const resolvedTerminalKey = terminalPaymentKey ?? terminalPaymentKeyRef.current
+            if (resolvedTerminalKey) {
+                formData.append('payment_request_idempotency_key', resolvedTerminalKey)
+            }
+
             if (approvalTaskId) {
                 formData.append('credit_approval_task_id', approvalTaskId.toString())
             }
@@ -531,6 +550,7 @@ export function SalesCheckoutWizardContent({
             }
 
             const res = await api.post('/billing/invoices/pos_checkout/', formData)
+            terminalPaymentKeyRef.current = null
             toast.success("Venta procesada correctamente")
             onComplete(res.data)
         } catch (error: unknown) {
@@ -557,16 +577,103 @@ export function SalesCheckoutWizardContent({
         }
     }
 
+    const isTerminalIntegrationPayment = paymentData.isTerminalIntegration === true
+    // Tarjeta TUU (CARD_TERMINAL) solo soporta BOLETA — TUU emite DTE 48 únicamente para boletas.
+    const cardTerminalRequiresBoleta = isTerminalIntegrationPayment && dteData.type !== 'BOLETA'
+
     const handleFinish = async () => {
         const validation = await validateCurrentStep()
         if (validation.requireApproval) return
         if (!validation.isValid) return
 
+        if (isTerminalIntegrationPayment && dteData.type === 'BOLETA') {
+            // Automatizado: TUU procesa tarjeta y emite DTE 48
+            setShowTerminalWizard(true)
+            return
+        }
+
+        if (isTerminalIntegrationPayment && dteData.type !== 'BOLETA') {
+            // Factura + terminal TUU → operación manual requerida
+            setManualTerminalReason('FACTURA_CARD')
+            return
+        }
+
+        if (terminalDeviceId && !isTerminalIntegrationPayment && dteData.type === 'BOLETA') {
+            // Boleta + pago no-tarjeta en caja con terminal → confirmar cobro manual
+            setManualTerminalReason('BOLETA_MANUAL')
+            return
+        }
+
+        if (terminalDeviceId && !isTerminalIntegrationPayment && dteData.type !== 'BOLETA' && dteData.isPending) {
+            setShowInvoiceReminder(true)
+            return
+        }
+
+        // Flujo directo: sin terminal o factura sin tarjeta
         if (isSessionHost) {
             setPinModalOpen(true)
         } else {
             executeCheckout()
         }
+    }
+
+    const handleTerminalCompleted = (pr: PaymentRequest) => {
+        setShowTerminalWizard(false)
+        // wasTerminalCard=true → backend recibe COMPROBANTE_PAGO, no emite DTE local
+        wasTerminalCardRef.current = true
+        terminalPaymentKeyRef.current = pr.idempotency_key
+        if (isSessionHost) {
+            setPinModalOpen(true)
+        } else {
+            executeCheckout(undefined, true)
+        }
+    }
+
+    const handleTerminalFailed = (_pr?: PaymentRequest, failureReason?: string) => {
+        setShowTerminalWizard(false)
+        setManualTerminalFailureReason(failureReason ?? null)
+        setManualTerminalReason('TERMINAL_BYPASS')
+    }
+
+    const handleTerminalCancel = () => {
+        setShowTerminalWizard(false)
+    }
+
+    const handleTerminalBypass = () => {
+        setShowTerminalWizard(false)
+        setManualTerminalFailureReason(null)
+        setManualTerminalReason('TERMINAL_BYPASS')
+    }
+
+    // Bypass manual: TUU no emitió DTE 48 (rechazo o no respuesta). El ERP
+    // emite el DTE local según dteData.type (BOLETA 39). wasTerminalCardRef
+    // permanece false → backend no aplica la ruta COMPROBANTE_PAGO.
+    const handleManualTerminalConfirm = () => {
+        setManualTerminalReason(null)
+        setManualTerminalFailureReason(null)
+        if (isSessionHost) {
+            setPinModalOpen(true)
+        } else {
+            executeCheckout()
+        }
+    }
+
+    const handleManualTerminalCancel = () => {
+        setManualTerminalReason(null)
+        setManualTerminalFailureReason(null)
+    }
+
+    const handleSwitchPaymentMethod = () => {
+        setManualTerminalReason(null)
+        setManualTerminalFailureReason(null)
+        setPaymentData((prev: CheckoutPaymentData) => ({
+            ...prev,
+            method: null,
+            paymentMethodId: undefined,
+            treasuryAccountId: null,
+            isTerminalIntegration: false,
+        }))
+        setStep(totalSteps)
     }
 
     const handleRequestApproval = async () => {
@@ -577,6 +684,7 @@ export function SalesCheckoutWizardContent({
             const payloadOrder = order ? { id: order.id } : {
                 customer: selectedCustomerId ? parseInt(selectedCustomerId) : null,
                 payment_method: paymentData.method,
+                payment_method_id: paymentData.paymentMethodId ?? null,
                 channel: channel,
                 total_discount_amount: totalDiscountAmount,
                 lines: currentOrderLines.map((l: SaleOrderLine) => ({
@@ -684,13 +792,13 @@ export function SalesCheckoutWizardContent({
                     totalSteps={totalSteps}
                     customerName={selectedCustomerName}
                     hasManufacturing={hasManufacturing}
-                    dteType={step > (hasManufacturing ? 2 : 1) ? dteData.type : undefined}
-                    paymentData={step > (hasManufacturing ? 4 : 3) ? {
+                    dteType={step > 1 ? dteData.type : undefined}
+                    paymentData={step === totalSteps ? {
                         method: (paymentData.method || "NOT_SET") as string,
                         amount: paymentData.amount,
                         creditAssigned: paymentData.amount < currentTotal ? currentTotal - paymentData.amount : 0
                     } : undefined}
-                    deliveryData={step > (hasManufacturing ? 3 : 2) ? {
+                    deliveryData={steps.findIndex(s => s.id === 'delivery') !== -1 && step > (steps.findIndex(s => s.id === 'delivery') + 1) ? {
                         ...deliveryData,
                         date: deliveryData.date || undefined
                     } : undefined}
@@ -700,46 +808,8 @@ export function SalesCheckoutWizardContent({
             <div className="flex-1 flex flex-col min-w-0">
                 <div className="flex-1 p-6 overflow-y-auto">
                     <>
-                        {/* Pending Debts Banner - Compact Version */}
-                        {pendingDebts && pendingDebts.length > 0 && (
-                            <Alert className="mb-4 border border-warning/30 bg-warning/5 p-3 sm:py-2.5">
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                    <div className="flex items-center gap-3">
-                                        <FileWarning className="h-3.5 w-3.5 text-muted-foreground" />
-                                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                                            <span className="text-sm font-bold text-warning-foreground shrink-0">
-                                                Deudas Pendientes ({pendingDebts.length})
-                                            </span>
-                                            <span className="text-xs text-warning-foreground/80 leading-none">
-                                                Total: <span className="font-bold font-mono">${pendingDebts.reduce((sum: number, d: any) => sum + Number(d.balance || 0), 0).toLocaleString('es-CL')}</span>
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-1.5 ml-8 sm:ml-0">
-                                        {pendingDebts.slice(0, 4).map((debt: any) => (
-                                            <Button
-                                                key={debt.id}
-                                                size="sm"
-                                                variant="outline"
-                                                className="h-6 px-2 border-warning/20 text-warning-foreground hover:bg-warning/10 text-[10px] gap-1 font-medium bg-white/50"
-                                                onClick={() => openHub({ orderId: debt.id, type: 'sale', onActionSuccess: refreshDebts })}
-                                            >
-                                                <span className="font-mono">NV-{debt.number}</span>
-                                                <span className="opacity-60">${Number(debt.balance).toLocaleString('es-CL')}</span>
-                                                {debt.days_overdue > 0 && (
-                                                    <span className="text-destructive font-bold ml-0.5">{debt.days_overdue}d</span>
-                                                )}
-                                            </Button>
-                                        ))}
-                                        {pendingDebts.length > 4 && (
-                                            <div className="text-[10px] text-warning/70 py-1 px-1.5 bg-warning/5 rounded border border-warning/10">
-                                                +{pendingDebts.length - 4}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </Alert>
-                        )}
+                        {/* Pending Debts Banner - Removed from here, moved to Step1_CustomerDTE */}
+
 
                         {/* Credit Approval Alert */}
                         {creditApprovalRequired && (
@@ -839,70 +909,53 @@ export function SalesCheckoutWizardContent({
                             </Button>
                         </div>
                         <div className="flex gap-4">
-                            {step < totalSteps ? (
+                            {step < totalSteps && (
                                 <Button 
                                     onClick={handleNext} 
                                     className="w-40 font-bold"
-                                    disabled={step === (hasManufacturing ? 3 : 2) && !dteData.isPending && !isFolioValid}
                                 >
                                     Siguiente
                                     <ChevronRight className="ml-2 h-4 w-4" />
                                 </Button>
-                            ) : (
-                                <Button onClick={handleFinish} disabled={loading || isWaitingApproval} className="w-48 bg-success font-bold">
-                                    {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-                                    Finalizar Venta
-                                </Button>
+                            )}
+                            {step === totalSteps && (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        className="hidden sm:flex items-center gap-2"
+                                        onClick={() => {
+                                            const finalState = {
+                                                step: step,
+                                                dteData,
+                                                paymentData,
+                                                deliveryData,
+                                                isApproved,
+                                                isLoading: false,
+                                                selectedCustomerId,
+                                                selectedCustomerName,
+                                                isQuickSale: quickSale,
+                                                isWaitingPayment: true
+                                            };
+                                            onSuspend?.(finalState);
+                                        }}
+                                        disabled={loading}
+                                    >
+                                        Pagar en otro terminal
+                                    </Button>
+                                    <Button
+                                        onClick={handleFinish}
+                                        disabled={loading || isWaitingApproval || cardTerminalRequiresBoleta}
+                                        className="w-48 bg-success font-bold"
+                                        title={cardTerminalRequiresBoleta ? "Tarjeta TUU requiere Boleta (DTE 48). Cambia el tipo de documento o el método de pago." : undefined}
+                                    >
+                                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                                        Finalizar Venta
+                                    </Button>
+                                </>
                             )}
                         </div>
                     </div>
                 )}
-
-                <AlertDialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>¿Continuar al Pago?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Ha completado los pasos previos. Puede pagar ahora mismo en esta caja, o enviar el cobro a otro terminal.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-4">
-                            <Button
-                                variant="outline"
-                                className="w-full sm:w-auto"
-                                onClick={() => {
-                                    const nextStep = step + 1;
-                                    const finalState = {
-                                        step: nextStep,
-                                        dteData,
-                                        paymentData,
-                                        deliveryData,
-                                        isApproved,
-                                        isLoading: false,
-                                        selectedCustomerId,
-                                        selectedCustomerName,
-                                        isQuickSale: quickSale,
-                                        isWaitingPayment: true
-                                    };
-                                    setStep(nextStep);
-                                    setShowSuspendDialog(false);
-                                    onSuspend?.(finalState);
-                                }}
-                            >
-                                Pagar en otro terminal
-                            </Button>
-                            <Button
-                                className="w-full sm:w-auto bg-primary text-white hover:bg-primary/90"
-                                onClick={() => {
-                                    setShowSuspendDialog(false);
-                                    setStep(prev => prev + 1);
-                                }}
-                            >
-                                Continuar al pago aquí
-                            </Button>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
             </div>
 
             {!isInline && (
@@ -917,14 +970,101 @@ export function SalesCheckoutWizardContent({
                 </div>
             )}
 
-            <PINPadModal 
+            <PINPadModal
                 open={pinModalOpen}
                 onOpenChange={setPinModalOpen}
                 onConfirm={(pin) => {
                     setPinModalOpen(false)
-                    executeCheckout(pin)
+                    const wasCard = wasTerminalCardRef.current
+                    const terminalKey = terminalPaymentKeyRef.current ?? undefined
+                    wasTerminalCardRef.current = false
+                    executeCheckout(pin, wasCard, terminalKey)
                 }}
             />
+
+            <BaseModal
+                open={showTerminalWizard && !!terminalDeviceId}
+                onOpenChange={handleTerminalCancel}
+                title="Cobro en Terminal"
+                size="sm"
+            >
+                <TerminalPaymentWizard
+                    deviceId={terminalDeviceId ?? 0}
+                    amount={currentTotal}
+                    saleOrderId={order?.id}
+                    posSessionId={posSessionId ?? undefined}
+                    onCompleted={handleTerminalCompleted}
+                    onFailed={handleTerminalFailed}
+                    onCancel={handleTerminalCancel}
+                    onBypass={handleTerminalBypass}
+                />
+            </BaseModal>
+
+            <BaseModal
+                open={!!manualTerminalReason}
+                onOpenChange={handleManualTerminalCancel}
+                title="Aviso de Registro Manual"
+                size="sm"
+            >
+                {manualTerminalReason && (
+                    <ManualTerminalNotice
+                        reason={manualTerminalReason}
+                        amount={currentTotal}
+                        paymentMethodName={paymentData.method ?? undefined}
+                        failureReason={manualTerminalFailureReason ?? undefined}
+                        onConfirm={handleManualTerminalConfirm}
+                        onCancel={handleManualTerminalCancel}
+                        onSwitchPaymentMethod={handleSwitchPaymentMethod}
+                        isLoading={loading}
+                        requiresInvoiceReminder={dteData.isPending}
+                    />
+                )}
+            </BaseModal>
+
+            <BaseModal
+                open={showInvoiceReminder}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setShowInvoiceReminder(false)
+                    }
+                }}
+                title="Atención: Factura Pendiente"
+                size="sm"
+            >
+                <div className="flex flex-col items-center gap-6 py-4">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-none border border-destructive/30 bg-destructive/10">
+                        <FileWarning className="h-8 w-8 text-destructive" />
+                    </div>
+                    <div className="text-center space-y-2">
+                        <h4 className="font-heading text-lg font-black uppercase tracking-tight text-foreground">
+                            Emitir Factura
+                        </h4>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                            Al finalizar el cobro, ten presente que marcaste la <b>Factura</b> para ser emitida posteriormente.
+                            <br/><br/>
+                            No olvides emitirla externamente e ingresarle los folios al sistema una vez concluido el servicio.
+                        </p>
+                    </div>
+                    <div className="w-full pt-4">
+                        <Button
+                            variant="primary"
+                            className="w-full h-12 font-bold uppercase tracking-widest text-xs rounded-none shadow-lg shadow-primary/20"
+                            onClick={() => {
+                                setShowInvoiceReminder(false)
+                                if (isSessionHost) {
+                                    setPinModalOpen(true)
+                                } else {
+                                    executeCheckout()
+                                }
+                            }}
+                        >
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
+                            Entendido, Ir a Pagar
+                        </Button>
+                    </div>
+                </div>
+            </BaseModal>
+
         </div>
     )
 }

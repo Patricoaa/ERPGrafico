@@ -37,7 +37,7 @@ Este documento define la "Constitución" técnica del frontend del proyecto ERPG
 - **Ritmo Vertical (8pt Grid):** Todo el espaciado (`padding`, `margin`, `gap`) debe ser múltiplo de 8px (0.5rem). Se prohíbe el uso de valores arbitrarios fuera de la escala definida en `color-tokens.md`.
 - **Ley de Fitts (Área de Clic):** Ningún elemento interactivo principal debe tener una altura menor a **40px** (`h-10`). Los elementos compactos excepcionales deben ser de **36px** (`h-9`).
 - **Regla 60-30-10:** El balance de color debe respetarse estrictamente para evitar la fatiga visual. El color primary (`Electric Violet`) solo debe ocupar el 10% de la superficie visual activa.
-- **Border Radius Industrial:** El sistema usa `--radius: 0.5rem` (8px). No usar `rounded-2xl`, `rounded-3xl` ni `rounded-full` en componentes estándar salvo excepción documentada (logo, avatar, FAB). Ver tabla de uso en `color-tokens.md`.
+- **Border Radius Industrial:** El sistema usa `--radius: 0.125rem` (2px) — micro-radius que mantiene la estética industrial pero permite mejor rendering subpixel. No usar `rounded-2xl`, `rounded-3xl` ni `rounded-full` en componentes estándar salvo excepción documentada (logo, avatar, FAB). Ver tabla de uso en `color-tokens.md`.
 
 ## 8. Anatomía del Layout
 - **Grilla de 12 Columnas:** Todos los layouts de página deben basarse en una grilla de 12 columnas (`grid-cols-12`). 

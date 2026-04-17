@@ -53,7 +53,7 @@ export interface CartItem extends Product {
     discount_percentage?: number
     discount_amount?: number
     uom?: number
-    manufacturing_data?: any
+    manufacturing_data?: unknown
     uom_name?: string
 }
 
@@ -103,7 +103,7 @@ export interface POSSession {
     expected_cash: number
     total_other_cash_inflow: number
     total_other_cash_outflow: number
-    cash_movements?: any[]
+    cash_movements?: unknown[]
 }
 
 export interface StockLimits {

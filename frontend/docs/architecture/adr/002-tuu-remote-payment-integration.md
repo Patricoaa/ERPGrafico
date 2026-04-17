@@ -1,7 +1,9 @@
 # ADR 002: Integración TUU Pago Remoto en POS
 
 ## Status
-Propuesto — 2026-04-15
+Implementado — 2026-04-16
+
+Fases 1–3 completadas. Fase 4 (go-live con terminal físico) pendiente de activación en producción.
 
 ## Context
 
@@ -139,15 +141,17 @@ Tarea `treasury.tasks.poll_payment_request(payment_request_id)` dispara polling 
 
 ## Implementation Checklist
 
-- [ ] Crear app/módulo `treasury/gateways/` con `PaymentGateway` abstracto, `TuuGateway`, `FakeTuuGateway`.
-- [ ] Migración: modelo `treasury.PaymentRequest` + índices (`idempotency_key` unique, `sequence_number`, `sale_order`).
-- [ ] Utility de cifrado Fernet para `gateway_config.api_key` + método `PaymentTerminalProvider.get_api_key()`.
-- [ ] Setting `TUU_GATEWAY_MODE` (default `fake`) + fábrica `get_gateway(provider)`.
-- [ ] Celery task `poll_payment_request` con rate-limit por terminal y timeout.
-- [ ] Endpoints `POST /initiate`, `GET /{key}`, `POST /{key}/cancel`.
-- [ ] Estado `PAYMENT_PENDING` en `SaleOrder` + transiciones en `sales/services.py`.
-- [ ] UI wizard POS: paso de espera con cancelación y manejo de `Failed`/`Canceled`.
-- [ ] Extender `matching_service.py` para cruce por `sequence_number`.
-- [ ] Tests: máquina de estados, idempotencia, timeout, rate limit, errores MR/RP, cifrado.
-- [ ] Registrar terminal dedicado en Workspace TUU para smoke test productivo.
-- [ ] Limpieza posterior de `PaymentMethod.process_via_terminal` / `is_terminal` (fuera del alcance de esta ADR, registrar issue).
+- [x] Crear app/módulo `treasury/gateways/` con `PaymentGateway` abstracto, `TuuGateway`, `FakeTuuGateway`. _(Fase 1)_
+- [x] Migración: modelo `treasury.PaymentRequest` + índices (`idempotency_key` unique, `sequence_number`, `sale_order`). _(Fase 1 — migraciones 0009, 0011)_
+- [x] Utility de cifrado Fernet para `gateway_config.api_key` + método `PaymentTerminalProvider.get_api_key()`. _(Fase 1 — `core/crypto.py`, `set_tuu_api_key` management command)_
+- [x] Setting `TUU_GATEWAY_MODE` (default `fake`) + fábrica `get_gateway(provider)`. _(Fase 1 — `gateways/factory.py`, `config/settings.py`)_
+- [x] Celery task `poll_payment_request` con rate-limit por terminal y timeout. _(Fase 1 — `treasury/tasks.py`, `gateways/ratelimit.py`)_
+- [x] Endpoints `POST /initiate`, `GET /{key}`, `POST /{key}/cancel`. _(Fase 1 — `treasury/views.py`)_
+- [x] Estado `PAYMENT_PENDING` en `SaleOrder` + transiciones en `sales/services.py`. _(Fase 1)_
+- [x] UI wizard POS: paso de espera con cancelación y manejo de `Failed`/`Canceled`. _(Fase 2 — `TerminalPaymentWizard`, `useInitiatePayment`, `usePaymentStatus`)_
+- [x] Guard DTE: bloqueo de emisión mientras `PAYMENT_PENDING`. _(Fase 2 — `billing/services.py`)_
+- [x] Extender `matching_service.py` para cruce por `sequence_number`. _(Fase 3 — `PaymentRequestBatchReconciler`)_
+- [x] Migración FK `PaymentRequest.terminal_batch`. _(Fase 3 — migración 0011)_
+- [x] Tests: máquina de estados, idempotencia, timeout, rate limit, errores MR/RP, cifrado, reconciliación. _(38/38 green)_
+- [ ] **Fase 4 — Go-live**: Registrar terminal dedicado en Workspace TUU. Obtener API Key. Ejecutar `set_tuu_api_key`. Setear `TUU_GATEWAY_MODE=live` + `TUU_ENCRYPTION_KEY` en env producción. Smoke test con $100 CLP real.
+- [ ] **Deuda técnica**: Limpiar `PaymentMethod.process_via_terminal` / `is_terminal` (registrar issue separado).

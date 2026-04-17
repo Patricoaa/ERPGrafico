@@ -52,7 +52,7 @@ Contenedores unificados que definen la jerarquía visual del sistema.
   - `standard`: Card con borde discontinuo para estados secundarios.
   - `glass`: Variante translúcida con efecto glassmorphism, para overlays y paneles flotantes.
 - **Reglas Visuales**:
-  - **Radio de Borde**: **`rounded-none`** siempre. El sistema es zero-radius.
+  - **Radio de Borde**: **`rounded-md`** (4px). Alineado con el micro-radius industrial.
   - **Marcas de Corte**: `IndustrialCard` incluye `<IndustryMark variant="crop" />` de forma nativa. El contenedor usa `overflow-visible` para permitir la proyección externa de las marcas.
   - **Sombras**: Utilizar sombras pronunciadas (`shadow-xl` o `shadow-2xl`) para elevar los contenedores sobre el fondo.
   - **Requiere `overflow-visible`**: Si el contenedor padre tiene `overflow-hidden`, las marcas de corte serán recortadas. Asegurarse de que ninguna ancestro corte el overflow.
@@ -83,16 +83,16 @@ Contenedores unificados que definen la jerarquía visual del sistema.
 Conjunto de tokens para elementos operativos que requieren precisión visual.
 
 - **Reglas Visuales**:
-  - **Radio de Borde: CERO**. El mandato de "Industrial Premium" establece **zero-radius (bordes rectos de 90°)** en **todos** los elementos del sistema sin excepción. Esto aplica a botones, inputs, cards, modales, popovers y contenedores.
-  - Para botones de acción principal (como el `+` de creación), se utiliza el `ActionFoldButton`, el cual mantiene de forma estricta los bordes cuadrados pero añade un feedback kinético (un "doblez" o pliegue en la esquina superior derecha) en estado interactivo.
+  - **Radio de Borde: MICRO-RADIUS**. El mandato de "Industrial Premium" establece **micro-radius (`--radius: 0.125rem` / 2px)** en **todos** los elementos del sistema. Bordes visualmente rectos pero técnicamente suavizados para mejor rendering subpixel. Esto aplica a botones, inputs, cards, modales, popovers y contenedores.
+  - Para botones de acción principal (como el `+` de creación), se utiliza el `ActionFoldButton`, el cual mantiene de forma estricta los bordes industriales pero añade un feedback kinético (un "doblez" o pliegue en la esquina superior derecha) en estado interactivo.
   - **Tipografía**: Labels en uppercase con extra-tracking.
 
 > [!IMPORTANT]
-> **Prohibido**: Usar `rounded-sm`, `rounded-md`, `rounded-lg` o cualquier variante diferente de `rounded-none` en componentes de negocio. El token CSS `--radius: 0` en `globals.css` es la fuente de verdad. No sobreescribir.
+> **Prohibido**: Usar `rounded-2xl`, `rounded-3xl` o `rounded-full` en componentes de negocio (excepto logo, avatar, FAB). El token CSS `--radius: 0.125rem` en `globals.css` es la fuente de verdad. No sobreescribir.
 
 - **Tokens**:
-  - `input`: `rounded-none`, border-solid, h-10.
-  - `button`: `rounded-none`, transiciones suaves.
+  - `input`: `rounded-sm`, border-solid, h-10.
+  - `button`: `rounded-sm`, transiciones suaves.
   - **Botones Principales de Proceso**: Para acciones primarias ("Guardar", "Siguiente", "Ejecutar") en áreas transaccionales como Modales, Wizards o Sheets, se **exige** el uso del componente estandarizado `ActionSlideButton` (`components/shared/ActionSlideButton`). 
     - Este botón utiliza una variante "Outline/Ghost" en reposo y aplica un deslizamiento táctico (Slide-Fill in) magnético desde la izquierda al apuntar, conservando el espíritu kinético sin añadir saturación estática.
   - `sectionHeader`: Industrial separator style. Puede usar `.die-cut-separator` como alternativa a bordes sólidos.
@@ -203,16 +203,32 @@ use[Entity]s         →  useOrders, useInvoices, useProducts
 
 ### Patrón A — react-hook-form + Zod (formularios complejos)
 
-El schema Zod se define **inline** en el archivo del componente (no en `schema.ts` separado).
+El schema Zod se define en un archivo **`schema.ts` separado** dentro de la carpeta del formulario.
+Esto permite reutilización entre formularios de creación/edición, testing independiente,
+y alineación con el patrón "schema-first design" del ecosistema Zod.
 
-**Estructura:**
+**Estructura de carpetas:**
+```
+features/[module]/components/forms/
+├── schema.ts              ← Zod schema + derived TypeScript type
+├── [Entity]Form.tsx      ← Componente del formulario
+└── [Entity]Fields.tsx    ← Campos reutilizables (opcional)
+```
+
+**schema.ts:**
 ```tsx
-// Schema + Type derivado (en el mismo archivo)
-const orderSchema = z.object({
+import { z } from "zod"
+
+export const orderSchema = z.object({
   customer_id: z.string().min(1, "Requerido"),
   lines: z.array(lineSchema).min(1, "Al menos un item"),
 })
-type OrderFormValues = z.infer<typeof orderSchema>
+export type OrderFormValues = z.infer<typeof orderSchema>
+```
+
+**[Entity]Form.tsx:**
+```tsx
+import { orderSchema, type OrderFormValues } from "./schema"
 
 // Props estándar
 interface CreateOrderFormProps {
@@ -223,7 +239,7 @@ interface CreateOrderFormProps {
 
 // Form
 const form = useForm<OrderFormValues>({
-  resolver: zodResolver(orderSchema) as any,
+  resolver: zodResolver(orderSchema),
   defaultValues: initialData ?? { lines: [defaultLine] },
 })
 
@@ -473,7 +489,7 @@ const columns = [
 1. Usar `variant='minimal'` cuando la página integra `PageTabs` debajo del header.
 2. Usar `titleActions` con `ActionFoldButton` para botones de creación.
 3. Usar `status` para autosave o cambios pendientes.
-4. `PageHeaderButton` con `circular=true` renderiza `ActionFoldButton`. Sin `circular`, renderiza un `Button` estándar `rounded-none`.
+4. `PageHeaderButton` con `circular=true` renderiza `ActionFoldButton`. Sin `circular`, renderiza un `Button` estándar `rounded-sm`.
 
 ---
 

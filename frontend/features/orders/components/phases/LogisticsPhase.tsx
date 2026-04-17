@@ -12,11 +12,11 @@ import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 
 interface LogisticsPhaseProps {
-    activeDoc: any
+    activeDoc: Record<string, unknown>
     isNoteMode: boolean
-    noteStatuses: any
+    noteStatuses: Record<string, unknown>
     isSale: boolean
-    invoices: any[]
+    invoices: unknown[]
     isTimeline?: boolean
     onModalChange?: (isOpen: boolean) => void
     logisticsProgress: number
@@ -99,7 +99,7 @@ export function LogisticsPhase({
         const docs: any[] = []
 
         // 1. Returns for Notes/Orders
-        if (activeDoc.related_returns?.length > 0) {
+        if (Array.isArray(activeDoc.related_returns) && activeDoc.related_returns.length > 0) {
             docs.push(...activeDoc.related_returns.map((doc: any) => ({
                 type: doc.type,
                 number: formatDocumentId('DEV', doc.number || doc.id, doc.display_id),

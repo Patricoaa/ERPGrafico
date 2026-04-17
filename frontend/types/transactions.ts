@@ -85,6 +85,6 @@ export interface TransactionData {
     items?: TransactionLine[]
     related_docs?: RelatedDocument[]
     documents?: RelatedDocument[]
-    workflow_state?: any
-    [key: string]: any // Temporarily kept for backwards compatibility during migration
+    workflow_state?: unknown
+    [key: string]: unknown // Temporarily kept for backwards compatibility during migration
 }

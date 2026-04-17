@@ -25,6 +25,8 @@ export interface TerminalCreatePayload {
 
 export interface TerminalUpdatePayload extends Partial<TerminalCreatePayload> { }
 
+export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH' | 'BRIDGE' | 'MERCHANT'
+
 // Treasury Account types
 export interface TreasuryAccount {
     id: number
@@ -34,14 +36,12 @@ export interface TreasuryAccount {
     account: number | null
     account_name?: string
     account_code?: string | null
-    account_type: 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH'
+    account_type: TreasuryAccountType
     allows_cash: boolean
     allows_card: boolean
     allows_transfer: boolean
-    location: string
-    custodian: number | null
-    custodian_name?: string
-    is_physical: boolean
+    /** true for BRIDGE/MERCHANT — managed by provider, no manual edit/delete */
+    is_system_managed: boolean
     current_balance?: number
     bank?: number | null
     bank_name?: string
@@ -50,15 +50,12 @@ export interface TreasuryAccount {
 
 export interface TreasuryAccountCreatePayload {
     name: string
-    account_type: TreasuryAccount['account_type']
+    account_type: TreasuryAccountType
     currency: string
     account: number | null
     allows_cash: boolean
     allows_card: boolean
     allows_transfer: boolean
-    location: string
-    custodian: number | null
-    is_physical: boolean
     bank?: number | null
     account_number?: string | null
 }
@@ -74,6 +71,10 @@ export interface PaymentMethod {
     treasury_account_name: string
     is_active: boolean
     allow_for_sales: boolean
+    allow_for_purchases: boolean
+    /** true solo para CARD_TERMINAL — activa flujo TUU automatizado en POS */
+    is_terminal_integration: boolean
+    linked_terminal_device: number | null
 }
 
 // New Terminal Provider Types
@@ -100,7 +101,7 @@ export interface PaymentTerminalDevice {
     provider_name?: string
     serial_number: string
     model?: string
-    is_active: boolean
+    status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE'
 }
 
 // Terminal Batch Types
@@ -127,6 +128,7 @@ export type PaymentMethodType =
     | 'OTHER'
     | 'DEBIT_CARD'
     | 'CREDIT_CARD'
+    | 'CARD_TERMINAL'
 
 // Payment types
 export interface PaymentCreatePayload {
@@ -158,4 +160,45 @@ export interface ApiError {
         status: number
     }
     message: string
+}
+
+// ========== Payment Requests (TUU Pago Remoto — ADR 002) ==========
+
+export type PaymentRequestStatus =
+    | 'PENDING'
+    | 'SENT'
+    | 'PROCESSING'
+    | 'COMPLETED'
+    | 'FAILED'
+    | 'CANCELED'
+
+export interface PaymentRequest {
+    idempotency_key: string
+    status: PaymentRequestStatus
+    amount: number
+    device: number
+    provider: number
+    dte_type: number
+    payment_method_code: number
+    description: string
+    sale_order: number | null
+    pos_session: number | null
+    sequence_number: string
+    transaction_reference: string
+    acquirer_id: string
+    failure_reason: string
+    initiated_at: string
+    completed_at: string | null
+    celery_task_id: string
+}
+
+export interface InitiatePaymentPayload {
+    device: number
+    amount: number
+    payment_method_code?: number
+    dte_type?: number
+    description?: string
+    sale_order?: number
+    pos_session?: number
+    idempotency_key?: string
 }

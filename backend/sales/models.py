@@ -40,6 +40,14 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
     date = models.DateField(_("Fecha"), default=get_current_date)
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
+    payment_method_ref = models.ForeignKey(
+        'treasury.PaymentMethod',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='sale_orders',
+        verbose_name=_("Método de Pago (Ref)"),
+        help_text=_("FK a treasury.PaymentMethod. Reemplaza el campo legacy payment_method.")
+    )
     channel = models.CharField(_("Canal"), max_length=20, choices=Channel.choices, default=Channel.SYSTEM)
     pos_session = models.ForeignKey(
         'treasury.POSSession',

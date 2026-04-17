@@ -22,7 +22,8 @@ from treasury.models import (
     TreasuryAccount, TreasuryMovement, BankStatement, BankStatementLine,
     ReconciliationMatch, ReconciliationRule,
     POSTerminal, POSSession, POSSessionAudit,
-    Bank, PaymentMethod, TerminalBatch
+    Bank, PaymentMethod, TerminalBatch,
+    PaymentTerminalProvider, PaymentTerminalDevice,
 )
 from billing.models import Invoice, NoteWorkflow
 from tax.models import TaxPeriod, AccountingPeriod, F29Declaration, F29Payment
@@ -263,6 +264,8 @@ class Command(BaseCommand):
         _safe_delete(POSTerminal, "POSTerminal")
         _safe_delete(TerminalBatch, "TerminalBatch")
         _safe_delete(PaymentMethod, "PaymentMethod")
+        _safe_delete(PaymentTerminalDevice, "PaymentTerminalDevice")
+        _safe_delete(PaymentTerminalProvider, "PaymentTerminalProvider")
 
         # 8. Banking
         _safe_delete(BankStatementLine, "BankStatementLine")
@@ -1072,9 +1075,7 @@ class Command(BaseCommand):
 
     def _create_treasury_infrastructure(self, accounts, partners):
         self.stdout.write('  Creating POS Terminals and Treasury Physical Accounts...')
-        
-        manager_user = User.objects.get(username='gerente')
-        
+
         # 0. Create Banks
         b_estado, _ = Bank.objects.get_or_create(code="ESTADO", defaults={'name': "Banco Estado", 'is_active': True})
         b_chile, _ = Bank.objects.get_or_create(code="CHILE", defaults={'name': "Banco de Chile", 'is_active': True})
@@ -1109,8 +1110,6 @@ class Command(BaseCommand):
                 'account': acc_safe,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
-                'is_physical': True,
-                'custodian': manager_user
             }
         )
         
@@ -1135,7 +1134,6 @@ class Command(BaseCommand):
                 'account': acc_till1,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
-                'location': "Mostrador 1"
             }
         )
         
@@ -1149,20 +1147,6 @@ class Command(BaseCommand):
                 'allow_for_purchases': True
             }
         )
-        PaymentMethod.objects.get_or_create(
-            name="Tarjeta Transbank POS 01",
-            treasury_account=till1,
-            defaults={
-                'method_type': PaymentMethod.Type.CARD,
-                'allow_for_sales': True,
-                'allow_for_purchases': False, # POS usually only for sales
-                'is_terminal': True,
-                'supplier': partners['suppliers'][0],
-                'terminal_receivable_account': accounts['receivable'],
-                'commission_expense_account': accounts['expense_general']
-            }
-        )
-
         # Petty Cash Account
         acc_petty = get_create_cash_account('1.1.01.13', "Efectivo Caja Chica")
         petty, _ = TreasuryAccount.objects.get_or_create(
@@ -1173,7 +1157,6 @@ class Command(BaseCommand):
                 'account': acc_petty,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
-                'custodian': manager_user
             }
         )
         
@@ -1225,7 +1208,6 @@ class Command(BaseCommand):
                 'account': acc_workshop, 
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
-                'location': "Taller - Piso 2"
             }
         )
         
@@ -1276,7 +1258,6 @@ class Command(BaseCommand):
                 'account': acc_reception,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
-                'location': "Recepción Principal"
             }
         )
         
@@ -1297,41 +1278,68 @@ class Command(BaseCommand):
                 'method_type': PaymentMethod.Type.CARD,
                 'allow_for_sales': True,
                 'allow_for_purchases': False,
-                'is_terminal': True,
-                'supplier': partners['suppliers'][0],
-                'terminal_receivable_account': accounts['receivable'],
-                'commission_expense_account': Account.objects.get(code='5.2.13') # Use granular card commission account
             }
         )
-        
+
+        # 1.2 TUU Integration Infrastructure
+        # Bridge account: clearing between card payment capture and bank settlement.
+        # Type BRIDGE bypasses the 1.1.01 prefix-only restriction.
+        acc_tuu_bridge = get_create_cash_account('1.1.01.16', "Liquidación TUU (Clearing)")
+        tuu_bridge, _ = TreasuryAccount.objects.get_or_create(
+            code="PUENTE-TUU",
+            defaults={
+                'name': "Puente Liquidación TUU",
+                'currency': "CLP",
+                'account': acc_tuu_bridge,
+                'account_type': TreasuryAccount.Type.BRIDGE,
+                'allows_cash': False,
+            }
+        )
+
+        tuu_contact, _ = Contact.objects.get_or_create(
+            tax_id="76.354.771-8",
+            defaults={'name': "TUU SpA", 'email': "soporte@tuu.cl"}
+        )
+        tuu_provider, _ = PaymentTerminalProvider.objects.get_or_create(
+            name="TUU",
+            defaults={
+                'provider_type': PaymentTerminalProvider.ProviderType.TUU,
+                'supplier': tuu_contact,
+                'receivable_account': accounts['receivable'],
+                'commission_expense_account': accounts['expense_general'],
+                'bank_treasury_account': tuu_bridge,
+                'is_active': True,
+            }
+        )
+        tuu_device, _ = PaymentTerminalDevice.objects.get_or_create(
+            serial_number="TUU-DEMO-001",
+            defaults={
+                'name': "TUU POS-01",
+                'provider': tuu_provider,
+                'status': PaymentTerminalDevice.Status.ACTIVE,
+            }
+        )
+
         # 2. POS Terminals
         
-        # POS-01: Caja Central P1
-        t1, _ = POSTerminal.objects.get_or_create(
+        # POS-01: Caja Central P1 — con device TUU integrado.
+        # post_save signal auto-crea método CARD_TERMINAL y lo agrega a allowed_payment_methods.
+        t1, t1_created = POSTerminal.objects.get_or_create(
             code="POS-01",
             defaults={
                 'name': "Caja Central P1",
                 'location': "Planta 1 - Recepción",
                 'ip_address': '192.168.1.100',
-                'default_treasury_account': bco01 # Suggest bank account
+                'default_treasury_account': bco01,
+                'payment_terminal_device': tuu_device,
             }
         )
+        if not t1_created and t1.payment_terminal_device != tuu_device:
+            t1.payment_terminal_device = tuu_device
+            t1.save()  # Triggers signal → auto-creates CARD_TERMINAL method
         cash_pm_01 = PaymentMethod.objects.get(name="Efectivo POS 01")
-        card_pm_01, _ = PaymentMethod.objects.get_or_create(
-            name="Tarjeta Transbank POS 01",
-            treasury_account=till1,
-            defaults={
-                'method_type': PaymentMethod.Type.CARD,
-                'allow_for_sales': True,
-                'allow_for_purchases': False,
-                'is_terminal': True,
-                'supplier': partners['suppliers'][0],
-                'terminal_receivable_account': accounts['receivable'],
-                'commission_expense_account': accounts['expense_general']
-            }
-        )
-        # Association per screenshot: Efectivo POS 01 + Tarjeta Transbank POS 01
-        t1.allowed_payment_methods.set([cash_pm_01, card_pm_01])
+        # Signal already added CARD_TERMINAL; ensure cash is also present
+        t1.allowed_payment_methods.add(cash_pm_01)
 
         # POS-02: Caja Taller P2
         t2, _ = POSTerminal.objects.get_or_create(
@@ -1453,8 +1461,6 @@ class Command(BaseCommand):
                 'address': "Av. Principal 123, Santiago, Chile",
                 'business_activity': "Servicios de Impresión y Diseño",
                 'contact': contact,
-                'primary_color': "#5b21b6", # purple-800
-                'secondary_color': "#3b82f6", # blue-500
             }
         )
         self.stdout.write("  ✓ Initialized/Updated company settings singleton")

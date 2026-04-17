@@ -21,19 +21,20 @@ class BankSerializer(serializers.ModelSerializer):
 class PaymentMethodSerializer(serializers.ModelSerializer):
     method_type_display = serializers.CharField(source='get_method_type_display', read_only=True)
     treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True)
-    
+
     # Ensure it's writable as ID
     treasury_account = serializers.PrimaryKeyRelatedField(
         queryset=TreasuryAccount.objects.all(),
         required=True
     )
-    
-    # Terminal specific display fields
-    supplier_name = serializers.CharField(source='supplier.name', read_only=True, allow_null=True)
-    terminal_receivable_account_name = serializers.CharField(source='terminal_receivable_account.name', read_only=True, allow_null=True)
-    commission_expense_account_name = serializers.CharField(source='commission_expense_account.name', read_only=True, allow_null=True)
 
-    
+    # Computed: true solo para CARD_TERMINAL con device vinculado — activa flujo TUU automatizado en POS
+    is_terminal_integration = serializers.SerializerMethodField()
+    settlement_account_name = serializers.CharField(source='effective_settlement_account.name', read_only=True, allow_null=True)
+
+    def get_is_terminal_integration(self, obj):
+        return obj.is_integrated
+
     class Meta:
         model = PaymentMethod
         fields = '__all__'
@@ -42,18 +43,20 @@ class PaymentMethodSerializer(serializers.ModelSerializer):
 class TreasuryAccountSerializer(serializers.ModelSerializer):
     account_name = serializers.CharField(source='account.name', read_only=True)
     account_code = serializers.CharField(source='account.code', read_only=True)
-    custodian_name = serializers.CharField(source='custodian.username', read_only=True, allow_null=True)
     bank_name = serializers.CharField(source='bank.name', read_only=True, allow_null=True)
-    
+    is_system_managed = serializers.SerializerMethodField()
+
     current_balance = serializers.DecimalField(max_digits=20, decimal_places=0, read_only=True)
     payment_methods = PaymentMethodSerializer(many=True, read_only=True)
 
+    def get_is_system_managed(self, obj):
+        return obj.account_type in TreasuryAccount._NON_CASH_EQUIVALENT_TYPES
+
     class Meta:
         model = TreasuryAccount
-        fields = ['id', 'name', 'code', 'currency', 'account', 'account_name', 'account_code', 'account_type', 
+        fields = ['id', 'name', 'code', 'currency', 'account', 'account_name', 'account_code', 'account_type',
                   'bank', 'bank_name', 'account_number', 'allows_cash', 'allows_card', 'allows_transfer', 'allows_check',
-                  'location', 'custodian', 'custodian_name', 'is_physical', 'current_balance', 
-                  'payment_methods']
+                  'is_system_managed', 'current_balance', 'payment_methods']
 
 
 class POSTerminalSerializer(serializers.ModelSerializer):
