@@ -43,22 +43,42 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         treasury_account = self.request.query_params.get('treasury_account')
         if treasury_account:
             qs = qs.filter(treasury_account_id=treasury_account)
-            
+
         for_sales = self.request.query_params.get('for_sales')
         if for_sales == 'true':
             qs = qs.filter(allow_for_sales=True)
-            
+
         for_purchases = self.request.query_params.get('for_purchases')
         if for_purchases == 'true':
             qs = qs.filter(allow_for_purchases=True)
 
-        # DEPRECATED: is_terminal filter removed — hardware is inferred from POSTerminal device linkage
-
         method_type = self.request.query_params.get('method_type')
         if method_type:
             qs = qs.filter(method_type=method_type)
-            
+
         return qs
+
+    def _check_integrated(self, instance):
+        if instance.is_integrated:
+            return Response(
+                {'detail': 'Los métodos de pago integrados (CARD_TERMINAL con dispositivo) son gestionados por el sistema. Modifique el dispositivo o proveedor en su lugar.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+    def update(self, request, *args, **kwargs):
+        err = self._check_integrated(self.get_object())
+        if err: return err
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        err = self._check_integrated(self.get_object())
+        if err: return err
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        err = self._check_integrated(self.get_object())
+        if err: return err
+        return super().destroy(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         serializer.save()
@@ -73,18 +93,32 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        
-        # Filter by physical status if requested
-        is_physical = self.request.query_params.get('is_physical')
-        if is_physical is not None:
-            qs = qs.filter(is_physical=is_physical.lower() == 'true')
-            
-        # Filter to exclude specific account (e.g., current POS account)
         exclude_id = self.request.query_params.get('exclude_id')
         if exclude_id:
             qs = qs.exclude(id=exclude_id)
-            
         return qs
+
+    def _check_system_managed(self, instance):
+        if instance.account_type in TreasuryAccount._NON_CASH_EQUIVALENT_TYPES:
+            return Response(
+                {'detail': f'Las cuentas de tipo {instance.get_account_type_display()} son gestionadas por el sistema (vinculadas a un proveedor de terminal). Modifique el proveedor en su lugar.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+    def update(self, request, *args, **kwargs):
+        err = self._check_system_managed(self.get_object())
+        if err: return err
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        err = self._check_system_managed(self.get_object())
+        if err: return err
+        return super().partial_update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        err = self._check_system_managed(self.get_object())
+        if err: return err
+        return super().destroy(request, *args, **kwargs)
 
 
 class PaymentTerminalProviderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):

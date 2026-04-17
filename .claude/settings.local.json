@@ -3,7 +3,17 @@
     "allow": [
       "Bash(npm run *)",
       "Bash(docker exec erpgrafico-backend-1 *)",
-      "Bash(grep -l \"^import requests\\\\|^from requests\" backend/*/*.py)"
+      "Bash(grep -l \"^import requests\\\\|^from requests\" backend/*/*.py)",
+      "Bash(docker compose *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(ls backend/*.env*)",
+      "Bash(ls *.env*)",
+      "WebFetch(domain:developers.tuu.cl)",
+      "Bash(python -c \"from treasury import models; print\\('OK', models.PaymentMethod._meta.get_field\\('settlement_account'\\)\\)\")",
+      "Bash(docker exec *)",
+      "Bash(npx tsc *)",
+      "Bash(grep -E \"\\\\.\\(tsx?|jsx?\\)$\")",
+      "Bash(xargs grep *)"
     ]
   }
 }

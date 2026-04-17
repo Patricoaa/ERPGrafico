@@ -2,6 +2,7 @@
 
 import React, { useState, useTransition } from "react"
 import { BaseModal, BaseModalProps } from "./BaseModal"
+import { ActionSlideButton } from "./ActionSlideButton"
 import { Button } from "@/components/ui/button"
 import { Loader2, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -26,8 +27,17 @@ export interface GenericWizardProps extends Omit<BaseModalProps, "children" | "t
     isCompleting?: boolean
     isLoading?: boolean
     successContent?: React.ReactNode
+    /** Optional footer-left element (e.g. "Suspender" button) */
+    footerLeft?: React.ReactNode
 }
 
+/**
+ * GenericWizard
+ *
+ * Industrial-themed multi-step wizard built on BaseModal.
+ * Uses ActionSlideButton for primary navigation (matching the kinetic interaction contract).
+ * Includes a monospaced industrial step counter for prepress-style progress indication.
+ */
 export function GenericWizard({
     open,
     onOpenChange,
@@ -41,6 +51,7 @@ export function GenericWizard({
     isCompleting = false,
     isLoading = false,
     successContent,
+    footerLeft,
     size = "md",
     ...props
 }: GenericWizardProps) {
@@ -77,44 +88,78 @@ export function GenericWizard({
         }
     }
 
-    // Header dynamic description: "Paso X de Y: Titulo del Paso"
-    const stepDescription = `Paso ${currentStep + 1} de ${totalSteps}: ${currentStepData.title}`
+    // Industrial step indicator: "01 / 03 — Título del Paso"
+    const stepDescription = (
+        <div className="flex items-center gap-3">
+            <span className="font-mono font-black text-xs text-primary tracking-wider">
+                {String(currentStep + 1).padStart(2, '0')} / {String(totalSteps).padStart(2, '0')}
+            </span>
+            <span className="text-[10px] font-heading font-black uppercase tracking-wider text-muted-foreground">
+                {currentStepData.title}
+            </span>
+        </div>
+    )
+
+    // Industrial step progress bar
+    const progressBar = (
+        <div className="flex gap-1 w-full">
+            {steps.map((_, idx) => (
+                <div
+                    key={idx}
+                    className={cn(
+                        "h-0.5 flex-1 transition-all duration-300",
+                        idx < currentStep && "bg-primary",
+                        idx === currentStep && "bg-primary animate-pulse",
+                        idx > currentStep && "bg-border/40"
+                    )}
+                />
+            ))}
+        </div>
+    )
 
     // Footer actions
     const footer = !isFinished && (
-        <div className="flex items-center justify-between w-full">
-            <Button
-                variant="ghost"
-                onClick={handleBack}
-                disabled={isFirstStep || isCompleting || isStepTransitioning}
-                className="gap-2"
-            >
-                <ChevronLeft className="h-4 w-4" />
-                Anterior
-            </Button>
+        <div className="flex flex-col gap-3 w-full">
+            {/* Progress bar */}
+            {progressBar}
+            
+            {/* Navigation */}
+            <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="ghost"
+                        onClick={handleBack}
+                        disabled={isFirstStep || isCompleting || isStepTransitioning}
+                        className="gap-2"
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                        Anterior
+                    </Button>
+                    {footerLeft}
+                </div>
 
-            <Button
-                onClick={() => startTransition(handleNext)}
-                disabled={currentStepData.isValid === false || isCompleting || isStepTransitioning}
-                className={cn(
-                    "gap-2 min-w-[120px]",
-                    isLastStep && "bg-success hover:bg-success/90 text-success-foreground"
-                )}
-            >
-                {isCompleting || isStepTransitioning ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                ) : isLastStep ? (
-                    <>
+                {isLastStep ? (
+                    <ActionSlideButton
+                        variant="success"
+                        onClick={() => startTransition(handleNext)}
+                        disabled={currentStepData.isValid === false || isCompleting || isStepTransitioning}
+                        loading={isCompleting || isStepTransitioning}
+                        icon={isCompleting || isStepTransitioning ? undefined : CheckCircle2}
+                    >
                         {completeButtonLabel}
-                        {completeButtonIcon}
-                    </>
+                    </ActionSlideButton>
                 ) : (
-                    <>
+                    <ActionSlideButton
+                        variant="primary"
+                        onClick={() => startTransition(handleNext)}
+                        disabled={currentStepData.isValid === false || isCompleting || isStepTransitioning}
+                        loading={isStepTransitioning}
+                        icon={isStepTransitioning ? undefined : ChevronRight}
+                    >
                         Siguiente
-                        <ChevronRight className="h-4 w-4" />
-                    </>
+                    </ActionSlideButton>
                 )}
-            </Button>
+            </div>
         </div>
     )
 

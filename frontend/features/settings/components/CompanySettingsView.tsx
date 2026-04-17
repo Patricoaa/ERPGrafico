@@ -552,69 +552,7 @@ export function CompanySettingsView({
                                 </div>
                             </div>
 
-                            <Separator />
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <FormField
-                                    control={form.control}
-                                    name="primary_color"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Color Primario</FormLabel>
-                                            <div className="flex items-center gap-4">
-                                                <FormControl>
-                                                    <div className="relative">
-                                                        <Input 
-                                                            {...field} 
-                                                            type="color" 
-                                                            className="h-10 w-20 p-1 cursor-pointer absolute opacity-0 z-10" 
-                                                        />
-                                                        <div 
-                                                            className="h-10 w-20 rounded border border-input shadow-sm" 
-                                                            style={{ backgroundColor: field.value }}
-                                                        />
-                                                    </div>
-                                                </FormControl>
-                                                <code className="text-sm font-mono font-bold">{field.value}</code>
-                                            </div>
-                                            <FormDescription className="text-[10px]">
-                                                Utilizado para encabezados y botones principales.
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <FormField
-                                    control={form.control}
-                                    name="secondary_color"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Color Secundario</FormLabel>
-                                            <div className="flex items-center gap-4">
-                                                <FormControl>
-                                                    <div className="relative">
-                                                        <Input 
-                                                            {...field} 
-                                                            type="color" 
-                                                            className="h-10 w-20 p-1 cursor-pointer absolute opacity-0 z-10" 
-                                                        />
-                                                        <div 
-                                                            className="h-10 w-20 rounded border border-input shadow-sm" 
-                                                            style={{ backgroundColor: field.value }}
-                                                        />
-                                                    </div>
-                                                </FormControl>
-                                                <code className="text-sm font-mono font-bold">{field.value}</code>
-                                            </div>
-                                            <FormDescription className="text-[10px]">
-                                                Utilizado para detalles y elementos de contraste.
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>

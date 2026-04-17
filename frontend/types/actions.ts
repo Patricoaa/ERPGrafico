@@ -12,7 +12,7 @@ export interface ActionBadge {
 /**
  * Individual action definition
  */
-export interface Action {
+export interface Action<T = unknown> {
     id: string
     label: string
     icon: LucideIcon
@@ -25,33 +25,33 @@ export interface Action {
     excludedStatus?: string[]
 
     // Custom availability check
-    checkAvailability?: (order: any) => boolean
+    checkAvailability?: (order: T) => boolean
 
     // Action handler
-    onClick?: (order: any) => void
+    onClick?: (order: T) => void
 
     // Visual indicators
     badge?: ActionBadge
     variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost'
     description?: string
-    isDisabled?: (order: any) => boolean
-    disabledTooltip?: string | ((order: any) => string)
+    isDisabled?: (order: T) => boolean
+    disabledTooltip?: string | ((order: T) => string)
 }
 
 /**
  * Category of related actions
  */
-export interface ActionCategory {
+export interface ActionCategory<T = unknown> {
     id: string
     label: string
     icon: LucideIcon
-    actions: Action[]
+    actions: Action<T>[]
 }
 
 /**
  * Complete action registry for an order type
  */
-export type ActionRegistry = Record<string, ActionCategory>
+export type ActionRegistry<T = unknown> = Record<string, ActionCategory<T>>
 
 /**
  * User permissions structure

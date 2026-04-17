@@ -12,3 +12,5 @@ class TreasuryConfig(AppConfig):
             ])
         except ImportError:
             pass
+
+        import treasury.signals  # noqa: F401 — register signal handlers

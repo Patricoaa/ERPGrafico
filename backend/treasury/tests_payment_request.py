@@ -25,6 +25,7 @@ from treasury.models import (
     PaymentTerminalDevice,
     PaymentTerminalProvider,
     TreasuryAccount,
+    TerminalBatch,
 )
 from treasury.payment_request_service import PaymentRequestService
 from treasury.tasks import poll_payment_request
@@ -331,6 +332,20 @@ class EndpointsTests(TestCase):
         so.refresh_from_db()
         self.assertEqual(so.status, SaleOrder.Status.CONFIRMED)
 
+    def test_dte_emission_blocked_during_payment_pending(self):
+        from sales.models import SaleOrder
+        from billing.models import Invoice
+        from billing.services import BillingService
+        from django.core.exceptions import ValidationError
+        customer = Contact.objects.create(name="Cliente Guard", tax_id="44.444.444-4")
+        so = _make_sale_order(customer, number="NV-GUARD-1")
+        so.status = SaleOrder.Status.PAYMENT_PENDING
+        so.save(update_fields=["status"])
+        with self.assertRaises(ValidationError):
+            BillingService.create_sale_invoice(
+                order=so, dte_type=Invoice.DTEType.BOLETA, payment_method="CREDIT",
+            )
+
     def test_rate_limit_returns_429(self):
         with mock.patch("treasury.payment_request_service.poll_payment_request.apply_async") as m:
             m.return_value = mock.Mock(id="task-x")
@@ -344,3 +359,117 @@ class EndpointsTests(TestCase):
             )
         self.assertEqual(resp.status_code, 429)
         self.assertEqual(resp.data["code"], "RATE-LIMIT-LOCAL")
+
+
+@override_settings(TUU_GATEWAY_MODE="fake")
+class BatchReconcilerTests(TestCase):
+    def setUp(self):
+        _reset_fake()
+        self.provider, self.device = _fixture()
+        from accounting.models import Account
+        from treasury.models import PaymentMethod
+        from treasury.models import Bank
+        card_acc = Account.objects.get(code="1.1.01.02")
+        bank = Bank.objects.create(name="Banco Test Reconciler")
+        card_treas = TreasuryAccount.objects.create(
+            name="Cuenta Tarjeta Test",
+            account=card_acc,
+            account_type=TreasuryAccount.Type.CREDIT_CARD,
+            allows_card=True,
+            bank=bank,
+        )
+        pm = PaymentMethod.objects.create(
+            name="Tarjeta Crédito", method_type="CREDIT_CARD",
+            treasury_account=card_treas,
+        )
+        self.today = timezone.now().date()
+        self.batch = TerminalBatch.objects.create(
+            provider=self.provider,
+            payment_method=pm,
+            sales_date=self.today,
+            settlement_date=self.today,
+            gross_amount=4800,
+            commission_base=100,
+            commission_tax=19,
+            commission_total=119,
+            net_amount=4681,
+            terminal_reference="LOTE-001",
+        )
+
+    def _completed_pr(self, amount, seq=""):
+        pr = PaymentRequest.objects.create(
+            idempotency_key=f"rec-{amount}-{seq or 'noseq'}",
+            amount=amount,
+            device=self.device,
+            provider=self.provider,
+            status=PaymentRequest.Status.COMPLETED,
+            sequence_number=seq,
+        )
+        PaymentRequest.objects.filter(pk=pr.pk).update(
+            initiated_at=timezone.now(),
+            completed_at=timezone.now(),
+        )
+        pr.refresh_from_db()
+        return pr
+
+    def test_links_by_sequence_number(self):
+        from treasury.matching_service import PaymentRequestBatchReconciler
+        pr = self._completed_pr(1600, seq="000000051934")
+        result = PaymentRequestBatchReconciler.reconcile_batch(self.batch)
+        pr.refresh_from_db()
+        self.assertEqual(pr.terminal_batch_id, self.batch.pk)
+        self.assertEqual(result["linked"], 1)
+        self.assertEqual(result["already_linked"], 0)
+
+    def test_links_fallback_no_sequence(self):
+        from treasury.matching_service import PaymentRequestBatchReconciler
+        pr = self._completed_pr(1600, seq="")
+        result = PaymentRequestBatchReconciler.reconcile_batch(self.batch)
+        pr.refresh_from_db()
+        self.assertEqual(pr.terminal_batch_id, self.batch.pk)
+        self.assertEqual(result["linked"], 1)
+
+    def test_idempotent_second_call(self):
+        from treasury.matching_service import PaymentRequestBatchReconciler
+        pr = self._completed_pr(1600, seq="SEQ-99")
+        PaymentRequestBatchReconciler.reconcile_batch(self.batch)
+        result = PaymentRequestBatchReconciler.reconcile_batch(self.batch)
+        pr.refresh_from_db()
+        self.assertEqual(pr.terminal_batch_id, self.batch.pk)
+        self.assertEqual(result["linked"], 0)
+        self.assertEqual(result["already_linked"], 1)
+
+    def test_does_not_overwrite_different_batch(self):
+        from treasury.matching_service import PaymentRequestBatchReconciler
+        from treasury.models import PaymentMethod
+        pm = PaymentMethod.objects.filter(method_type="CREDIT_CARD").first()
+        other_batch = TerminalBatch.objects.create(
+            provider=self.provider,
+            payment_method=pm,
+            sales_date=self.today,
+            settlement_date=self.today,
+            gross_amount=1600,
+            commission_base=30,
+            commission_tax=6,
+            commission_total=36,
+            net_amount=1564,
+            terminal_reference="LOTE-002",
+        )
+        pr = self._completed_pr(1600, seq="SEQ-X")
+        pr.terminal_batch = other_batch
+        pr.save(update_fields=["terminal_batch"])
+
+        result = PaymentRequestBatchReconciler.reconcile_batch(self.batch)
+        pr.refresh_from_db()
+        self.assertEqual(pr.terminal_batch_id, other_batch.pk)
+        self.assertIn("SEQ-X", result["unmatched_sequences"])
+
+    def test_ignores_non_completed(self):
+        from treasury.matching_service import PaymentRequestBatchReconciler
+        PaymentRequest.objects.create(
+            idempotency_key="rec-pending",
+            amount=1600, device=self.device, provider=self.provider,
+            status=PaymentRequest.Status.SENT,
+        )
+        result = PaymentRequestBatchReconciler.reconcile_batch(self.batch)
+        self.assertEqual(result["linked"], 0)

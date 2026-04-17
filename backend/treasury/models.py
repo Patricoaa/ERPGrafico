@@ -388,19 +388,21 @@ class TreasuryAccount(models.Model):
         DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito')
         CHECKBOOK = 'CHECKBOOK', _('Chequera')
         CASH = 'CASH', _('Efectivo')
+        BRIDGE = 'BRIDGE', _('Cuenta Puente (Clearing)')
+        MERCHANT = 'MERCHANT', _('Cuenta Recaudadora Pasarela')
+
+    # Types que NO son efectivo/banco directo — usan prefijos contables distintos.
+    _NON_CASH_EQUIVALENT_TYPES = frozenset({'BRIDGE', 'MERCHANT'})
 
     name = models.CharField(_("Nombre"), max_length=100)
     code = models.CharField(_("Código"), max_length=20, blank=True, null=True)
     currency = models.CharField(_("Moneda"), max_length=3, default='CLP')
-    
-    # Linked financial account (Asset -> Bank/Cash)
+
+    # Linked financial account (Asset -> Bank/Cash/Bridge)
     account = models.ForeignKey(
-        Account, 
-        on_delete=models.PROTECT, 
-        limit_choices_to={
-            'account_type': AccountType.ASSET,
-            'code__startswith': '1.1.01'
-        },
+        Account,
+        on_delete=models.PROTECT,
+        limit_choices_to={'account_type': AccountType.ASSET},
         related_name='treasury_accounts',
         verbose_name=_("Cuenta Contable")
     )
@@ -430,29 +432,6 @@ class TreasuryAccount(models.Model):
     allows_transfer = models.BooleanField(_("Permite Traspaso"), default=False)
     allows_check = models.BooleanField(_("Permite Cheque"), default=False)
 
-    # Physical Location Fields (Refactor from CashContainer)
-    location = models.CharField(
-        _("Ubicación"),
-        max_length=200,
-        blank=True,
-        help_text=_("Ubicación física (ej: Caja Fuerte Principal, Gaveta 1)")
-    )
-    custodian = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='custodian_of_accounts',
-        verbose_name=_("Responsable / Custodio")
-    )
-    is_physical = models.BooleanField(
-        _("Es Contenedor Físico"),
-        default=False,
-        help_text=_("Marcar si esta cuenta representa un lugar físico de almacenamiento de dinero")
-    )
-    
-
-    
     # Custom manager
     objects = TreasuryAccountManager()
 
@@ -482,11 +461,12 @@ class TreasuryAccount(models.Model):
                     'account': _("La cuenta contable debe ser una cuenta auxiliar (hoja) sin subcuentas.")
                 })
             
-            # 2. Cash prefix validation (Strictly 1.1.01 as per user request)
-            if not self.account.code.startswith('1.1.01'):
-                raise ValidationError({
-                    'account': _("La cuenta contable debe pertenecer al grupo de 'Efectivo y Equivalentes' (Prefijo 1.1.01).")
-                })
+            # 2. Account prefix validation: 1.1.01 for cash-equivalent; BRIDGE/MERCHANT use other AR/clearing prefixes.
+            if self.account_type not in self._NON_CASH_EQUIVALENT_TYPES:
+                if not self.account.code.startswith('1.1.01'):
+                    raise ValidationError({
+                        'account': _("La cuenta contable debe pertenecer al grupo de 'Efectivo y Equivalentes' (Prefijo 1.1.01).")
+                    })
 
             # 3. Duplicate usage validation (already exists but refined)
             duplicates = TreasuryAccount.objects.filter(account=self.account).exclude(id=self.id)
@@ -643,7 +623,7 @@ class POSTerminal(models.Model):
         """
         types = set()
         for mt in self.allowed_payment_methods.values_list('method_type', flat=True):
-            if mt in ['DEBIT_CARD', 'CREDIT_CARD', 'CARD_TERMINAL']:
+            if mt in ['DEBIT_CARD', 'CREDIT_CARD']:
                 types.add('CARD')
             else:
                 types.add(mt)
@@ -663,6 +643,7 @@ class POSTerminal(models.Model):
         method_types = {
             'CASH': ['CASH'],
             'CARD': ['DEBIT_CARD', 'CREDIT_CARD'],
+            'CARD_TERMINAL': ['CARD_TERMINAL'],
             'TRANSFER': ['TRANSFER'],
             'CHECK': ['CHECK'],
         }.get(payment_method, [payment_method])
@@ -1170,6 +1151,7 @@ class PaymentMethod(models.Model):
         CARD = 'CARD', _('Tarjeta')
         DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito')
         CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito')
+        CARD_TERMINAL = 'CARD_TERMINAL', _('Tarjeta (Terminal Integrado)')
         TRANSFER = 'TRANSFER', _('Transferencia')
         CHECK = 'CHECK', _('Cheque')
 
@@ -1179,20 +1161,25 @@ class PaymentMethod(models.Model):
         'TreasuryAccount',
         on_delete=models.CASCADE,
         related_name='payment_methods',
-        verbose_name=_("Cuenta de Tesorería")
+        verbose_name=_("Cuenta de Tesorería Visible"),
+        help_text=_("Cuenta mostrada al operador. Para contabilidad usar effective_settlement_account.")
+    )
+    settlement_account = models.ForeignKey(
+        'TreasuryAccount',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='payment_methods_as_settlement',
+        verbose_name=_("Cuenta de Liquidación"),
+        help_text=_("Cuenta destino contable real. Para CARD_TERMINAL: cuenta puente del proveedor.")
     )
     is_active = models.BooleanField(_("Activo"), default=True)
-    # DEPRECATED: El procesamiento vía terminal se infiere del vínculo POSTerminal → PaymentTerminalDevice.
-    # Se mantienen los campos para compatibilidad con datos existentes.
-    process_via_terminal = models.BooleanField(
-        _("Procesa Vía Terminal"), 
-        default=False,
-        help_text=_("DEPRECATED: Se infiere del hardware vinculado a la caja POS.")
-    )
-    is_terminal = models.BooleanField(
-        _("Es Terminal de Cobro"), 
-        default=False,
-        help_text=_("DEPRECATED: Campo legacy, usar PaymentTerminalDevice.")
+    linked_terminal_device = models.ForeignKey(
+        'PaymentTerminalDevice',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='card_terminal_methods',
+        verbose_name=_("Dispositivo Terminal Vinculado"),
+        help_text=_("Solo para CARD_TERMINAL — el device TUU que automatiza este método.")
     )
     allow_for_sales = models.BooleanField(_("Permitir en Ventas"), default=True)
     allow_for_purchases = models.BooleanField(_("Permitir en Compras"), default=True)
@@ -1216,29 +1203,84 @@ class PaymentMethod(models.Model):
         Type.CASH: [TreasuryAccount.Type.CASH],
         Type.DEBIT_CARD: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
         Type.CREDIT_CARD: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
+        Type.CARD_TERMINAL: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
         Type.TRANSFER: [TreasuryAccount.Type.CHECKING],
         Type.CHECK: [TreasuryAccount.Type.CHECKING, TreasuryAccount.Type.CHECKBOOK],
     }
-    
+
     def __str__(self):
         return f"{self.name} ({self.treasury_account.name})"
-    
+
+    @property
+    def is_integrated(self):
+        """True si el método tiene integración remota con un terminal físico."""
+        return self.method_type == self.Type.CARD_TERMINAL and self.linked_terminal_device_id is not None
+
+    @property
+    def effective_settlement_account(self):
+        """
+        Cuenta destino real del cobro.
+        Precedencia: settlement_account explícito → provider.bank_treasury_account (CARD_TERMINAL) → treasury_account.
+        """
+        if self.settlement_account_id:
+            return self.settlement_account
+        if self.is_integrated and self.linked_terminal_device.provider.bank_treasury_account_id:
+            return self.linked_terminal_device.provider.bank_treasury_account
+        return self.treasury_account
+
     def clean(self):
         """Validar compatibilidad entre método y tipo de cuenta"""
         from django.core.exceptions import ValidationError
         super().clean()
-        
-        if not self.treasury_account:
+
+        # DEBIT_CARD / CREDIT_CARD → solo compras
+        if self.method_type in (self.Type.DEBIT_CARD, self.Type.CREDIT_CARD):
+            self.allow_for_sales = False
+
+        # CARD_TERMINAL → solo ventas, requiere device vinculado
+        if self.method_type == self.Type.CARD_TERMINAL:
+            self.allow_for_purchases = False
+            if not self.linked_terminal_device_id:
+                raise ValidationError(
+                    {'linked_terminal_device': _("CARD_TERMINAL requiere un dispositivo terminal vinculado.")}
+                )
+
+            # Auto-asignar y bloquear settlement_account desde provider.bank_treasury_account.
+            # El operador no puede sobrescribir esta cuenta — la define el proveedor.
+            provider_bridge = self.linked_terminal_device.provider.bank_treasury_account
+            if provider_bridge is None:
+                raise ValidationError(
+                    {'linked_terminal_device': _(
+                        "El proveedor del dispositivo no tiene cuenta destino de liquidación configurada. "
+                        "Configure 'Cuenta Destino Liquidación' en el Proveedor de Terminal antes de crear este método."
+                    )}
+                )
+            if self.settlement_account_id and self.settlement_account_id != provider_bridge.pk:
+                raise ValidationError(
+                    {'settlement_account': _(
+                        "La cuenta de liquidación de métodos CARD_TERMINAL está gestionada por el sistema "
+                        "y se asigna automáticamente desde el proveedor del dispositivo. "
+                        f"Cuenta asignada: {provider_bridge.name}."
+                    )}
+                )
+            # Forzar siempre la cuenta del proveedor (auto-sync)
+            self.settlement_account = provider_bridge
+
+        if not self.treasury_account_id:
             return
-        
+
+        # CARD_TERMINAL: cuenta resuelta arriba, no aplicar TYPE_COMPATIBILITY.
+        if self.method_type == self.Type.CARD_TERMINAL:
+            return
+
         allowed_account_types = self.TYPE_COMPATIBILITY.get(self.method_type, [])
-        if self.treasury_account.account_type not in allowed_account_types:
+        if allowed_account_types and self.treasury_account.account_type not in allowed_account_types:
             account_type_display = dict(TreasuryAccount.Type.choices).get(
-                self.treasury_account.account_type, 
+                self.treasury_account.account_type,
                 self.treasury_account.account_type
             )
             method_type_display = dict(self.Type.choices).get(self.method_type, self.method_type)
-            
+
             raise ValidationError({
                 'treasury_account': _(
                     f"El método '{method_type_display}' no es compatible "
@@ -1691,6 +1733,15 @@ class PaymentRequest(models.Model):
         help_text=_("Código MR-/RP-/KEY-/TIMEOUT.")
     )
 
+    terminal_batch = models.ForeignKey(
+        'TerminalBatch',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='payment_requests',
+        verbose_name=_("Lote Terminal"),
+        help_text=_("Lote TUU al que pertenece esta transacción (asignado en reconciliación Fase 3).")
+    )
+
     initiated_at = models.DateTimeField(_("Iniciada"), auto_now_add=True)
     completed_at = models.DateTimeField(_("Finalizada"), null=True, blank=True)
     celery_task_id = models.CharField(
@@ -1708,6 +1759,7 @@ class PaymentRequest(models.Model):
             models.Index(fields=['sale_order', 'status']),
             models.Index(fields=['-initiated_at', 'status']),
             models.Index(fields=['sequence_number']),
+            models.Index(fields=['terminal_batch']),
         ]
 
     def __str__(self):

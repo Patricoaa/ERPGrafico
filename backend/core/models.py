@@ -65,8 +65,6 @@ class CompanySettings(models.Model):
     )
     
     # Corporate Identity
-    primary_color = models.CharField(_("Color Primario"), max_length=7, default="#000000", blank=True)
-    secondary_color = models.CharField(_("Color Secundario"), max_length=7, default="#ffffff", blank=True)
     business_activity = models.CharField(_("Giro / Actividad Económica"), max_length=255, blank=True)
     
     history = HistoricalRecords()
