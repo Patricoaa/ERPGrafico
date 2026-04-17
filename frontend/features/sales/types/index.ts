@@ -98,6 +98,8 @@ export interface CheckoutPaymentData {
     treasuryAccountId: number | null
     isPending: boolean
     paymentMethodId?: number
+    /** true cuando el método es CARD_TERMINAL — activa flujo TUU automatizado */
+    isTerminalIntegration?: boolean
 }
 
 export interface CheckoutDeliveryData {

@@ -17,14 +17,13 @@ export function POSCheckoutHeader() {
     // Define steps
     const steps = [
         { id: 1, label: 'Carrito', icon: ShoppingCart },
-        { id: 2, label: 'Cliente', icon: User },
+        { id: 2, label: 'Cliente & Doc', icon: User },
     ]
 
     let nextStepId = 3
     if (hasManufacturing) {
         steps.push({ id: nextStepId++, label: 'Fabricación', icon: Factory })
     }
-    steps.push({ id: nextStepId++, label: 'Documento', icon: FileText })
     if (!isOnlyService) {
         steps.push({ id: nextStepId++, label: 'Entrega', icon: Truck })
     }

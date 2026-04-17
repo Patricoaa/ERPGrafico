@@ -6,7 +6,9 @@ import type {
     TreasuryAccount,
     TreasuryAccountCreatePayload,
     TreasuryAccountUpdatePayload,
-    PaymentMethod
+    PaymentMethod,
+    PaymentRequest,
+    InitiatePaymentPayload,
 } from '../types'
 
 /**
@@ -122,6 +124,23 @@ export const treasuryApi = {
      */
     getBanks: async (): Promise<any[]> => {
         const { data } = await api.get<any[]>('/treasury/banks/')
+        return data
+    },
+
+    // ========== Payment Requests (ADR 002) ==========
+
+    initiatePayment: async (payload: InitiatePaymentPayload): Promise<PaymentRequest> => {
+        const { data } = await api.post<PaymentRequest>('/treasury/payment-requests/initiate/', payload)
+        return data
+    },
+
+    getPaymentRequest: async (idempotencyKey: string): Promise<PaymentRequest> => {
+        const { data } = await api.get<PaymentRequest>(`/treasury/payment-requests/${idempotencyKey}/`)
+        return data
+    },
+
+    cancelPaymentRequest: async (idempotencyKey: string): Promise<PaymentRequest> => {
+        const { data } = await api.post<PaymentRequest>(`/treasury/payment-requests/${idempotencyKey}/cancel/`)
         return data
     },
 }

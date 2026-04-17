@@ -524,6 +524,7 @@ function POSPageContent() {
                                     initialCustomerId={selectedCustomerId?.toString() || (wizardState?.isQuickSale ? defaultCustomerId?.toString() : undefined)}
                                     posSessionId={currentSession?.id}
                                     terminalId={currentSession?.terminal}
+                                    terminalDeviceId={currentSession?.terminal_details?.payment_terminal_device ?? null}
                                     quickSale={wizardState?.isQuickSale}
                                     initialStep={wizardState?.step}
                                     initialDteData={wizardState?.dteData}
