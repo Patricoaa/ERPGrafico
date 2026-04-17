@@ -36,7 +36,9 @@ class InitiateSerializer(serializers.Serializer):
         choices=PaymentRequest.PaymentMethodCode.choices,
         default=PaymentRequest.PaymentMethodCode.CREDIT,
     )
-    dte_type = serializers.IntegerField(default=48)
+    # ADR 002 §D1: alcance actual = solo DTE 48 (Comprobante de Pago Electrónico).
+    # Ampliar choices si se suman otros tipos (33, 39) en el futuro.
+    dte_type = serializers.ChoiceField(choices=[(48, "COMPROBANTE_PAGO")], default=48)
     description = serializers.CharField(max_length=28, required=False, allow_blank=True)
     sale_order = serializers.IntegerField(required=False, allow_null=True)
     pos_session = serializers.PrimaryKeyRelatedField(
