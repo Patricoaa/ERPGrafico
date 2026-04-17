@@ -1075,9 +1075,7 @@ class Command(BaseCommand):
 
     def _create_treasury_infrastructure(self, accounts, partners):
         self.stdout.write('  Creating POS Terminals and Treasury Physical Accounts...')
-        
-        manager_user = User.objects.get(username='gerente')
-        
+
         # 0. Create Banks
         b_estado, _ = Bank.objects.get_or_create(code="ESTADO", defaults={'name': "Banco Estado", 'is_active': True})
         b_chile, _ = Bank.objects.get_or_create(code="CHILE", defaults={'name': "Banco de Chile", 'is_active': True})
@@ -1112,8 +1110,6 @@ class Command(BaseCommand):
                 'account': acc_safe,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
-                'is_physical': True,
-                'custodian': manager_user
             }
         )
         
@@ -1138,7 +1134,6 @@ class Command(BaseCommand):
                 'account': acc_till1,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
-                'location': "Mostrador 1"
             }
         )
         
@@ -1162,7 +1157,6 @@ class Command(BaseCommand):
                 'account': acc_petty,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
-                'custodian': manager_user
             }
         )
         
@@ -1214,7 +1208,6 @@ class Command(BaseCommand):
                 'account': acc_workshop, 
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
-                'location': "Taller - Piso 2"
             }
         )
         
@@ -1265,7 +1258,6 @@ class Command(BaseCommand):
                 'account': acc_reception,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
-                'location': "Recepción Principal"
             }
         )
         

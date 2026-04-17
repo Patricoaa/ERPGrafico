@@ -9,7 +9,7 @@ import {
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Badge } from "@/components/ui/badge"
-import { Landmark, Pencil, Trash2, MapPin, Shield } from "lucide-react"
+import { Landmark, Pencil, Trash2, Lock } from "lucide-react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement } from "@/features/treasury"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -98,6 +98,8 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                     'DEBIT_CARD': 'T. Débito',
                     'CHECKBOOK': 'Chequera',
                     'CASH': 'Efectivo',
+                    'BRIDGE': 'Puente (Clearing)',
+                    'MERCHANT': 'Recaudadora',
                 }
                 return (
                     <div className="flex flex-col items-center text-center w-full">
@@ -155,52 +157,25 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             },
         },
         {
-            accessorKey: "location",
-            header: ({ column }: { column: any }) => (
-                <DataTableColumnHeader column={column} title="Ubicación" className="justify-center" />
-            ),
-            cell: ({ row }: { row: any }) => {
-                const val = row.original.location
-                if (!val) return <div className="flex justify-center text-muted-foreground opacity-30">-</div>
-                return (
-                    <div className="flex justify-center w-full">
-                        <DataCell.Secondary className="text-center flex items-center gap-1.5">
-                            <MapPin className="h-3 w-3 text-warning" />
-                            {val}
-                        </DataCell.Secondary>
-                    </div>
-                )
-            }
-        },
-        {
-            id: "custodian",
-            header: ({ column }: { column: any }) => (
-                <DataTableColumnHeader column={column} title="Responsable" className="justify-center" />
-            ),
-            cell: ({ row }: { row: any }) => {
-                const acc = row.original
-                if (!acc.custodian_name) return <div className="flex justify-center text-muted-foreground opacity-30">-</div>
-                return (
-                    <div className="flex justify-center w-full">
-                        <DataCell.Secondary className="text-center flex items-center gap-1.5">
-                            <Shield className="h-3 w-3 text-info" />
-                            {acc.custodian_name}
-                        </DataCell.Secondary>
-                    </div>
-                )
-            }
-        },
-        {
             accessorKey: "account_type",
             header: "Tipo",
             enableHiding: true,
         },
         createActionsColumn<TreasuryAccount>({
             renderActions: (item) => (
-                <>
-                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => handleEdit(item)} />
-                    <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item.id)} />
-                </>
+                item.is_system_managed ? (
+                    <DataCell.Action
+                        icon={Lock}
+                        title="Gestionada por sistema"
+                        onClick={() => handleEdit(item)}
+                        className="text-muted-foreground cursor-default opacity-50"
+                    />
+                ) : (
+                    <>
+                        <DataCell.Action icon={Pencil} title="Editar" onClick={() => handleEdit(item)} />
+                        <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item.id)} />
+                    </>
+                )
             ),
         }),
     ]
@@ -228,6 +203,8 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                                 { label: "T. Crédito", value: "CREDIT_CARD" },
                                 { label: "T. Débito", value: "DEBIT_CARD" },
                                 { label: "Chequera", value: "CHECKBOOK" },
+                                { label: "Puente (Clearing)", value: "BRIDGE" },
+                                { label: "Recaudadora", value: "MERCHANT" },
                             ]
                         }
                     ]}

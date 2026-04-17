@@ -432,29 +432,6 @@ class TreasuryAccount(models.Model):
     allows_transfer = models.BooleanField(_("Permite Traspaso"), default=False)
     allows_check = models.BooleanField(_("Permite Cheque"), default=False)
 
-    # Physical Location Fields (Refactor from CashContainer)
-    location = models.CharField(
-        _("Ubicación"),
-        max_length=200,
-        blank=True,
-        help_text=_("Ubicación física (ej: Caja Fuerte Principal, Gaveta 1)")
-    )
-    custodian = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='custodian_of_accounts',
-        verbose_name=_("Responsable / Custodio")
-    )
-    is_physical = models.BooleanField(
-        _("Es Contenedor Físico"),
-        default=False,
-        help_text=_("Marcar si esta cuenta representa un lugar físico de almacenamiento de dinero")
-    )
-    
-
-    
     # Custom manager
     objects = TreasuryAccountManager()
 

@@ -13,10 +13,8 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Loader2, Landmark, CreditCard } from "lucide-react"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Loader2, Landmark, CreditCard, Lock } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { UserSelector } from "@/components/selectors/UserSelector"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
@@ -29,46 +27,40 @@ interface TreasuryAccountModalProps {
     onSuccess?: () => void
 }
 
+const SYSTEM_MANAGED_TYPES = new Set(['BRIDGE', 'MERCHANT'])
+
 export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess }: TreasuryAccountModalProps) {
     const { createAccount, updateAccount, isCreating, isUpdating } = useTreasuryAccounts()
     const [account, setAccount] = useState<TreasuryAccount | null>(null)
     const [loading, setLoading] = useState(false)
-    
+
     const [name, setName] = useState("")
-    const [type, setType] = useState<'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH'>("CASH")
+    const [type, setType] = useState<string>("CASH")
     const [currency, setCurrency] = useState("CLP")
     const [accountingAccount, setAccountingAccount] = useState<number | null>(null)
-    const [location, setLocation] = useState("")
-    const [custodian, setCustodian] = useState<number | null>(null)
-    const [isPhysical, setIsPhysical] = useState(false)
     const [bank, setBank] = useState<number | null>(null)
     const [accountNumber, setAccountNumber] = useState("")
     const [banks, setBanks] = useState<any[]>([])
 
     const isSubmitting = isCreating || isUpdating
+    const isSystemManaged = SYSTEM_MANAGED_TYPES.has(type)
 
     useEffect(() => {
         const fetchData = async () => {
             if (!open) return
-            
             try {
                 setLoading(true)
                 const [banksData, accountData] = await Promise.all([
                     treasuryApi.getBanks(),
                     accountId ? treasuryApi.getAccount(accountId) : Promise.resolve(null)
                 ])
-                
                 setBanks(banksData)
-                
                 if (accountData) {
                     setAccount(accountData)
                     setName(accountData.name)
                     setType(accountData.account_type)
                     setCurrency(accountData.currency)
                     setAccountingAccount(accountData.account ? Number(accountData.account) : null)
-                    setLocation(accountData.location || "")
-                    setCustodian(accountData.custodian || null)
-                    setIsPhysical(accountData.is_physical || false)
                     setBank(accountData.bank ? Number(accountData.bank) : null)
                     setAccountNumber(accountData.account_number || "")
                 } else {
@@ -77,9 +69,6 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                     setType("CASH")
                     setCurrency("CLP")
                     setAccountingAccount(null)
-                    setLocation("")
-                    setCustodian(null)
-                    setIsPhysical(false)
                     setBank(null)
                     setAccountNumber("")
                 }
@@ -89,7 +78,6 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                 setLoading(false)
             }
         }
-        
         fetchData()
     }, [open, accountId])
 
@@ -99,6 +87,7 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        if (isSystemManaged) return
         try {
             const allowsCash = type === 'CASH'
             const allowsCard = ['CHECKING', 'CREDIT_CARD', 'DEBIT_CARD'].includes(type)
@@ -112,19 +101,16 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                 allows_cash: allowsCash,
                 allows_card: allowsCard,
                 allows_transfer: allowsTransfer,
-                location,
-                custodian,
-                is_physical: isPhysical,
                 bank: requiresBank(type) ? bank : null,
                 account_number: requiresBank(type) ? accountNumber : null
             }
-            
+
             if (accountId) {
                 await updateAccount({ id: accountId, payload })
             } else {
                 await createAccount(payload)
             }
-            
+
             if (onSuccess) onSuccess()
             onOpenChange(false)
         } catch (error: unknown) {
@@ -141,18 +127,33 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                 <div className="flex items-center gap-3">
                     <Landmark className="h-5 w-5 text-muted-foreground" />
                     <span>{accountId ? "Ficha de Cuenta" : "Nueva Cuenta"}</span>
+                    {isSystemManaged && (
+                        <span className="flex items-center gap-1 text-xs font-normal px-2 py-0.5 rounded-full bg-muted text-muted-foreground border">
+                            <Lock className="h-3 w-3" /> Gestionada por sistema
+                        </span>
+                    )}
                 </div>
             }
-            description={accountId ? "Modifique los detalles de la cuenta y revise su historial." : "Complete la información para registrar una nueva cuenta."}
+            description={
+                isSystemManaged
+                    ? "Esta cuenta es gestionada automáticamente por el proveedor de terminal. No puede modificarse directamente."
+                    : accountId
+                        ? "Modifique los detalles de la cuenta y revise su historial."
+                        : "Complete la información para registrar una nueva cuenta."
+            }
             hideScrollArea={true}
             className="h-[85vh]"
             footer={
                 <>
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <ActionSlideButton type="submit" form="account-form" disabled={isSubmitting || loading}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {accountId ? "Guardar Cambios" : "Crear Cuenta"}
-                    </ActionSlideButton>
+                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+                        {isSystemManaged ? "Cerrar" : "Cancelar"}
+                    </Button>
+                    {!isSystemManaged && (
+                        <ActionSlideButton type="submit" form="account-form" disabled={isSubmitting || loading}>
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {accountId ? "Guardar Cambios" : "Crear Cuenta"}
+                        </ActionSlideButton>
+                    )}
                 </>
             }
         >
@@ -164,16 +165,29 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                         </div>
                     ) : (
                         <form id="account-form" onSubmit={handleSubmit} className="space-y-6">
+                            {isSystemManaged && (
+                                <div className="flex items-start gap-3 p-3 rounded-lg border border-muted bg-muted/30 text-sm text-muted-foreground">
+                                    <Lock className="h-4 w-4 mt-0.5 shrink-0" />
+                                    <p>Esta cuenta es creada y gestionada automáticamente cuando se configura un proveedor de terminal de cobro. Para modificarla, actualice la cuenta puente en el <strong>Proveedor de Terminal</strong> correspondiente.</p>
+                                </div>
+                            )}
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <div className="grid gap-2">
                                         <Label className={FORM_STYLES.label}>Nombre de la Cuenta</Label>
-                                        <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja Principal" className={FORM_STYLES.input} required />
+                                        <Input
+                                            value={name}
+                                            onChange={e => setName(e.target.value)}
+                                            placeholder="Ej: Caja Principal"
+                                            className={FORM_STYLES.input}
+                                            required
+                                            disabled={isSystemManaged}
+                                        />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="grid gap-2">
                                             <Label className={FORM_STYLES.label}>Tipo</Label>
-                                            <Select value={type} onValueChange={(v: any) => setType(v)}>
+                                            <Select value={type} onValueChange={(v: string) => setType(v)} disabled={isSystemManaged || !!accountId}>
                                                 <SelectTrigger className={FORM_STYLES.input}>
                                                     <SelectValue />
                                                 </SelectTrigger>
@@ -183,12 +197,14 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                                                     <SelectItem value="DEBIT_CARD">Tarjeta de Débito</SelectItem>
                                                     <SelectItem value="CHECKBOOK">Chequera</SelectItem>
                                                     <SelectItem value="CASH">Efectivo</SelectItem>
+                                                    <SelectItem value="BRIDGE">Cuenta Puente (Clearing)</SelectItem>
+                                                    <SelectItem value="MERCHANT">Cuenta Recaudadora</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
                                         <div className="grid gap-2">
                                             <Label className={FORM_STYLES.label}>Moneda</Label>
-                                            <Select value={currency} onValueChange={setCurrency}>
+                                            <Select value={currency} onValueChange={setCurrency} disabled={isSystemManaged}>
                                                 <SelectTrigger className={FORM_STYLES.input}>
                                                     <SelectValue />
                                                 </SelectTrigger>
@@ -205,7 +221,11 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                                             <Label className={cn(FORM_STYLES.label, "text-info flex items-center gap-1")}>
                                                 <Landmark className="h-3.5 w-3.5" /> Entidad Bancaria
                                             </Label>
-                                            <Select value={bank?.toString() || ""} onValueChange={(v) => setBank(v ? Number(v) : null)}>
+                                            <Select
+                                                value={bank?.toString() || ""}
+                                                onValueChange={(v) => setBank(v ? Number(v) : null)}
+                                                disabled={isSystemManaged}
+                                            >
                                                 <SelectTrigger className={cn(FORM_STYLES.input, "border-info/20 bg-info/5")}>
                                                     <SelectValue placeholder="Seleccione banco..." />
                                                 </SelectTrigger>
@@ -228,6 +248,7 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                                                 onChange={e => setAccountNumber(e.target.value)}
                                                 placeholder="Ej: 0123456789"
                                                 className={cn(FORM_STYLES.input, "border-info/20 bg-info/5")}
+                                                disabled={isSystemManaged}
                                             />
                                         </div>
                                     )}
@@ -240,31 +261,11 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                                             accountType="ASSET"
                                             isReconcilable={true}
                                             placeholder="Seleccione cuenta..."
+                                            disabled={isSystemManaged}
                                         />
                                         <p className="text-[10px] text-muted-foreground italic">
                                             Vínculo con el plan de cuentas.
                                         </p>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="p-4 border rounded-lg bg-warning/5 space-y-3 border-warning/10">
-                                        <div className="flex items-center space-x-2">
-                                            <Checkbox id="is-physical-p" checked={isPhysical} onCheckedChange={(v) => setIsPhysical(!!v)} />
-                                            <Label htmlFor="is-physical-p" className="font-semibold cursor-pointer">¿Es un lugar físico?</Label>
-                                        </div>
-                                        {isPhysical && (
-                                            <div className="space-y-3 pt-2 border-t border-warning/10 animate-in fade-in duration-300">
-                                                <div className="grid gap-1.5">
-                                                    <Label className={cn(FORM_STYLES.label, "text-[11px] uppercase tracking-wider text-warning")}>Ubicación</Label>
-                                                    <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Oficina Central" className={cn(FORM_STYLES.input, "h-8 text-xs bg-white")} />
-                                                </div>
-                                                <div className="grid gap-1.5">
-                                                    <Label className={cn(FORM_STYLES.label, "text-[11px] uppercase tracking-wider text-warning")}>Custodio</Label>
-                                                    <UserSelector value={custodian} onChange={setCustodian} />
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -274,11 +275,11 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
 
                 {accountId && (
                     <ActivitySidebar
-                            entityType="treasuryaccount"
-                            entityId={accountId}
-                            className="h-full border-none"
-                            title="Historial de Cambios"
-                        />
+                        entityType="treasuryaccount"
+                        entityId={accountId}
+                        className="h-full border-none"
+                        title="Historial de Cambios"
+                    />
                 )}
             </div>
         </BaseModal>

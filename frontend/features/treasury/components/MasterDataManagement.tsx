@@ -5,7 +5,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Button } from "@/components/ui/button"
 import {
-    Plus, Edit, Trash2, Loader2, CreditCard, Landmark, List, History, Tag, Pencil
+    Plus, Edit, Trash2, Loader2, CreditCard, Landmark, List, History, Tag, Pencil, Lock
 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
@@ -413,19 +413,28 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
         },
         createActionsColumn<PaymentMethod>({
             renderActions: (item) => (
-                <>
+                item.is_terminal_integration ? (
                     <DataCell.Action
-                        icon={Pencil}
-                        title="Editar"
-                        onClick={() => openEdit(item)}
+                        icon={Lock}
+                        title="Gestionado por terminal — modifique el dispositivo"
+                        onClick={() => {}}
+                        className="text-muted-foreground cursor-default opacity-50"
                     />
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(item.id)}
-                    />
-                </>
+                ) : (
+                    <>
+                        <DataCell.Action
+                            icon={Pencil}
+                            title="Editar"
+                            onClick={() => openEdit(item)}
+                        />
+                        <DataCell.Action
+                            icon={Trash2}
+                            title="Eliminar"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(item.id)}
+                        />
+                    </>
+                )
             )
         })
     ]

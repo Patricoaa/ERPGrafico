@@ -25,6 +25,8 @@ export interface TerminalCreatePayload {
 
 export interface TerminalUpdatePayload extends Partial<TerminalCreatePayload> { }
 
+export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH' | 'BRIDGE' | 'MERCHANT'
+
 // Treasury Account types
 export interface TreasuryAccount {
     id: number
@@ -34,14 +36,12 @@ export interface TreasuryAccount {
     account: number | null
     account_name?: string
     account_code?: string | null
-    account_type: 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH'
+    account_type: TreasuryAccountType
     allows_cash: boolean
     allows_card: boolean
     allows_transfer: boolean
-    location: string
-    custodian: number | null
-    custodian_name?: string
-    is_physical: boolean
+    /** true for BRIDGE/MERCHANT — managed by provider, no manual edit/delete */
+    is_system_managed: boolean
     current_balance?: number
     bank?: number | null
     bank_name?: string
@@ -50,15 +50,12 @@ export interface TreasuryAccount {
 
 export interface TreasuryAccountCreatePayload {
     name: string
-    account_type: TreasuryAccount['account_type']
+    account_type: TreasuryAccountType
     currency: string
     account: number | null
     allows_cash: boolean
     allows_card: boolean
     allows_transfer: boolean
-    location: string
-    custodian: number | null
-    is_physical: boolean
     bank?: number | null
     account_number?: string | null
 }
@@ -104,7 +101,7 @@ export interface PaymentTerminalDevice {
     provider_name?: string
     serial_number: string
     model?: string
-    is_active: boolean
+    status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE'
 }
 
 // Terminal Batch Types
