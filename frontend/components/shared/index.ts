@@ -1,26 +1,57 @@
+// ─────────────────────────────────────────────────────────
+// Shared Components — Barrel Export
+// ─────────────────────────────────────────────────────────
+// This is the public API for all shared components.
+// Features MUST import from '@/components/shared' (this file),
+// not from individual component files.
+// ─────────────────────────────────────────────────────────
+
+// Modals & Sheets
 export * from './ActionConfirmModal';
-export * from './AttachmentList';
 export * from './BaseModal';
-export * from './CardSkeleton';
 export * from './CollapsibleSheet';
-export * from './CommentSystem';
-export * from './DataManagement';
-export * from './DateRangeFilter';
-export * from './DocumentAttachmentDropzone';
-export * from './DatePicker';
 export * from './DocumentCompletionModal';
-export * from './EmptyState';
-export * from './FacetedFilter';
-export * from './IndustrialCard';
-export * from './IndustryMark';
-export * from './LoadingFallback';
-export * from './MoneyDisplay';
-export * from './PageHeader';
-export * from './PageTabs';
-export * from './StatusBadge';
-export * from './TableSkeleton';
-export * from './TransactionViewModal';
-export * from './transaction-modal';
+export * from './GenericWizard';
 export * from './ModuleSettingsSheet';
 export * from './SettingsSheetRouteWrapper';
+export * from './SheetCloseButton';
+export * from './TransactionViewModal';
+export * from './transaction-modal';
+
+// Buttons & Actions
+export * from './ActionFoldButton';
+export * from './ActionSlideButton';
+
+// Cards & Containers
+export * from './IndustrialCard';
+export * from './CardSkeleton';
+
+// Data Display
 export * from './ColorBar';
+export * from './MoneyDisplay';
+export * from './StatusBadge';
+export * from './ReportTable';
+export * from './DataManagement';
+export * from './CommentSystem';
+export * from './AttachmentList';
+export * from './DocumentAttachmentDropzone';
+
+// Navigation & Layout
+export * from './PageHeader';
+export * from './PageTabs';
+export * from './EmptyState';
+
+// Industrial Identity
+export * from './CropFrame';
+export * from './IndustryMark';
+
+// Loading States
+export * from './LoadingFallback';
+export * from './TableSkeleton';
+
+// Filters & Inputs
+export * from './DatePicker';
+export * from './DateRangeFilter';
+export * from './FacetedFilter';
+export * from './FolioValidationInput';
+export * from './PeriodValidationDateInput';

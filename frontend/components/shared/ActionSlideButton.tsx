@@ -2,20 +2,40 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { Loader2, type LucideIcon } from "lucide-react";
 
 export interface ActionSlideButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'destructive' | 'success';
+    /** Show loading spinner and disable interaction */
+    loading?: boolean;
+    /** Leading icon (Lucide component) */
+    icon?: LucideIcon;
 }
 
+/**
+ * ActionSlideButton
+ *
+ * Primary kinetic interaction component: a bordered button whose background
+ * slides in from left on hover, revealing a filled state.
+ *
+ * Usage:
+ * - Primary processes: confirm order, save, submit
+ * - Destructive: cancel, delete (with `variant="destructive"`)
+ * - Success: complete, finalize (with `variant="success"`)
+ *
+ * Supports `loading` (spinner + disabled) and `icon` (leading Lucide icon).
+ */
 export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlideButtonProps>(
-    ({ className, variant = 'primary', children, ...props }, ref) => {
+    ({ className, variant = 'primary', loading = false, icon: Icon, disabled, children, ...props }, ref) => {
         const isPrimary = variant === 'primary';
         const isDestructive = variant === 'destructive';
         const isSuccess = variant === 'success';
+        const isDisabled = disabled || loading;
 
         return (
             <button
                 ref={ref}
+                disabled={isDisabled}
                 className={cn(
                     "relative inline-flex items-center justify-center overflow-hidden z-10 transition-colors duration-300 ease-out",
                     "h-10 px-6 text-sm font-bold tracking-widest uppercase rounded-none",
@@ -23,6 +43,7 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                     isPrimary && "border-primary text-primary hover:text-primary-foreground",
                     isDestructive && "border-destructive text-destructive hover:text-destructive-foreground",
                     isSuccess && "border-success text-success hover:text-success-foreground",
+                    isDisabled && "opacity-50 cursor-not-allowed pointer-events-none",
                     "group",
                     className
                 )}
@@ -44,6 +65,11 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                 
                 {/* Content wrapper to ensure text stays above the animated background */}
                 <span className="flex items-center justify-center gap-2">
+                    {loading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : Icon ? (
+                        <Icon className="h-4 w-4" />
+                    ) : null}
                     {children}
                 </span>
             </button>

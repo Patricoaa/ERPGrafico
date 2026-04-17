@@ -1469,8 +1469,6 @@ class Command(BaseCommand):
                 'address': "Av. Principal 123, Santiago, Chile",
                 'business_activity': "Servicios de Impresión y Diseño",
                 'contact': contact,
-                'primary_color': "#5b21b6", # purple-800
-                'secondary_color': "#3b82f6", # blue-500
             }
         )
         self.stdout.write("  ✓ Initialized/Updated company settings singleton")
