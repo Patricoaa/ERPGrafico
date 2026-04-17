@@ -215,6 +215,7 @@ export function SalesCheckoutWizardContent({
     const [loadingDebts, setLoadingDebts] = useState(false)
     const [showTerminalWizard, setShowTerminalWizard] = useState(false)
     const [manualTerminalReason, setManualTerminalReason] = useState<ManualTerminalReason | null>(null)
+    const [manualTerminalFailureReason, setManualTerminalFailureReason] = useState<string | null>(null)
     const [showInvoiceReminder, setShowInvoiceReminder] = useState(false)
     const [checkoutResponse, setCheckoutResponse] = useState<any>(null)
     // Tracks whether the last completed step was a TUU terminal card payment
@@ -492,7 +493,10 @@ export function SalesCheckoutWizardContent({
             // wasTerminalCard=true → TUU completó el pago, forzar dte_type=COMPROBANTE_PAGO
             const effectiveDteType = wasTerminalCard ? 'COMPROBANTE_PAGO' : dteData.type
             formData.append('dte_type', effectiveDteType)
-            formData.append('is_pending_registration', dteData.isPending.toString())
+            // is_pending_registration solo aplica a DTE local (backend lo ignora en ruta COMPROBANTE_PAGO).
+            if (!wasTerminalCard) {
+                formData.append('is_pending_registration', dteData.isPending.toString())
+            }
             if (dteData.number) formData.append('document_number', dteData.number)
             if (dteData.date) formData.append('document_date', dteData.date)
             if (dteData.attachment) formData.append('document_attachment', dteData.attachment)
@@ -574,6 +578,8 @@ export function SalesCheckoutWizardContent({
     }
 
     const isTerminalIntegrationPayment = paymentData.isTerminalIntegration === true
+    // Tarjeta TUU (CARD_TERMINAL) solo soporta BOLETA — TUU emite DTE 48 únicamente para boletas.
+    const cardTerminalRequiresBoleta = isTerminalIntegrationPayment && dteData.type !== 'BOLETA'
 
     const handleFinish = async () => {
         const validation = await validateCurrentStep()
@@ -623,8 +629,9 @@ export function SalesCheckoutWizardContent({
         }
     }
 
-    const handleTerminalFailed = (_pr?: PaymentRequest) => {
+    const handleTerminalFailed = (_pr?: PaymentRequest, failureReason?: string) => {
         setShowTerminalWizard(false)
+        setManualTerminalFailureReason(failureReason ?? null)
         setManualTerminalReason('TERMINAL_BYPASS')
     }
 
@@ -634,11 +641,16 @@ export function SalesCheckoutWizardContent({
 
     const handleTerminalBypass = () => {
         setShowTerminalWizard(false)
+        setManualTerminalFailureReason(null)
         setManualTerminalReason('TERMINAL_BYPASS')
     }
 
+    // Bypass manual: TUU no emitió DTE 48 (rechazo o no respuesta). El ERP
+    // emite el DTE local según dteData.type (BOLETA 39). wasTerminalCardRef
+    // permanece false → backend no aplica la ruta COMPROBANTE_PAGO.
     const handleManualTerminalConfirm = () => {
         setManualTerminalReason(null)
+        setManualTerminalFailureReason(null)
         if (isSessionHost) {
             setPinModalOpen(true)
         } else {
@@ -648,6 +660,20 @@ export function SalesCheckoutWizardContent({
 
     const handleManualTerminalCancel = () => {
         setManualTerminalReason(null)
+        setManualTerminalFailureReason(null)
+    }
+
+    const handleSwitchPaymentMethod = () => {
+        setManualTerminalReason(null)
+        setManualTerminalFailureReason(null)
+        setPaymentData((prev: CheckoutPaymentData) => ({
+            ...prev,
+            method: null,
+            paymentMethodId: undefined,
+            treasuryAccountId: null,
+            isTerminalIntegration: false,
+        }))
+        setStep(totalSteps)
     }
 
     const handleRequestApproval = async () => {
@@ -916,7 +942,12 @@ export function SalesCheckoutWizardContent({
                                     >
                                         Pagar en otro terminal
                                     </Button>
-                                    <Button onClick={handleFinish} disabled={loading || isWaitingApproval} className="w-48 bg-success font-bold">
+                                    <Button
+                                        onClick={handleFinish}
+                                        disabled={loading || isWaitingApproval || cardTerminalRequiresBoleta}
+                                        className="w-48 bg-success font-bold"
+                                        title={cardTerminalRequiresBoleta ? "Tarjeta TUU requiere Boleta (DTE 48). Cambia el tipo de documento o el método de pago." : undefined}
+                                    >
                                         {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
                                         Finalizar Venta
                                     </Button>
@@ -980,8 +1011,10 @@ export function SalesCheckoutWizardContent({
                         reason={manualTerminalReason}
                         amount={currentTotal}
                         paymentMethodName={paymentData.method ?? undefined}
+                        failureReason={manualTerminalFailureReason ?? undefined}
                         onConfirm={handleManualTerminalConfirm}
                         onCancel={handleManualTerminalCancel}
+                        onSwitchPaymentMethod={handleSwitchPaymentMethod}
                         isLoading={loading}
                         requiresInvoiceReminder={dteData.isPending}
                     />
