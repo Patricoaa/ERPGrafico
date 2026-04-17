@@ -85,12 +85,12 @@ api.interceptors.response.use(
     }
 );
 
-export async function pollTask(
+export async function pollTask<T = unknown>(
     taskId: string, 
     endpoint: string = 'finances/api/report-status/', 
     initialInterval: number = 2000,
     maxRetries: number = 10
-): Promise<any> {
+): Promise<T> {
     let currentInterval = initialInterval;
     let retryCount = 0;
 
@@ -102,7 +102,7 @@ export async function pollTask(
                 const response = await api.get(`${cleanEndpoint}${taskId}/`);
                 
                 if (response.data.status === 'SUCCESS') {
-                    resolve(response.data.data);
+                    resolve(response.data.data as T);
                 } else if (response.data.status === 'FAILURE') {
                     reject(new Error(response.data.error || 'Task failed'));
                 } else {
@@ -110,9 +110,9 @@ export async function pollTask(
                     currentInterval = initialInterval; 
                     setTimeout(checkStatus, currentInterval);
                 }
-            } catch (error: any) {
-                const status = error.response?.status;
-                const isRetriable = status === 429 || (status >= 500 && status < 600);
+            } catch (error: unknown) {
+                const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+                const isRetriable = status === 429 || (status !== undefined && status >= 500 && status < 600);
                 
                 if (isRetriable && retryCount < maxRetries) {
                     retryCount++;

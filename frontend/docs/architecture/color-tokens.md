@@ -98,28 +98,54 @@ Estos son los tokens fundamentales del sistema. Se auto-adaptan al modo oscuro s
 | Borde estándar | `--border` | `border-border` | `oklch(0.12 0.02 240 / 15%)` — translúcido |
 | Input background | `--input` | `border-input` | `oklch(0.12 0.02 240 / 10%)` — muy sutil |
 | Focus ring | `--ring` | `ring` / `outline-ring` | `oklch(0.65 0.25 310 / 40%)` — violeta difuso |
-| Border radius base | `--radius` | `rounded-md` | `0.5rem` — esquinas industriales (8px) |
+| Border radius base | `--radius` | `rounded-sm` | `0.125rem` — micro-radius industrial (2px) |
 
-**Sistema de radius (Industrial Precision):**
+**Sistema de Radius (Industrial Micro-Radius):**
 
-El sistema usa esquinas rectas e industriales (`0.5rem` / 8px) que refuerzan la identidad de la industria gráfica.
-Las variantes relativas de Tailwind son:
-- `rounded-sm` → `calc(var(--radius) - 2px)` (6px) — Inputs, botones, badges
-- `rounded-md` → `var(--radius)` (8px) — Cards, containers
-- `rounded-lg` → `calc(var(--radius) + 2px)` (10px) — Modals, sheets
-- `rounded-xl` → `calc(var(--radius) + 6px)` (14px) — Solo casos especiales documentados
+El sistema usa esquinas casi rectas (`0.125rem` / 2px) que mantienen la identidad industrial
+pero permiten mejor rendering subpixel. Bordes visualmente rectos pero técnicamente suavizados.
+
+Las variantes de Tailwind escaladas:
+- `rounded-sm` → `var(--radius)` (2px) — Inputs, botones, badges, chips
+- `rounded-md` → `calc(var(--radius) + 2px)` (4px) — Cards, containers
+- `rounded-lg` → `calc(var(--radius) + 4px)` (6px) — Modals, sheets
+- `rounded-xl` → `calc(var(--radius) + 8px)` (10px) — Solo casos especiales documentados
+- `rounded-2xl` → `calc(var(--radius) + 14px)` (16px) — Prohibido en componentes estándar
 
 **Regla de uso por tipo de elemento:**
 
 | Tipo de elemento | Clase de radio | Valor | Justificación |
 |---|---|---|---|
-| Inputs, Selects, Buttons | `rounded-sm` | 6px | Precisión operativa, evoca controles de máquina |
-| Cards, Containers | `rounded-md` | 8px | Equilibrio industrial |
-| Modals, Sheets, Overlays | `rounded-lg` | 10px | Separación visual de capas |
-| Logo, Avatar, FAB | `rounded-xl` o `rounded-full` | 14px / full | Excepción documentada |
-| Badges, Chips | `rounded-sm` | 6px | Compacto e industrial |
+| Inputs, Selects, Buttons | `rounded-sm` | 2px | Precisión operativa, evoca controles de máquina |
+| Cards, Containers | `rounded-md` | 4px | Equilibrio industrial |
+| Modals, Sheets, Overlays | `rounded-lg` | 6px | Separación visual de capas |
+| Logo, Avatar, FAB | `rounded-xl` o `rounded-full` | 10px / full | Excepción documentada |
+| Badges, Chips | `rounded-sm` | 2px | Compacto e industrial |
 
 > **Prohibido:** Usar `rounded-2xl` o `rounded-3xl` en componentes estándar. Esos valores rompen la coherencia industrial.
+
+### Elevation System (Profundidad)
+
+| Token CSS | Clase sugerida | Uso |
+|-----------|---------------|-----|
+| `--shadow-card` | `shadow-[var(--shadow-card)]` | Cards en reposo, contenedores estándar |
+| `--shadow-elevated` | `shadow-[var(--shadow-elevated)]` | Cards destacadas, métricas KPI, `IndustrialCard variant="elevated"` |
+| `--shadow-floating` | `shadow-[var(--shadow-floating)]` | Dropdowns, popovers, tooltips |
+| `--shadow-overlay` | `shadow-[var(--shadow-overlay)]` | Modales, sheets, wizards |
+
+> Las sombras usan `oklch(0.12 0.02 240 / X%)` para producir sombras tintadas que coinciden con la paleta industrial.
+
+### Motion Tokens (Animación)
+
+| Token CSS | Valor | Uso |
+|-----------|-------|-----|
+| `--ease-premium` | `cubic-bezier(0.16, 1, 0.3, 1)` | Overshoot para paneles, sheets, modales |
+| `--ease-micro` | `cubic-bezier(0.25, 0.1, 0.25, 1)` | Hover, focus, cambios de estado sutiles |
+| `--ease-enter` | `cubic-bezier(0.0, 0.0, 0.2, 1)` | Elementos que entran (fade-in, slide-in) |
+| `--ease-exit` | `cubic-bezier(0.4, 0.0, 1, 1)` | Elementos que salen (fade-out, slide-out) |
+| `--duration-fast` | `150ms` | Hover, focus, micro-interacciones |
+| `--duration-normal` | `250ms` | Transiciones estándar, cambios de estado |
+| `--duration-slow` | `400ms` | Paneles, modales, animaciones complejas |
 
 ---
 

@@ -91,8 +91,8 @@ export function BankManagement({ externalOpen, onOpenChange }: BankManagementPro
     const columns = [
         {
             accessorKey: "name",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }: any) => (
+            header: ({ column }: { column: unknown }) => <DataTableColumnHeader column={column as any} title="Nombre" className="justify-center" />,
+            cell: ({ row }: { row: { original: Bank } }) => (
                 <div className="flex items-center justify-center gap-2 w-full">
                     <DataCell.Text className="font-medium text-center">
                         <Landmark className="h-4 w-4 text-muted-foreground mr-2 inline" />
@@ -103,14 +103,14 @@ export function BankManagement({ externalOpen, onOpenChange }: BankManagementPro
         },
         {
             accessorKey: "code",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
-            cell: ({ row }: any) => (
+            header: ({ column }: { column: unknown }) => <DataTableColumnHeader column={column as any} title="Código" className="justify-center" />,
+            cell: ({ row }: { row: { original: Bank } }) => (
                 <div className="flex justify-center w-full">
                     <DataCell.Code>{row.original.code || 'N/A'}</DataCell.Code>
                 </div>
             )
         },
-        createActionsColumn<any>({
+        createActionsColumn<Bank>({
             renderActions: (item) => (
                 <>
                     <DataCell.Action
@@ -184,7 +184,14 @@ export function BankManagement({ externalOpen, onOpenChange }: BankManagementPro
     )
 }
 
-function BankDialog({ open, onOpenChange, bank, onSuccess }: any) {
+interface BankDialogProps {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    bank: Bank | null
+    onSuccess: () => void
+}
+
+function BankDialog({ open, onOpenChange, bank, onSuccess }: BankDialogProps) {
     const [name, setName] = useState("")
     const [code, setCode] = useState("")
     const [swiftCode, setSwiftCode] = useState("")
@@ -357,8 +364,8 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
     const columns = [
         {
             accessorKey: "name",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }: any) => (
+            header: ({ column }: { column: unknown }) => <DataTableColumnHeader column={column as any} title="Nombre" className="justify-center" />,
+            cell: ({ row }: { row: { original: PaymentMethod } }) => (
                 <div className="flex items-center justify-center gap-2 w-full">
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
                     <div className="flex flex-col items-center">
@@ -370,8 +377,8 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
         },
         {
             accessorKey: "method_type_display",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }: any) => (
+            header: ({ column }: { column: unknown }) => <DataTableColumnHeader column={column as any} title="Tipo" className="justify-center" />,
+            cell: ({ row }: { row: { original: PaymentMethod } }) => (
                 <div className="flex justify-center w-full">
                     <StatusBadge status={row.original.method_type} label={row.original.method_type_display} size="sm" />
                 </div>
@@ -379,8 +386,8 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
         },
         {
             accessorKey: "treasury_account_name",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Cuenta de Tesorería" className="justify-center" />,
-            cell: ({ row }: any) => (
+            header: ({ column }: { column: unknown }) => <DataTableColumnHeader column={column as any} title="Cuenta de Tesorería" className="justify-center" />,
+            cell: ({ row }: { row: { original: PaymentMethod } }) => (
                 <div className="flex flex-col items-center justify-center gap-1.5 w-full">
                     <DataCell.Secondary className="text-center">{row.original.treasury_account_name}</DataCell.Secondary>
                     <div className="flex justify-center gap-1">
@@ -404,7 +411,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
                 </div>
             )
         },
-        createActionsColumn<any>({
+        createActionsColumn<PaymentMethod>({
             renderActions: (item) => (
                 <>
                     <DataCell.Action
@@ -478,7 +485,14 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
     )
 }
 
-function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
+interface PaymentMethodDialogProps {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    method: PaymentMethod | null
+    onSuccess: () => void
+}
+
+function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: PaymentMethodDialogProps) {
     const [name, setName] = useState("")
     const [type, setType] = useState("DEBIT_CARD")
     const [accountId, setAccountId] = useState<string | null>(null)
@@ -486,7 +500,7 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: any) {
     const [allowSales, setAllowSales] = useState(true)
     const [allowPurchases, setAllowPurchases] = useState(true)
     const [loading, setLoading] = useState(false)
-    const [accounts, setAccounts] = useState<any[]>([])
+    const [accounts, setAccounts] = useState<{id: number | string, name: string}[]>([])
 
 
     useEffect(() => {

@@ -5,7 +5,7 @@ export interface HistoricalRecord {
     history_type: '+' | '~' | '-';
     history_user_id: number | null;
     history_user_username: string;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export interface ActionLog {
@@ -17,5 +17,5 @@ export interface ActionLog {
     action_type_display: string;
     description: string;
     ip_address: string | null;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
 }
