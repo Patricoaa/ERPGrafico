@@ -34,7 +34,7 @@
   /* SYSTEM STATES */
   --destructive: oklch(46.933% 0.18444 22.356);
   --destructive-foreground: oklch(0.99 0.01 25);
-  --success: var(--primary);
+  --success: oklch(64.837% 0.11864 230.453);
   --success-foreground: oklch(0.99 0.01 145);
   --warning: oklch(0.75 0.20 85);
   --warning-foreground: oklch(0.99 0.01 85);

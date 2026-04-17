@@ -111,8 +111,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         has_terminal_payment_method = self.request.query_params.get('has_terminal_payment_method', None)
         if has_terminal_payment_method == 'true':
             queryset = queryset.filter(
-                terminal_payment_methods__is_terminal=True,
-                terminal_payment_methods__is_active=True
+                terminal_providers__is_active=True,
             ).distinct()
         
         return queryset

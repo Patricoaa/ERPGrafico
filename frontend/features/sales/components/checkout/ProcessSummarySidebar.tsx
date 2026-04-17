@@ -45,16 +45,14 @@ export function ProcessSummarySidebar({
 }: ProcessSummarySidebarProps) {
     // Dynamically build the steps list
     const steps = [
-        { id: 'customer', label: 'Cliente', icon: User },
+        { id: 'customer_dte', label: 'Cliente & Doc', icon: User },
     ]
 
     if (hasManufacturing) {
         steps.push({ id: 'mfg', label: 'Fabricación', icon: Paintbrush })
     }
 
-    steps.push({ id: 'dte', label: 'Documento', icon: FileText })
-
-    if (totalSteps > (hasManufacturing ? 4 : 3)) {
+    if (totalSteps > (hasManufacturing ? 3 : 2)) {
         steps.push({ id: 'delivery', label: 'Entrega', icon: ShoppingBag })
     }
 
@@ -92,11 +90,11 @@ export function ProcessSummarySidebar({
                         {/* Step Details */}
                         {isPast && (
                             <div className="px-3 pb-3 pt-1 space-y-1 animate-in fade-in duration-300">
-                                {step.id === 'customer' && customerName && (
-                                    <p className="text-xs font-semibold truncate">{customerName}</p>
-                                )}
-                                {step.id === 'dte' && dteType && (
-                                    <p className="text-xs font-semibold">{dteType}</p>
+                                {step.id === 'customer_dte' && (
+                                    <>
+                                        {customerName && <p className="text-xs font-semibold truncate">{customerName}</p>}
+                                        {dteType && <p className="text-xs font-semibold mt-1">{dteType}</p>}
+                                    </>
                                 )}
                                 {step.id === 'payment' && paymentData && (
                                     <div className="space-y-0.5">

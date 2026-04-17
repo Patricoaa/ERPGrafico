@@ -262,13 +262,18 @@ class SaleOrderSerializer(serializers.ModelSerializer):
 
 class CreateSaleOrderSerializer(serializers.ModelSerializer):
     """
-    Serializer to handle nested creation of lines
+    Serializer to handle nested creation of lines.
+
+    payment_method_id (opcional): ID de treasury.PaymentMethod.
+        Si se provee, se guarda en payment_method_ref (FK nuevo).
+        El campo legacy payment_method se normaliza desde el tipo del método si no viene explícito.
     """
     lines = SaleLineSerializer(many=True)
+    payment_method_id = serializers.IntegerField(required=False, allow_null=True, write_only=True)
 
     class Meta:
         model = SaleOrder
-        fields = ['id', 'number', 'customer', 'notes', 'payment_method', 'total_discount_amount', 'lines']
+        fields = ['id', 'number', 'customer', 'notes', 'payment_method', 'payment_method_id', 'total_discount_amount', 'lines']
         read_only_fields = ['id', 'number']
 
     def validate(self, attrs):
@@ -287,14 +292,22 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         lines_data = validated_data.pop('lines')
-        order = SaleOrder.objects.create(**validated_data)
-        
+        payment_method_id = validated_data.pop('payment_method_id', None)
+
+        # Resolve PaymentMethod FK if ID provided
+        pm_ref = None
+        if payment_method_id:
+            from treasury.models import PaymentMethod as TreasuryPM
+            pm_ref = TreasuryPM.objects.filter(id=payment_method_id).first()
+
+        order = SaleOrder.objects.create(**validated_data, payment_method_ref=pm_ref)
+
         for line_data in lines_data:
             SaleLine.objects.create(order=order, **line_data)
-        
+
         order.recalculate_totals()
         order.save()
-        
+
         return order
 
 class SaleDeliveryLineSerializer(serializers.ModelSerializer):

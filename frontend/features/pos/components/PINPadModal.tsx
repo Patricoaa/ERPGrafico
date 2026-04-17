@@ -36,7 +36,7 @@ export function PINPadModal({
             title={
                 <div className="flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-primary" />
-                    <span className="font-bold">{title}</span>
+                    <span className="font-heading font-black uppercase tracking-tighter text-lg">{title}</span>
                 </div>
             }
             description={description}
