@@ -11,7 +11,9 @@
       "WebFetch(domain:developers.tuu.cl)",
       "Bash(python -c \"from treasury import models; print\\('OK', models.PaymentMethod._meta.get_field\\('settlement_account'\\)\\)\")",
       "Bash(docker exec *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(grep -E \"\\\\.\\(tsx?|jsx?\\)$\")",
+      "Bash(xargs grep *)"
     ]
   }
 }
