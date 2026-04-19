@@ -26,7 +26,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
             queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
             toast.success('Cuenta creada exitosamente')
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             showApiError(error, 'Error al crear la cuenta')
         }
     })
@@ -38,7 +38,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
             queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
             toast.success('Cuenta actualizada exitosamente')
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             showApiError(error, 'Error al actualizar la cuenta')
         }
     })
@@ -49,7 +49,7 @@ export function useAccounts({ filters }: UseAccountsProps = {}) {
             queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
             toast.success('Cuenta eliminada exitosamente')
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             showApiError(error, 'Error al eliminar la cuenta')
         }
     })

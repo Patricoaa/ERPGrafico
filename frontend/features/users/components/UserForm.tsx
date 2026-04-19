@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
+import { AppGroup } from "@/types/entities"
 
 const userSchema = z.object({
     username: z.string().min(3, "Mínimo 3 caracteres"),
@@ -44,7 +45,7 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [availableRoles, setAvailableRoles] = useState<[string, string][]>([])
-    const [availableGroups, setAvailableGroups] = useState<any[]>([])
+    const [availableGroups, setAvailableGroups] = useState<AppGroup[]>([])
 
     // Helper to parse groups from initialData
     const parseInitialGroups = () => {
@@ -85,7 +86,7 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
                     // Filter out system roles from the groups list so they don't appear in the "Teams" checklist
                     const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
                     const functionalGroupsData = (groupsRes.data.results || groupsRes.data).filter(
-                        (g: any) => !systemRoles.includes(g.name)
+                        (g: AppGroup) => !systemRoles.includes(g.name)
                     )
                     setAvailableGroups(functionalGroupsData)
 
@@ -114,16 +115,23 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
             // Merge primary role and functional groups into the backend expected format
             const groups = [data.primary_role, ...data.functional_groups]
 
-            const payload: any = {
-                ...data,
-                groups
+            // Build typed payload — password is optional so we omit it if empty
+            interface UserApiPayload {
+                username: string
+                groups: string[]
+                contact: number
+                is_active: boolean
+                password?: string
             }
 
-            // Cleanup generic form fields not in backend serializer
-            delete payload.primary_role
-            delete payload.functional_groups
+            const payload: UserApiPayload = {
+                username: data.username,
+                contact: data.contact,
+                is_active: data.is_active,
+                groups,
+            }
 
-            if (!payload.password) delete payload.password
+            if (data.password) payload.password = data.password
 
             if (initialData?.id) {
                 await api.patch(`/core/users/${initialData.id}/`, payload)

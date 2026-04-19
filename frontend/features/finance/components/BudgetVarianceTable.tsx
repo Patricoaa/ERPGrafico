@@ -11,8 +11,10 @@ import {
 } from "@/components/ui/table";
 import { CaretRight, CaretDown, WarningCircle } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
+import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { EmptyState } from "@/components/shared/EmptyState";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export interface BudgetVarianceNode {
     id: number;
@@ -134,18 +136,14 @@ export const BudgetVarianceTable: React.FC<BudgetVarianceTableProps> = ({ data, 
         return (
             <div className="space-y-2 p-4">
                 {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} className="h-10 w-full bg-muted animate-pulse rounded" />
+                    <Skeleton key={i} className="h-10 w-full rounded" />
                 ))}
             </div>
         );
     }
 
     if (!data.length) {
-        return (
-            <div className="flex flex-col items-center justify-center p-12 text-muted-foreground">
-                <p>No se encontraron datos para este periodo.</p>
-            </div>
-        );
+        return <EmptyState context="finance" variant="full" title="Sin datos presupuestarios" description="No se encontraron datos para el periodo seleccionado." />
     }
 
     return (

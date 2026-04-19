@@ -108,7 +108,7 @@ export function StatementsList({ externalOpen = false }: { externalOpen?: boolea
         },
         {
             id: "lines_info",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Líneas" className="justify-center" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Líneas" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex flex-col items-center justify-center w-full">
                     <span className="font-semibold text-xs">{row.original.total_lines} total</span>

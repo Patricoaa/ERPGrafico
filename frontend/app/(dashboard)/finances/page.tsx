@@ -107,7 +107,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
             <PageHeader
                 title={config.title}
                 description={config.description}
-                iconName={config.icon as any}
+                iconName={config.icon}
                 variant="minimal"
                 titleActions={config.action}
             />

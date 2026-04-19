@@ -298,6 +298,84 @@
     animation: shimmer 2s infinite;
   }
 
+  /*
+   * SKELETON SHELL — CSS-based shimmer overlay
+   * Transforms any component subtree into a skeleton without a parallel structure.
+   * Usage: wrap the real component (with placeholder/empty data) in SkeletonShell.
+   * The component's DOM layout IS the skeleton — no drift possible.
+   */
+  [data-skeleton-shell] {
+    pointer-events: none;
+    user-select: none;
+    cursor: default;
+  }
+
+  /* Hide all text content while preserving layout geometry */
+  [data-skeleton-shell] * {
+    color: transparent !important;
+    text-shadow: none !important;
+    caret-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Hide icons — preserve their space */
+  [data-skeleton-shell] svg {
+    visibility: hidden !important;
+  }
+
+  /* Hide images */
+  [data-skeleton-shell] img {
+    opacity: 0 !important;
+  }
+
+  /* Shimmer on text-bearing leaf elements */
+  [data-skeleton-shell] p,
+  [data-skeleton-shell] h1, [data-skeleton-shell] h2,
+  [data-skeleton-shell] h3, [data-skeleton-shell] h4,
+  [data-skeleton-shell] h5, [data-skeleton-shell] h6,
+  [data-skeleton-shell] label,
+  [data-skeleton-shell] td, [data-skeleton-shell] th,
+  [data-skeleton-shell] span:not(:has(*)),
+  [data-skeleton-shell] div:not(:has(*))[class]:not(:empty) {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background-color: var(--muted) !important;
+    background-image: linear-gradient(90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.2) 20%,
+      rgba(255, 255, 255, 0.5) 60%,
+      rgba(255, 255, 255, 0)
+    ) !important;
+    background-size: 200% 100% !important;
+    animation: shimmer 2s infinite linear !important;
+    min-height: 0.75em;
+    min-width: 2rem;
+  }
+
+  /* Form inputs look like muted fields */
+  [data-skeleton-shell] input,
+  [data-skeleton-shell] textarea,
+  [data-skeleton-shell] select {
+    background-color: var(--muted) !important;
+    border-color: var(--border) !important;
+    opacity: 0.5 !important;
+  }
+
+  /* Buttons and badges fade to muted */
+  [data-skeleton-shell] button,
+  [data-skeleton-shell] [role="button"],
+  [data-skeleton-shell] [data-slot="badge"] {
+    background-color: var(--muted) !important;
+    border-color: transparent !important;
+    opacity: 0.4 !important;
+  }
+
+  /* Mute decorative borders to give depth without distraction */
+  [data-skeleton-shell] [class*="border"] {
+    border-color: oklch(0.12 0.02 240 / 0.06) !important;
+  }
+
   /* Interaction Guards (Ley de Fitts) 
      Target: 40px height for primary interactive elements.
      Excludes: small variants (h-9, h-8, h-7) to maintain density in toolbars/tabs.

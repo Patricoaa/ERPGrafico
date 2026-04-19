@@ -261,14 +261,14 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
                 ]}
                 useAdvancedFilter={true}
                 defaultPageSize={500}
-                getSubRows={(row: any) => row.children}
+                getSubRows={(row: Account & { children?: unknown[] }) => row.children}
                 autoExpand={true}
                 rightAction={null}
             />
 
             <AccountForm
                 accounts={flatAccounts}
-                initialData={editingAccount as any}
+                initialData={editingAccount as Record<string, unknown>}
                 parentId={formParentId || undefined}
                 onSuccess={() => {
                     refetch()

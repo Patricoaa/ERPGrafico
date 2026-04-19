@@ -9,7 +9,7 @@ interface UseInventorySettingsReturn {
     settings: InventorySettings
     saving: boolean
     updateSettings: (payload: InventorySettingsUpdatePayload) => Promise<void>
-    refetch: () => Promise<any>
+    refetch: () => Promise<unknown>
 }
 
 /**

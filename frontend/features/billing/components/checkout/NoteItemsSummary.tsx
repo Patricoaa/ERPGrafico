@@ -3,6 +3,7 @@
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { ShoppingBag } from "lucide-react"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { formatCurrency } from "@/lib/currency"
 import { cn } from "@/lib/utils"
 
@@ -36,9 +37,7 @@ export function NoteItemsSummary({
 
                         <div className="space-y-4">
                             {items.length === 0 ? (
-                                <p className="text-center text-muted-foreground text-[11px] font-bold py-8 uppercase tracking-tighter">
-                                    No hay productos seleccionados
-                                </p>
+                                <EmptyState context="inventory" variant="compact" title="Sin productos seleccionados" />
                             ) : (
                                 items.map((item, idx) => (
                                     <div key={idx} className="flex justify-between items-start gap-4 animate-in fade-in duration-500">

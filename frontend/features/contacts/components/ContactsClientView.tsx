@@ -27,10 +27,10 @@ interface ContactsClientViewProps {
 
 export function ContactsClientView({ isNewModalOpen = false }: ContactsClientViewProps) {
     const { contacts, deleteContact } = useContacts()
-    const [selectedContact, setSelectedContact] = useState<any>(null)
+    const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
     const [modalOpen, setModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-    const [contactToDelete, setContactToDelete] = useState<any>(null)
+    const [contactToDelete, setContactToDelete] = useState<Contact | null>(null)
     const router = useRouter()
     const searchParams = useSearchParams()
 
@@ -55,7 +55,7 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
         }
     }
 
-    const handleDelete = async (contact: any, isConfirmed = false) => {
+    const handleDelete = async (contact: Contact, isConfirmed = false) => {
         if (!contact) return
         if (!isConfirmed) {
             setContactToDelete(contact)
@@ -84,7 +84,7 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
             cell: ({ row }) => {
-                const contact = row.original as any
+                const contact = row.original as Contact
                 return (
                     <div className="flex items-center justify-center gap-2 w-full">
                         <DataCell.Text>{contact.name}</DataCell.Text>

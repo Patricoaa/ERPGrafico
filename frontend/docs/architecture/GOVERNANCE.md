@@ -29,7 +29,7 @@ Este documento define la "Constitución" técnica del frontend del proyecto ERPG
 ## 6. Integridad de Pull Requests y QA
 - No se aceptará en la rama principal código que no pase limpiamente `npm run type-check`.
 - Todos los estados en componentes compartidos y tablas de datos deben contemplar y documentar:
-  - Estado *Loading* (Skeletons/Spinners).
+  - Estado *Loading* (ver Regla 10 — protocolo de estados de carga).
   - Estado *Empty* (`EmptyState`).
   - Estado de *Error* (Manejado globalmente a través de utilidades proxy hacia Toasts).
 
@@ -42,6 +42,32 @@ Este documento define la "Constitución" técnica del frontend del proyecto ERPG
 ## 8. Anatomía del Layout
 - **Grilla de 12 Columnas:** Todos los layouts de página deben basarse en una grilla de 12 columnas (`grid-cols-12`). 
 - **Contenedores:** El ancho máximo de contenido debe estar controlado por el contenedor estándar del sistema para mantener la legibilidad en monitores ultrawide.
+
+## 10. Protocolo de Estados de Carga (Loading States)
+
+La distinción entre **Skeleton** y **Spinner** es obligatoria. No son intercambiables.
+
+### Regla de uso
+
+| Situación | Componente correcto | Prohibido |
+|-----------|---------------------|-----------|
+| Carga inicial de datos (page load, Suspense, fetch inicial) | `Skeleton` | `Loader2` spinner |
+| Acción iniciada por usuario (submit, guardar, eliminar, pagar) | `Loader2` en el botón/acción | Skeleton |
+| `loading.tsx` de ruta Next.js | `Skeleton` que mimetice el layout | `Loader2` spinner |
+| Botón en estado de envío | `Loader2` inline (`h-4 w-4 animate-spin`) | Skeleton |
+
+**Regla de oro:** Si el usuario NO hizo clic → Skeleton. Si el usuario hizo clic → Spinner en el elemento accionado.
+
+### Implementación de Skeletons
+
+- Crear un skeleton por **región/layout**, no por componente atómico. Un `InvoiceListSkeleton` que cubra toda la tabla, no un `RowSkeleton` individual.
+- Siempre componer usando el primitivo `<Skeleton>` de `@/components/ui/skeleton`. **Prohibido** aplicar `animate-pulse` o `bg-muted animate-pulse` directamente en divs. El primitivo garantiza propagación de tokens de animación.
+- Ubicación: `features/[modulo]/components/skeletons/[Modulo]Skeleton.tsx`. Skeletons compartidos entre módulos van a `components/shared/`.
+- El skeleton debe replicar fielmente el número de columnas, altura de filas y estructura de la región real.
+
+### `LoadingFallback`
+
+El componente `LoadingFallback` NO debe usarse con `variant='spinner'`. Ese variant está deprecado. Para Suspense boundaries siempre usar `variant='table'`, `'card'` o `'list'`, o pasar directamente el skeleton específico del módulo.
 
 ## 9. Identidad de Industria Gráfica
 - El ERP debe transmitir visualmente su orientación a la industria gráfica mediante un **vocabulario visual de imprenta** formalizado en `color-tokens.md` §Vocabulario Visual.

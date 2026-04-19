@@ -58,6 +58,22 @@ interface PaymentFormProps {
     triggerText?: string
 }
 
+interface InvoiceOption {
+    id: number
+    dte_type_display: string
+    number: string | null
+    total: number
+    sale_order?: { customer: number }
+    purchase_order?: { supplier: number }
+    status: string
+}
+
+interface PaymentMethodOption {
+    id: number | string
+    name: string
+    method_type: string
+}
+
 export function PaymentForm({
     onSuccess,
     initialData,
@@ -72,8 +88,8 @@ export function PaymentForm({
     const [loading, setLoading] = useState(false)
     const [isFetchingMethods, setIsFetchingMethods] = useState(false)
     const [isFetchingInvoices, setIsFetchingInvoices] = useState(false)
-    const [orders, setOrders] = useState<any[]>([])
-    const [availableMethods, setAvailableMethods] = useState<any[]>([])
+    const [orders, setOrders] = useState<InvoiceOption[]>([])
+    const [availableMethods, setAvailableMethods] = useState<PaymentMethodOption[]>([])
 
     const form = useForm<PaymentFormValues>({
         resolver: zodResolver(paymentSchema),
@@ -105,9 +121,9 @@ export function PaymentForm({
             const res = await api.get('/billing/invoices/')
             let results = res.data.results || res.data
             if (paymentType === "INBOUND" && customerId) {
-                results = results.filter((i: any) => i.sale_order && i.sale_order.customer === parseInt(customerId) && i.status === 'POSTED')
+                results = results.filter((i: InvoiceOption) => i.sale_order && i.sale_order.customer === parseInt(customerId) && i.status === 'POSTED')
             } else if (paymentType === "OUTBOUND" && supplierId) {
-                results = results.filter((i: any) => i.purchase_order && i.purchase_order.supplier === parseInt(supplierId) && i.status === 'POSTED')
+                results = results.filter((i: InvoiceOption) => i.purchase_order && i.purchase_order.supplier === parseInt(supplierId) && i.status === 'POSTED')
             }
             setOrders(results)
         } catch (error) {
@@ -134,7 +150,7 @@ export function PaymentForm({
 
                     if (methods.length > 0) {
                         const currentPM = form.getValues("payment_method_new")
-                        const exists = methods.find((m: any) => m.id.toString() === currentPM)
+                        const exists = methods.find((m: PaymentMethodOption) => m.id.toString() === currentPM)
                         if (!exists) {
                             form.setValue("payment_method_new", methods[0].id.toString())
                         }

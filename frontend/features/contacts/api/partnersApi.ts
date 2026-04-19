@@ -1,5 +1,5 @@
 import api from "@/lib/api"
-import { PartnerSummary, PartnerStatement, PartnerTransactionPayload } from "../types/partner"
+import { Partner, PartnerSummary, PartnerStatement, PartnerTransactionPayload, ProfitDistribution } from "../types/partner"
 
 export const partnersApi = {
     /**
@@ -13,7 +13,7 @@ export const partnersApi = {
     /**
      * Get all contacts marked as partners
      */
-    getPartners: async () => {
+    getPartners: async (): Promise<Partner[]> => {
         const response = await api.get('/contacts/partners/')
         return response.data
     },
@@ -79,18 +79,18 @@ export const partnersApi = {
     /**
      * Profit Distributions
      */
-    getProfitDistributions: async (year?: number) => {
+    getProfitDistributions: async (year?: number): Promise<ProfitDistribution[]> => {
         const url = year ? `/contacts/profit-distributions/?fiscal_year=${year}` : '/contacts/profit-distributions/'
         const response = await api.get(url)
         return response.data
     },
 
-    createProfitDistribution: async (data: { fiscal_year_id: number, net_result: number, resolution_date: string, acta_number?: string, notes?: string }) => {
+    createProfitDistribution: async (data: { fiscal_year_id: number, net_result: number, resolution_date: string, acta_number?: string, notes?: string }): Promise<ProfitDistribution> => {
         const response = await api.post('/contacts/profit-distributions/', data)
         return response.data
     },
 
-    updateProfitDistribution: async (id: number, data: any) => {
+    updateProfitDistribution: async (id: number, data: Record<string, unknown>) => {
         const response = await api.patch(`/contacts/profit-distributions/${id}/`, data)
         return response.data
     },

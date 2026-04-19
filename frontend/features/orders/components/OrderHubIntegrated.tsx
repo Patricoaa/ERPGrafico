@@ -14,9 +14,26 @@ import { ActionCategory } from "./ActionCategory"
 import { cn } from "@/lib/utils"
 // IndustrialCard removed here as we are moving to individual Card components per phase
 import { getHubStatuses } from "@/lib/order-status-utils"
+import { Order } from "../types"
+
+interface OrderHubData {
+    order: Order | null
+    activeInvoice: Order | null
+    activeDoc: Order
+    userPermissions: string[]
+    isNoteMode: boolean
+    noteStatuses: Record<string, string>
+    showProduction: boolean
+    showLogistics: boolean
+    invoices: Order[]
+    billingIsComplete: boolean
+    payments: any[]
+    logisticsProgress: number
+    fetchOrderDetails: () => void
+}
 
 interface OrderHubIntegratedProps {
-    data: any
+    data: OrderHubData
     type?: 'purchase' | 'sale' | 'obligation'
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void

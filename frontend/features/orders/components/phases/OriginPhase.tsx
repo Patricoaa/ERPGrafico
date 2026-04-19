@@ -8,13 +8,14 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
+import { Order, OrderLine, PhaseDocument } from "../../types"
 
 interface OriginPhaseProps {
     isNoteMode: boolean
-    activeInvoice: any
+    activeInvoice: Order | null
     noteStatuses: any
-    order: any
-    activeDoc: any
+    order: Order | null
+    activeDoc: Order
     type: 'purchase' | 'sale' | 'obligation'
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
@@ -58,18 +59,18 @@ export function OriginPhase({
         }
     }
 
-    const documents = isNoteMode ? [
+    const documents: PhaseDocument[] = isNoteMode ? [
         {
             type: 'Documento Rectificado',
-            number: formatDocumentId('FACT', activeInvoice?.corrected_invoice?.number || '---', activeInvoice?.corrected_invoice?.display_id),
+            number: formatDocumentId('FACT', activeInvoice?.corrected_invoice?.number || '---', (activeInvoice?.corrected_invoice as any)?.display_id),
             icon: FileText,
-            id: activeInvoice?.corrected_invoice?.id,
+            id: activeInvoice?.corrected_invoice?.id as number,
             docType: 'invoice',
             actions: []
         },
         ...(order ? [{
             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
-            number: formatDocumentId(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
+            number: formatDocumentId(isSale ? 'NV' : 'OCS', order?.number || order?.id, (order as any)?.display_id),
             icon: FileText,
             id: order?.id,
             docType: type === 'obligation' ? 'service_obligation' : (type === 'sale' ? 'sale_order' : 'purchase_order'),
@@ -78,7 +79,7 @@ export function OriginPhase({
     ] : (order ? [
         {
             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
-            number: formatDocumentId(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
+            number: formatDocumentId(isSale ? 'NV' : 'OCS', order?.number || order?.id, (order as any)?.display_id),
             icon: FileText,
             id: order?.id,
             docType: type === 'obligation' ? 'service_obligation' : (type === 'sale' ? 'sale_order' : 'purchase_order'),
@@ -99,8 +100,8 @@ export function OriginPhase({
         }
     ] : (activeInvoice ? [
         {
-            type: activeInvoice?.dte_type_display || 'Factura Directa',
-            number: formatDocumentId('FACT', activeInvoice?.number || '---', activeInvoice?.display_id),
+            type: (activeInvoice as any)?.dte_type_display || 'Factura Directa',
+            number: formatDocumentId('FACT', activeInvoice?.number || '---', (activeInvoice as any)?.display_id),
             icon: FileText,
             id: activeInvoice?.id,
             docType: 'invoice',
@@ -144,13 +145,13 @@ export function OriginPhase({
             onOpenChange={onOpenChange}
         >
             <div className="flex flex-col gap-1">
-                {(activeDoc?.lines || activeDoc?.items || []).slice(0, 3).map((line: any, idx: number) => (
+                {(activeDoc?.lines || activeDoc?.items || []).slice(0, 3).map((line: OrderLine, idx: number) => (
                     <div key={idx} className="flex items-start justify-between text-[10px] gap-2 py-0.5 border-b border-white/5 last:border-0">
                         <span className="text-foreground/70 line-clamp-1 leading-tight flex-1">
-                            {line.product_name || line.description}
+                            {line.product_name || (line as any).description}
                         </span>
                         <span className="shrink-0 font-black text-primary text-[11px]">
-                            {Math.round(line.quantity)} {line.uom_name || line.unit_name || 'un'}
+                            {Math.round(line.quantity as number)} {(line as any).uom_name || (line as any).unit_name || 'un'}
                         </span>
                     </div>
                 ))}

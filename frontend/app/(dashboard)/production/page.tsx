@@ -4,14 +4,13 @@ import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import { Tabs } from "@/components/ui/tabs"
 
 // Lazy load feature components
 const WorkOrdersView = lazy(() => import("@/app/(dashboard)/production/orders/page").then(m => ({ default: m.default })))
 const BOMsView = lazy(() => import("@/app/(dashboard)/production/boms/page").then(m => ({ default: m.default })))
 const ProductionSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.ProductionSettingsView })))
 import { SettingsSheetRouteWrapper } from "@/components/shared"
-import { Settings2 } from "lucide-react"
+
 
 export const metadata: Metadata = {
     title: "Módulo de Producción | ERPGrafico",
@@ -23,8 +22,7 @@ interface PageProps {
 }
 
 export default async function ProductionPage({ searchParams }: PageProps) {
-    const { view, tab } = await searchParams
-    const configTab = tab || "global"
+    const { view } = await searchParams
     const viewMode = (view as 'orders' | 'boms') || 'orders'
 
     const tabs = [
@@ -74,7 +72,7 @@ export default async function ProductionPage({ searchParams }: PageProps) {
             <PageHeader
                 title={title}
                 description={description}
-                iconName={icon as any}
+                iconName={icon}
                 variant="minimal"
                 configHref="?config=true"
                 titleActions={action}

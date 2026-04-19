@@ -150,6 +150,7 @@ export interface Payroll {
   items?: PayrollItem[]
   advances?: SalaryAdvance[]
   payments?: PayrollPayment[]
+  remuneration_paid_status?: 'PENDING' | 'PARTIAL' | 'PAID'
   notes: string
   created_at: string
   updated_at: string

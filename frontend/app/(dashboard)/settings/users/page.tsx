@@ -1,11 +1,10 @@
 "use client"
 
-import { lazy, Suspense, useState } from "react"
+import { type ReactNode, lazy, Suspense, useState } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import { Plus, Users, UserPlus } from "lucide-react"
 import { useSearchParams } from "next/navigation"
 
 // Lazy load the UsersSettingsView component
@@ -18,7 +17,7 @@ const UsersSettingsView = lazy(() =>
 export default function UsersSettingsPage() {
     const searchParams = useSearchParams()
     const activeTab = searchParams.get("tab") || "users"
-    const [headerActions, setHeaderActions] = useState<React.ReactNode>(null)
+    const [headerActions, setHeaderActions] = useState<ReactNode>(null)
 
     const tabs = [
         { value: "users", label: "Usuarios", iconName: "users", href: "/settings/users?tab=users" },

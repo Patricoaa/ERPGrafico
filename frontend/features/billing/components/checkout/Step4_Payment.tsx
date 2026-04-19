@@ -7,8 +7,8 @@ import { useEffect } from "react"
 interface Step4_PaymentProps {
     isCreditNote: boolean
     total: number
-    data: any
-    setData: (data: any) => void
+    data: Record<string, unknown>
+    setData: (data: Record<string, unknown>) => void
 }
 
 export function Step4_Payment({
@@ -42,7 +42,7 @@ export function Step4_Payment({
 
     // Map internal snake_case data to PaymentData (camelCase)
     const paymentData: PaymentData = {
-        method: data.method as any,
+        method: data.method as string,
         amount: data.amount,
         treasuryAccountId: data.treasury_account_id || null,
         paymentMethodId: null, // Not strictly used by logic but part of type

@@ -41,7 +41,7 @@ interface DraftCart {
     notes: string
     customer: number | null
     customer_name: string | null
-    items: any[]
+    items: Array<Record<string, unknown>>
     total_net: number
     total_gross: number
     item_count: number
@@ -52,9 +52,9 @@ interface DraftCart {
     pos_session: number
     wizard_state?: {
         step: number
-        dteData: any
-        paymentData: any
-        deliveryData: any
+        dteData: Record<string, unknown>
+        paymentData: Record<string, unknown>
+        deliveryData: Record<string, unknown>
         approvalTaskId?: number | null
         isWaitingApproval?: boolean
         isApproved?: boolean
@@ -115,7 +115,7 @@ export function DraftCartsList({
             const newDrafts = Array.isArray(data) ? data : []
             setDrafts(newDrafts)
             setPrevDraftIds(new Set(newDrafts.map((d: DraftCart) => d.id)))
-        } catch (error: unknown) {
+        } catch (error) {
             console.error("Error al cargar borradores:", error)
             toast.error("Error al cargar los borradores")
         } finally {
@@ -187,9 +187,10 @@ export function DraftCartsList({
             toast.success(`Borrador "${draftName}" eliminado`)
             await fetchDrafts()
             onDraftDeleted?.()
-        } catch (error: unknown) {
+        } catch (error) {
             console.error("Error al eliminar borrador:", error)
-            if (error.response?.status === 404) {
+            const err = error as { response?: { status?: number } }
+            if (err.response?.status === 404) {
                 toast.info("El borrador ya no existía en el servidor")
                 await fetchDrafts()
                 onDraftDeleted?.()

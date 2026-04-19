@@ -6,17 +6,20 @@ import { Eye, CheckCircle2, ChevronDown } from "lucide-react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useState, useEffect, useId } from "react"
 import { Card } from "@/components/ui/card"
+import { Order, PhaseDocument } from "../../types"
+import { Action } from "@/types/actions"
+import { LucideIcon } from "lucide-react"
 
 interface PhaseCardProps {
     title: string
-    icon: any
+    icon: LucideIcon
     children?: React.ReactNode
-    actions: any[]
-    order: any
+    actions: Action<Order>[]
+    order: Order
     userPermissions: string[]
     onActionSuccess?: () => void
     variant?: 'success' | 'active' | 'neutral' | 'destructive'
-    documents?: any[]
+    documents?: PhaseDocument[]
     onViewDetail?: (docType: string, id: number | string) => void
     emptyMessage?: string
     showDocProgress?: boolean
@@ -89,7 +92,7 @@ export function PhaseCard({
 
     // Separate actions into primary (closing) and secondary
     const categorizedActions = (() => {
-        const filtered = actions?.filter((action: any) => {
+        const filtered = actions?.filter((action: Action<Order>) => {
             if (action.requiredPermissions && !action.requiredPermissions.some((p: string) => userPermissions.includes(p))) {
                 return false
             }
@@ -104,8 +107,8 @@ export function PhaseCard({
         }) || []
 
         const secondaryIds = ['history', 'note', 'view-']
-        const secondary = filtered.filter((a: any) => secondaryIds.some(id => a.id.toLowerCase().includes(id)))
-        const primary = filtered.filter((a: any) => !secondaryIds.some(id => a.id.toLowerCase().includes(id)))
+        const secondary = filtered.filter((a: Action<Order>) => secondaryIds.some(id => a.id.toLowerCase().includes(id)))
+        const primary = filtered.filter((a: Action<Order>) => !secondaryIds.some(id => a.id.toLowerCase().includes(id)))
 
         return { primary, secondary }
     })()
@@ -171,7 +174,7 @@ export function PhaseCard({
                 {/* Unified Action Icons — Primary + Shortcuts */}
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     {/* Primary actions — prominent style */}
-                    {!isSuccess && categorizedActions.primary.map((action: any, idx: number) => {
+                    {!isSuccess && categorizedActions.primary.map((action: Action<Order>, idx: number) => {
                         const disabled = action.isDisabled?.(order) || false
                         let tooltipText = action.label
                         if (disabled && action.disabledTooltip) {
@@ -217,7 +220,7 @@ export function PhaseCard({
                     )}
 
                     {/* Secondary/shortcut actions — ghost style */}
-                    {categorizedActions.secondary.map((action: any, idx: number) => {
+                    {categorizedActions.secondary.map((action: Action<Order>, idx: number) => {
                         const disabled = action.isDisabled?.(order) || false
                         let tooltipText = action.label
                         if (disabled && action.disabledTooltip) {

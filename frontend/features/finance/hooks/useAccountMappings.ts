@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { accountingApi } from '@/features/accounting/api/accountingApi'
 import { Account } from '@/features/accounting/types'
 import { toast } from 'sonner'
+import { showApiError } from '@/lib/errors'
 
 export type MappingType = 'is' | 'cf' | 'bs'
 
@@ -81,9 +82,9 @@ export function useAccountMappings(mappingType: MappingType) {
             setPendingChanges(new Map())
             queryClient.invalidateQueries({ queryKey: ['accounts'] })
             return true
-        } catch (error) {
-            console.error('Error saving mappings:', error)
-            toast.error('Error al guardar el mapeo')
+        } catch (e) {
+            console.error('Error saving mappings:', e)
+            showApiError(e)
             return false
         } finally {
             setIsSaving(false)

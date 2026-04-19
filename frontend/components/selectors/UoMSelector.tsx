@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Info } from 'lucide-react'
+import { EmptyState } from "@/components/shared/EmptyState"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface UoM {
@@ -97,9 +98,12 @@ export function UoMSelector({
         return (
             <div className="space-y-2">
                 <Label className="text-destructive">{label}</Label>
-                <div className="text-sm text-muted-foreground">
-                    No hay unidades disponibles. Configure la UoM base del producto.
-                </div>
+                <EmptyState
+                    context="generic"
+                    variant="compact"
+                    title="Sin unidades disponibles"
+                    description="Configure la UoM base del producto."
+                />
             </div>
         )
     }

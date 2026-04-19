@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 "use client"
 
 import React, { useEffect, useState, useMemo } from "react"
@@ -63,7 +64,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
             setCategories(res.data.results || res.data)
         } catch (error) {
             console.error(error)
-            toast.error("Error al cargar categorías de medida")
+            showApiError(error, "Error al cargar categorías de medida")
         } finally {
             setLoading(false)
         }
@@ -90,7 +91,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
             setIsModalOpen(false)
             fetchCategories()
         } catch (error) {
-            toast.error("Error al guardar")
+            showApiError(error, "Error al guardar")
             console.error(error)
         } finally {
             setIsSaving(false)
@@ -103,7 +104,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
             toast.success("Categoría eliminada")
             fetchCategories()
         } catch (error) {
-            toast.error("Error al eliminar (puede estar en uso)")
+            showApiError(error, "Error al eliminar (puede estar en uso)")
         }
     })
 
@@ -163,7 +164,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
             setSelectedRows({})
             fetchCategories()
         } catch (error) {
-            toast.error("Error al eliminar las categorías (pueden tener unidades asociadas)")
+            showApiError(error, "Error al eliminar las categorías (pueden tener unidades asociadas)")
         }
     }
 

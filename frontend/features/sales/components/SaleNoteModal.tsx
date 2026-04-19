@@ -24,12 +24,7 @@ import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachme
 import { EmptyState } from "@/components/shared/EmptyState"
 import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 
-import { SaleOrderLine } from "../types"
-
-interface SaleNoteLine extends SaleOrderLine {
-    note_quantity: number
-    note_unit_price: number
-}
+import { SaleOrderLine, SaleNoteLine } from "../types"
 
 interface SaleNoteModalProps {
     open: boolean
@@ -145,7 +140,11 @@ export function SaleNoteModal({
             formData.append('amount_net', amountNet.toString())
             formData.append('amount_tax', amountTax.toString())
 
-            const returnItems = lines
+            const returnItems: Array<{
+                product_id: number
+                quantity: number
+                unit_price: number
+            }> = lines
                 .filter(l => l.note_quantity > 0)
                 .map(l => ({
                     product_id: l.product as number,
@@ -216,7 +215,7 @@ export function SaleNoteModal({
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label className={FORM_STYLES.label}>Tipo de Nota</Label>
-                        <Select value={noteType} onValueChange={(val: any) => setNoteType(val)}>
+                        <Select value={noteType} onValueChange={(val: "NOTA_CREDITO" | "NOTA_DEBITO") => setNoteType(val)}>
                             <SelectTrigger className={FORM_STYLES.input}>
                                 <SelectValue />
                             </SelectTrigger>

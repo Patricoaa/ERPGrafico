@@ -9,6 +9,7 @@ import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
 import { ArrowRightLeft, CheckCircle2 } from "lucide-react"
+import { Partner } from "@/features/contacts/types/partner"
 
 interface MobilizeEarningsWizardProps {
     open: boolean
@@ -19,30 +20,34 @@ interface MobilizeEarningsWizardProps {
 
 export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialPartnerId }: MobilizeEarningsWizardProps) {
     const [loading, setLoading] = useState(false)
-    const [partners, setPartners] = useState<any[]>([])
+    const [partners, setPartners] = useState<Partner[]>([])
     const [mobilizations, setMobilizations] = useState<Record<number, { dividend: number, reinvest: number }>>({})
     const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
     const [description, setDescription] = useState("Movilización de utilidades retenidas")
 
     useEffect(() => {
         if (open) {
-            import("@/lib/api").then(m => m.default).then(api => {
-                api.get('/contacts/?is_partner=true').then(res => {
-                    let availablePartners = res.data.filter((p: any) => parseFloat(p.partner_earnings_balance) > 0)
+            const fetchPartners = async () => {
+                try {
+                    const data = await partnersApi.getPartners()
+                    let availablePartners = data.filter((p: Partner) => parseFloat(p.partner_earnings_balance || "0") > 0)
                     
                     if (initialPartnerId) {
-                        availablePartners = availablePartners.filter((p: any) => p.id === initialPartnerId)
+                        availablePartners = availablePartners.filter((p: Partner) => p.id === initialPartnerId)
                     }
 
                     setPartners(availablePartners)
                     
                     const initial: Record<number, { dividend: number, reinvest: number }> = {}
-                    availablePartners.forEach((p: any) => {
+                    availablePartners.forEach((p: Partner) => {
                         initial[p.id] = { dividend: 0, reinvest: 0 }
                     })
                     setMobilizations(initial)
-                }).catch(console.error)
-            })
+                } catch (error) {
+                    console.error("Error fetching partners:", error)
+                }
+            }
+            fetchPartners()
         }
     }, [open, initialPartnerId])
 

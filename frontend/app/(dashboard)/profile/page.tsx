@@ -36,7 +36,7 @@ export default function ProfilePage() {
             <div className={LAYOUT_TOKENS.view}>
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
-                        <Skeleton className="h-10 w-10 rounded-xl" />
+                        <Skeleton className="h-10 w-10 rounded-md" />
                         <div className="space-y-2">
                             <Skeleton className="h-4 w-32" />
                             <Skeleton className="h-3 w-48" />
@@ -44,8 +44,8 @@ export default function ProfilePage() {
                     </div>
                 </div>
                 <div className="flex gap-4 mb-4">
-                    <Skeleton className="h-10 w-32 rounded-lg" />
-                    <Skeleton className="h-10 w-32 rounded-lg" />
+                    <Skeleton className="h-10 w-32 rounded-md" />
+                    <Skeleton className="h-10 w-32 rounded-md" />
                 </div>
                 <div className="pt-4">
                     <ProfileView activeTab={activeTab} />
@@ -94,7 +94,7 @@ export default function ProfilePage() {
 
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <PageHeader title={title} description={description} iconName={iconName as any} />
+            <PageHeader title={title} description={description} iconName={iconName} />
             <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-md" />
             
             <div className="pt-4">

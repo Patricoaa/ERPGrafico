@@ -16,8 +16,8 @@ export default function AccountLedgerPage() {
     const router = useRouter()
     const accountId = params.id as string
 
-    const [account, setAccount] = useState<any>(null)
-    const [movements, setMovements] = useState<any[]>([])
+    const [account, setAccount] = useState<{ id: number, code: string, name: string } | null>(null)
+    const [movements, setMovements] = useState<Record<string, unknown>[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -38,7 +38,7 @@ export default function AccountLedgerPage() {
         }
     }
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<Record<string, unknown>>[] = [
         {
             accessorKey: "date",
             header: ({ column }) => (
@@ -49,7 +49,7 @@ export default function AccountLedgerPage() {
             id: "reference",
             header: "Referencia",
             cell: ({ row }) => {
-                const mov = row.original
+                const mov = row.original as { reference?: string, entry_id?: number, source_document?: { url: string, type: string, name: string } }
                 return (
                     <div className="flex flex-col">
                         <a href={`/accounting/entries`} className="text-primary hover:underline text-sm font-medium">

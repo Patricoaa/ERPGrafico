@@ -20,6 +20,16 @@ import { Switch } from "@/components/ui/switch"
 
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
+import { WorkflowRule, NotificationRule } from "@/types/entities"
+
+/** Shape of the /workflow/settings/current/ response */
+interface WorkflowRecurrentSettings {
+    f29_creation_day?: number
+    f29_payment_day?: number
+    period_close_day?: number
+    low_margin_threshold_percent?: number
+    [key: string]: number | undefined
+}
 
 const TASK_TYPES = [
     { id: 'OT_MATERIAL_APPROVAL', name: 'Aprobación de Stock', description: 'Validación de existencia de materiales.' },
@@ -55,13 +65,13 @@ interface WorkflowSettingsProps {
 }
 
 export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
-    const [rules, setRules] = useState<any[]>([])
+    const [rules, setRules] = useState<WorkflowRule[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState<string | null>(null)
     const [uiModes, setUiModes] = useState<Record<string, 'user' | 'group'>>({})
-    const [recurrentSettings, setRecurrentSettings] = useState<any>(null)
+    const [recurrentSettings, setRecurrentSettings] = useState<WorkflowRecurrentSettings | null>(null)
     const [recurrentLoading, setRecurrentLoading] = useState(false)
-    const [notificationRules, setNotificationRules] = useState<any[]>([])
+    const [notificationRules, setNotificationRules] = useState<NotificationRule[]>([])
 
     const fetchRules = async () => {
         try {
@@ -71,7 +81,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
 
             // Sync UI modes from fetched rules
             const modes: Record<string, 'user' | 'group'> = {}
-            fetchedRules.forEach((r: any) => {
+            fetchedRules.forEach((r: WorkflowRule) => {
                 modes[r.task_type] = r.assigned_user === null ? 'group' : 'user'
             })
             setUiModes(prev => ({ ...modes, ...prev }))
@@ -109,7 +119,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
         fetchNotificationRules()
     }, [])
 
-    const handleUpdateRule = async (taskType: string, value: any, isGroup: boolean) => {
+    const handleUpdateRule = async (taskType: string, value: string | number | null, isGroup: boolean) => {
         setSaving(taskType)
         // Update local UI mode immediately for better UX
         setUiModes(prev => ({ ...prev, [taskType]: isGroup ? 'group' : 'user' }))
@@ -155,10 +165,10 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
         }
     }
 
-    const handleUpdateNotificationRule = async (notifType: string, field: string, value: any) => {
+    const handleUpdateNotificationRule = async (notifType: string, field: string, value: string | number | boolean | null) => {
         setSaving(`${notifType}-${field}`)
         try {
-            const existingRule = notificationRules.find((r: any) => r.notification_type === notifType)
+            const existingRule = notificationRules.find((r: NotificationRule) => r.notification_type === notifType)
             const payload = {
                 notification_type: notifType,
                 [field]: value
@@ -203,7 +213,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
     }
 
 
-    const renderRuleRows = (taskTypes: any[]) => (
+    const renderRuleRows = (taskTypes: { id: string; name: string; description: string; dayField?: string }[]) => (
         <div className="grid gap-2">
             {taskTypes.map((type) => {
                 const rule = rules.find(r => r.task_type === type.id)
@@ -290,7 +300,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                                     ) : (
                                         <UserSelector
                                             value={rule?.assigned_user ? parseInt(rule.assigned_user) : null}
-                                            onChange={(val: any) => handleUpdateRule(type.id, val, false)}
+                                            onChange={(val: number | null) => handleUpdateRule(type.id, val, false)}
                                             disabled={saving === type.id}
                                             placeholder="Añadir usuario..."
                                         />
@@ -410,7 +420,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                                             ) : (
                                                 <UserSelector
                                                     value={rule?.assigned_user ? parseInt(rule.assigned_user) : null}
-                                                    onChange={(val: any) => handleUpdateNotificationRule(type.id, 'assigned_user', val)}
+                                                    onChange={(val: number | null) => handleUpdateNotificationRule(type.id, 'assigned_user', val)}
                                                     placeholder="Añadir usuario..."
                                                 />
                                             )}

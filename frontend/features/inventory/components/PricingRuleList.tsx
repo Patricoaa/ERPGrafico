@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 "use client"
 
 import React, { useEffect, useState, useMemo } from "react"
@@ -75,7 +76,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
             setRules(response.data.results || response.data)
         } catch (error) {
             console.error("Failed to fetch rules", error)
-            toast.error("Error al cargar las reglas de precio.")
+            showApiError(error, "Error al cargar las reglas de precio.")
         } finally {
             setLoading(false)
         }
@@ -88,7 +89,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
             fetchRules()
         } catch (error) {
             console.error("Error deleting rule:", error)
-            toast.error("Error al eliminar la regla.")
+            showApiError(error, "Error al eliminar la regla.")
         }
     })
 

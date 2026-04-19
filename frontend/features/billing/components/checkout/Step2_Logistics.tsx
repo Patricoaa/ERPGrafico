@@ -27,8 +27,8 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-function UoMSelector({ line, currentUom, onUomChange }: { line: any, currentUom: any, onUomChange: (uomId: number) => void }) {
-    const [allowedUoms, setAllowedUoms] = useState<any[]>([])
+function UoMSelector({ line, currentUom, onUomChange }: { line: Record<string, unknown>, currentUom: Record<string, unknown>, onUomChange: (uomId: number) => void }) {
+    const [allowedUoms, setAllowedUoms] = useState<Record<string, unknown>[]>([])
 
     useEffect(() => {
         const fetchAllowed = async () => {
@@ -50,7 +50,7 @@ function UoMSelector({ line, currentUom, onUomChange }: { line: any, currentUom:
                 <SelectValue />
             </SelectTrigger>
             <SelectContent>
-                {allowedUoms.map((u: any) => (
+                {allowedUoms.map((u: Record<string, unknown>) => (
                     <SelectItem key={u.id} value={u.id.toString()} className="text-[10px]">
                         {u.name}
                     </SelectItem>
@@ -62,9 +62,9 @@ function UoMSelector({ line, currentUom, onUomChange }: { line: any, currentUom:
 
 interface Step2_LogisticsProps {
     isCreditNote: boolean
-    data: any
-    setData: (data: any) => void
-    selectedItems: any[]
+    data: Record<string, unknown>
+    setData: (data: Record<string, unknown>) => void
+    selectedItems: Record<string, unknown>[]
 }
 
 export function Step2_Logistics({
@@ -73,7 +73,7 @@ export function Step2_Logistics({
     setData,
     selectedItems
 }: Step2_LogisticsProps) {
-    const [warehouses, setWarehouses] = useState<any[]>([])
+    const [warehouses, setWarehouses] = useState<Record<string, unknown>[]>([])
     const [fetchingWarehouses, setFetchingWarehouses] = useState(true)
     const { dateString } = useServerDate()
 
@@ -273,7 +273,7 @@ export function Step2_Logistics({
                                             item.has_bom) && !isRestricted;
 
                                         const currentVal = (formData.line_data || [])
-                                            .find((ld: any) => ld.line_id === item.line_id)?.quantity ?? 0;
+                                            .find((ld: Record<string, unknown>) => ld.line_id === item.line_id)?.quantity ?? 0;
 
                                         return (
                                             <TableRow key={item.line_id} className={cn(!isEligible && "bg-muted/30 opacity-70")}>
@@ -301,7 +301,7 @@ export function Step2_Logistics({
                                                         onChange={(e) => {
                                                             const val = parseFloat(e.target.value) || 0;
                                                             const lines = [...(formData.line_data || [])];
-                                                            const idx = lines.findIndex((ld: any) => ld.line_id === item.line_id);
+                                                            const idx = lines.findIndex((ld: Record<string, unknown>) => ld.line_id === item.line_id);
                                                             if (idx >= 0) {
                                                                 lines[idx] = { ...lines[idx], quantity: val };
                                                             } else {
@@ -315,10 +315,10 @@ export function Step2_Logistics({
                                                 <TableCell className="text-sm text-muted-foreground font-medium">
                                                     <UoMSelector
                                                         line={item}
-                                                        currentUom={(formData.line_data || []).find((ld: any) => ld.line_id === item.line_id)?.uom_id || item.uom_id}
+                                                        currentUom={(formData.line_data as Record<string, unknown>[] || []).find((ld: Record<string, unknown>) => ld.line_id === item.line_id)?.uom_id || item.uom_id}
                                                         onUomChange={(uomId) => {
                                                             const lines = [...(formData.line_data || [])];
-                                                            const idx = lines.findIndex((ld: any) => ld.line_id === item.line_id);
+                                                            const idx = lines.findIndex((ld: Record<string, unknown>) => ld.line_id === item.line_id);
                                                             if (idx >= 0) {
                                                                 lines[idx] = { ...lines[idx], uom_id: uomId };
                                                             } else {

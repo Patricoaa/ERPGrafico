@@ -5,8 +5,10 @@ import { getInvoiceHubStatuses } from "@/lib/order-status-utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
+import { Invoice } from "@/features/billing/types"
+
 interface InvoiceHubStatusProps {
-    invoice: any
+    invoice: Invoice | Record<string, unknown>
 }
 
 export function InvoiceHubStatus({ invoice }: InvoiceHubStatusProps) {

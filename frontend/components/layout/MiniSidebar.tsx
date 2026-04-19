@@ -51,7 +51,8 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
 
     const getInitials = () => {
         // Assume user might have a tenant/company name, fallback to "SD"
-        const companyName = (user as any)?.tenant_name || (user as any)?.company_name;
+        const companyName = (user as Record<string, unknown>)?.tenant_name as string | undefined
+            || (user as Record<string, unknown>)?.company_name as string | undefined;
         if (companyName) {
             return companyName.substring(0, 2).toUpperCase()
         }
@@ -127,7 +128,7 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
                                                     </motion.button>
                                                 </CropFrame>
                                             </TooltipTrigger>
-                                            <TooltipContent side="right" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border px-3 py-1.5 shadow-xl">
+                                            <TooltipContent side="right" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border px-3 py-1.5 shadow-md">
                                                 {item.label}
                                             </TooltipContent>
                                         </Tooltip>

@@ -12,15 +12,14 @@ import { cn } from '@/lib/utils'
 import { CartItem } from './CartItem'
 import { formatCurrency } from '@/lib/currency'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
-import type { CartItem as CartItemType, Product, UoM } from '@/types/pos'
-import type { WizardState } from '../contexts/POSContext'
+import type { CartItem as CartItemType, Product, UoM, StockLimits, WizardState } from '@/types/pos'
 import { useSalesSettings } from '@/features/settings'
 
 interface CartProps {
     items: CartItemType[]
     products: Product[]
     uoms: UoM[]
-    limits: Record<string, number>
+    limits: StockLimits
     totals: {
         total_gross: number
         total_net: number

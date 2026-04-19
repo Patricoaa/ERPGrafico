@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { TableRow, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { Partner, PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
 import { formatCurrency, formatPlainDate as formatDate, cn } from "@/lib/utils"
 import {
@@ -47,8 +48,8 @@ const TRANSACTION_TYPE_OPTIONS = [
 
 export function PartnerLedgerTab() {
     const [loading, setLoading] = useState(true)
-    const [transactions, setTransactions] = useState<any[]>([])
-    const [partners, setPartners] = useState<any[]>([])
+    const [transactions, setTransactions] = useState<PartnerTransaction[]>([])
+    const [partners, setPartners] = useState<Partner[]>([])
 
     // Movement Modals
     const [isContributionOpen, setIsContributionOpen] = useState(false)
@@ -100,6 +101,8 @@ export function PartnerLedgerTab() {
         return 'bg-muted/50 text-muted-foreground border-transparent'
     }
 
+    type TransactionWithBalance = PartnerTransaction & { balance_after: number }
+
     // Calculate Running Balance
     const txsWithBalance = React.useMemo(() => {
         const sorted = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -113,7 +116,7 @@ export function PartnerLedgerTab() {
         return withBal.reverse() // Display newest first
     }, [transactions])
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<TransactionWithBalance>[] = [
         {
             accessorKey: "date",
             header: "Fecha",

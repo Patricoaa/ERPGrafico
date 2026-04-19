@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 "use client"
 
 import React, { useState, useEffect, useMemo } from "react"
@@ -27,7 +28,7 @@ export function StockReport() {
             const res = await api.get('/inventory/products/stock_report/')
             setReport(res.data)
         } catch (error) {
-            toast.error("Error al cargar el reporte de stock")
+            showApiError(error, "Error al cargar el reporte de stock")
         } finally {
             setLoading(false)
         }

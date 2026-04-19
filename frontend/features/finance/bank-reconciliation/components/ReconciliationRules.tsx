@@ -105,10 +105,10 @@ export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }
         {
             id: "criterios",
             accessorKey: "match_config",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Criterios" className="justify-center" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Criterios" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex gap-1 flex-wrap justify-center w-full">
-                    {row.original.match_config.criteria?.map((c: string) => (
+                    {row.original.match_config.criteria?.map((c) => (
                         <Badge key={c} variant="secondary" className="text-[10px] lowercase">
                             {c.replace('_', ' ')}
                         </Badge>
@@ -119,7 +119,7 @@ export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }
         },
         {
             accessorKey: "auto_confirm",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Auto" className="justify-center" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Auto" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
                     {row.original.auto_confirm
@@ -218,7 +218,7 @@ export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }
                                 value={editingRule.treasury_account?.id?.toString() || "global"}
                                 onValueChange={val => setEditingRule({
                                     ...editingRule,
-                                    treasury_account: val === "global" ? null : accounts.find(a => a.id.toString() === val) as any
+                                    treasury_account: val === "global" ? null : accounts.find(a => a.id.toString() === val) as Account
                                 })}
                             >
                                 <SelectTrigger className={FORM_STYLES.input}>
@@ -267,7 +267,7 @@ export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }
                                                 ...editingRule,
                                                 match_config: {
                                                     ...editingRule.match_config,
-                                                    criteria: checked ? [...current, criteria] : current.filter((c: string) => c !== criteria)
+                                                    criteria: checked ? [...current, criteria] : current.filter((c) => c !== criteria)
                                                 }
                                             })
                                         }}

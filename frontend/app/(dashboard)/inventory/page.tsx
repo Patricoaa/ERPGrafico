@@ -187,7 +187,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
             <PageHeader
                 title={config.title}
                 description={config.description}
-                iconName={config.iconName as any}
+                iconName={config.iconName}
                 variant="minimal"
                 configHref="?config=true"
                 titleActions={config.showAction && config.actionHref && (

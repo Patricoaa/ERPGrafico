@@ -31,20 +31,30 @@ import {
 import { useServerDate } from "@/hooks/useServerDate"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { PINPadModal } from "@/features/pos/components/PINPadModal"
-import { SaleOrder, SaleOrderLine, CheckoutDTEData, CheckoutPaymentData, CheckoutDeliveryData } from "../../types"
-import { Product } from "@/features/inventory/types"
-import { TerminalPaymentWizard } from "@/features/treasury/components/TerminalPaymentWizard"
-import { ManualTerminalNotice, type ManualTerminalReason } from "@/features/treasury/components/ManualTerminalNotice"
-import type { PaymentRequest } from "@/features/treasury/types"
+import { SaleOrder, SaleOrderLine, CheckoutDTEData, CheckoutPaymentData, CheckoutDeliveryData, PendingDebt, AccountingSettings, CheckoutResponse, CreditApprovalTask } from "../../types"
+import { Contact } from "@/features/contacts/types"
+
+export interface CheckoutWizardState {
+    step: number
+    dteData: CheckoutDTEData
+    paymentData: CheckoutPaymentData
+    deliveryData: CheckoutDeliveryData
+    isApproved: boolean
+    isLoading: boolean
+    selectedCustomerId: string | null
+    selectedCustomerName: string
+    isQuickSale: boolean
+    isWaitingPayment: boolean
+}
 
 export interface SalesCheckoutWizardContentProps {
     order: SaleOrder | null
     orderLines: SaleOrderLine[]
     total: number
     totalDiscountAmount?: number
-    onComplete: (data?: any) => void
+    onComplete: (data?: CheckoutResponse) => void
     onCancel?: () => void
-    onSuspend?: (finalState: any) => void
+    onSuspend?: (finalState: CheckoutWizardState) => void
     customerName?: string
     initialCustomerName?: string
     initialCustomerId?: string
@@ -61,7 +71,7 @@ export interface SalesCheckoutWizardContentProps {
     initialIsWaitingApproval?: boolean
     initialIsApproved?: boolean
     initialDraftId?: number | null
-    onStateChange?: (state: any) => void
+    onStateChange?: (state: CheckoutWizardState) => void
     isInline?: boolean
     isSessionHost?: boolean
 }
@@ -126,7 +136,7 @@ export function SalesCheckoutWizardContent({
 
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
     const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)
-    const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
+    const [selectedCustomer, setSelectedCustomer] = useState<Contact | null>(null)
     const [dteData, setDteData] = useState<CheckoutDTEData>(initialDteData || {
         type: 'BOLETA',
         number: '',
@@ -174,7 +184,7 @@ export function SalesCheckoutWizardContent({
 
     useEffect(() => {
         if (dateString && !initialDteData) {
-            setDteData((prev: any) => ({ ...prev, date: dateString }))
+            setDteData((prev: CheckoutDTEData) => ({ ...prev, date: dateString }))
         }
     }, [dateString, initialDteData])
 
@@ -195,7 +205,7 @@ export function SalesCheckoutWizardContent({
         const hasTotalChanged = prevTotalRef.current !== currentTotal
         if (hasTotalChanged) {
             if (paymentData.amount === prevTotalRef.current || paymentData.amount === 0) {
-                setPaymentData((prev: any) => ({ ...prev, amount: currentTotal }))
+                setPaymentData((prev: CheckoutPaymentData) => ({ ...prev, amount: currentTotal }))
             }
             prevTotalRef.current = currentTotal
         }
@@ -204,20 +214,20 @@ export function SalesCheckoutWizardContent({
     const [isWaitingApproval, setIsWaitingApproval] = useState(initialIsWaitingApproval || false)
     const [approvalTaskId, setApprovalTaskId] = useState<number | null>(initialApprovalTaskId || null)
     const [creditApprovalRequired, setCreditApprovalRequired] = useState(!!initialIsWaitingApproval || !!initialIsApproved)
-    const [approvedTaskData, setApprovedTaskData] = useState<any | null>(null)
+    const [approvedTaskData, setApprovedTaskData] = useState<CreditApprovalTask | null>(null)
     const [securityErrorMessage, setSecurityErrorMessage] = useState<string | null>(null)
     const [isApproved, setIsApproved] = useState(initialIsApproved || false)
     const [creditApprovalReason, setCreditApprovalReason] = useState<string | null>(null)
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-    const [salesSettings, setSalesSettings] = useState<any>(null)
-    const [pendingDebts, setPendingDebts] = useState<any[] | null>(null)
+    const [salesSettings, setSalesSettings] = useState<AccountingSettings | null>(null)
+    const [pendingDebts, setPendingDebts] = useState<PendingDebt[] | null>(null)
     const [loadingDebts, setLoadingDebts] = useState(false)
     const [showTerminalWizard, setShowTerminalWizard] = useState(false)
     const [manualTerminalReason, setManualTerminalReason] = useState<ManualTerminalReason | null>(null)
     const [manualTerminalFailureReason, setManualTerminalFailureReason] = useState<string | null>(null)
     const [showInvoiceReminder, setShowInvoiceReminder] = useState(false)
-    const [checkoutResponse, setCheckoutResponse] = useState<any>(null)
+    const [checkoutResponse, setCheckoutResponse] = useState<CheckoutResponse | null>(null)
     // Tracks whether the last completed step was a TUU terminal card payment
     const wasTerminalCardRef = useRef(false)
     // Idempotency key of the completed PaymentRequest — used to link TreasuryMovement
@@ -227,9 +237,9 @@ export function SalesCheckoutWizardContent({
     const refreshDebts = useCallback(() => {
         if (selectedCustomer && (Number(selectedCustomer.credit_balance_used || 0) > 0)) {
             setLoadingDebts(true)
-            api.get(`/contacts/${selectedCustomer.id}/credit_ledger/`)
+            api.get<PendingDebt[]>(`/contacts/${selectedCustomer.id}/credit_ledger/`)
                 .then(res => {
-                    const pending = res.data.filter((d: any) => Number(d.balance) > 0)
+                    const pending = res.data.filter((d: PendingDebt) => Number(d.balance) > 0)
                     setPendingDebts(pending)
                 })
                 .catch(err => console.error("Error fetching credit ledger:", err))
@@ -370,7 +380,7 @@ export function SalesCheckoutWizardContent({
                     return { isValid: true }
                 
                 case 'manufacturing':
-                    const pendingItems = currentOrderLines.filter((line: any) =>
+                    const pendingItems = currentOrderLines.filter((line: SaleOrderLine) =>
                         line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing && !line.manufacturing_data
                     )
                     if (pendingItems.length > 0) {
@@ -516,7 +526,7 @@ export function SalesCheckoutWizardContent({
             if (deliveryData.notes) formData.append('delivery_notes', deliveryData.notes)
 
             if (deliveryData.type === 'PARTIAL' && deliveryData.partialQuantities) {
-                formData.append('immediate_lines', JSON.stringify(deliveryData.partialQuantities.map((pq: any) => ({
+                formData.append('immediate_lines', JSON.stringify(deliveryData.partialQuantities.map(pq => ({
                     line_id: pq.lineId,
                     product_id: pq.productId,
                     quantity: pq.dispatchedQty,
@@ -549,7 +559,7 @@ export function SalesCheckoutWizardContent({
                 formData.append('pos_pin', pin)
             }
 
-            const res = await api.post('/billing/invoices/pos_checkout/', formData)
+            const res = await api.post<CheckoutResponse>('/billing/invoices/pos_checkout/', formData)
             terminalPaymentKeyRef.current = null
             toast.success("Venta procesada correctamente")
             onComplete(res.data)
@@ -1032,7 +1042,7 @@ export function SalesCheckoutWizardContent({
                 size="sm"
             >
                 <div className="flex flex-col items-center gap-6 py-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-none border border-destructive/30 bg-destructive/10">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-sm border border-destructive/30 bg-destructive/10">
                         <FileWarning className="h-8 w-8 text-destructive" />
                     </div>
                     <div className="text-center space-y-2">
@@ -1048,7 +1058,7 @@ export function SalesCheckoutWizardContent({
                     <div className="w-full pt-4">
                         <Button
                             variant="primary"
-                            className="w-full h-12 font-bold uppercase tracking-widest text-xs rounded-none shadow-lg shadow-primary/20"
+                            className="w-full h-12 font-bold uppercase tracking-widest text-xs rounded-sm shadow-lg shadow-primary/20"
                             onClick={() => {
                                 setShowInvoiceReminder(false)
                                 if (isSessionHost) {

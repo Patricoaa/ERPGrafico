@@ -10,6 +10,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { useTreasuryAccounts, PaymentContext } from "@/hooks/useTreasuryAccounts"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { Input } from "@/components/ui/input"
 import { formatCurrency } from "@/lib/utils"
 
@@ -96,7 +97,7 @@ export function TreasuryAccountSelector({
                 >
                     {selectedAccount ? (
                         <div className="flex items-center gap-2 truncate">
-                            <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                            <div className="p-1.5 rounded-md bg-primary/10 text-primary">
                                 {getIcon(selectedAccount.account_type)}
                             </div>
                             <div className="flex flex-col items-start truncate">
@@ -128,7 +129,7 @@ export function TreasuryAccountSelector({
                     {loading ? (
                         <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
                     ) : filteredAccounts.length === 0 ? (
-                        <div className="p-4 text-sm text-center">No hay cuentas disponibles.</div>
+                        <EmptyState context="finance" variant="compact" title="No hay cuentas disponibles" />
                     ) : (
                         filteredAccounts.map((account) => (
                             <div

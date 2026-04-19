@@ -9,12 +9,13 @@ import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
+import { Order } from "../../types"
 
 interface BillingPhaseProps {
     isNoteMode: boolean
     noteStatuses: any
-    activeDoc: any
-    invoices: any[]
+    activeDoc: Order
+    invoices: Order[]
     billingIsComplete: boolean
     userPermissions: string[]
     onActionSuccess?: () => void
@@ -40,7 +41,7 @@ export function BillingPhase({
     isOpen,
     onOpenChange,
 }: BillingPhaseProps) {
-    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
+    const registry = (activeDoc?.document_type as string === 'PURCHASE_ORDER' || activeDoc?.document_type as string === 'SERVICE_OBLIGATION') 
         ? purchaseOrderActions 
         : saleOrderActions
     const [confirmModal, setConfirmModal] = useState<{
@@ -112,11 +113,11 @@ export function BillingPhase({
                 variant={isNoteMode ? noteStatuses.billing : (billingIsComplete ? 'success' : (invoices.length > 0 ? 'active' : 'neutral'))}
                 documents={[
                     ...(isNoteMode ? [{
-                        type: activeDoc.dte_type_display || 'Nota',
-                        number: activeDoc.display_id || formatDocumentId(
+                        type: (activeDoc as any).dte_type_display || 'Nota',
+                        number: (activeDoc as any).display_id || formatDocumentId(
                             activeDoc.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND',
                             activeDoc.number || '---',
-                            activeDoc.display_id
+                            (activeDoc as any).display_id
                         ),
                         icon: FileText,
                         color: 'text-warning',
@@ -127,15 +128,15 @@ export function BillingPhase({
                         actions: [] // Removed redundant GitBranch icon
                     }] : []),
                     ...invoices
-                        .filter((inv: any) => !isNoteMode || inv.id !== activeDoc.id) // Avoid double entry if already in activeDoc
-                        .map((inv: any) => ({
-                            type: inv.dte_type_display || 'Documento',
-                            number: inv.display_id || formatDocumentId(
+                        .filter((inv: Order) => !isNoteMode || inv.id !== activeDoc.id) // Avoid double entry if already in activeDoc
+                        .map((inv: Order) => ({
+                            type: (inv as any).dte_type_display || 'Documento',
+                            number: (inv as any).display_id || formatDocumentId(
                                 inv.dte_type === 'BOLETA' ? 'BOL' :
                                     inv.dte_type === 'FACTURA_EXENTA' ? 'FE' :
                                         inv.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FACT',
                                 inv.number || '---',
-                                inv.display_id
+                                (inv as any).display_id
                             ),
                             icon: FileText,
                             color: (inv.dte_type === 'FACTURA_EXENTA' || inv.dte_type === 'BOLETA_EXENTA') ? 'text-warning' : 'text-primary',
@@ -157,7 +158,6 @@ export function BillingPhase({
                                 }] : [])
                             ]
                         })),
-                    // NEW: Add related notes (NC/ND) as separate items if in Order mode
                     ...(!isNoteMode ? (activeDoc.related_documents?.notes || []).map((note: any) => ({
                         type: note.type_display || (note.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' : 'Nota de Débito'),
                         number: note.display_id || note.number,

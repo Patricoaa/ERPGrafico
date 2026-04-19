@@ -6,6 +6,7 @@ import {
     ColumnDef
 } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from "@/components/ui/data-table"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,7 +37,7 @@ export default function BOMsPage() {
     const [boms, setBoms] = useState<BOM[]>([])
     const [loading, setLoading] = useState(true)
     const [isFormOpen, setIsFormOpen] = useState(false)
-    const [editingBom, setEditingBom] = useState<any | null>(null)
+    const [editingBom, setEditingBom] = useState<BOM & { product_id?: number } | null>(null)
     const searchParams = useSearchParams()
     const router = useRouter()
     const isNewModalOpen = searchParams.get("modal") === "new"

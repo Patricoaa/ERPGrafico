@@ -25,7 +25,7 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
             toast.success('Documento anulado correctamente')
             queryClient.invalidateQueries({ queryKey: PURCHASE_INVOICES_QUERY_KEY })
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             console.error("Error annulling invoice", error)
         }
     })

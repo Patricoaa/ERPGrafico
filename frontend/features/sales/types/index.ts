@@ -18,8 +18,8 @@ export interface SaleOrderLine {
     total_gross?: number
     discount_amount?: number
     discount_percentage?: number
-    custom_specs?: Record<string, any>
-    manufacturing_data?: any
+    custom_specs?: Record<string, unknown>
+    manufacturing_data?: Record<string, unknown>
     product_type?: string
     requires_advanced_manufacturing?: boolean
     has_bom?: boolean
@@ -39,7 +39,20 @@ export interface SaleOrderLine {
     track_inventory?: boolean
     internal_code?: string
     code?: string
+    work_order_summary?: {
+        total_steps: number
+        completed_steps: number
+        status: string
+        id: number
+    }
 }
+
+export interface SaleNoteLine extends SaleOrderLine {
+    note_quantity: number
+    note_unit_price: number
+}
+
+export type SaleNote = Invoice
 
 export interface SaleOrder {
     id: number
@@ -56,9 +69,20 @@ export interface SaleOrder {
     has_pending_work_orders?: boolean
     related_documents?: {
         invoices: Invoice[]
-        notes: Invoice[]
-        payments: any[]
-        deliveries: any[]
+        notes: SaleNote[]
+        payments: Array<{
+            id: number
+            amount: number
+            date: string
+            method: string
+            account_name: string
+        }>
+        deliveries: Array<{
+            id: number
+            number: string
+            date: string
+            status: string
+        }>
     }
     lines?: SaleOrderLine[]
     pos_session_display?: string
@@ -80,6 +104,13 @@ export interface SaleOrderPayload {
     total_discount_amount?: number
     date: string
     lines: Partial<SaleOrderLine>[]
+}
+
+export interface PendingDebt {
+    id: number
+    number: string
+    balance: number
+    days_overdue: number
 }
 
 // Checkout Wizard Types
@@ -112,4 +143,30 @@ export interface CheckoutDeliveryData {
         dispatchedQty: number
         uom: string | number
     }>
+}
+
+export interface AccountingSettings {
+    currency: string
+    tax_rate: number
+    tax_name: string
+    financial_period_locked: boolean
+    last_closing_date: string | null
+}
+
+export interface CheckoutResponse {
+    order_id: number
+    order_number: string
+    invoice_id?: number
+    invoice_number?: string
+    payment_id?: number
+    delivery_id?: number
+    status: string
+}
+
+export interface CreditApprovalTask {
+    id: number
+    status: 'PENDING' | 'APPROVED' | 'REJECTED'
+    requested_amount: number
+    reason: string
+    created_at: string
 }

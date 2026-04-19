@@ -11,12 +11,13 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { TransactionNumberForm } from "@/features/finance/components/TransactionNumberForm"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
+import { Order, PhaseDocument, Payment } from "../../types"
 
 interface TreasuryPhaseProps {
     isNoteMode: boolean
-    noteStatuses: any
-    activeDoc: any
-    payments: any[]
+    noteStatuses: Record<string, string>
+    activeDoc: Order
+    payments: Payment[]
     userPermissions: string[]
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
@@ -64,7 +65,7 @@ export function TreasuryPhase({
         initialValue: ""
     })
 
-    const hasPendingTransactions = payments.some((pay: any) => {
+    const hasPendingTransactions = payments.some((pay: Payment) => {
         const requiresTR = (
             (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'CARD' || pay.payment_method === 'TRANSFER')) ||
             (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
@@ -129,11 +130,11 @@ export function TreasuryPhase({
                 title="Tesorería"
                 icon={Banknote}
                 variant={
-                    isNoteMode ? noteStatuses.treasury :
-                        ((parseFloat(activeDoc.pending_amount || '0') <= 0 && !hasPendingTransactions) ? 'success' :
+                    isNoteMode ? (noteStatuses.treasury as any) :
+                        ((parseFloat((activeDoc.pending_amount as any) || '0') <= 0 && !hasPendingTransactions) ? 'success' :
                             (payments.length > 0 || hasPendingTransactions ? 'active' : 'neutral'))
                 }
-                documents={payments.map((p: any) => {
+                documents={payments.map((p: Payment) => {
                     const isWriteOff = p.payment_method === 'WRITE_OFF'
                     return {
                         type: isWriteOff ? 'Castigo' : (p.payment_method_display || 'Pago'),
@@ -160,7 +161,7 @@ export function TreasuryPhase({
                             }] : [])
                         ]
                     }
-                })}
+                }) as PhaseDocument[]}
                 onViewDetail={openDetails}
                 actions={(registry.payments?.actions || []).filter((a: any) => !a.id.includes('view-'))}
                 emptyMessage="Sin pagos registrados"
@@ -168,7 +169,7 @@ export function TreasuryPhase({
                 userPermissions={userPermissions}
                 onActionSuccess={onActionSuccess}
                 stageId="treasury"
-                isComplete={parseFloat(activeDoc.pending_amount || '0') <= 0 && !hasPendingTransactions}
+                isComplete={parseFloat((activeDoc.pending_amount as any) || '0') <= 0 && !hasPendingTransactions}
                 posSessionId={posSessionId}
                 collapsible={collapsible}
                 isOpen={isOpen}
@@ -178,7 +179,7 @@ export function TreasuryPhase({
                     <div className="flex flex-col gap-0.5">
                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 leading-none">Pagado</span>
                         <span className="text-[14px] font-heading font-black text-success tracking-tight">
-                            {formatCurrency((activeDoc.total || 0) - (activeDoc.pending_amount || 0))}
+                            {formatCurrency(((activeDoc.total as number) || 0) - ((activeDoc.pending_amount as number) || 0))}
                         </span>
                     </div>
                     
@@ -188,9 +189,9 @@ export function TreasuryPhase({
                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 leading-none">Pendiente</span>
                         <span className={cn(
                             "text-[14px] font-heading font-black tracking-tight",
-                            parseFloat(activeDoc.pending_amount || '0') > 0 ? "text-warning" : "text-muted-foreground/30"
+                            parseFloat((activeDoc.pending_amount as any) || '0') > 0 ? "text-warning" : "text-muted-foreground/30"
                         )}>
-                            {formatCurrency(activeDoc.pending_amount || 0)}
+                            {formatCurrency((activeDoc.pending_amount as number) || 0)}
                         </span>
                     </div>
                 </div>

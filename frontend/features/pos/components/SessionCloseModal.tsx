@@ -22,32 +22,10 @@ import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountS
 import { BaseModal } from "@/components/shared/BaseModal"
 import { cn, formatCurrency } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
-import { POSReport } from "./POSReport"
+import { POSReport, type POSReportData } from "./POSReport"
 
-interface POSSession {
-    id: number
-    terminal_name?: string
-    treasury_account: number // Added for default destination logic
-    treasury_account_name: string
-    opening_balance: number
-    total_cash_sales: number
-    total_card_sales: number
-    total_transfer_sales: number
-    total_credit_sales: number
-    expected_cash: number
-    total_other_cash_inflow: number
-    total_other_cash_outflow: number
-    cash_movements?: any[]
-    sales_by_category?: Array<{ name: string, value: number }>
-}
+import type { POSSession, POSSessionAudit, AccountingSettings, TreasuryAccount } from "@/types/pos"
 
-interface POSSessionAudit {
-    id: number
-    difference: number
-    expected_amount: number
-    actual_amount: number
-    notes: string
-}
 
 interface SessionCloseModalProps {
     open: boolean
@@ -72,7 +50,7 @@ export function SessionCloseModal({
     const [submitting, setSubmitting] = useState(false)
 
     // Fund validation states
-    const [selectedAccount, setSelectedAccount] = useState<any>(null)
+    const [selectedAccount, setSelectedAccount] = useState<TreasuryAccount | null>(null)
     const [insufficientFunds, setInsufficientFunds] = useState(false)
 
     // Sync withdrawalAmount with actualCash by default
@@ -82,7 +60,7 @@ export function SessionCloseModal({
 
     const [step, setStep] = useState(1)
 
-    const [accountingSettings, setAccountingSettings] = useState<any>(null)
+    const [accountingSettings, setAccountingSettings] = useState<AccountingSettings | null>(null)
 
     // Derived values for validation and display
     const actual = parseFloat(actualCash) || 0
@@ -105,7 +83,7 @@ export function SessionCloseModal({
     }, [open, session])
 
     // Fetch Accounting Settings and Full Report Data
-    const [fullReportData, setFullReportData] = useState<any>(null)
+    const [fullReportData, setFullReportData] = useState<POSReportData | null>(null)
     useEffect(() => {
         if (open && session) {
             api.get('/accounting/settings/current/')
@@ -127,7 +105,7 @@ export function SessionCloseModal({
                     setSelectedAccount(res.data)
                     // Validate funds for surplus (diff > 0 = money coming IN, source account needs money)
                     if (diff > 0 && res.data.current_balance !== undefined) {
-                        const available = res.data.current_balance
+                        const available = res.data.current_balance as number
                         const needed = Math.abs(diff)
                         setInsufficientFunds(available < needed)
                     } else {
@@ -205,8 +183,8 @@ export function SessionCloseModal({
                     expected_cash: session.expected_cash,
                     total_manual_inflow: session.total_other_cash_inflow,
                     total_manual_outflow: session.total_other_cash_outflow,
-                    manual_movements: session.cash_movements,
-                    sales_by_category: session.sales_by_category,
+                    manual_movements: session.cash_movements as unknown as POSReportData["manual_movements"],
+                    sales_by_category: session.sales_by_category as POSReportData["sales_by_category"],
                     treasury_account_id: session.treasury_account,
                 }
 
@@ -338,9 +316,9 @@ export function SessionCloseModal({
                                                     <div className="text-sm text-destructive dark:text-destructive/20">
                                                         <div className="font-bold">Fondos Insuficientes</div>
                                                         <div className="text-xs mt-1 space-y-0.5">
-                                                            <div>Disponible en {selectedAccount.name}: {formatCurrency(selectedAccount.current_balance || 0)}</div>
+                                                            <div>Disponible en {selectedAccount.name as string}: {formatCurrency((selectedAccount.current_balance as number) || 0)}</div>
                                                             <div>Necesario: {formatCurrency(Math.abs(diff))}</div>
-                                                            <div className="font-semibold">Faltante: {formatCurrency(Math.abs(diff) - (selectedAccount.current_balance || 0))}</div>
+                                                            <div className="font-semibold">Faltante: {formatCurrency(Math.abs(diff) - ((selectedAccount.current_balance as number) || 0))}</div>
                                                         </div>
                                                     </div>
                                                 </div>

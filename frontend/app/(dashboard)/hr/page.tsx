@@ -109,7 +109,7 @@ export default async function HRPage({ searchParams }: PageProps) {
             <PageHeader
                 title={config.title}
                 description={config.description}
-                iconName={config.icon as any}
+                iconName={config.icon}
                 variant="minimal"
                 configHref="?config=true"
                 titleActions={getTitleActions()}

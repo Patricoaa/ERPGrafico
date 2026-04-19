@@ -10,9 +10,10 @@ import { cn } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { IndustrialCard } from "@/components/shared/IndustrialCard"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { Order, OrderLine } from "../types"
 
 interface OrderCardProps {
-    item: any
+    item: Order
     type: 'sale' | 'purchase' | 'work_order' | 'note' | 'ledger'
     onClick?: () => void
     onActionClick?: () => void
@@ -26,7 +27,7 @@ interface OrderCardProps {
 export function OrderCard({ item, type, onClick, onActionClick, hideStatus = false, isSelected = false, isHubOpen = false, className, visibleColumns }: OrderCardProps) {
     const isSale = type === 'sale'
     const isNote = type === 'note'
-    const isPurchase = type === 'purchase' || (isNote && (item.purchase_order || item.purchase_order_id || item.supplier_name))
+    const isPurchase = type === 'purchase' || (isNote && ((item as any).purchase_order || (item as any).purchase_order_id || item.supplier_name))
     const isWorkOrder = type === 'work_order'
     const isLedger = type === 'ledger'
 
@@ -67,15 +68,15 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
         Icon = Monitor
     }
 
-    const itemNumber = item.display_id || (item.number ? (item.number.toString().includes(prefix) ? item.number : `${prefix}-${item.number}`) : '---')
+    const itemNumber = (item as any).display_id || (item.number ? (item.number.toString().includes(prefix) ? item.number : `${prefix}-${item.number}`) : '---')
     const itemName = item.customer_name || item.supplier_name || item.partner_name || item.name || '---'
-    const displayTotal = isLedger ? (item.balance || item.pending_amount || 0) : (item.total || item.effective_total || 0)
+    const displayTotal = isLedger ? ((item.balance as number) || (item.pending_amount as number) || 0) : ((item.total as number) || (item.effective_total as number) || 0)
 
     // --- Enrichment Data ---
     const lines = item.lines || item.items || []
 
-    const total = parseFloat(item.total || 0)
-    const pending = parseFloat(item.pending_amount || 0)
+    const total = parseFloat((item.total as any) || 0)
+    const pending = parseFloat((item.pending_amount as any) || 0)
     const hasPending = !isLedger && !isWorkOrder && total > 0 && pending > 0
 
     const handleClick = () => {
@@ -189,14 +190,14 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
             {(lines.length > 0 || hasPending) && !isWorkOrder && (
                 <div className="mt-1.5 pt-1.5 border-t border-border/30 flex items-start justify-between gap-4">
                     <div className="flex flex-wrap gap-x-4 gap-y-0.5 flex-1">
-                        {lines.map((line: any, idx: number) => (
+                        {lines.map((line: OrderLine, idx: number) => (
                             <span key={idx} className="text-[11px] text-muted-foreground/80 flex items-center gap-1">
                                 <span className="font-semibold text-foreground/70">
-                                    {Math.round(parseFloat(line.quantity || 0))}
+                                    {Math.round(parseFloat(line.quantity as string || '0'))}
                                 </span>
                                 <span className="text-muted-foreground/50">×</span>
                                 <span className="truncate max-w-[200px]">
-                                    {line.product_name || line.description || 'Producto'}
+                                    {line.product_name || (line as any).description || 'Producto'}
                                 </span>
                             </span>
                         ))}

@@ -2,6 +2,7 @@
 
 import React from "react"
 import { Paperclip, FileText, Download, ExternalLink, Trash2, Loader2 } from "lucide-react"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn, formatPlainDate } from "@/lib/utils"
@@ -31,10 +32,12 @@ export function AttachmentList({
 }: AttachmentListProps) {
     if (!attachments || attachments.length === 0) {
         return (
-            <div className={cn("text-center py-6 border border-dashed rounded-lg bg-muted/5", className)}>
-                <Paperclip className="h-8 w-8 text-muted-foreground/20 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground italic">No hay archivos adjuntos</p>
-            </div>
+            <EmptyState
+                icon={Paperclip}
+                variant="compact"
+                title="No hay archivos adjuntos"
+                className={cn("border border-dashed rounded-lg bg-muted/5", className)}
+            />
         )
     }
 

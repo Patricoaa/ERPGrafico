@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { Column } from "@tanstack/react-table";
 
 // --- Bank Management ---
 
@@ -91,7 +92,7 @@ export function BankManagement({ externalOpen, onOpenChange }: BankManagementPro
     const columns = [
         {
             accessorKey: "name",
-            header: ({ column }: { column: unknown }) => <DataTableColumnHeader column={column as any} title="Nombre" className="justify-center" />,
+            header: ({ column }: { column: Column<Bank, unknown> }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
             cell: ({ row }: { row: { original: Bank } }) => (
                 <div className="flex items-center justify-center gap-2 w-full">
                     <DataCell.Text className="font-medium text-center">
@@ -103,7 +104,7 @@ export function BankManagement({ externalOpen, onOpenChange }: BankManagementPro
         },
         {
             accessorKey: "code",
-            header: ({ column }: { column: unknown }) => <DataTableColumnHeader column={column as any} title="Código" className="justify-center" />,
+            header: ({ column }: { column: Column<Bank, unknown> }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
             cell: ({ row }: { row: { original: Bank } }) => (
                 <div className="flex justify-center w-full">
                     <DataCell.Code>{row.original.code || 'N/A'}</DataCell.Code>
@@ -364,7 +365,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
     const columns = [
         {
             accessorKey: "name",
-            header: ({ column }: { column: unknown }) => <DataTableColumnHeader column={column as any} title="Nombre" className="justify-center" />,
+            header: ({ column }: { column: Column<PaymentMethod, unknown> }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
             cell: ({ row }: { row: { original: PaymentMethod } }) => (
                 <div className="flex items-center justify-center gap-2 w-full">
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
@@ -377,7 +378,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
         },
         {
             accessorKey: "method_type_display",
-            header: ({ column }: { column: unknown }) => <DataTableColumnHeader column={column as any} title="Tipo" className="justify-center" />,
+            header: ({ column }: { column: Column<PaymentMethod, unknown> }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
             cell: ({ row }: { row: { original: PaymentMethod } }) => (
                 <div className="flex justify-center w-full">
                     <StatusBadge status={row.original.method_type} label={row.original.method_type_display} size="sm" />
@@ -386,7 +387,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
         },
         {
             accessorKey: "treasury_account_name",
-            header: ({ column }: { column: unknown }) => <DataTableColumnHeader column={column as any} title="Cuenta de Tesorería" className="justify-center" />,
+            header: ({ column }: { column: Column<PaymentMethod, unknown> }) => <DataTableColumnHeader column={column} title="Cuenta de Tesorería" className="justify-center" />,
             cell: ({ row }: { row: { original: PaymentMethod } }) => (
                 <div className="flex flex-col items-center justify-center gap-1.5 w-full">
                     <DataCell.Secondary className="text-center">{row.original.treasury_account_name}</DataCell.Secondary>

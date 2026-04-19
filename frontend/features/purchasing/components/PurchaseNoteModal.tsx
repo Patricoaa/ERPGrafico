@@ -14,8 +14,10 @@ import {
     X
 } from "lucide-react"
 import api from "@/lib/api"
-import { PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { validateTaxPeriod } from "@/lib/actions/tax-actions"
+import { PurchaseOrderAPI, PurchaseNoteLine } from "../types"
+import { PricingUtils } from "@/lib/pricing"
+import { toast } from "sonner"
 
 import { ShieldAlert } from "lucide-react"
 
@@ -53,8 +55,8 @@ export function PurchaseNoteModal({
     const [documentNumber, setDocumentNumber] = useState("")
     const [documentDate, setDocumentDate] = useState<Date | undefined>(new Date())
     const [attachment, setAttachment] = useState<File | null>(null)
-    const [lines, setLines] = useState<any[]>([])
-    const [orderDetails, setOrderDetails] = useState<any>(null)
+    const [lines, setLines] = useState<PurchaseNoteLine[]>([])
+    const [orderDetails, setOrderDetails] = useState<PurchaseOrderAPI | null>(null)
     const [paymentData, setPaymentData] = useState<PaymentData>({
         method: null,
         amount: 0,
@@ -103,7 +105,7 @@ export function PurchaseNoteModal({
                 }))
             }
 
-            setOrderDetails(data)
+            setOrderDetails(data as PurchaseOrderAPI)
 
             // Initializing lines with 0 quantity but original unit cost
             const initialLines = fetchedLines.map((line: any) => ({

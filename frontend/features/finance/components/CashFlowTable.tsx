@@ -62,7 +62,7 @@ interface CashFlowTableProps {
 
 
 
-const SectionHeader = ({ title, showComparison, icon: Icon }: { title: string, showComparison?: boolean, icon?: any }) => (
+const SectionHeader = ({ title, showComparison, icon: Icon }: { title: string, showComparison?: boolean, icon?: React.ElementType }) => (
     <TableRow className="bg-muted/30 font-bold border-t-2 first:border-t-0">
         <TableCell colSpan={showComparison ? 4 : 2} className="py-2.5 px-4">
             <div className="flex items-center gap-2">

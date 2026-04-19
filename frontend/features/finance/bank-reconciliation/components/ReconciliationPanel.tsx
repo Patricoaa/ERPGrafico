@@ -15,6 +15,7 @@ import {
     Ban, CheckCircle2, ChevronRight, Filter,
     Loader2, Search, Sparkles, X, AlertCircle, Wand2
 } from "lucide-react"
+import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
@@ -91,6 +92,13 @@ interface LineSuggestion {
     difference: string
 }
 
+interface BankStatement {
+    id: number;
+    total_lines: number;
+    reconciled_lines: number;
+    name?: string;
+}
+
 interface ReconciliationPanelProps {
     statementId: number
     treasuryAccountId: number
@@ -112,7 +120,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const [autoMatching, setAutoMatching] = useState(false)
     const [loadingPayments, setLoadingPayments] = useState(false)
     const [lineSuggestions, setLineSuggestions] = useState<LineSuggestion[]>([])
-    const [statement, setStatement] = useState<any>(null)
+    const [statement, setStatement] = useState<BankStatement | null>(null)
 
     const [diffDialog, setDiffDialog] = useState<{ open: boolean, lineId: number, paymentId: number, amount: string, isGroup?: boolean }>({
         open: false, lineId: 0, paymentId: 0, amount: '0', isGroup: false
@@ -268,7 +276,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 await api.post(`/treasury/statement-lines/${lineId}/match/`, { payment_id: paymentId })
             }
 
-            const confirmData: any = {}
+            const confirmData: Record<string, unknown> = {}
             if (force) {
                 confirmData.difference_type = diffType
                 confirmData.notes = diffNotes
@@ -304,7 +312,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
         try {
             setMatching(true)
-            const payload: any = {
+            const payload: Record<string, unknown> = {
                 line_ids: selectedLines.map(l => l.id),
                 payment_ids: selectedPayments.filter(p => !p.is_batch).map(p => p.id),
                 batch_ids: selectedPayments.filter(p => p.is_batch).map(p => p.id)
@@ -314,7 +322,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
             await api.post('/treasury/statement-lines/match_group/', payload)
             
-            const confirmPayload: any = {}
+            const confirmPayload: Record<string, unknown> = {}
             if (force) { confirmPayload.difference_type = diffType; confirmPayload.notes = diffNotes; }
 
             await api.post(`/treasury/statement-lines/${selectedLines[0].id}/confirm/`, confirmPayload)
@@ -509,14 +517,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     // ─── Render ───────────────────────────────────────────────────────────────
 
-    if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-                <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
-                <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.2em] animate-pulse">Sincronizando Cartola...</p>
-            </div>
-        )
-    }
+    if (loading) return <TableSkeleton rows={10} columns={4} className="py-6" />
 
     return (
         <div className="space-y-6">

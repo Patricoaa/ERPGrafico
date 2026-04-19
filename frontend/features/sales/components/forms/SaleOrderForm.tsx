@@ -54,26 +54,7 @@ interface UoM {
     ratio: number
 }
 
-const saleLineSchema = z.object({
-    id: z.number().optional(),
-    product: z.string().optional(),
-    description: z.string().min(1, "La descripción es requerida"),
-    quantity: z.number().min(0.01, "La cantidad debe ser mayor a 0"),
-    uom: z.string().min(1, "Unidad requerida"),
-    unit_price: z.number().min(0, "El precio no puede ser negativo"),
-    unit_price_gross: z.number().min(0, "El precio no puede ser negativo").optional(),
-    tax_rate: z.number().default(19),
-    custom_specs: z.record(z.string(), z.any()).optional(),
-    manufacturing_data: z.any().optional(),
-})
-
-const saleOrderSchema = z.object({
-    payment_method: z.enum(["CASH", "CARD", "TRANSFER", "CREDIT"]),
-    notes: z.string().optional(),
-    lines: z.array(saleLineSchema).min(1, "Debe agregar al menos una línea"),
-})
-
-type SaleOrderFormValues = z.infer<typeof saleOrderSchema>
+import { saleOrderSchema, type SaleOrderFormValues } from "./schema"
 
 interface SaleOrderFormProps {
     onSuccess?: (order?: SaleOrder) => void
@@ -95,8 +76,7 @@ const OrderTotals = ({ control }: { control: Control<SaleOrderFormValues> }) => 
             quantity: Number(l.quantity),
             unit_price_net: Number(l.unit_price),
             unit_price_gross: l.unit_price_gross ? Number(l.unit_price_gross) : undefined
-        })) || [],
-        true // Use Gross as base if possible
+        })) || []
     )
 
     return (
@@ -125,18 +105,18 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
     const { checkAvailability, validateLine, getStockMessage } = useStockValidation()
 
     const form = useForm<SaleOrderFormValues>({
-        resolver: zodResolver(saleOrderSchema) as any,
+        resolver: zodResolver(saleOrderSchema),
         defaultValues: initialData ? {
             ...initialData,
-            lines: initialData?.lines?.map((l: any) => ({
+            lines: initialData?.lines?.map((l: SaleOrderLine) => ({
                 id: l.id,
                 product: l.product?.toString() || "",
                 description: l.description,
-                quantity: parseFloat(l.quantity) || 0,
+                quantity: l.quantity || 0,
                 uom: l.uom?.toString() || "",
-                unit_price: parseFloat(l.unit_price) || 0,
-                unit_price_gross: parseFloat(l.unit_price_gross) || (l.unit_price ? PricingUtils.netToGross(parseFloat(l.unit_price)) : 0),
-                tax_rate: parseFloat(l.tax_rate) || 19,
+                unit_price: l.unit_price || 0,
+                unit_price_gross: l.unit_price_gross || (l.unit_price ? PricingUtils.netToGross(l.unit_price) : 0),
+                tax_rate: l.tax_rate || 19,
                 custom_specs: l.custom_specs || {},
                 manufacturing_data: l.manufacturing_data || null,
             })) || []
@@ -193,15 +173,15 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
             if (initialData) {
                 form.reset({
                     ...initialData,
-                    lines: initialData?.lines?.map((l: any) => ({
+                    lines: initialData?.lines?.map((l: SaleOrderLine) => ({
                         id: l.id,
                         product: l.product?.toString() || "",
                         description: l.description,
-                        quantity: parseFloat(l.quantity) || 0,
+                        quantity: l.quantity || 0,
                         uom: l.uom?.toString() || "",
-                        unit_price: parseFloat(l.unit_price) || 0,
-                        unit_price_gross: parseFloat(l.unit_price_gross || "0") || (l.unit_price ? PricingUtils.netToGross(parseFloat(l.unit_price)) : 0),
-                        tax_rate: parseFloat(l.tax_rate) || 19,
+                        unit_price: l.unit_price || 0,
+                        unit_price_gross: l.unit_price_gross || (l.unit_price ? PricingUtils.netToGross(l.unit_price) : 0),
+                        tax_rate: l.tax_rate || 19,
                         custom_specs: l.custom_specs || {},
                         manufacturing_data: l.manufacturing_data || null,
                     })) || []
@@ -287,7 +267,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
             onConfirmCheckout({ 
                 ...data, 
                 lines: enrichedLines,
-                customer: (initialData as any)?.customer || null,
+                customer: (initialData as SaleOrder)?.customer || null,
                 date: new Date().toISOString()
             });
             setOpen(false)

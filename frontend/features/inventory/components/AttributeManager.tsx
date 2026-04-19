@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 "use client"
 
 import React, { useEffect, useState, useMemo } from "react"
@@ -92,7 +93,7 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
             setAttributes(enrichedAttrs)
         } catch (error) {
             console.error(error)
-            toast.error("Error al cargar atributos")
+            showApiError(error, "Error al cargar atributos")
         } finally {
             setLoading(false)
         }
@@ -128,7 +129,7 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
             handleCloseModal()
             fetchAttributes()
         } catch (error) {
-            toast.error("Error al guardar atributo")
+            showApiError(error, "Error al guardar atributo")
         } finally {
             setIsSaving(false)
         }
@@ -158,7 +159,7 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
             setIsValueModalOpen(false)
             fetchAttributes()
         } catch (error) {
-            toast.error("Error al añadir valor")
+            showApiError(error, "Error al añadir valor")
         }
     }
 
@@ -168,7 +169,7 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
             toast.success("Atributo eliminado")
             fetchAttributes()
         } catch (error) {
-            toast.error("Error al eliminar")
+            showApiError(error, "Error al eliminar")
         }
     })
 
@@ -180,7 +181,7 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
             toast.success("Valor eliminado")
             fetchAttributes()
         } catch (error) {
-            toast.error("Error al eliminar valor")
+            showApiError(error, "Error al eliminar valor")
         }
     })
 
@@ -308,7 +309,7 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
             setSelectedRows({})
             fetchAttributes()
         } catch (error) {
-            toast.error("Error al eliminar los atributos")
+            showApiError(error, "Error al eliminar los atributos")
         }
     }
 
@@ -404,7 +405,7 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
                                     </Button>
                                 </div>
                                 
-                                <div className="flex flex-wrap gap-2 pt-2 min-h-[60px] p-3 rounded-lg border border-dashed bg-muted/20">
+                                <div className="flex flex-wrap gap-2 pt-2 min-h-[60px] p-3 rounded-md border border-dashed bg-muted/20">
                                     {newAttrValues.map((tag, i) => (
                                         <DataCell.Badge key={i} variant="secondary" className="flex items-center gap-1.5 py-1 px-2.5 text-xs font-medium animate-in zoom-in-50 duration-200">
                                             {tag}

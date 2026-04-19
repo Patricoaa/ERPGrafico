@@ -1,6 +1,7 @@
 "use client"
 
 import { User, Settings, LogOut, Bell, Store, Calculator, Inbox } from "lucide-react"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { toast } from "sonner"
@@ -225,7 +226,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                         </div>
                         <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                             {notifications.length === 0 ? (
-                                <div className="p-8 text-center text-muted-foreground text-xs">No hay notificaciones</div>
+                                <EmptyState context="generic" variant="compact" title="No hay notificaciones" />
                             ) : (
                                 notifications.slice(0, displayLimit).map((n) => (
                                     <DropdownMenuItem key={n.id} className="p-3 cursor-pointer" onClick={() => handleNotificationClick(n)}>

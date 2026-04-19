@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { Partner } from "@/features/contacts/types/partner"
+import { TreasuryAccount } from "@/features/treasury/types"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
 import {
@@ -46,7 +48,7 @@ interface ModalProps {
 
 export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initialPartnerId, initialAmount }: ModalProps) {
     const [loading, setLoading] = useState(false)
-    const [partners, setPartners] = useState<any[]>([])
+    const [partners, setPartners] = useState<Partner[]>([])
     const [showConfirm, setShowConfirm] = useState(false)
     const [formData, setFormData] = useState({
         contact_id: "",
@@ -187,7 +189,7 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
                         <Label htmlFor="type">Tipo de Movimiento</Label>
                         <Select
                             value={formData.type}
-                            onValueChange={(v: any) => setFormData(prev => ({ ...prev, type: v }))}
+                            onValueChange={(v: "SUBSCRIPTION" | "REDUCTION") => setFormData(prev => ({ ...prev, type: v }))}
                         >
                             <SelectTrigger>
                                 <SelectValue />
@@ -267,7 +269,7 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
 
 export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProps) {
     const [loading, setLoading] = useState(false)
-    const [partners, setPartners] = useState<any[]>([])
+    const [partners, setPartners] = useState<Partner[]>([])
     const [showConfirm, setShowConfirm] = useState(false)
     const [formData, setFormData] = useState({
         from_contact_id: "",
@@ -486,12 +488,17 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
 }
 
 function useTreasuryAccounts() {
-    const [accounts, setAccounts] = useState<any[]>([])
+    const [accounts, setAccounts] = useState<TreasuryAccount[]>([])
 
     useEffect(() => {
         // Fetch treasury accounts for the dropdowns
-        import("@/lib/api").then(m => m.default).then(api => {
-            api.get('/treasury/accounts/').then(res => setAccounts(res.data)).catch(console.error)
+        import("@/lib/api").then(m => m.default).then(async (api) => {
+            try {
+                const res = await api.get<TreasuryAccount[]>('/treasury/accounts/')
+                setAccounts(res.data)
+            } catch (error) {
+                console.error("Error fetching treasury accounts:", error)
+            }
         })
     }, [])
 
@@ -500,7 +507,7 @@ function useTreasuryAccounts() {
 
 export function CapitalContributionModal({ open, onOpenChange, onSuccess }: ModalProps) {
     const [loading, setLoading] = useState(false)
-    const [partners, setPartners] = useState<any[]>([])
+    const [partners, setPartners] = useState<Partner[]>([])
     const treasuryAccounts = useTreasuryAccounts()
 
     const [formData, setFormData] = useState({
@@ -644,7 +651,7 @@ export function CapitalContributionModal({ open, onOpenChange, onSuccess }: Moda
 
 export function ProvisionalWithdrawalModal({ open, onOpenChange, onSuccess }: ModalProps) {
     const [loading, setLoading] = useState(false)
-    const [partners, setPartners] = useState<any[]>([])
+    const [partners, setPartners] = useState<Partner[]>([])
     const treasuryAccounts = useTreasuryAccounts()
 
     const [formData, setFormData] = useState({
@@ -789,7 +796,7 @@ export function ProvisionalWithdrawalModal({ open, onOpenChange, onSuccess }: Mo
 
 export function DividendPaymentModal({ open, onOpenChange, onSuccess, initialPartnerId }: ModalProps) {
     const [loading, setLoading] = useState(false)
-    const [partners, setPartners] = useState<any[]>([])
+    const [partners, setPartners] = useState<Partner[]>([])
     const treasuryAccounts = useTreasuryAccounts()
 
     const [formData, setFormData] = useState({

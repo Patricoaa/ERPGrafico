@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 "use client"
 
 import { useEffect, useState, useMemo, useCallback } from "react"
@@ -61,7 +62,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
             setCategories(response.data.results || response.data)
         } catch (error) {
             console.error("Failed to fetch categories", error)
-            toast.error("Error al cargar las categorías.")
+            showApiError(error, "Error al cargar las categorías.")
         } finally {
             setLoading(false)
         }
@@ -83,7 +84,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
             fetchCategories()
         } catch (error) {
             console.error("Error deleting category:", error)
-            toast.error("Error al eliminar la categoría.")
+            showApiError(error, "Error al eliminar la categoría.")
         }
     }, [fetchCategories])
 
@@ -100,9 +101,9 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
                 if (!iconName) return <div className="flex justify-center w-full">-</div>
                 return (
                     <div className="flex items-center justify-center w-full">
-                        <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/30 border border-muted-foreground/10 transition-colors">
+                        <div className="flex items-center justify-center h-8 w-8 rounded-md bg-muted/30 border border-muted-foreground/10 transition-colors">
                             {(() => {
-                                const Icon = (LucideIcons as any)[iconName] || LucideIcons.Package
+                                const Icon = (LucideIcons as Record<string, React.ElementType>)[iconName] || LucideIcons.Package
                                 return <Icon className="h-4 w-4 text-muted-foreground/70" />
                             })()}
                         </div>
@@ -139,14 +140,14 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
                 columns={columns}
                 data={categories}
                 cardMode
-                isLoading={loading}
+                
                 searchPlaceholder="Buscar categoría por nombre..."
                 globalFilterFields={globalFilterFields}
                 useAdvancedFilter={true}
             />
 
             <CategoryForm
-                onSuccess={fetchCategories}
+                onSuccess={refetch}
                 open={isFormOpen || !!externalOpen}
                 onOpenChange={(open) => {
                     if (!open) {

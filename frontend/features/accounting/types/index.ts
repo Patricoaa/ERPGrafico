@@ -81,6 +81,8 @@ export interface FiscalYear {
     closed_by: number | null;
     closed_by_name: string | null;
     closed_at: string | null;
+    net_result?: string;
+    is_profit?: boolean;
     created_at: string;
     updated_at: string;
 }

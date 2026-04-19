@@ -47,7 +47,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
             setDrafts(list)
 
             // Sync currentDraftId: if it's set but not in the list, it's stale
-            if (currentDraftId && !list.find((d: any) => d.id === currentDraftId)) {
+            if (currentDraftId && !list.find((d: DraftCart) => d.id === currentDraftId)) {
                 console.warn(`Current draft ${currentDraftId} not found in list, clearing state`)
                 setCurrentDraftId(null)
                 setWizardState(null)
@@ -61,14 +61,14 @@ export function useDrafts(options: UseDraftsOptions = {}) {
     }, [currentSession?.id, currentDraftId, setCurrentDraftId, setWizardState])
 
     // Save current cart as draft
-    const saveDraft = useCallback(async (name?: string, silent = false, manualWizardState?: any) => {
+    const saveDraft = useCallback(async (name?: string, silent = false, manualWizardState?: Record<string, unknown>) => {
         if (items.length === 0 || isLoading || isSaving) {
             return
         }
 
         setIsSaving(true)
         try {
-            const draftData: any = {
+            const draftData: Record<string, unknown> = {
                 pos_session_id: currentSession?.id,
                 name: name || (currentDraftId ? undefined : `Borrador ${new Date().toLocaleString()}`),
                     items: items.map(item => ({
@@ -91,7 +91,8 @@ export function useDrafts(options: UseDraftsOptions = {}) {
                 // Update existing
                 try {
                     res = await api.put(`/sales/pos-drafts/${currentDraftId}/`, draftData)
-                } catch (err: any) {
+                } catch (error) {
+                    const err = error as { response?: { status?: number } }
                     if (err.response?.status === 404) {
                         console.warn("Draft not found on server, falling back to new draft")
                         setCurrentDraftId(null)
@@ -167,7 +168,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
             const draft = res.data
 
             // Reconstruct cart items from draft
-            const itemPromises = draft.items.map(async (draftItem: any) => {
+            const itemPromises = draft.items.map(async (draftItem: { product_id: number; quantity: number; uom_id: number; unit_price_net: number; unit_price_gross: number; manufacturing_data?: unknown }) => {
                 try {
                     const productRes = await api.get(`/inventory/products/${draftItem.product_id}/`)
                     const product = productRes.data
@@ -198,7 +199,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
             // Set or clear customer - Robustly handle ID or Object
             const rawCustomer = draft.customer
             const targetCustomerId = (typeof rawCustomer === 'object' && rawCustomer !== null) 
-                ? (rawCustomer as any).id 
+                ? (rawCustomer as { id: number }).id 
                 : rawCustomer
             setSelectedCustomerId(targetCustomerId)
 

@@ -15,6 +15,7 @@ import { format } from "date-fns"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Badge } from "@/components/ui/badge"
 import { useSaleOrderSearch } from "@/features/orders/hooks/useSaleOrderSearch"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { SaleOrder } from "@/types/entities"
 
 
@@ -106,7 +107,7 @@ export function AdvancedSaleOrderSelector({
                     >
                         {selectedOrder ? (
                              <div className="flex items-center gap-2 truncate text-left">
-                                <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                                <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
                                     <FileText className="h-4 w-4" />
                                 </div>
                                 <div className="flex flex-col items-start truncate leading-tight">
@@ -138,15 +139,17 @@ export function AdvancedSaleOrderSelector({
                         {searchLoading ? (
                             <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
                         ) : orders.length === 0 ? (
-                                <div className="p-4 text-sm text-center text-muted-foreground">
-                                    {searchTerm ? "No se encontraron notas." : "Escriba para buscar..."}
-                                </div>
-                            ) : (
+                            <EmptyState
+                                context="search"
+                                variant="compact"
+                                title={searchTerm ? "No se encontraron notas" : "Escriba para buscar"}
+                            />
+                        ) : (
                                 orders.map((order) => (
                                     <div
                                         key={order.id}
                                         className={cn(
-                                            "relative flex cursor-pointer select-none items-center rounded-lg px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground group",
+                                            "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground group",
                                             selectedOrder?.id === order.id && "bg-accent"
                                         )}
                                         onClick={() => handleSelect(order)}

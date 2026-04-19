@@ -19,14 +19,15 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { Loader2, Users } from "lucide-react"
 import { FORM_STYLES } from "@/lib/styles"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
+import { AppGroup } from "@/types/entities"
 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
 })
 
 interface GroupFormProps {
-    initialData?: any
+    initialData?: AppGroup
     trigger?: React.ReactNode
     onSuccess?: () => void
     open?: boolean

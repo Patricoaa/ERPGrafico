@@ -90,7 +90,7 @@ export function useCart() {
     }, [])
 
     // Add product to cart
-    const addProductToCart = useCallback(async (product: Product, manufacturingData?: any) => {
+    const addProductToCart = useCallback(async (product: Product, manufacturingData?: Record<string, unknown>) => {
         // Check if can add
         const canAdd = CartUtils.canAddToCart(product)
         if (!canAdd.canAdd) {
@@ -119,7 +119,7 @@ export function useCart() {
                     : i
             )
         } else {
-            const tempItem: any = { ...product, qty: 1, cartItemId: 'temp' }
+            const tempItem = { ...product, qty: 1, cartItemId: 'temp' } as CartItem
             projectedItems.push(tempItem)
         }
 

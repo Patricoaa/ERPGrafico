@@ -7,6 +7,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { Partner } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
 import { Loader2, UserPlus, Info, TrendingDown } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
@@ -29,7 +30,7 @@ interface AddPartnerModalProps {
 
 export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerModalProps) {
     const [loading, setLoading] = useState(false)
-    const [partners, setPartners] = useState<any[]>([])
+    const [partners, setPartners] = useState<Partner[]>([])
     const [totalCapital, setTotalCapital] = useState(0)
     const [formData, setFormData] = useState({
         contact_id: "",
@@ -42,7 +43,7 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
         if (open) {
             partnersApi.getPartners().then(data => {
                 setPartners(data)
-                const total = data.reduce((acc: number, p: any) => {
+                const total = data.reduce((acc: number, p: Partner) => {
                     const amount = typeof p.partner_total_contributions === 'string' 
                         ? parseFloat(p.partner_total_contributions) 
                         : (p.partner_total_contributions || 0)

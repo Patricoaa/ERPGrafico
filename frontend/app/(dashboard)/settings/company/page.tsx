@@ -30,13 +30,13 @@ export default async function CompanySettingsPage({ searchParams }: PageProps) {
             return {
                 title: "Identidad Visual",
                 description: "Logotipos, colores corporativos y apariencia de documentos.",
-                iconName: "palette" as any
+                iconName: "palette",
             }
         }
         return {
             title: "Configuración de Empresa",
             description: "Gestione la identidad y parámetros globales de su organización.",
-            iconName: "building" as any
+            iconName: "building",
         }
     }
 
