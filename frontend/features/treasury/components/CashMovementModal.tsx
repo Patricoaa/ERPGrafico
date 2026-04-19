@@ -52,35 +52,17 @@ export function CashMovementModal({
     }
 
     return (
-        <BaseModal
+        <MovementWizard
             open={open}
             onOpenChange={onOpenChange}
-            title={
-                <div className="flex items-center gap-3">
-                    <ArrowLeftRight className="h-5 w-5 text-muted-foreground" />
-                    <span>Nuevo Movimiento de Tesorería</span>
-                </div>
-            }
-            description={variant === 'partners' 
-                ? "Registre aportes o retiros de capital societario en efectivo."
-                : "Registre traspasos, depósitos o retiros manuales de socios o generales."
-            }
-            size="md"
-        >
-            <div className="pt-2 pb-6">
-                {open && (
-                    <MovementWizard
-                        context="treasury"
-                        initialContactId={initialContactId}
-                        initialContactName={initialContactName}
-                        fixedMoveType={fixedMoveType}
-                        variant={variant}
-                        onComplete={handleCompleteWizard}
-                        onCancel={() => onOpenChange(false)}
-                    />
-                )}
-            </div>
-        </BaseModal>
+            context="treasury"
+            initialContactId={initialContactId}
+            initialContactName={initialContactName}
+            fixedMoveType={fixedMoveType}
+            variant={variant}
+            onComplete={handleCompleteWizard}
+            onCancel={() => onOpenChange(false)}
+        />
     )
 }
 

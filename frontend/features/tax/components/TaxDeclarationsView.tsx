@@ -25,7 +25,8 @@ import { ColumnDef } from "@tanstack/react-table"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { TaxPeriod, TaxDeclaration } from "../types"
+import { TaxPeriod, TaxDeclaration, TaxPaymentData } from "../types"
+import { Row } from "@tanstack/react-table"
 
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -71,8 +72,8 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
     const fetchPeriods = async () => {
         setIsLoading(true)
         try {
-            const response = await api.get("/tax/periods/?page_size=100")
-            const fetchedPeriods = response.data.results || response.data
+            const response = await api.get<{ results?: TaxPeriod[] } | TaxPeriod[]>("/tax/periods/?page_size=100")
+            const fetchedPeriods = (response.data as { results?: TaxPeriod[] }).results || (response.data as TaxPeriod[])
             setPeriods(fetchedPeriods)
             
             const year = searchParams.get('year')
@@ -139,8 +140,8 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
             setIsPaymentOpen(true)
         } else {
             try {
-                const resp = await api.get(`/tax/declarations/?tax_period__year=${period.year}&tax_period__month=${period.month}`)
-                const declarations = resp.data.results || resp.data
+                const resp = await api.get<{ results?: TaxDeclaration[] } | TaxDeclaration[]>(`/tax/declarations/?tax_period__year=${period.year}&tax_period__month=${period.month}`)
+                const declarations = (resp.data as { results?: TaxDeclaration[] }).results || (resp.data as TaxDeclaration[])
                 if (declarations.length > 0) {
                     setSelectedDeclaration({
                         ...declarations[0],
@@ -158,7 +159,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
 
     const { serverDate, dateString } = useServerDate()
 
-    const handlePaymentConfirm = async (data: any) => {
+    const handlePaymentConfirm = async (data: TaxPaymentData) => {
         if (!selectedDeclaration) return
         try {
             await api.post("/tax/payments/", {
@@ -404,7 +405,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                     }
                     return (
                         <div className="grid gap-3 pt-2">
-                            {rows.map((row: any) => {
+                            {rows.map((row: Row<TaxPeriod>) => {
                                 const period = row.original
                                 const summary = period.declaration_summary
                                 const isFullyPaid = summary?.is_fully_paid

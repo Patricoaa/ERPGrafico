@@ -12,13 +12,12 @@ import {
     Activity, 
     CalendarDays, 
     Wallet, 
-    User, 
-    Mail, 
-    FileText, 
-    Building2, 
-    TrendingUp, 
+    User,
+    Mail,
+    FileText,
+    Building2,
+    TrendingUp,
     TrendingDown,
-    Loader2,
     ChevronRight,
     Briefcase,
     Eye
@@ -31,7 +30,7 @@ import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { TableSkeleton } from "@/components/shared/TableSkeleton"
 
 const TransactionViewModal = lazy(() => import("@/components/shared/TransactionViewModal"))
 
@@ -97,7 +96,7 @@ export function PartnerProfileTab({ contactId }: Props) {
 
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.Badge variant={variant as any}>
+                        <DataCell.Badge variant={variant}>
                             {tx.transaction_type_display || type}
                         </DataCell.Badge>
                     </div>
@@ -138,13 +137,7 @@ export function PartnerProfileTab({ contactId }: Props) {
         })
     ]
 
-    if (loading) {
-        return (
-            <div className="flex h-[400px] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        )
-    }
+    if (loading) return <TableSkeleton rows={8} columns={4} className="p-6" />
 
     if (!statement) return null
 

@@ -4,7 +4,8 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { PurchaseOrderInitialData } from "@/types/forms"
+import { PurchaseOrderInitialData, PurchaseOrderLine } from "@/types/forms"
+import { ProductMinimal, UoM } from "@/types/entities"
 import * as z from "zod"
 import { Plus, Trash2 } from "lucide-react"
 import { FORM_STYLES } from "@/lib/styles"
@@ -100,21 +101,24 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    const [products, setProducts] = useState<any[]>([])
-    const [uoms, setUoMs] = useState<any[]>([])
+    const [products, setProducts] = useState<ProductMinimal[]>([])
+    const [uoms, setUoMs] = useState<UoM[]>([])
 
     const form = useForm<PurchaseOrderFormValues>({
         resolver: zodResolver(purchaseOrderSchema),
         defaultValues: initialData ? {
             ...initialData,
-            lines: initialData.lines.map((l: any) => ({
-                id: l.id,
-                product: l.product?.id?.toString() || l.product?.toString() || "",
-                quantity: parseFloat(l.quantity) || 0,
-                uom: l.uom?.toString() || "",
-                unit_cost: parseFloat(l.unit_cost) || 0,
-                tax_rate: parseFloat(l.tax_rate) || 19,
-            }))
+            lines: initialData.lines.map((l: PurchaseOrderLine) => {
+                const productId = typeof l.product === 'object' && l.product !== null ? l.product.id : l.product;
+                return {
+                    id: l.id,
+                    product: productId?.toString() || "",
+                    quantity: typeof l.quantity === 'string' ? parseFloat(l.quantity) : (l.quantity || 0),
+                    uom: l.uom?.toString() || "",
+                    unit_cost: typeof l.unit_cost === 'string' ? parseFloat(l.unit_cost) : (l.unit_cost || 0),
+                    tax_rate: typeof l.tax_rate === 'string' ? parseFloat(l.tax_rate) : (l.tax_rate || 19),
+                }
+            })
         } : {
             notes: "",
             lines: [{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 }],
@@ -149,14 +153,17 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
             if (initialData) {
                 form.reset({
                     ...initialData,
-                    lines: initialData.lines.map((l: any) => ({
-                        id: l.id,
-                        product: l.product?.id?.toString() || l.product?.toString() || "",
-                        quantity: parseFloat(l.quantity) || 0,
-                        uom: l.uom?.toString() || "",
-                        unit_cost: parseFloat(l.unit_cost) || 0,
-                        tax_rate: parseFloat(l.tax_rate) || 19,
-                    }))
+                    lines: initialData.lines.map((l: PurchaseOrderLine) => {
+                        const productId = typeof l.product === 'object' && l.product !== null ? l.product.id : l.product;
+                        return {
+                            id: l.id,
+                            product: productId?.toString() || "",
+                            quantity: typeof l.quantity === 'string' ? parseFloat(l.quantity) : (l.quantity || 0),
+                            uom: l.uom?.toString() || "",
+                            unit_cost: typeof l.unit_cost === 'string' ? parseFloat(l.unit_cost) : (l.unit_cost || 0),
+                            tax_rate: typeof l.tax_rate === 'string' ? parseFloat(l.tax_rate) : (l.tax_rate || 19),
+                        }
+                    })
                 })
             } else {
                 form.reset({

@@ -8,18 +8,11 @@ import { toast } from "sonner"
 import api from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import {
-    Loader2,
-} from "lucide-react"
+import { FormSkeleton } from "@/components/shared/FormSkeleton"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 
-const purchasingSchema = z.object({
-    default_expense_account: z.string().nullable(),
-    default_service_expense_account: z.string().nullable(),
-    default_subscription_expense_account: z.string().nullable(),
-})
-
-type PurchasingFormValues = z.infer<typeof purchasingSchema>
+import { purchasingSchema, type PurchasingFormValues } from "./PurchasingSettingsView.schema"
+import { UseFormReturn, Path } from "react-hook-form"
 
 export function PurchasingSettingsView({ onSavingChange }: { onSavingChange?: (saving: boolean) => void }) {
     const [loading, setLoading] = useState(true)
@@ -39,19 +32,17 @@ export function PurchasingSettingsView({ onSavingChange }: { onSavingChange?: (s
             try {
                 const res = await api.get('/accounting/settings/current/')
                 const settings = res.data
-                const formattedSettings: any = {}
+                const formattedSettings = {} as PurchasingFormValues
+                const fields = Object.keys(purchasingSchema.shape) as (keyof PurchasingFormValues)[]
 
-                const fields = Object.keys(form.getValues())
-                fields.forEach((key: any) => {
-                    const val = (settings as any)[key]
-                    formattedSettings[key] = val ? val.toString() : null
+                fields.forEach((key) => {
+                    const val = settings[key]
+                    formattedSettings[key] = (val ? val.toString() : null) as never
                 })
 
                 form.reset(formattedSettings)
-            } catch (error: any) {
-                if (error.response?.status !== 404) {
-                    toast.error("Error al cargar configuración")
-                }
+            } catch (error: unknown) {
+                toast.error("Error al cargar configuración")
             } finally {
                 setLoading(false)
             }
@@ -85,13 +76,7 @@ export function PurchasingSettingsView({ onSavingChange }: { onSavingChange?: (s
         }
     }, [watchedValues, loading, isDirty, form, onSubmit])
 
-    if (loading) {
-        return (
-            <div className="flex h-[200px] items-center justify-center">
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-        )
-    }
+    if (loading) return <FormSkeleton fields={3} />
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
@@ -118,7 +103,7 @@ export function PurchasingSettingsView({ onSavingChange }: { onSavingChange?: (s
     )
 }
 
-function AccountField({ form, name, label, accountType }: { form: any, name: string, label: string, accountType: string }) {
+function AccountField({ form, name, label, accountType }: { form: UseFormReturn<PurchasingFormValues>, name: Path<PurchasingFormValues>, label: string, accountType: string }) {
     return (
         <FormField
             control={form.control}

@@ -7,10 +7,11 @@ import { getActionBadgeCount } from "@/lib/actions/utils"
 import { cn } from "@/lib/utils"
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Order } from "../types"
 
 interface ActionButtonProps {
     action: Action
-    order: any
+    order: Order
     userPermissions: string[]
     onClick: () => void
     showBadge?: boolean

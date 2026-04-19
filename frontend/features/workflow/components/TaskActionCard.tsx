@@ -1,6 +1,6 @@
 "use client"
 
-import { Task } from "@/lib/workflow/api"
+import { Task, TaskAttachment } from "@/lib/workflow/api"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
@@ -92,7 +92,7 @@ export function TaskActionCard({
                     )}
                     {task.attachments_data && task.attachments_data.length > 0 && (
                         <div className="flex flex-wrap gap-2">
-                            {task.attachments_data.map((att: any) => (
+                            {task.attachments_data.map((att: TaskAttachment) => (
                                 <a
                                     key={att.id}
                                     href={att.file}

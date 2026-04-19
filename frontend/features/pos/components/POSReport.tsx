@@ -8,34 +8,36 @@ import { Printer, Calculator, TrendingUp, X, Activity, CreditCard, ChevronDown, 
 import { Button } from "@/components/ui/button"
 import { useBranding } from "@/contexts/BrandingProvider"
 
+export interface POSReportData {
+    session_id: number
+    treasury_account_id?: number
+    opening_balance: number
+    total_cash_sales: number
+    total_card_sales: number
+    total_transfer_sales: number
+    total_credit_sales: number
+    total_sales: number
+    expected_cash: number
+    total_manual_inflow?: number
+    total_manual_outflow?: number
+    manual_movements?: Array<{
+        id: number
+        amount: string | number
+        movement_type: string
+        movement_type_display: string
+        notes: string
+        created_at: string
+        justify_reason?: string
+        to_account?: number
+        from_account?: number
+    }>
+    sales_by_category?: Array<{ name: string, value: number }>
+    generated_at?: string
+    user_name?: string
+}
+
 interface POSReportProps {
-    data: {
-        session_id: number
-        treasury_account_id?: number
-        opening_balance: number
-        total_cash_sales: number
-        total_card_sales: number
-        total_transfer_sales: number
-        total_credit_sales: number
-        total_sales: number
-        expected_cash: number
-        total_manual_inflow?: number
-        total_manual_outflow?: number
-        manual_movements?: Array<{
-            id: number
-            amount: string | number
-            movement_type: string
-            movement_type_display: string
-            notes: string
-            created_at: string
-            justify_reason?: string
-            to_account?: number
-            from_account?: number
-        }>
-        sales_by_category?: Array<{ name: string, value: number }>
-        generated_at?: string
-        user_name?: string
-    }
+    data: POSReportData
     title?: string
     type?: "X" | "Z"
     onClose?: () => void

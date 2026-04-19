@@ -25,7 +25,7 @@ interface JournalEntry {
     reference: string
     state: string
     source_documents?: {
-        type: any
+        type: string
         id: number | string
         name: string
         url: string
@@ -39,9 +39,9 @@ interface EntriesPageProps {
 
 export default function EntriesPage({ externalOpen, onExternalOpenChange }: EntriesPageProps) {
     const [entries, setEntries] = useState<JournalEntry[]>([])
-    const [accounts, setAccounts] = useState<any[]>([])
+    const [accounts, setAccounts] = useState<Record<string, unknown>[]>([])
     const [loading, setLoading] = useState(true)
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string } | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: string, id: number | string } | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null)
     
@@ -255,7 +255,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
                     actionButton={
                         <Button
                             onClick={handleCreateEntry}
-                            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-4 h-9 font-heading text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-primary/20"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-sm px-4 h-9 font-heading text-xs font-bold uppercase tracking-wider transition-all shadow-lg shadow-primary/20"
                         >
                             Nuevo Asiento
                         </Button>
@@ -264,7 +264,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange }: Entr
 
                 <JournalEntryForm 
                     accounts={accounts} 
-                    initialData={editingEntry as any}
+                    initialData={editingEntry as Record<string, unknown> | undefined}
                     onSuccess={() => {
                         fetchEntries()
                         handleFormOpenChange(false)

@@ -25,33 +25,7 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
 
-const accountIdSchema = z.union([z.string(), z.number()]).nullable()
-
-const billingSchema = z.object({
-    // Tax fields
-    default_vat_rate: z.number().min(0).max(100),
-    vat_payable_account: accountIdSchema,
-    vat_carryforward_account: accountIdSchema,
-    withholding_tax_account: accountIdSchema,
-    ppm_account: accountIdSchema,
-    second_category_tax_account: accountIdSchema,
-    correction_income_account: accountIdSchema,
-    default_tax_receivable_account: accountIdSchema,
-    default_tax_payable_account: accountIdSchema,
-    loan_retention_account: accountIdSchema,
-    ila_tax_account: accountIdSchema,
-    vat_withholding_account: accountIdSchema,
-    // Billing fields
-    default_receivable_account: accountIdSchema,
-    default_payable_account: accountIdSchema,
-    default_advance_payment_account: accountIdSchema,
-    default_prepayment_account: accountIdSchema,
-    // DTE Configuration
-    allowed_dte_types_emit: z.array(z.string()),
-    allowed_dte_types_receive: z.array(z.string()),
-})
-
-type BillingFormValues = z.infer<typeof billingSchema>
+import { billingSchema, type BillingFormValues } from "./BillingSettingsView.schema"
 
 export const BillingSettingsView: React.FC<{ 
     activeTab?: string,
@@ -95,7 +69,7 @@ export const BillingSettingsView: React.FC<{
 
     const onSubmit = useCallback(async (data: BillingFormValues) => {
         try {
-            await updateSettings(data as any)
+            await updateSettings(data)
             form.reset(data)
         } catch {
             // Error already handled by hook
@@ -109,19 +83,19 @@ export const BillingSettingsView: React.FC<{
             const keys = Object.keys(billingSchema.shape) as (keyof BillingFormValues)[]
 
             keys.forEach((key) => {
-                const val = settings[key as keyof typeof settings]
+                const val = settings[key]
                 if (val === null || val === undefined) {
                     if (key === 'default_vat_rate') {
-                        formattedSettings[key] = 19.00 as never;
+                        (formattedSettings as Record<string, unknown>)[key] = 19.00;
                     } else if (key === 'allowed_dte_types_emit' || key === 'allowed_dte_types_receive') {
-                        formattedSettings[key] = [] as never;
+                        (formattedSettings as Record<string, unknown>)[key] = [];
                     } else {
-                        formattedSettings[key] = null as never;
+                        (formattedSettings as Record<string, unknown>)[key] = null;
                     }
                 } else if (key === 'default_vat_rate') {
-                    formattedSettings[key] = parseFloat(val.toString()) as never
+                    (formattedSettings as Record<string, unknown>)[key] = parseFloat(val.toString())
                 } else {
-                    formattedSettings[key] = val as never
+                    (formattedSettings as Record<string, unknown>)[key] = val
                 }
             })
 

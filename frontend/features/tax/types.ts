@@ -79,3 +79,21 @@ export interface TaxCalculationData {
         }[]
     }
 }
+
+/**
+ * Data payload emitted by PaymentDialog.onConfirm when registering a tax payment.
+ * Mirrors the PaymentDialog onConfirm callback shape (subset used for F29 flows).
+ */
+export interface TaxPaymentData {
+    paymentMethod: string
+    amount: number
+    dteType?: string
+    reference?: string
+    transaction_number?: string
+    is_pending_registration?: boolean
+    treasury_account_id?: string | null
+    payment_method_new?: string | null
+    documentReference?: string
+    documentDate?: string
+    documentAttachment?: File | null
+}

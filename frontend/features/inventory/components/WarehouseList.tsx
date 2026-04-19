@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
@@ -15,12 +16,7 @@ import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { cn } from "@/lib/utils"
 
-interface Warehouse {
-    id: number
-    name: string
-    code: string
-    address: string
-}
+import { useWarehouses, type Warehouse } from "@/features/inventory/hooks/useWarehouses"
 
 interface WarehouseListProps {
     externalOpen?: boolean
@@ -53,19 +49,6 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
         }
     }
 
-    const fetchWarehouses = async () => {
-        setLoading(true)
-        try {
-            const response = await api.get('/inventory/warehouses/')
-            setWarehouses(response.data.results || response.data)
-        } catch (error) {
-            console.error("Failed to fetch warehouses", error)
-            toast.error("Error al cargar los almacenes.")
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const handleDelete = async (warehouse: Warehouse | null, isConfirmed = false) => {
         if (!warehouse) return
 
@@ -82,7 +65,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
             fetchWarehouses()
         } catch (error) {
             console.error("Error deleting warehouse:", error)
-            toast.error("Error al eliminar el almacén.")
+            showApiError(error, "Error al eliminar el almacén.")
         }
     }
 
@@ -164,7 +147,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
             setSelectedRows({})
             fetchWarehouses()
         } catch (error) {
-            toast.error("Error al eliminar los almacenes (algunos podrían estar en uso)")
+            showApiError(error, "Error al eliminar los almacenes (algunos podrían estar en uso)")
         }
     }
 
@@ -174,7 +157,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
                 columns={columns}
                 data={warehouses}
                 cardMode
-                isLoading={loading}
+                
                 useAdvancedFilter={true}
                 filterColumn="name"
                 searchPlaceholder="Buscar almacén por nombre o código..."
@@ -194,7 +177,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
             />
 
             <WarehouseForm
-                onSuccess={fetchWarehouses}
+                onSuccess={refetch}
                 open={isFormOpen || !!externalOpen}
                 onOpenChange={(open) => {
                     if (!open) {

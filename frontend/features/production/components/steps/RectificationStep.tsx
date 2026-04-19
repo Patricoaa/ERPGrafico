@@ -57,8 +57,8 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
         }
 
         const adjustments: MaterialAdjustment[] = materials
-            .filter((m: any) => !m.is_outsourced) // Only stock materials get rectified
-            .map((m: any) => ({
+            .filter((m: WorkOrderMaterial) => !m.is_outsourced) // Only stock materials get rectified
+            .map((m: WorkOrderMaterial) => ({
                 material_id: m.id,
                 actual_quantity: parseFloat(actualQuantities[m.id] ?? String(m.quantity_planned)) || 0
             }))
@@ -76,7 +76,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
 
     const resetAll = () => {
         const reset: Record<number, string> = {}
-        materials.forEach((m: any) => { reset[m.id] = String(m.quantity_planned) })
+        materials.forEach((m: WorkOrderMaterial) => { reset[m.id] = String(m.quantity_planned) })
         setActualQuantities(reset)
         if (isManualWithInventory) setActualProducedQty(plannedProducedQty)
     }
@@ -87,13 +87,13 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
         return a - planned
     }
 
-    const hasMeaningfulChanges = materials.some((m: any) => {
+    const hasMeaningfulChanges = materials.some((m: WorkOrderMaterial) => {
         const diff = getDiff(parseFloat(m.quantity_planned), actualQuantities[m.id] ?? String(m.quantity_planned))
         return diff !== null && diff !== 0
     }) || (isManualWithInventory && parseFloat(actualProducedQty) !== parseFloat(plannedProducedQty))
 
-    const stockMaterials = materials.filter((m: any) => !m.is_outsourced)
-    const outsourcedMaterials = materials.filter((m: any) => m.is_outsourced)
+    const stockMaterials = materials.filter((m: WorkOrderMaterial) => !m.is_outsourced)
+    const outsourcedMaterials = materials.filter((m: WorkOrderMaterial) => m.is_outsourced)
 
     return (
         <div className="space-y-6 p-1">
@@ -147,8 +147,8 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                                 </tr>
                             </thead>
                             <tbody>
-                                {stockMaterials.map((material: any, idx: number) => {
-                                    const planned = parseFloat(material.quantity_planned)
+                                {stockMaterials.map((material: WorkOrderMaterial) => {
+                                    const planned = material.quantity_planned
                                     const actualStr = actualQuantities[material.id] ?? String(planned)
                                     const diff = getDiff(planned, actualStr)
                                     const hasChange = diff !== null && diff !== 0
@@ -168,7 +168,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                                                 <div className="text-xs text-muted-foreground">{material.uom_name}</div>
                                             </td>
                                             <td className="px-4 py-3 text-right text-muted-foreground">
-                                                {Number(planned).toLocaleString('es-CL', { maximumFractionDigits: 4 })}
+                                                {planned.toLocaleString('es-CL', { maximumFractionDigits: 4 })}
                                             </td>
                                             <td className="px-4 py-3 text-right">
                                                 <Input
@@ -228,7 +228,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                         </span>
                     </div>
                     <div className="rounded-lg border border-dashed border-border p-3 space-y-1">
-                        {outsourcedMaterials.map((m: any) => (
+                        {outsourcedMaterials.map((m: WorkOrderMaterial) => (
                             <div key={m.id} className="flex items-center justify-between text-sm text-muted-foreground py-0.5">
                                 <span>{m.component_name}</span>
                                 <span>{Number(m.quantity_planned).toLocaleString('es-CL', { maximumFractionDigits: 4 })} {m.uom_name}</span>

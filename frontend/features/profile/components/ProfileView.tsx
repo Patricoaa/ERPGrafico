@@ -297,8 +297,8 @@ function PasswordChangeCard() {
             })
             toast.success("Contraseña actualizada exitosamente")
             form.reset()
-        } catch (err: any) {
-            toast.error(err?.response?.data?.detail || "Error al cambiar contraseña")
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error al cambiar contraseña")
         } finally {
             setSaving(false)
         }
@@ -410,8 +410,8 @@ function PersonalTab({
         ...payments.map(p => ({
             id: `pay-${p.id}`,
             date: p.date,
-            type: (p as any).payment_type,
-            typeLabel: (p as any).payment_type_display || (p as any).payment_type,
+            type: p.payment_type as 'SALARIO' | 'PREVIRED',
+            typeLabel: p.payment_type_display || p.payment_type,
             amount: p.amount,
             payroll_display_id: p.payroll_display_id || null,
             statusLabel: 'Pagado'
@@ -517,7 +517,7 @@ function PersonalTab({
             accessorKey: "remuneration_paid_status",
             header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Pago" />,
             cell: ({ row }) => {
-                const s = (row.original as any).remuneration_paid_status
+                const s = row.original.remuneration_paid_status
                 return (
                     <div className="flex justify-center">
                         <DataCell.Badge variant={s === 'PAID' ? 'success' : s === 'PARTIAL' ? 'warning' : 'outline'}>
@@ -542,11 +542,10 @@ function PersonalTab({
                     <DataCell.Action
                         icon={FileDown}
                         title="Descargar PDF"
-                        className="text-primary hover:text-primary hover:bg-primary/10"
                         onClick={async (e) => {
                             e.stopPropagation()
                             try {
-                                await downloadPayrollPdf(p.id, `${p.display_id}_${(p as any).period_label?.replace(' ', '_')}.pdf`)
+                                await downloadPayrollPdf(p.id, `${p.display_id}_${p.period_label?.replace(' ', '_')}.pdf`)
                                 toast.success("Liquidación descargada")
                             } catch {
                                 toast.error("Error al descargar")
@@ -713,7 +712,7 @@ function PersonalTab({
                                             facetedFilters={[{
                                                 column: "period_label",
                                                 title: "Período",
-                                                options: Array.from(new Set(payrolls.map(p => (p as any).period_label))).map(label => ({ label: label as string, value: label as string }))
+                                                options: Array.from(new Set(payrolls.map(p => p.period_label))).map(label => ({ label, value: label }))
                                             }]}
                                             renderSubComponent={(row) => {
                                                 const relatedPayments = unifiedPayments.filter(p => p.payroll_display_id === row.original.display_id)
@@ -774,8 +773,8 @@ function PinChangeCard() {
             })
             toast.success("PIN de Punto de Venta (POS) actualizado exitosamente")
             form.reset()
-        } catch (err: any) {
-            toast.error(err?.response?.data?.detail || "Error al cambiar PIN")
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error al cambiar PIN")
         } finally {
             setSaving(false)
         }

@@ -23,6 +23,7 @@ import { formatPlainDate } from '@/lib/utils'
 import { purchaseOrderActions } from '@/lib/actions/purchase-actions'
 import { saleOrderActions } from '@/lib/actions/sale-actions'
 import type { UserPermissions } from '@/types/actions'
+import { Order } from '../types'
 
 interface OrderActionPanelProps {
     open: boolean
@@ -39,7 +40,7 @@ export function OrderActionPanel({
     orderType,
     onActionComplete
 }: OrderActionPanelProps) {
-    const [order, setOrder] = useState<any>(null)
+    const [order, setOrder] = useState<Order | null>(null)
     const [loading, setLoading] = useState(true)
     const [userPermissions, setUserPermissions] = useState<UserPermissions | null>(null)
 

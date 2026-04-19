@@ -7,6 +7,7 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/types/partner"
 import { formatCurrency, formatPlainDate, cn } from "@/lib/utils"
 import {
     Calendar,
@@ -33,7 +34,6 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 interface ProfitDistributionsTabProps {
     /** Whether the new-distribution flow should open on mount (driven by URL ?modal=new-distribution) */
     initialFlowOpen?: boolean
-    initialFlowOpen?: boolean
     /** Callback to clear the modal query param in the URL when the flow closes */
     onModalClose?: () => void
 }
@@ -41,12 +41,12 @@ interface ProfitDistributionsTabProps {
 export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose }: ProfitDistributionsTabProps) {
     // Unified state to prevent fragmented updates
     const [state, setState] = useState({
-        distributions: [] as any[],
+        distributions: [] as ProfitDistribution[],
         loading: true,
         isFlowOpen: false,
         isMassPaymentOpen: false,
-        selectedResolution: null as any,
-        viewingDist: null as any
+        selectedResolution: null as ProfitDistribution | null,
+        viewingDist: null as ProfitDistribution | null
     })
 
     const isMounted = useRef(false)
@@ -99,7 +99,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose }
         fetchDistributions()
     }
 
-    const handleExecute = async (resolution: any) => {
+    const handleExecute = async (resolution: ProfitDistribution) => {
         if (!confirm(`¿Está seguro de ejecutar la resolución del año ${resolution.fiscal_year}? Esto generará los asientos contables finales y las transacciones de los socios.`)) return
 
         setState(prev => ({ ...prev, loading: true }))
@@ -107,9 +107,9 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose }
             await partnersApi.executeProfitDistribution(resolution.id)
             toast.success("Distribución ejecutada exitosamente.")
             fetchDistributions()
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error)
-            const detail = error.response?.data?.detail || error.message || "Error al ejecutar la resolución"
+            const detail = (error as any).response?.data?.detail || (error as Error).message || "Error al ejecutar la resolución"
             toast.error(detail)
         } finally {
             setState(prev => ({ ...prev, loading: false }))
@@ -136,7 +136,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose }
         }
     }
 
-    const columns = useMemo<ColumnDef<any>[]>(() => [
+    const columns = useMemo<ColumnDef<ProfitDistribution>[]>(() => [
         {
             accessorKey: "fiscal_year",
             header: () => <div className="text-center">Año Fiscal</div>,
@@ -169,7 +169,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose }
             header: () => <div className="text-center">Distribución por Destino</div>,
             cell: ({ row }) => {
                 const dist = row.original
-                const totals = (dist.lines || []).reduce((acc: any, line: any) => {
+                const totals = (dist.lines || []).reduce((acc, line) => {
                     const amount = parseFloat(line.net_amount) || 0;
                     const dest = line.destination;
                     if (dest === 'DIVIDEND') acc.dividends += amount;
@@ -236,7 +236,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose }
                 )
             }
         },
-        createActionsColumn<any>({
+        createActionsColumn<ProfitDistribution>({
             renderActions: (dist) => {
                 if (dist.status === 'CANCELLED') return (
                     <DataCell.Action icon={Eye} title="Ver Detalle" onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))} />
@@ -256,7 +256,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose }
                             <DataCell.Action icon={Play} title="Ejecutar Contablemente" className="text-primary" onClick={() => handleExecute(dist)} />
                         )}
                         
-                        {dist.status === 'EXECUTED' && (dist.lines?.some((l: any) => l.destination === 'DIVIDEND')) && (
+                        {dist.status === 'EXECUTED' && (dist.lines?.some((l) => l.destination === 'DIVIDEND')) && (
                             <DataCell.Action icon={Wallet} title="Pagar Dividendos" className="text-primary" onClick={() => {
                                 setState(prev => ({ ...prev, selectedResolution: dist, isMassPaymentOpen: true }))
                             }} />

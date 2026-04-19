@@ -29,6 +29,8 @@ import api from "@/lib/api"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
+import { Partner } from "@/features/contacts/types/partner"
+import { Product } from "@/features/inventory/types"
 
 interface InventoryContributionModalProps {
     open: boolean
@@ -37,11 +39,7 @@ interface InventoryContributionModalProps {
     preSelectedPartnerId?: number
 }
 
-interface Partner {
-    id: number
-    name: string
-    tax_id: string
-}
+
 
 interface Warehouse {
     id: number
@@ -74,7 +72,7 @@ export function InventoryContributionModal({
     const [uomId, setUomId] = useState("")
     const [unitCost, setUnitCost] = useState("0")
     const [description, setDescription] = useState("")
-    const [productDetails, setProductDetails] = useState<any>(null)
+    const [productDetails, setProductDetails] = useState<Product | null>(null)
 
     // Load initial data
     useEffect(() => {
@@ -83,10 +81,10 @@ export function InventoryContributionModal({
             try {
                 const [pData, wRes] = await Promise.all([
                     partnersApi.getPartners(),
-                    api.get('/inventory/warehouses/')
+                    api.get<{ results?: Warehouse[] } | Warehouse[]>('/inventory/warehouses/')
                 ])
                 setPartners(pData)
-                const wData = wRes.data.results || wRes.data
+                const wData = 'results' in wRes.data ? wRes.data.results : wRes.data
                 setWarehouses(Array.isArray(wData) ? wData : [])
             } catch {
                 toast.error("Error cargando datos")
@@ -110,20 +108,22 @@ export function InventoryContributionModal({
             setUomId("")
             return
         }
-        api.get(`/inventory/products/${productId}/`)
+        api.get<Product>(`/inventory/products/${productId}/`)
             .then(res => {
                 const data = res.data
                 setProductDetails(data)
                 setUnitCost(data.cost_price?.toString() || "0")
 
                 if (data.uom_category) {
-                    return api.get(`/inventory/uoms/?category=${data.uom_category}`)
+                    return api.get<{ results?: UoM[] } | UoM[]>(`/inventory/uoms/?category=${data.uom_category}`)
                         .then(uomRes => {
-                            const uoms = uomRes.data.results || uomRes.data
-                            setProductUoMs(uoms)
-                            const baseId = typeof data.uom === 'object' ? data.uom.id : data.uom
-                            const base = uoms.find((u: UoM) => u.id === baseId)
-                            if (base) setUomId(base.id.toString())
+                            const uoms = 'results' in uomRes.data ? uomRes.data.results : uomRes.data
+                            if (uoms) {
+                                setProductUoMs(uoms)
+                                const baseId = typeof data.uom === 'object' ? data.uom.id : data.uom
+                                const base = uoms.find((u: UoM) => u.id === baseId)
+                                if (base) setUomId(base.id.toString())
+                            }
                         })
                 }
             })

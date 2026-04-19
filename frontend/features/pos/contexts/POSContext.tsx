@@ -4,23 +4,11 @@
 // Centralized state management for the POS system
 
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect, useMemo } from 'react'
-import type { Product, CartItem, Category, UoM, POSSession, BOMCache, ComponentCache, BOM } from '@/types/pos'
+import type { Product, CartItem, Category, UoM, POSSession, BOMCache, ComponentCache, BOM, WizardState, Customer } from '@/types/pos'
 import * as CartUtils from '@/lib/pos/cart-utils'
 import api from '@/lib/api'
 
-export interface WizardState {
-    step: number
-    dteData?: any
-    paymentData?: any
-    deliveryData?: any
-    approvalTaskId?: number | null
-    isWaitingApproval?: boolean
-    isApproved?: boolean
-    isLoading?: boolean
-    isQuickSale?: boolean
-    selectedCustomerName?: string
-    selectedCustomerId?: string | number
-}
+
 
 interface POSContextValue {
     // Session
@@ -39,8 +27,8 @@ interface POSContextValue {
     items: CartItem[]
     selectedCustomerId: number | null
     setSelectedCustomerId: (id: number | null) => void
-    selectedCustomer: any | null
-    setSelectedCustomer: (customer: any | null) => void
+    selectedCustomer: Customer | null
+    setSelectedCustomer: (customer: Customer | null) => void
     totalDiscountAmount: number
     setTotalDiscountAmount: (amount: number) => void
 
@@ -94,7 +82,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
     // Cart State
     const [items, setItems] = useState<CartItem[]>([])
     const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null)
-    const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null)
+    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
     const [defaultCustomerId, setDefaultCustomerId] = useState<number | null>(null)
     const [totalDiscountAmount, setTotalDiscountAmount] = useState<number>(0)
 
@@ -109,7 +97,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
             try {
                 const response = await api.get('/contacts/?is_default_customer=true')
                 const results = response.data.results || response.data
-                const defaultCustomer = results.find((c: { id: number; is_default_customer: boolean }) => c.is_default_customer)
+                const defaultCustomer = results.find((c: Customer) => c.is_default_customer)
                 if (defaultCustomer) {
                     setDefaultCustomerId(defaultCustomer.id)
                     // Only set as selected if none is already selected (prevents overwriting draft loads)

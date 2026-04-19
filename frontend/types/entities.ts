@@ -76,7 +76,9 @@ export interface Product {
     mfg_default_delivery_days?: number
     parent_template?: number | null
     attribute_values?: number[]
+    attribute_values_data?: ProductAttributeValue[]
     variant_display_name?: string
+    has_active_bom?: boolean
 
     // Subscription fields
     recurrence_period?: string
@@ -197,6 +199,27 @@ export interface UoM {
     name: string
     category: number
     ratio: number
+    uom_type?: string
+}
+
+export interface ProductMinimal {
+    id: number | string
+    name: string
+    code?: string
+    internal_code?: string
+    variant_display_name?: string
+    product_type?: string
+    uom?: UoM | number | string
+    uom_name?: string
+    uom_category?: number
+    cost_price?: number | string
+    last_purchase_price?: string | number
+    purchase_uom?: number | string
+    has_variants?: boolean
+    track_inventory?: boolean
+    requires_bom_validation?: boolean
+    requires_advanced_manufacturing?: boolean
+    mfg_auto_finalize?: boolean
 }
 
 // ─── User ────────────────────────────────────────────────
@@ -257,4 +280,45 @@ export interface NotificationRule {
     assigned_user?: number | null
     is_active: boolean
     send_email?: boolean
+}
+
+// ─── Pricing Rule ────────────────────────────────────────
+
+export interface PricingRule {
+    id: number
+    name: string
+    product?: number | null
+    is_category_rule?: boolean
+    start_date?: string | null
+    end_date?: string | null
+    min_quantity: number | string
+    rule_type: string
+    fixed_price?: number | string
+    discount_percentage?: number | string
+    active: boolean
+}
+
+// ─── Custom Field Template ────────────────────────────────
+
+export interface CustomFieldTemplate {
+    id: number
+    name: string
+    fields?: any[]
+}
+
+// ─── Product Category ────────────────────────────────
+
+export interface ProductCategory {
+    id: number
+    name: string
+    parent?: number | null
+}
+
+// ─── Warehouse ──────────────────────────────────────
+
+export interface Warehouse {
+    id: number
+    name: string
+    code?: string
+    is_active?: boolean
 }

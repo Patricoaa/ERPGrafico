@@ -19,6 +19,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { CommentSystem } from "@/components/shared/CommentSystem"
 import { formatPlainDate, cn } from "@/lib/utils"
+import type { WorkOrder } from "../types"
 
 interface Comment {
     user: string
@@ -27,10 +28,10 @@ interface Comment {
 }
 
 interface WizardRightSidebarProps {
-    order: any
+    order: WorkOrder
     viewingStepIndex: number
     productName: string
-    stageData: any
+    stageData: WorkOrder['stage_data']
     onAddComment: (text: string) => void
     comments: Comment[]
 }

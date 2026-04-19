@@ -13,6 +13,7 @@ import { DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { TableSkeleton } from "@/components/shared/TableSkeleton"
 
 interface BankStatement {
     id: number
@@ -73,16 +74,11 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
 
     const handleConfirmStatement = () => confirmAction.requestConfirm()
 
-    if (loading) {
-        return (
-            <div className="flex-1 p-8 pt-6">
-                <div className="flex flex-col items-center justify-center h-64 gap-3">
-                    <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
-                    <p className="text-muted-foreground text-sm font-medium">Preparando banco de trabajo...</p>
-                </div>
-            </div>
-        )
-    }
+    if (loading) return (
+        <div className="flex-1 p-8 pt-6">
+            <TableSkeleton rows={12} columns={5} />
+        </div>
+    )
 
     if (!statement) {
         return (

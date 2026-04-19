@@ -218,7 +218,7 @@ export function MappingConfigSheet({
 
                     <div className="flex items-center gap-3">
                         {hasChanges && (
-                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-[10px] uppercase font-black px-2 py-0.5 animate-pulse">
+                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-[10px] uppercase font-black px-2 py-0.5">
                                 Cambios Pendientes ({pendingChanges.size})
                             </Badge>
                         )}

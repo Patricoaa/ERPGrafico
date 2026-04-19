@@ -11,7 +11,7 @@ interface UseSalesSettingsReturn {
     settings: SalesSettings
     saving: boolean
     updateSettings: (payload: SalesSettingsUpdatePayload) => Promise<void>
-    refetch: () => Promise<any>
+    refetch: () => Promise<unknown>
     canApplyLineDiscount: boolean
     canApplyGlobalDiscount: boolean
 }

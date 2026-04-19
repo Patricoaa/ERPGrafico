@@ -40,7 +40,7 @@ export function ModuleSettingsSheet({
                 side="bottom"
                 hideOverlay={true}
                 hideCloseButton={true}
-                className="h-[85vh] sm:h-[90vh] p-0 border-t-0 bg-background rounded-t-[2.5rem] shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.25)] flex flex-col"
+                className="h-[85vh] sm:h-[90vh] p-0 border-t-0 bg-background rounded-t-xl shadow-[var(--shadow-overlay)] flex flex-col"
             >
                 {/* Visual Handle for "Drawer" feel */}
                 <div className="w-12 h-1.5 bg-muted-foreground/20 rounded-full mx-auto my-4 shrink-0 shadow-inner" />

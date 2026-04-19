@@ -1,3 +1,4 @@
+import { ProductCategory, Product } from "@/types/entities"
 
 import { cn } from "@/lib/utils"
 
@@ -93,7 +94,7 @@ const ICON_OPTIONS = [
 ]
 
 function RichIconSelector({ value, onChange }: { value: string, onChange: (val: string) => void }) {
-    const SelectedIcon = (LucideIcons as any)[value] || LucideIcons.Package
+    const SelectedIcon = (LucideIcons as Record<string, React.ElementType>)[value] || LucideIcons.Package
     const selectedLabel = ICON_OPTIONS.find(i => i.name === value)?.label || value
 
     return (
@@ -129,7 +130,7 @@ function RichIconSelector({ value, onChange }: { value: string, onChange: (val: 
                     </div>
                     <div className="h-[250px] overflow-y-auto p-1 grid grid-cols-2 gap-1">
                         {ICON_OPTIONS.map((item) => {
-                            const Icon = (LucideIcons as any)[item.name] || LucideIcons.Package
+                            const Icon = (LucideIcons as Record<string, React.ElementType>)[item.name] || LucideIcons.Package
                             const isSelected = value === item.name
                             return (
                                 <div
@@ -170,8 +171,8 @@ type CategoryFormValues = z.infer<typeof categorySchema>
 
 interface CategoryFormProps {
     auditSidebar?: React.ReactNode
-    onSuccess?: (category: any) => void
-    initialData?: any
+    onSuccess?: (category: ProductCategory) => void
+    initialData?: ProductCategory
     open?: boolean
     onOpenChange?: (open: boolean) => void
     triggerText?: React.ReactNode
@@ -189,7 +190,7 @@ export function CategoryForm({
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    const [categories, setCategories] = useState<any[]>([])
+    const [categories, setCategories] = useState<ProductCategory[]>([] )
 
     const form = useForm<CategoryFormValues>({
         resolver: zodResolver(categorySchema),
@@ -225,10 +226,10 @@ export function CategoryForm({
             if (initialData) {
                 form.reset({
                     ...initialData,
-                    parent: initialData.parent?.id?.toString() || initialData.parent?.toString() || "none",
-                    asset_account: initialData.asset_account?.id?.toString() || initialData.asset_account?.toString() || "none",
-                    income_account: initialData.income_account?.id?.toString() || initialData.income_account?.toString() || "none",
-                    expense_account: initialData.expense_account?.id?.toString() || initialData.expense_account?.toString() || "none",
+                    parent: (initialData.parent as { id?: number } | undefined)?.id?.toString() || initialData.parent?.toString() || "none",
+                    asset_account: (initialData.asset_account as { id?: number } | undefined)?.id?.toString() || initialData.asset_account?.toString() || "none",
+                    income_account: (initialData.income_account as { id?: number } | undefined)?.id?.toString() || initialData.income_account?.toString() || "none",
+                    expense_account: (initialData.expense_account as { id?: number } | undefined)?.id?.toString() || initialData.expense_account?.toString() || "none",
                 })
             } else {
                 form.reset({

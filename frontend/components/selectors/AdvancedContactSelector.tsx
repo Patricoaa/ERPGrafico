@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { useDebounce } from "@/hooks/use-debounce"
 import { formatRUT } from "@/lib/utils/format"
 import { useContactSearch } from "@/features/contacts/hooks/useContactSearch"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { Contact } from "@/types/entities"
 import React, { Suspense } from "react"
 
@@ -112,7 +113,7 @@ export function AdvancedContactSelector({
                 >
                     {selectedContact ? (
                         <div className="flex items-center gap-2 truncate text-left">
-                            <div className={cn("p-1.5 rounded-lg shrink-0", disabled ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary")}>
+                            <div className={cn("p-1.5 rounded-md shrink-0", disabled ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary")}>
                                 {selectedContact.contact_type === 'COMPANY' ? <Building2 className="h-4 w-4" /> : <User className="h-4 w-4" />}
                             </div>
                             <div className="flex flex-col items-start truncate leading-tight">
@@ -166,14 +167,12 @@ export function AdvancedContactSelector({
                         {searchLoading ? (
                             <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
                         ) : contacts.length === 0 ? (
-                            <div className="p-4 text-sm text-center text-muted-foreground flex flex-col items-center gap-2">
-                                <span>{searchTerm ? "No se encontraron contactos." : "Escriba para buscar..."}</span>
-                                {searchTerm && (
-                                    <span className="text-xs opacity-70 flex items-center justify-center gap-1 mt-1">
-                                        Presione el botón <Plus className="h-3 w-3 inline" /> para crear un nuevo contacto.
-                                    </span>
-                                )}
-                            </div>
+                            <EmptyState
+                                context="search"
+                                variant="compact"
+                                title={searchTerm ? "No se encontraron contactos" : "Escriba para buscar"}
+                                description={searchTerm ? "Use el botón + para crear un nuevo contacto." : undefined}
+                            />
                         ) : (
                             contacts.map((contact) => (
                                 <div

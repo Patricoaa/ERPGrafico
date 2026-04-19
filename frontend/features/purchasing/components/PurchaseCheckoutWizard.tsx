@@ -11,6 +11,8 @@ import { PurchaseOrderSummaryCard } from "./checkout/PurchaseOrderSummaryCard"
 import { PurchaseProcessSummarySidebar } from "./checkout/PurchaseProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
+import { PurchaseOrderAPI, CheckoutLine, DTEData, ReceiptData } from "../types"
+import { PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 
 import { PricingUtils } from "@/lib/pricing"
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
@@ -22,8 +24,8 @@ import { useServerDate } from "@/hooks/useServerDate"
 interface PurchaseCheckoutWizardProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    order: any | null
-    orderLines: any[]
+    order: PurchaseOrderAPI | null
+    orderLines: CheckoutLine[]
     total: number
     onComplete: () => void
     initialSupplierId?: string | null
@@ -42,10 +44,10 @@ export function PurchaseCheckoutWizard({
     initialWarehouseId = "",
     orderId = null
 }: PurchaseCheckoutWizardProps) {
-    const [internalOrder, setInternalOrder] = useState<any>(order)
+    const [internalOrder, setInternalOrder] = useState<PurchaseOrderAPI | null>(order)
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
-    const [currentOrderLines, setCurrentOrderLines] = useState<any[]>(orderLines)
+    const [currentOrderLines, setCurrentOrderLines] = useState<CheckoutLine[]>(orderLines)
     const [currentTotal, setCurrentTotal] = useState(total)
     const { dateString } = useServerDate()
 
@@ -102,7 +104,7 @@ export function PurchaseCheckoutWizard({
         // we might reset the user's progress in Step 1, which is what we are avoiding.
     }, [open])
 
-    const [dteData, setDteData] = useState({
+    const [dteData, setDteData] = useState<DTEData>({
         type: 'FACTURA',
         number: '',
         date: '',
@@ -136,15 +138,16 @@ export function PurchaseCheckoutWizard({
     const [selectedWarehouseId, setSelectedWarehouseId] = useState(initialWarehouseId)
     const [selectedWarehouseName, setSelectedWarehouseName] = useState("")
 
-    const [paymentData, setPaymentData] = useState({
-        method: '',
+    const [paymentData, setPaymentData] = useState<PaymentData>({
+        method: null,
         amount: total,
         transactionNumber: '',
         treasuryAccountId: null,
+        paymentMethodId: null,
         isPending: false
     })
 
-    const [receiptData, setReceiptData] = useState<any>({
+    const [receiptData, setReceiptData] = useState<ReceiptData>({
         type: 'IMMEDIATE',
         deliveryReference: '',
         notes: '',

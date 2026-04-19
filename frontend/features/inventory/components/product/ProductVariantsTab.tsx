@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState, useMemo } from "react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
@@ -16,6 +17,7 @@ import { SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 import { getErrorMessage } from "@/lib/errors"
+import { Product, ProductAttributeValue } from "@/types/entities"
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditForm } from "./BulkVariantEditForm"
@@ -24,8 +26,8 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface ProductVariantsTabProps {
     form: UseFormReturn<ProductFormValues>
-    initialData?: any
-    onEditVariant?: (variant: any) => void
+    initialData?: Partial<Product>
+    onEditVariant?: (variant: Product) => void
     onTabChange?: (tab: string) => void
 }
 
@@ -44,14 +46,14 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
     const [availableAttributes, setAvailableAttributes] = useState<Attribute[]>([])
     const [selectedValues, setSelectedValues] = useState<Record<number, number[]>>({})
     const [isGenerating, setIsGenerating] = useState(false)
-    const [variants, setVariants] = useState<any[]>([])
+    const [variants, setVariants] = useState<Product[]>([])
     const [isSheetOpen, setIsSheetOpen] = useState(false)
     const [isPendingGeneration, setIsPendingGeneration] = useState(false)
 
     // Master-Detail State
     const [selectedVariantIds, setSelectedVariantIds] = useState<number[]>([])
     const [activeEditVariantId, setActiveEditVariantId] = useState<number | null>(null)
-    const [variantToDelete, setVariantToDelete] = useState<any | null>(null)
+    const [variantToDelete, setVariantToDelete] = useState<Product | null>(null)
 
     useEffect(() => {
         fetchAttributes()
@@ -69,9 +71,9 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
             const attrs = attrRes.data.results || attrRes.data
             const vals = valRes.data.results || valRes.data
 
-            const enriched = attrs.map((a: any) => ({
+            const enriched = attrs.map((a: Attribute) => ({
                 ...a,
-                values: vals.filter((v: any) => v.attribute === a.id)
+                values: vals.filter((v: AttributeValue & { attribute: number }) => v.attribute === a.id)
             }))
             setAvailableAttributes(enriched)
         } catch (error) {
@@ -110,13 +112,13 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
             fetchVariants()
         } catch (error) {
             console.error("Failed to delete variant", error)
-            toast.error("Error al eliminar variante")
+            showApiError(error, "Error al eliminar variante")
         } finally {
             setVariantToDelete(null)
         }
     })
 
-    const handleDeleteVariant = (variant: any, e: React.MouseEvent) => {
+    const handleDeleteVariant = (variant: Product, e: React.MouseEvent) => {
         e.stopPropagation()
         setVariantToDelete(variant)
         deleteConfirm.requestConfirm()
@@ -155,7 +157,8 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
             setSelectedValues({})
             setIsSheetOpen(false)
         } catch (error: unknown) {
-            toast.error("Error al generar variantes", {
+            showApiError(error, "Error al generar variantes")
+            // {
                 description: getErrorMessage(error) || "Error desconocido"
             })
         } finally {
@@ -209,7 +212,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
     if (form.watch("parent_template")) {
         return (
             <TabsContent value="variants" className="mt-0 p-6 text-center space-y-4">
-                <div className="flex flex-col items-center justify-center py-12 bg-muted/20 rounded-lg border-2 border-dashed">
+                <div className="flex flex-col items-center justify-center py-12 bg-muted/20 rounded-md border-2 border-dashed">
                     <Layers className="h-12 w-12 text-muted-foreground mb-4" />
                     <h3 className="text-lg font-bold">Este producto es una variante</h3>
                     <p className="text-sm text-muted-foreground">
@@ -245,14 +248,14 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         variant="outline" 
                         size="sm" 
                         onClick={fetchVariants}
-                        className="text-xs rounded-lg border-primary/20 hover:bg-primary/5 font-bold"
+                        className="text-xs rounded-md border-primary/20 hover:bg-primary/5 font-bold"
                     >
                         <RefreshCw className="h-3.5 w-3.5 mr-2" /> Actualizar
                     </Button>
                     
                     <Button 
                         size="sm" 
-                        className="text-xs font-bold rounded-lg"
+                        className="text-xs font-bold rounded-md"
                         disabled={availableAttributes.length === 0}
                         onClick={() => setIsSheetOpen(true)}
                     >
@@ -284,11 +287,11 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                                 <div className="flex-1 overflow-y-auto pr-3 space-y-6 scrollbar-thin">
                                     {availableAttributes.map(attr => (
-                                        <div key={attr.id} className="space-y-4 p-5 border rounded-lg bg-card shadow-sm">
+                                        <div key={attr.id} className="space-y-4 p-5 border rounded-md bg-card shadow-sm">
                                             <Label className={cn(FORM_STYLES.label, "font-bold text-sm text-foreground/80 tracking-wide uppercase")}>{attr.name}</Label>
                                             <div className="grid grid-cols-2 gap-3">
                                                 {attr.values.map(val => (
-                                                    <div key={val.id} className="flex items-center space-x-3 p-3 rounded-lg border bg-background hover:bg-muted/30 hover:border-primary/50 transition-all">
+                                                    <div key={val.id} className="flex items-center space-x-3 p-3 rounded-md border bg-background hover:bg-muted/30 hover:border-primary/50 transition-all">
                                                         <Checkbox
                                                             id={`val-${val.id}`}
                                                             checked={selectedValues[attr.id]?.includes(val.id) || false}
@@ -307,7 +310,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
 
                                 <div className="shrink-0 mt-8 pt-6 border-t">
                                     <Button
-                                        className="w-full h-14 rounded-lg font-bold text-md shadow-md bg-primary hover:bg-primary/90 text-primary-foreground transition-colors"
+                                        className="w-full h-14 rounded-md font-bold text-md shadow-md bg-primary hover:bg-primary/90 text-primary-foreground transition-colors"
                                         onClick={handleGenerateVariants}
                                         disabled={isGenerating || availableAttributes.length === 0}
                                     >
@@ -331,7 +334,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                 
                 {/* Left: Master Table */}
                 <div className={cn(
-                    "flex-1 rounded-lg border bg-card/50 overflow-hidden flex flex-col transition-all duration-300",
+                    "flex-1 rounded-md border bg-card/50 overflow-hidden flex flex-col transition-all duration-300",
                     (activeEditVariant || selectedVariantIds.length > 0) ? "md:w-3/5 lg:w-2/3" : "w-full"
                 )}>
                     <div className="overflow-y-auto scrollbar-thin flex-1">
@@ -383,7 +386,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-xs truncate max-w-[150px]" title={v.variant_display_name || v.name}>{v.variant_display_name || v.name}</span>
                                                     <div className="flex gap-1 flex-wrap mt-1">
-                                                        {v.attribute_values_data?.slice(0, 2).map((av: any, valIndex: number) => (
+                                                        {v.attribute_values_data?.slice(0, 2).map((av: ProductAttributeValue, valIndex: number) => (
                                                             <span key={valIndex} className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-muted/50 border-border/50 text-muted-foreground">
                                                                 {av.value}
                                                             </span>
@@ -484,18 +487,18 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                             <BulkVariantEditForm 
                                 selectedVariants={selectedVariantsList}
                                 availableVariants={variants}
-                                onSaved={(updatedVariants: any[]) => {
+                                onSaved={(updatedVariants: Product[]) => {
                                     // Update local variants UI
                                     setVariants(prev => prev.map(v => {
-                                        const matching = updatedVariants.find((upd: any) => upd.id === v.id);
+                                        const matching = updatedVariants.find((upd: Product) => upd.id === v.id);
                                         return matching || v;
                                     }));
                                     
                                     // Add to form payload for main submit
                                     const currentUpdates = form.getValues("variant_updates") || [];
                                     let newUpdates = [...currentUpdates];
-                                    updatedVariants.forEach((uv: any) => {
-                                        newUpdates = [...newUpdates.filter((u: any) => u.id !== uv.id), uv];
+                                    updatedVariants.forEach((uv: Product) => {
+                                        newUpdates = [...newUpdates.filter((u: Product) => u.id !== uv.id), uv];
                                     });
                                     form.setValue("variant_updates", newUpdates, { shouldDirty: true });
                                     
@@ -506,13 +509,13 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         ) : activeEditVariant ? (
                             <VariantQuickEditForm 
                                 variant={activeEditVariant} 
-                                onSaved={(updatedVariant: any) => {
+                                onSaved={(updatedVariant: Product) => {
                                     // Update local variants UI
                                     setVariants(prev => prev.map(v => v.id === updatedVariant.id ? updatedVariant : v));
                                     
                                     // Add to form payload for main submit
                                     const currentUpdates = form.getValues("variant_updates") || [];
-                                    const newUpdates = [...currentUpdates.filter((u: any) => u.id !== updatedVariant.id), updatedVariant];
+                                    const newUpdates = [...currentUpdates.filter((u: Product) => u.id !== updatedVariant.id), updatedVariant];
                                     form.setValue("variant_updates", newUpdates, { shouldDirty: true });
                                 }}
                                 onCancel={() => setActiveEditVariantId(null)}

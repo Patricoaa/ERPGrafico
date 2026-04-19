@@ -3,12 +3,10 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { getPayrolls, createPayroll, getEmployees, deletePayroll, paySalary, payPrevired, createAdvance } from "@/lib/hr/api"
+import { CreatePayrollDialog } from "@/features/hr/components/CreatePayrollDialog"
+import { getPayrolls, deletePayroll, paySalary, payPrevired, createAdvance } from "@/lib/hr/api"
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
-import type { Payroll, Employee } from "@/types/hr"
+import type { Payroll } from "@/types/hr"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
@@ -16,45 +14,15 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import {
-    Dialog, DialogHeader, DialogTitle, DialogTrigger
-} from "@/components/ui/dialog"
-import { BaseModal } from "@/components/shared/BaseModal"
-import {
-    Form, FormControl, FormField, FormItem, FormLabel, FormMessage
-} from "@/components/ui/form"
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
-import {
-    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from "@/components/ui/table"
-import { Loader2, Plus, FileText, Eye, Trash2, Coins, CreditCard, Wallet } from "lucide-react"
+import { Loader2, Eye, Trash2, Coins, CreditCard, Wallet } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { cn } from "@/lib/utils"
 import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
-import { FORM_STYLES } from "@/lib/styles"
 import { PayrollDetailSheet } from "@/features/hr/components/payrolls/PayrollDetailSheet"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
-const MONTHS = [
-    { value: 1, label: "Enero" }, { value: 2, label: "Febrero" },
-    { value: 3, label: "Marzo" }, { value: 4, label: "Abril" },
-    { value: 5, label: "Mayo" }, { value: 6, label: "Junio" },
-    { value: 7, label: "Julio" }, { value: 8, label: "Agosto" },
-    { value: 9, label: "Septiembre" }, { value: 10, label: "Octubre" },
-    { value: 11, label: "Noviembre" }, { value: 12, label: "Diciembre" },
-]
 
-const createPayrollSchema = z.object({
-    employee: z.string().min(1, "Empleado requerido"),
-    period_year: z.string().min(1),
-    period_month: z.string().min(1),
-    notes: z.string().optional(),
-})
-type CreatePayrollValues = z.infer<typeof createPayrollSchema>
+// Schema and dialog moved to features/hr/components/CreatePayrollDialog
 
 export default function PayrollsPage() {
     const router = useRouter()
@@ -132,7 +100,7 @@ export default function PayrollsPage() {
         setDetailSheetOpen(true)
     }
 
-    const handleConfirmPayment = async (data: any) => {
+    const handleConfirmPayment = async (data: Record<string, unknown>) => {
         if (!selectedPayroll || !paymentMode) return
 
         try {
@@ -156,8 +124,8 @@ export default function PayrollsPage() {
             setPaymentMode(null)
             setSelectedPayroll(null)
             fetchPayrolls()
-        } catch (err: any) {
-            toast.error(err.response?.data?.detail || "Error al procesar")
+        } catch (err: unknown) {
+            toast.error((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Error al procesar")
         }
     }
 
@@ -192,7 +160,7 @@ export default function PayrollsPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Desc. Legales" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat((row.original as any).legal_deductions_worker || 0)} className="text-destructive text-[11px]" />
+                    <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).legal_deductions_worker || "0")} className="text-destructive text-[11px]" />
                 </div>
             ),
         },
@@ -201,7 +169,7 @@ export default function PayrollsPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Aporte Patr." className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat((row.original as any).employer_contribution || 0)} className="text-warning text-[11px]" />
+                    <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).employer_contribution || "0")} className="text-warning text-[11px]" />
                 </div>
             ),
         },
@@ -210,7 +178,7 @@ export default function PayrollsPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Otros Desc." className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat((row.original as any).other_deductions || 0)} className="text-muted-foreground text-[11px]" />
+                    <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).other_deductions || "0")} className="text-muted-foreground text-[11px]" />
                 </div>
             ),
         },
@@ -219,7 +187,7 @@ export default function PayrollsPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Anticipos" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Currency value={parseFloat((row.original as any).advances_total || 0)} className="text-primary text-[11px]" />
+                    <DataCell.Currency value={parseFloat((row.original as Payroll & Record<string, string>).advances_total || "0")} className="text-primary text-[11px]" />
                 </div>
             ),
         },
@@ -246,7 +214,7 @@ export default function PayrollsPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Remuneración" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <StatusBadge status={(row.original as any).remuneration_paid_status} />
+                    <StatusBadge status={(row.original as Payroll & Record<string, string>).remuneration_paid_status} />
                 </div>
             )
         },
@@ -255,7 +223,7 @@ export default function PayrollsPage() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Previred" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <StatusBadge status={(row.original as any).previred_paid_status} />
+                    <StatusBadge status={(row.original as Payroll & Record<string, string>).previred_paid_status} />
                 </div>
             )
         },
@@ -282,7 +250,7 @@ export default function PayrollsPage() {
                         />
                     )}
 
-                    {p.status === 'POSTED' && (p as any).remuneration_paid_status !== 'PAID' && (
+                    {p.status === 'POSTED' && (p as Payroll & Record<string, string>).remuneration_paid_status !== 'PAID' && (
                         <DataCell.Action
                             icon={Coins}
                             title="Registrar Pago Sueldo"
@@ -295,7 +263,7 @@ export default function PayrollsPage() {
                         />
                     )}
 
-                    {p.status === 'POSTED' && (p as any).previred_paid_status !== 'PAID' && (
+                    {p.status === 'POSTED' && (p as Payroll & Record<string, string>).previred_paid_status !== 'PAID' && (
                         <DataCell.Action
                             icon={CreditCard}
                             title="Pagar Previred"
@@ -383,194 +351,20 @@ export default function PayrollsPage() {
                         `Registrar Anticipo: ${selectedPayroll?.employee_name}`
                     }
                     total={
-                        paymentMode === 'SALARY' ? (selectedPayroll ? ((selectedPayroll as any).net_salary - ((selectedPayroll as any).advances_total || 0)) : 0) :
-                        paymentMode === 'PREVIRED' ? ((selectedPayroll as any)?.total_previred || 0) :
-                        ((selectedPayroll as any)?.net_salary || 0)
+                        paymentMode === 'SALARY' ? (selectedPayroll ? (Number((selectedPayroll as Payroll & Record<string, string>).net_salary) - Number((selectedPayroll as Payroll & Record<string, string>).advances_total || 0)) : 0) :
+                        paymentMode === 'PREVIRED' ? Number((selectedPayroll as Payroll & Record<string, string>)?.total_previred || 0) :
+                        Number((selectedPayroll as Payroll & Record<string, string>)?.net_salary || 0)
                     }
                     pendingAmount={
-                        paymentMode === 'SALARY' ? (selectedPayroll ? ((selectedPayroll as any).net_salary - ((selectedPayroll as any).advances_total || 0)) : 0) :
-                        paymentMode === 'PREVIRED' ? ((selectedPayroll as any)?.total_previred || 0) :
-                        ((selectedPayroll as any)?.net_salary || 0)
+                        paymentMode === 'SALARY' ? (selectedPayroll ? (Number((selectedPayroll as Payroll & Record<string, string>).net_salary) - Number((selectedPayroll as Payroll & Record<string, string>).advances_total || 0)) : 0) :
+                        paymentMode === 'PREVIRED' ? Number((selectedPayroll as Payroll & Record<string, string>)?.total_previred || 0) :
+                        Number((selectedPayroll as Payroll & Record<string, string>)?.net_salary || 0)
                     }
                     onConfirm={handleConfirmPayment}
                 />
                 </>
             )}
         </div>
-    )
-}
-interface CreatePayrollDialogProps {
-    open: boolean
-    onOpenChange: (o: boolean) => void
-    onSaved: (id: number) => void
-    trigger?: React.ReactNode
-}
-
-function CreatePayrollDialog({ open, onOpenChange, onSaved, trigger }: CreatePayrollDialogProps) {
-    const [saving, setSaving] = useState(false)
-    const [employees, setEmployees] = useState<Employee[]>([])
-
-    useEffect(() => {
-        if (open) {
-            getEmployees({ status: 'ACTIVE' }).then(setEmployees).catch(() => toast.error("Error al cargar empleados"))
-        }
-    }, [open])
-
-    const currentYear = new Date().getFullYear()
-    const currentMonth = new Date().getMonth() + 1
-
-    const form = useForm<CreatePayrollValues>({
-        resolver: zodResolver(createPayrollSchema),
-        defaultValues: {
-            employee: "",
-            period_year: String(currentYear),
-            period_month: String(currentMonth),
-            notes: "",
-        }
-    })
-
-    const onSubmit = async (data: CreatePayrollValues) => {
-        setSaving(true)
-        try {
-            const created = await createPayroll({
-                employee: parseInt(data.employee) as any,
-                period_year: parseInt(data.period_year),
-                period_month: parseInt(data.period_month),
-                notes: data.notes || "",
-            })
-            toast.success("Liquidación creada")
-            onSaved(created.id)
-        } catch (e: any) {
-            const err = e?.response?.data
-            const msg = err?.non_field_errors?.[0] || err?.detail || "Error al crear liquidación"
-            toast.error(msg)
-        } finally {
-            setSaving(false)
-        }
-    }
-
-    return (
-        <BaseModal
-            open={open}
-            onOpenChange={onOpenChange}
-            title={
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                        <Plus className="h-5 w-5" />
-                    </div>
-                    <div className="flex flex-col text-left">
-                        <span className="text-lg font-bold tracking-tight">Nueva Liquidación</span>
-                        <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
-                            RRHH <span className="opacity-30">|</span> Emisión Mensual
-                        </div>
-                    </div>
-                </div>
-            }
-            footer={
-                <div className="flex justify-end gap-3 w-full">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        form="create-payroll-form"
-                        type="submit"
-                        disabled={saving}
-                        className="rounded-lg text-xs font-bold transition-all shadow-lg shadow-primary/20"
-                    >
-                        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        <FileText className="mr-2 h-3.5 w-3.5" />
-                        Crear Liquidación
-                    </Button>
-                </div>
-            }
-        >
-            <Form {...form}>
-                <form 
-                    id="create-payroll-form"
-                    onSubmit={form.handleSubmit(onSubmit)} 
-                    className="space-y-4 py-2 text-left"
-                >
-                    <FormField control={form.control} name="employee" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className={FORM_STYLES.label}>Empleado</FormLabel>
-                            <Select value={field.value} onValueChange={field.onChange}>
-                                <FormControl>
-                                    <SelectTrigger className="rounded-lg h-11 focus:ring-primary/20">
-                                        <SelectValue placeholder="Seleccionar empleado..." />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent className="rounded-lg">
-                                    {employees.map(e => (
-                                        <SelectItem key={e.id} value={String(e.id)} className="rounded-lg">
-                                            {e.contact_detail?.name} — {e.contact_detail?.tax_id}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage className="text-[10px]" />
-                        </FormItem>
-                    )} />
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="period_year" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Año</FormLabel>
-                                <Select value={field.value} onValueChange={field.onChange}>
-                                    <FormControl>
-                                        <SelectTrigger className="rounded-lg h-11 focus:ring-primary/20">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent className="rounded-lg">
-                                        {[currentYear - 1, currentYear, currentYear + 1].map(y => (
-                                            <SelectItem key={y} value={String(y)} className="rounded-lg">{y}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage className="text-[10px]" />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="period_month" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Mes</FormLabel>
-                                <Select value={field.value} onValueChange={field.onChange}>
-                                    <FormControl>
-                                        <SelectTrigger className="rounded-lg h-11 focus:ring-primary/20">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent className="rounded-lg">
-                                        {MONTHS.map(m => (
-                                            <SelectItem key={m.value} value={String(m.value)} className="rounded-lg">{m.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage className="text-[10px]" />
-                            </FormItem>
-                        )} />
-                    </div>
-
-                    <FormField control={form.control} name="notes" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className={FORM_STYLES.label}>Notas (Opcional)</FormLabel>
-                            <FormControl>
-                                <Input 
-                                    {...field} 
-                                    className="rounded-lg h-11 focus:ring-primary/20" 
-                                    placeholder="Información adicional..."
-                                />
-                            </FormControl>
-                            <FormMessage className="text-[10px]" />
-                        </FormItem>
-                    )} />
-                </form>
-            </Form>
-        </BaseModal>
     )
 }
 

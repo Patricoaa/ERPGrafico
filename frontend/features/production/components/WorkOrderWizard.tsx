@@ -187,10 +187,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         if (task.assigned_to === user.id) return true
 
         // Group assignment
-        const userGroups = (user as { groups?: (string | number)[] })?.groups as (string | number)[] | undefined;
+        const userGroups = user.groups
         if (userGroups) {
-            return userGroups.some((g: string | number) => {
-                const groupName = typeof g === 'string' ? g.toLowerCase() : String(g).toLowerCase()
+            return userGroups.some((g) => {
+                const groupName = g.toLowerCase()
 
                 return (
                     // Match by name (case-insensitive)

@@ -22,26 +22,8 @@ import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
-const inventorySchema = z.object({
-    // Inventory accounts by type
-    storable_inventory_account: z.string().nullable(),
-    manufacturable_inventory_account: z.string().nullable(),
-    default_consumable_account: z.string().nullable(),
-    // Bridge accounts
-    stock_input_account: z.string().nullable(),
-    stock_output_account: z.string().nullable(),
-    // Adjustment accounts
-    adjustment_income_account: z.string().nullable(),
-    adjustment_expense_account: z.string().nullable(),
-    revaluation_account: z.string().nullable(),
-    // COGS accounts
-    merchandise_cogs_account: z.string().nullable(),
-    manufactured_cogs_account: z.string().nullable(),
-    // Valuation method
-    inventory_valuation_method: z.string(),
-})
-
-type InventoryFormValues = z.infer<typeof inventorySchema>
+import { inventorySchema, type InventoryFormValues } from "./InventorySettingsView.schema"
+import { UseFormReturn, Path } from "react-hook-form"
 
 interface InventorySettingsViewProps {
     activeTab: string
@@ -82,11 +64,11 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
             const keys = Object.keys(inventorySchema.shape) as (keyof InventoryFormValues)[]
 
             keys.forEach((key) => {
-                const val = settings[key as keyof typeof settings]
+                const val = settings[key]
                 if (val === null || val === undefined) {
-                    formattedSettings[key] = (key === 'inventory_valuation_method' ? "AVERAGE" : null) as never
+                    (formattedSettings as Record<string, unknown>)[key] = (key === 'inventory_valuation_method' ? "AVERAGE" : null)
                 } else {
-                    formattedSettings[key] = val.toString() as never
+                    (formattedSettings as Record<string, unknown>)[key] = val.toString()
                 }
             })
 
@@ -230,8 +212,8 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
 export default InventorySettingsView
 
 interface AccountFieldProps {
-    form: any
-    name: string
+    form: UseFormReturn<InventoryFormValues>
+    name: Path<InventoryFormValues>
     label: string
     accountType: string
 }

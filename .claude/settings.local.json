@@ -13,7 +13,17 @@
       "Bash(docker exec *)",
       "Bash(npx tsc *)",
       "Bash(grep -E \"\\\\.\\(tsx?|jsx?\\)$\")",
-      "Bash(xargs grep *)"
+      "Bash(xargs grep *)",
+      "Bash(grep -B3 -A5 \"useEffect\\(\\(\\).*=>.*{$\" frontend/features/billing/components/checkout/Step2_Logistics.tsx)",
+      "Bash(grep -rn \"useEffect.*\\\\[\\\\w\\\\+\\\\].*{$\\\\|useEffect\\(\\(\\) => { if\" frontend/features --include=\"*.tsx\")",
+      "Bash(node -e \"const p = require\\('@tanstack/react-table/package.json'\\); console.log\\(p.version\\)\")",
+      "Bash(npm view *)",
+      "WebFetch(domain:github.com)",
+      "Bash(find /c/Users/patox/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/app -name \"loading.tsx\" -exec echo {} \\\\;)",
+      "Bash(find /c/Users/patox/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) ! -path \"*/.next/*\" -exec grep -l \"Skeleton\" {} \\\\;)",
+      "Bash(find /c/Users/patox/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) ! -path \"*/.next/*\" -exec grep -l \"Loader2\\\\|LoadingSpinner\\\\|CircleNotch\" {} \\\\;)",
+      "Bash(find . -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) ! -path \"*/.next/*\" -exec grep -l \"Skeleton\" {} \\\\;)",
+      "Bash(find . -type f -name \"*.tsx\" ! -path \"*/.next/*\" ! -path \"*/node_modules/*\" -exec grep -l \"Skeleton\" {} \\\\;)"
     ]
   }
 }

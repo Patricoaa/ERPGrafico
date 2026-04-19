@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import type { SaleOrder, SaleOrderFilters, SaleOrderPayload } from '../types'
+import type { SaleOrder, SaleOrderFilters, SaleOrderPayload, SaleNote } from '../types'
 import { Invoice } from '@/features/billing/types'
 
 /**
@@ -55,7 +55,7 @@ export const salesApi = {
     /**
      * Fetch sales notes (credit/debit notes associated with orders)
      */
-    getSalesNotes: async (filters?: { date_after?: string, date_before?: string }): Promise<Invoice[]> => {
+    getSalesNotes: async (filters?: { date_after?: string, date_before?: string }): Promise<SaleNote[]> => {
         const params = new URLSearchParams()
         params.append('dte_type__in', 'NOTA_CREDITO,NOTA_DEBITO')
         params.append('sale_order__isnull', 'true') // Actually false in logic: sale_order__isnull=false means it HAS a sale order. In Django filter: sale_order__isnull=false. 
@@ -90,7 +90,7 @@ export const salesApi = {
         const results = data.results || data
         // Client-side filtering was also done in original code:
         /*
-             const salesNotes = results.filter((inv: any) =>
+             const salesNotes = results.filter((inv: Invoice) =>
                  ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && inv.sale_order
              )
         */

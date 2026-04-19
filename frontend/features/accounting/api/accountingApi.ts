@@ -1,5 +1,5 @@
 import api from '@/lib/api'
-import type { Account, AccountFilters, AccountPayload } from '../types'
+import type { Account, AccountFilters, AccountPayload, FiscalYear } from '../types'
 
 export const accountingApi = {
     getAccounts: async (filters?: AccountFilters): Promise<Account[]> => {
@@ -36,14 +36,14 @@ export const accountingApi = {
         return response.data
     },
 
-    updateSettings: async (data: any) => {
+    updateSettings: async (data: Record<string, unknown>) => {
         const response = await api.patch('/accounting/settings/current/', data)
         return response.data
     },
 
-    getFiscalYears: async (params?: any): Promise<any[]> => {
-        const { data } = await api.get<{ results: any[] }>('/accounting/fiscal-years/', { params })
-        return data.results || data
+    getFiscalYears: async (params?: Record<string, unknown>): Promise<FiscalYear[]> => {
+        const { data } = await api.get<{ results: FiscalYear[] }>('/accounting/fiscal-years/', { params })
+        return data.results || (data as unknown as FiscalYear[])
     },
 
     updateAccountMappings: async (updates: Array<{ id: number; field: string; value: string | null }>): Promise<void> => {

@@ -5,8 +5,7 @@ import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import Link from "next/link"
-import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { Banknote, Landmark, History, FileText, BarChart3, Wand2, Plus, Upload } from "lucide-react"
+
 
 // Lazy load feature components
 const TreasuryMovementsClientView = lazy(() => import("@/features/treasury").then(m => ({ default: m.TreasuryMovementsClientView })))
@@ -16,7 +15,7 @@ const ReconciliationDashboard = lazy(() => import("@/features/finance/bank-recon
 const ReconciliationRules = lazy(() => import("@/features/finance/bank-reconciliation/components").then(m => ({ default: m.ReconciliationRules })))
 const TreasurySettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.TreasurySettingsView })))
 import { SettingsSheetRouteWrapper } from "@/components/shared"
-import { Settings2 } from "lucide-react"
+
 
 export const metadata: Metadata = {
     title: "Módulo de Tesorería | ERPGrafico",
@@ -150,7 +149,7 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
                 titleActions={config.showAction && config.actionHref && (
                     <Link href={config.actionHref}>
                         <PageHeaderButton
-                            iconName={config.actionIcon as any}
+                            iconName={config.actionIcon}
                             circular
                             title={config.actionTitle}
                         />

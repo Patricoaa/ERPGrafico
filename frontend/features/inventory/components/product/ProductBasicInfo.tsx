@@ -1,4 +1,5 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -11,10 +12,11 @@ import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { BarcodeDialog } from "@/features/inventory/components/BarcodeDialog"
 import { useState } from "react"
+import { ProductCategory } from "@/types/entities"
 
 export interface ProductBasicInfoProps {
     form: UseFormReturn<ProductFormValues>
-    categories: any[]
+    categories: ProductCategory[]
     isEditing: boolean
     onAddCategory: () => void
 }
@@ -94,7 +96,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                                 type="button"
                                                 variant="outline"
                                                 size="icon"
-                                                className="shrink-0 h-10 w-10 rounded-lg"
+                                                className="shrink-0 h-10 w-10 rounded-md"
                                                 onClick={() => setIsBarcodeDialogOpen(true)}
                                                 title="Gestionar Código de Barras"
                                             >
@@ -131,7 +133,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                                         variant="outline"
                                                         role="combobox"
                                                         disabled={isEditing}
-                                                        className={cn("w-full justify-between font-normal h-10 rounded-lg", !field.value && "text-muted-foreground", FORM_STYLES.input)}
+                                                        className={cn("w-full justify-between font-normal h-10 rounded-md", !field.value && "text-muted-foreground", FORM_STYLES.input)}
                                                     >
                                                         {field.value
                                                             ? categories.find((cat) => cat.id.toString() === field.value.toString())?.name
@@ -180,9 +182,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                                             </div>
                                                         ))}
                                                         {categories.length === 0 && (
-                                                            <div className="p-4 text-sm text-center text-muted-foreground">
-                                                                No hay categorías
-                                                            </div>
+                                                            <EmptyState context="inventory" variant="compact" title="Sin categorías" />
                                                         )}
                                                     </div>
                                                 </div>
@@ -193,7 +193,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                                 type="button"
                                                 variant="outline"
                                                 size="icon"
-                                                className="shrink-0 h-10 w-10 rounded-lg"
+                                                className="shrink-0 h-10 w-10 rounded-md"
                                                 onClick={onAddCategory}
                                                 title="Nueva Categoría"
                                             >

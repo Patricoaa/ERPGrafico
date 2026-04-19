@@ -78,7 +78,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
 
     // Form & Actions state
     const [isFormOpen, setIsFormOpen] = useState(false)
-    const [editingProduct, setEditingProduct] = useState<any>(null)
+    const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<{ id: number, name: string } | null>(null)
     const [isHistoryOpen, setIsHistoryOpen] = useState(false)
@@ -111,7 +111,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             setSubscriptions(response.data.results || response.data)
         } catch (error) {
             console.error("Error fetching subscriptions:", error)
-            toast.error("Error al cargar suscripciones")
+            showApiError(error, "Error al cargar suscripciones")
         } finally {
             setLoading(false)
         }
@@ -170,7 +170,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             setIsConfirmModalOpen(false)
             setIsRestrictionsDialogOpen(false)
         } catch (error: unknown) {
-            const err = error as any;
+            const err = error as { response?: { status: number, data?: { restrictions: Restriction[] } } };
             if (err.response?.status === 400 && err.response?.data?.restrictions) {
                 setRestrictions(err.response.data.restrictions)
                 setIsRestrictionsDialogOpen(true)
@@ -193,7 +193,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             setIsFormOpen(true)
         } catch (error) {
             console.error("Error fetching product details:", error)
-            toast.error("Error al cargar detalles del producto")
+            showApiError(error, "Error al cargar detalles del producto")
         }
     }, [])
 
@@ -419,7 +419,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             fetchSubscriptions()
             fetchStats()
         } catch (error) {
-            toast.error("Error al pausar suscripciones")
+            showApiError(error, "Error al pausar suscripciones")
         }
     }
 
@@ -431,7 +431,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             fetchSubscriptions()
             fetchStats()
         } catch (error) {
-            toast.error("Error al reactivar suscripciones")
+            showApiError(error, "Error al reactivar suscripciones")
         }
     }
 
@@ -442,7 +442,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
             setSelectedRows({})
             fetchSubscriptions()
         } catch (error) {
-            toast.error("Error al archivar suscripciones")
+            showApiError(error, "Error al archivar suscripciones")
         }
     }
 

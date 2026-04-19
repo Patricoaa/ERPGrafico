@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { showApiError } from "@/lib/errors"
 import type { BankStatement, ReconciliationRule, TreasuryAccount } from "../types"
 
 export function useReconciliation() {
@@ -13,7 +14,7 @@ export function useReconciliation() {
             return res.data
         } catch (error) {
             console.error('Error fetching statements:', error)
-            toast.error('Error al cargar cartolas')
+            showApiError(error, 'Error al cargar cartolas')
             return []
         } finally {
             setLoading(false)
@@ -26,6 +27,7 @@ export function useReconciliation() {
             return res.data as TreasuryAccount[]
         } catch (error) {
             console.error('Error fetching accounts:', error)
+            showApiError(error, 'Error al cargar cuentas')
             return []
         }
     }, [])
@@ -37,7 +39,7 @@ export function useReconciliation() {
             return res.data as ReconciliationRule[]
         } catch (error) {
             console.error('Error fetching rules:', error)
-            toast.error('Error al cargar reglas')
+            showApiError(error, 'Error al cargar reglas')
             return []
         } finally {
             setLoading(false)
@@ -56,7 +58,7 @@ export function useReconciliation() {
             }
             return true
         } catch (error) {
-            toast.error('Error al guardar regla')
+            showApiError(error, 'Error al guardar regla')
             return false
         }
     }, [])
@@ -67,7 +69,7 @@ export function useReconciliation() {
             toast.success('Reglas predeterminadas creadas')
             return true
         } catch (error) {
-            toast.error('Error al crear reglas predeterminadas')
+            showApiError(error, 'Error al crear reglas predeterminadas')
             return false
         }
     }, [])

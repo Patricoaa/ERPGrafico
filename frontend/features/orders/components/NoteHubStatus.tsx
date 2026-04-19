@@ -4,9 +4,10 @@ import { translateStatus } from "@/lib/utils"
 import { getNoteHubStatuses } from "@/lib/order-status-utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { Order } from "../types"
 
 interface NoteHubStatusProps {
-    note: any
+    note: Order
 }
 
 export function NoteHubStatus({ note }: NoteHubStatusProps) {
@@ -22,10 +23,10 @@ export function NoteHubStatus({ note }: NoteHubStatusProps) {
                     icon={FileText}
                     status={statuses.origin || 'info'}
                     tooltip={(() => {
-                        const isNoteDocument = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(note.dte_type)
+                        const isNoteDocument = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(note.dte_type as string)
                         if (isNoteDocument) {
-                            const source = note.corrected_invoice?.display_id || note.corrected_invoice?.number || "Factura"
-                            const order = note.sale_order_number || note.purchase_order_number || ""
+                            const source = (note.corrected_invoice as any)?.display_id || note.corrected_invoice?.number || "Factura"
+                            const order = (note as any).sale_order_number || (note as any).purchase_order_number || ""
                             return `Origen: ${source}${order ? ` (${order})` : ''}`
                         }
                         return `Documento: ${translateStatus(note.status)}`
@@ -39,7 +40,7 @@ export function NoteHubStatus({ note }: NoteHubStatusProps) {
                     icon={Receipt}
                     status={statuses.billing || 'info'}
                     tooltip={(() => {
-                        const isNoteDocument = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(note.dte_type)
+                        const isNoteDocument = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(note.dte_type as string)
                         if (isNoteDocument && note.number && note.number !== 'Draft') {
                             const prefix = note.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND'
                             const num = note.number.toString().includes(prefix) ? note.number : `${prefix}-${note.number}`
@@ -55,7 +56,7 @@ export function NoteHubStatus({ note }: NoteHubStatusProps) {
                     size="sm"
                     icon={Banknote}
                     status={statuses.treasury || 'info'}
-                    tooltip={`Tesorería: ${translateStatus(note.payment_status || note.status)}`}
+                    tooltip={`Tesorería: ${translateStatus((note as any).payment_status || note.status)}`}
                 />
 
                 {/* Logistics */}

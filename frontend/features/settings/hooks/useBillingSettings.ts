@@ -9,7 +9,7 @@ interface UseBillingSettingsReturn {
     settings: BillingSettings
     saving: boolean
     updateSettings: (payload: BillingSettingsUpdatePayload) => Promise<void>
-    refetch: () => Promise<any>
+    refetch: () => Promise<unknown>
 }
 
 /**

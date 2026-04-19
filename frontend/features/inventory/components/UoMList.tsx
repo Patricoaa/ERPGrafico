@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 "use client"
 
 import React, { useEffect, useState, useMemo } from "react"
@@ -29,21 +30,7 @@ import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
-interface UoMCategory {
-    id: number
-    name: string
-}
-
-interface UoM {
-    id: number
-    name: string
-    category: number
-    category_name: string
-    uom_type: 'REFERENCE' | 'BIGGER' | 'SMALLER'
-    ratio: string
-    rounding: string
-    active: boolean
-}
+import { useUoMs, type UoM, type UoMCategory } from "@/features/inventory/hooks/useUoMs"
 
 interface UoMListProps {
     externalOpen?: boolean
@@ -59,7 +46,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
     const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
     const [isUoMModalOpen, setIsUoMModalOpen] = useState(false)
     const [currentUoM, setCurrentUoM] = useState<Partial<UoM>>({})
-    const [isSaving, setIsSaving] = useState(false)
+    // isSaving is handled by useUoMs
 
     const router = useRouter()
     const pathname = usePathname()
@@ -88,7 +75,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
             setCategories(resCats.data.results || resCats.data)
         } catch (error) {
             console.error(error)
-            toast.error("Error al cargar unidades de medida")
+            showApiError(error, "Error al cargar unidades de medida")
         } finally {
             setLoading(false)
         }
@@ -111,7 +98,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
             setIsUoMModalOpen(false)
             fetchData()
         } catch (error) {
-            toast.error("Error al guardar")
+            showApiError(error, "Error al guardar")
             console.error(error)
         } finally {
             setIsSaving(false)
@@ -124,7 +111,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
             toast.success("Eliminada correctamente")
             fetchData()
         } catch (error) {
-            toast.error("No se puede eliminar (puede estar en uso)")
+            showApiError(error, "No se puede eliminar (puede estar en uso)")
         }
     })
 
@@ -225,7 +212,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
             setSelectedRows({})
             fetchData()
         } catch (error) {
-            toast.error("Error al eliminar las unidades")
+            showApiError(error, "Error al eliminar las unidades")
         }
     }
 
@@ -235,7 +222,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
             <DataTable
                 columns={columns}
                 data={uoms}
-                isLoading={loading}
+                
                 cardMode
                 filterColumn="name"
                 searchPlaceholder="Buscar unidad..."
@@ -417,7 +404,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                                                             currentUoM.uom_type === opt.value && "bg-accent"
                                                         )}
                                                         onClick={() => {
-                                                            setCurrentUoM({ ...currentUoM, uom_type: opt.value as any })
+                                                            setCurrentUoM({ ...currentUoM, uom_type: opt.value as UoM['uom_type'] })
                                                             document.body.click()
                                                         }}
                                                     >

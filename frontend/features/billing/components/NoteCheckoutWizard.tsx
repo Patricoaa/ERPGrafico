@@ -43,18 +43,18 @@ export function NoteCheckoutWizard({
     const { dateString } = useServerDate()
 
     // Original Data
-    const [originalInvoice, setOriginalInvoice] = useState<any>(null)
+    const [originalInvoice, setOriginalInvoice] = useState<Record<string, unknown> | null>(null)
 
     // Wizard State (Accumulated Data)
-    const [selectedItems, setSelectedItems] = useState<any[]>([])
-    const [logisticsData, setLogisticsData] = useState<any>(null)
-    const [registrationData, setRegistrationData] = useState<any>({
+    const [selectedItems, setSelectedItems] = useState<Record<string, unknown>[]>([])
+    const [logisticsData, setLogisticsData] = useState<Record<string, unknown> | null>(null)
+    const [registrationData, setRegistrationData] = useState<Record<string, unknown>>({
         document_number: '',
         document_date: '',
         is_pending: false,
         attachment: null
     })
-    const [paymentData, setPaymentData] = useState<any>({
+    const [paymentData, setPaymentData] = useState<Record<string, unknown>>({
         method: '', // Blank means "Credit" if not selected? User wants implicit Credit.
         amount: 0,
         treasury_account_id: '',
@@ -71,7 +71,7 @@ export function NoteCheckoutWizard({
         item.has_bom
     )
 
-    const hasManufacturing = initialType === 'NOTA_DEBITO' && selectedItems.some((item: any) =>
+    const hasManufacturing = initialType === 'NOTA_DEBITO' && selectedItems.some((item: Record<string, unknown>) =>
         (item.product_type === 'MANUFACTURABLE' && item.requires_advanced_manufacturing) ||
         (item.product_type === 'MANUFACTURABLE' && !item.has_bom)
     );
@@ -116,7 +116,7 @@ export function NoteCheckoutWizard({
             setOriginalInvoice(invRes.data)
 
             // Initial Payment Amount default
-            setPaymentData((p: any) => ({ ...p, amount: invRes.data.total })) // Correct logic will happen when items are selected
+            setPaymentData((p: Record<string, unknown>) => ({ ...p, amount: invRes.data.total })) // Correct logic will happen when items are selected
 
         } catch (error: unknown) {
             console.error("Error initializing note wizard:", error)
@@ -130,13 +130,13 @@ export function NoteCheckoutWizard({
     // Sync date when server date arrives
     useEffect(() => {
         if (dateString && !registrationData.document_date) {
-            setRegistrationData((prev: any) => ({ ...prev, document_date: dateString }))
+            setRegistrationData((prev: Record<string, unknown>) => ({ ...prev, document_date: dateString }))
         }
     }, [dateString])
 
     // Update payment amount when totals change
     useEffect(() => {
-        setPaymentData((prev: any) => ({ ...prev, amount: total }))
+        setPaymentData((prev: Record<string, unknown>) => ({ ...prev, amount: total }))
     }, [total])
 
 
@@ -157,7 +157,7 @@ export function NoteCheckoutWizard({
         }
         else if (step === 5) {
             // ... (mfg items check)
-            const pendingItems = selectedItems.filter((line: any) =>
+            const pendingItems = selectedItems.filter((line: Record<string, unknown>) =>
                 (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing && !line.manufacturing_data) ||
                 (line.product_type === 'MANUFACTURABLE' && !line.has_bom && !line.manufacturing_data)
             )
@@ -240,7 +240,7 @@ export function NoteCheckoutWizard({
                     const { design_files, approval_file, ...rest } = i.manufacturing_data
                     cleanMfgData = {
                         ...rest,
-                        design_filenames: (design_files || []).map((f: any) => f.name),
+                        design_filenames: (design_files || []).map((f: File) => f.name),
                         approval_filename: approval_file ? approval_file.name : null
                     }
                 }
@@ -257,7 +257,7 @@ export function NoteCheckoutWizard({
             })))
 
             // Append manufacturing files per item
-            selectedItems.forEach((item: any, itemIdx: number) => {
+            selectedItems.forEach((item: Record<string, unknown>, itemIdx: number) => {
                 if (item.manufacturing_data) {
                     if (item.manufacturing_data.design_files) {
                         item.manufacturing_data.design_files.forEach((file: File, fileIdx: number) => {
@@ -375,7 +375,7 @@ export function NoteCheckoutWizard({
     if (requiresLogistics) stepsSequence.push('logistics')
     stepsSequence.push('dte', 'payment')
 
-    const stepToId: any = {
+    const stepToId: Record<number, string> = {
         1: 'items',
         5: 'manufacturing',
         2: 'logistics',
@@ -439,7 +439,7 @@ export function NoteCheckoutWizard({
                     {!isLastStep ? (
                         <Button
                             onClick={handleNext}
-                            className="w-40 h-12 font-bold shadow-lg hover:shadow-xl transition-all"
+                            className="w-40 h-12 font-bold shadow-md transition-all"
                             disabled={isStepLoading || (currentStepId === 'dte' && !isPeriodValid)}
                         >
                             Siguiente
@@ -448,7 +448,7 @@ export function NoteCheckoutWizard({
                     ) : (
                         <Button
                             onClick={handleFinish}
-                            className="w-48 h-12 bg-success hover:bg-success font-bold shadow-lg hover:shadow-xl transition-all"
+                            className="w-48 h-12 bg-success hover:bg-success font-bold shadow-md transition-all"
                             disabled={loading}
                         >
                             {loading ? (

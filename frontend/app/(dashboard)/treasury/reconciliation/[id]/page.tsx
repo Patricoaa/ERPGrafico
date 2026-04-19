@@ -10,6 +10,7 @@ import {
     ArrowLeft, FileText, Calendar, Banknote, TrendingUp, TrendingDown,
     Undo2, Info, AlertCircle, Loader2, CheckCircle2, GraduationCap
 } from "lucide-react"
+import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -193,7 +194,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             ),
             cell: ({ row }) => {
                 const state = row.getValue("reconciliation_state") as string
-                let variant: any = 'secondary'
+                let variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'warning' | 'success' = 'secondary'
                 let label = row.original.reconciliation_state_display
                 let tooltip = ""
 
@@ -255,16 +256,11 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         }),
     ]
 
-    if (loading) {
-        return (
-            <div className="flex-1 p-8 pt-6">
-                <div className="flex flex-col items-center justify-center h-64 gap-3">
-                    <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
-                    <p className="text-muted-foreground text-sm font-medium">Cargando detalles de la cartola...</p>
-                </div>
-            </div>
-        )
-    }
+    if (loading) return (
+        <div className="flex-1 p-8 pt-6">
+            <TableSkeleton rows={12} columns={5} />
+        </div>
+    )
 
     if (!statement) {
         return (

@@ -1,3 +1,4 @@
+import { showApiError } from "@/lib/errors"
 "use client"
 
 import React, { useEffect, useState, useMemo } from "react"
@@ -78,7 +79,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
     }
 
     const displayProducts = React.useMemo(() => {
-        const result: any[] = []
+        const result: Product[] = []
         products.forEach(p => {
             result.push(p)
             if (p.has_variants && expandedTemplates.has(p.id) && p.variants) {
@@ -118,7 +119,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
             setIsRestrictionsDialogOpen(false)
             setIsConfirmModalOpen(false)
         } catch (error: unknown) {
-            const err = error as any;
+            const err = error as { response?: { status?: number, data?: { restrictions: Restriction[] } } };
             if (err.response?.status === 400 && err.response?.data?.restrictions) {
                 setTargetProductName(targetProduct.name)
                 setRestrictions(err.response.data.restrictions)
@@ -168,7 +169,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 />
             ),
             cell: ({ row }) => {
-                const isChild = (row.original as any).is_child_variant;
+                const isChild = row.original.is_child_variant;
                 if (isChild) return null;
                 return (
                     <Checkbox
@@ -212,7 +213,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                 <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />
             ),
             cell: ({ row }) => {
-                const product = row.original as any;
+                const product = row.original;
                 const isChild = product.is_child_variant;
                 return (
                     <div className={cn("w-full flex items-center justify-center gap-2", isChild && "pl-8")}>
@@ -401,7 +402,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
             setSelectedRows({})
             refetch()
         } catch (error) {
-            toast.error(`Error al ${action} los productos.`)
+            showApiError(error, `Error al ${action} los productos.`)
         }
     }
 
@@ -527,7 +528,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                         </p>
 
                         {currentArchivingProduct?.active && currentArchivingProduct?.product_type === 'SUBSCRIPTION' && (
-                            <div className="bg-warning/10 border border-warning/10 p-3 rounded-lg flex gap-3 text-warning">
+                            <div className="bg-warning/10 border border-warning/10 p-3 rounded-md flex gap-3 text-warning">
                                 <AlertTriangle className="h-5 w-5 shrink-0" />
                                 <div className="text-xs">
                                     <p className="font-bold mb-1">Impacto en Suscripciones</p>

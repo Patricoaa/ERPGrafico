@@ -5,9 +5,7 @@ import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import Link from "next/link"
-import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { Store, ShoppingCart, Banknote, PieChart } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
 
 // Lazy load feature components
 const SalesOrdersClientView = lazy(() => import("@/features/sales").then(m => ({ default: m.SalesOrdersClientView })))
@@ -16,7 +14,7 @@ const CreditPortfolioView = lazy(() => import("@/features/credits").then(m => ({
 const BlacklistView = lazy(() => import("@/features/credits").then(m => ({ default: m.BlacklistView })))
 const SalesSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.SalesSettingsView })))
 import { SettingsSheetRouteWrapper } from "@/components/shared"
-import { Settings2 } from "lucide-react"
+
 
 export const metadata: Metadata = {
     title: "Módulo de Ventas | ERPGrafico",

@@ -29,10 +29,11 @@ import api from "@/lib/api"
 
 import { useRouter } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { Order, OrderLine } from "../types"
 
 interface ActionCategoryProps {
     category: CategoryType
-    order: any
+    order: Order
     userPermissions: string[]
     onActionSuccess?: () => void
     layout?: 'list' | 'grid' | 'flex'
@@ -98,7 +99,7 @@ export const ActionCategory = forwardRef(({
     const isPurchase = !!order?.supplier_name || !!order?.supplier || !!order?.purchase_order
 
     const resolvedInvoices = (order?.dte_type ? [order] : (order?.related_documents?.invoices || order?.invoices)) || []
-    const [viewConfig, setViewConfig] = useState<{ type: any, id: any } | null>(null)
+    const [viewConfig, setViewConfig] = useState<{ type: string, id: number | string } | null>(null)
 
     const handleActionClick = (actionId: string) => {
         if (!order) {
@@ -182,7 +183,7 @@ export const ActionCategory = forwardRef(({
 
     const handleAnnulDocument = async (force: boolean = false) => {
         const invoices = resolvedInvoices
-        const invoice = invoices.find((inv: any) => inv.number !== 'Draft' && inv.status !== 'CANCELLED')
+        const invoice = invoices.find((inv: Order) => inv.number !== 'Draft' && inv.status !== 'CANCELLED')
 
         if (!invoice) {
             toast.error("No se encontró un documento válido para anular")
@@ -246,7 +247,7 @@ export const ActionCategory = forwardRef(({
 
     const handleDeleteDraft = async () => {
         const invoices = resolvedInvoices
-        const draftInvoice = invoices.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')
+        const draftInvoice = invoices.find((inv: Order) => inv.status === 'DRAFT' || inv.number === 'Draft')
 
         if (!draftInvoice) {
             toast.error("No se encontró un borrador para eliminar")
@@ -276,7 +277,7 @@ export const ActionCategory = forwardRef(({
         })
     }
 
-    const handlePaymentConfirm = async (data: any) => {
+    const handlePaymentConfirm = async (data: Record<string, unknown>) => {
         setIsProcessing(true)
         try {
             const isInvoice = !!order?.dte_type
@@ -375,9 +376,9 @@ export const ActionCategory = forwardRef(({
                 <DocumentCompletionModal
                     open={true}
                     onOpenChange={closeModal}
-                    invoiceId={tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id}
-                    invoiceType={tempInvoiceId ? undefined : resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.dte_type}
-                    contactId={(order?.customer || order?.supplier)?.id || (isSale ? order?.customer_id : order?.supplier_id)}
+                    invoiceId={tempInvoiceId || resolvedInvoices?.find((inv: Order) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id}
+                    invoiceType={tempInvoiceId ? undefined : resolvedInvoices?.find((inv: Order) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.dte_type}
+                    contactId={((order?.customer || order?.supplier) as any)?.id || (isSale ? order?.customer_id : order?.supplier_id)}
                     isPurchase={isPurchase}
                     onComplete={async (invoiceId, formData) => {
                         if (!invoiceId || invoiceId === 'undefined') {
@@ -457,7 +458,7 @@ export const ActionCategory = forwardRef(({
                     open={true}
                     onOpenChange={closeModal}
                     orderId={order?.id}
-                    invoiceId={resolvedInvoices?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type))?.id}
+                    invoiceId={resolvedInvoices?.find((inv: Order) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.id}
                     initialType={activeModal === 'create-debit-note' ? 'NOTA_DEBITO' : 'NOTA_CREDITO'}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
@@ -492,7 +493,7 @@ export const ActionCategory = forwardRef(({
                     initialData={{
                         sale_order: order?.id?.toString(),
                         // Find the first manufacturable line that doesn't have an active OT
-                        sale_line: (order.lines || order.items || []).find((l: any) =>
+                        sale_line: (order.lines || order.items || []).find((l: OrderLine) =>
                             l.product_type === 'MANUFACTURABLE' &&
                             l.requires_advanced_manufacturing &&
                             !l.work_order_summary

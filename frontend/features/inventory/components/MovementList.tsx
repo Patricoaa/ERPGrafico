@@ -14,6 +14,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { cn } from "@/lib/utils"
+import { TransactionType } from "@/types/transactions"
 
 interface StockMove {
     id: number
@@ -41,7 +42,7 @@ interface MovementListProps {
 export function MovementList({ externalOpen, onExternalOpenChange }: MovementListProps) {
     const [moves, setMoves] = useState<StockMove[]>([])
     const [loading, setLoading] = useState(true)
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: TransactionType, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [showAdjustmentModal, setShowAdjustmentModal] = useState(false)
 
     const router = useRouter()

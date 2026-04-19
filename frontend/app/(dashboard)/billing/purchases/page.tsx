@@ -1,6 +1,7 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { useState, useEffect } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
@@ -37,24 +38,24 @@ interface PurchaseDocument {
     purchase_order?: number
     purchase_order_number?: string
     service_obligation?: number
-    service_obligation_data?: any
+    service_obligation_data?: Record<string, unknown>
     total: string
     status: string
     status_display?: string
     pending_amount?: number
-    serialized_payments?: any[]
+    serialized_payments?: Record<string, unknown>[]
     po_receiving_status?: string
-    related_stock_moves?: any[]
+    related_stock_moves?: Record<string, unknown>[]
     related_documents?: {
-        invoices: any[]
-        notes: any[]
-        receipts: any[]
-        payments: any[]
+        invoices: Record<string, unknown>[]
+        notes: Record<string, unknown>[]
+        receipts: Record<string, unknown>[]
+        payments: Record<string, unknown>[]
     }
 }
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" | "warning" }> = {
-    'DRAFT': { label: 'Folio Pendiente', variant: 'warning' as any },
+    'DRAFT': { label: 'Folio Pendiente', variant: 'warning' },
     'POSTED': { label: 'Publicado', variant: 'info' },
     'PAID': { label: 'Pagado', variant: 'success' },
     'CANCELLED': { label: 'Anulado', variant: 'destructive' },
@@ -63,7 +64,7 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
 export default function PurchaseInvoicesPage() {
     const [documents, setDocuments] = useState<PurchaseDocument[]>([])
     const [loading, setLoading] = useState(true)
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: string, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
 
     const [payingDoc, setPayingDoc] = useState<PurchaseDocument | null>(null)
     const [receivingDoc, setReceivingDoc] = useState<PurchaseDocument | null>(null)
@@ -86,7 +87,7 @@ export default function PurchaseInvoicesPage() {
             // Includes: FACTURA_COMPRA (custom type?), or standard Invoices linked to PO, or NC/ND linked to PO.
             // Let's stick to "linked to purchase_order" or "DTE Type is specifically Purchase-related" check.
             // Include: Invoices with PO OR Invoices with Service Obligation
-            const filtered = results.filter((i: any) =>
+            const filtered = results.filter((i: PurchaseDocument) =>
                 i.purchase_order ||
                 i.service_obligation ||
                 i.dte_type === 'PURCHASE_INV'
@@ -143,7 +144,7 @@ export default function PurchaseInvoicesPage() {
 
     const handleAnnul = (id: number) => annulConfirm.requestConfirm(id)
 
-    const handlePayment = async (data: any) => {
+    const handlePayment = async (data: Record<string, unknown>) => {
         if (!payingDoc) return
         try {
             const formData = new FormData()
@@ -264,7 +265,7 @@ export default function PurchaseInvoicesPage() {
                 return (
                     <div className="flex flex-col gap-1">
                         {doc.status !== 'POSTED' && (
-                            <Badge variant={badgeStyle.variant as any} className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">
+                            <Badge variant={badgeStyle.variant} className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">
                                 {badgeStyle.label}
                             </Badge>
                         )}
@@ -457,15 +458,17 @@ export default function PurchaseInvoicesPage() {
                         const rows = table.getRowModel().rows
                         if (rows.length === 0) {
                             return (
-                                <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-lg border-2 border-dashed">
-                                    <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-                                    <p className="text-muted-foreground font-medium">No se encontraron documentos</p>
-                                </div>
+                                <EmptyState
+                                    context="inventory"
+                                    variant="full"
+                                    title="No se encontraron documentos"
+                                    className="bg-muted/30 rounded-lg border-2 border-dashed"
+                                />
                             )
                         }
                         return (
                             <div className="grid gap-3 pt-2">
-                                {rows.map((row: any) => {
+                                {rows.map((row: { original: PurchaseDocument }) => {
                                     const doc: PurchaseDocument = row.original
                                     return (
                                         <InvoiceCard

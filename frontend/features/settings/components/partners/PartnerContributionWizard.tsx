@@ -12,6 +12,9 @@ import {
 } from "lucide-react"
 import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { Partner } from "@/features/contacts/types/partner"
+import { TreasuryAccount } from "@/features/treasury/types"
+import { Product } from "@/features/inventory/types"
 import api from "@/lib/api"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -49,9 +52,9 @@ export function PartnerContributionWizard({
     const [isCompleting, setIsCompleting] = useState(false)
     
     // Data lists
-    const [partners, setPartners] = useState<any[]>([])
+    const [partners, setPartners] = useState<Partner[]>([])
     const [warehouses, setWarehouses] = useState<any[]>([])
-    const [treasuryAccounts, setTreasuryAccounts] = useState<any[]>([])
+    const [treasuryAccounts, setTreasuryAccounts] = useState<TreasuryAccount[]>([])
     
     // Form State
     const [partnerId, setPartnerId] = useState(initialPartnerId || "")
@@ -77,7 +80,7 @@ export function PartnerContributionWizard({
     })
     
     // Product details for assets
-    const [productDetails, setProductDetails] = useState<any>(null)
+    const [productDetails, setProductDetails] = useState<Product | null>(null)
     const [productUoMs, setProductUoMs] = useState<any[]>([])
 
     // Load initial data
@@ -142,7 +145,7 @@ export function PartnerContributionWizard({
                             const uoms = uomRes.data.results || uomRes.data
                             setProductUoMs(uoms)
                             const baseId = typeof data.uom === 'object' ? data.uom.id : data.uom
-                            const base = uoms.find((u: any) => u.id === baseId)
+                            const base = uoms.find((u: { id: number }) => u.id === baseId)
                             if (base) setAssetData(prev => ({ ...prev, uomId: base.id.toString() }))
                         })
                 }

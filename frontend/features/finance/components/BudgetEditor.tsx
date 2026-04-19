@@ -26,8 +26,21 @@ import { cn } from "@/lib/utils";
 interface BudgetEditorProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    budget: any;
+    budget: { id: number; name: string; start_date: string } | null;
     onSave: () => void;
+}
+
+interface BudgetAccount {
+    id: number;
+    code: string;
+    name: string;
+    account_type_display: string;
+}
+
+interface BudgetItem {
+    account: number;
+    month: number;
+    amount: string | number;
 }
 
 const months = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -39,7 +52,7 @@ const BudgetAccountRow = React.memo(({
     onAmountChange,
     onAutoDistribute
 }: {
-    account: any,
+    account: BudgetAccount,
     monthlyData: Record<number, number>,
     onAmountChange: (accountId: number, month: number, val: string) => void,
     onAutoDistribute?: (accountId: number) => void
@@ -90,7 +103,7 @@ const BudgetAccountRow = React.memo(({
 BudgetAccountRow.displayName = 'BudgetAccountRow';
 
 export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEditorProps) {
-    const [accounts, setAccounts] = useState<any[]>([]);
+    const [accounts, setAccounts] = useState<BudgetAccount[]>([]);
     // accountId -> month (1-12) -> amount
     const [items, setItems] = useState<Record<number, Record<number, number>>>({});
     const [loading, setLoading] = useState(false);
@@ -127,7 +140,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
             // or use the BudgetViewSet if it serializes items.
             // Let's assume BudgetSerializer includes items (BudgetItemSerializer).
             if (budgetRes.data.items) {
-                budgetRes.data.items.forEach((item: any) => {
+                budgetRes.data.items.forEach((item: BudgetItem) => {
                     if (!currItems[item.account]) currItems[item.account] = {};
                     currItems[item.account][item.month] = parseFloat(item.amount);
                 });
@@ -148,9 +161,9 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
             const fetchedItems = res.data;
             const newItems: Record<number, Record<number, number>> = {};
 
-            fetchedItems.forEach((item: any) => {
+            fetchedItems.forEach((item: BudgetItem) => {
                 if (!newItems[item.account]) newItems[item.account] = {};
-                newItems[item.account][item.month] = item.amount;
+                newItems[item.account][item.month] = Number(item.amount);
             });
 
             setItems(prev => ({ ...prev, ...newItems }));
@@ -196,8 +209,8 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
 
     const handleSave = async () => {
         try {
-            const payload: any[] = [];
-            const budgetYear = new Date(budget.start_date).getFullYear();
+            const payload: Array<Record<string, unknown>> = [];
+            const budgetYear = budget ? new Date(budget.start_date).getFullYear() : new Date().getFullYear();
 
             Object.entries(items).forEach(([accId, monthlyData]) => {
                 Object.entries(monthlyData).forEach(([month, amount]) => {
@@ -212,7 +225,9 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                 });
             });
 
-            await api.post(`/accounting/budgets/${budget.id}/set_items/`, { items: payload });
+            if (budget) {
+                await api.post(`/accounting/budgets/${budget.id}/set_items/`, { items: payload });
+            }
             onOpenChange(false);
             onSave();
         } catch (error) {
@@ -302,7 +317,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                             {loading && (
                                 <div className="flex flex-col items-center justify-center p-12 space-y-4">
                                     <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                                    <p className="text-sm text-muted-foreground animate-pulse">Cargando cuentas...</p>
+                                    <p className="text-sm text-muted-foreground">Cargando cuentas...</p>
                                 </div>
                             )}
 

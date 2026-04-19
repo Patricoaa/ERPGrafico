@@ -96,7 +96,7 @@ export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, classNam
                                                     <DropdownMenuItem 
                                                         key={`${tab.value}-${sub.value}`} 
                                                         className={cn(
-                                                            "cursor-pointer my-0.5 rounded-[0.2rem] transition-colors duration-200 focus:bg-primary/5 p-0",
+                                                            "cursor-pointer my-0.5 rounded-sm transition-colors duration-200 focus:bg-primary/5 p-0",
                                                             isSubActive ? "bg-primary/10" : ""
                                                         )}
                                                     >

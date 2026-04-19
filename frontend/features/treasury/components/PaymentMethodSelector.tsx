@@ -38,11 +38,11 @@ export function PaymentMethodSelector({
 
     // Group methods by High-Level Type
     const methodsByType = useMemo(() => {
-        const groups = {
-            CASH: [] as PaymentMethod[],
-            CARD: [] as PaymentMethod[],
-            TRANSFER: [] as PaymentMethod[],
-            CHECK: [] as PaymentMethod[]
+        const groups: Record<string, PaymentMethod[]> = {
+            CASH: [],
+            CARD: [],
+            TRANSFER: [],
+            CHECK: []
         }
 
         allowedMethods.forEach(m => {
@@ -100,7 +100,6 @@ export function PaymentMethodSelector({
     // Specific methods for the CURRENTLY selected type
     const currentTypeMethods = useMemo(() => {
         if (!value.methodType) return []
-        // @ts-ignore
         return methodsByType[value.methodType] || []
     }, [value.methodType, methodsByType])
 
@@ -137,12 +136,10 @@ export function PaymentMethodSelector({
     // Handle Type Change
     const handleTypeChange = (type: string) => {
         // Find methods for this new type
-        // @ts-ignore
         const newMethods = methodsByType[type] || []
 
         const nextValue: PaymentMethodValue = {
-            // @ts-ignore
-            methodType: type,
+            methodType: type as 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK',
             treasuryAccountId: null,
             paymentMethodId: null
         }

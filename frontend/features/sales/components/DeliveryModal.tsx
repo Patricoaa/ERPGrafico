@@ -44,6 +44,11 @@ interface SaleOrderLine {
     track_inventory: boolean
     manufacturable_quantity: number | null
     requires_advanced_manufacturing: boolean
+    is_production_finished?: boolean
+    work_order_summary?: {
+        status: string
+        number: string
+    }
 }
 
 interface SaleOrder {
@@ -144,7 +149,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                     // Handle paginated or non-paginated response
                     const moves = response.data.results || response.data
                     // The results might be a list of moves, we need to sum their quantities
-                    const totalStock = moves.reduce((sum: number, move: any) => sum + parseFloat(move.quantity || 0), 0)
+                    const totalStock = moves.reduce((sum: number, move: { quantity?: string | number }) => sum + parseFloat(String(move.quantity || 0)), 0)
                     return { productId, stock: totalStock }
                 } catch (error) {
                     return { productId, stock: 0 }
@@ -190,7 +195,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
             // Skip stock validation for advanced manufacturing if production is finished
             // The stock was already created when the OT was finalized
             if (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing) {
-                const isFinished = (line as any).is_production_finished
+                const isFinished = line.is_production_finished
                 if (isFinished) {
                     return false // Skip stock check, production is complete
                 }
@@ -279,7 +284,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
 
         // 1. Advanced Manufacturing Check
         if (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing) {
-            const isFinished = (line as any).is_production_finished
+            const isFinished = line.is_production_finished
             if (!isFinished) {
                 return {
                     type: 'error',
@@ -454,14 +459,14 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                                 </span>
                                                             )}
 
-                                                            {(line as any).work_order_summary ? (
+                                                            {line.work_order_summary ? (
                                                                 <div className="flex flex-col items-center mt-1">
                                                                     <StatusBadge
-                                                                        status={(line as any).work_order_summary.status.toLowerCase()}
+                                                                        status={line.work_order_summary.status.toLowerCase()}
                                                                         size="sm"
                                                                         className="text-[8px]"
                                                                     />
-                                                                    <span className="text-[8px] text-muted-foreground mt-0.5">{(line as any).work_order_summary.number}</span>
+                                                                    <span className="text-[8px] text-muted-foreground mt-0.5">{line.work_order_summary.number}</span>
                                                                 </div>
                                                             ) : !line.requires_advanced_manufacturing && !line.track_inventory ? (
                                                                 <span className={cn(

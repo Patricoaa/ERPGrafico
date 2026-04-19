@@ -90,7 +90,7 @@ export default async function TerminalsPage({ searchParams }: PageProps) {
             <PageHeader
                 title={title}
                 description={description}
-                iconName={iconName as any}
+                iconName={iconName}
                 titleActions={actions}
             >
                 {children}
