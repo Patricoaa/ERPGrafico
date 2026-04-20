@@ -1,5 +1,6 @@
-import { showApiError } from "@/lib/errors"
 "use client"
+
+import { showApiError } from "@/lib/errors"
 
 import { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
@@ -15,23 +16,24 @@ import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { cn } from "@/lib/utils"
+import React from "react"
 
 import { useWarehouses, type Warehouse } from "@/features/inventory/hooks/useWarehouses"
 
 interface WarehouseListProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseListProps) {
-    const [warehouses, setWarehouses] = useState<Warehouse[]>([])
-    const [loading, setLoading] = useState(true)
+export function WarehouseList({ externalOpen, onExternalOpenChange, createAction }: WarehouseListProps) {
+    const { warehouses, refetch, deleteWarehouse } = useWarehouses()
+    
     const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [warehouseToDelete, setWarehouseToDelete] = useState<Warehouse | null>(null)
     const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
-
 
     const router = useRouter()
     const pathname = usePathname()
@@ -59,19 +61,14 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
         }
 
         try {
-            await api.delete(`/inventory/warehouses/${warehouse.id}/`)
+            await deleteWarehouse(warehouse.id)
             toast.success("Almacén eliminado correctamente.")
             setIsDeleteModalOpen(false)
-            fetchWarehouses()
         } catch (error) {
             console.error("Error deleting warehouse:", error)
             showApiError(error, "Error al eliminar el almacén.")
         }
     }
-
-    useEffect(() => {
-        fetchWarehouses()
-    }, [])
 
     const columns = useMemo<ColumnDef<Warehouse>[]>(() => [
         {
@@ -131,9 +128,10 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
                 </>
             ),
         }),
-    ], [])
+    ], [deleteWarehouse])
 
     const selectedWarehouses = useMemo(() => {
+        // Use indexes from the selection state to filter the warehouses array
         return warehouses.filter((_, index) => selectedRows[index])
     }, [selectedRows, warehouses])
 
@@ -142,10 +140,9 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
         if (!confirm(`¿Está seguro de que desea eliminar ${selectedWarehouses.length} almacenes? Esta acción es irreversible.`)) return
 
         try {
-            await Promise.all(selectedWarehouses.map(w => api.delete(`/inventory/warehouses/${w.id}/`)))
+            await Promise.all(selectedWarehouses.map(w => deleteWarehouse(w.id)))
             toast.success(`${selectedWarehouses.length} almacenes eliminados`)
             setSelectedRows({})
-            fetchWarehouses()
         } catch (error) {
             showApiError(error, "Error al eliminar los almacenes (algunos podrían estar en uso)")
         }
@@ -174,6 +171,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange }: WarehouseL
                         Eliminar
                     </Button>
                 }
+                createAction={createAction}
             />
 
             <WarehouseForm

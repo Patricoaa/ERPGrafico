@@ -330,11 +330,15 @@
 
   /* Shimmer on text-bearing leaf elements */
   [data-skeleton-shell] p,
-  [data-skeleton-shell] h1, [data-skeleton-shell] h2,
-  [data-skeleton-shell] h3, [data-skeleton-shell] h4,
-  [data-skeleton-shell] h5, [data-skeleton-shell] h6,
+  [data-skeleton-shell] h1,
+  [data-skeleton-shell] h2,
+  [data-skeleton-shell] h3,
+  [data-skeleton-shell] h4,
+  [data-skeleton-shell] h5,
+  [data-skeleton-shell] h6,
   [data-skeleton-shell] label,
-  [data-skeleton-shell] td, [data-skeleton-shell] th,
+  [data-skeleton-shell] td,
+  [data-skeleton-shell] th,
   [data-skeleton-shell] span:not(:has(*)),
   [data-skeleton-shell] div:not(:has(*))[class]:not(:empty) {
     position: relative;
@@ -342,11 +346,10 @@
     border-radius: var(--radius);
     background-color: var(--muted) !important;
     background-image: linear-gradient(90deg,
-      rgba(255, 255, 255, 0) 0,
-      rgba(255, 255, 255, 0.2) 20%,
-      rgba(255, 255, 255, 0.5) 60%,
-      rgba(255, 255, 255, 0)
-    ) !important;
+        rgba(255, 255, 255, 0) 0,
+        rgba(255, 255, 255, 0.2) 20%,
+        rgba(255, 255, 255, 0.5) 60%,
+        rgba(255, 255, 255, 0)) !important;
     background-size: 200% 100% !important;
     animation: shimmer 2s infinite linear !important;
     min-height: 0.75em;
@@ -485,13 +488,11 @@
   .section-divider {
     border: none;
     height: 1px;
-    background: linear-gradient(
-      to right,
-      transparent,
-      oklch(from var(--border) l c h / 0.6) 15%,
-      oklch(from var(--border) l c h / 0.6) 85%,
-      transparent
-    );
+    background: linear-gradient(to right,
+        transparent,
+        oklch(from var(--border) l c h / 0.6) 15%,
+        oklch(from var(--border) l c h / 0.6) 85%,
+        transparent);
     margin: var(--spacing-r-lg) 0;
   }
 
@@ -505,7 +506,8 @@
     gap: 1px;
     height: var(--pantone-swatch-size);
   }
-  .pantone-strip > * {
+
+  .pantone-strip>* {
     flex: 1;
     min-width: var(--pantone-swatch-size);
   }

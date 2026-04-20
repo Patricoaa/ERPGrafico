@@ -1,3 +1,5 @@
+"use client"
+
 import { UoM, Product } from "@/types/entities"
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -11,6 +13,7 @@ import { ProductFormValues } from "./schema"
 import { ProductInitialData } from "@/types/forms"
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
+
 import { useState } from "react"
 import { BOMManager } from "@/features/production/components/BOMManager"
 import { ProductSelector } from "@/components/selectors/ProductSelector"

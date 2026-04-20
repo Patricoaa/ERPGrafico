@@ -1,5 +1,6 @@
-import { showApiError } from "@/lib/errors"
 "use client"
+
+import { showApiError } from "@/lib/errors"
 
 import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
@@ -45,9 +46,10 @@ interface PricingRule {
 interface PricingRuleListProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingRuleListProps) {
+export function PricingRuleList({ externalOpen, onExternalOpenChange, createAction }: PricingRuleListProps) {
     const [rules, setRules] = useState<PricingRule[]>([])
     const [loading, setLoading] = useState(true)
     const [editingRule, setEditingRule] = useState<PricingRule | null>(null)
@@ -260,6 +262,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
                         },
                     ]}
                     useAdvancedFilter={true}
+                    createAction={createAction}
                 />
             </div>
 

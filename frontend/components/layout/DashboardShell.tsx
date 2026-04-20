@@ -128,18 +128,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
                                     {/* Right: Icons & Actions */}
                                     <div className="flex items-center gap-2 mt-[-2px] shrink-0">
-                                        {config.configHref && (
-                                            <Link href={config.configHref} className="pointer-events-auto shrink-0">
-                                                <motion.div
-                                                    whileHover={{ rotate: 90, scale: 1.1 }}
-                                                    transition={{ duration: 0.3 }}
-                                                    className="p-1 text-muted-foreground/40 hover:text-primary transition-colors"
-                                                >
-                                                    <DynamicIcon name="settings" className="h-3.5 w-3.5" />
-                                                </motion.div>
-                                            </Link>
-                                        )}
-
                                         {config.status && (
                                             <div className={cn(
                                                 "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border shrink-0",

@@ -1,14 +1,12 @@
+"use client"
+
+import React, { useState, useEffect } from "react"
 import { ProductCategory, Product } from "@/types/entities"
-
 import { cn } from "@/lib/utils"
-
-import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
-
-// ... imports remain the same
 import {
     Form,
     FormControl,

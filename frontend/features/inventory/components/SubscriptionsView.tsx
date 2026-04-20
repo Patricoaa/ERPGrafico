@@ -67,9 +67,10 @@ interface Stats {
 interface SubscriptionsViewProps {
     hideHeader?: boolean
     externalOpen?: boolean
+    createAction?: React.ReactNode
 }
 
-export function SubscriptionsView({ hideHeader = false, externalOpen = false }: SubscriptionsViewProps) {
+export function SubscriptionsView({ hideHeader = false, externalOpen = false, createAction }: SubscriptionsViewProps) {
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
     const [stats, setStats] = useState<Stats | null>(null)
     const [loading, setLoading] = useState(true)
@@ -555,6 +556,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false }: 
                                     </Button>
                                 </>
                             }
+                            createAction={createAction}
                         />
                     </div>
                 )}

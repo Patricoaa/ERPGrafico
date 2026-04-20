@@ -54,7 +54,11 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
     'CANCELLED': { label: 'Anulada', variant: 'destructive' },
 }
 
-export default function WorkOrdersPage() {
+interface WorkOrdersPageProps {
+    createAction?: React.ReactNode
+}
+
+export default function WorkOrdersPage({ createAction }: WorkOrdersPageProps = {}) {
     const [orders, setOrders] = useState<WorkOrder[]>([])
     const [loading, setLoading] = useState(true)
     const [editingOrder, setEditingOrder] = useState<WorkOrder | null>(null)
@@ -334,6 +338,7 @@ export default function WorkOrdersPage() {
                     }
                     onReset={() => setDateRange(undefined)}
                     renderCustomView={viewMode === "kanban" ? renderKanbanView : undefined}
+                    createAction={createAction}
                 />
             </div>
 

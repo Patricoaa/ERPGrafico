@@ -1130,6 +1130,12 @@ class PaymentTerminalDevice(models.Model):
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.ACTIVE)
     notes = models.TextField(_("Notas"), blank=True)
     
+    supported_payment_methods = models.JSONField(
+        _("Métodos Soportados"), 
+        default=list, 
+        blank=True,
+        help_text=_("Lista de códigos soportados. 1: Crédito, 2: Débito. Ej: [1, 2]")
+    )
     device_config = models.JSONField(_("Configuración del Dispositivo"), default=dict, blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -1653,121 +1659,6 @@ class POSSessionAudit(models.Model):
         return f"Arqueo Sesión #{self.session.id} - Diff: {self.difference}"
 
 
-class PaymentRequest(models.Model):
-    """
-    Solicitud de pago electrónico enviada a un terminal (TUU) vía API de Pago Remoto.
-    Modela la transacción individual, separada de TerminalBatch (liquidación diaria)
-    y de SaleOrder (venta del ERP). Ver ADR 002.
-    """
-    class Status(models.TextChoices):
-        PENDING = 'PENDING', _('Pendiente')
-        SENT = 'SENT', _('Enviado a Terminal')
-        PROCESSING = 'PROCESSING', _('Procesando')
-        COMPLETED = 'COMPLETED', _('Completado')
-        FAILED = 'FAILED', _('Fallido')
-        CANCELED = 'CANCELED', _('Cancelado')
-
-    TERMINAL_STATUSES = frozenset({Status.COMPLETED, Status.FAILED, Status.CANCELED})
-
-    class PaymentMethodCode(models.IntegerChoices):
-        CREDIT = 1, _('Crédito')
-        DEBIT = 2, _('Débito')
-
-    idempotency_key = models.CharField(
-        _("Clave de Idempotencia"), max_length=36, unique=True,
-        help_text=_("UUID único enviado al proveedor; previene cobros duplicados.")
-    )
-    status = models.CharField(
-        _("Estado"), max_length=20,
-        choices=Status.choices, default=Status.PENDING, db_index=True
-    )
-    amount = models.PositiveIntegerField(
-        _("Monto (CLP entero)"),
-        validators=[MinValueValidator(100)],
-        help_text=_("Monto en pesos sin decimales; mínimo 100 según TUU.")
-    )
-    device = models.ForeignKey(
-        'PaymentTerminalDevice', on_delete=models.PROTECT,
-        related_name='payment_requests', verbose_name=_("Dispositivo Terminal")
-    )
-    provider = models.ForeignKey(
-        'PaymentTerminalProvider', on_delete=models.PROTECT,
-        related_name='payment_requests', verbose_name=_("Proveedor")
-    )
-    dte_type = models.IntegerField(
-        _("Tipo DTE"), default=48,
-        help_text=_("48=comprobante pago electrónico (tarjeta).")
-    )
-    payment_method_code = models.IntegerField(
-        _("Método de Pago Terminal"),
-        choices=PaymentMethodCode.choices, default=PaymentMethodCode.CREDIT
-    )
-    description = models.CharField(
-        _("Descripción"), max_length=28, blank=True,
-        help_text=_("Máximo 28 caracteres según validación TUU.")
-    )
-    sale_order = models.ForeignKey(
-        'sales.SaleOrder', on_delete=models.PROTECT, null=True, blank=True,
-        related_name='payment_requests', verbose_name=_("Nota de Venta")
-    )
-    pos_session = models.ForeignKey(
-        'POSSession', on_delete=models.PROTECT, null=True, blank=True,
-        related_name='payment_requests', verbose_name=_("Sesión POS")
-    )
-
-    sequence_number = models.CharField(
-        _("Nº Correlativo Terminal"), max_length=32, blank=True,
-        help_text=_("sequenceNumber devuelto por TUU; clave de reconciliación.")
-    )
-    transaction_reference = models.CharField(
-        _("Referencia Transacción"), max_length=64, blank=True
-    )
-    acquirer_id = models.CharField(
-        _("ID Adquirente"), max_length=64, blank=True
-    )
-    raw_last_response = models.JSONField(
-        _("Última Respuesta Cruda"), default=dict, blank=True
-    )
-    failure_reason = models.CharField(
-        _("Motivo de Falla"), max_length=64, blank=True,
-        help_text=_("Código MR-/RP-/KEY-/TIMEOUT.")
-    )
-
-    terminal_batch = models.ForeignKey(
-        'TerminalBatch',
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='payment_requests',
-        verbose_name=_("Lote Terminal"),
-        help_text=_("Lote TUU al que pertenece esta transacción (asignado en reconciliación Fase 3).")
-    )
-
-    initiated_at = models.DateTimeField(_("Iniciada"), auto_now_add=True)
-    completed_at = models.DateTimeField(_("Finalizada"), null=True, blank=True)
-    celery_task_id = models.CharField(
-        _("Celery Task ID"), max_length=64, blank=True
-    )
-
-    history = HistoricalRecords()
-
-    class Meta:
-        verbose_name = _("Solicitud de Pago")
-        verbose_name_plural = _("Solicitudes de Pago")
-        ordering = ['-initiated_at']
-        indexes = [
-            models.Index(fields=['device', 'status']),
-            models.Index(fields=['sale_order', 'status']),
-            models.Index(fields=['-initiated_at', 'status']),
-            models.Index(fields=['sequence_number']),
-            models.Index(fields=['terminal_batch']),
-        ]
-
-    def __str__(self):
-        return f"PaymentRequest {self.idempotency_key} ({self.get_status_display()})"
-
-    @property
-    def is_terminal(self):
-        return self.status in self.TERMINAL_STATUSES
 
 
 

@@ -1,5 +1,6 @@
-import { showApiError } from "@/lib/errors"
 "use client"
+
+import { showApiError } from "@/lib/errors"
 
 import React, { useEffect, useState, useMemo } from "react"
 import api from "@/lib/api"
@@ -36,9 +37,10 @@ interface ProductAttributeValue {
 
 interface AttributeManagerProps {
     externalOpen?: boolean
+    createAction?: React.ReactNode
 }
 
-export function AttributeManager({ externalOpen }: AttributeManagerProps) {
+export function AttributeManager({ externalOpen, createAction }: AttributeManagerProps) {
     const [attributes, setAttributes] = useState<ProductAttribute[]>([])
     const [loading, setLoading] = useState(true)
     const [isAttrModalOpen, setIsAttrModalOpen] = useState(false)
@@ -337,6 +339,7 @@ export function AttributeManager({ externalOpen }: AttributeManagerProps) {
                         Eliminar
                     </Button>
                 }
+                createAction={createAction}
             />
 
             {/* Modal para Atributo */}

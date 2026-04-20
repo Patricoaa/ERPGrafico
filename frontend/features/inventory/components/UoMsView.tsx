@@ -8,6 +8,7 @@ interface UoMsViewProps {
     activeTab: string
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
 /**
@@ -15,19 +16,21 @@ interface UoMsViewProps {
  * Refactored to remove redundant headers and fix TabsContent context error.
  * Navigation is now handled at the page level.
  */
-export function UoMsView({ activeTab, externalOpen, onExternalOpenChange }: UoMsViewProps) {
+export function UoMsView({ activeTab, externalOpen, onExternalOpenChange, createAction }: UoMsViewProps) {
     return (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             {activeTab === "units" && (
                 <UoMList
                     externalOpen={externalOpen}
                     onExternalOpenChange={onExternalOpenChange}
+                    createAction={createAction}
                 />
             )}
             {activeTab === "categories" && (
                 <UoMCategoryList
                     externalOpen={externalOpen}
                     onExternalOpenChange={onExternalOpenChange}
+                    createAction={createAction}
                 />
             )}
         </div>

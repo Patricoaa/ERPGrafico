@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import {
     ColumnDef
@@ -33,7 +33,11 @@ interface BOM {
     total_cost: number
 }
 
-export default function BOMsPage() {
+interface BOMsPageProps {
+    createAction?: React.ReactNode
+}
+
+export default function BOMsPage({ createAction }: BOMsPageProps = {}) {
     const [boms, setBoms] = useState<BOM[]>([])
     const [loading, setLoading] = useState(true)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -225,6 +229,7 @@ export default function BOMsPage() {
                         },
                     ]}
                     useAdvancedFilter={true}
+                    createAction={createAction}
                 />
             </div>
 

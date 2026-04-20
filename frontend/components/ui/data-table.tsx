@@ -76,6 +76,8 @@ interface DataTableProps<TData, TValue> {
     customFilterCount?: number
     getSubRows?: (originalRow: TData, index: number) => TData[] | undefined
     autoExpand?: boolean
+    /** Primary create action rendered at the right-most end of the toolbar, after the button group */
+    createAction?: React.ReactNode
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -120,6 +122,7 @@ export function DataTable<TData, TValue>({
     customFilterCount,
     getSubRows,
     autoExpand,
+    createAction,
 }: DataTableProps<TData, TValue>) {
     // Uncontrolled mode: let TanStack Table manage sorting/filters/visibility/
     // expansion/selection state internally. Previous controlled-state wiring
@@ -147,6 +150,8 @@ export function DataTable<TData, TValue>({
         getFacetedUniqueValues: getFacetedUniqueValues(),
         getExpandedRowModel: getExpandedRowModel(),
         getSubRows,
+        autoResetPageIndex: false,
+        autoResetExpanded: false,
         initialState: {
             pagination: {
                 pageSize: defaultPageSize,
@@ -184,7 +189,7 @@ export function DataTable<TData, TValue>({
         }
     }, [rowSelection, onRowSelectionChange])
 
-    const showToolbar = filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction
+    const showToolbar = filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction || createAction
     const selectedRows = table.getSelectedRowModel().rows
 
     if (cardMode) {
@@ -268,6 +273,7 @@ export function DataTable<TData, TValue>({
                             customFilters={customFilters}
                             isCustomFiltered={isCustomFiltered}
                             customFilterCount={customFilterCount}
+                            createAction={createAction}
                             batchActions={batchActions && selectedRows.length > 0 ? (
                                 <div className="flex items-center gap-3 bg-foreground text-background px-3 py-1.5 rounded-md shadow-sm border border-white/10 animate-in fade-in slide-in-from-left-2 duration-300">
                                     <div className="flex items-center gap-2 pr-3 border-r border-white/20">
@@ -366,6 +372,7 @@ export function DataTable<TData, TValue>({
                         customFilters={customFilters}
                         isCustomFiltered={isCustomFiltered}
                         customFilterCount={customFilterCount}
+                        createAction={createAction}
                         batchActions={batchActions && selectedRows.length > 0 ? (
                             <div className="flex items-center gap-2 bg-foreground text-background px-3 py-1 rounded-md shadow-sm text-xs font-bold font-heading uppercase tracking-wider animate-in fade-in slide-in-from-left-2 duration-300">
                                 <span>{selectedRows.length} Sel.</span>

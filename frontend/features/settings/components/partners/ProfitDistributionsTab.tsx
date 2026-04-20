@@ -36,9 +36,10 @@ interface ProfitDistributionsTabProps {
     initialFlowOpen?: boolean
     /** Callback to clear the modal query param in the URL when the flow closes */
     onModalClose?: () => void
+    createAction?: React.ReactNode
 }
 
-export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose }: ProfitDistributionsTabProps) {
+export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, createAction }: ProfitDistributionsTabProps) {
     // Unified state to prevent fragmented updates
     const [state, setState] = useState({
         distributions: [] as ProfitDistribution[],
@@ -276,6 +277,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose }
                 cardMode={true}
                 searchPlaceholder="Buscar por año o resolución..."
                 filterColumn="fiscal_year"
+                createAction={createAction}
             />
 
             {/* Modal Flows */}

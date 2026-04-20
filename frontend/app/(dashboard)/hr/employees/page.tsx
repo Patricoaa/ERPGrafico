@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { EmployeeFormDialog } from "@/features/hr/components/EmployeeFormDialog"
@@ -17,7 +17,7 @@ import { useSearchParams } from "next/navigation"
 
 // Employee schemas and types moved to features/hr/components/EmployeeFormDialog
 
-export default function EmployeesPage() {
+export default function EmployeesPage({ createAction }: { createAction?: React.ReactNode } = {}) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [employees, setEmployees] = useState<Employee[]>([])
@@ -155,6 +155,7 @@ export default function EmployeesPage() {
                     ]}
                     useAdvancedFilter={true}
                     defaultPageSize={20}
+                    createAction={createAction}
                 />
             )}
             <EmployeeFormDialog

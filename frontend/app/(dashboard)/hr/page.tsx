@@ -1,19 +1,19 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
+import Link from "next/link"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { Button } from "@/components/ui/button"
+import { FileText } from "lucide-react"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import { Tabs } from "@/components/ui/tabs"
 
-// Lazy load feature components from current pages
 const EmployeesView = lazy(() => import("@/app/(dashboard)/hr/employees/page").then(m => ({ default: m.default })))
 const AbsencesView = lazy(() => import("@/app/(dashboard)/hr/absences/page").then(m => ({ default: m.default })))
 const AdvancesView = lazy(() => import("@/app/(dashboard)/hr/advances/page").then(m => ({ default: m.default })))
 const PayrollsView = lazy(() => import("@/app/(dashboard)/hr/payrolls/page").then(m => ({ default: m.default })))
 const HRSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.HRSettingsView })))
-import { SettingsSheetRouteWrapper } from "@/components/shared"
-import { Settings2 } from "lucide-react"
 
 export const metadata: Metadata = {
     title: "Módulo de Recursos Humanos (RRHH) | ERPGrafico",
@@ -27,17 +27,20 @@ interface PageProps {
 export default async function HRPage({ searchParams }: PageProps) {
     const { view, tab } = await searchParams
     const configTab = tab || "global"
-    const viewMode = (view as 'employees' | 'absences' | 'advances' | 'payrolls') || 'employees'
+    const viewMode = (view as 'employees' | 'absences' | 'advances' | 'payrolls' | 'config') || 'employees'
 
     const tabs = [
         { value: "employees", label: "Nómina Personal", iconName: "users-2", href: "/hr?view=employees" },
         { value: "absences", label: "Inasistencias", iconName: "calendar-off", href: "/hr?view=absences" },
         { value: "advances", label: "Anticipos", iconName: "hand-coins", href: "/hr?view=advances" },
         { value: "payrolls", label: "Liquidaciones", iconName: "file-spreadsheet", href: "/hr?view=payrolls" },
+        { value: "config", label: "Config", iconName: "settings", href: "/hr?view=config" },
     ]
 
     const getHeaderConfig = () => {
         switch (viewMode) {
+            case 'config':
+                return { title: "Configuración de RRHH", description: "Gestione indicadores económicos, conceptos de nómina e instituciones previsionales.", icon: "settings" }
             case 'employees':
                 return { title: "Nómina de Personal", description: "Gestión de fichas de empleados y cargos.", icon: "users-2" }
             case 'absences':
@@ -53,90 +56,48 @@ export default async function HRPage({ searchParams }: PageProps) {
 
     const config = getHeaderConfig()
 
-    const getTitleActions = () => {
+    const getCreateAction = () => {
         switch (viewMode) {
             case 'employees':
-                return (
-                    <PageHeaderButton
-                        href="/hr?view=employees&modal=new"
-                        iconName="plus"
-                        circular
-                        title="Nuevo Empleado"
-                    />
-                )
+                return <ToolbarCreateButton label="Nuevo Empleado" href="/hr?view=employees&modal=new" />
             case 'absences':
-                return (
-                    <PageHeaderButton
-                        href="/hr?view=absences&modal=new"
-                        iconName="plus"
-                        circular
-                        title="Nueva Inasistencia"
-                    />
-                )
+                return <ToolbarCreateButton label="Nueva Inasistencia" href="/hr?view=absences&modal=new" />
             case 'advances':
-                return (
-                    <PageHeaderButton
-                        href="/hr?view=advances&modal=new"
-                        iconName="plus"
-                        circular
-                        title="Nuevo Anticipo"
-                    />
-                )
+                return <ToolbarCreateButton label="Nuevo Anticipo" href="/hr?view=advances&modal=new" />
             case 'payrolls':
-                return (
-                    <div className="flex items-center gap-2">
-                        <PageHeaderButton
-                            href="/hr?view=payrolls&action=generate_drafts"
-                            iconName="file-text"
-                            variant="outline"
-                            label="Generar Borradores"
-                        />
-                        <PageHeaderButton
-                            href="/hr?view=payrolls&modal=new"
-                            iconName="plus"
-                            circular
-                            title="Generar Liquidaciones"
-                        />
-                    </div>
-                )
+                return <ToolbarCreateButton label="Generar Liquidaciones" href="/hr?view=payrolls&modal=new" />
             default:
                 return null
         }
     }
 
+    const createAction = getCreateAction()
+
+    const headerChildren = viewMode === 'payrolls' ? (
+        <Link href="/hr?view=payrolls&action=generate_drafts">
+            <Button variant="outline" size="sm" className="h-9">
+                <FileText className="mr-2 h-4 w-4" /> Generar Borradores
+            </Button>
+        </Link>
+    ) : null
+
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title={config.title}
-                description={config.description}
-                iconName={config.icon}
-                variant="minimal"
-                configHref="?config=true"
-                titleActions={getTitleActions()}
-            />
+            <PageHeader title={config.title} description={config.description} iconName={config.icon} variant="minimal">
+                {headerChildren}
+            </PageHeader>
 
             <PageTabs tabs={tabs} activeValue={viewMode} />
 
             <div className="pt-2">
                 <Suspense fallback={<LoadingFallback />}>
-                    {viewMode === 'employees' && <EmployeesView />}
-                    {viewMode === 'absences' && <AbsencesView />}
-                    {viewMode === 'advances' && <AdvancesView />}
-                    {viewMode === 'payrolls' && <PayrollsView />}
+                    {viewMode === 'employees' && <EmployeesView createAction={createAction} />}
+                    {viewMode === 'absences' && <AbsencesView createAction={createAction} />}
+                    {viewMode === 'advances' && <AdvancesView createAction={createAction} />}
+                    {viewMode === 'payrolls' && <PayrollsView createAction={createAction} />}
+                    {viewMode === 'config' && <HRSettingsView activeTab={configTab} />}
                 </Suspense>
             </div>
-
-            <SettingsSheetRouteWrapper
-                sheetId="hr-settings"
-                title="Configuración de RRHH"
-                description="Gestione indicadores económicos, conceptos de nómina e instituciones previsionales."
-                tabLabel="Configuración"
-                fullWidth={1200}
-            >
-                <Suspense fallback={<LoadingFallback />}>
-                    <HRSettingsView activeTab={configTab} />
-                </Suspense>
-            </SettingsSheetRouteWrapper>
         </div>
     )
 }

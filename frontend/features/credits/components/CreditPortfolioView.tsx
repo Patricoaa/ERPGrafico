@@ -559,12 +559,14 @@ const historyColumns: ColumnDef<CreditHistoryEntry>[] = [
 
 // ─── Main View ───────────────────────────────────────────────────────────────
 
-export function CreditPortfolioView({ 
+export function CreditPortfolioView({
     activeTab = 'portfolio',
-    externalOpen = false
-}: { 
+    externalOpen = false,
+    createAction
+}: {
     activeTab?: 'portfolio' | 'history',
-    externalOpen?: boolean
+    externalOpen?: boolean,
+    createAction?: React.ReactNode
 }) {
     const [data, setData] = useState<CreditPortfolioResponse | null>(null)
     const [loading, setLoading] = useState(true)
@@ -728,6 +730,7 @@ export function CreditPortfolioView({
                                 globalFilterFields={["name", "tax_id"]}
                                 searchPlaceholder="Buscar cliente..."
                                 renderCustomView={renderPortfolioCustomView}
+                                createAction={createAction}
                             />
                     </div>
                 </>

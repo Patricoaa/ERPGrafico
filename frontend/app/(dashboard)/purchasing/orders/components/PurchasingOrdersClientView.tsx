@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import { useEffect, useState, useRef } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -67,9 +67,10 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
 interface PurchasingOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
     externalOpenCheckout?: boolean
+    createAction?: React.ReactNode
 }
 
-export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: PurchasingOrdersClientViewProps) {
+export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction }: PurchasingOrdersClientViewProps) {
     const [orders, setOrders] = useState<PurchaseOrder[]>([])
     const [notes, setNotes] = useState<Record<string, unknown>[]>([])
     const [loading, setLoading] = useState(true)
@@ -617,6 +618,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                                 </div>
                             )
                         } : undefined}
+                        createAction={createAction}
                     />
                 </Tabs>
             )}

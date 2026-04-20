@@ -1,5 +1,6 @@
-import { showApiError } from "@/lib/errors"
 "use client"
+
+import { showApiError } from "@/lib/errors"
 
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
@@ -13,28 +14,19 @@ import { Pencil, Trash2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import React from "react"
 
-interface Category {
-    id: number
-    name: string
-    parent: number | null
-    parent_name: string | null
-    asset_account: number | null
-    income_account: number | null
-    expense_account: number | null
-    icon?: string
-}
-
+import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
 import * as LucideIcons from "lucide-react"
 
 interface CategoryListProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryListProps) {
-    const [categories, setCategories] = useState<Category[]>([])
-    const [loading, setLoading] = useState(true)
+export function CategoryList({ externalOpen, onExternalOpenChange, createAction }: CategoryListProps) {
+    const { categories, refetch, deleteCategory } = useCategories()
     const [editingCategory, setEditingCategory] = useState<Category | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -56,18 +48,6 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
         }
     }
 
-    const fetchCategories = useCallback(async () => {
-        try {
-            const response = await api.get('/inventory/categories/')
-            setCategories(response.data.results || response.data)
-        } catch (error) {
-            console.error("Failed to fetch categories", error)
-            showApiError(error, "Error al cargar las categorías.")
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
     const handleDelete = useCallback(async (category: Category | null, isConfirmed = false) => {
         if (!category) return
 
@@ -78,19 +58,14 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
         }
 
         try {
-            await api.delete(`/inventory/categories/${category.id}/`)
+            await deleteCategory(category.id)
             toast.success("Categoría eliminada correctamente.")
             setIsDeleteModalOpen(false)
-            fetchCategories()
         } catch (error) {
             console.error("Error deleting category:", error)
             showApiError(error, "Error al eliminar la categoría.")
         }
-    }, [fetchCategories])
-
-    useEffect(() => {
-        fetchCategories()
-    }, [fetchCategories])
+    }, [deleteCategory])
 
     const columns = useMemo<ColumnDef<Category>[]>(() => [
         {
@@ -144,6 +119,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
                 searchPlaceholder="Buscar categoría por nombre..."
                 globalFilterFields={globalFilterFields}
                 useAdvancedFilter={true}
+                createAction={createAction}
             />
 
             <CategoryForm

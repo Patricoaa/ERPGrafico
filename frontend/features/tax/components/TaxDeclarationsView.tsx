@@ -33,9 +33,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 interface TaxDeclarationsViewProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxDeclarationsViewProps) {
+export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, createAction }: TaxDeclarationsViewProps) {
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -359,6 +360,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange }: TaxD
                 searchPlaceholder="Buscar período..."
                 useAdvancedFilter={true}
                 showToolbarSort={true}
+                createAction={createAction}
                 facetedFilters={[
                     {
                         column: "status",

@@ -5,9 +5,9 @@ import { MovementList } from "@/features/inventory/components/MovementList"
 import { StockReport } from "@/features/inventory/components/StockReport"
 import { Warehouse, History, FileBarChart } from "lucide-react"
 import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import Link from "next/link"
 
 export const metadata: Metadata = {
     title: "Stock e Inventario | ERPGrafico",
@@ -35,49 +35,43 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                 return {
                     title: "Reporte de Existencias",
                     description: "Estado actual del inventario, valorización y alertas de stock.",
-                    actions: null
                 }
             case "movements":
                 return {
                     title: "Historial de Movimientos",
                     description: "Registro cronológico de entradas, salidas y transferencias.",
-                    actions: (
-                        <Link href="/inventory/stock?tab=movements&modal=adjustment">
-                            <PageHeaderButton
-                                iconName="plus"
-                                circular
-                                title="Nuevo Ajuste"
-                            />
-                        </Link>
-                    )
                 }
             case "warehouses":
                 return {
                     title: "Gestión de Almacenes",
                     description: "Configure y administre sus bodegas y puntos de almacenamiento.",
-                    actions: (
-                        <Link href="/inventory/stock?tab=warehouses&modal=new">
-                            <PageHeaderButton
-                                iconName="plus"
-                                circular
-                                title="Nuevo Almacén"
-                            />
-                        </Link>
-                    )
                 }
             default:
-                return { title: "Stock", description: "", actions: null }
+                return { title: "Stock", description: "" }
         }
     }
 
-    const { title, description, actions } = getHeaderConfig()
+    const { title, description } = getHeaderConfig()
+
+    const movementsCreateAction = (
+        <ToolbarCreateButton
+            label="Nuevo Ajuste"
+            href="/inventory/stock?tab=movements&modal=adjustment"
+        />
+    )
+
+    const warehousesCreateAction = (
+        <ToolbarCreateButton
+            label="Nuevo Almacén"
+            href="/inventory/stock?tab=warehouses&modal=new"
+        />
+    )
 
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title={title}
                 description={description}
-                titleActions={actions}
                 iconName="warehouse"
                 variant="minimal"
             />
@@ -92,11 +86,13 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                     <TabsContent value="movements" className="mt-0 outline-none">
                         <MovementList
                             externalOpen={activeTab === 'movements' && modal === 'adjustment'}
+                            createAction={movementsCreateAction}
                         />
                     </TabsContent>
                     <TabsContent value="warehouses" className="mt-0 outline-none">
                         <WarehouseList
                             externalOpen={activeTab === 'warehouses' && modal === 'new'}
+                            createAction={warehousesCreateAction}
                         />
                     </TabsContent>
                 </Tabs>

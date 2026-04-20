@@ -1,3 +1,5 @@
+"use client"
+
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Input } from "@/components/ui/input"
@@ -11,6 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { BarcodeDialog } from "@/features/inventory/components/BarcodeDialog"
+
 import { useState } from "react"
 import { ProductCategory } from "@/types/entities"
 

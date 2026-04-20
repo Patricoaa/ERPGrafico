@@ -33,6 +33,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { PINPadModal } from "@/features/pos/components/PINPadModal"
 import { SaleOrder, SaleOrderLine, CheckoutDTEData, CheckoutPaymentData, CheckoutDeliveryData, PendingDebt, AccountingSettings, CheckoutResponse, CreditApprovalTask } from "../../types"
 import { Contact } from "@/features/contacts/types"
+import { ManualTerminalNotice, ManualTerminalReason } from "@/features/treasury"
 
 export interface CheckoutWizardState {
     step: number
@@ -223,15 +224,10 @@ export function SalesCheckoutWizardContent({
     const [salesSettings, setSalesSettings] = useState<AccountingSettings | null>(null)
     const [pendingDebts, setPendingDebts] = useState<PendingDebt[] | null>(null)
     const [loadingDebts, setLoadingDebts] = useState(false)
-    const [showTerminalWizard, setShowTerminalWizard] = useState(false)
     const [manualTerminalReason, setManualTerminalReason] = useState<ManualTerminalReason | null>(null)
     const [manualTerminalFailureReason, setManualTerminalFailureReason] = useState<string | null>(null)
     const [showInvoiceReminder, setShowInvoiceReminder] = useState(false)
     const [checkoutResponse, setCheckoutResponse] = useState<CheckoutResponse | null>(null)
-    // Tracks whether the last completed step was a TUU terminal card payment
-    const wasTerminalCardRef = useRef(false)
-    // Idempotency key of the completed PaymentRequest — used to link TreasuryMovement
-    const terminalPaymentKeyRef = useRef<string | null>(null)
 
 
     const refreshDebts = useCallback(() => {
@@ -450,7 +446,7 @@ export function SalesCheckoutWizardContent({
     }
 
     // Checkout handlers
-    const executeCheckout = async (pin?: string, wasTerminalCard = false, terminalPaymentKey?: string) => {
+    const executeCheckout = async (pin?: string) => {
         setLoading(true)
         try {
             const formData = new FormData()
@@ -500,13 +496,8 @@ export function SalesCheckoutWizardContent({
                 }
             })
 
-            // wasTerminalCard=true → TUU completó el pago, forzar dte_type=COMPROBANTE_PAGO
-            const effectiveDteType = wasTerminalCard ? 'COMPROBANTE_PAGO' : dteData.type
-            formData.append('dte_type', effectiveDteType)
-            // is_pending_registration solo aplica a DTE local (backend lo ignora en ruta COMPROBANTE_PAGO).
-            if (!wasTerminalCard) {
-                formData.append('is_pending_registration', dteData.isPending.toString())
-            }
+            formData.append('dte_type', dteData.type)
+            formData.append('is_pending_registration', dteData.isPending.toString())
             if (dteData.number) formData.append('document_number', dteData.number)
             if (dteData.date) formData.append('document_date', dteData.date)
             if (dteData.attachment) formData.append('document_attachment', dteData.attachment)
@@ -538,11 +529,6 @@ export function SalesCheckoutWizardContent({
                 formData.append('pos_session_id', posSessionId.toString())
             }
 
-            const resolvedTerminalKey = terminalPaymentKey ?? terminalPaymentKeyRef.current
-            if (resolvedTerminalKey) {
-                formData.append('payment_request_idempotency_key', resolvedTerminalKey)
-            }
-
             if (approvalTaskId) {
                 formData.append('credit_approval_task_id', approvalTaskId.toString())
             }
@@ -560,7 +546,6 @@ export function SalesCheckoutWizardContent({
             }
 
             const res = await api.post<CheckoutResponse>('/billing/invoices/pos_checkout/', formData)
-            terminalPaymentKeyRef.current = null
             toast.success("Venta procesada correctamente")
             onComplete(res.data)
         } catch (error: unknown) {
@@ -588,8 +573,6 @@ export function SalesCheckoutWizardContent({
     }
 
     const isTerminalIntegrationPayment = paymentData.isTerminalIntegration === true
-    // Tarjeta TUU (CARD_TERMINAL) solo soporta BOLETA — TUU emite DTE 48 únicamente para boletas.
-    const cardTerminalRequiresBoleta = isTerminalIntegrationPayment && dteData.type !== 'BOLETA'
 
     const handleFinish = async () => {
         const validation = await validateCurrentStep()
@@ -597,13 +580,11 @@ export function SalesCheckoutWizardContent({
         if (!validation.isValid) return
 
         if (isTerminalIntegrationPayment && dteData.type === 'BOLETA') {
-            // Automatizado: TUU procesa tarjeta y emite DTE 48
-            setShowTerminalWizard(true)
+            setManualTerminalReason('BOLETA_MANUAL')
             return
         }
 
         if (isTerminalIntegrationPayment && dteData.type !== 'BOLETA') {
-            // Factura + terminal TUU → operación manual requerida
             setManualTerminalReason('FACTURA_CARD')
             return
         }
@@ -627,37 +608,6 @@ export function SalesCheckoutWizardContent({
         }
     }
 
-    const handleTerminalCompleted = (pr: PaymentRequest) => {
-        setShowTerminalWizard(false)
-        // wasTerminalCard=true → backend recibe COMPROBANTE_PAGO, no emite DTE local
-        wasTerminalCardRef.current = true
-        terminalPaymentKeyRef.current = pr.idempotency_key
-        if (isSessionHost) {
-            setPinModalOpen(true)
-        } else {
-            executeCheckout(undefined, true)
-        }
-    }
-
-    const handleTerminalFailed = (_pr?: PaymentRequest, failureReason?: string) => {
-        setShowTerminalWizard(false)
-        setManualTerminalFailureReason(failureReason ?? null)
-        setManualTerminalReason('TERMINAL_BYPASS')
-    }
-
-    const handleTerminalCancel = () => {
-        setShowTerminalWizard(false)
-    }
-
-    const handleTerminalBypass = () => {
-        setShowTerminalWizard(false)
-        setManualTerminalFailureReason(null)
-        setManualTerminalReason('TERMINAL_BYPASS')
-    }
-
-    // Bypass manual: TUU no emitió DTE 48 (rechazo o no respuesta). El ERP
-    // emite el DTE local según dteData.type (BOLETA 39). wasTerminalCardRef
-    // permanece false → backend no aplica la ruta COMPROBANTE_PAGO.
     const handleManualTerminalConfirm = () => {
         setManualTerminalReason(null)
         setManualTerminalFailureReason(null)
@@ -954,9 +904,8 @@ export function SalesCheckoutWizardContent({
                                     </Button>
                                     <Button
                                         onClick={handleFinish}
-                                        disabled={loading || isWaitingApproval || cardTerminalRequiresBoleta}
+                                        disabled={loading || isWaitingApproval}
                                         className="w-48 bg-success font-bold"
-                                        title={cardTerminalRequiresBoleta ? "Tarjeta TUU requiere Boleta (DTE 48). Cambia el tipo de documento o el método de pago." : undefined}
                                     >
                                         {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
                                         Finalizar Venta
@@ -985,30 +934,9 @@ export function SalesCheckoutWizardContent({
                 onOpenChange={setPinModalOpen}
                 onConfirm={(pin) => {
                     setPinModalOpen(false)
-                    const wasCard = wasTerminalCardRef.current
-                    const terminalKey = terminalPaymentKeyRef.current ?? undefined
-                    wasTerminalCardRef.current = false
-                    executeCheckout(pin, wasCard, terminalKey)
+                    executeCheckout(pin)
                 }}
             />
-
-            <BaseModal
-                open={showTerminalWizard && !!terminalDeviceId}
-                onOpenChange={handleTerminalCancel}
-                title="Cobro en Terminal"
-                size="sm"
-            >
-                <TerminalPaymentWizard
-                    deviceId={terminalDeviceId ?? 0}
-                    amount={currentTotal}
-                    saleOrderId={order?.id}
-                    posSessionId={posSessionId ?? undefined}
-                    onCompleted={handleTerminalCompleted}
-                    onFailed={handleTerminalFailed}
-                    onCancel={handleTerminalCancel}
-                    onBypass={handleTerminalBypass}
-                />
-            </BaseModal>
 
             <BaseModal
                 open={!!manualTerminalReason}

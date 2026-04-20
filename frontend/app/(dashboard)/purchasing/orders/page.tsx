@@ -2,9 +2,9 @@ import { Metadata } from "next"
 import { lazy, Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import Link from "next/link"
 
 const PurchasingOrdersClientView = lazy(() =>
     import("./components/PurchasingOrdersClientView").then(m => ({ default: m.PurchasingOrdersClientView }))
@@ -29,34 +29,30 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps) {
         { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: "/purchasing/orders?view=notes" },
     ]
 
+    const createAction = viewMode === 'orders' ? (
+        <ToolbarCreateButton
+            label="Nueva Orden"
+            href="/purchasing/orders?view=orders&modal=new"
+        />
+    ) : null
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Gestión de Compras"
-                description={viewMode === 'orders' 
-                    ? "Gestión integral de órdenes de compra y recepciones" 
+                description={viewMode === 'orders'
+                    ? "Gestión integral de órdenes de compra y recepciones"
                     : "Gestión de notas de crédito y débito de proveedores"
                 }
                 iconName="shopping-bag"
                 variant="minimal"
-                titleActions={
-                    viewMode === 'orders' && (
-                        <Link href="/purchasing/orders?view=orders&modal=new">
-                            <PageHeaderButton
-                                iconName="plus"
-                                circular
-                                title="Nueva Orden"
-                            />
-                        </Link>
-                    )
-                }
             />
 
             <PageTabs tabs={tabs} activeValue={viewMode} />
 
             <div className="pt-4">
                 <Suspense fallback={<LoadingFallback />}>
-                    <PurchasingOrdersClientView viewMode={viewMode} externalOpenCheckout={modalOpen} />
+                    <PurchasingOrdersClientView viewMode={viewMode} externalOpenCheckout={modalOpen} createAction={createAction} />
                 </Suspense>
             </div>
         </div>
