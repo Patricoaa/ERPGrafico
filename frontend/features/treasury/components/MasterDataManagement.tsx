@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Button } from "@/components/ui/button"
@@ -41,9 +41,10 @@ interface Bank {
 interface BankManagementProps {
     externalOpen?: boolean
     onOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function BankManagement({ externalOpen, onOpenChange }: BankManagementProps) {
+export function BankManagement({ externalOpen, onOpenChange, createAction }: BankManagementProps) {
     const [banks, setBanks] = useState<Bank[]>([])
     const [loading, setLoading] = useState(true)
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -152,6 +153,7 @@ export function BankManagement({ externalOpen, onOpenChange }: BankManagementPro
                 searchPlaceholder="Buscar bancos..."
                 filterColumn="name"
                 useAdvancedFilter={true}
+                createAction={createAction}
             />
 
             <BankDialog
@@ -314,9 +316,10 @@ interface PaymentMethod {
 interface PaymentMethodManagementProps {
     externalOpen?: boolean
     onOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentMethodManagementProps) {
+export function PaymentMethodManagement({ externalOpen, onOpenChange, createAction }: PaymentMethodManagementProps) {
     const [methods, setMethods] = useState<PaymentMethod[]>([])
     const [loading, setLoading] = useState(true)
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -462,6 +465,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange }: PaymentM
                 searchPlaceholder="Buscar por nombre o cuenta..."
                 filterColumn="name"
                 useAdvancedFilter={true}
+                createAction={createAction}
             />
 
             <PaymentMethodDialog

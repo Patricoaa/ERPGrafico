@@ -14,7 +14,6 @@ export interface HeaderConfig {
         type?: 'synced' | 'saving' | 'error' | 'warning' | 'info'
         iconName?: string
     }
-    configHref?: string
     children?: React.ReactNode
 }
 

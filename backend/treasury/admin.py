@@ -1,6 +1,6 @@
 from django.contrib import admin
-from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine, 
-                     ReconciliationRule, TerminalBatch, PaymentTerminalProvider, 
+from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine,
+                     ReconciliationRule, TerminalBatch, PaymentTerminalProvider,
                      PaymentTerminalDevice, POSTerminal, PaymentMethod)
 
 
@@ -127,7 +127,7 @@ class PaymentTerminalProviderAdmin(admin.ModelAdmin):
 
 @admin.register(PaymentTerminalDevice)
 class PaymentTerminalDeviceAdmin(admin.ModelAdmin):
-    list_display = ['name', 'provider', 'serial_number', 'status']
+    list_display = ['name', 'provider', 'serial_number', 'status', 'supported_payment_methods']
     list_filter = ['status', 'provider']
     search_fields = ['name', 'serial_number']
 
@@ -165,3 +165,17 @@ class TerminalBatchAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+@admin.register(POSTerminal)
+class POSTerminalAdmin(admin.ModelAdmin):
+    list_display = ['name', 'code', 'location', 'is_active', 'payment_terminal_device']
+    list_filter = ['is_active', 'location']
+    search_fields = ['name', 'code', 'serial_number']
+    filter_horizontal = ['allowed_payment_methods']
+
+@admin.register(PaymentMethod)
+class PaymentMethodAdmin(admin.ModelAdmin):
+    list_display = ['name', 'method_type', 'treasury_account', 'is_active']
+    list_filter = ['method_type', 'is_active', 'treasury_account']
+    search_fields = ['name']
+

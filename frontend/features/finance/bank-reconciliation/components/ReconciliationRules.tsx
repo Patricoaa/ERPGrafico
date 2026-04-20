@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils"
 
 type RuleRow = ReconciliationRule & { account_name: string }
 
-export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }) {
+export function ReconciliationRules({ externalOpen, createAction }: { externalOpen?: boolean; createAction?: React.ReactNode }) {
     const router = useRouter()
     const { fetchRules, fetchAccounts, saveRule, createDefaultRules, loading } = useReconciliation()
     const [rules, setRules] = useState<ReconciliationRule[]>([])
@@ -180,6 +180,7 @@ export function ReconciliationRules({ externalOpen }: { externalOpen?: boolean }
                 ]}
                 defaultPageSize={10}
                 pageSizeOptions={[5, 10, 20, 50]}
+                createAction={createAction}
             />
 
             {/* Empty state when no rules configured */}

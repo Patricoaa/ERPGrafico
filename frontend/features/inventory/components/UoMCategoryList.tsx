@@ -1,5 +1,6 @@
-import { showApiError } from "@/lib/errors"
 "use client"
+
+import { showApiError } from "@/lib/errors"
 
 import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
@@ -29,9 +30,10 @@ interface UoMCategory {
 interface UoMCategoryListProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCategoryListProps) {
+export function UoMCategoryList({ externalOpen, onExternalOpenChange, createAction }: UoMCategoryListProps) {
     const [categories, setCategories] = useState<UoMCategory[]>([])
     const [loading, setLoading] = useState(true)
 
@@ -191,6 +193,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
                         Eliminar
                     </Button>
                 }
+                createAction={createAction}
             />
 
             <BaseModal

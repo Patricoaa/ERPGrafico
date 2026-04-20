@@ -40,13 +40,6 @@ interface PageHeaderProps {
      * - 'minimal': No border and reduced margin, ideal for integrated tabs
      */
     variant?: 'default' | 'minimal'
-    /** Right-side action area for buttons and controls */
-    children?: React.ReactNode
-    /** 
-     * Optional URL for a configuration page. 
-     * If provided, a settings gear icon will appear in titleActions.
-     */
-    configHref?: string
     /** Additional CSS classes for the container */
     className?: string
 }
@@ -67,7 +60,6 @@ export function PageHeader({
     isLoading,
     status,
     variant = 'default',
-    configHref,
     children, 
     className 
 }: PageHeaderProps) {
@@ -85,7 +77,6 @@ export function PageHeader({
                 titleActions,
                 isLoading,
                 status,
-                configHref,
                 children
             })
         }, 0)
@@ -102,7 +93,6 @@ export function PageHeader({
         titleActions, 
         isLoading, 
         status, 
-        configHref, 
         children, 
         setHeader
     ])

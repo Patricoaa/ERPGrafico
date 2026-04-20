@@ -222,13 +222,7 @@ class BillingService:
         """
         Creates a Sale Invoice (Factura/Boleta) from a SaleOrder.
         """
-        if order.status == SaleOrder.Status.PAYMENT_PENDING:
-            raise ValidationError(
-                "No se puede emitir DTE mientras el cobro en terminal está en curso. "
-                "TUU emitirá el Boleta 48 automáticamente al completar el pago. "
-                "Espera el resultado o cancela la PaymentRequest."
-            )
-        if order.status not in [SaleOrder.Status.CONFIRMED, SaleOrder.Status.DRAFT]:
+        if order.status not in [SaleOrder.Status.CONFIRMED, SaleOrder.Status.DRAFT, SaleOrder.Status.PAYMENT_PENDING]:
              # Allow from draft if POS immediate
              pass
         
@@ -514,8 +508,7 @@ class BillingService:
                      is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None,
                      document_number=None, document_date=None, document_attachment=None,
                      delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None, payment_type='INBOUND',
-                     line_files=None, pos_session_id=None, user=None, payment_method_id=None, credit_approval_task_id=None, draft_id=None, direct_credit_approval=False,
-                     payment_request_idempotency_key=None):
+                     line_files=None, pos_session_id=None, user=None, payment_method_id=None, credit_approval_task_id=None, draft_id=None, direct_credit_approval=False):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
         pos_session_id: Optional ID of an open POS session to link the payment to.
@@ -797,50 +790,27 @@ class BillingService:
         # --- Detección de pago vía terminal integrado TUU (DTE 48) ---
         # dte_type='COMPROBANTE_PAGO' indica que TUU ya emitió el DTE 48.
         # El ERP no emite DTE local; solo registra el movimiento de tesorería.
-        is_terminal_card_payment = (dte_type == 'COMPROBANTE_PAGO')
-
-        # Double guard: bloquear si existe PaymentRequest.COMPLETED para esta orden
-        # y el frontend NO indicó COMPROBANTE_PAGO (evita DTE doble vía API directa).
-        if not is_terminal_card_payment and order.id:
-            from treasury.models import PaymentRequest
-            completed_pr_exists = PaymentRequest.objects.filter(
-                sale_order=order,
-                status=PaymentRequest.Status.COMPLETED,
-            ).exists()
-            if completed_pr_exists:
-                raise ValidationError(
-                    "Esta orden tiene un pago por terminal TUU completado. "
-                    "TUU ya emitió el Comprobante de Pago (DTE 48). "
-                    "No se puede emitir un DTE local adicional."
-                )
-
         # 4. Create Invoice (if not already invoiced)
         invoice = order.invoices.filter(status=Invoice.Status.POSTED).first()
         if not invoice:
-            if is_terminal_card_payment:
-                # TUU emite DTE 48 — ERP no genera DTE local.
-                # invoice queda None; el movimiento de tesorería se vincula a sale_order.
-                invoice = None
-            else:
-                status = Invoice.Status.DRAFT if is_pending_registration else Invoice.Status.POSTED
+            status = Invoice.Status.DRAFT if is_pending_registration else Invoice.Status.POSTED
 
-                # Validate uniqueness if number provided
-                if document_number:
-                    BillingService._validate_document_uniqueness(document_number, dte_type)
+            # Validate uniqueness if number provided
+            if document_number:
+                BillingService._validate_document_uniqueness(document_number, dte_type)
 
-                invoice = BillingService.create_sale_invoice(order, dte_type, payment_method, status=status, number=document_number, date=document_date)
-                if document_date:
-                    invoice.date = document_date
-                if document_attachment:
-                    invoice.document_attachment = document_attachment
-                invoice.save()
-        
+            invoice = BillingService.create_sale_invoice(order, dte_type, payment_method, status=status, number=document_number, date=document_date)
+            if document_date:
+                invoice.date = document_date
+            if document_attachment:
+                invoice.document_attachment = document_attachment
+            invoice.save()
+
         # 4. Create Payment (if not credit)
         if payment_method not in ('CREDIT', 'CREDIT_BALANCE'):
             received_amount = Decimal(str(amount)) if amount is not None and str(amount) != '' else order.total
             payment_amount = min(received_amount, order.total)
 
-            # For CARD_TERMINAL: invoice is None (TUU emits DTE 48); use today as movement date.
             movement_date = invoice.date if invoice is not None else (document_date or timezone.now().date())
 
             # Resolve PaymentMethod FK — required for PaymentOrchestrator path.
@@ -850,7 +820,6 @@ class BillingService:
                 payment_method_inst = PM.objects.filter(id=payment_method_id).first()
 
             if payment_method_inst is not None:
-                # New path: orchestrator resolves settlement account + legacy mapping.
                 from treasury.orchestrator import PaymentOrchestrator
                 PaymentOrchestrator.create_movement(
                     payment_method_obj=payment_method_inst,
@@ -862,7 +831,6 @@ class BillingService:
                     date=movement_date,
                     sale_order=order,
                     pos_session_id=pos_session_id,
-                    payment_request_idempotency_key=payment_request_idempotency_key,
                     transaction_number=transaction_number or None,
                     is_pending_registration=payment_is_pending,
                     created_by=user,
@@ -888,12 +856,6 @@ class BillingService:
                     pos_session_id=pos_session_id,
                     created_by=user,
                 )
-
-            # CARD_TERMINAL: marcar SaleOrder como PAID (Celery ya lo hace si hay PaymentRequest,
-            # pero para órdenes sin PaymentRequest vinculado lo forzamos aquí).
-            if is_terminal_card_payment and order.status != order.__class__.Status.PAID:
-                order.status = order.__class__.Status.PAID
-                order.save(update_fields=['status'])
         elif payment_method == 'CREDIT_BALANCE':
             contact = order.customer
             received_amount = Decimal(str(amount)) if amount is not None and str(amount) != '' else order.total

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, lazy, Suspense, useMemo } from "react"
+import React, { useState, useEffect, lazy, Suspense, useMemo } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -30,6 +30,7 @@ interface TerminalBatchesManagementProps {
     onExternalOpenBatchChange?: (open: boolean) => void
     externalOpenInvoice?: boolean
     onExternalOpenInvoiceChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
 export function TerminalBatchesManagement({
@@ -37,7 +38,8 @@ export function TerminalBatchesManagement({
     externalOpenBatch,
     onExternalOpenBatchChange,
     externalOpenInvoice,
-    onExternalOpenInvoiceChange
+    onExternalOpenInvoiceChange,
+    createAction
 }: TerminalBatchesManagementProps) {
     const { batches, refetch, isLoading } = useTerminalBatches()
     const [openCreate, setOpenCreate] = useState(false)
@@ -154,6 +156,7 @@ export function TerminalBatchesManagement({
                 isCustomFiltered={!!dateRange}
                 customFilterCount={dateRange ? 1 : 0}
                 onReset={() => setDateRange(undefined)}
+                createAction={createAction}
             />
 
             <Suspense fallback={<LoadingFallback />}>

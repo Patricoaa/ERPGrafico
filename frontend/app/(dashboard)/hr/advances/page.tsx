@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { AdvanceFormDialog } from "@/features/hr/components/AdvanceFormDialog"
 import { getAdvances, createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/lib/hr/api"
@@ -13,11 +13,13 @@ import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import {
     Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog"
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
+import {
     Plus, Pencil, Trash2, WalletCards, CheckCircle2, Clock, History
 } from "lucide-react"
 import { format } from "date-fns"
@@ -33,7 +35,7 @@ import { useSearchParams } from "next/navigation"
 
 // Advance schemas and types moved to features/hr/components/AdvanceFormDialog
 
-export default function AdvancesPage() {
+export default function AdvancesPage({ createAction }: { createAction?: React.ReactNode } = {}) {
     const searchParams = useSearchParams()
     const [advances, setAdvances] = useState<SalaryAdvance[]>([])
     const [employees, setEmployees] = useState<Employee[]>([])
@@ -179,6 +181,7 @@ export default function AdvancesPage() {
                     filterColumn="employee_name"
                     defaultPageSize={20}
                     useAdvancedFilter={true}
+                    createAction={createAction}
                 />
             )}
 

@@ -1,5 +1,6 @@
-import { showApiError } from "@/lib/errors"
 "use client"
+
+import { showApiError } from "@/lib/errors"
 
 import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
@@ -30,9 +31,10 @@ import { Product, Restriction } from "@/features/inventory/types"
 interface ProductListProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function ProductList({ externalOpen, onExternalOpenChange }: ProductListProps) {
+export function ProductList({ externalOpen, onExternalOpenChange, createAction }: ProductListProps) {
     const { products, refetch, updateProduct } = useProducts({
         filters: { active: 'all', parent_template__isnull: true, page_size: 1000 }
     })
@@ -488,6 +490,7 @@ export function ProductList({ externalOpen, onExternalOpenChange }: ProductListP
                     ]}
                     useAdvancedFilter={true}
                     defaultPageSize={500}
+                    createAction={createAction}
                 />
             </div>
 

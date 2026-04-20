@@ -1,5 +1,6 @@
-import { ProductCategory, UoM, Warehouse, PricingRule, Product } from "@/types/entities"
 "use client"
+
+import { ProductCategory, UoM, Warehouse, PricingRule, Product } from "@/types/entities"
 
 import { useState, useEffect } from "react"
 import { useWindowWidth } from "@/hooks/useWindowWidth"

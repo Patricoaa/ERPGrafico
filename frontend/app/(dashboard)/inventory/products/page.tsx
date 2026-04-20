@@ -6,10 +6,8 @@ import { CategoryList } from "@/features/inventory/components/CategoryList"
 import { PricingRuleList } from "@/features/inventory/components/PricingRuleList"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { Plus } from "lucide-react"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
@@ -67,6 +65,13 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
 
     const { title, description, actionTitle, tabValue } = getHeaderConfig()
 
+    const createAction = actionTitle ? (
+        <ToolbarCreateButton
+            label={actionTitle}
+            href={`/inventory/products?tab=${tabValue}&modal=new`}
+        />
+    ) : null
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
@@ -74,15 +79,6 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                 description={description}
                 variant="minimal"
                 iconName="package"
-                titleActions={actionTitle ? (
-                    <Link href={`/inventory/products?tab=${tabValue}&modal=new`}>
-                        <PageHeaderButton
-                            iconName="plus"
-                            circular
-                            title={actionTitle}
-                        />
-                    </Link>
-                ) : null}
             />
 
             <div className="pt-2">
@@ -95,6 +91,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                         <Suspense fallback={<LoadingFallback />}>
                             <ProductList
                                 externalOpen={activeTab === 'products' && resolvedParams.modal === 'new'}
+                                createAction={activeTab === 'products' ? createAction : null}
                             />
                         </Suspense>
                     </TabsContent>
@@ -102,6 +99,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                         <Suspense fallback={<LoadingFallback />}>
                             <CategoryList
                                 externalOpen={activeTab === 'categories' && resolvedParams.modal === 'new'}
+                                createAction={activeTab === 'categories' ? createAction : null}
                             />
                         </Suspense>
                     </TabsContent>
@@ -109,6 +107,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                         <Suspense fallback={<LoadingFallback />}>
                             <PricingRuleList
                                 externalOpen={activeTab === 'pricing-rules' && resolvedParams.modal === 'new'}
+                                createAction={activeTab === 'pricing-rules' ? createAction : null}
                             />
                         </Suspense>
                     </TabsContent>

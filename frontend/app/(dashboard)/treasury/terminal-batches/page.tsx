@@ -2,12 +2,20 @@
 
 import { TerminalBatchesManagement } from "@/features/treasury"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useState } from "react"
 
 export default function TerminalBatchesPage() {
     const [openBatch, setOpenBatch] = useState(false)
     const [openInvoice, setOpenInvoice] = useState(false)
+
+    const createAction = (
+        <ToolbarCreateButton
+            label="Registrar Liquidación"
+            onClick={() => setOpenBatch(true)}
+        />
+    )
 
     return (
         <div className={LAYOUT_TOKENS.view}>
@@ -17,20 +25,12 @@ export default function TerminalBatchesPage() {
                 iconName="credit-card"
                 variant="minimal"
                 titleActions={
-                    <div className="flex items-center gap-2">
-                        <PageHeaderButton
-                            onClick={() => setOpenInvoice(true)}
-                            iconName="file-text"
-                            variant="outline"
-                            label="Factura Mensual"
-                        />
-                        <PageHeaderButton
-                            onClick={() => setOpenBatch(true)}
-                            iconName="plus"
-                            circular
-                            title="Registrar Liquidación"
-                        />
-                    </div>
+                    <PageHeaderButton
+                        onClick={() => setOpenInvoice(true)}
+                        iconName="file-text"
+                        variant="outline"
+                        label="Factura Mensual"
+                    />
                 }
             />
 
@@ -41,6 +41,7 @@ export default function TerminalBatchesPage() {
                     onExternalOpenBatchChange={setOpenBatch}
                     externalOpenInvoice={openInvoice}
                     onExternalOpenInvoiceChange={setOpenInvoice}
+                    createAction={createAction}
                 />
             </div>
         </div>

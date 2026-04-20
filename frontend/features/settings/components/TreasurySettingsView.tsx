@@ -13,7 +13,7 @@ import { Banknote, ArrowLeftRight, Settings2 } from "lucide-react"
 import { FormSkeleton } from "@/components/shared/FormSkeleton"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { Separator } from "@/components/ui/separator"
-import { SavingStatus } from "@/components/shared/ModuleSettingsSheet"
+type SavingStatus = "idle" | "saving" | "synced" | "error"
 
 import { treasurySchema, type TreasuryFormValues } from "./TreasurySettingsView.schema"
 

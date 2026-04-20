@@ -1,5 +1,5 @@
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState, useEffect, lazy, Suspense } from "react"
+import React, { useState, useEffect, lazy, Suspense } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Edit, Trash2, Plus, Building2, User as UserIcon, Banknote } from "lucide-react"
@@ -23,9 +23,10 @@ const ActionConfirmModal = lazy(() => import("@/components/shared/ActionConfirmM
 
 interface ContactsClientViewProps {
     isNewModalOpen?: boolean
+    createAction?: React.ReactNode
 }
 
-export function ContactsClientView({ isNewModalOpen = false }: ContactsClientViewProps) {
+export function ContactsClientView({ isNewModalOpen = false, createAction }: ContactsClientViewProps) {
     const { contacts, deleteContact } = useContacts()
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
     const [modalOpen, setModalOpen] = useState(false)
@@ -210,6 +211,7 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
                 ]}
                 useAdvancedFilter={true}
                 defaultPageSize={20}
+                createAction={createAction}
             />
 
             <Suspense fallback={<LoadingFallback />}>

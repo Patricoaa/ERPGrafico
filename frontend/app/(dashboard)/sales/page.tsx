@@ -2,9 +2,9 @@ import { Metadata } from "next"
 import { lazy, Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import Link from "next/link"
 
 
 // Lazy load feature components
@@ -13,7 +13,6 @@ const SalesTerminalsView = lazy(() => import("@/features/sales/components/SalesT
 const CreditPortfolioView = lazy(() => import("@/features/credits").then(m => ({ default: m.CreditPortfolioView })))
 const BlacklistView = lazy(() => import("@/features/credits").then(m => ({ default: m.BlacklistView })))
 const SalesSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.SalesSettingsView })))
-import { SettingsSheetRouteWrapper } from "@/components/shared"
 
 
 export const metadata: Metadata = {
@@ -28,7 +27,7 @@ interface PageProps {
 export default async function SalesPage({ searchParams }: PageProps) {
     const { view, sub, modal, tab } = await searchParams
     const configTab = tab || "income"
-    const viewMode = (view as 'orders' | 'pos' | 'hardware' | 'credits') || 'orders'
+    const viewMode = (view as 'orders' | 'pos' | 'hardware' | 'credits' | 'config') || 'orders'
     const subView = sub || (
         viewMode === 'orders' ? 'orders' :
             viewMode === 'pos' ? 'pos-terminals' :
@@ -80,9 +79,18 @@ export default async function SalesPage({ searchParams }: PageProps) {
                 { value: "blacklist", label: "Lista Negra", href: "/sales?view=credits&sub=blacklist" },
             ]
         },
+        { value: "config", label: "Config", iconName: "settings", href: "/sales?view=config" },
     ]
 
     const getHeaderConfig = () => {
+        if (viewMode === 'config') {
+            return {
+                title: "Configuración de Ventas",
+                description: "Gestione los ingresos, políticas de crédito y parámetros del POS.",
+                iconName: "settings" as const,
+                showAction: false
+            }
+        }
         if (viewMode === 'orders') {
             return {
                 title: subView === 'orders' ? "Notas de Venta" : "Notas de Crédito y Débito",
@@ -171,6 +179,13 @@ export default async function SalesPage({ searchParams }: PageProps) {
 
     const config = getHeaderConfig()
 
+    const createAction = config.showAction && 'actionHref' in config && config.actionHref ? (
+        <ToolbarCreateButton
+            label={('actionTitle' in config && config.actionTitle) || "Crear"}
+            href={config.actionHref}
+        />
+    ) : null
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
@@ -178,19 +193,7 @@ export default async function SalesPage({ searchParams }: PageProps) {
                 description={config.description}
                 iconName={config.iconName}
                 variant="minimal"
-                configHref="?config=true"
-                titleActions={config.showAction && config.actionHref && (
-                    <Link href={config.actionHref}>
-                        <PageHeaderButton
-                            iconName="plus"
-                            circular
-                            title={config.actionTitle}
-                        />
-                    </Link>
-                )}
-            >
-
-            </PageHeader>
+            />
 
             <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={subView} />
 
@@ -201,13 +204,14 @@ export default async function SalesPage({ searchParams }: PageProps) {
                             <SalesOrdersClientView
                                 viewMode={subView === 'orders' ? 'orders' : 'notes'}
                                 isCreateModalOpen={modal === 'new'}
+                                createAction={createAction}
                             />
                         </div>
                     )}
 
                     {(viewMode === 'pos' || viewMode === 'hardware') && (
                         <div className="pt-2">
-                            <SalesTerminalsView activeTab={subView} modal={modal} />
+                            <SalesTerminalsView activeTab={subView} modal={modal} createAction={createAction} />
                         </div>
                     )}
 
@@ -219,24 +223,19 @@ export default async function SalesPage({ searchParams }: PageProps) {
                                 <CreditPortfolioView
                                     activeTab={subView as 'portfolio' | 'history'}
                                     externalOpen={modal === 'new'}
+                                    createAction={createAction}
                                 />
                             )}
                         </div>
                     )}
+
+                    {viewMode === 'config' && (
+                        <div className="pt-2">
+                            <SalesSettingsView activeTab={configTab} />
+                        </div>
+                    )}
                 </Suspense>
             </div>
-
-            <SettingsSheetRouteWrapper
-                sheetId="sales-settings"
-                title="Configuración de Ventas"
-                description="Gestione los ingresos, políticas de crédito y parámetros del POS."
-                tabLabel="Configuración"
-                fullWidth={600}
-            >
-                <Suspense fallback={<LoadingFallback />}>
-                    <SalesSettingsView activeTab={configTab} />
-                </Suspense>
-            </SettingsSheetRouteWrapper>
         </div>
     )
 }

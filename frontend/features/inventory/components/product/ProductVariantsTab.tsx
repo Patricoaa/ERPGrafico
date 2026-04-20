@@ -1,3 +1,5 @@
+"use client"
+
 import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState, useMemo } from "react"
 import { UseFormReturn } from "react-hook-form"
@@ -158,9 +160,6 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
             setIsSheetOpen(false)
         } catch (error: unknown) {
             showApiError(error, "Error al generar variantes")
-            // {
-                description: getErrorMessage(error) || "Error desconocido"
-            })
         } finally {
             setIsGenerating(false)
         }

@@ -1,5 +1,6 @@
-import { Skeleton } from "@/components/ui/skeleton"
 "use client"
+
+import { Skeleton } from "@/components/ui/skeleton"
 
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"

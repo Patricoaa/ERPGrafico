@@ -1,3 +1,5 @@
+"use client"
+
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
 import { Package, Settings2, Plus, Warehouse, ChevronsUpDown, Search, Check } from "lucide-react"
@@ -7,6 +9,7 @@ import { TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+
 import { useState } from "react"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"

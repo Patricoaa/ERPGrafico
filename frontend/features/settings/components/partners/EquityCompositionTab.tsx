@@ -63,11 +63,13 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 export function EquityCompositionTab({
     initialAddPartnerOpen = false,
     initialStatsOpen = false,
-    onModalClose
+    onModalClose,
+    createAction
 }: {
     initialAddPartnerOpen?: boolean,
     initialStatsOpen?: boolean,
-    onModalClose?: () => void
+    onModalClose?: () => void,
+    createAction?: React.ReactNode
 }) {
     const [loading, setLoading] = useState(true)
     const [partners, setPartners] = useState<Partner[]>([])
@@ -323,6 +325,7 @@ export function EquityCompositionTab({
                 data={partners}
                 isLoading={loading}
                 cardMode={true}
+                createAction={createAction}
                 toolbarAction={
                     <>
                         {!hasPartners ? (

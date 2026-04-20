@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { AbsenceFormDialog } from "@/features/hr/components/AbsenceFormDialog"
@@ -16,7 +16,7 @@ import { Pencil, Trash2 } from "lucide-react"
 
 // Absence schemas and types moved to features/hr/components/AbsenceFormDialog
 
-export default function AbsencesPage() {
+export default function AbsencesPage({ createAction }: { createAction?: React.ReactNode } = {}) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [absences, setAbsences] = useState<Absence[]>([])
@@ -154,6 +154,7 @@ export default function AbsencesPage() {
                     useAdvancedFilter={true}
                     defaultPageSize={20}
                     onRowClick={(row: Absence) => { setEditingAbsence(row); setDialogOpen(true) }}
+                    createAction={createAction}
                 />
             )}
         </div>

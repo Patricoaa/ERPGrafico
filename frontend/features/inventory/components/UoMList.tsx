@@ -1,9 +1,9 @@
-import { showApiError } from "@/lib/errors"
 "use client"
 
-import React, { useEffect, useState, useMemo } from "react"
+import { showApiError } from "@/lib/errors"
+
+import React, { useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import api from "@/lib/api"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
@@ -35,18 +35,16 @@ import { useUoMs, type UoM, type UoMCategory } from "@/features/inventory/hooks/
 interface UoMListProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
-    const [uoms, setUoMs] = useState<UoM[]>([])
-    const [categories, setCategories] = useState<UoMCategory[]>([])
-    const [loading, setLoading] = useState(true)
+export function UoMList({ externalOpen, onExternalOpenChange, createAction }: UoMListProps) {
+    const { uoms, categories, refetch, saveUoM, deleteUoM, isSaving } = useUoMs()
 
     // Modal State
     const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
     const [isUoMModalOpen, setIsUoMModalOpen] = useState(false)
     const [currentUoM, setCurrentUoM] = useState<Partial<UoM>>({})
-    // isSaving is handled by useUoMs
 
     const router = useRouter()
     const pathname = usePathname()
@@ -64,52 +62,21 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
         }
     }
 
-    const fetchData = async () => {
-        setLoading(true)
-        try {
-            const [resUoMs, resCats] = await Promise.all([
-                api.get('/inventory/uoms/'),
-                api.get('/inventory/uom-categories/')
-            ])
-            setUoMs(resUoMs.data.results || resUoMs.data)
-            setCategories(resCats.data.results || resCats.data)
-        } catch (error) {
-            console.error(error)
-            showApiError(error, "Error al cargar unidades de medida")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchData()
-    }, [])
-
     const handleSaveUoM = async () => {
-        setIsSaving(true)
         try {
-            if (currentUoM.id) {
-                await api.put(`/inventory/uoms/${currentUoM.id}/`, currentUoM)
-                toast.success("Unidad actualizada")
-            } else {
-                await api.post('/inventory/uoms/', currentUoM)
-                toast.success("Unidad creada")
-            }
+            await saveUoM(currentUoM)
+            toast.success(currentUoM.id ? "Unidad actualizada" : "Unidad creada")
             setIsUoMModalOpen(false)
-            fetchData()
         } catch (error) {
             showApiError(error, "Error al guardar")
             console.error(error)
-        } finally {
-            setIsSaving(false)
         }
     }
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.delete(`/inventory/uoms/${id}/`)
+            await deleteUoM(id)
             toast.success("Eliminada correctamente")
-            fetchData()
         } catch (error) {
             showApiError(error, "No se puede eliminar (puede estar en uso)")
         }
@@ -207,10 +174,9 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
         if (!confirm(`¿Está seguro de que desea eliminar ${selectedUoMs.length} unidades de medida?`)) return
 
         try {
-            await Promise.all(selectedUoMs.map(u => api.delete(`/inventory/uoms/${u.id}/`)))
+            await Promise.all(selectedUoMs.map(u => deleteUoM(u.id)))
             toast.success(`${selectedUoMs.length} unidades eliminadas`)
             setSelectedRows({})
-            fetchData()
         } catch (error) {
             showApiError(error, "Error al eliminar las unidades")
         }
@@ -251,6 +217,7 @@ export function UoMList({ externalOpen, onExternalOpenChange }: UoMListProps) {
                         ],
                     },
                 ]}
+                createAction={createAction}
             />
 
             <BaseModal

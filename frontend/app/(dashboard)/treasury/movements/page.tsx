@@ -1,8 +1,8 @@
 import { Metadata } from "next"
 import { TreasuryMovementsClientView } from "@/features/treasury"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import Link from "next/link"
 
 export const metadata: Metadata = {
     title: "Movimientos de Tesorería | ERPGrafico",
@@ -17,6 +17,13 @@ export default async function TreasuryMovementsPage({ searchParams }: PageProps)
     const params = await searchParams
     const modalOpen = params.modal === "new"
 
+    const createAction = (
+        <ToolbarCreateButton
+            label="Nuevo Movimiento"
+            href="/treasury/movements?modal=new"
+        />
+    )
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
@@ -24,19 +31,10 @@ export default async function TreasuryMovementsPage({ searchParams }: PageProps)
                 description="Registro histórico de ingresos, egresos y traslados de fondos."
                 iconName="banknote"
                 variant="minimal"
-                titleActions={
-                    <Link href="/treasury/movements?modal=new">
-                        <PageHeaderButton
-                            iconName="plus"
-                            circular
-                            title="Nuevo Movimiento"
-                        />
-                    </Link>
-                }
             />
-            
+
             <div className="pt-4">
-                <TreasuryMovementsClientView externalOpen={modalOpen} />
+                <TreasuryMovementsClientView externalOpen={modalOpen} createAction={createAction} />
             </div>
         </div>
     )

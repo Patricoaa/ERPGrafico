@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -37,6 +38,7 @@ interface PaymentHardwareManagementProps {
     externalProviderOpen?: boolean
     onExternalProviderOpenChange?: (open: boolean) => void
     activeTab?: "providers" | "devices"
+    createAction?: React.ReactNode
 }
 
 export function PaymentHardwareManagement({
@@ -44,7 +46,8 @@ export function PaymentHardwareManagement({
     onExternalDeviceOpenChange,
     externalProviderOpen,
     onExternalProviderOpenChange,
-    activeTab: externalActiveTab
+    activeTab: externalActiveTab,
+    createAction
 }: PaymentHardwareManagementProps) {
     const [activeTab, setActiveTab] = useState<"providers" | "devices">("devices")
 
@@ -120,6 +123,11 @@ export function PaymentHardwareManagement({
 
     return (
         <div className="space-y-6">
+            {createAction && (
+                <div className="flex items-center justify-end">
+                    {createAction}
+                </div>
+            )}
             {activeTab === "providers" ? (
                 <div className="m-0 outline-none">
                     {loadingProviders ? (
@@ -281,6 +289,20 @@ function DeviceCard({ device, onEdit, onDelete }: { device: PaymentTerminalDevic
                     <div className="flex justify-between">
                         <span>N° Serie:</span>
                         <span className="text-foreground font-mono">{device.serial_number}</span>
+                    </div>
+                    <div className="flex justify-between items-center pt-1">
+                        <span>Soporta:</span>
+                        <div className="flex gap-1">
+                            {device.supported_payment_methods?.includes(2) && (
+                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-none">DÉBITO</span>
+                            )}
+                            {device.supported_payment_methods?.includes(1) && (
+                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-none">CRÉDITO</span>
+                            )}
+                            {(!device.supported_payment_methods || device.supported_payment_methods.length === 0) && (
+                                <span className="text-[8px] italic opacity-50">SIN CONFIG</span>
+                            )}
+                        </div>
                     </div>
                 </div>
             </CardContent>
@@ -455,6 +477,7 @@ function DeviceDialog({ open, onOpenChange, device, providers, onSuccess }: {
     const [providerId, setProviderId] = useState<string>("")
     const [serialNumber, setSerialNumber] = useState("")
     const [model, setModel] = useState("")
+    const [supportedMethods, setSupportedMethods] = useState<number[]>([])
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
@@ -464,14 +487,24 @@ function DeviceDialog({ open, onOpenChange, device, providers, onSuccess }: {
                 setProviderId(device.provider.toString())
                 setSerialNumber(device.serial_number)
                 setModel(device.model || "")
+                setSupportedMethods(device.supported_payment_methods || [])
             } else {
                 setName("")
                 setProviderId("")
                 setSerialNumber("")
                 setModel("")
+                setSupportedMethods([1, 2])
             }
         }
     }, [open, device])
+
+    const toggleMethod = (code: number) => {
+        setSupportedMethods(prev => 
+            prev.includes(code) 
+                ? prev.filter(c => c !== code) 
+                : [...prev, code]
+        )
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -481,13 +514,14 @@ function DeviceDialog({ open, onOpenChange, device, providers, onSuccess }: {
         }
         setLoading(true)
         try {
-            const data = {
-                name,
-                provider: parseInt(providerId),
-                serial_number: serialNumber,
-                model: model || undefined,
-                is_active: true
-            }
+                const data = {
+                    name,
+                    provider: parseInt(providerId),
+                    serial_number: serialNumber,
+                    model: model || undefined,
+                    supported_payment_methods: supportedMethods,
+                    is_active: true
+                }
 
             if (device) {
                 await updateDevice.mutateAsync({ id: device.id, data })
@@ -548,6 +582,44 @@ function DeviceDialog({ open, onOpenChange, device, providers, onSuccess }: {
                 <div className="space-y-2">
                     <Label className={FORM_STYLES.label}>Modelo (Opcional)</Label>
                     <Input value={model} onChange={e => setModel(e.target.value)} placeholder="Ej: Pax A920" />
+                </div>
+
+                <div className="space-y-3 pt-2">
+                    <Label className={cn(FORM_STYLES.label, "flex items-center gap-2")}>
+                        <CreditCard className="h-4 w-4 text-primary" />
+                        Capacidades del Hardware
+                    </Label>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div 
+                            className={cn(
+                                "flex items-center space-x-3 p-3 border rounded-none cursor-pointer transition-colors",
+                                supportedMethods.includes(2) ? "bg-primary/5 border-primary/30" : "bg-background border-border"
+                            )}
+                            onClick={() => toggleMethod(2)}
+                        >
+                            <Checkbox checked={supportedMethods.includes(2)} onCheckedChange={() => toggleMethod(2)} />
+                            <div className="space-y-0.5">
+                                <span className="text-xs font-black uppercase tracking-tight">Débito</span>
+                                <p className="text-[9px] text-muted-foreground leading-none">Ventas directas</p>
+                            </div>
+                        </div>
+                        <div 
+                            className={cn(
+                                "flex items-center space-x-3 p-3 border rounded-none cursor-pointer transition-colors",
+                                supportedMethods.includes(1) ? "bg-primary/5 border-primary/30" : "bg-background border-border"
+                            )}
+                            onClick={() => toggleMethod(1)}
+                        >
+                            <Checkbox checked={supportedMethods.includes(1)} onCheckedChange={() => toggleMethod(1)} />
+                            <div className="space-y-0.5">
+                                <span className="text-xs font-black uppercase tracking-tight">Crédito</span>
+                                <p className="text-[9px] text-muted-foreground leading-none">Cuotas / Otros</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground italic">
+                        Marque solo los métodos que su terminal física permite procesar.
+                    </p>
                 </div>
             </form>
         </BaseModal>

@@ -2,12 +2,10 @@ import React from "react"
 import { Metadata } from "next"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import dynamic from "next/dynamic"
-import { Skeleton } from "@/components/ui/skeleton"
 import { StatementsList, ReconciliationDashboard, ReconciliationRules } from "@/features/finance/bank-reconciliation/components"
-import Link from "next/link"
 
 
 export const metadata: Metadata = {
@@ -57,6 +55,21 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
 
     const { title, description } = getHeaderConfig()
 
+    const statementsCreateAction = (
+        <ToolbarCreateButton
+            label="Importar Cartola"
+            iconName="upload"
+            href="/treasury/reconciliation?tab=statements&modal=import"
+        />
+    )
+
+    const rulesCreateAction = (
+        <ToolbarCreateButton
+            label="Nueva Regla"
+            href="/treasury/reconciliation?tab=rules&modal=new-rule"
+        />
+    )
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
@@ -64,23 +77,6 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
                 description={description}
                 iconName="landmark"
                 variant="minimal"
-                titleActions={
-                    activeTab === "statements" ? (
-                        <Link href="/treasury/reconciliation?tab=statements&modal=import">
-                            <PageHeaderButton
-                                iconName="upload"
-                                circular
-                            />
-                        </Link>
-                    ) : activeTab === "rules" ? (
-                        <Link href="/treasury/reconciliation?tab=rules&modal=new-rule">
-                            <PageHeaderButton
-                                iconName="plus"
-                                circular
-                            />
-                        </Link>
-                    ) : null
-                }
             />
 
             <PageTabs tabs={tabs} activeValue={activeTab} />
@@ -88,13 +84,13 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
             <div className="pt-4">
                 <Tabs value={activeTab} className="space-y-4">
                     <TabsContent value="statements" className="mt-0 outline-none">
-                        <StatementsList externalOpen={modalOpen} />
+                        <StatementsList externalOpen={modalOpen} createAction={statementsCreateAction} />
                     </TabsContent>
                     <TabsContent value="dashboard" className="mt-0 outline-none">
                         <ReconciliationDashboard />
                     </TabsContent>
                     <TabsContent value="rules" className="mt-0 outline-none">
-                        <ReconciliationRules externalOpen={resolvedParams.modal === "new-rule"} />
+                        <ReconciliationRules externalOpen={resolvedParams.modal === "new-rule"} createAction={rulesCreateAction} />
                     </TabsContent>
                 </Tabs>
             </div>

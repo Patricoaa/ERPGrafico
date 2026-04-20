@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { CreatePayrollDialog } from "@/features/hr/components/CreatePayrollDialog"
@@ -24,7 +24,7 @@ import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Schema and dialog moved to features/hr/components/CreatePayrollDialog
 
-export default function PayrollsPage() {
+export default function PayrollsPage({ createAction }: { createAction?: React.ReactNode } = {}) {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [payrolls, setPayrolls] = useState<Payroll[]>([])
@@ -332,6 +332,7 @@ export default function PayrollsPage() {
                     useAdvancedFilter={true}
                     defaultPageSize={20}
                     onRowClick={(row: Payroll) => openDetail(row.id)}
+                    createAction={createAction}
                 />
 
                 <PayrollDetailSheet 

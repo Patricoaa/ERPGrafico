@@ -2,9 +2,9 @@ import { Metadata } from "next"
 import { lazy, Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import Link from "next/link"
 
 
 // Lazy load feature components
@@ -14,7 +14,6 @@ const StatementsList = lazy(() => import("@/features/finance/bank-reconciliation
 const ReconciliationDashboard = lazy(() => import("@/features/finance/bank-reconciliation/components").then(m => ({ default: m.ReconciliationDashboard })))
 const ReconciliationRules = lazy(() => import("@/features/finance/bank-reconciliation/components").then(m => ({ default: m.ReconciliationRules })))
 const TreasurySettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.TreasurySettingsView })))
-import { SettingsSheetRouteWrapper } from "@/components/shared"
 
 
 export const metadata: Metadata = {
@@ -28,7 +27,7 @@ interface PageProps {
 
 export default async function TreasuryPage({ searchParams }: PageProps) {
     const { view, sub, modal } = await searchParams
-    const viewMode = (view as 'movements' | 'accounts' | 'reconciliation') || 'movements'
+    const viewMode = (view as 'movements' | 'accounts' | 'reconciliation' | 'config') || 'movements'
     const subView = sub || (viewMode === 'accounts' ? 'accounts' : viewMode === 'reconciliation' ? 'statements' : '')
     const isModalOpen = !!modal
 
@@ -56,9 +55,18 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
                 { value: "rules", label: "Reglas", iconName: "wand-2", href: "/treasury?view=reconciliation&sub=rules" },
             ]
         },
+        { value: "config", label: "Config", iconName: "settings", href: "/treasury?view=config" },
     ]
 
     const getHeaderConfig = () => {
+        if (viewMode === 'config') {
+            return {
+                title: "Configuración de Tesorería",
+                description: "Gestione las cuentas de ajuste para conciliación bancaria y movimientos de caja.",
+                iconName: "settings" as const,
+                showAction: false
+            }
+        }
         if (viewMode === 'movements') {
             return {
                 title: "Movimientos de Tesorería",
@@ -138,6 +146,13 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
 
     const config = getHeaderConfig()
 
+    const createAction = config.showAction && 'actionHref' in config && config.actionHref ? (
+        <ToolbarCreateButton
+            label={('actionTitle' in config && config.actionTitle) || "Crear"}
+            href={config.actionHref}
+        />
+    ) : null
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
@@ -145,16 +160,6 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
                 description={config.description}
                 iconName={config.iconName}
                 variant="minimal"
-                configHref="?config=true"
-                titleActions={config.showAction && config.actionHref && (
-                    <Link href={config.actionHref}>
-                        <PageHeaderButton
-                            iconName={config.actionIcon}
-                            circular
-                            title={config.actionTitle}
-                        />
-                    </Link>
-                )}
             />
 
             <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={subView} />
@@ -163,37 +168,31 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
                 <Suspense fallback={<LoadingFallback />}>
                     {viewMode === 'movements' && (
                         <div className="pt-2">
-                            <TreasuryMovementsClientView externalOpen={modal === 'new'} />
+                            <TreasuryMovementsClientView externalOpen={modal === 'new'} createAction={createAction} />
                         </div>
                     )}
 
                     {viewMode === 'accounts' && (
                         <div className="pt-2">
-                            <TreasuryAccountsView activeTab={subView} externalOpen={modal === 'new'} />
+                            <TreasuryAccountsView activeTab={subView} externalOpen={modal === 'new'} createAction={createAction} />
                         </div>
                     )}
 
                     {viewMode === 'reconciliation' && (
                         <div className="pt-2">
-                            {subView === 'statements' && <StatementsList externalOpen={modal === 'import'} />}
+                            {subView === 'statements' && <StatementsList externalOpen={modal === 'import'} createAction={createAction} />}
                             {subView === 'dashboard' && <ReconciliationDashboard />}
-                            {subView === 'rules' && <ReconciliationRules externalOpen={modal === 'new-rule'} />}
+                            {subView === 'rules' && <ReconciliationRules externalOpen={modal === 'new-rule'} createAction={createAction} />}
+                        </div>
+                    )}
+
+                    {viewMode === 'config' && (
+                        <div className="pt-2">
+                            <TreasurySettingsView />
                         </div>
                     )}
                 </Suspense>
             </div>
-
-            <SettingsSheetRouteWrapper
-                sheetId="treasury-settings"
-                title="Configuración de Tesorería"
-                description="Gestione las cuentas de ajuste para conciliación bancaria y movimientos de caja."
-                tabLabel="Configuración"
-                fullWidth={600}
-            >
-                <Suspense fallback={<LoadingFallback />}>
-                    <TreasurySettingsView />
-                </Suspense>
-            </SettingsSheetRouteWrapper>
         </div>
     )
 }

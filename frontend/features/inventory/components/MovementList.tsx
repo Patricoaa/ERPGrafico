@@ -37,9 +37,10 @@ interface StockMove {
 interface MovementListProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function MovementList({ externalOpen, onExternalOpenChange }: MovementListProps) {
+export function MovementList({ externalOpen, onExternalOpenChange, createAction }: MovementListProps) {
     const [moves, setMoves] = useState<StockMove[]>([])
     const [loading, setLoading] = useState(true)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: TransactionType, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
@@ -180,6 +181,7 @@ export function MovementList({ externalOpen, onExternalOpenChange }: MovementLis
                         ],
                     },
                 ]}
+                createAction={createAction}
             />
 
             {viewingTransaction && (

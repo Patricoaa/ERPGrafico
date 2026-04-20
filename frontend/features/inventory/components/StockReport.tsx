@@ -1,5 +1,6 @@
-import { showApiError } from "@/lib/errors"
 "use client"
+
+import { showApiError } from "@/lib/errors"
 
 import React, { useState, useEffect, useMemo } from "react"
 import { DataTable } from "@/components/ui/data-table"
