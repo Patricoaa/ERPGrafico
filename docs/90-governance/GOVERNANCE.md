@@ -50,7 +50,7 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 24. Errors handled internally via `showApiError` toast; do not expose `error`.
 25. Loading flags: `isLoading` (initial), `isFetching` (refetch), `isCreating` / `isUpdating` / `isDeleting`.
 26. No `useQuery` / `useMutation` directly in components. Wrap in feature hook.
-27. `@/lib/api` importable only from `features/*/hooks` and `/hooks/*`.
+27. `@/lib/api` importable only from `features/*/api/*`, `features/*/hooks/*`, and `/hooks/*`.
 
 ## 6. Forms
 
