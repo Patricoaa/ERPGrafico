@@ -14,7 +14,7 @@ export function OrderHubStatus({ order }: OrderHubStatusProps) {
     const statuses = getHubStatuses(order)
     // Visible if order has manufacturable items or existing work orders
     const showProduction = (order.work_orders?.length || 0) > 0 || (order.lines || order.items || []).some((l: OrderLine) => l.is_manufacturable)
-    const totalOTProgress = (order as any).production_progress || 0
+    const totalOTProgress = (order as Record<string, unknown>).production_progress as number || 0
 
     const lines = order.lines || order.items || []
     const totalOrdered = lines.reduce((acc: number, line: OrderLine) => acc + (parseFloat(line.quantity as string) || 0), 0)
@@ -29,8 +29,8 @@ export function OrderHubStatus({ order }: OrderHubStatusProps) {
         logisticsProgress = 100
     }
 
-    const pendingAmount = parseFloat((order.pending_amount as any) || 0)
-    const total = parseFloat((order.total as any) || 0)
+    const pendingAmount = parseFloat(String(order.pending_amount || 0))
+    const total = parseFloat(String(order.total || 0))
     const paidPct = total > 0 ? ((1 - (pendingAmount / total)) * 100).toFixed(0) : "0"
     const originLabel = translateStatus(order.status)
 

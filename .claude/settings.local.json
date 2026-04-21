@@ -23,7 +23,8 @@
       "Bash(find /c/Users/patox/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) ! -path \"*/.next/*\" -exec grep -l \"Skeleton\" {} \\\\;)",
       "Bash(find /c/Users/patox/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) ! -path \"*/.next/*\" -exec grep -l \"Loader2\\\\|LoadingSpinner\\\\|CircleNotch\" {} \\\\;)",
       "Bash(find . -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) ! -path \"*/.next/*\" -exec grep -l \"Skeleton\" {} \\\\;)",
-      "Bash(find . -type f -name \"*.tsx\" ! -path \"*/.next/*\" ! -path \"*/node_modules/*\" -exec grep -l \"Skeleton\" {} \\\\;)"
+      "Bash(find . -type f -name \"*.tsx\" ! -path \"*/.next/*\" ! -path \"*/node_modules/*\" -exec grep -l \"Skeleton\" {} \\\\;)",
+      "Bash(grep -r \"--radius\" c:/Users/patox/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/app/globals.css)"
     ]
   }
 }

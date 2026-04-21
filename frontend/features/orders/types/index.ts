@@ -1,10 +1,46 @@
 import { Contact, ProductType } from "@/types/entities"
 import { LucideIcon } from 'lucide-react'
 
+export interface WorkOrderSummary {
+    id: number | string
+    status: string
+    production_progress?: number
+    [key: string]: unknown
+}
+
+export interface InvoiceSummary {
+    id: number | string
+    number?: string
+    status?: string
+    [key: string]: unknown
+}
+
+export interface DeliverySummary {
+    id: number | string
+    status?: string
+    [key: string]: unknown
+}
+
+export interface StockMoveSummary {
+    id: number | string
+    state?: string
+    [key: string]: unknown
+}
+
+export interface NoteSummary {
+    id: number | string
+    number?: string
+    status?: string
+    [key: string]: unknown
+}
+
 export interface OrderLine {
     id: number
     product?: number
     product_name?: string
+    description?: string
+    uom_name?: string
+    unit_name?: string
     product_type?: ProductType
     quantity: number | string
     quantity_received?: number | string
@@ -13,7 +49,7 @@ export interface OrderLine {
     subtotal: number | string
     is_manufacturable?: boolean
     requires_advanced_manufacturing?: boolean
-    work_order_summary?: any // TODO: Define WorkOrderSummary if needed
+    work_order_summary?: WorkOrderSummary
 }
 
 export interface Payment {
@@ -37,15 +73,15 @@ export interface WorkOrder {
 }
 
 export interface RelatedDocuments {
-    invoices?: any[]
+    invoices?: InvoiceSummary[]
     payments?: Payment[]
-    deliveries?: any[]
-    receipts?: any[]
-    receptions?: any[]
+    deliveries?: DeliverySummary[]
+    receipts?: DeliverySummary[]
+    receptions?: DeliverySummary[]
     work_orders?: WorkOrder[]
-    returns?: any[]
-    stock_moves?: any[]
-    notes?: any[]
+    returns?: DeliverySummary[]
+    stock_moves?: StockMoveSummary[]
+    notes?: NoteSummary[]
 }
 
 export interface PhaseDocument {
@@ -67,6 +103,7 @@ export interface PhaseDocument {
 
 export interface Order {
     id: number
+    display_id?: string
     number: string
     status: string
     date?: string
@@ -78,8 +115,8 @@ export interface Order {
     supplier_name?: string
     customer_id?: number
     supplier_id?: number
-    sale_order?: any // Recursive or related
-    purchase_order?: any
+    sale_order?: Partial<Order> | number | string
+    purchase_order?: Partial<Order> | number | string
     lines?: OrderLine[]
     items?: OrderLine[] 
     related_documents?: RelatedDocuments
@@ -90,12 +127,15 @@ export interface Order {
     document_type?: string
     work_orders?: WorkOrder[]
     serialized_payments?: Payment[]
-    related_returns?: any[]
-    related_stock_moves?: any[]
+    related_returns?: DeliverySummary[]
+    related_stock_moves?: StockMoveSummary[]
     corrected_invoice?: Order
+    dte_type_display?: string
     partner_name?: string
     name?: string
     effective_total?: number | string
+    payment_status?: string
+    is_quote?: boolean
     pos_session?: number | string
     balance?: number | string
     folio?: string

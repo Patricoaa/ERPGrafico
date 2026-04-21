@@ -291,9 +291,9 @@ export const ActionCategory = forwardRef(({
             }
 
             if (isInvoice) {
-                (payload as any).invoice = order.id
+                (payload as Record<string, unknown>).invoice = order.id
             } else {
-                (payload as any)[isSale ? 'sale_order' : 'purchase_order'] = order?.id
+                (payload as Record<string, unknown>)[isSale ? 'sale_order' : 'purchase_order'] = order?.id
             }
 
             await api.post('/treasury/payments/register_movement/', payload)
@@ -378,7 +378,7 @@ export const ActionCategory = forwardRef(({
                     onOpenChange={closeModal}
                     invoiceId={tempInvoiceId || resolvedInvoices?.find((inv: Order) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id}
                     invoiceType={tempInvoiceId ? undefined : resolvedInvoices?.find((inv: Order) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.dte_type}
-                    contactId={((order?.customer || order?.supplier) as any)?.id || (isSale ? order?.customer_id : order?.supplier_id)}
+                    contactId={((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? order?.customer_id : order?.supplier_id)}
                     isPurchase={isPurchase}
                     onComplete={async (invoiceId, formData) => {
                         if (!invoiceId || invoiceId === 'undefined') {

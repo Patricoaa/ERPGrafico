@@ -167,7 +167,11 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             ),
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("debit"))
-                return val > 0 ? <DataCell.Currency value={val} className="text-destructive font-bold" /> : <span className="text-muted-foreground/30 ml-4">-</span>
+                return val > 0 ? (
+                    <DataCell.Currency value={val} className="text-expense font-black" />
+                ) : (
+                    <span className="text-muted-foreground/30 ml-4">-</span>
+                )
             },
         },
         {
@@ -177,7 +181,11 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             ),
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("credit"))
-                return val > 0 ? <DataCell.Currency value={val} className="text-success font-bold" /> : <span className="text-muted-foreground/30 ml-4">-</span>
+                return val > 0 ? (
+                    <DataCell.Currency value={val} className="text-income font-black" />
+                ) : (
+                    <span className="text-muted-foreground/30 ml-4">-</span>
+                )
             },
         },
         {
@@ -194,39 +202,12 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             ),
             cell: ({ row }) => {
                 const state = row.getValue("reconciliation_state") as string
-                let variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'warning' | 'success' = 'secondary'
-                let label = row.original.reconciliation_state_display
-                let tooltip = ""
-
-                if (state === 'MATCHED') {
-                    variant = 'warning'
-                    label = "Sugerencia de Match"
-                    tooltip = "Esta línea tiene un match sugerido. Revise y confirme para finalizar."
-                }
-                if (state === 'RECONCILED') {
-                    variant = 'success'
-                    label = "Conciliado"
-                    tooltip = "Confirmado y asiento contable generado."
-                }
-                if (state === 'DISPUTED') {
-                    variant = 'destructive'
-                    label = "En Disputa"
-                }
-                if (state === 'EXCLUDED') {
-                    variant = 'outline'
-                    label = "Excluido"
-                    tooltip = "Esta línea no será considerada en la conciliación."
-                }
-                if (state === 'UNRECONCILED') {
-                    label = "Sin Conciliar"
-                }
-
+                const label = row.original.reconciliation_state_display
                 return (
-                    <div title={tooltip}>
-                        <DataCell.Badge variant={variant}>
-                            {label}
-                        </DataCell.Badge>
-                    </div>
+                    <DataCell.Status 
+                        status={state} 
+                        label={state === 'MATCHED' ? "Sugerencia Match" : label}
+                    />
                 )
             },
         },
@@ -296,19 +277,19 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                             <Button
                                 variant="outline"
                                 size="icon"
-                                className="rounded-full shadow-sm"
+                                className="rounded-sm shadow-sm"
                                 onClick={() => setView('summary')}
                             >
                                 <ArrowLeft className="h-4 w-4" />
                             </Button>
                             <div>
                                 <div className="flex items-center gap-2">
-                                    <h2 className="text-2xl font-bold tracking-tight text-foreground/80">
+                                    <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-foreground/80">
                                         Banco de Trabajo
                                     </h2>
-                                    <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold px-3">
+                                    <DataCell.Badge variant="secondary" className="bg-primary/10 text-primary border-none font-black px-3">
                                         {statement.display_id}
-                                    </Badge>
+                                    </DataCell.Badge>
                                 </div>
                                 <p className="text-muted-foreground text-sm">{statement.treasury_account_name}</p>
                             </div>
@@ -324,7 +305,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                                 <Button
                                     onClick={handleConfirmStatement}
                                     disabled={confirming}
-                                    className="bg-success hover:bg-success shadow-sm px-6 font-bold"
+                                    className="bg-success hover:bg-success/90 shadow-sm px-6 font-black"
                                 >
                                     {confirming ? (
                                         <>
@@ -390,16 +371,14 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                         variant="outline"
                         size="icon"
                         onClick={() => router.push('/treasury/reconciliation')}
-                        className="rounded-full shadow-sm"
+                        className="rounded-sm shadow-sm"
                     >
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h2 className="text-3xl font-bold tracking-tight text-foreground/90">{statement.display_id}</h2>
-                            <DataCell.Badge variant={statement.state === 'CONFIRMED' ? 'success' : 'secondary'}>
-                                {statement.state_display}
-                            </DataCell.Badge>
+                            <h2 className="text-3xl font-extrabold tracking-tighter uppercase text-foreground/90">{statement.display_id}</h2>
+                            <DataCell.Status status={statement.state} />
                         </div>
                         <p className="text-muted-foreground text-sm font-medium">{statement.treasury_account_name}</p>
                     </div>
@@ -444,7 +423,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                         <div className="text-xl font-bold font-mono">
                             {formatCurrency(statement.closing_balance)}
                         </div>
-                        <p className={`text-[10px] font-medium mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-success' : 'text-destructive'}`}>
+                        <p className={`text-[10px] font-black mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-income' : 'text-expense'}`}>
                             {netMovement >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
                             {netMovement >= 0 ? 'Excedente' : 'Déficit'}: {formatCurrency(Math.abs(netMovement))}
                         </p>
@@ -457,7 +436,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                         <TrendingDown className="h-3.5 w-3.5 text-destructive" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-xl font-bold font-mono text-destructive/80">
+                        <div className="text-xl font-bold font-mono text-expense">
                             {formatCurrency(totalDebits)}
                         </div>
                         <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -472,7 +451,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                         <TrendingUp className="h-3.5 w-3.5 text-success/50" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-xl font-bold font-mono text-success/80">
+                        <div className="text-xl font-bold font-mono text-income">
                             {formatCurrency(totalCredits)}
                         </div>
                         <p className="text-[10px] text-muted-foreground mt-0.5">

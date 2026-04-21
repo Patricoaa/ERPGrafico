@@ -14,7 +14,7 @@ import { ActionCategory } from "./ActionCategory"
 import { cn } from "@/lib/utils"
 // IndustrialCard removed here as we are moving to individual Card components per phase
 import { getHubStatuses } from "@/lib/order-status-utils"
-import { Order } from "../types"
+import { Order, Payment } from "../types"
 
 interface OrderHubData {
     order: Order | null
@@ -27,7 +27,7 @@ interface OrderHubData {
     showLogistics: boolean
     invoices: Order[]
     billingIsComplete: boolean
-    payments: any[]
+    payments: Payment[]
     logisticsProgress: number
     fetchOrderDetails: () => void
 }

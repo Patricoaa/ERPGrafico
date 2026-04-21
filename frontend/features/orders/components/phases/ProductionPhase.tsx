@@ -113,7 +113,7 @@ export function ProductionPhase({
                     ]
                 })) as PhaseDocument[] || []}
                 onViewDetail={openDetails}
-                actions={(registry.production?.actions || []).filter((a: any) => !a.id.includes('view-'))}
+                actions={(registry.production?.actions || []).filter((a: { id: string }) => !a.id.includes('view-'))}
                 emptyMessage="Sin órdenes de trabajo"
                 order={activeDoc}
                 userPermissions={userPermissions}

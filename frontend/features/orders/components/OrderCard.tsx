@@ -27,7 +27,7 @@ interface OrderCardProps {
 export function OrderCard({ item, type, onClick, onActionClick, hideStatus = false, isSelected = false, isHubOpen = false, className, visibleColumns }: OrderCardProps) {
     const isSale = type === 'sale'
     const isNote = type === 'note'
-    const isPurchase = type === 'purchase' || (isNote && ((item as any).purchase_order || (item as any).purchase_order_id || item.supplier_name))
+    const isPurchase = type === 'purchase' || (isNote && ((item as Record<string, unknown>).purchase_order || (item as Record<string, unknown>).purchase_order_id || item.supplier_name))
     const isWorkOrder = type === 'work_order'
     const isLedger = type === 'ledger'
 
@@ -68,15 +68,15 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
         Icon = Monitor
     }
 
-    const itemNumber = (item as any).display_id || (item.number ? (item.number.toString().includes(prefix) ? item.number : `${prefix}-${item.number}`) : '---')
+    const itemNumber = item.display_id || (item.number ? (item.number.toString().includes(prefix) ? item.number : `${prefix}-${item.number}`) : '---')
     const itemName = item.customer_name || item.supplier_name || item.partner_name || item.name || '---'
     const displayTotal = isLedger ? ((item.balance as number) || (item.pending_amount as number) || 0) : ((item.total as number) || (item.effective_total as number) || 0)
 
     // --- Enrichment Data ---
     const lines = item.lines || item.items || []
 
-    const total = parseFloat((item.total as any) || 0)
-    const pending = parseFloat((item.pending_amount as any) || 0)
+    const total = parseFloat(String(item.total || 0))
+    const pending = parseFloat(String(item.pending_amount || 0))
     const hasPending = !isLedger && !isWorkOrder && total > 0 && pending > 0
 
     const handleClick = () => {
@@ -197,7 +197,7 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                                 </span>
                                 <span className="text-muted-foreground/50">×</span>
                                 <span className="truncate max-w-[200px]">
-                                    {line.product_name || (line as any).description || 'Producto'}
+                                    {line.product_name || line.description || 'Producto'}
                                 </span>
                             </span>
                         ))}

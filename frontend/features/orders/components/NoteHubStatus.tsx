@@ -25,8 +25,8 @@ export function NoteHubStatus({ note }: NoteHubStatusProps) {
                     tooltip={(() => {
                         const isNoteDocument = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(note.dte_type as string)
                         if (isNoteDocument) {
-                            const source = (note.corrected_invoice as any)?.display_id || note.corrected_invoice?.number || "Factura"
-                            const order = (note as any).sale_order_number || (note as any).purchase_order_number || ""
+                            const source = (note.corrected_invoice as Record<string, unknown>)?.display_id || note.corrected_invoice?.number || "Factura"
+                            const order = (note as Record<string, unknown>).sale_order_number || (note as Record<string, unknown>).purchase_order_number || ""
                             return `Origen: ${source}${order ? ` (${order})` : ''}`
                         }
                         return `Documento: ${translateStatus(note.status)}`
@@ -56,7 +56,7 @@ export function NoteHubStatus({ note }: NoteHubStatusProps) {
                     size="sm"
                     icon={Banknote}
                     status={statuses.treasury || 'info'}
-                    tooltip={`Tesorería: ${translateStatus((note as any).payment_status || note.status)}`}
+                    tooltip={`Tesorería: ${translateStatus(String((note as Record<string, unknown>).payment_status || note.status))}`}
                 />
 
                 {/* Logistics */}

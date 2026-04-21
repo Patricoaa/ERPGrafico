@@ -175,15 +175,10 @@ export default function BOMsPage({ createAction }: BOMsPageProps = {}) {
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    {row.getValue("active") ? (
-                        <Badge className="bg-success hover:bg-success">
-                            <CheckCircle2 className="h-3 w-3 mr-1" /> Activa
-                        </Badge>
-                    ) : (
-                        <Badge variant="outline" className="text-muted-foreground">
-                            <XCircle className="h-3 w-3 mr-1" /> Inactiva
-                        </Badge>
-                    )}
+                    <DataCell.Status 
+                        status={row.getValue("active") ? "active" : "inactive"} 
+                        label={row.getValue("active") ? "Activa" : "Inactiva"}
+                    />
                 </div>
             ),
         },

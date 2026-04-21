@@ -13,7 +13,7 @@ import { Order, OrderLine, PhaseDocument } from "../../types"
 interface OriginPhaseProps {
     isNoteMode: boolean
     activeInvoice: Order | null
-    noteStatuses: any
+    noteStatuses: Record<string, string | boolean | number>
     order: Order | null
     activeDoc: Order
     type: 'purchase' | 'sale' | 'obligation'
@@ -62,7 +62,7 @@ export function OriginPhase({
     const documents: PhaseDocument[] = isNoteMode ? [
         {
             type: 'Documento Rectificado',
-            number: formatDocumentId('FACT', activeInvoice?.corrected_invoice?.number || '---', (activeInvoice?.corrected_invoice as any)?.display_id),
+            number: formatDocumentId('FACT', activeInvoice?.corrected_invoice?.number || '---', activeInvoice?.corrected_invoice?.display_id),
             icon: FileText,
             id: activeInvoice?.corrected_invoice?.id as number,
             docType: 'invoice',
@@ -70,7 +70,7 @@ export function OriginPhase({
         },
         ...(order ? [{
             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
-            number: formatDocumentId(isSale ? 'NV' : 'OCS', order?.number || order?.id, (order as any)?.display_id),
+            number: formatDocumentId(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
             icon: FileText,
             id: order?.id,
             docType: type === 'obligation' ? 'service_obligation' : (type === 'sale' ? 'sale_order' : 'purchase_order'),
@@ -79,7 +79,7 @@ export function OriginPhase({
     ] : (order ? [
         {
             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
-            number: formatDocumentId(isSale ? 'NV' : 'OCS', order?.number || order?.id, (order as any)?.display_id),
+            number: formatDocumentId(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
             icon: FileText,
             id: order?.id,
             docType: type === 'obligation' ? 'service_obligation' : (type === 'sale' ? 'sale_order' : 'purchase_order'),
@@ -100,8 +100,8 @@ export function OriginPhase({
         }
     ] : (activeInvoice ? [
         {
-            type: (activeInvoice as any)?.dte_type_display || 'Factura Directa',
-            number: formatDocumentId('FACT', activeInvoice?.number || '---', (activeInvoice as any)?.display_id),
+            type: activeInvoice?.dte_type_display || 'Factura Directa',
+            number: formatDocumentId('FACT', activeInvoice?.number || '---', activeInvoice?.display_id),
             icon: FileText,
             id: activeInvoice?.id,
             docType: 'invoice',
@@ -132,7 +132,7 @@ export function OriginPhase({
         <PhaseCard
             title="Origen"
             icon={TrendingUp}
-            variant={isNoteMode ? noteStatuses.origin : (activeDoc.status !== 'DRAFT' ? 'success' : 'neutral')}
+            variant={(isNoteMode ? noteStatuses.origin : (activeDoc.status !== 'DRAFT' ? 'success' : 'neutral')) as string}
             isComplete={isNoteMode && noteStatuses.origin === 'success'}
             documents={documents}
             onViewDetail={openDetails}
@@ -148,10 +148,10 @@ export function OriginPhase({
                 {(activeDoc?.lines || activeDoc?.items || []).slice(0, 3).map((line: OrderLine, idx: number) => (
                     <div key={idx} className="flex items-start justify-between text-[10px] gap-2 py-0.5 border-b border-white/5 last:border-0">
                         <span className="text-foreground/70 line-clamp-1 leading-tight flex-1">
-                            {line.product_name || (line as any).description}
+                            {line.product_name || line.description}
                         </span>
                         <span className="shrink-0 font-black text-primary text-[11px]">
-                            {Math.round(line.quantity as number)} {(line as any).uom_name || (line as any).unit_name || 'un'}
+                            {Math.round(line.quantity as number)} {line.uom_name || line.unit_name || 'un'}
                         </span>
                     </div>
                 ))}

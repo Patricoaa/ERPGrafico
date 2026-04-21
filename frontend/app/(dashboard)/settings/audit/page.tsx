@@ -18,6 +18,7 @@ import {
     Minus,
     RefreshCw
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import api from "@/lib/api";
 import { DataCell } from "@/components/ui/data-table-cells";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
@@ -255,10 +256,10 @@ export default function AuditHubPage() {
                         {[1, 2, 3, 4].map((i) => (
                             <Card key={i} className="shadow-sm">
                                 <CardContent className="p-4 flex items-center gap-4">
-                                    <div className="h-10 w-10 rounded-full bg-muted animate-pulse" />
+                                    <Skeleton className="h-10 w-10 rounded-full" />
                                     <div className="space-y-2">
-                                        <div className="h-2 w-16 bg-muted animate-pulse" />
-                                        <div className="h-6 w-10 bg-muted animate-pulse" />
+                                        <Skeleton className="h-2 w-16" />
+                                        <Skeleton className="h-6 w-10" />
                                     </div>
                                 </CardContent>
                             </Card>
@@ -266,50 +267,50 @@ export default function AuditHubPage() {
                     </>
                 ) : (
                     <>
-                        <Card className="bg-success/10/30 border-success/10 shadow-sm">
+                        <Card className="bg-success/10 border-success/20 shadow-sm rounded-sm">
                             <CardContent className="p-4 flex items-center gap-4">
-                                <div className="p-2 bg-success/10/50 rounded-full">
+                                <div className="p-2 bg-success/10 rounded-sm">
                                     <LogIn className="h-5 w-5 text-success" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-success font-bold uppercase tracking-tight">Logins (Sesión)</p>
-                                    <p className="text-2xl font-bold text-success">{logs.filter(l => l.action_type === 'LOGIN').length}</p>
+                                    <p className="text-[10px] text-success font-black uppercase tracking-tight">Logins (Sesión)</p>
+                                    <p className="text-2xl font-black text-success tabular-nums">{logs.filter(l => l.action_type === 'LOGIN').length}</p>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-primary/10/30 border-primary/10 shadow-sm">
+                        <Card className="bg-primary/5 border-primary/10 shadow-sm rounded-sm">
                             <CardContent className="p-4 flex items-center gap-4">
-                                <div className="p-2 bg-primary/10/50 rounded-full">
+                                <div className="p-2 bg-primary/10 rounded-sm">
                                     <Activity className="h-5 w-5 text-primary" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-primary font-bold uppercase tracking-tight">Cambios Datos</p>
-                                    <p className="text-2xl font-bold text-primary">{logs.filter(l => l.source === 'history').length}</p>
+                                    <p className="text-[10px] text-primary font-black uppercase tracking-tight">Cambios Datos</p>
+                                    <p className="text-2xl font-black text-primary tabular-nums">{logs.filter(l => l.source === 'history').length}</p>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-primary/10/30 border-info/10 shadow-sm">
+                        <Card className="bg-info/5 border-info/10 shadow-sm rounded-sm">
                             <CardContent className="p-4 flex items-center gap-4">
-                                <div className="p-2 bg-primary/10/50 rounded-full">
-                                    <Settings className="h-5 w-5 text-primary" />
+                                <div className="p-2 bg-info/10 rounded-sm">
+                                    <Settings className="h-5 w-5 text-info" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-primary font-bold uppercase tracking-tight">Configuración</p>
-                                    <p className="text-2xl font-bold text-info">{logs.filter(l => l.action_type === 'SETTINGS_CHANGE').length}</p>
+                                    <p className="text-[10px] text-info font-black uppercase tracking-tight">Configuración</p>
+                                    <p className="text-2xl font-black text-info tabular-nums">{logs.filter(l => l.action_type === 'SETTINGS_CHANGE').length}</p>
                                 </div>
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-destructive/10/30 border-destructive/10 shadow-sm">
+                        <Card className="bg-destructive/5 border-destructive/10 shadow-sm rounded-sm">
                             <CardContent className="p-4 flex items-center gap-4">
-                                <div className="p-2 bg-destructive/10/50 rounded-full">
+                                <div className="p-2 bg-destructive/10 rounded-sm">
                                     <ShieldAlert className="h-5 w-5 text-destructive" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-destructive font-bold uppercase tracking-tight">Incidentes</p>
-                                    <p className="text-2xl font-bold text-destructive">{logs.filter(l => l.action_type === 'SECURITY').length}</p>
+                                    <p className="text-[10px] text-destructive font-black uppercase tracking-tight">Incidentes</p>
+                                    <p className="text-2xl font-black text-destructive tabular-nums">{logs.filter(l => l.action_type === 'SECURITY').length}</p>
                                 </div>
                             </CardContent>
                         </Card>
