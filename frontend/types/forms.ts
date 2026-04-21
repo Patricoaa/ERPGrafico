@@ -39,8 +39,21 @@ export interface WorkOrderInitialData {
     start_date?: string | Date
     estimated_completion_date?: string | Date
     sale_order_delivery_date?: string | Date
-    sale_line?: string | number | { id: string | number, product?: Record<string, unknown>, description?: string, quantity?: number, uom?: Record<string, unknown> }
-    product?: { id: string | number, name: string, requires_bom_validation?: boolean }
+    sale_line?: string | number | { 
+        id: string | number
+        product?: { name: string }
+        description?: string
+        quantity?: number
+        uom?: { name: string } 
+    }
+    product?: { 
+        id: string | number
+        name: string
+        requires_bom_validation?: boolean
+        uom?: { name: string }
+        uom_category?: number
+        track_inventory?: boolean
+    }
     status?: string
     current_stage?: string
     production_progress?: number
@@ -68,7 +81,11 @@ export interface WorkOrderInitialData {
         quantity?: number | string
         uom_id?: string | number
         uom_name?: string
-        comments?: unknown[]
+        comments?: Array<{
+            user: string
+            text: string
+            timestamp: string
+        }>
     }
 }
 

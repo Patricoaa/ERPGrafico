@@ -10,13 +10,14 @@ import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
+import { Order, OrderLine, PhaseDocument } from "../../types"
 
 interface LogisticsPhaseProps {
-    activeDoc: Record<string, unknown>
+    activeDoc: Order
     isNoteMode: boolean
-    noteStatuses: Record<string, unknown>
+    noteStatuses: Record<string, string>
     isSale: boolean
-    invoices: unknown[]
+    invoices: Order[]
     isTimeline?: boolean
     onModalChange?: (isOpen: boolean) => void
     logisticsProgress: number
@@ -96,23 +97,23 @@ export function LogisticsPhase({
 
     // Resolve Logistics Documents
     const logisticsDocs = (() => {
-        const docs: any[] = []
+        const docs: PhaseDocument[] = []
 
         // 1. Returns for Notes/Orders
         if (Array.isArray(activeDoc.related_returns) && activeDoc.related_returns.length > 0) {
-            docs.push(...activeDoc.related_returns.map((doc: any) => ({
-                type: doc.type,
+            docs.push(...activeDoc.related_returns.map((doc: Order) => ({
+                type: (doc as Record<string, unknown>).type as string,
                 number: formatDocumentId('DEV', doc.number || doc.id, doc.display_id),
                 icon: Package,
                 id: doc.id,
-                docType: doc.docType,
+                docType: (doc as Record<string, unknown>).docType as string,
                 status: doc.status,
                 actions: [
                     ...((doc.status !== 'CANCELLED') ? [{
                         icon: Ban,
                         title: 'Anular Devolución',
                         color: 'text-warning hover:bg-warning/10',
-                        onClick: () => handleAnnulLogistics(doc.id, doc.docType)
+                        onClick: () => handleAnnulLogistics(doc.id, (doc as Record<string, unknown>).docType as string)
                     }] : [])
                 ]
             })))
@@ -120,34 +121,34 @@ export function LogisticsPhase({
 
         // 2. High-level Deliveries/Receipts
         const specificDocs = isSale ? activeDoc.related_documents?.deliveries : (activeDoc.related_documents?.receipts || activeDoc.related_documents?.receptions)
-        if (specificDocs?.length > 0) {
-            docs.push(...specificDocs.map((doc: any) => ({
+        if (specificDocs && specificDocs.length > 0) {
+            docs.push(...specificDocs.map((doc: Record<string, unknown>) => ({
                 type: isSale ? 'Despacho' : 'Recepción',
-                number: formatDocumentId(isSale ? 'DES' : 'REC', doc.number || doc.id, doc.display_id),
+                number: formatDocumentId(isSale ? 'DES' : 'REC', (doc.number as string) || (doc.id as number), doc.display_id as string),
                 icon: Package,
-                id: doc.id,
-                docType: doc.docType || (isSale ? 'sale_delivery' : 'inventory'),
-                status: doc.status,
+                id: doc.id as number,
+                docType: (doc.docType as string) || (isSale ? 'sale_delivery' : 'inventory'),
+                status: doc.status as string,
                 actions: [
-                    ...((doc.status !== 'CANCELLED' && invoices.some((inv: any) => inv.status === 'DRAFT')) ? [{
+                    ...((doc.status !== 'CANCELLED' && invoices.some((inv: Order) => inv.status === 'DRAFT')) ? [{
                         icon: Ban,
                         title: isSale ? 'Anular Despacho' : 'Anular Recepción',
                         color: 'text-warning hover:bg-warning/10',
-                        onClick: () => handleAnnulLogistics(doc.id, isSale ? 'sale_delivery' : 'purchase_receipt')
+                        onClick: () => handleAnnulLogistics(doc.id as number, isSale ? 'sale_delivery' : 'purchase_receipt')
                     }] : [])
                 ]
             })))
         }
 
         // 3. Low-level Stock Moves (only if no high-level docs found to avoid clutter)
-        if (docs.length === 0 && activeDoc.related_stock_moves?.length > 0) {
-            docs.push(...activeDoc.related_stock_moves.map((m: any) => ({
-                type: m.move_type_display || 'Movimiento',
-                number: formatDocumentId('MOV', m.id, m.display_id),
+        if (docs.length === 0 && (activeDoc.related_stock_moves?.length || 0) > 0) {
+            docs.push(...(activeDoc.related_stock_moves || []).map((m: Record<string, unknown>) => ({
+                type: (m.move_type_display as string) || 'Movimiento',
+                number: formatDocumentId('MOV', m.id as number, m.display_id as string),
                 icon: Package,
-                id: m.id,
+                id: m.id as number,
                 docType: 'inventory',
-                status: m.state || 'Realizado',
+                status: (m.state as string) || 'Realizado',
                 actions: []
             })))
         }
@@ -157,15 +158,15 @@ export function LogisticsPhase({
 
 
 
-    const showLogistics = (activeDoc.lines || activeDoc.items || []).length > 0 && !(activeDoc.lines || activeDoc.items || []).every((l: any) => l.product_type === 'SUBSCRIPTION')
+    const showLogistics = (activeDoc.lines || activeDoc.items || []).length > 0 && !(activeDoc.lines || activeDoc.items || []).every((l: OrderLine) => l.product_type === 'SUBSCRIPTION')
 
     if (!showLogistics) return null
 
     const title = (() => {
         const lines = activeDoc?.lines || activeDoc?.items || []
-        const allServices = lines.every((l: any) => ['SERVICE', 'SUBSCRIPTION'].includes(l.product_type))
-        const hasServices = lines.some((l: any) => ['SERVICE', 'SUBSCRIPTION'].includes(l.product_type))
-        const onlySubscriptions = lines.every((l: any) => l.product_type === 'SUBSCRIPTION')
+        const allServices = lines.every((l: OrderLine) => ['SERVICE', 'SUBSCRIPTION'].includes(l.product_type as string))
+        const hasServices = lines.some((l: OrderLine) => ['SERVICE', 'SUBSCRIPTION'].includes(l.product_type as string))
+        const onlySubscriptions = lines.every((l: OrderLine) => l.product_type === 'SUBSCRIPTION')
 
         if (onlySubscriptions) return 'Suscripciones'
         return allServices ? 'Cumplimiento' : (hasServices ? 'Logística/Cumplimiento' : 'Logística')
@@ -176,10 +177,10 @@ export function LogisticsPhase({
             <PhaseCard
                 title={title}
                 icon={Package}
-                variant={isNoteMode ? noteStatuses.logistics : (logisticsProgress === 100 ? 'success' : logisticsProgress > 0 ? 'active' : 'neutral')}
+                variant={(isNoteMode ? noteStatuses.logistics : (logisticsProgress === 100 ? 'success' : logisticsProgress > 0 ? 'active' : 'neutral')) as string}
                 documents={logisticsDocs}
                 onViewDetail={openDetails}
-                actions={(isNoteMode ? (registry[isSale ? 'deliveries' : 'receptions']?.actions || registry.returns?.actions || []) : (registry[isSale ? 'deliveries' : 'receptions']?.actions || [])).filter((a: any) => !a.id.includes('view-'))}
+                actions={(isNoteMode ? (registry[isSale ? 'deliveries' : 'receptions']?.actions || registry.returns?.actions || []) : (registry[isSale ? 'deliveries' : 'receptions']?.actions || [])).filter((a: { id: string }) => !a.id.includes('view-'))}
                 emptyMessage={isNoteMode ? "Sin movimientos asociados" : "Sin movimientos"}
                 order={activeDoc}
                 userPermissions={userPermissions}
@@ -194,8 +195,8 @@ export function LogisticsPhase({
                 onOpenChange={onOpenChange}
             >
                 <div className="space-y-1 py-0.5">
-                    {(activeDoc?.lines || activeDoc?.items || []).slice(0, 3).map((line: any, idx: number) => {
-                        const total = parseFloat(line.quantity) || 1
+                    {(activeDoc?.lines || activeDoc?.items || []).slice(0, 3).map((line: OrderLine, idx: number) => {
+                        const total = parseFloat(line.quantity as string) || 1
                         const processedField = isSale
                             ? (line.quantity_delivered !== undefined ? 'quantity_delivered' : 'delivered_quantity')
                             : (line.quantity_received !== undefined ? 'quantity_received' : 'received_quantity')

@@ -20,7 +20,7 @@ export function ProductImageUpload({ form, imagePreview, setImagePreview }: Prod
                 name="image"
                 render={({ field }) => (
                     <FormItem>
-                        <div className="relative group w-full h-[143px] rounded-lg border-2 border-dashed border-muted-foreground/20 overflow-hidden bg-muted/10 flex items-center justify-center transition-all hover:border-primary/50">
+                        <div className="relative group w-full h-[143px] rounded-md border-2 border-dashed border-muted-foreground/20 overflow-hidden bg-muted/10 flex items-center justify-center transition-all hover:border-primary/50">
                             {imagePreview ? (
                                 <>
                                     <Image

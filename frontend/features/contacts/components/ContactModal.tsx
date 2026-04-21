@@ -63,19 +63,19 @@ const contactSchema = z.object({
 interface ContactModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    contact?: any
-    onSuccess: (contact?: any) => void
+    contact?: Record<string, unknown> | null
+    onSuccess: (contact?: Record<string, unknown>) => void
 }
 
 export default function ContactModal({ open, onOpenChange, contact, onSuccess }: ContactModalProps) {
-    const [defaultCustomer, setDefaultCustomer] = useState<any>(null)
-    const [defaultVendor, setDefaultVendor] = useState<any>(null)
+    const [defaultCustomer, setDefaultCustomer] = useState<Record<string, unknown> | null>(null)
+    const [defaultVendor, setDefaultVendor] = useState<Record<string, unknown> | null>(null)
     const [confirmReplacement, setConfirmReplacement] = useState<{ type: 'customer' | 'vendor' | null, name: string }>({ type: null, name: "" })
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [pendingValues, setPendingValues] = useState<z.infer<typeof contactSchema> | null>(null)
 
     const [activeTab, setActiveTab] = useState("profile")
-    const [ledgerData, setLedgerData] = useState<any[]>([])
+    const [ledgerData, setLedgerData] = useState<Record<string, unknown>[]>([])
     const [loadingLedger, setLoadingLedger] = useState(false)
 
     const { createContact, updateContact } = useContactMutations()
@@ -227,7 +227,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             if (contact) {
                 savedContact = await updateContact({ id: contact.id, payload: values })
             } else {
-                savedContact = await createContact(values as any)
+                savedContact = await createContact(values as Record<string, unknown>)
             }
             onSuccess(savedContact)
             onOpenChange(false)
@@ -562,9 +562,9 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 }
 
 interface InsightsTableProps {
-    data: any[]
+    data: Record<string, unknown>[]
     type: 'sale' | 'purchase' | 'work_order'
-    icon: any
+    icon: React.ElementType
     onActionSuccess?: () => void
 }
 
@@ -630,7 +630,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         }
     }, [data, activeFilter])
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<Record<string, unknown>>[] = [
         {
             accessorKey: "date",
             header: "Fecha",
@@ -641,7 +641,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
             header: "Número",
             cell: ({ row }) => {
                 let prefix = ""
-                let variant: any = "outline"
+                let variant: "outline" | "indigo" | "warning" | "purple" = "outline"
                 if (type === 'sale') { prefix = "NV-"; variant = "indigo" }
                 else if (type === 'purchase') { prefix = "OC-"; variant = "warning" }
                 else if (type === 'work_order') { prefix = "OT-"; variant = "purple" }
@@ -657,7 +657,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
             {
                 accessorKey: "total",
                 header: "Total",
-                cell: ({ row }: any) => <DataCell.Currency value={row.original.total} className="text-left font-bold" />,
+                cell: ({ row }: { row: { original: Record<string, unknown> } }) => <DataCell.Currency value={row.original.total} className="text-left font-bold" />,
             }
         ] : []),
         {
@@ -672,7 +672,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                 return <OrderHubStatus order={row.original} />
             }
         },
-        createActionsColumn<any>({
+        createActionsColumn<Record<string, unknown>>({
             renderActions: (item) => (
                 <DataCell.Action
                     icon={LayoutDashboard}
@@ -812,7 +812,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                     showToolbarSort={true}
                     renderCustomView={(table) => (
                         <div className="grid gap-3 pt-2">
-                            {table.getRowModel().rows.map((row: any) => (
+                            {table.getRowModel().rows.map((row: { original: Record<string, unknown>, id: string }) => (
                                 <OrderCard
                                     key={row.original.id}
                                     item={row.original}
@@ -834,7 +834,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
     )
 }
 
-function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], loading: boolean, onActionSuccess?: () => void }) {
+function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Record<string, unknown>[], loading: boolean, onActionSuccess?: () => void }) {
     const { openHub } = useHubPanel()
 
     if (loading) {
@@ -855,7 +855,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], lo
         )
     }
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<Record<string, unknown>>[] = [
         {
             accessorKey: "date",
             header: "Fecha",
@@ -895,7 +895,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], lo
                     showToolbarSort={true}
                     renderCustomView={(table) => (
                         <div className="grid gap-3 pt-2">
-                            {table.getRowModel().rows.map((row: any) => (
+                            {table.getRowModel().rows.map((row: { original: Record<string, unknown>, id: string }) => (
                                 <OrderCard
                                     key={row.original.id}
                                     item={row.original}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { ColumnDef } from "@tanstack/react-table"
+import { ColumnDef, Row } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { LayoutDashboard, List, ArrowRight, ArrowLeft } from "lucide-react"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -17,7 +17,7 @@ import { OrderCard } from "@/features/orders/components/OrderCard"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
 import { Tabs } from "@/components/ui/tabs"
-import { useSalesOrders, useSalesNotes, type SaleOrder } from "@/features/sales"
+import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/features/sales"
 
 
 
@@ -171,7 +171,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         }
     ]
 
-    const noteColumns: ColumnDef<any>[] = [
+    const noteColumns: ColumnDef<SaleNote>[] = [
         {
             accessorKey: "dte_type_display",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Documento" className="justify-center" />,
@@ -242,7 +242,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             <DataTable
                 columns={viewMode === 'orders' ? columns : noteColumns}
                 data={viewMode === 'orders' ? filteredOrders : filteredNotes}
-                onRowClick={(row: any) => {
+                onRowClick={(row: Row<SaleOrder | SaleNote>) => {
                     const isSelected = viewMode === "orders" ? hubConfig?.orderId === row.id : hubConfig?.invoiceId === row.id
                     if (isSelected && isHubOpen) {
                         closeHub()
@@ -256,7 +256,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                 }}
                 cardMode={true}
                     currentView={currentView}
-                    onViewChange={(v: any) => setCurrentView(v)}
+                    onViewChange={(v: 'list' | 'card') => setCurrentView(v)}
                     viewOptions={viewOptions}
                     isLoading={viewMode === 'notes' ? loadingNotes : false}
                     filterColumn={viewMode === 'orders' ? "customer_name" : "number"}
@@ -344,7 +344,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                         }
                         return (
                             <div className="grid gap-3 pt-1">
-                                {rows.map((row: any) => {
+                                {rows.map((row: Row<SaleOrder | SaleNote>) => {
                                     const item = row.original
                                     const isSelected = viewMode === 'orders'
                                         ? hubConfig?.orderId === item.id

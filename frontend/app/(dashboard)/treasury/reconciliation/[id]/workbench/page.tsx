@@ -13,6 +13,7 @@ import { DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { TableSkeleton } from "@/components/shared/TableSkeleton"
 
 interface BankStatement {
     id: number
@@ -73,21 +74,16 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
 
     const handleConfirmStatement = () => confirmAction.requestConfirm()
 
-    if (loading) {
-        return (
-            <div className="flex-1 p-8 pt-6">
-                <div className="flex flex-col items-center justify-center h-64 gap-3">
-                    <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
-                    <p className="text-muted-foreground text-sm font-medium">Preparando banco de trabajo...</p>
-                </div>
-            </div>
-        )
-    }
+    if (loading) return (
+        <div className="flex-1 p-8 pt-6">
+            <TableSkeleton rows={12} columns={5} />
+        </div>
+    )
 
     if (!statement) {
         return (
             <div className="flex-1 p-8 pt-6">
-                <Card className="max-w-md mx-auto mt-12 bg-destructive/10/50 border-destructive/10">
+                <Card className="max-w-md mx-auto mt-12 bg-destructive/10 border-destructive/20">
                     <CardHeader>
                         <CardTitle className="text-destructive flex items-center gap-2">
                             <Info className="h-5 w-5" />
@@ -116,19 +112,19 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
                         <Button
                             variant="outline"
                             size="icon"
-                            className="rounded-full shadow-sm"
+                            className="rounded-sm shadow-sm"
                             onClick={() => router.push(`/treasury/reconciliation/${statementId}`)}
                         >
                             <ArrowLeft className="h-4 w-4" />
                         </Button>
                         <div>
                             <div className="flex items-center gap-2">
-                                <h2 className="text-2xl font-bold tracking-tight text-foreground/80">
+                                <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-foreground/80">
                                     Banco de Trabajo
                                 </h2>
-                                <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold px-3">
+                                <DataCell.Badge variant="secondary" className="bg-primary/10 text-primary border-none font-mono font-black px-3">
                                     {statement.display_id}
-                                </Badge>
+                                </DataCell.Badge>
                             </div>
                             <p className="text-muted-foreground text-sm">{statement.treasury_account_name}</p>
                         </div>
@@ -144,7 +140,7 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
                             <Button
                                 onClick={handleConfirmStatement}
                                 disabled={confirming}
-                                className="bg-success hover:bg-success shadow-sm px-6 font-bold"
+                                className="bg-success hover:bg-success/90 shadow-sm px-6 font-black"
                             >
                                 {confirming ? (
                                     <>
@@ -188,7 +184,7 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
             {/* Context Help Footer */}
             {!canConfirm && (
                 <div className="flex items-center justify-center p-8 opacity-40 hover:opacity-100 transition-opacity">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-white px-4 py-2 rounded-full border shadow-sm">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-white px-4 py-2 rounded-sm border shadow-sm">
                         <Info className="h-3.5 w-3.5" />
                         Para confirmar la cartola, debes reconciliar o excluir el 100% de las transacciones.
                     </div>

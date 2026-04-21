@@ -16,12 +16,13 @@ import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
 
 import { Checkbox } from "@/components/ui/checkbox"
+import { Product, UoM } from "@/types/entities"
 
 interface ProductPricingSectionProps {
     form: UseFormReturn<ProductFormValues>
-    initialData?: any
+    initialData?: Partial<Product> & { bom_cost?: number, cost_price?: number }
     canBeSold?: boolean
-    uoms: any[]
+    uoms: UoM[]
     forceEdit?: boolean
 }
 
@@ -49,7 +50,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
     // UNLESS forceEdit is true (for simplified variant editing)
     if (hasVariants && !forceEdit) {
         return (
-            <div className="p-6 rounded-lg bg-warning/10/50 border border-warning/20">
+            <div className="p-6 rounded-md bg-warning/10/50 border border-warning/20">
                 <div className="flex items-start gap-3">
                     <Info className="h-5 w-5 text-warning mt-0.5" />
                     <div>
@@ -147,7 +148,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
 
                 <div className={cn("space-y-2", isDynamicPricing && "opacity-50")}>
                     <Label className={FORM_STYLES.label}>Impuestos (IVA)</Label>
-                    <div className="h-10 flex items-center px-4 rounded-lg bg-muted/20 border border-dashed font-mono text-sm font-medium text-muted-foreground">
+                    <div className="h-10 flex items-center px-4 rounded-md bg-muted/20 border border-dashed font-mono text-sm font-medium text-muted-foreground">
                         + {formatCurrency(salePriceGross - salePrice)}
                     </div>
                 </div>
@@ -194,7 +195,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                                                 variant="outline"
                                                 role="combobox"
                                                 disabled={isDisabled}
-                                                className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground", FORM_STYLES.input, "bg-background border-none shadow-sm h-10 rounded-lg font-medium text-xs")}
+                                                className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground", FORM_STYLES.input, "bg-background border-none shadow-sm h-10 rounded-md font-medium text-xs")}
                                             >
                                                 {field.value
                                                     ? allowedUoms.find((u) => u.id.toString() === field.value.toString())?.name
@@ -258,7 +259,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                 {(initialData || Number(salePrice) > 0) && (
                     <div className="md:col-span-4 flex flex-col pt-4">
                         <div className={cn(
-                            "h-full flex flex-col justify-center p-4 rounded-lg border text-sm font-bold shadow-sm transition-all animate-in fade-in zoom-in duration-300",
+                            "h-full flex flex-col justify-center p-4 rounded-md border text-sm font-bold shadow-sm transition-all animate-in fade-in zoom-in duration-300",
                             marginPercentage > 30
                                 ? "bg-success/10 border-success/20 text-success dark:text-success/50"
                                 : marginPercentage > 15

@@ -19,21 +19,8 @@ import { toast } from "sonner"
 import { Textarea } from "@/components/ui/textarea"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
-const formSchema = z.object({
-    name: z.string().min(2, "El nombre es muy corto"),
-    description: z.string().optional(),
-    supplier: z.string().min(1, "Debe seleccionar proveedor"),
-    category: z.string().min(1, "Debe seleccionar categoría"),
-    recurrence_type: z.string().default("MONTHLY"),
-    payment_day: z.coerce.number().min(1).max(31),
-    base_amount: z.coerce.number().min(0),
-    is_amount_variable: z.boolean().default(false),
-    start_date: z.string().min(1, "Fecha de inicio requerida"),
-    end_date: z.string().optional(),
-    auto_renew: z.boolean().default(false),
-    expense_account: z.string().optional(), // Will be populated from category
-    payable_account: z.string().optional(), // Will be populated from category
-})
+import { serviceContractSchema, type ServiceContractFormValues } from "./ServiceContractForm.schema"
+import { Account } from "@/types/entities"
 
 interface ServiceContractFormProps {
     onSuccess?: () => void
@@ -43,19 +30,26 @@ interface ServiceContractFormProps {
 export function ServiceContractForm({ onSuccess, initialData }: ServiceContractFormProps) {
     const router = useRouter()
     // const [suppliers, setSuppliers] = useState([])
-    const [categories, setCategories] = useState([])
-    const [accounts, setAccounts] = useState([])
+    const [categories, setCategories] = useState<{ id: number; name: string }[]>([])
+    const [accounts, setAccounts] = useState<Account[]>([])
 
-    const form = useForm({
-        resolver: zodResolver(formSchema),
+    const form = useForm<ServiceContractFormValues>({
+        resolver: zodResolver(serviceContractSchema),
         defaultValues: {
+            name: "",
+            description: "",
+            supplier: "",
+            category: "",
             recurrence_type: "MONTHLY",
             payment_day: 1,
+            base_amount: 0,
             is_amount_variable: false,
+            start_date: "",
+            end_date: "",
             auto_renew: false,
             expense_account: "inherited",
             payable_account: "inherited",
-            ...initialData
+            ...(initialData as unknown as ServiceContractFormValues)
         },
     })
 
@@ -100,7 +94,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
         // We don't force accounts anymore if they are to be "inherited" by default
     }
 
-    async function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values: ServiceContractFormValues) {
         try {
             const data = {
                 ...values,
@@ -187,7 +181,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                                     <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
-                                                    {categories.map((c: any) => (
+                                                    {categories.map((c) => (
                                                         <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -349,7 +343,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                                     </FormControl>
                                                     <SelectContent>
                                                         <SelectItem value="inherited" className="font-semibold text-primary italic">Heredar de categoría (Recomendado)</SelectItem>
-                                                        {accounts.filter((a: any) => a.account_type === 'EXPENSE').map((a: any) => (
+                                                        {accounts.filter((a) => a.account_type === 'EXPENSE').map((a) => (
                                                             <SelectItem key={a.id} value={a.id.toString()}>{a.code} - {a.name}</SelectItem>
                                                         ))}
                                                     </SelectContent>
@@ -369,7 +363,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                                     </FormControl>
                                                     <SelectContent>
                                                         <SelectItem value="inherited" className="font-semibold text-primary italic">Heredar de categoría (Recomendado)</SelectItem>
-                                                        {accounts.filter((a: any) => a.account_type === 'LIABILITY').map((a: any) => (
+                                                        {accounts.filter((a) => a.account_type === 'LIABILITY').map((a) => (
                                                             <SelectItem key={a.id} value={a.id.toString()}>{a.code} - {a.name}</SelectItem>
                                                         ))}
                                                     </SelectContent>

@@ -16,40 +16,42 @@ import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
 import { Wallet, CheckCircle2, Banknote } from "lucide-react"
+import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/types/partner"
+import { TreasuryAccount } from "@/features/treasury/types"
 
 interface MassPaymentModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    resolution: any
+    resolution: ProfitDistribution
     onSuccess: () => void
 }
 
 export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: MassPaymentModalProps) {
     const [loading, setLoading] = useState(false)
-    const [treasuryAccounts, setTreasuryAccounts] = useState<any[]>([])
+    const [treasuryAccounts, setTreasuryAccounts] = useState<TreasuryAccount[]>([])
     const [selectedAccountId, setSelectedAccountId] = useState<string>("")
     const [payments, setPayments] = useState<Record<number, number>>({})
 
     const pendingLines = useMemo(() => {
         if (!resolution?.lines) return [];
-        return resolution.lines.map((l: any) => {
-            const divAlloc = l.destinations?.find((d: any) => d.destination === 'DIVIDEND');
+        return resolution.lines.map((l: ProfitDistributionLine) => {
+            const divAlloc = l.destinations?.find(d => d.destination === 'DIVIDEND');
             const totalAllocated = divAlloc ? parseFloat(divAlloc.amount) : 0;
-            const paid = parseFloat(l.paid_dividend_amount || 0);
+            const paid = parseFloat(l.paid_dividend_amount || "0");
             return {
                 ...l,
                 pendingAmount: Math.max(0, totalAllocated - paid),
                 totalAllocated,
                 paid
             }
-        }).filter((l: any) => l.pendingAmount > 0)
+        }).filter(l => l.pendingAmount > 0)
     }, [resolution])
 
     useEffect(() => {
         if (open) {
             setSelectedAccountId("")
             const initialPayments: Record<number, number> = {}
-            pendingLines.forEach((l: any) => {
+            pendingLines.forEach(l => {
                 initialPayments[l.partner] = l.pendingAmount
             })
             setPayments(initialPayments)
@@ -87,7 +89,7 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
             {
                 id: 1,
                 title: "Beneficiarios y Montos",
-                isValid: totalToPay > 0 && pendingLines.every((l: any) => (payments[l.partner] || 0) <= l.pendingAmount),
+                isValid: totalToPay > 0 && pendingLines.every(l => (payments[l.partner] || 0) <= l.pendingAmount),
                 component: (
                     <div className="space-y-4">
                         <div className="flex justify-between items-end mb-2">
@@ -99,7 +101,7 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
                                 <button
                                     onClick={() => {
                                         const next: Record<number, number> = {}
-                                        pendingLines.forEach((l:any) => next[l.partner] = l.pendingAmount)
+                                        pendingLines.forEach(l => next[l.partner] = l.pendingAmount)
                                         setPayments(next)
                                     }}
                                     className="text-[10px] font-bold text-primary underline hover:text-primary/80"
@@ -132,7 +134,7 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
                                             </td>
                                         </tr>
                                     )}
-                                    {pendingLines.map((line: any) => {
+                                    {pendingLines.map((line) => {
                                         const currentVal = payments[line.partner] || 0
                                         const isOver = currentVal > line.pendingAmount
                                         return (

@@ -25,14 +25,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
-import { CheckoutDTEData } from "../../types"
-
-interface PendingDebt {
-    id: number
-    number: string
-    balance: number
-    days_overdue: number
-}
+import { CheckoutDTEData, PendingDebt } from "../../types"
 
 interface Step1_CustomerDTEProps {
     /* Customer */

@@ -2,12 +2,14 @@
 import React from "react"
 import { FileText, Package, Receipt, Banknote } from "lucide-react"
 import { translateStatus } from "@/lib/utils"
+import { OrderLine, Order } from "../types"
 import { getPurchaseHubStatuses } from "@/lib/purchase-order-status-utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
+
 interface PurchaseOrderHubStatusProps {
-    order: any
+    order: Order
 }
 
 export function PurchaseOrderHubStatus({ order }: PurchaseOrderHubStatusProps) {
@@ -16,12 +18,12 @@ export function PurchaseOrderHubStatus({ order }: PurchaseOrderHubStatusProps) {
 
     // Calculate reception progress for tooltip
     const lines = order.lines || order.items || []
-    const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
+    const totalOrdered = lines.reduce((acc: number, line: OrderLine) => acc + (parseFloat(line.quantity as string) || 0), 0)
     let receptionProgress = 0
     if (totalOrdered > 0) {
-        const totalReceived = lines.reduce((acc: number, line: any) => {
+        const totalReceived = lines.reduce((acc: number, line: OrderLine) => {
             const received = (line.quantity_received || 0)
-            return acc + (parseFloat(received) || 0)
+            return acc + (parseFloat(received as string) || 0)
         }, 0)
         receptionProgress = Math.min(100, Math.round((totalReceived / totalOrdered) * 100))
     } else if (lines.length > 0) {

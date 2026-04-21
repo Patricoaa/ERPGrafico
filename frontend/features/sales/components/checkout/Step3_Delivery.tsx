@@ -23,7 +23,7 @@ function UoMSelector({ line, currentUom, onUomChange }: { line: SaleOrderLine, c
                 <SelectValue />
             </SelectTrigger>
             <SelectContent>
-                {allowedUoms.map((u: any) => (
+                {allowedUoms.map((u: {id: number, name: string}) => (
                     <SelectItem key={u.id} value={u.id.toString()} className="text-xs">
                         {u.name}
                     </SelectItem>
@@ -263,7 +263,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                             isSimpleManufacturableWithAvailability;
 
                                         const pendingQty = line.qty || line.quantity;
-                                        const currentVal = (deliveryData.partialQuantities || []).find((pq: any) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product))?.dispatchedQty ?? 0;
+                                        const currentVal = (deliveryData.partialQuantities || []).find((pq: NonNullable<CheckoutDeliveryData["partialQuantities"]>[number]) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product))?.dispatchedQty ?? 0;
 
                                         return (
                                             <TableRow key={line.id} className={!isEligible ? "bg-muted/30 opacity-70" : ""}>
@@ -302,7 +302,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                             const val = parseFloat(e.target.value) || 0;
                                                             setDeliveryData((prev: CheckoutDeliveryData) => {
                                                                 const pqs = [...(prev.partialQuantities || [])];
-                                                                const existingIdx = pqs.findIndex((pq: any) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
+                                                                const existingIdx = pqs.findIndex((pq: NonNullable<CheckoutDeliveryData["partialQuantities"]>[number]) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
                                                                 if (existingIdx >= 0) {
                                                                     pqs[existingIdx] = { ...pqs[existingIdx], dispatchedQty: val };
                                                                 } else {
@@ -317,11 +317,11 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                 <TableCell className="text-sm text-muted-foreground font-medium">
                                                     <UoMSelector
                                                         line={line}
-                                                        currentUom={(deliveryData.partialQuantities || []).find((pq: any) => pq.productId === line.id)?.uom || line.uom}
+                                                        currentUom={(deliveryData.partialQuantities || []).find((pq: NonNullable<CheckoutDeliveryData["partialQuantities"]>[number]) => pq.productId === line.id)?.uom || line.uom}
                                                         onUomChange={(uomId) => {
                                                             setDeliveryData((prev: CheckoutDeliveryData) => {
                                                                 const pqs = [...(prev.partialQuantities || [])];
-                                                                const existingIdx = pqs.findIndex((pq: any) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
+                                                                const existingIdx = pqs.findIndex((pq: NonNullable<CheckoutDeliveryData["partialQuantities"]>[number]) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
                                                                 if (existingIdx >= 0) {
                                                                     pqs[existingIdx] = { ...pqs[existingIdx], uom: uomId };
                                                                 } else {

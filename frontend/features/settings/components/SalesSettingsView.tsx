@@ -38,29 +38,9 @@ import { Button } from "@/components/ui/button"
 import { SalesSettings, SalesSettingsUpdatePayload } from "@/features/settings/types"
 import { cn } from "@/lib/utils"
 
-const accountFieldSchema = z.string().nullable()
+import { salesSchema, type SalesFormValues } from "./SalesSettingsView.schema"
 
-const salesSchema = z.object({
-    default_revenue_account: z.string().nullable(),
-    default_service_revenue_account: z.string().nullable(),
-    default_subscription_revenue_account: z.string().nullable(),
-    pos_default_credit_percentage: z.coerce.number().min(0).max(100),
-    pos_enable_line_discounts: z.boolean(),
-    pos_enable_total_discounts: z.boolean(),
-    pos_line_discount_user: z.number().nullable(),
-    pos_line_discount_group: z.string(),
-    pos_global_discount_user: z.number().nullable(),
-    pos_global_discount_group: z.string(),
-    terminal_commission_bridge_account: z.string().nullable(),
-    terminal_iva_bridge_account: z.string().nullable(),
-    credit_auto_block_days: z.coerce.number().nullable(),
-    default_uncollectible_expense_account: z.string().nullable(),
-})
-
-
-type SalesFormValues = z.infer<typeof salesSchema>
-
-const AccountField = ({ form, name, label, accountType }: { form: any, name: any, label: string, accountType: string | string[] }) => (
+const AccountField = ({ form, name, label, accountType }: { form: UseFormReturn<SalesFormValues>, name: Path<SalesFormValues>, label: string, accountType: string | string[] }) => (
     <FormField
         control={form.control}
         name={name}
@@ -69,7 +49,7 @@ const AccountField = ({ form, name, label, accountType }: { form: any, name: any
                 <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">{label}</FormLabel>
                 <FormControl>
                     <AccountSelector
-                        value={field.value as any}
+                        value={field.value as string}
                         onChange={field.onChange}
                         accountType={accountType}
                     />
@@ -80,8 +60,8 @@ const AccountField = ({ form, name, label, accountType }: { form: any, name: any
     />
 )
 
-const DiscountPermissionControl = ({ form, userField, groupField }: { form: any, userField: any, groupField: any }) => {
-    const groupVal = form.watch(groupField as any)
+const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseFormReturn<SalesFormValues>, userField: Path<SalesFormValues>, groupField: Path<SalesFormValues> }) => {
+    const groupVal = form.watch(groupField)
     const [mode, setMode] = useState<'user' | 'group'>(groupVal ? 'group' : 'user')
 
     return (
@@ -124,7 +104,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: any,
                         name={userField}
                         render={({ field }) => (
                             <UserSelector
-                                value={field.value as any}
+                                value={field.value as string}
                                 onChange={field.onChange}
                                 placeholder="Sel. usuario con permiso..."
                             />
@@ -136,7 +116,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: any,
                         name={groupField}
                         render={({ field }) => (
                             <GroupSelector
-                                value={field.value as any}
+                                value={field.value as string}
                                 onChange={field.onChange}
                                 placeholder="Sel. grupo con permiso..."
                             />
@@ -157,7 +137,7 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
     const { settings, saving, updateSettings } = useSalesSettings()
 
     const form = useForm<SalesFormValues>({
-        resolver: zodResolver(salesSchema) as any,
+        resolver: zodResolver(salesSchema),
         defaultValues: {
             default_revenue_account: null,
             default_service_revenue_account: null,
@@ -218,7 +198,7 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
     useEffect(() => {
         if (isDirty) {
             const timer = setTimeout(() => {
-                form.handleSubmit(onSubmit as any)()
+                form.handleSubmit(onSubmit)()
             }, 1000)
             return () => clearTimeout(timer)
         }
@@ -246,7 +226,7 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                     </TabsTrigger>
                 </TabsList>
 
-                <Form {...(form as any)}>
+                <Form {...form}>
 
                     <form className="mt-6 space-y-6">
                         <TabsContent value="income" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">

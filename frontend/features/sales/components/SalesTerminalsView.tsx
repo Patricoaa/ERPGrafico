@@ -13,9 +13,10 @@ const POSSessionsView = lazy(() => import("@/features/sales/components/POSSessio
 interface SalesTerminalsViewProps {
     activeTab: string
     modal?: string
+    createAction?: React.ReactNode
 }
 
-export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTab, modal }) => {
+export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTab, modal, createAction }) => {
     const [isTerminalModalOpen, setIsTerminalModalOpen] = useState(false)
     const [isBatchModalOpen, setIsBatchModalOpen] = useState(false)
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false)
@@ -34,9 +35,10 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
         <Tabs value={activeTab} className="space-y-4">
             <TabsContent value="pos-terminals" className="mt-0 outline-none">
                 <Suspense fallback={<LoadingFallback variant="card" />}>
-                    <TerminalManagement 
-                        externalOpen={isTerminalModalOpen} 
-                        onExternalOpenChange={setIsTerminalModalOpen} 
+                    <TerminalManagement
+                        externalOpen={isTerminalModalOpen}
+                        onExternalOpenChange={setIsTerminalModalOpen}
+                        createAction={activeTab === "pos-terminals" ? createAction : undefined}
                     />
                 </Suspense>
             </TabsContent>
@@ -55,26 +57,29 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
                         onExternalOpenBatchChange={setIsBatchModalOpen}
                         externalOpenInvoice={isInvoiceModalOpen}
                         onExternalOpenInvoiceChange={setIsInvoiceModalOpen}
+                        createAction={activeTab === "batches" ? createAction : undefined}
                     />
                 </Suspense>
             </TabsContent>
 
             <TabsContent value="devices" className="mt-0 outline-none">
                 <Suspense fallback={<LoadingFallback variant="card" />}>
-                   <PaymentHardwareManagement 
+                   <PaymentHardwareManagement
                         externalDeviceOpen={isDeviceModalOpen}
                         onExternalDeviceOpenChange={setIsDeviceModalOpen}
                         activeTab="devices"
+                        createAction={activeTab === "devices" ? createAction : undefined}
                    />
                 </Suspense>
             </TabsContent>
 
             <TabsContent value="providers" className="mt-0 outline-none">
                 <Suspense fallback={<LoadingFallback variant="card" />}>
-                   <PaymentHardwareManagement 
+                   <PaymentHardwareManagement
                         externalProviderOpen={isProviderModalOpen}
                         onExternalProviderOpenChange={setIsProviderModalOpen}
                         activeTab="providers"
+                        createAction={activeTab === "providers" ? createAction : undefined}
                    />
                 </Suspense>
             </TabsContent>

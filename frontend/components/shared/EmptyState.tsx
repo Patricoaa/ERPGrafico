@@ -30,9 +30,9 @@ interface EmptyStateProps {
 
 const CONTEXT_CONFIG: Record<EmptyStateContext, { icon: LucideIcon; title: string }> = {
     generic: { icon: Inbox, title: "Sin datos disponibles" },
-    search: { icon: SearchX, title: "Sin resultados encontrados" },
-    inventory: { icon: Package, title: "Sin productos en inventario" },
-    finance: { icon: Receipt, title: "Sin movimientos registrados" },
+    search: { icon: SearchX, title: "Sin resultados" },
+    inventory: { icon: Package, title: "Sin stock / productos" },
+    finance: { icon: Receipt, title: "Sin movimientos financieros" },
     users: { icon: Users, title: "Sin contactos o usuarios" },
     database: { icon: Database, title: "Error de conexión o base vacía" },
     production: { icon: Package, title: "Sin órdenes o procesos activos" },

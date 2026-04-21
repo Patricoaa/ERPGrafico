@@ -26,12 +26,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface TerminalManagementProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
-export function TerminalManagement({ externalOpen, onExternalOpenChange }: TerminalManagementProps) {
+export function TerminalManagement({ externalOpen, onExternalOpenChange, createAction }: TerminalManagementProps) {
     const { terminals, toggleActive, deleteTerminal, refetch, isLoading } = useTerminals()
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingTerminal, setEditingTerminal] = useState<Terminal | null>(null)
@@ -75,6 +76,11 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange }: Termi
 
     return (
         <div className="space-y-6">
+            {createAction && (
+                <div className="flex items-center justify-end">
+                    {createAction}
+                </div>
+            )}
             {isLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {[1, 2, 3].map((i) => (

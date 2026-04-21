@@ -22,7 +22,7 @@ export interface SyncDraft {
     locked_at: string | null
     created_by_full_name: string | null
     last_modified_by_full_name: string | null
-    wizard_state: any | null
+    wizard_state: Record<string, unknown> | null
     updated_at: string
     created_at: string
 }
@@ -190,8 +190,9 @@ export function useDraftSync({
                     pos_session_id: posSessionId,
                     session_key: browserSessionKey.current,
                 })
-            } catch (error: unknown) {
-                if (error.response?.status === 409) {
+            } catch (error) {
+                const err = error as { response?: { status?: number } }
+                if (err.response?.status === 409) {
                     // Lock was lost
                     console.warn('[DraftSync] Lock lost for draft', activeLockDraftId)
                     toast.warning('El bloqueo del borrador se ha perdido. Otro usuario puede estar editándolo.')
@@ -242,9 +243,10 @@ export function useDraftSync({
             })
             setActiveLockDraftId(draftId)
             return { acquired: true }
-        } catch (error: unknown) {
-            if (error.response?.status === 423) {
-                const data = error.response.data
+        } catch (error) {
+            const err = error as { response?: { status?: number; data?: { error?: string; locked_by_name?: string } } }
+            if (err.response?.status === 423) {
+                const data = err.response.data
                 return {
                     acquired: false,
                     error: data.error,

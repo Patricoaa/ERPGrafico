@@ -7,10 +7,11 @@ import { getActionBadgeCount } from "@/lib/actions/utils"
 import { cn } from "@/lib/utils"
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Order } from "../types"
 
 interface ActionButtonProps {
     action: Action
-    order: any
+    order: Order
     userPermissions: string[]
     onClick: () => void
     showBadge?: boolean
@@ -72,7 +73,7 @@ export function ActionButton({
 
                 {showBadge && !ghost && (badgeCount !== undefined || badge) && (
                     <Badge
-                        variant={badge?.type as any || "secondary"}
+                        variant={(badge?.type as "default" | "secondary" | "destructive" | "outline") || "secondary"}
                         className={cn(
                             "ml-auto shrink-0",
                             compact ? "text-[9px] h-4 px-1 min-w-[16px] justify-center" : "text-[10px] h-5 px-1.5"

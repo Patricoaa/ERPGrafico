@@ -7,7 +7,7 @@ import { SaleOrderFilters, SaleOrderPayload } from '../types'
 const SALES_KEYS = {
     all: ['sales'] as const,
     orders: (filters: SaleOrderFilters) => [...SALES_KEYS.all, 'orders', { filters }] as const,
-    notes: (filters: any) => [...SALES_KEYS.all, 'notes', { filters }] as const,
+    notes: (filters: SaleOrderFilters) => [...SALES_KEYS.all, 'notes', { filters }] as const,
     order: (id: number) => [...SALES_KEYS.all, 'order', id] as const,
 }
 
@@ -25,7 +25,7 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
             toast.success('Nota de venta creada')
             queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             showApiError(error, 'Error al crear la nota de venta')
         }
     })
@@ -37,7 +37,7 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
             toast.success('Nota de venta actualizada')
             queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             showApiError(error, 'Error al actualizar la nota de venta')
         }
     })
@@ -48,7 +48,7 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
             toast.success('Nota de venta eliminada')
             queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             toast.error('Error al eliminar')
         }
     })

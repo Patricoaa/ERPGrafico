@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { MessageSquare, Send, History } from "lucide-react"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
@@ -64,10 +65,12 @@ export function CommentSystem({
                         </div>
                     </div>
                 )) : (
-                    <div className="text-center py-8 space-y-2 border-2 border-dashed rounded-lg bg-muted/20">
-                        <MessageSquare className="h-8 w-8 text-muted-foreground/20 mx-auto" />
-                        <p className="text-[11px] text-muted-foreground">{emptyMessage}</p>
-                    </div>
+                    <EmptyState
+                        icon={MessageSquare}
+                        variant="compact"
+                        title={emptyMessage}
+                        className="border-2 border-dashed rounded-lg"
+                    />
                 )}
             </div>
 

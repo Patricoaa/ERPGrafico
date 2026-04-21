@@ -75,7 +75,7 @@ export function ArchivingRestrictionsDialog({
                     {restrictions.map((restriction, index) => (
                         <div
                             key={index}
-                            className="flex items-start justify-between p-3 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                            className="flex items-start justify-between p-3 border rounded-md bg-muted/30 hover:bg-muted/50 transition-colors"
                         >
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">

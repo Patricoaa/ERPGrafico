@@ -5,9 +5,10 @@ import { Badge } from "@/components/ui/badge"
 import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
+import { CheckoutLine } from "../../types"
 
 interface PurchaseOrderSummaryCardProps {
-    orderLines: any[]
+    orderLines: CheckoutLine[]
     total: number
     dteType?: string
 }

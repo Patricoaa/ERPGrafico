@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react"
 import { TabsContent } from "@/components/ui/tabs"
 import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { IndustrialCard } from "@/components/shared/IndustrialCard"
+import { Skeleton } from "@/components/ui/skeleton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -57,14 +58,14 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
     }, [serverDate])
 
     // Data States
-    const [bsData, setBsData] = useState<any>(null)
-    const [plData, setPlData] = useState<any>(null)
-    const [cfData, setCfData] = useState<any>(null)
+    const [bsData, setBsData] = useState<Record<string, unknown> | null>(null)
+    const [plData, setPlData] = useState<Record<string, unknown> | null>(null)
+    const [cfData, setCfData] = useState<Record<string, unknown> | null>(null)
 
     const loadData = async () => {
         setLoading(true)
         try {
-            const params: any = {
+            const params: Record<string, unknown> = {
                 start_date: date?.from ? format(date.from, 'yyyy-MM-dd') : undefined,
                 end_date: date?.to ? format(date.to, 'yyyy-MM-dd') : undefined,
                 is_async: true
@@ -281,7 +282,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                 <RenderToolbar />
                                 {plData ? (
                                     <div className="space-y-8">
-                                        {(plData.sections || []).map((section: any, idx: number) => (
+                                        {((plData.sections as Array<Record<string, unknown>>) || []).map((section, idx: number) => (
                                             section.is_total ? (
                                                 <div key={idx} className={cn(
                                                     "py-6 px-4 flex justify-between items-center rounded-lg my-4 transition-colors",
@@ -346,7 +347,9 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                         compPeriodLabel={compPeriodLabel}
                                     />
                                 ) : (
-                                    <div className="p-8 text-center animate-pulse">Cargando flujo de caja...</div>
+                                    <div className="p-8">
+                                        <Skeleton className="h-[400px] w-full" />
+                                    </div>
                                 )}
                             </CardContent>
                         </IndustrialCard>

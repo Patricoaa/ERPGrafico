@@ -2,7 +2,8 @@
 
 import { lazy, Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useRouter, useSearchParams } from "next/navigation"
 
@@ -21,24 +22,23 @@ export default function ContactsPage() {
         router.push(`?${params.toString()}`)
     }
 
+    const createAction = (
+        <ToolbarCreateButton
+            label="Nuevo Contacto"
+            onClick={handleOpenNew}
+        />
+    )
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title="Contactos"
                 description="Directorio de contactos."
-                titleActions={
-                    <PageHeaderButton
-                        onClick={handleOpenNew}
-                        iconName="plus"
-                        circular
-                        title="Nuevo Contacto"
-                    />
-                }
                 iconName="users-2"
             />
 
             <Suspense fallback={<LoadingFallback />}>
-                <ContactsClientView isNewModalOpen={isNewModalOpen} />
+                <ContactsClientView isNewModalOpen={isNewModalOpen} createAction={createAction} />
             </Suspense>
         </div>
     )

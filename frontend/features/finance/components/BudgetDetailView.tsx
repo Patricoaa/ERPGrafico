@@ -22,9 +22,33 @@ interface BudgetDetailViewProps {
     budgetId: string
 }
 
+interface BudgetExecutionItem {
+    account_name: string;
+    account_code: string;
+    budgeted: number;
+    actual: number;
+    percentage: number;
+}
+
+interface BudgetExecutionData {
+    summary: {
+        total_budgeted: number;
+        total_actual: number;
+        total_variance: number;
+    };
+    items: BudgetExecutionItem[];
+}
+
+interface Budget {
+    id: number;
+    name: string;
+    start_date: string;
+    end_date: string;
+}
+
 export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
-    const [executionData, setExecutionData] = useState<any>(null)
-    const [budget, setBudget] = useState<any>(null)
+    const [executionData, setExecutionData] = useState<BudgetExecutionData | null>(null)
+    const [budget, setBudget] = useState<Budget | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -146,7 +170,7 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {executionData.items.map((item: any, idx: number) => (
+                            {executionData.items.map((item, idx: number) => (
                                 <TableRow key={idx}>
                                     <TableCell>
                                         <div className="font-medium">{item.account_name}</div>

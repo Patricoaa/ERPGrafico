@@ -33,15 +33,43 @@ interface BIAnalyticsViewProps {
     date?: DateRange;
 }
 
+interface BIAnalyticsData {
+    sales: {
+        total_sales: number;
+        growth: number;
+        average_ticket: number;
+        sales_count: number;
+        monthly_trend: Array<{ month: string; sales: number }>;
+        top_customers: Array<{ name: string; amount: number }>;
+    };
+    inventory: {
+        total_value: number;
+        item_count: number;
+        turnover_ratio: number;
+        low_stock_alerts: number;
+        stock_distribution: Array<{ category: string; value: number }>;
+    };
+    performance: {
+        purchase_total: number;
+        efficiency: number;
+        ar_total: number;
+        ap_total: number;
+    };
+    production: {
+        finished_wo: number;
+        total_wo: number;
+    };
+}
+
 export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<BIAnalyticsData | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const loadData = async () => {
             setLoading(true);
             try {
-                const params: any = { is_async: true };
+                const params: Record<string, unknown> = { is_async: true };
                 if (date?.to) params.end_date = format(date.to, 'yyyy-MM-dd');
                 if (date?.from) params.start_date = format(date.from, 'yyyy-MM-dd');
 
@@ -138,7 +166,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="month" />
                             <YAxis />
-                            <Tooltip formatter={(value: any) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Ventas']} />
+                            <Tooltip formatter={(value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Ventas']} />
                             <Legend />
                             <Line
                                 type="monotone"
@@ -168,7 +196,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis type="number" />
                                 <YAxis dataKey="name" type="category" width={100} />
-                                <Tooltip formatter={(value: any) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Ventas']} />
+                                <Tooltip formatter={(value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Ventas']} />
                                 <Bar dataKey="amount" fill={COLORS[1]} />
                             </BarChart>
                         </ResponsiveContainer>
@@ -189,16 +217,16 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                                     cx="50%"
                                     cy="50%"
                                     labelLine={false}
-                                    label={(entry: any) => `${entry.category}`}
+                                    label={(entry: { category: string }) => `${entry.category}`}
                                     outerRadius={80}
                                     fill="var(--primary)"
                                     dataKey="value"
                                 >
-                                    {(inventory.stock_distribution || []).map((entry: any, index: number) => (
+                                    {(inventory.stock_distribution || []).map((_entry, index: number) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(value: any) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Valor']} />
+                                <Tooltip formatter={(value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Valor']} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>

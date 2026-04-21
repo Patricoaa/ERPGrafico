@@ -20,6 +20,8 @@ import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2, ArrowLeftRight } from "lucide-react"
 import { useServerDate } from "@/hooks/useServerDate"
 
+import { Order } from "../types"
+
 interface InvoiceLine {
     product_id: number
     product_name: string
@@ -33,13 +35,13 @@ interface InvoiceLine {
 interface NoteLogisticsModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    invoice: any
+    invoice: Order
     onSuccess?: () => void
 }
 
 export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: NoteLogisticsModalProps) {
     const { dateString } = useServerDate()
-    const [warehouses, setWarehouses] = useState<any[]>([])
+    const [warehouses, setWarehouses] = useState<Record<string, unknown>[]>([])
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
     const [processQuantities, setProcessQuantities] = useState<{ [pId: number]: number }>({})
     const [displayLines, setDisplayLines] = useState<InvoiceLine[]>(invoice?.lines || [])
@@ -207,7 +209,7 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {displayLines.map((line: any) => {
+                                {displayLines.map((line: InvoiceLine) => {
                                     const processed = isSale ? (line.quantity_delivered || 0) : (line.quantity_received || 0)
                                     const pending = Math.max(0, line.quantity - processed)
 

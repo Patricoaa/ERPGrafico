@@ -13,10 +13,11 @@ import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachme
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
 import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
+import { DTEData } from "../../types"
 
 interface Step2_PurchaseDTEProps {
-    dteData: any
-    setDteData: (data: any) => void
+    dteData: DTEData
+    setDteData: (data: DTEData) => void
     contactId?: number | string | null
     onValidityChange?: (isValid: boolean) => void
     onPeriodValidityChange?: (isValid: boolean) => void

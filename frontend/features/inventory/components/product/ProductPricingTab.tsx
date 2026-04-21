@@ -1,5 +1,7 @@
+import { showApiError } from "@/lib/errors"
 import { Button } from "@/components/ui/button"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { Info, Plus, Pencil, Trash2 } from "lucide-react"
@@ -9,12 +11,13 @@ import { TabsContent } from "@/components/ui/tabs"
 import { formatCurrency } from "@/lib/currency"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { Product, PricingRule } from "@/types/entities"
 
 interface ProductPricingTabProps {
-    initialData?: any
-    pricingRules: any[]
+    initialData?: Partial<Product>
+    pricingRules: PricingRule[]
     fetchPricingRules: () => void
-    onOpenRuleDialog: (rule?: any) => void
+    onOpenRuleDialog: (rule?: PricingRule) => void
 }
 
 export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules, onOpenRuleDialog }: ProductPricingTabProps) {
@@ -24,14 +27,14 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
             toast.success("Regla eliminada")
             fetchPricingRules()
         } catch (error) {
-            toast.error("Error al eliminar la regla")
+            showApiError(error, "Error al eliminar la regla")
         }
     })
 
     return (
         <TabsContent value="pricing" className="mt-0">
             <div className="space-y-4">
-                <div className={cn("flex items-center justify-between p-4 rounded-lg border bg-primary/5 border-primary/10 shadow-sm", FORM_STYLES.card)}>
+                <div className={cn("flex items-center justify-between p-4 rounded-md border bg-primary/5 border-primary/10 shadow-sm", FORM_STYLES.card)}>
                     <div className="flex gap-4 items-center">
                         <Info className="h-5 w-5 text-muted-foreground" />
                         <div>
@@ -44,7 +47,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                         variant="default"
                         size="sm"
                         onClick={() => onOpenRuleDialog()}
-                        className="rounded-lg text-xs font-bold"
+                        className="rounded-md text-xs font-bold"
                     >
                         <Plus className="h-4 w-4 mr-2" />
                         Nueva Regla
@@ -52,7 +55,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                 </div>
 
                 {!initialData && (
-                    <div className="py-12 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-center px-6">
+                    <div className="py-12 border-2 border-dashed rounded-md flex flex-col items-center justify-center text-center px-6">
                         <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
                             <Pencil className="h-6 w-6 text-muted-foreground" />
                         </div>
@@ -62,7 +65,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                 )}
 
                 {initialData && (
-                    <div className="border rounded-lg overflow-hidden shadow-sm">
+                    <div className="border rounded-md overflow-hidden shadow-sm">
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/50 hover:bg-muted/50 border-none">
@@ -77,8 +80,8 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                             <TableBody>
                                 {pricingRules.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center py-12 text-muted-foreground italic">
-                                            No hay reglas personalizadas para este producto.
+                                        <TableCell colSpan={6}>
+                                            <EmptyState context="finance" variant="compact" title="Sin reglas de precio" description="No hay reglas de precio personalizadas para este producto." />
                                         </TableCell>
                                     </TableRow>
                                 ) : (

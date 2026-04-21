@@ -11,12 +11,13 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { TransactionNumberForm } from "@/features/finance/components/TransactionNumberForm"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
+import { Order, PhaseDocument, Payment } from "../../types"
 
 interface TreasuryPhaseProps {
     isNoteMode: boolean
-    noteStatuses: any
-    activeDoc: any
-    payments: any[]
+    noteStatuses: Record<string, string>
+    activeDoc: Order
+    payments: Payment[]
     userPermissions: string[]
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
@@ -64,7 +65,7 @@ export function TreasuryPhase({
         initialValue: ""
     })
 
-    const hasPendingTransactions = payments.some((pay: any) => {
+    const hasPendingTransactions = payments.some((pay: Payment) => {
         const requiresTR = (
             (pay.payment_type === 'OUTBOUND' && (pay.payment_method === 'CARD' || pay.payment_method === 'TRANSFER')) ||
             (pay.payment_type === 'INBOUND' && pay.payment_method === 'TRANSFER')
@@ -90,10 +91,10 @@ export function TreasuryPhase({
             toast.success("Pago eliminado correctamente")
             setConfirmModal(prev => ({ ...prev, open: false }))
             onActionSuccess?.()
-        } catch (error: any) {
+        } catch (error: unknown) {
             const errorMessage = getErrorMessage(error) || ""
             // Identify if error is due to POSTED status (standardize backend to return this specific code/msg)
-            if (errorMessage.includes("publicado") || error?.response?.status === 400) {
+            if (errorMessage.includes("publicado") || (error as { response?: { status?: number } })?.response?.status === 400) {
                 // Close previous modal
                 setConfirmModal(prev => ({ ...prev, open: false }))
 
@@ -110,8 +111,8 @@ export function TreasuryPhase({
                                 toast.success("Pago anulado correctamente")
                                 setConfirmModal(prev => ({ ...prev, open: false }))
                                 onActionSuccess?.()
-                            } catch (err: any) {
-                                toast.error(err.response?.data?.error || "Error al anular pago")
+                            } catch (err: unknown) {
+                                toast.error((err as { response?: { data?: { error?: string } } })?.response?.data?.error || "Error al anular pago")
                             }
                         },
                         description: "No se puede eliminar un pago ya contabilizado. ¿Desea ANULARLO en su lugar? Esto creará un contra-asiento contable."
@@ -129,11 +130,11 @@ export function TreasuryPhase({
                 title="Tesorería"
                 icon={Banknote}
                 variant={
-                    isNoteMode ? noteStatuses.treasury :
-                        ((parseFloat(activeDoc.pending_amount || '0') <= 0 && !hasPendingTransactions) ? 'success' :
-                            (payments.length > 0 || hasPendingTransactions ? 'active' : 'neutral'))
+                    (isNoteMode ? noteStatuses.treasury :
+                        ((parseFloat(String(activeDoc.pending_amount || '0')) <= 0 && !hasPendingTransactions) ? 'success' :
+                            (payments.length > 0 || hasPendingTransactions ? 'active' : 'neutral'))) as string
                 }
-                documents={payments.map((p: any) => {
+                documents={payments.map((p: Payment) => {
                     const isWriteOff = p.payment_method === 'WRITE_OFF'
                     return {
                         type: isWriteOff ? 'Castigo' : (p.payment_method_display || 'Pago'),
@@ -160,15 +161,15 @@ export function TreasuryPhase({
                             }] : [])
                         ]
                     }
-                })}
+                }) as PhaseDocument[]}
                 onViewDetail={openDetails}
-                actions={(registry.payments?.actions || []).filter((a: any) => !a.id.includes('view-'))}
+                actions={(registry.payments?.actions || []).filter((a: { id: string }) => !a.id.includes('view-'))}
                 emptyMessage="Sin pagos registrados"
                 order={activeDoc}
                 userPermissions={userPermissions}
                 onActionSuccess={onActionSuccess}
                 stageId="treasury"
-                isComplete={parseFloat(activeDoc.pending_amount || '0') <= 0 && !hasPendingTransactions}
+                isComplete={parseFloat(String(activeDoc.pending_amount || '0')) <= 0 && !hasPendingTransactions}
                 posSessionId={posSessionId}
                 collapsible={collapsible}
                 isOpen={isOpen}
@@ -178,7 +179,7 @@ export function TreasuryPhase({
                     <div className="flex flex-col gap-0.5">
                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 leading-none">Pagado</span>
                         <span className="text-[14px] font-heading font-black text-success tracking-tight">
-                            {formatCurrency((activeDoc.total || 0) - (activeDoc.pending_amount || 0))}
+                            {formatCurrency(Number(activeDoc.total || 0) - Number(activeDoc.pending_amount || 0))}
                         </span>
                     </div>
                     
@@ -188,9 +189,9 @@ export function TreasuryPhase({
                         <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 leading-none">Pendiente</span>
                         <span className={cn(
                             "text-[14px] font-heading font-black tracking-tight",
-                            parseFloat(activeDoc.pending_amount || '0') > 0 ? "text-warning" : "text-muted-foreground/30"
+                            parseFloat(String(activeDoc.pending_amount || '0')) > 0 ? "text-warning" : "text-muted-foreground/30"
                         )}>
-                            {formatCurrency(activeDoc.pending_amount || 0)}
+                            {formatCurrency(Number(activeDoc.pending_amount || 0))}
                         </span>
                     </div>
                 </div>

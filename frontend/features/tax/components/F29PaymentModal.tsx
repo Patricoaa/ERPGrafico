@@ -17,13 +17,13 @@ import { formatCurrency, cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
-import { TaxDeclaration } from "../types"
+import { TaxDeclaration, TaxPaymentData } from "../types"
 
 interface F29PaymentModalProps {
     isOpen: boolean
     onOpenChange: (open: boolean) => void
     declaration: TaxDeclaration
-    onConfirmPayment: (data: any) => Promise<void>
+    onConfirmPayment: (data: TaxPaymentData) => Promise<void>
 }
 
 export function F29PaymentModal({

@@ -1,14 +1,16 @@
 import { Button } from "@/components/ui/button"
 import { Plus, Settings2, Trash2 } from "lucide-react"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { UseFormReturn, useFieldArray } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { TabsContent } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
+import { CustomFieldTemplate } from "@/types/entities"
 
 interface ProductCustomFieldsTabProps {
     form: UseFormReturn<ProductFormValues>
-    fieldTemplates: any[]
+    fieldTemplates: CustomFieldTemplate[]
     onShowTemplateForm: () => void
 }
 
@@ -35,7 +37,7 @@ export function ProductCustomFieldsTab({ form, fieldTemplates, onShowTemplateFor
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="rounded-lg font-bold gap-2"
+                        className="rounded-md font-bold gap-2"
                         onClick={onShowTemplateForm}
                     >
                         <Settings2 className="h-4 w-4" /> Gestionar Plantillas
@@ -44,7 +46,7 @@ export function ProductCustomFieldsTab({ form, fieldTemplates, onShowTemplateFor
                         type="button"
                         variant="default"
                         size="sm"
-                        className="rounded-lg font-bold gap-2"
+                        className="rounded-md font-bold gap-2"
                         onClick={() => appendCustomField({ template: 0, order: customFields.length })}
                     >
                         <Plus className="h-4 w-4" /> Añadir Campo
@@ -52,7 +54,7 @@ export function ProductCustomFieldsTab({ form, fieldTemplates, onShowTemplateFor
                 </div>
             </div>
 
-            <div className="border rounded-lg overflow-hidden shadow-sm">
+            <div className="border rounded-md overflow-hidden shadow-sm">
                 <Table>
                     <TableHeader className="bg-muted/50">
                         <TableRow>
@@ -64,8 +66,8 @@ export function ProductCustomFieldsTab({ form, fieldTemplates, onShowTemplateFor
                     <TableBody>
                         {customFields.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={3} className="text-center py-12 text-muted-foreground italic">
-                                    No hay grupos de campos personalizados asignados.
+                                <TableCell colSpan={3}>
+                                    <EmptyState context="generic" variant="compact" title="Sin campos personalizados" description="No hay grupos de campos asignados a este producto." />
                                 </TableCell>
                             </TableRow>
                         ) : (

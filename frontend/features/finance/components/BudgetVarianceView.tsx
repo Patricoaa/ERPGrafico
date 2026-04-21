@@ -32,7 +32,7 @@ const MONTH_NAMES = [
 ];
 
 export function BudgetVarianceView() {
-    const [budgets, setBudgets] = useState<any[]>([]);
+    const [budgets, setBudgets] = useState<Array<{ id: number; name: string }>>([]);
     const [selectedBudget, setSelectedBudget] = useState<string>("");
     const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());

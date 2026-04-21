@@ -10,38 +10,9 @@ import api from "@/lib/api"
 import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
 import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 
-interface Product {
-    id: number
-    name: string
-    has_variants?: boolean
-    image?: string | null
-}
-
-interface Variant {
-    id: number
-    name: string
-    variant_display_name?: string
-    code: string
-    internal_code?: string
-    sale_price: string
-    sale_price_gross: string
-    current_stock: number
-    qty_available: number
-    qty_reserved?: number
-    manufacturable_quantity: number | null
-    has_active_bom: boolean
-    product_type: string
-    requires_advanced_manufacturing?: boolean
-    uom?: number
-    uom_name?: string
-    image?: string | null
-    attribute_values_data?: {
-        id: number
-        attribute_name: string
-        value: string
-    }[]
-}
+import type { Product, Variant, CartItem } from '@/types/pos'
 
 interface POSVariantSelectorModalProps {
     open: boolean
@@ -49,10 +20,10 @@ interface POSVariantSelectorModalProps {
     product: Product | null
     onSelect: (variant: Variant) => void
     initialVariantId?: number | null
-    items: any[]
-    bomCache: Record<number, any>
+    items: CartItem[]
+    bomCache: Record<number, Record<string, unknown>>
     componentCache: Record<number, { stock: number, uom: number }>
-    calculateMaxQty: (product: any, currentQty?: number, cartItemId?: string) => Promise<number>
+    calculateMaxQty: (product: Variant, currentQty?: number, cartItemId?: string) => Promise<number>
 }
 
 export function POSVariantSelectorModal({

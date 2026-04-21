@@ -30,7 +30,7 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
         setEditingLineIndex(index)
     }
 
-    const handleConfirmManufacturing = (data: any) => {
+    const handleConfirmManufacturing = (data: Record<string, unknown>) => {
         if (editingLineIndex === null) return
 
         const newLines = [...orderLines]

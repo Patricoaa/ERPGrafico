@@ -41,7 +41,7 @@ type JournalFormValues = z.infer<typeof journalSchema>
 interface BankJournalFormProps {
     auditSidebar?: React.ReactNode
     onSuccess?: () => void
-    initialData?: any
+    initialData?: Record<string, unknown> | null
     open?: boolean
     onOpenChange?: (open: boolean) => void
 }
@@ -73,7 +73,7 @@ export function BankJournalForm({ auditSidebar,  onSuccess, initialData, open: o
             if (initialData) {
                 form.reset({
                     ...initialData,
-                    account: initialData.account?.id?.toString() || initialData.account?.toString() || "",
+                    account: (initialData.account as { id?: number } | undefined)?.id?.toString() || initialData.account?.toString() || "",
                 })
             } else {
                 form.reset({
@@ -88,7 +88,7 @@ export function BankJournalForm({ auditSidebar,  onSuccess, initialData, open: o
     async function onSubmit(data: JournalFormValues) {
         setLoading(true)
         try {
-            if (initialData) {
+            if (initialData && initialData.id) {
                 await api.put(`/treasury/journals/${initialData.id}/`, data)
             } else {
                 await api.post('/treasury/journals/', data)

@@ -47,6 +47,8 @@ interface DataTableToolbarProps<TData> {
     isCustomFiltered?: boolean
     customFilterCount?: number
     leftAction?: React.ReactNode
+    /** Primary create action rendered to the right of the button group */
+    createAction?: React.ReactNode
 }
 
 function translateColumnId(id: string): string {
@@ -111,6 +113,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         isCustomFiltered,
         customFilterCount,
         leftAction,
+        createAction,
     } = props
 
     const isFiltered = table.getState().columnFilters.length > 0 || table.getState().globalFilter?.length > 0 || isCustomFiltered
@@ -386,6 +389,12 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             </div>
                         )}
                     </div>
+
+                    {createAction && (
+                        <div className="flex items-center shrink-0">
+                            {createAction}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

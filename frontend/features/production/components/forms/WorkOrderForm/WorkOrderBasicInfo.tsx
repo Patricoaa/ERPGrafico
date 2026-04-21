@@ -21,19 +21,22 @@ import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactS
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms"
+import type { SaleOrder, SaleOrderLine } from "@/features/sales/types"
+import type { Contact } from "@/features/contacts/types"
+import type { UoM, ProductMinimal } from "../../types"
 
 interface WorkOrderBasicInfoProps {
     otType: "LINKED" | "NONE"
     initialData?: WorkOrderInitialData
     isAutoCreated: boolean
-    linkedSaleOrder?: any
-    saleLines: any[]
+    linkedSaleOrder?: SaleOrder | number | string
+    saleLines: SaleOrderLine[]
     loadingLines: boolean
-    uoms: any[]
-    selectedContact: any
-    setSelectedContact: (c: any) => void
-    selectedManualProduct: any
-    handleManualProductSelect: (p: any) => void
+    uoms: UoM[]
+    selectedContact: Contact | null
+    setSelectedContact: (c: Contact | null) => void
+    selectedManualProduct: ProductMinimal | null
+    handleManualProductSelect: (p: ProductMinimal) => void
     watchedSaleOrder: string | undefined
     watchedSaleLineId: string | undefined
 }
@@ -85,7 +88,9 @@ export function WorkOrderBasicInfo({
                                             {initialData?.sale_order_number ? `NV-${initialData.sale_order_number}` : "Sin NV"}
                                         </span>
                                         <span className="text-muted-foreground">
-                                            - {(initialData?.sale_line as any)?.product?.name || (initialData?.sale_line as any)?.description || ''}
+                                            - {typeof initialData?.sale_line === 'object' 
+                                                ? (initialData.sale_line?.product?.name || initialData.sale_line?.description || '')
+                                                : ''}
                                         </span>
                                     </div>
                                 </div>
@@ -110,8 +115,8 @@ export function WorkOrderBasicInfo({
                                             value={field.value}
                                             onChange={field.onChange}
                                             disabled={!!initialData}
-                                            customFilter={(order: any) =>
-                                                order.lines?.some((l: any) =>
+                                            customFilter={(order: SaleOrder) =>
+                                                order.lines?.some((l: SaleOrderLine) =>
                                                     l.product_type === 'MANUFACTURABLE' &&
                                                     l.requires_advanced_manufacturing &&
                                                     !l.work_order_summary
@@ -138,8 +143,8 @@ export function WorkOrderBasicInfo({
                             <div>
                                 <p className="text-xs text-muted-foreground uppercase font-semibold">Producto</p>
                                 <p className="font-medium truncate">
-                                    {(initialData.sale_line as any)
-                                        ? ((initialData.sale_line as any).product?.name || (initialData.sale_line as any).description)
+                                    {typeof initialData.sale_line === 'object'
+                                        ? (initialData.sale_line?.product?.name || initialData.sale_line?.description)
                                         : (initialData.product?.name || "Producto Manual")
                                     }
                                 </p>
@@ -147,8 +152,8 @@ export function WorkOrderBasicInfo({
                             <div>
                                 <p className="text-xs text-muted-foreground uppercase font-semibold">Cantidad</p>
                                 <p className="font-medium">
-                                    {(initialData.sale_line as any)
-                                        ? `${(initialData.sale_line as any).quantity} ${(initialData.sale_line as any).uom?.name || ''}`
+                                    {typeof initialData.sale_line === 'object'
+                                        ? `${initialData.sale_line?.quantity} ${initialData.sale_line?.uom?.name || ''}`
                                         : `${initialData.stage_data?.quantity || 0} ${initialData.stage_data?.uom_name || ""}`
                                     }
                                 </p>
@@ -251,7 +256,7 @@ export function WorkOrderBasicInfo({
                                             onChange={field.onChange}
                                             onSelect={handleManualProductSelect}
                                             productType="MANUFACTURABLE"
-                                            customFilter={(p: any) =>
+                                            customFilter={(p: ProductMinimal) =>
                                                 !p.requires_advanced_manufacturing &&
                                                 !p.mfg_auto_finalize
                                             }

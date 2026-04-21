@@ -10,6 +10,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Input } from "@/components/ui/input"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUserSearch } from "@/features/users/hooks/useUserSearch"
 import type { AppUser } from "@/types/entities"
@@ -70,7 +71,7 @@ export function UserSelector({ value, onChange, placeholder = "Seleccionar usuar
                 >
                     {selectedUser ? (
                         <div className="flex items-center gap-2 truncate text-left">
-                            <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                            <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
                                 <User className="h-4 w-4" />
                             </div>
                             <div className="flex flex-col items-start truncate leading-tight">
@@ -100,9 +101,7 @@ export function UserSelector({ value, onChange, placeholder = "Seleccionar usuar
                         {searchLoading ? (
                             <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
                         ) : users.length === 0 ? (
-                            <div className="p-4 text-sm text-center text-muted-foreground">
-                                No se encontraron usuarios.
-                            </div>
+                            <EmptyState context="users" variant="compact" title="No se encontraron usuarios" />
                         ) : (
                             users.map((u) => (
                                 <div

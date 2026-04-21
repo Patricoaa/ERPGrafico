@@ -17,9 +17,9 @@ export async function fetchBOM(
     if (bomCache[productId]) return bomCache[productId]
 
     // Try to find it in the preloaded products list
-    const product = products.find(p => p.id === productId) as any
+    const product = products.find(p => p.id === productId)
     if (product && product.boms && product.boms.length > 0) {
-        const activeBom = product.boms.find((b: any) => b.active)
+        const activeBom = product.boms.find(b => b.active)
         if (activeBom) {
             updateBomCache(productId, activeBom)
             return activeBom
@@ -82,18 +82,18 @@ export async function fetchComponentData(
  * Initialize BOM and component caches from preloaded products
  */
 export function initializeCachesFromProducts(
-    products: any[]
+    products: Product[]
 ): { bomCache: BOMCache, componentCache: ComponentCache } {
     const newBomCache: BOMCache = {}
     const newComponentCache: ComponentCache = {}
 
-    products.forEach((p: any) => {
+    products.forEach((p) => {
         if (p.boms && p.boms.length > 0) {
-            const activeBom = p.boms.find((b: any) => b.active)
+            const activeBom = p.boms.find(b => b.active)
             if (activeBom) {
                 newBomCache[p.id] = activeBom
                 // Also pre-cache component stock from BOM lines
-                activeBom.lines?.forEach((line: any) => {
+                activeBom.lines?.forEach((line) => {
                     if (line.component && line.component_stock !== undefined) {
                         newComponentCache[line.component] = {
                             stock: line.component_stock,

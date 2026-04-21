@@ -10,14 +10,17 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Plus, Edit, Loader2, ChevronLeft, Users, UserPlus } from "lucide-react"
+import { Edit, Trash2 } from "lucide-react"
 import { UserForm } from "@/features/users/components/UserForm"
 import { GroupForm } from "@/features/users/components/GroupForm"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/features/settings/components/GroupManagement"
 import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
+import { type AppUser } from "@/types/entities"
+import { cn } from "@/lib/utils"
 
 interface UsersSettingsViewProps {
     activeTab: string
@@ -26,7 +29,7 @@ interface UsersSettingsViewProps {
 
 export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsViewProps) {
     const [loading, setLoading] = useState(true)
-    const [users, setUsers] = useState<any[]>([])
+    const [users, setUsers] = useState<AppUser[]>([])
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
 
     const fetchUsers = async () => {
@@ -44,7 +47,7 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
         fetchUsers()
     }, [])
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<AppUser>[] = [
         {
             accessorKey: "username",
             header: ({ column }) => (
@@ -72,9 +75,9 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
                 <DataTableColumnHeader column={column} title="Rol" />
             ),
             cell: ({ row }) => {
-                const groups = row.getValue("role") as string[]
+                const groups = (row.original.groups || []).map(g => typeof g === 'string' ? g : g.name)
                 const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
-                const systemRole = groups?.find(g => roles.includes(g))
+                const systemRole = groups.find(g => roles.includes(g))
 
                 return systemRole ? (
                     <span className={cn(
@@ -93,9 +96,9 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
                 <DataTableColumnHeader column={column} title="Grupos" />
             ),
             cell: ({ row }) => {
-                const groups = row.getValue("functional_groups") as string[]
+                const groups = (row.original.groups || []).map(g => typeof g === 'string' ? g : g.name)
                 const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
-                const functionalGroups = groups?.filter(g => !roles.includes(g)) || []
+                const functionalGroups = groups.filter(g => !roles.includes(g))
 
                 return (
                     <div className="flex flex-wrap gap-1">
@@ -117,7 +120,7 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
                 />
             ),
         },
-        createActionsColumn<any>({
+        createActionsColumn<AppUser>({
             renderActions: (user) => (
                 <UserForm
                     initialData={user}
@@ -133,37 +136,22 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
     ]
 
     useEffect(() => {
-        const getHeaderActions = () => {
-            switch (activeTab) {
-                case "users":
-                    return (
-                        <UserForm
-                            onSuccess={fetchUsers}
-                            trigger={
-                                <PageHeaderButton
-                                    icon={Plus}
-                                    circular
-                                    title="Nuevo Usuario"
-                                />
-                            }
-                        />
-                    )
-                case "groups":
-                    return (
-                        <PageHeaderButton
-                            onClick={() => setIsGroupModalOpen(true)}
-                            icon={Plus}
-                            circular
-                            title="Nuevo Grupo"
-                        />
-                    )
-                default:
-                    return null
-            }
-        }
+        onActionsChange?.(null)
+    }, [activeTab, onActionsChange])
 
-        onActionsChange?.(getHeaderActions())
-    }, [activeTab, isGroupModalOpen, onActionsChange])
+    const usersCreateAction = (
+        <UserForm
+            onSuccess={fetchUsers}
+            trigger={<ToolbarCreateButton label="Nuevo Usuario" />}
+        />
+    )
+
+    const groupsCreateAction = (
+        <ToolbarCreateButton
+            label="Nuevo Grupo"
+            onClick={() => setIsGroupModalOpen(true)}
+        />
+    )
 
     return (
         <div className="pt-4">
@@ -189,11 +177,16 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
                                 ],
                             },
                         ]}
+                        createAction={usersCreateAction}
                     />
                 </TabsContent>
 
                 <TabsContent value="groups" className="mt-0 outline-none">
-                    <GroupManagement externalOpen={isGroupModalOpen} onExternalOpenChange={setIsGroupModalOpen} />
+                    <GroupManagement
+                        externalOpen={isGroupModalOpen}
+                        onExternalOpenChange={setIsGroupModalOpen}
+                        createAction={groupsCreateAction}
+                    />
                 </TabsContent>
             </Tabs>
         </div>

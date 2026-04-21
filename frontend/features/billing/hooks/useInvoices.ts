@@ -7,7 +7,7 @@ export const INVOICES_QUERY_KEY = ['invoices']
 
 interface UseInvoicesProps {
     filters?: InvoiceFilters
-    initialData?: any // For server-side prefetching if needed
+    initialData?: Record<string, unknown> // For server-side prefetching if needed
 }
 
 export function useInvoices({ filters }: UseInvoicesProps = {}) {
@@ -26,7 +26,7 @@ export function useInvoices({ filters }: UseInvoicesProps = {}) {
             toast.success('Documento anulado correctamente')
             queryClient.invalidateQueries({ queryKey: INVOICES_QUERY_KEY })
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             // Let component handle specific errors
             console.error("Error annulling invoice", error)
         }

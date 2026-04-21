@@ -51,9 +51,9 @@ function CartItemComponent({
 
     // Determine allowed UoMs
     let allowedUoMs: UoM[] = []
-    if (originalProduct && (originalProduct as any).allowed_sale_uoms?.length > 0) {
-        const allowedIds = (originalProduct as any).allowed_sale_uoms
-        const saleUoMId = (originalProduct as any).sale_uom
+    if (originalProduct && originalProduct.allowed_sale_uoms?.length) {
+        const allowedIds = originalProduct.allowed_sale_uoms || []
+        const saleUoMId = originalProduct.sale_uom
         allowedUoMs = uoms.filter(u => allowedIds.includes(u.id) || u.id === saleUoMId)
     } else if (itemUom) {
         allowedUoMs = uoms.filter(u => u.category === itemUom.category)

@@ -199,9 +199,21 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
     return (
         <>
             {trigger ? (
-                <div onClick={() => setOpen(true)} className="inline-block cursor-pointer">
-                    {trigger}
-                </div>
+                React.isValidElement(trigger) ? (
+                    React.cloneElement(trigger as React.ReactElement<{ onClick?: (e: React.MouseEvent) => void }>, {
+                        onClick: (e: React.MouseEvent) => {
+                            e.stopPropagation();
+                            setOpen(true);
+                            if (trigger.props.onClick) {
+                                trigger.props.onClick(e);
+                            }
+                        }
+                    })
+                ) : (
+                    <div onClick={(e) => { e.stopPropagation(); setOpen(true); }} className="inline-block cursor-pointer">
+                        {trigger}
+                    </div>
+                )
             ) : (
                 <Button
                     variant="ghost"

@@ -5,12 +5,15 @@ import { Badge } from "@/components/ui/badge"
 import { cn, formatCurrency } from "@/lib/utils"
 import { CheckCircle2, Circle, Clock, AlertCircle, PlayCircle, TrendingUp, Package, FileText, Banknote, ClipboardList } from "lucide-react"
 
+import { Order } from "../types"
+import { LucideIcon } from "lucide-react"
+
 interface OrderHeaderDashboardProps {
-    order: any
-    activeInvoice: any
+    order: Partial<Order> | null
+    activeInvoice: Partial<Order> | null
     isNoteMode: boolean
     type: 'purchase' | 'sale' | 'obligation'
-    globalStatus: { label: string, variant: string, icon: any }
+    globalStatus: { label: string, variant: string, icon: LucideIcon | React.ElementType }
     phasesStatus: {
         production: string
         logistics: string
@@ -32,8 +35,8 @@ export function OrderHeaderDashboard({
     if (!activeDoc) return null
 
     // KPIs
-    const totalAmount = parseFloat(activeDoc.total || '0')
-    const pendingAmount = parseFloat(activeDoc.pending_amount || '0')
+    const totalAmount = parseFloat(String(activeDoc.total || '0'))
+    const pendingAmount = parseFloat(String(activeDoc.pending_amount || '0'))
     const paidAmount = totalAmount - pendingAmount
     const paymentProgress = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0
 

@@ -13,7 +13,9 @@ import {
     SelectValue 
 } from "@/components/ui/select"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/types/partner"
 import { accountingApi } from "@/features/accounting/api/accountingApi"
+import { FiscalYear } from "@/features/accounting/types"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
 import { 
@@ -35,12 +37,12 @@ interface ModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess: () => void
-    initialResolution?: any
+    initialResolution?: ProfitDistribution
 }
 
 export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialResolution }: ModalProps) {
     const [loading, setLoading] = useState(false)
-    const [fiscalYears, setFiscalYears] = useState<any[]>([])
+    const [fiscalYears, setFiscalYears] = useState<FiscalYear[]>([])
     
     // Step 1 Form
     const [formData, setFormData] = useState({
@@ -52,8 +54,8 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
     })
 
     // Draft Resolution State (from backend)
-    const [draftResolution, setDraftResolution] = useState<any>(null)
-    const [lines, setLines] = useState<any[]>([])
+    const [draftResolution, setDraftResolution] = useState<ProfitDistribution | null>(null)
+    const [lines, setLines] = useState<ProfitDistributionLine[]>([])
 
     type DestinationAllocation = {
         destination: string;
@@ -117,7 +119,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             setLines(initialResolution.lines || [])
             
             const dests: Record<number, DestinationAllocation[]> = {}
-            initialResolution.lines?.forEach((l: any) => {
+            initialResolution.lines?.forEach((l) => {
                 dests[l.id] = l.destinations || []
                 // if it's loss, auto assign
                 if (initialResolution.is_loss && dests[l.id].length === 0) {
@@ -151,7 +153,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                 notes: formData.notes
             }
 
-            let res;
+            let res: ProfitDistribution;
             if (draftResolution?.status === 'DRAFT') {
                 await partnersApi.updateProfitDistribution(draftResolution.id, payload)
                 res = await partnersApi.recalculateProfitDistribution(draftResolution.id)
@@ -163,7 +165,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             setLines(res.lines || [])
             
             const dests: Record<number, DestinationAllocation[]> = {}
-            res.lines?.forEach((l: any) => {
+            res.lines?.forEach((l) => {
                 dests[l.id] = l.destinations || []
                 if (res.is_loss && dests[l.id].length === 0) {
                      dests[l.id] = [{ destination: 'LOSS', amount: Math.abs(parseFloat(l.net_amount)) }]
@@ -212,10 +214,12 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
     const handleExecute = async () => {
         setLoading(true)
         try {
-            if (draftResolution.status === 'DRAFT') {
+            if (draftResolution && draftResolution.status === 'DRAFT') {
                 await partnersApi.approveProfitDistribution(draftResolution.id)
             }
-            await partnersApi.executeProfitDistribution(draftResolution.id)
+            if (draftResolution) {
+                await partnersApi.executeProfitDistribution(draftResolution.id)
+            }
             toast.success("Distribución contable ejecutada con éxito")
             onSuccess()
             onOpenChange(false)
@@ -367,7 +371,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
-                                {lines.map((line: any) => {
+                                {lines.map((line) => {
                                     const net = parseFloat(line.net_amount);
                                     const isCompensated = net <= 0 && draftResolution?.is_profit;
                                     const dests = lineDestinations[line.id] || [];

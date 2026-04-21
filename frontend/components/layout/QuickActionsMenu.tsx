@@ -108,7 +108,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                             href={action.url}
                                             target={action.title === "POS" ? "_blank" : undefined}
                                             className={cn(
-                                                "relative flex items-center justify-center h-12 w-12 rounded-lg transition-all duration-300 group hover:scale-110 active:scale-95",
+                                                "relative flex items-center justify-center h-12 w-12 rounded-sm transition-all duration-300 group hover:scale-110 active:scale-95",
                                                 isActive
                                                     ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                                                     : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -135,7 +135,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                             <button
                                 onClick={onInboxToggle}
                                 className={cn(
-                                    "relative flex items-center justify-center h-12 w-12 rounded-lg transition-all duration-300 group hover:scale-110 active:scale-95",
+                                    "relative flex items-center justify-center h-12 w-12 rounded-sm transition-all duration-300 group hover:scale-110 active:scale-95",
                                     isInboxOpen
                                         ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                                         : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -163,7 +163,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                             <button
                                 onClick={() => setIsCalculatorOpen(true)}
                                 className={cn(
-                                    "relative flex items-center justify-center h-12 w-12 rounded-lg transition-all duration-300 group hover:scale-110 active:scale-95",
+                                    "relative flex items-center justify-center h-12 w-12 rounded-sm transition-all duration-300 group hover:scale-110 active:scale-95",
                                     isCalculatorOpen
                                         ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                                         : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"

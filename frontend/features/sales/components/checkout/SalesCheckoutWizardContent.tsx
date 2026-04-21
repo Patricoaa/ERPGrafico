@@ -31,20 +31,31 @@ import {
 import { useServerDate } from "@/hooks/useServerDate"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { PINPadModal } from "@/features/pos/components/PINPadModal"
-import { SaleOrder, SaleOrderLine, CheckoutDTEData, CheckoutPaymentData, CheckoutDeliveryData } from "../../types"
-import { Product } from "@/features/inventory/types"
-import { TerminalPaymentWizard } from "@/features/treasury/components/TerminalPaymentWizard"
-import { ManualTerminalNotice, type ManualTerminalReason } from "@/features/treasury/components/ManualTerminalNotice"
-import type { PaymentRequest } from "@/features/treasury/types"
+import { SaleOrder, SaleOrderLine, CheckoutDTEData, CheckoutPaymentData, CheckoutDeliveryData, PendingDebt, AccountingSettings, CheckoutResponse, CreditApprovalTask } from "../../types"
+import { Contact } from "@/features/contacts/types"
+import { ManualTerminalNotice, ManualTerminalReason } from "@/features/treasury"
+
+export interface CheckoutWizardState {
+    step: number
+    dteData: CheckoutDTEData
+    paymentData: CheckoutPaymentData
+    deliveryData: CheckoutDeliveryData
+    isApproved: boolean
+    isLoading: boolean
+    selectedCustomerId: string | null
+    selectedCustomerName: string
+    isQuickSale: boolean
+    isWaitingPayment: boolean
+}
 
 export interface SalesCheckoutWizardContentProps {
     order: SaleOrder | null
     orderLines: SaleOrderLine[]
     total: number
     totalDiscountAmount?: number
-    onComplete: (data?: any) => void
+    onComplete: (data?: CheckoutResponse) => void
     onCancel?: () => void
-    onSuspend?: (finalState: any) => void
+    onSuspend?: (finalState: CheckoutWizardState) => void
     customerName?: string
     initialCustomerName?: string
     initialCustomerId?: string
@@ -61,7 +72,7 @@ export interface SalesCheckoutWizardContentProps {
     initialIsWaitingApproval?: boolean
     initialIsApproved?: boolean
     initialDraftId?: number | null
-    onStateChange?: (state: any) => void
+    onStateChange?: (state: CheckoutWizardState) => void
     isInline?: boolean
     isSessionHost?: boolean
 }
@@ -126,7 +137,7 @@ export function SalesCheckoutWizardContent({
 
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
     const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)
-    const [selectedCustomer, setSelectedCustomer] = useState<any>(null)
+    const [selectedCustomer, setSelectedCustomer] = useState<Contact | null>(null)
     const [dteData, setDteData] = useState<CheckoutDTEData>(initialDteData || {
         type: 'BOLETA',
         number: '',
@@ -174,7 +185,7 @@ export function SalesCheckoutWizardContent({
 
     useEffect(() => {
         if (dateString && !initialDteData) {
-            setDteData((prev: any) => ({ ...prev, date: dateString }))
+            setDteData((prev: CheckoutDTEData) => ({ ...prev, date: dateString }))
         }
     }, [dateString, initialDteData])
 
@@ -195,7 +206,7 @@ export function SalesCheckoutWizardContent({
         const hasTotalChanged = prevTotalRef.current !== currentTotal
         if (hasTotalChanged) {
             if (paymentData.amount === prevTotalRef.current || paymentData.amount === 0) {
-                setPaymentData((prev: any) => ({ ...prev, amount: currentTotal }))
+                setPaymentData((prev: CheckoutPaymentData) => ({ ...prev, amount: currentTotal }))
             }
             prevTotalRef.current = currentTotal
         }
@@ -204,32 +215,27 @@ export function SalesCheckoutWizardContent({
     const [isWaitingApproval, setIsWaitingApproval] = useState(initialIsWaitingApproval || false)
     const [approvalTaskId, setApprovalTaskId] = useState<number | null>(initialApprovalTaskId || null)
     const [creditApprovalRequired, setCreditApprovalRequired] = useState(!!initialIsWaitingApproval || !!initialIsApproved)
-    const [approvedTaskData, setApprovedTaskData] = useState<any | null>(null)
+    const [approvedTaskData, setApprovedTaskData] = useState<CreditApprovalTask | null>(null)
     const [securityErrorMessage, setSecurityErrorMessage] = useState<string | null>(null)
     const [isApproved, setIsApproved] = useState(initialIsApproved || false)
     const [creditApprovalReason, setCreditApprovalReason] = useState<string | null>(null)
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-    const [salesSettings, setSalesSettings] = useState<any>(null)
-    const [pendingDebts, setPendingDebts] = useState<any[] | null>(null)
+    const [salesSettings, setSalesSettings] = useState<AccountingSettings | null>(null)
+    const [pendingDebts, setPendingDebts] = useState<PendingDebt[] | null>(null)
     const [loadingDebts, setLoadingDebts] = useState(false)
-    const [showTerminalWizard, setShowTerminalWizard] = useState(false)
     const [manualTerminalReason, setManualTerminalReason] = useState<ManualTerminalReason | null>(null)
     const [manualTerminalFailureReason, setManualTerminalFailureReason] = useState<string | null>(null)
     const [showInvoiceReminder, setShowInvoiceReminder] = useState(false)
-    const [checkoutResponse, setCheckoutResponse] = useState<any>(null)
-    // Tracks whether the last completed step was a TUU terminal card payment
-    const wasTerminalCardRef = useRef(false)
-    // Idempotency key of the completed PaymentRequest — used to link TreasuryMovement
-    const terminalPaymentKeyRef = useRef<string | null>(null)
+    const [checkoutResponse, setCheckoutResponse] = useState<CheckoutResponse | null>(null)
 
 
     const refreshDebts = useCallback(() => {
         if (selectedCustomer && (Number(selectedCustomer.credit_balance_used || 0) > 0)) {
             setLoadingDebts(true)
-            api.get(`/contacts/${selectedCustomer.id}/credit_ledger/`)
+            api.get<PendingDebt[]>(`/contacts/${selectedCustomer.id}/credit_ledger/`)
                 .then(res => {
-                    const pending = res.data.filter((d: any) => Number(d.balance) > 0)
+                    const pending = res.data.filter((d: PendingDebt) => Number(d.balance) > 0)
                     setPendingDebts(pending)
                 })
                 .catch(err => console.error("Error fetching credit ledger:", err))
@@ -370,7 +376,7 @@ export function SalesCheckoutWizardContent({
                     return { isValid: true }
                 
                 case 'manufacturing':
-                    const pendingItems = currentOrderLines.filter((line: any) =>
+                    const pendingItems = currentOrderLines.filter((line: SaleOrderLine) =>
                         line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing && !line.manufacturing_data
                     )
                     if (pendingItems.length > 0) {
@@ -440,7 +446,7 @@ export function SalesCheckoutWizardContent({
     }
 
     // Checkout handlers
-    const executeCheckout = async (pin?: string, wasTerminalCard = false, terminalPaymentKey?: string) => {
+    const executeCheckout = async (pin?: string) => {
         setLoading(true)
         try {
             const formData = new FormData()
@@ -490,13 +496,8 @@ export function SalesCheckoutWizardContent({
                 }
             })
 
-            // wasTerminalCard=true → TUU completó el pago, forzar dte_type=COMPROBANTE_PAGO
-            const effectiveDteType = wasTerminalCard ? 'COMPROBANTE_PAGO' : dteData.type
-            formData.append('dte_type', effectiveDteType)
-            // is_pending_registration solo aplica a DTE local (backend lo ignora en ruta COMPROBANTE_PAGO).
-            if (!wasTerminalCard) {
-                formData.append('is_pending_registration', dteData.isPending.toString())
-            }
+            formData.append('dte_type', dteData.type)
+            formData.append('is_pending_registration', dteData.isPending.toString())
             if (dteData.number) formData.append('document_number', dteData.number)
             if (dteData.date) formData.append('document_date', dteData.date)
             if (dteData.attachment) formData.append('document_attachment', dteData.attachment)
@@ -516,7 +517,7 @@ export function SalesCheckoutWizardContent({
             if (deliveryData.notes) formData.append('delivery_notes', deliveryData.notes)
 
             if (deliveryData.type === 'PARTIAL' && deliveryData.partialQuantities) {
-                formData.append('immediate_lines', JSON.stringify(deliveryData.partialQuantities.map((pq: any) => ({
+                formData.append('immediate_lines', JSON.stringify(deliveryData.partialQuantities.map(pq => ({
                     line_id: pq.lineId,
                     product_id: pq.productId,
                     quantity: pq.dispatchedQty,
@@ -526,11 +527,6 @@ export function SalesCheckoutWizardContent({
 
             if (posSessionId) {
                 formData.append('pos_session_id', posSessionId.toString())
-            }
-
-            const resolvedTerminalKey = terminalPaymentKey ?? terminalPaymentKeyRef.current
-            if (resolvedTerminalKey) {
-                formData.append('payment_request_idempotency_key', resolvedTerminalKey)
             }
 
             if (approvalTaskId) {
@@ -549,8 +545,7 @@ export function SalesCheckoutWizardContent({
                 formData.append('pos_pin', pin)
             }
 
-            const res = await api.post('/billing/invoices/pos_checkout/', formData)
-            terminalPaymentKeyRef.current = null
+            const res = await api.post<CheckoutResponse>('/billing/invoices/pos_checkout/', formData)
             toast.success("Venta procesada correctamente")
             onComplete(res.data)
         } catch (error: unknown) {
@@ -578,8 +573,6 @@ export function SalesCheckoutWizardContent({
     }
 
     const isTerminalIntegrationPayment = paymentData.isTerminalIntegration === true
-    // Tarjeta TUU (CARD_TERMINAL) solo soporta BOLETA — TUU emite DTE 48 únicamente para boletas.
-    const cardTerminalRequiresBoleta = isTerminalIntegrationPayment && dteData.type !== 'BOLETA'
 
     const handleFinish = async () => {
         const validation = await validateCurrentStep()
@@ -587,13 +580,11 @@ export function SalesCheckoutWizardContent({
         if (!validation.isValid) return
 
         if (isTerminalIntegrationPayment && dteData.type === 'BOLETA') {
-            // Automatizado: TUU procesa tarjeta y emite DTE 48
-            setShowTerminalWizard(true)
+            setManualTerminalReason('BOLETA_MANUAL')
             return
         }
 
         if (isTerminalIntegrationPayment && dteData.type !== 'BOLETA') {
-            // Factura + terminal TUU → operación manual requerida
             setManualTerminalReason('FACTURA_CARD')
             return
         }
@@ -617,37 +608,6 @@ export function SalesCheckoutWizardContent({
         }
     }
 
-    const handleTerminalCompleted = (pr: PaymentRequest) => {
-        setShowTerminalWizard(false)
-        // wasTerminalCard=true → backend recibe COMPROBANTE_PAGO, no emite DTE local
-        wasTerminalCardRef.current = true
-        terminalPaymentKeyRef.current = pr.idempotency_key
-        if (isSessionHost) {
-            setPinModalOpen(true)
-        } else {
-            executeCheckout(undefined, true)
-        }
-    }
-
-    const handleTerminalFailed = (_pr?: PaymentRequest, failureReason?: string) => {
-        setShowTerminalWizard(false)
-        setManualTerminalFailureReason(failureReason ?? null)
-        setManualTerminalReason('TERMINAL_BYPASS')
-    }
-
-    const handleTerminalCancel = () => {
-        setShowTerminalWizard(false)
-    }
-
-    const handleTerminalBypass = () => {
-        setShowTerminalWizard(false)
-        setManualTerminalFailureReason(null)
-        setManualTerminalReason('TERMINAL_BYPASS')
-    }
-
-    // Bypass manual: TUU no emitió DTE 48 (rechazo o no respuesta). El ERP
-    // emite el DTE local según dteData.type (BOLETA 39). wasTerminalCardRef
-    // permanece false → backend no aplica la ruta COMPROBANTE_PAGO.
     const handleManualTerminalConfirm = () => {
         setManualTerminalReason(null)
         setManualTerminalFailureReason(null)
@@ -944,9 +904,8 @@ export function SalesCheckoutWizardContent({
                                     </Button>
                                     <Button
                                         onClick={handleFinish}
-                                        disabled={loading || isWaitingApproval || cardTerminalRequiresBoleta}
+                                        disabled={loading || isWaitingApproval}
                                         className="w-48 bg-success font-bold"
-                                        title={cardTerminalRequiresBoleta ? "Tarjeta TUU requiere Boleta (DTE 48). Cambia el tipo de documento o el método de pago." : undefined}
                                     >
                                         {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
                                         Finalizar Venta
@@ -975,30 +934,9 @@ export function SalesCheckoutWizardContent({
                 onOpenChange={setPinModalOpen}
                 onConfirm={(pin) => {
                     setPinModalOpen(false)
-                    const wasCard = wasTerminalCardRef.current
-                    const terminalKey = terminalPaymentKeyRef.current ?? undefined
-                    wasTerminalCardRef.current = false
-                    executeCheckout(pin, wasCard, terminalKey)
+                    executeCheckout(pin)
                 }}
             />
-
-            <BaseModal
-                open={showTerminalWizard && !!terminalDeviceId}
-                onOpenChange={handleTerminalCancel}
-                title="Cobro en Terminal"
-                size="sm"
-            >
-                <TerminalPaymentWizard
-                    deviceId={terminalDeviceId ?? 0}
-                    amount={currentTotal}
-                    saleOrderId={order?.id}
-                    posSessionId={posSessionId ?? undefined}
-                    onCompleted={handleTerminalCompleted}
-                    onFailed={handleTerminalFailed}
-                    onCancel={handleTerminalCancel}
-                    onBypass={handleTerminalBypass}
-                />
-            </BaseModal>
 
             <BaseModal
                 open={!!manualTerminalReason}
@@ -1032,7 +970,7 @@ export function SalesCheckoutWizardContent({
                 size="sm"
             >
                 <div className="flex flex-col items-center gap-6 py-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-none border border-destructive/30 bg-destructive/10">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-sm border border-destructive/30 bg-destructive/10">
                         <FileWarning className="h-8 w-8 text-destructive" />
                     </div>
                     <div className="text-center space-y-2">
@@ -1048,7 +986,7 @@ export function SalesCheckoutWizardContent({
                     <div className="w-full pt-4">
                         <Button
                             variant="primary"
-                            className="w-full h-12 font-bold uppercase tracking-widest text-xs rounded-none shadow-lg shadow-primary/20"
+                            className="w-full h-12 font-bold uppercase tracking-widest text-xs rounded-sm shadow-lg shadow-primary/20"
                             onClick={() => {
                                 setShowInvoiceReminder(false)
                                 if (isSessionHost) {

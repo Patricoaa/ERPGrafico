@@ -47,8 +47,8 @@ type AccountFormValues = z.infer<typeof accountSchema>
 interface AccountFormProps {
     auditSidebar?: React.ReactNode
     onSuccess?: () => void
-    accounts?: any[]
-    initialData?: any // Use any for initialData to avoid strict prop widening issues
+    accounts?: Record<string, unknown>[]
+    initialData?: Record<string, unknown>
     triggerText?: React.ReactNode
     triggerVariant?: "default" | "circular"
     open?: boolean
@@ -77,7 +77,7 @@ export function AccountForm({
         defaultValues: {
             code: initialData?.code || "",
             name: initialData?.name || "",
-            account_type: (initialData?.account_type as any) || "ASSET",
+            account_type: (initialData?.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE") || "ASSET",
             parent: initialData?.parent || undefined,
         },
     })
@@ -91,7 +91,7 @@ export function AccountForm({
                 form.reset({
                     code: initialData.code,
                     name: initialData.name,
-                    account_type: initialData.account_type as any,
+                    account_type: initialData.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE",
                     parent: initialData.parent || undefined,
                 })
             } else {
@@ -128,9 +128,9 @@ export function AccountForm({
             };
 
             if (initialData?.id) {
-                await updateAccount({ id: initialData.id, payload: payload as any })
+                await updateAccount({ id: initialData.id as number, payload })
             } else {
-                await createAccount(payload as any)
+                await createAccount(payload)
             }
 
             form.reset()

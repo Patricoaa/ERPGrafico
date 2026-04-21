@@ -15,9 +15,10 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 interface GroupManagementProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function GroupManagement({ externalOpen, onExternalOpenChange }: GroupManagementProps) {
+export function GroupManagement({ externalOpen, onExternalOpenChange, createAction }: GroupManagementProps) {
     const [loading, setLoading] = useState(true)
     const [groups, setGroups] = useState<any[]>([])
     const [deleteId, setDeleteId] = useState<number | null>(null)
@@ -114,6 +115,7 @@ export function GroupManagement({ externalOpen, onExternalOpenChange }: GroupMan
                     filterColumn="name"
                     searchPlaceholder="Buscar grupo..."
                     useAdvancedFilter={true}
+                    createAction={createAction}
                 />
             )}
 

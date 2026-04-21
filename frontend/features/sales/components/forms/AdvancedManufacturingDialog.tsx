@@ -18,7 +18,7 @@ import { motion, AnimatePresence } from "framer-motion"
 interface AdvancedManufacturingDialogProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    product: { id: number; manufacturing_data?: any;[key: string]: any } | null | undefined
+    product: { id: number; manufacturing_data?: Record<string, unknown>;[key: string]: unknown } | null | undefined
     onConfirm: (data: Record<string, unknown>) => void
 }
 

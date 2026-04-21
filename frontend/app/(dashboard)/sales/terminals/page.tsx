@@ -1,17 +1,17 @@
 import { lazy, Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import Link from "next/link"
 import { Store, Receipt } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-// Lazy load the heavy SalesTerminalsView component
 const SalesTerminalsView = lazy(() => import("@/features/sales/components/SalesTerminalsView"))
 
 interface PageProps {
-    searchParams: Promise<{ 
+    searchParams: Promise<{
         tab?: string,
         modal?: string
     }>
@@ -35,24 +35,17 @@ export default async function TerminalsPage({ searchParams }: PageProps) {
                     title: "Terminales POS",
                     description: "Administre los puntos de venta y sus métodos de pago autorizados.",
                     iconName: "banknote",
-                    actions: (
-                        <Link href="/sales/terminals?tab=terminals&modal=new-terminal">
-                            <PageHeaderButton iconName="plus" circular title="Nuevo Terminal" />
-                        </Link>
-                    )
+                    createLabel: "Nuevo Terminal",
+                    createHref: "/sales/terminals?tab=terminals&modal=new-terminal",
+                    children: null as React.ReactNode
                 }
             case "batches":
                 return {
                     title: "Lotes de Liquidación",
                     description: "Registre liquidaciones y comisiones de terminales de cobro.",
                     iconName: "receipt",
-                    actions: (
-                        <div className="flex items-center gap-2">
-                            <Link href="/sales/terminals?tab=batches&modal=new-batch">
-                                <PageHeaderButton iconName="plus" circular title="Registrar Liquidación" />
-                            </Link>
-                        </div>
-                    ),
+                    createLabel: "Registrar Liquidación",
+                    createHref: "/sales/terminals?tab=batches&modal=new-batch",
                     children: (
                         <Link href="/sales/terminals?tab=batches&modal=new-invoice">
                             <Button variant="outline" size="sm" className="h-9">
@@ -66,7 +59,8 @@ export default async function TerminalsPage({ searchParams }: PageProps) {
                     title: "Historial de Sesiones",
                     description: "Registro cronológico de aperturas y cierres de terminales POS.",
                     iconName: "list",
-                    actions: null,
+                    createLabel: null,
+                    createHref: null,
                     children: (
                         <a href="/pos" target="_blank" rel="noopener noreferrer">
                             <Button className="bg-primary hover:bg-primary/90 h-9">
@@ -77,11 +71,15 @@ export default async function TerminalsPage({ searchParams }: PageProps) {
                     )
                 }
             default:
-                return { title: "Terminales", description: "", iconName: "banknote", actions: null }
+                return { title: "Terminales", description: "", iconName: "banknote", createLabel: null, createHref: null, children: null as React.ReactNode }
         }
     }
 
-    const { title, description, iconName, actions, children } = getHeaderConfig()
+    const { title, description, iconName, createLabel, createHref, children } = getHeaderConfig()
+
+    const createAction = createLabel && createHref ? (
+        <ToolbarCreateButton label={createLabel} href={createHref} />
+    ) : null
 
     return (
         <div className={LAYOUT_TOKENS.view}>
@@ -90,17 +88,17 @@ export default async function TerminalsPage({ searchParams }: PageProps) {
             <PageHeader
                 title={title}
                 description={description}
-                iconName={iconName as any}
-                titleActions={actions}
+                iconName={iconName}
             >
                 {children}
             </PageHeader>
-            
+
             <div className="pt-4">
                 <Suspense fallback={<LoadingFallback message="Cargando terminales..." />}>
-                    <SalesTerminalsView 
-                        activeTab={activeTab} 
+                    <SalesTerminalsView
+                        activeTab={activeTab}
                         modal={modal}
+                        createAction={createAction}
                     />
                 </Suspense>
             </div>

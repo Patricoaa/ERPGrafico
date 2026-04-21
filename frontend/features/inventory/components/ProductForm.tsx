@@ -1,5 +1,7 @@
 "use client"
 
+import { ProductCategory, UoM, Warehouse, PricingRule, Product } from "@/types/entities"
+
 import { useState, useEffect } from "react"
 import { useWindowWidth } from "@/hooks/useWindowWidth"
 import { 
@@ -10,7 +12,7 @@ import {
 } from "@/components/ui/sheet"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
-import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
+import { useForm, useFieldArray, useWatch, Control, FieldErrors } from "react-hook-form"
 import { ProductInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -54,14 +56,14 @@ interface ProductFormProps {
 
 export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false }: ProductFormProps) {
     const [loading, setLoading] = useState(false)
-    const [categories, setCategories] = useState<any[]>([])
-    const [uoms, setUoms] = useState<any[]>([])
-    const [warehouses, setWarehouses] = useState<any[]>([])
+    const [categories, setCategories] = useState<ProductCategory[]>([] )
+    const [uoms, setUoms] = useState<UoM[]>([] )
+    const [warehouses, setWarehouses] = useState<Warehouse[]>([] )
     const [imagePreview, setImagePreview] = useState<string | null>(null)
     const [isCategoryFormOpen, setIsCategoryFormOpen] = useState(false)
-    const [products, setProducts] = useState<any[]>([])
-    const [pricingRules, setPricingRules] = useState<any[]>([])
-    const [selectedPricingRule, setSelectedPricingRule] = useState<any>(null)
+    const [products, setProducts] = useState<Product[]>([] )
+    const [pricingRules, setPricingRules] = useState<any[]>([] )
+    const [selectedPricingRule, setSelectedPricingRule] = useState<any | null>(null)
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
     const [variantsRefreshKey, setVariantsRefreshKey] = useState(0)
     const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
@@ -95,7 +97,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
     const fullWidth = Math.min(windowWidth * 0.95, 1800) // Match the 95vw logic
 
     const form = useForm<ProductFormValues>({
-        resolver: zodResolver(productSchema) as any,
+        resolver: zodResolver(productSchema),
         defaultValues: {
             code: "",
             internal_code: "",
@@ -329,7 +331,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
             ];
             
             if (initialData?.id) {
-                initOperations.push(fetchPricingRules() as any)
+                initOperations.push(fetchPricingRules())
             }
 
             Promise.all(initOperations).finally(() => {
@@ -337,10 +339,10 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
             });
 
             if (initialData) {
-                const getId = (val: any) => {
+                const getId = (val: unknown): string => {
                     if (val == null) return ""
-                    if (typeof val === "object" && "id" in val) return val.id.toString()
-                    return val.toString()
+                    if (typeof val === "object" && val !== null && "id" in val) return String((val as { id: unknown }).id)
+                    return String(val)
                 }
 
                 form.reset({
@@ -356,7 +358,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     sale_uom: getId(initialData.sale_uom),
                     purchase_uom: getId(initialData.purchase_uom),
                     allowed_sale_uoms: (initialData.allowed_sale_uoms && initialData.allowed_sale_uoms.length > 0)
-                        ? initialData.allowed_sale_uoms.map((u: any) => getId(u))
+                        ? initialData.allowed_sale_uoms.map((u) => getId(u))
                         : (initialData.uom ? [getId(initialData.uom)] : []), // Safeguard: Ensure at least base UoM is allowed
                     receiving_warehouse: getId(initialData.receiving_warehouse),
                     track_inventory: initialData.track_inventory ?? true,
@@ -378,13 +380,13 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     mfg_auto_finalize: initialData.mfg_auto_finalize ?? false,
                     has_variants: initialData.has_variants ?? false,
                     parent_template: initialData.parent_template?.toString() || null,
-                    attribute_values: initialData.attribute_values?.map((v: any) => v.toString()) || [],
+                    attribute_values: initialData.attribute_values?.map((v: unknown) => String(v)) || [],
                     variant_display_name: initialData.variant_display_name || "",
-                    boms: initialData.boms?.map((b: any) => ({
+                    boms: initialData.boms?.map((b: ProductBOM) => ({
                         id: b.id,
                         name: b.name || "",
                         active: b.active || false,
-                        lines: b.lines.map((l: any) => ({
+                        lines: b.lines.map((l: ProductBOMLine) => ({
                             id: l.id,
                             component: l.component?.toString() || "",
                             quantity: parseFloat(l.quantity) || 0,
@@ -392,7 +394,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                             notes: l.notes || ""
                         }))
                     })) || [],
-                    product_custom_fields: initialData.product_custom_fields?.map((pcf: any) => ({
+                    product_custom_fields: initialData.product_custom_fields?.map((pcf: ProductCustomField) => ({
                         template: pcf.template,
                         order: pcf.order || 0
                     })) || [],
@@ -409,7 +411,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     auto_activate_subscription: initialData.auto_activate_subscription ?? true,
                     is_indefinite: initialData.is_indefinite ?? true,
                     contract_end_date: initialData.contract_end_date || "",
-                    income_account: initialData.income_account?.id?.toString() || initialData.income_account?.toString() || "",
+                    income_account: (initialData.income_account as { id?: number } | undefined)?.id?.toString() || initialData.income_account?.toString() || "",
                     expense_account: initialData.expense_account?.id?.toString() || initialData.expense_account?.toString() || "",
                     preferred_supplier: initialData.preferred_supplier?.id?.toString() || initialData.preferred_supplier?.toString() || "",
                 })
@@ -481,7 +483,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
         attribute_values: "Valores de Atributos"
     };
 
-    const onSubmitError = (errors: any) => {
+    const onSubmitError = (errors: FieldErrors<ProductFormValues>) => {
         console.log("Form validation errors:", errors)
         const tabsWithErrors = getTabsWithErrors()
         const firstErrorTab = Object.keys(tabsWithErrors)[0]
@@ -629,47 +631,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
             onOpenChange(false)
         } catch (error: unknown) {
             console.error("Error saving product", error)
-            const errorData = (error as any).response?.data
-
-            let errorMessage = "No se pudo guardar el producto."
-
-            if (errorData) {
-                if (typeof errorData === 'object') {
-                    // Recursive function to extract all error messages
-                    const extractErrors = (obj: any, prefix = ''): string[] => {
-                        let messages: string[] = []
-                        for (const [key, value] of Object.entries(obj)) {
-                            const label = FIELD_LABELS[key] || key
-                            const currentPrefix = prefix ? `${prefix} -> ${label}` : label
-
-                            if (Array.isArray(value)) {
-                                messages.push(`${currentPrefix}: ${value.join(', ')}`)
-                            } else if (typeof value === 'object' && value !== null) {
-                                messages = [...messages, ...extractErrors(value, currentPrefix)]
-                            } else {
-                                messages.push(`${currentPrefix}: ${value}`)
-                            }
-                        }
-                        return messages
-                    }
-
-                    const allErrors = extractErrors(errorData)
-                    if (allErrors.length > 0) {
-                        errorMessage = allErrors.join('\n')
-                    }
-                } else if (typeof errorData === 'string') {
-                    errorMessage = errorData
-                }
-            }
-
-            toast.error("Error al guardar", {
-                description: (
-                    <pre className="mt-2 font-sans text-[10px] text-destructive-foreground whitespace-pre-wrap max-h-40 overflow-y-auto">
-                        {errorMessage}
-                    </pre>
-                ),
-                duration: 10000,
-            })
+            showApiError(error, "No se pudo guardar el producto.")
         } finally {
             setLoading(false)
         }
@@ -777,7 +739,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                                                 <div className="flex-1 h-px bg-border" />
                                             </div>
                                             <ProductImageUpload
-                                                form={form as any}
+                                                form={form}
                                                 imagePreview={imagePreview}
                                                 setImagePreview={setImagePreview}
                                             />
@@ -789,20 +751,20 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                                                 <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">Tipo de producto</span>
                                                 <div className="flex-1 h-px bg-border" />
                                             </div>
-                                            <ProductTypeSelector form={form as any} disabled={!!initialData} lockedType={lockedType} />
+                                            <ProductTypeSelector form={form} disabled={!!initialData} lockedType={lockedType} />
                                         </div>
                                     </div>
 
                                     <div className="md:col-span-9 space-y-4">
                                         <ProductBasicInfo
-                                            form={form as any}
+                                            form={form}
                                             categories={categories}
                                             isEditing={!!initialData}
                                             onAddCategory={() => setIsCategoryFormOpen(true)}
                                         />
 
                                         <ProductPricingSection
-                                            form={form as any}
+                                            form={form}
                                             initialData={initialData}
                                             canBeSold={form.watch("can_be_sold")}
                                             uoms={uoms}
@@ -813,7 +775,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
 
                             { (form.watch("product_type") === 'MANUFACTURABLE' || form.watch("has_bom")) && (
                                 <ProductManufacturingTab
-                                    form={form as any}
+                                    form={form}
                                     initialData={initialData}
                                     products={products}
                                     uoms={uoms}
@@ -824,7 +786,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                             { form.watch("has_variants") && !variantMode && (
                                 <ProductVariantsTab
                                     key={variantsRefreshKey}
-                                    form={form as any}
+                                    form={form}
                                     initialData={initialData}
                                     onTabChange={(tab: string) => setActiveTab(tab)}
                                 />
@@ -832,7 +794,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
 
                             { ['STORABLE', 'MANUFACTURABLE'].includes(form.watch("product_type")) && (
                                 <ProductInventoryTab
-                                    form={form as any}
+                                    form={form}
                                     initialData={initialData}
                                     warehouses={warehouses}
                                     uoms={uoms}
@@ -936,7 +898,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     <Button
                         variant="outline"
                         onClick={() => onOpenChange(false)}
-                        className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5"
+                        className="rounded-md text-xs font-bold border-primary/20 hover:bg-primary/5"
                     >
                         Cancelar
                     </Button>
@@ -944,7 +906,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                         form="product-form"
                         type="submit"
                         disabled={loading}
-                        className="rounded-lg text-xs font-bold"
+                        className="rounded-md text-xs font-bold"
                     >
                         {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
                         {initialData ? 'Guardar Cambios' : 'Crear Producto'}

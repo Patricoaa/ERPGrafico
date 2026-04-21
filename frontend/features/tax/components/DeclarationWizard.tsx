@@ -162,19 +162,21 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                 await api.post(`/tax/declarations/${declarationId}/register/`, {
                     declaration_date: dateString || ""
                 })
-            } catch (regError: any) {
-                const isAlreadyRegistered = regError.response?.data?.error?.includes("ya fue registrada") || 
-                                             regError.response?.data?.error?.includes("ya ha sido registrada");
-                if (!isAlreadyRegistered) throw regError;
+            } catch (regError: unknown) {
+                const isAlreadyRegistered =
+                    (regError as { response?: { data?: { error?: string } } })?.response?.data?.error?.includes("ya fue registrada") ||
+                    (regError as { response?: { data?: { error?: string } } })?.response?.data?.error?.includes("ya ha sido registrada")
+                if (!isAlreadyRegistered) throw regError
             }
             if (currentTaxPeriodId) await api.post(`/tax/periods/${currentTaxPeriodId}/close/`)
             toast.success("Ciclo tributario finalizado exitosamente")
             setIsClosed(true)
             onSuccess();
             return true
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error in final process:", error)
-            toast.error(error.response?.data?.error || "Error al finalizar el ciclo tributario")
+            const apiError = error as { response?: { data?: { error?: string } } }
+            toast.error(apiError.response?.data?.error || "Error al finalizar el ciclo tributario")
             return false
         } finally {
             setIsLoading(false)

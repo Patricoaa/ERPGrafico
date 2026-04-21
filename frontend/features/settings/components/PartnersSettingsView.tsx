@@ -13,15 +13,17 @@ interface PartnersSettingsViewProps {
     onModalClose?: () => void
     initialAddPartnerOpen?: boolean
     initialStatsOpen?: boolean
+    createAction?: React.ReactNode
 }
 
-export function PartnersSettingsView({ 
-    activeTab = "composition", 
+export function PartnersSettingsView({
+    activeTab = "composition",
     onSavingChange,
     initialFlowOpen = false,
     initialAddPartnerOpen = false,
     initialStatsOpen = false,
-    onModalClose
+    onModalClose,
+    createAction
 }: PartnersSettingsViewProps) {
     // Reset saving state when switching tabs.
     // We use a small delay to ensure this doesn't conflict with parent's mount/render cycle
@@ -36,17 +38,19 @@ export function PartnersSettingsView({
     return (
         <div className="space-y-6">
             {activeTab === "composition" && (
-                <EquityCompositionTab 
+                <EquityCompositionTab
                     initialAddPartnerOpen={initialAddPartnerOpen}
                     initialStatsOpen={initialStatsOpen}
                     onModalClose={onModalClose}
+                    createAction={createAction}
                 />
             )}
-            
+
             {activeTab === "distributions" && (
-                <ProfitDistributionsTab 
+                <ProfitDistributionsTab
                     initialFlowOpen={initialFlowOpen}
                     onModalClose={onModalClose}
+                    createAction={createAction}
                 />
             )}
         </div>

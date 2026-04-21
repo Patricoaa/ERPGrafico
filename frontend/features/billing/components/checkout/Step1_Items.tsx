@@ -9,9 +9,9 @@ import { AlertCircle, Tag, Package, Hash } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Step1_ItemsProps {
-    originalInvoice: any
-    selectedItems: any[]
-    setSelectedItems: (items: any[]) => void
+    originalInvoice: Record<string, unknown>
+    selectedItems: Record<string, unknown>[]
+    setSelectedItems: (items: Record<string, unknown>[]) => void
     isCreditNote: boolean
 }
 
@@ -26,7 +26,7 @@ export function Step1_Items({
 
 
     const toggleItem = (lineId: number) => {
-        const line = lines.find((l: any) => l.id === lineId)
+        const line = lines.find((l: Record<string, unknown>) => l.id === lineId)
         if (!line) return
 
         const exists = selectedItems.find(i => i.line_id === lineId)
@@ -60,7 +60,7 @@ export function Step1_Items({
         }
     }
 
-    const updateItem = (lineId: number, field: string, value: any) => {
+    const updateItem = (lineId: number, field: string, value: unknown) => {
         setSelectedItems(selectedItems.map(item => {
             if (item.line_id === lineId) {
                 const updated = { ...item, [field]: value }
@@ -107,7 +107,7 @@ export function Step1_Items({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {lines.map((line: any) => {
+                        {lines.map((line: Record<string, unknown>) => {
                             const selected = isSelected(line.id)
                             const itemData = getItem(line.id)
 

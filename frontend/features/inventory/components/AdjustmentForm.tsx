@@ -36,6 +36,7 @@ import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import api from "@/lib/api"
 import { FORM_STYLES } from "@/lib/styles"
+import { Product, UoM, Warehouse } from "@/types/entities"
 import { cn } from "@/lib/utils"
 import { validateAccountingPeriod } from "@/lib/actions/accounting-actions"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
@@ -72,12 +73,23 @@ interface AdjustmentFormProps {
     onCancel?: () => void
 }
 
+interface StockMovePayload {
+    product_id: string;
+    warehouse_id: string;
+    quantity: number;
+    uom_id?: string;
+    unit_cost: number;
+    adjustment_reason: string;
+    description: string;
+    partner_contact_id?: string;
+}
+
 export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuccess, onCancel }: AdjustmentFormProps) {
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [productUoMs, setProductUoMs] = useState<UoM[]>([])
     const [baseUoM, setBaseUoM] = useState<UoM | null>(null)
     const [isLoading, setIsLoading] = useState(false)
-    const [productDetails, setProductDetails] = useState<any>(null)
+    const [productDetails, setProductDetails] = useState<Product | null>(null)
     const [partners, setPartners] = useState<{ id: number, name: string }[]>([])
     const [periodStatus, setPeriodStatus] = useState<{ is_closed: boolean; period_name?: string } | null>(null)
 
@@ -118,7 +130,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                 setPartners(Array.isArray(partnersRes.data) ? partnersRes.data : [])
             } catch (err) {
                 console.error("Error fetching data", err)
-                toast.error("Error al cargar datos")
+                showApiError(err, "Error al cargar datos")
             }
         }
         fetchWarehouses()
@@ -156,7 +168,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
 
                                 // Identify Base UoM
                                 const baseId = typeof data.uom === 'object' ? data.uom.id : data.uom
-                                const base = uoms.find((u: any) => u.id === baseId)
+                                const base = uoms.find((u: UoM) => u.id === baseId)
                                 setBaseUoM(base || null)
 
                                 // Auto-select Base UoM if not set
@@ -168,7 +180,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                 })
                 .catch(err => {
                     console.error("Error fetching product details", err)
-                    toast.error("Error cargando detalles del producto")
+                    showApiError(err, "Error cargando detalles del producto")
                 })
         } else {
             setProductUoMs([])
@@ -195,7 +207,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
             const qty = Number(values.quantity)
             const finalQty = values.type === 'OUT' ? -qty : qty
 
-            const payload: any = {
+            const payload: StockMovePayload = {
                 product_id: values.product_id,
                 warehouse_id: values.warehouse_id,
                 quantity: finalQty,
@@ -526,12 +538,12 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
 
                 <div className="flex justify-end gap-3 pt-6 pb-2">
                     {onCancel && (
-                        <Button type="button" variant="outline" onClick={onCancel} className="border-primary/20 hover:bg-primary/5 rounded-lg text-xs font-bold">Cancelar</Button>
+                        <Button type="button" variant="outline" onClick={onCancel} className="border-primary/20 hover:bg-primary/5 rounded-md text-xs font-bold">Cancelar</Button>
                     )}
                     <ActionSlideButton
                         type="submit"
                         disabled={isLoading}
-                        className={cn("rounded-lg text-xs font-bold", moveType === 'IN' ? 'bg-success hover:bg-success' : 'bg-destructive hover:bg-destructive/90')}
+                        className={cn("rounded-md text-xs font-bold", moveType === 'IN' ? 'bg-success hover:bg-success' : 'bg-destructive hover:bg-destructive/90')}
                     >
                         {isLoading ? "Procesando..." : (
                             <>

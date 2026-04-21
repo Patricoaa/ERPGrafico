@@ -1,5 +1,8 @@
-import { useState } from "react"
+"use client"
+
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
+import { Product, UoM } from "@/types/entities"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
@@ -22,18 +25,17 @@ const bulkEditSchema = z.object({
 type BulkEditValues = z.infer<typeof bulkEditSchema>
 
 interface BulkVariantEditFormProps {
-  selectedVariants: any[]
-  availableVariants?: any[] // All variants of the product to use as BOM sources
-  onSaved: (updatedVariants: any[]) => void
+  selectedVariants: Product[]
+  availableVariants?: Product[] // All variants of the product to use as BOM sources
+  onSaved: (updatedVariants: Product[]) => void
   onCancel: () => void
 }
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useEffect } from "react"
 
 export function BulkVariantEditForm({ selectedVariants, availableVariants = [], onSaved, onCancel }: BulkVariantEditFormProps) {
   const [loading, setLoading] = useState(false)
-  const [uoms, setUoms] = useState<any[]>([])
+  const [uoms, setUoms] = useState<UoM[]>([])
 
   useEffect(() => {
     fetchUoms()
@@ -49,7 +51,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
   }
 
   const form = useForm<BulkEditValues>({
-    resolver: zodResolver(bulkEditSchema) as any,
+    resolver: zodResolver(bulkEditSchema) ,
     defaultValues: {
       sale_price: "",
       sale_uom: "",
@@ -60,7 +62,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
   })
 
   const onSubmit = async (data: BulkEditValues) => {
-    const payload: any = {}
+    const payload: Partial<Product> & { copy_bom_from?: number } = {}
     if (data.sale_price !== "") payload.sale_price = Number(data.sale_price)
     if (data.sale_uom !== "") payload.sale_uom = Number(data.sale_uom)
     if (data.apply_has_bom) {
@@ -95,7 +97,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
   }
 
   return (
-    <div className="flex flex-col h-full bg-primary/10/30 rounded-lg border border-primary/10 shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+    <div className="flex flex-col h-full bg-primary/10/30 rounded-md border border-primary/10 shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
       <div className="flex items-center justify-between p-4 border-b bg-primary/10/80">
         <div>
            <div className="flex items-center gap-2 mb-1">
@@ -112,7 +114,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
       <div className="p-4 overflow-y-auto flex-1 scrollbar-thin">
         <Form {...form}>
           <div className="space-y-4">
-             <div className="text-[11px] text-muted-foreground mb-4 leading-relaxed bg-white/50 p-3 rounded-lg border border-primary/10/50">
+             <div className="text-[11px] text-muted-foreground mb-4 leading-relaxed bg-white/50 p-3 rounded-md border border-primary/10/50">
                  Deje en blanco los campos que <strong>no desea alterar</strong>. Solo se aplicarán los campos con valores rellenados.
              </div>
 

@@ -72,7 +72,7 @@ export interface PaymentMethod {
     is_active: boolean
     allow_for_sales: boolean
     allow_for_purchases: boolean
-    /** true solo para CARD_TERMINAL — activa flujo TUU automatizado en POS */
+    /** true para CARD_TERMINAL — método vinculado a dispositivo de terminal integrado */
     is_terminal_integration: boolean
     linked_terminal_device: number | null
 }
@@ -102,6 +102,7 @@ export interface PaymentTerminalDevice {
     serial_number: string
     model?: string
     status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE'
+    supported_payment_methods?: number[]
 }
 
 // Terminal Batch Types
@@ -162,43 +163,3 @@ export interface ApiError {
     message: string
 }
 
-// ========== Payment Requests (TUU Pago Remoto — ADR 002) ==========
-
-export type PaymentRequestStatus =
-    | 'PENDING'
-    | 'SENT'
-    | 'PROCESSING'
-    | 'COMPLETED'
-    | 'FAILED'
-    | 'CANCELED'
-
-export interface PaymentRequest {
-    idempotency_key: string
-    status: PaymentRequestStatus
-    amount: number
-    device: number
-    provider: number
-    dte_type: number
-    payment_method_code: number
-    description: string
-    sale_order: number | null
-    pos_session: number | null
-    sequence_number: string
-    transaction_reference: string
-    acquirer_id: string
-    failure_reason: string
-    initiated_at: string
-    completed_at: string | null
-    celery_task_id: string
-}
-
-export interface InitiatePaymentPayload {
-    device: number
-    amount: number
-    payment_method_code?: number
-    dte_type?: number
-    description?: string
-    sale_order?: number
-    pos_session?: number
-    idempotency_key?: string
-}

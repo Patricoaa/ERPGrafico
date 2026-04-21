@@ -1,5 +1,7 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
+
 import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import api from "@/lib/api"
@@ -28,9 +30,10 @@ interface UoMCategory {
 interface UoMCategoryListProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCategoryListProps) {
+export function UoMCategoryList({ externalOpen, onExternalOpenChange, createAction }: UoMCategoryListProps) {
     const [categories, setCategories] = useState<UoMCategory[]>([])
     const [loading, setLoading] = useState(true)
 
@@ -63,7 +66,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
             setCategories(res.data.results || res.data)
         } catch (error) {
             console.error(error)
-            toast.error("Error al cargar categorías de medida")
+            showApiError(error, "Error al cargar categorías de medida")
         } finally {
             setLoading(false)
         }
@@ -90,7 +93,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
             setIsModalOpen(false)
             fetchCategories()
         } catch (error) {
-            toast.error("Error al guardar")
+            showApiError(error, "Error al guardar")
             console.error(error)
         } finally {
             setIsSaving(false)
@@ -103,7 +106,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
             toast.success("Categoría eliminada")
             fetchCategories()
         } catch (error) {
-            toast.error("Error al eliminar (puede estar en uso)")
+            showApiError(error, "Error al eliminar (puede estar en uso)")
         }
     })
 
@@ -163,7 +166,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
             setSelectedRows({})
             fetchCategories()
         } catch (error) {
-            toast.error("Error al eliminar las categorías (pueden tener unidades asociadas)")
+            showApiError(error, "Error al eliminar las categorías (pueden tener unidades asociadas)")
         }
     }
 
@@ -190,6 +193,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange }: UoMCateg
                         Eliminar
                     </Button>
                 }
+                createAction={createAction}
             />
 
             <BaseModal

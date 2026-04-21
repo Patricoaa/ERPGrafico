@@ -42,7 +42,7 @@ export function ProductTypeSelector({ form, disabled, lockedType }: ProductTypeS
                                 const isDisabled = !!(disabled || isLocked);
 
                                 return (
-                                    <FormItem key={t.id} className={`flex items-center space-x-3 space-y-0 py-2 transition-all ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/30 rounded-lg px-2 -mx-2'}`}>
+                                    <FormItem key={t.id} className={`flex items-center space-x-3 space-y-0 py-2 transition-all ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/30 rounded-md px-2 -mx-2'}`}>
                                         <FormControl>
                                             <RadioGroupItem value={t.id} disabled={isDisabled} />
                                         </FormControl>

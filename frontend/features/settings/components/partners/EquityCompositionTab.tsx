@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { Partner, PartnerSummary } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
 import { formatCurrency, cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -62,15 +63,17 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 export function EquityCompositionTab({
     initialAddPartnerOpen = false,
     initialStatsOpen = false,
-    onModalClose
+    onModalClose,
+    createAction
 }: {
     initialAddPartnerOpen?: boolean,
     initialStatsOpen?: boolean,
-    onModalClose?: () => void
+    onModalClose?: () => void,
+    createAction?: React.ReactNode
 }) {
     const [loading, setLoading] = useState(true)
-    const [partners, setPartners] = useState<any[]>([])
-    const [summary, setSummary] = useState<any>(null)
+    const [partners, setPartners] = useState<Partner[]>([])
+    const [summary, setSummary] = useState<PartnerSummary | null>(null)
     const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false)
     const [isTransferOpen, setIsTransferOpen] = useState(false)
     const [isInitialSetupOpen, setIsInitialSetupOpen] = useState(false)
@@ -139,7 +142,7 @@ export function EquityCompositionTab({
 
     const hasPartners = partners.length > 0
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<Partner>[] = [
         {
             accessorKey: "name",
             header: "Socio",
@@ -257,7 +260,7 @@ export function EquityCompositionTab({
                 </div>
             )
         },
-        createActionsColumn<any>({
+        createActionsColumn<Partner>({
             renderActions: (partner) => {
                 const hasEarnings = parseFloat(partner.partner_earnings_balance) > 0
                 const hasDividends = parseFloat(partner.partner_dividends_payable_balance) > 0
@@ -322,6 +325,7 @@ export function EquityCompositionTab({
                 data={partners}
                 isLoading={loading}
                 cardMode={true}
+                createAction={createAction}
                 toolbarAction={
                     <>
                         {!hasPartners ? (

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/sheet"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { PartnerStatement, PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
 import { formatCurrency, formatPlainDate as formatDate, cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -48,7 +49,7 @@ export function PartnerLedgerModal({
     partnerName
 }: PartnerLedgerModalProps) {
     const [loading, setLoading] = useState(false)
-    const [data, setData] = useState<any>(null)
+    const [data, setData] = useState<PartnerStatement | null>(null)
     const [isContributionOpen, setIsContributionOpen] = useState(false)
     const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
 
@@ -98,7 +99,9 @@ export function PartnerLedgerModal({
         return 'bg-muted/50 text-muted-foreground border-transparent'
     }
 
-    const columns: ColumnDef<any>[] = [
+    type TransactionWithBalance = PartnerTransaction & { balance_after: number }
+
+    const columns: ColumnDef<TransactionWithBalance>[] = [
         {
             accessorKey: "date",
             header: "Fecha",

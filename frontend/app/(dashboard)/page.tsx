@@ -1,17 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Loader2 } from "lucide-react"
-import api from "@/lib/api"
-
-interface UserProfile {
-  username: string
-  first_name: string
-  last_name: string
-}
-
 import { useAuth } from "@/contexts/AuthContext"
 import { PageHeader } from "@/components/shared/PageHeader"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function DashboardPage() {
   const { user, isLoading: loading } = useAuth()
@@ -22,8 +13,12 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[400px] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex flex-col space-y-8">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-40" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <Skeleton className="h-40 w-full" />
       </div>
     )
   }

@@ -9,7 +9,7 @@ interface UsePartnerSettingsReturn {
     settings: PartnerSettings
     saving: boolean
     updateSettings: (payload: PartnerSettingsUpdatePayload) => Promise<void>
-    refetch: () => Promise<any>
+    refetch: () => Promise<unknown>
 }
 
 /**

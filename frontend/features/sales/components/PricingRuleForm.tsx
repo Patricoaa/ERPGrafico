@@ -99,10 +99,10 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
         if (open) {
             // Reset form when dialog opens
             if (initialData) {
-                const getProductId = (p: any): number | null => {
+                const getProductId = (p: unknown): number | null => {
                     if (typeof p === 'number') return p
                     if (typeof p === 'string') return parseInt(p) || null
-                    if (p && typeof p === 'object') return p.id || null
+                    if (p && typeof p === 'object' && 'id' in p) return (p as {id: number}).id || null
                     return null
                 }
 

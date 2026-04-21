@@ -10,39 +10,16 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2, Database, Settings2, Receipt, Percent, Coins, TrendingUp } from "lucide-react"
+import { Database, Settings2, Receipt, Percent, Coins, TrendingUp } from "lucide-react"
+import { FormSkeleton } from "@/components/shared/FormSkeleton"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { PageHeaderButton } from "@/components/shared/PageHeader"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 
-// --- SCHEMAS ---
-
-const accountingSchema = z.object({
-    hierarchy_levels: z.number().min(2).max(5),
-    code_separator: z.string().min(1).max(1),
-    asset_prefix: z.string(),
-    liability_prefix: z.string(),
-    equity_prefix: z.string(),
-    income_prefix: z.string(),
-    expense_prefix: z.string(),
-})
-
-const taxSchema = z.object({
-    default_tax_rate: z.number().min(0).max(100),
-    vat_payable_account: z.string().nullable(),
-    vat_carryforward_account: z.string().nullable(),
-    withholding_tax_account: z.string().nullable(),
-    ppm_account: z.string().nullable(),
-    second_category_tax_account: z.string().nullable(),
-    correction_income_account: z.string().nullable(),
-    default_tax_receivable_account: z.string().nullable(),
-    default_tax_payable_account: z.string().nullable(),
-})
-
-type AccountingFormValues = z.infer<typeof accountingSchema>
-type TaxFormValues = z.infer<typeof taxSchema>
+import { accountingSchema, taxSchema, type AccountingFormValues, type TaxFormValues } from "./AccountingSettingsView.schema"
+import { UseFormReturn } from "react-hook-form"
 
 // --- COMPONENT ---
 
@@ -104,20 +81,20 @@ function StructureSettings({ onSavingChange }: { onSavingChange?: (saving: boole
             try {
                 const res = await api.get('/accounting/settings/current/')
                 const settings = res.data
-                const formattedSettings: any = {}
+                const formattedSettings = {} as AccountingFormValues
                 const keys = Object.keys(accountingSchema.shape) as (keyof AccountingFormValues)[]
 
                 keys.forEach((key) => {
                     const val = settings[key]
                     if (val === null || val === undefined) {
-                        formattedSettings[key] = (key.includes('prefix') || key === 'code_separator' ? "" : (key === 'hierarchy_levels' ? 4 : null))
+                        (formattedSettings as Record<string, unknown>)[key] = (key.includes('prefix') || key === 'code_separator' ? "" : (key === 'hierarchy_levels' ? 4 : null))
                     } else {
-                        formattedSettings[key] = (typeof val === 'number' ? val : val.toString())
+                        (formattedSettings as Record<string, unknown>)[key] = (typeof val === 'number' ? val : val.toString())
                     }
                 })
                 form.reset(formattedSettings)
-            } catch (error: any) {
-                if (error.response?.status !== 404) toast.error("Error al cargar configuración")
+            } catch (error: unknown) {
+                toast.error("Error al cargar configuración")
             } finally {
                 setLoading(false)
             }
@@ -156,14 +133,14 @@ function StructureSettings({ onSavingChange }: { onSavingChange?: (saving: boole
             const res = await api.post('/accounting/accounts/populate_ifrs/')
             toast.success(res.data.message)
             window.location.reload()
-        } catch (error: any) {
-            toast.error(error.response?.data?.error || "Error al poblar plan de cuentas")
+        } catch (error: unknown) {
+            toast.error("Error al poblar plan de cuentas")
         } finally {
             setPopulating(false)
         }
     }
 
-    if (loading) return <div className="flex h-[200px] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+    if (loading) return <FormSkeleton fields={3} />
 
     return (
         <div className="space-y-6">
@@ -276,22 +253,23 @@ function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) =>
             try {
                 const res = await api.get('/accounting/settings/current/')
                 const settings = res.data
-                const formattedSettings: any = {}
+                const formattedSettings = {} as TaxFormValues
                 const fields = Object.keys(taxSchema.shape)
 
-                fields.forEach((key: any) => {
+                fields.forEach((key) => {
                     const val = settings[key]
+                    const typedKey = key as keyof TaxFormValues
                     if (val === null || val === undefined) {
-                        formattedSettings[key] = (key === 'default_tax_rate' ? 19.00 : null)
+                        (formattedSettings as Record<string, unknown>)[typedKey] = (key === 'default_tax_rate' ? 19.00 : null)
                     } else if (key === 'default_tax_rate') {
-                        formattedSettings[key] = parseFloat(val.toString())
+                        (formattedSettings as Record<string, unknown>)[typedKey] = parseFloat(val.toString())
                     } else {
-                        formattedSettings[key] = val.toString()
+                        (formattedSettings as Record<string, unknown>)[typedKey] = val.toString()
                     }
                 })
                 form.reset(formattedSettings)
-            } catch (error: any) {
-                if (error.response?.status !== 404) toast.error("Error al cargar configuración")
+            } catch (error: unknown) {
+                toast.error("Error al cargar configuración")
             } finally {
                 setLoading(false)
             }
@@ -323,7 +301,7 @@ function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) =>
         }
     }, [watchedValues, loading, isDirty, form, onSubmit])
 
-    if (loading) return <div className="flex h-[200px] items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+    if (loading) return <FormSkeleton fields={4} cards={3} />
 
     return (
         <Form {...form}>
@@ -407,7 +385,7 @@ function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) =>
     )
 }
 
-function AccountField({ form, name, label, accountType }: { form: any, name: string, label: string, accountType: string }) {
+function AccountField({ form, name, label, accountType }: { form: UseFormReturn<TaxFormValues>, name: keyof TaxFormValues, label: string, accountType: string }) {
     return (
         <FormField
             control={form.control}
@@ -429,7 +407,7 @@ function AccountField({ form, name, label, accountType }: { form: any, name: str
     )
 }
 
-function PrefixField({ form, name, label }: { form: any, name: string, label: string }) {
+function PrefixField({ form, name, label }: { form: UseFormReturn<AccountingFormValues>, name: keyof AccountingFormValues, label: string }) {
     return (
         <FormField control={form.control} name={name} render={({ field }) => (
             <FormItem className="space-y-1">

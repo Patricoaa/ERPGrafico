@@ -9,12 +9,13 @@ import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
+import { Order, PhaseDocument } from "../../types"
 
 interface BillingPhaseProps {
     isNoteMode: boolean
-    noteStatuses: any
-    activeDoc: any
-    invoices: any[]
+    noteStatuses: Record<string, string | boolean | number>
+    activeDoc: Order
+    invoices: Order[]
     billingIsComplete: boolean
     userPermissions: string[]
     onActionSuccess?: () => void
@@ -40,7 +41,7 @@ export function BillingPhase({
     isOpen,
     onOpenChange,
 }: BillingPhaseProps) {
-    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
+    const registry = (activeDoc?.document_type as string === 'PURCHASE_ORDER' || activeDoc?.document_type as string === 'SERVICE_OBLIGATION') 
         ? purchaseOrderActions 
         : saleOrderActions
     const [confirmModal, setConfirmModal] = useState<{
@@ -127,8 +128,8 @@ export function BillingPhase({
                         actions: [] // Removed redundant GitBranch icon
                     }] : []),
                     ...invoices
-                        .filter((inv: any) => !isNoteMode || inv.id !== activeDoc.id) // Avoid double entry if already in activeDoc
-                        .map((inv: any) => ({
+                        .filter((inv: Order) => !isNoteMode || inv.id !== activeDoc.id) // Avoid double entry if already in activeDoc
+                        .map((inv: Order) => ({
                             type: inv.dte_type_display || 'Documento',
                             number: inv.display_id || formatDocumentId(
                                 inv.dte_type === 'BOLETA' ? 'BOL' :
@@ -157,19 +158,18 @@ export function BillingPhase({
                                 }] : [])
                             ]
                         })),
-                    // NEW: Add related notes (NC/ND) as separate items if in Order mode
-                    ...(!isNoteMode ? (activeDoc.related_documents?.notes || []).map((note: any) => ({
-                        type: note.type_display || (note.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' : 'Nota de Débito'),
-                        number: note.display_id || note.number,
+                    ...(!isNoteMode ? (activeDoc.related_documents?.notes || []).map((note: Record<string, unknown>) => ({
+                        type: (note.type_display as string) || (note.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' : 'Nota de Débito'),
+                        number: (note.display_id as string) || (note.number as string),
                         icon: FileText,
                         color: 'text-primary',
-                        id: note.id,
+                        id: note.id as number | string,
                         docType: 'invoice',
-                        status: note.status,
+                        status: note.status as string,
                         isWarning: true, // Highlights as requested
                         actions: [] // Removed redundant GitBranch icon
-                    })) : [])
-                ].filter((doc: any) => {
+                    })) as PhaseDocument[] : [])
+                ].filter((doc: PhaseDocument) => {
                     // If in Note mode, we ONLY want to show the note itself in this stage list
                     // as the "original" invoices are already shown in the Origin stage.
                     if (isNoteMode) return doc.id === activeDoc.id;
@@ -179,7 +179,7 @@ export function BillingPhase({
                 actions={[
                     ...(registry.documents?.actions || []),
                     ...(isNoteMode ? [] : (registry.notes?.actions || []))
-                ].filter((a: any) => !a.id.includes('view-'))}
+                ].filter((a: { id: string }) => !a.id.includes('view-'))}
                 emptyMessage="Sin documentos emitidos"
                 order={activeDoc}
                 userPermissions={userPermissions}

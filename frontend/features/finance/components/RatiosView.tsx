@@ -34,15 +34,15 @@ interface RatiosViewProps {
 }
 
 export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, compDate }) => {
-    const [data, setData] = useState<any>(null);
-    const [compData, setCompData] = useState<any>(null);
+    const [data, setData] = useState<Record<string, unknown> | null>(null);
+    const [compData, setCompData] = useState<Record<string, unknown> | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const loadData = async () => {
             setLoading(true);
             try {
-                const params: any = { is_async: true };
+                const params: Record<string, unknown> = { is_async: true };
                 if (date?.to) {
                     params.end_date = format(date.to, 'yyyy-MM-dd');
                 }
@@ -56,7 +56,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
 
                 // Load comparison data if enabled
                 if (showComparison && compDate?.to) {
-                    const compParams: any = { is_async: true };
+                    const compParams: Record<string, unknown> = { is_async: true };
                     if (compDate.to) {
                         compParams.end_date = format(compDate.to, 'yyyy-MM-dd');
                     }
@@ -232,7 +232,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                     cx="50%"
                                     cy="50%"
                                     labelLine={false}
-                                    label={(props: any) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`}
+                                    label={(props: { name: string; percent?: number }) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`}
                                     outerRadius={90}
                                     fill="var(--primary)"
                                     dataKey="value"
@@ -241,7 +241,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(value: any) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']} />
+                                <Tooltip formatter={(value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
@@ -261,7 +261,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                     data={assetsDistribution}
                                     cx="50%"
                                     cy="50%"
-                                    label={(props: any) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`}
+                                    label={(props: { name: string; percent?: number }) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`}
                                     innerRadius={60}
                                     outerRadius={90}
                                     fill="var(--accent)"
@@ -271,7 +271,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                         <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(value: any) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']} />
+                                <Tooltip formatter={(value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
@@ -321,7 +321,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis />
-                                <Tooltip formatter={(value: any) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']} />
+                                <Tooltip formatter={(value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']} />
                                 <Bar dataKey="value" fill={COLORS[3]} />
                             </BarChart>
                         </ResponsiveContainer>

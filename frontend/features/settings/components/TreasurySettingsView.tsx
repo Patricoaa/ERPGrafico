@@ -9,35 +9,13 @@ import api from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Banknote, ArrowLeftRight, Settings2, Loader2 } from "lucide-react"
+import { Banknote, ArrowLeftRight, Settings2 } from "lucide-react"
+import { FormSkeleton } from "@/components/shared/FormSkeleton"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { Separator } from "@/components/ui/separator"
-import { SavingStatus } from "@/components/shared/ModuleSettingsSheet"
+type SavingStatus = "idle" | "saving" | "synced" | "error"
 
-const treasurySchema = z.object({
-    // Reconciliation accounts
-    bank_commission_account: z.string().nullable(),
-    interest_income_account: z.string().nullable(),
-    exchange_difference_account: z.string().nullable(),
-    rounding_adjustment_account: z.string().nullable(),
-    error_adjustment_account: z.string().nullable(),
-    miscellaneous_adjustment_account: z.string().nullable(),
-    // POS Session Difference accounts
-    pos_cash_difference_gain_account: z.string().nullable(),
-    pos_cash_difference_loss_account: z.string().nullable(),
-    // POS Manual Movement (adjustment) accounts
-    pos_tip_account: z.string().nullable(),
-    pos_other_inflow_account: z.string().nullable(),
-    pos_counting_error_account: z.string().nullable(),
-    pos_system_error_account: z.string().nullable(),
-    pos_partner_withdrawal_account: z.string().nullable(),
-    pos_theft_account: z.string().nullable(),
-    pos_rounding_adjustment_account: z.string().nullable(),
-    pos_cashback_error_account: z.string().nullable(),
-    pos_other_outflow_account: z.string().nullable(),
-})
-
-type TreasuryFormValues = z.infer<typeof treasurySchema>
+import { treasurySchema, type TreasuryFormValues } from "./TreasurySettingsView.schema"
 
 interface TreasurySettingsViewProps {
     onSavingChange?: (status: SavingStatus) => void
@@ -121,13 +99,7 @@ export function TreasurySettingsView({ onSavingChange }: TreasurySettingsViewPro
         }
     }, [watchedValues, loading, isDirty, form, onSubmit])
 
-    if (loading) {
-        return (
-            <div className="flex h-[400px] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        )
-    }
+    if (loading) return <FormSkeleton hasTabs tabs={3} fields={4} />
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">

@@ -2,7 +2,8 @@ import { Metadata } from "next"
 import { lazy, Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load feature components
@@ -24,10 +25,10 @@ export default async function FinancesPage({ searchParams }: PageProps) {
     const viewMode = (view as 'statements' | 'analysis' | 'budgets') || 'statements'
 
     const tabs = [
-        { 
-            value: "statements", 
-            label: "Estados Financieros", 
-            iconName: "clipboard-list", 
+        {
+            value: "statements",
+            label: "Estados Financieros",
+            iconName: "clipboard-list",
             href: "/finances?view=statements",
             subTabs: [
                 { value: "bs", label: "Balance", iconName: "file-text", href: "/finances?view=statements&tab=bs" },
@@ -35,20 +36,20 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                 { value: "cf", label: "Flujos", iconName: "trending-up", href: "/finances?view=statements&tab=cf" },
             ]
         },
-        { 
-            value: "analysis", 
-            label: "Análisis", 
-            iconName: "line-chart", 
+        {
+            value: "analysis",
+            label: "Análisis",
+            iconName: "line-chart",
             href: "/finances?view=analysis",
             subTabs: [
                 { value: "ratios", label: "Ratios Financieros", iconName: "pie-chart", href: "/finances?view=analysis&tab=ratios" },
                 { value: "bi", label: "Business Intelligence", iconName: "activity", href: "/finances?view=analysis&tab=bi" },
             ]
         },
-        { 
-            value: "budgets", 
-            label: "Presupuestos", 
-            iconName: "target", 
+        {
+            value: "budgets",
+            label: "Presupuestos",
+            iconName: "target",
             href: "/finances?view=budgets",
             subTabs: [
                 { value: "list", label: "Gestión", iconName: "list", href: "/finances?view=budgets&tab=list" },
@@ -61,55 +62,54 @@ export default async function FinancesPage({ searchParams }: PageProps) {
         switch (viewMode) {
             case 'statements':
                 if (tab === 'bs') {
-                    return { title: "Balance General", description: "Estado de situación financiera resumido.", icon: "file-text", action: null }
+                    return { title: "Balance General", description: "Estado de situación financiera resumido.", icon: "file-text", showCreate: false }
                 } else if (tab === 'pl') {
-                    return { title: "Estado de Resultados", description: "Pérdidas y ganancias en un periodo determinado.", icon: "bar-chart-2", action: null }
+                    return { title: "Estado de Resultados", description: "Pérdidas y ganancias en un periodo determinado.", icon: "bar-chart-2", showCreate: false }
                 } else if (tab === 'cf') {
-                    return { title: "Flujo de Caja", description: "Análisis de entradas y salidas de efectivo.", icon: "trending-up", action: null }
+                    return { title: "Flujo de Caja", description: "Análisis de entradas y salidas de efectivo.", icon: "trending-up", showCreate: false }
                 } else {
-                    return { title: "Estados Financieros", description: "Reportes oficiales de Balance, P&L y Flujo de Caja.", icon: "clipboard-list", action: null }
+                    return { title: "Estados Financieros", description: "Reportes oficiales de Balance, P&L y Flujo de Caja.", icon: "clipboard-list", showCreate: false }
                 }
             case 'analysis':
                 if (tab === 'bi') {
-                    return { title: "Business Intelligence", description: "Análisis visual de métricas de rentabilidad y evolución.", icon: "activity", action: null }
+                    return { title: "Business Intelligence", description: "Análisis visual de métricas de rentabilidad y evolución.", icon: "activity", showCreate: false }
                 } else if (tab === 'ratios') {
-                    return { title: "Ratios Financieros", description: "Métricas de liquidez, solvencia y rentabilidad.", icon: "pie-chart", action: null }
+                    return { title: "Ratios Financieros", description: "Métricas de liquidez, solvencia y rentabilidad.", icon: "pie-chart", showCreate: false }
                 } else {
-                    return { title: "Análisis Financiero", description: "Visualización de ratios, KPIs e inteligencia de negocio.", icon: "line-chart", action: null }
+                    return { title: "Análisis Financiero", description: "Visualización de ratios, KPIs e inteligencia de negocio.", icon: "line-chart", showCreate: false }
                 }
             case 'budgets':
                 if (tab === 'versus') {
-                    return { title: "Versus Presupuestario", description: "Análisis de variaciones mes y acumulado.", icon: "chart-bar", action: null }
+                    return { title: "Versus Presupuestario", description: "Análisis de variaciones mes y acumulado.", icon: "chart-bar", showCreate: false }
                 }
-                return { 
-                    title: "Control Presupuestario", 
-                    description: "Gestión de metas presupuestarias y ejecución.", 
+                return {
+                    title: "Control Presupuestario",
+                    description: "Gestión de metas presupuestarias y ejecución.",
                     icon: "target",
-                    action: (
-                        <PageHeaderButton
-                            href="/finances?view=budgets&modal=new"
-                            iconName="plus"
-                            circular
-                            title="Nuevo Presupuesto"
-                        />
-                    )
+                    showCreate: true
                 }
             default:
-                return { title: "Finanzas", description: "", icon: "trending-up", action: null }
+                return { title: "Finanzas", description: "", icon: "trending-up", showCreate: false }
         }
     }
 
     const { modal } = await searchParams
     const config = getHeaderConfig()
 
+    const createAction = config.showCreate ? (
+        <ToolbarCreateButton
+            label="Nuevo Presupuesto"
+            href="/finances?view=budgets&modal=new"
+        />
+    ) : null
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
                 title={config.title}
                 description={config.description}
-                iconName={config.icon as any}
+                iconName={config.icon}
                 variant="minimal"
-                titleActions={config.action}
             />
 
             <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={tab} />
@@ -118,7 +118,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                 <Suspense fallback={<LoadingFallback />}>
                     {viewMode === 'statements' && <StatementsView searchParams={Promise.resolve({ tab })} />}
                     {viewMode === 'analysis' && <AnalysisView searchParams={Promise.resolve({ tab })} />}
-                    {viewMode === 'budgets' && <BudgetsView externalOpen={modal === 'new'} tab={tab} />}
+                    {viewMode === 'budgets' && <BudgetsView externalOpen={modal === 'new'} tab={tab} createAction={createAction} />}
                 </Suspense>
             </div>
         </div>

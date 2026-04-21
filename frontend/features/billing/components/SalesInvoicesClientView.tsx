@@ -29,7 +29,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 export function SalesInvoicesClientView() {
     const { invoices, refetch, annulInvoice } = useInvoices()
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: string, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
     const [currentView, setCurrentView] = useState<'card' | 'list'>('card')
@@ -66,7 +66,7 @@ export function SalesInvoicesClientView() {
         annulConfirm.requestConfirm(id)
     }
 
-    const handlePayment = async (data: any) => {
+    const handlePayment = async (data: Record<string, unknown>) => {
         if (!payingInv) return
         try {
             const formData = new FormData()
@@ -115,7 +115,7 @@ export function SalesInvoicesClientView() {
         {
             accessorKey: "partner_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
-            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as any).customer || (row.original as any).partner}>{row.getValue("partner_name")}</DataCell.ContactLink>
+            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as Record<string, unknown>).customer as number || (row.original as Record<string, unknown>).partner as number}>{row.getValue("partner_name")}</DataCell.ContactLink>
         },
         {
             accessorKey: "total",
@@ -166,7 +166,7 @@ export function SalesInvoicesClientView() {
             <DataTable
                 columns={columns}
                 data={invoices}
-                onRowClick={(row: any) => {
+                onRowClick={(row: Invoice) => {
                     const isSelected = hubConfig?.invoiceId === row.id
                     if (isSelected && isHubOpen) {
                         closeHub()
@@ -176,7 +176,7 @@ export function SalesInvoicesClientView() {
                 }}
                 cardMode={true}
                 currentView={currentView}
-                onViewChange={(v: any) => setCurrentView(v)}
+                onViewChange={(v: 'all' | 'unpaid') => setCurrentView(v)}
                 viewOptions={viewOptions}
                 filterColumn="partner_name"
                 searchPlaceholder="Buscar por cliente..."
@@ -209,7 +209,7 @@ export function SalesInvoicesClientView() {
                     }
                     return (
                         <div className="grid gap-3 pt-2">
-                            {rows.map((row: any) => {
+                            {rows.map((row: Invoice) => {
                                 const inv = row.original as Invoice
                                 const isSelected = hubConfig?.invoiceId === inv.id
                                 return (

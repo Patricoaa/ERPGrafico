@@ -194,9 +194,7 @@ export function BOMFormDialog({
     }, [selectedProduct?.id, bomToEdit?.id])
 
     const form = useForm<BOMFormValues>({
-        resolver: zodResolver(bomSchema) as unknown as {
-          (values: any, context: any, options: any): any;
-        }, // FIXME: Still using any in the internal function type, but the cast is better than a bare 'as any'
+        resolver: zodResolver(bomSchema),
         defaultValues: {
             name: "",
             active: true,
@@ -221,16 +219,16 @@ export function BOMFormDialog({
     useEffect(() => {
         if (open) {
             if (bomToEdit) {
-                const allLines = bomToEdit.lines || []
-                const stockLines = allLines.filter((l: { is_outsourced?: boolean }) => !l.is_outsourced)
-                const outsourcedLines = allLines.filter((l: { is_outsourced?: boolean }) => l.is_outsourced)
+                const allLines: BOMLine[] = bomToEdit.lines || []
+                const stockLines = allLines.filter((l: BOMLine) => !l.is_outsourced)
+                const outsourcedLines = allLines.filter((l: BOMLine) => l.is_outsourced)
 
                 form.reset({
                     name: bomToEdit.name,
                     active: bomToEdit.active,
                     yield_quantity: bomToEdit.yield_quantity || 1,
                     yield_uom: bomToEdit.yield_uom?.toString() || "",
-                    lines: stockLines.map((l: { id: string | number; name: string }) => ({
+                    lines: stockLines.map((l: BOMLine) => ({
                         component: l.component.toString(),
                         component_code: l.component_code,
                         component_name: l.component_name,
@@ -241,7 +239,7 @@ export function BOMFormDialog({
                         component_uom_category: l.uom_category, // Assuming backend provides this
                         notes: l.notes || ""
                     })),
-                    service_lines: outsourcedLines.map((l: { id: string | number; name: string }) => ({
+                    service_lines: outsourcedLines.map((l: BOMLine) => ({
                         component: l.component.toString(),
                         component_name: l.component_name,
                         quantity: l.quantity,
@@ -661,7 +659,7 @@ export function BOMFormDialog({
                                                                                 allowedTypes={['STORABLE', 'MANUFACTURABLE']}
                                                                                 customFilter={(p: ProductMinimal) => 
                                                                                     !!(p.product_type === 'STORABLE' || 
-                                                                                    (p.product_type === 'MANUFACTURABLE' && !((p as unknown) as { requires_advanced_manufacturing?: boolean }).requires_advanced_manufacturingfacturing))
+                                                                                    (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing))
                                                                                 }
                                                                                 excludeIds={selectedProduct ? [selectedProduct.id] : []}
                                                                                 shouldResolveVariants={false}

@@ -1,4 +1,8 @@
+"use client"
+
+import { UoM, Product } from "@/types/entities"
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
@@ -6,8 +10,10 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { Package, Plus, Trash2, Layers, Check, ChevronUp, ChevronDown, X, Clock, Settings2, Search } from "lucide-react"
 import { UseFormReturn, useFieldArray } from "react-hook-form"
 import { ProductFormValues } from "./schema"
+import { ProductInitialData } from "@/types/forms"
 import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
+
 import { useState } from "react"
 import { BOMManager } from "@/features/production/components/BOMManager"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
@@ -17,9 +23,9 @@ import { Label } from "@/components/ui/label"
 
 interface ProductManufacturingTabProps {
     form: UseFormReturn<ProductFormValues>
-    initialData?: any
-    products: any[]
-    uoms: any[]
+    initialData?: ProductInitialData
+    products: Product[]
+    uoms: UoM[]
     variantMode?: boolean
 }
 
@@ -125,7 +131,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                     const shouldDisable = isExpress && !hasVariants
 
                                     return (
-                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-lg border bg-background/50", FORM_STYLES.card)}>
+                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-md border bg-background/50", FORM_STYLES.card)}>
                                             <div className="space-y-0.5">
                                                 <FormLabel className={FORM_STYLES.label}>Posee Lista de Materiales</FormLabel>
                                                 <FormDescription className="text-[10px]">
@@ -152,7 +158,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                 name="has_variants"
                                 render={({ field }) => (
                                     !variantMode ? (
-                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-lg border bg-background/50", FORM_STYLES.card)}>
+                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-md border bg-background/50", FORM_STYLES.card)}>
                                             <div className="space-y-0.5">
                                                 <FormLabel className={FORM_STYLES.label}>Posee Variantes</FormLabel>
                                                 <FormDescription className="text-[10px]">
@@ -182,7 +188,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                             control={form.control}
                                             name="mfg_enable_prepress"
                                             render={({ field }) => (
-                                                <FormItem className="flex items-center justify-between p-3 rounded-lg border bg-background/30">
+                                                <FormItem className="flex items-center justify-between p-3 rounded-md border bg-background/30">
                                                     <FormLabel className="text-xs font-medium">Pre-Impresión</FormLabel>
                                                     <FormControl>
                                                         <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -224,7 +230,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                             control={form.control}
                                             name="mfg_enable_press"
                                             render={({ field }) => (
-                                                <FormItem className="flex items-center justify-between p-3 rounded-lg border bg-background/30">
+                                                <FormItem className="flex items-center justify-between p-3 rounded-md border bg-background/30">
                                                     <FormLabel className="text-xs font-medium">Impresión</FormLabel>
                                                     <FormControl>
                                                         <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -278,7 +284,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                             control={form.control}
                                             name="mfg_enable_postpress"
                                             render={({ field }) => (
-                                                <FormItem className="flex items-center justify-between p-3 rounded-lg border bg-background/30">
+                                                <FormItem className="flex items-center justify-between p-3 rounded-md border bg-background/30">
                                                     <FormLabel className="text-xs font-medium">Post-Impresión</FormLabel>
                                                     <FormControl>
                                                         <Switch checked={field.value} onCheckedChange={field.onChange} />
@@ -312,7 +318,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                             </div>
 
                             {isEditing ? (
-                                <div className={cn("rounded-lg border", variantMode && "p-0 border-none bg-transparent")}>
+                                <div className={cn("rounded-md border", variantMode && "p-0 border-none bg-transparent")}>
                                     <BOMManager 
                                         product={initialData} 
                                         variantMode={variantMode} 
@@ -348,7 +354,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                         />
                                     ))}
                                     {bomFields.length === 0 && (
-                                        <div className="py-12 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-center px-6 bg-muted/5 group hover:bg-muted/10 transition-colors">
+                                        <div className="py-12 border-2 border-dashed rounded-md flex flex-col items-center justify-center text-center px-6 bg-muted/5 group hover:bg-muted/10 transition-colors">
                                             <Layers className="h-8 w-8 text-muted-foreground" />
                                             <h4 className="font-bold text-muted-foreground">Sin recetas definidas</h4>
                                             <p className="text-xs text-muted-foreground/60 max-w-xs mt-1">Haga clic en el botón superior para añadir su primera lista de materiales.</p>
@@ -364,7 +370,16 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
     )
 }
 
-function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }: any) {
+interface BOMItemFieldProps {
+    form: UseFormReturn<ProductFormValues>
+    bomIndex: number
+    products: Product[]
+    uoms: UoM[]
+    onRemove: () => void
+    onSetDefault: () => void
+}
+
+function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }: BOMItemFieldProps) {
     const [isExpanded, setIsExpanded] = useState(false)
     const { fields: lineFields, append, remove } = useFieldArray({
         control: form.control,
@@ -375,7 +390,7 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
 
     return (
         <div className={cn(
-            "rounded-lg border transition-all duration-200",
+            "rounded-md border transition-all duration-200",
             isActive ? "border-primary/50 bg-primary/[0.02]" : "bg-background shadow-sm hover:border-muted-foreground/30"
         )}>
             <div className="p-4 flex items-center justify-between gap-4">
@@ -447,7 +462,7 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                         </Button>
                     </div>
 
-                    <div className="rounded-lg border overflow-hidden">
+                    <div className="rounded-md border overflow-hidden">
                         <Table>
                             <TableHeader className="bg-muted/30">
                                 <TableRow className="h-8 hover:bg-transparent">
@@ -460,8 +475,8 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                             <TableBody>
                                 {lineFields.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center py-4 text-[10px] text-muted-foreground italic">
-                                            No hay componentes definidos
+                                        <TableCell colSpan={4}>
+                                            <EmptyState context="production" variant="compact" title="Sin componentes" description="Agregue componentes a esta receta de fabricación." />
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -474,15 +489,15 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                 </div>
                                                 <ProductSelector
                                                     value={form.watch(`boms.${bomIndex}.lines.${index}.component`)}
-                                                    onChange={(val: any) => {
-                                                        form.setValue(`boms.${bomIndex}.lines.${index}.component`, val)
-                                                        const p = products.find((prod: any) => prod.id.toString() === val?.toString());
+                                                    onChange={(val) => {
+                                                        form.setValue(`boms.${bomIndex}.lines.${index}.component`, val as string)
+                                                        const p = products.find((prod) => prod.id?.toString() === val?.toString());
                                                         if (p && p.uom) {
                                                             form.setValue(`boms.${bomIndex}.lines.${index}.uom`, p.uom.toString());
                                                         }
                                                     }}
                                                     placeholder="Sel. componente"
-                                                    customFilter={(product: any) => {
+                                                    customFilter={(product: Product) => {
                                                         // No CONSUMABLE - uso interno solamente
                                                         if (product.product_type === 'CONSUMABLE') return false
 
@@ -494,7 +509,7 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                         }
 
                                                         return true
-                                                    }} customDisabled={(product: any) => {
+                                                    }} customDisabled={(product: Product) => {
                                                         // Deshabilitar STORABLE sin stock
                                                         if (product.product_type === 'STORABLE' && (product.current_stock || 0) <= 0) {
                                                             return true
@@ -524,7 +539,7 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                     name={`boms.${bomIndex}.lines.${index}.uom`}
                                                     render={({ field }) => {
                                                         const componentId = form.watch(`boms.${bomIndex}.lines.${index}.component`);
-                                                        const product = products.find((p: any) => p.id.toString() === componentId?.toString());
+                                                        const product = products.find((p) => p.id?.toString() === componentId?.toString()) as Product | undefined;
 
                                                         // Get UoM IDs, not names
                                                         const uomIds = new Set<string>();
@@ -532,9 +547,9 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                             if (product.uom) uomIds.add(product.uom.toString());
                                                             if (product.sale_uom) uomIds.add(product.sale_uom.toString());
                                                             if (product.purchase_uom) uomIds.add(product.purchase_uom.toString());
-
-                                                            if (product.allowed_sale_uoms) {
-                                                                product.allowed_sale_uoms.forEach((uomInfo: any) => {
+                                                            const allowed_sale_uoms = product.allowed_sale_uoms as (string | { id: number })[] | undefined;
+                                                            if (allowed_sale_uoms) {
+                                                                allowed_sale_uoms.forEach((uomInfo) => {
                                                                     // Handle both ID and object
                                                                     if (typeof uomInfo === 'object' && uomInfo.id) {
                                                                         uomIds.add(uomInfo.id.toString());
@@ -546,7 +561,7 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                         }
 
                                                         // Filter uoms to only show those related to product's category
-                                                        const availableUoms = uoms.filter((u: any) => uomIds.has(u.id.toString()));
+                                                        const availableUoms = uoms.filter((u) => uomIds.has(String(u.id)));
 
                                                         return (
                                                             <Popover>
@@ -558,7 +573,7 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                                             className="h-8 text-[10px] px-2 w-full justify-between font-normal"
                                                                         >
                                                                             {field.value
-                                                                                ? availableUoms.find((u: any) => u.id.toString() === field.value.toString())?.name
+                                                                                ? availableUoms.find((u) => String(u.id) === field.value.toString())?.name as string
                                                                                 : "-"}
                                                                             <ChevronDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
                                                                         </Button>
@@ -585,20 +600,20 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                                             />
                                                                         </div>
                                                                         <div className="max-h-[150px] overflow-y-auto space-y-1">
-                                                                            {availableUoms.map((u: any) => (
+                                                                            {availableUoms.map((u) => (
                                                                                 <div
                                                                                     key={u.id}
                                                                                     className={cn(
                                                                                         "uom-item-mfg relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                                        field.value === u.id.toString() && "bg-accent"
+                                                                                        field.value === String(u.id) && "bg-accent"
                                                                                     )}
                                                                                     onClick={() => {
-                                                                                        field.onChange(u.id.toString())
+                                                                                        field.onChange(String(u.id))
                                                                                         document.body.click()
                                                                                     }}
                                                                                 >
-                                                                                    <span>{u.name}</span>
-                                                                                    {field.value === u.id.toString() && (
+                                                                                    <span>{u.name as string}</span>
+                                                                                    {field.value === String(u.id) && (
                                                                                         <Check className="ml-auto h-3 w-3 opacity-100" />
                                                                                     )}
                                                                                 </div>

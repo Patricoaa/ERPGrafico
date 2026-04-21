@@ -11,7 +11,7 @@ import * as BOMResolver from '@/lib/pos/bom-resolver'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { inventoryApi } from '@/features/inventory/api/inventoryApi'
 
-const EMPTY_ARRAY: any[] = []
+const EMPTY_ARRAY: Product[] = []
 
 export function useProducts() {
     const queryClient = useQueryClient()
@@ -146,9 +146,9 @@ export function useProducts() {
             const isFavorite = res.data.is_favorite
 
             // Update cache directly for immediate UI response
-            queryClient.setQueryData(['products', { active: true, can_be_sold: true }], (old: any) => {
+            queryClient.setQueryData(['products', { active: true, can_be_sold: true }], (old: Product[] | undefined) => {
                 if (!old) return old
-                return old.map((p: any) => p.id === productId ? { ...p, is_favorite: isFavorite } : p)
+                return old.map((p: Product) => p.id === productId ? { ...p, is_favorite: isFavorite } : p)
             })
 
             toast.success(isFavorite ? "Añadido a favoritos" : "Eliminado de favoritos")

@@ -1,10 +1,9 @@
 """
 Utility de cifrado simétrico para secretos almacenados en JSONField
-(ej. API keys de gateways de pago). Ver ADR 002.
+(ej. API keys de proveedores de terminales de pago).
 
-La clave se deriva de settings.TUU_ENCRYPTION_KEY (preferida) o, como fallback,
-de settings.SECRET_KEY. En producción debe definirse TUU_ENCRYPTION_KEY como
-una clave Fernet válida (`Fernet.generate_key()`) y rotarse controladamente.
+La clave se deriva de settings.SECRET_KEY. En producción se puede sobreescribir
+definiendo TUU_ENCRYPTION_KEY como una clave Fernet válida en el entorno.
 """
 from __future__ import annotations
 

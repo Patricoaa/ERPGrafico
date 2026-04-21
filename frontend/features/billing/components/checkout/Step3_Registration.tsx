@@ -15,8 +15,8 @@ import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationD
 
 interface Step3_RegistrationProps {
     isCreditNote: boolean
-    data: any
-    setData: (data: any) => void
+    data: Record<string, unknown>
+    setData: (data: Record<string, unknown>) => void
     onPeriodValidityChange?: (isValid: boolean) => void
 }
 

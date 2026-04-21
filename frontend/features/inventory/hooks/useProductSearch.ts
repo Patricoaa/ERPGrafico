@@ -28,7 +28,7 @@ export function useProductSearch(): UseProductSearchReturn {
     const [loading, setLoading] = useState(false)
 
     // Variant resolver uses an internal cache to avoid hitting endpoints repeatedly
-    const resolveVariants = async (productList: any[], limit?: number) => {
+    const resolveVariants = async (productList: Product[], limit?: number) => {
         const resolved = [...productList]
         const itemsToResolve = limit ? resolved.slice(0, limit) : resolved
 

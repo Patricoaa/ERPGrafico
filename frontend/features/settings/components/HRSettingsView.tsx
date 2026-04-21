@@ -20,6 +20,7 @@ import {
     AlertCircle
 } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { FormSkeleton } from "@/components/shared/FormSkeleton"
 import {
     Select,
     SelectContent,
@@ -57,29 +58,7 @@ import { cn } from "@/lib/utils"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
-const globalSettingsSchema = z.object({
-    uf_current_value: z.string(),
-    utm_current_value: z.string(),
-    min_wage_value: z.string(),
-    account_remuneraciones_por_pagar: z.string().nullable(),
-    account_previred_por_pagar: z.string().nullable(),
-    account_anticipos: z.string().nullable(),
-})
-
-const conceptSchema = z.object({
-    name: z.string().min(1, "Nombre requerido"),
-    category: z.enum(['HABER_IMPONIBLE', 'HABER_NO_IMPONIBLE', 'DESCUENTO_LEGAL_TRABAJADOR', 'DESCUENTO_LEGAL_EMPLEADOR', 'OTRO_DESCUENTO']),
-    account: z.string().min(1, "Cuenta requerida"),
-    formula_type: z.enum(['FIXED', 'PERCENTAGE', 'EMPLOYEE_SPECIFIC', 'FORMULA', 'CHILEAN_LAW']),
-    formula: z.string().optional(),
-    default_amount: z.string(),
-})
-
-const afpSchema = z.object({
-    name: z.string().min(1, "Nombre requerido"),
-    percentage: z.string().min(1, "Porcentaje requerido"),
-    account: z.string().nullable(),
-})
+import { globalSettingsSchema, conceptSchema, afpSchema, type GlobalHRFormValues, type ConceptFormValues, type AFPFormValues } from "./HRSettingsView.schema"
 
 export function HRSettingsView({ activeTab = "global", onSavingChange }: { 
     activeTab?: string,
@@ -158,10 +137,10 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
     const watchedGlobal = globalForm.watch()
     const { isDirty: isGlobalDirty } = globalForm.formState
 
-    const onSaveGlobal = useCallback(async (data: z.infer<typeof globalSettingsSchema>) => {
+    const onSaveGlobal = useCallback(async (data: GlobalHRFormValues) => {
         setSaving(true)
         try {
-            await updateGlobalHRSettings(data as any)
+            await updateGlobalHRSettings(data)
             globalForm.reset(data)
         } catch {
             toast.error("Error al guardar parámetros globales")
@@ -249,13 +228,7 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
         })
     ]
 
-    if (loading) {
-        return (
-            <div className="flex h-[400px] items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        )
-    }
+    if (loading) return <FormSkeleton hasTabs tabs={3} fields={4} />
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
@@ -473,7 +446,7 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
     const [open, setOpen] = useState(false)
     const [saving, setSaving] = useState(false)
 
-    const form = useForm<z.infer<typeof conceptSchema>>({
+    const form = useForm<ConceptFormValues>({
         resolver: zodResolver(conceptSchema),
         defaultValues: concept ? {
             name: concept.name,
@@ -492,14 +465,14 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
         }
     })
 
-    const onSubmit = async (data: z.infer<typeof conceptSchema>) => {
+    const onSubmit = async (data: ConceptFormValues) => {
         setSaving(true)
         try {
             if (concept) {
-                await updatePayrollConcept(concept.id, data as any)
+                await updatePayrollConcept(concept.id, data)
                 toast.success("Concepto actualizado")
             } else {
-                await createPayrollConcept(data as any)
+                await createPayrollConcept(data)
                 toast.success("Concepto creado")
             }
             onSaved()
@@ -678,7 +651,7 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
     const [open, setOpen] = useState(false)
     const [saving, setSaving] = useState(false)
 
-    const form = useForm<z.infer<typeof afpSchema>>({
+    const form = useForm<AFPFormValues>({
         resolver: zodResolver(afpSchema),
         defaultValues: afp ? {
             name: afp.name,
@@ -691,14 +664,14 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
         }
     })
 
-    const onSubmit = async (data: z.infer<typeof afpSchema>) => {
+    const onSubmit = async (data: AFPFormValues) => {
         setSaving(true)
         try {
             if (afp) {
-                await updateAFP(afp.id, data as any)
+                await updateAFP(afp.id, data)
                 toast.success("AFP actualizada")
             } else {
-                await createAFP(data as any)
+                await createAFP(data)
                 toast.success("AFP registrada")
             }
             onSaved()

@@ -9,10 +9,11 @@ import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
+import { Order, OrderLine, PhaseDocument, WorkOrder } from "../../types"
 
 interface ProductionPhaseProps {
-    order: any
-    activeDoc: any
+    order: Order | null
+    activeDoc: Order
     userPermissions: string[]
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
@@ -52,14 +53,14 @@ export function ProductionPhase({
         onConfirm: () => { }
     })
 
-    const activeOTs = activeDoc.work_orders?.filter((ot: any) => ot.status !== 'CANCELLED') || []
+    const activeOTs = activeDoc.work_orders?.filter((ot: WorkOrder) => ot.status !== 'CANCELLED') || []
     const totalOTs = activeOTs.length
     const totalOTProgress = totalOTs > 0
-        ? activeOTs.reduce((sum: number, ot: any) => sum + (ot.production_progress || 0), 0) / totalOTs
+        ? activeOTs.reduce((sum: number, ot: WorkOrder) => sum + (ot.production_progress || 0), 0) / totalOTs
         : 0
 
     // Only show if order has manufacturable items or existing work orders
-    const showProduction = (order?.work_orders?.length || 0) > 0 || (activeDoc.lines || activeDoc.items || []).some((l: any) => l.is_manufacturable)
+    const showProduction = (order?.work_orders?.length || 0) > 0 || (activeDoc.lines || activeDoc.items || []).some((l: OrderLine) => l.is_manufacturable)
 
     if (!showProduction) return null
 
@@ -91,7 +92,7 @@ export function ProductionPhase({
                 title="Producción"
                 icon={ClipboardList}
                 variant={totalOTs === 0 ? 'neutral' : (totalOTProgress === 100 ? 'success' : 'active')}
-                documents={activeDoc.work_orders?.map((ot: any) => ({
+                documents={activeDoc.work_orders?.map((ot: WorkOrder) => ({
                     type: 'Orden de Trabajo',
                     number: ot.display_id || `OT-${ot.code || ot.id}`,
                     icon: ClipboardList,
@@ -102,7 +103,7 @@ export function ProductionPhase({
                     actions: [
                         // Only show OT annulment if invoice is DRAFT and stage is pre-impresion or earlier
                         ...((ot.status !== 'CANCELLED' &&
-                            invoices.some((inv: any) => inv.status === 'DRAFT') &&
+                            invoices.some((inv: Order) => inv.status === 'DRAFT') &&
                             ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(ot.current_stage)) ? [{
                                 icon: Ban,
                                 title: 'Anular OT',
@@ -110,9 +111,9 @@ export function ProductionPhase({
                                 onClick: () => handleAnnulWorkOrder(ot.id)
                             }] : [])
                     ]
-                })) || []}
+                })) as PhaseDocument[] || []}
                 onViewDetail={openDetails}
-                actions={(registry.production?.actions || []).filter((a: any) => !a.id.includes('view-'))}
+                actions={(registry.production?.actions || []).filter((a: { id: string }) => !a.id.includes('view-'))}
                 emptyMessage="Sin órdenes de trabajo"
                 order={activeDoc}
                 userPermissions={userPermissions}
