@@ -49,7 +49,7 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
 
     const [selectedSession, setSelectedSession] = useState<POSSession | null>(null)
     const [reportDialogOpen, setReportDialogOpen] = useState(false)
-    const [reportData, setReportData] = useState<any>(null)
+    const [reportData, setReportData] = useState<Record<string, unknown> | null>(null)
     const [reportType, setReportType] = useState<"X" | "Z">("X")
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
 

@@ -4,9 +4,10 @@ import { CalendarIcon, Pencil, LayoutDashboard, Ban, Trash2 } from "lucide-react
 import { Button } from "@/components/ui/button"
 import { formatPlainDate, cn, formatCurrency } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import type { WorkOrder } from "../types"
 
 interface WizardHeaderProps {
-    order: any
+    order: WorkOrder
     currentStageLabel: string
     onEdit: () => void
     onOpenCommandCenter: (id: number, type: 'sale' | 'purchase') => void

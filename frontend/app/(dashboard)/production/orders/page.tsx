@@ -35,7 +35,7 @@ interface WorkOrder {
     start_date: string
     due_date: string
     sale_customer_name?: string
-    materials?: any[]
+    materials?: Record<string, unknown>[]
 }
 
 const statusOptions = [
@@ -54,10 +54,14 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
     'CANCELLED': { label: 'Anulada', variant: 'destructive' },
 }
 
-export default function WorkOrdersPage() {
+interface WorkOrdersPageProps {
+    createAction?: React.ReactNode
+}
+
+export default function WorkOrdersPage({ createAction }: WorkOrdersPageProps = {}) {
     const [orders, setOrders] = useState<WorkOrder[]>([])
     const [loading, setLoading] = useState(true)
-    const [editingOrder, setEditingOrder] = useState<any | null>(null)
+    const [editingOrder, setEditingOrder] = useState<WorkOrder | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [activeWizardId, setActiveWizardId] = useState<number | null>(null)
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
@@ -258,11 +262,11 @@ export default function WorkOrdersPage() {
         }),
     ], [])
 
-    const renderKanbanView = useCallback((table: any) => (
+    const renderKanbanView = useCallback((table: import("@tanstack/react-table").Table<WorkOrder>) => (
         <div className="relative">
             <div className="min-h-[600px]">
                 <WorkOrderKanban
-                    orders={table.getFilteredRowModel().rows.map((row: any) => row.original)}
+                    orders={table.getFilteredRowModel().rows.map((row: import("@tanstack/react-table").Row<WorkOrder>) => row.original)}
                     onTransition={handleKanbanTransition}
                     onManage={(id) => setActiveWizardId(id)}
                     isLoading={loading}
@@ -334,6 +338,7 @@ export default function WorkOrdersPage() {
                     }
                     onReset={() => setDateRange(undefined)}
                     renderCustomView={viewMode === "kanban" ? renderKanbanView : undefined}
+                    createAction={createAction}
                 />
             </div>
 

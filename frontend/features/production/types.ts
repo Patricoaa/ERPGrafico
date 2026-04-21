@@ -96,7 +96,6 @@ export interface WorkOrder {
         uom_id?: string | number
         uom_name?: string
         comments?: ProductionComment[]
-        [key: string]: unknown
     }
     product?: {
         id: string | number
@@ -112,11 +111,20 @@ export interface WorkOrder {
         product?: {
             name: string
         }
+        description?: string
+        quantity?: number
+        uom?: {
+            name: string
+        }
     }
     sale_order?: {
         id: number
         number: string
     }
+    total_price?: number
+    created_at?: string
+    sale_customer_rut?: string
+    is_cancellable?: boolean
     checkout_files?: ProductionAttachment[]
     attachments?: ProductionAttachment[]
 }
@@ -169,6 +177,9 @@ export interface ProductMinimal {
     cost_price?: number | string
     has_variants?: boolean
     track_inventory?: boolean
+    requires_bom_validation?: boolean
+    requires_advanced_manufacturing?: boolean
+    mfg_auto_finalize?: boolean
     attribute_values_data?: {
         id: number
         attribute: string

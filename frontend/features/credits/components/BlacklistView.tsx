@@ -10,7 +10,7 @@ import {
 import { CreditContact, CreditLedgerEntry } from "@/lib/credits/api"
 import { formatCurrency } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
-import { ColumnDef, flexRender } from "@tanstack/react-table"
+import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, ColumnDef, flexRender } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -62,7 +62,7 @@ const agingBg: Record<string, string> = {
     'overdue_90plus': 'bg-destructive/20 text-destructive border-destructive/30',
 }
 
-function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () => void }) {
+function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, onRefresh: () => void }) {
     const contact = row.original as CreditContact
     const [expanded, setExpanded] = useState(false)
     const [ledger, setLedger] = useState<CreditLedgerEntry[] | null>(null)
@@ -93,7 +93,8 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
             await unblockContact(contact.id)
             toast.success("Cliente desbloqueado correctamente.")
             onRefresh()
-        } catch (e: any) {
+        } catch (error) {
+            const e = error as { response?: { data?: { error?: string } } }
             toast.error(e.response?.data?.error || "Error al desbloquear cliente.")
         } finally {
             setUnblocking(false)
@@ -110,7 +111,8 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
             onRefresh()
             const data = await getContactCreditLedger(contact.id, true)
             setLedger(data)
-        } catch (e: any) {
+        } catch (error) {
+            const e = error as { response?: { data?: { error?: string } } }
             toast.error(e.response?.data?.error || "Error al registrar recuperación.")
         }
     }
@@ -124,7 +126,7 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
                 )}
                 onClick={handleExpand}
             >
-                {row.getVisibleCells().map((cell: any) => (
+                {row.getVisibleCells().map((cell: Cell<CreditContact, unknown>) => (
                     <TableCell key={cell.id} className="py-3 px-4">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
@@ -269,7 +271,7 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: any, onRefresh: () =>
 }
 
 export function BlacklistView() {
-    const [data, setData] = useState<any>(null)
+    const [data, setData] = useState<{ contacts?: CreditContact[] } | null>(null)
     const [loading, setLoading] = useState(true)
 
     const fetchData = useCallback(async () => {
@@ -330,7 +332,7 @@ export function BlacklistView() {
                 globalFilterFields={["name", "tax_id"]}
                 cardMode
                 isLoading={loading}
-                renderCustomView={(table) => {
+                renderCustomView={(table: ReactTable<CreditContact>) => {
                     const rows = table.getRowModel().rows
                     if (rows.length === 0 && !loading) {
                         return (
@@ -345,9 +347,9 @@ export function BlacklistView() {
                         <div className="overflow-x-auto pb-4">
                             <table className="w-full text-left">
                                 <thead className="border-b border-border/50">
-                                    {table.getHeaderGroups().map((headerGroup: any) => (
+                                    {table.getHeaderGroups().map((headerGroup: HeaderGroup<CreditContact>) => (
                                         <tr key={headerGroup.id}>
-                                            {headerGroup.headers.map((header: any) => (
+                                            {headerGroup.headers.map((header: Header<CreditContact, unknown>) => (
                                                 <th key={header.id} className="px-4 py-3 text-muted-foreground font-black text-[10px] uppercase tracking-widest whitespace-nowrap">
                                                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                                 </th>
@@ -357,7 +359,7 @@ export function BlacklistView() {
                                     ))}
                                 </thead>
                                 <tbody className="divide-y divide-border/50">
-                                    {rows.map((row: any) => (
+                                    {rows.map((row: Row<CreditContact>) => (
                                         <ExpandableBlacklistRow key={row.id} row={row} onRefresh={fetchData} />
                                     ))}
                                 </tbody>

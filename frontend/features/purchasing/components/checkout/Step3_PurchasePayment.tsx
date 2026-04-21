@@ -5,8 +5,8 @@ import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/comp
 import { useEffect } from "react"
 
 interface Step3_PurchasePaymentProps {
-    paymentData: any
-    setPaymentData: (data: any) => void
+    paymentData: PaymentData
+    setPaymentData: (data: PaymentData) => void
     total: number
 }
 

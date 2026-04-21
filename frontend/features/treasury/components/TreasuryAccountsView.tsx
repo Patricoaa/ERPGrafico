@@ -22,9 +22,10 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 interface TreasuryAccountsViewProps {
     activeTab: string
     externalOpen?: boolean
+    createAction?: React.ReactNode
 }
 
-export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab, externalOpen }) => {
+export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab, externalOpen, createAction }) => {
     const { openTreasuryAccount } = useGlobalModalActions()
     const { accounts, deleteAccount, isLoading } = useTreasuryAccounts()
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
@@ -209,32 +210,35 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                         }
                     ]}
                     useAdvancedFilter={true}
+                    createAction={activeTab === "accounts" ? createAction : undefined}
                 />
             </TabsContent>
 
             <TabsContent value="banks">
-                <BankManagement 
-                    externalOpen={isBankModalOpen || (activeTab === "banks" && !!externalOpen)} 
+                <BankManagement
+                    externalOpen={isBankModalOpen || (activeTab === "banks" && !!externalOpen)}
                     onOpenChange={(open) => {
                         if (!open) {
                             handleCloseModal()
                         } else {
                             setIsBankModalOpen(true)
                         }
-                    }} 
+                    }}
+                    createAction={activeTab === "banks" ? createAction : undefined}
                 />
             </TabsContent>
 
             <TabsContent value="methods">
-                <PaymentMethodManagement 
-                    externalOpen={isMethodModalOpen || (activeTab === "methods" && !!externalOpen)} 
+                <PaymentMethodManagement
+                    externalOpen={isMethodModalOpen || (activeTab === "methods" && !!externalOpen)}
                     onOpenChange={(open) => {
                         if (!open) {
                             handleCloseModal()
                         } else {
                             setIsMethodModalOpen(true)
                         }
-                    }} 
+                    }}
+                    createAction={activeTab === "methods" ? createAction : undefined}
                 />
             </TabsContent>
         </Tabs>

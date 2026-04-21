@@ -23,9 +23,10 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 interface AccountsClientViewProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function AccountsClientView({ externalOpen, onExternalOpenChange }: AccountsClientViewProps) {
+export function AccountsClientView({ externalOpen, onExternalOpenChange, createAction }: AccountsClientViewProps) {
     const { accounts: flatAccounts, refetch, deleteAccount, isLoading } = useAccounts()
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -261,14 +262,15 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange }: Accou
                 ]}
                 useAdvancedFilter={true}
                 defaultPageSize={500}
-                getSubRows={(row: any) => row.children}
+                getSubRows={(row: Account & { children?: unknown[] }) => row.children}
                 autoExpand={true}
                 rightAction={null}
+                createAction={createAction}
             />
 
             <AccountForm
                 accounts={flatAccounts}
-                initialData={editingAccount as any}
+                initialData={editingAccount as Record<string, unknown>}
                 parentId={formParentId || undefined}
                 onSuccess={() => {
                     refetch()

@@ -1,5 +1,7 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
+
 import React, { useState, useEffect, useMemo } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -27,7 +29,7 @@ export function StockReport() {
             const res = await api.get('/inventory/products/stock_report/')
             setReport(res.data)
         } catch (error) {
-            toast.error("Error al cargar el reporte de stock")
+            showApiError(error, "Error al cargar el reporte de stock")
         } finally {
             setLoading(false)
         }

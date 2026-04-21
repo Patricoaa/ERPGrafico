@@ -50,13 +50,15 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
     const [treasuryAccounts, setTreasuryAccounts] = useState<TreasuryAccount[]>([])
     const [bankFormats, setBankFormats] = useState<BankFormat>({})
 
+    interface ImportPreviewData {
+        columns: Array<string | number>;
+        rows: Array<Array<unknown>>;
+        file_type: string;
+        filename: string;
+    }
+
     // Preview Data
-    const [previewData, setPreviewData] = useState<{
-        columns: Array<string | number>,
-        rows: Array<Array<any>>,
-        file_type: string,
-        filename: string
-    } | null>(null)
+    const [previewData, setPreviewData] = useState<ImportPreviewData | null>(null)
 
     // Column Mapping State
     const [mapping, setMapping] = useState<ColumnMapping>({
@@ -150,7 +152,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
             }
             const cols = response.data.columns
             const newMapping = { ...mapping }
-            cols.forEach((col: any, idx: number) => {
+            cols.forEach((col, idx: number) => {
                 const colStr = String(col).toLowerCase()
                 if (colStr.includes('fech') || colStr.includes('date')) newMapping.date = col
                 if (colStr.includes('desc') || colStr.includes('glos') || colStr.includes('detalle')) newMapping.description = col

@@ -32,8 +32,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { ColumnDef } from "@tanstack/react-table"
-import { flexRender } from "@tanstack/react-table"
+import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, ColumnDef, flexRender } from "@tanstack/react-table"
 import { TableRow, TableCell } from "@/components/ui/table"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
@@ -111,7 +110,7 @@ function AgingBar({ aging }: { aging: CreditContact["credit_aging"] }) {
     )
 }
 
-function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => void }) {
+function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onRefresh: () => void }) {
     const contact = row.original as CreditContact
     const [expanded, setExpanded] = useState(false)
     const [ledger, setLedger] = useState<CreditLedgerEntry[] | null>(null)
@@ -150,7 +149,8 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
             const res = await writeOffDebt(contact.id)
             toast.success(`Deuda castigada: ${res.journal_entry} por ${fmt(res.amount)}`)
             onRefresh()
-        } catch (e: any) {
+        } catch (error) {
+            const e = error as { response?: { data?: { error?: string } }; message?: string }
             const errorMsg = e.response?.data?.error || e.message || "Error al castigar deuda"
             toast.error(errorMsg)
         } finally {
@@ -165,7 +165,8 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
             toast.success(`Documento castigado: ${res.journal_entry} por ${fmt(res.amount)}`)
             setLedger(null)
             onRefresh()
-        } catch (e: any) {
+        } catch (error) {
+            const e = error as { response?: { data?: { error?: string } }; message?: string }
             const errorMsg = e.response?.data?.error || e.message || "Error al castigar documento"
             toast.error(errorMsg)
         } finally {
@@ -186,7 +187,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: any, onRefresh: () => v
                 onClick={handleExpand}
                 data-state={row.getIsSelected() && "selected"}
             >
-                {row.getVisibleCells().map((cell: any) => (
+                {row.getVisibleCells().map((cell: Cell<CreditContact, unknown>) => (
                     <TableCell key={cell.id} className="py-3 px-4">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
@@ -519,7 +520,7 @@ const historyColumns: ColumnDef<CreditHistoryEntry>[] = [
         accessorKey: "customer_name",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
         cell: ({ row }) => (
-            <DataCell.ContactLink contactId={(row.original as any).customer_id || (row.original as any).customer}>
+            <DataCell.ContactLink contactId={(row.original as CreditHistoryEntry).customer_id || (row.original as CreditHistoryEntry).customer}>
                 {row.original.customer_name}
             </DataCell.ContactLink>
         )
@@ -558,12 +559,14 @@ const historyColumns: ColumnDef<CreditHistoryEntry>[] = [
 
 // ─── Main View ───────────────────────────────────────────────────────────────
 
-export function CreditPortfolioView({ 
+export function CreditPortfolioView({
     activeTab = 'portfolio',
-    externalOpen = false
-}: { 
+    externalOpen = false,
+    createAction
+}: {
     activeTab?: 'portfolio' | 'history',
-    externalOpen?: boolean
+    externalOpen?: boolean,
+    createAction?: React.ReactNode
 }) {
     const [data, setData] = useState<CreditPortfolioResponse | null>(null)
     const [loading, setLoading] = useState(true)
@@ -588,7 +591,8 @@ export function CreditPortfolioView({
         try {
             const result = await getCreditPortfolio()
             setData(result)
-        } catch (e: any) {
+        } catch (error) {
+            const e = error as { message?: string }
             setError(e.message || "Error cargando datos")
         } finally {
             setLoading(false)
@@ -621,7 +625,7 @@ export function CreditPortfolioView({
     const totalOverdue = Number(s?.overdue_30 || 0) + Number(s?.overdue_60 || 0) + Number(s?.overdue_90 || 0) + Number(s?.overdue_90plus || 0)
     const contacts = data?.contacts || EMPTY_CONTACTS
 
-    const renderPortfolioCustomView = useCallback((table: any) => {
+    const renderPortfolioCustomView = useCallback((table: ReactTable<CreditContact>) => {
         const rows = table.getRowModel().rows
         if (rows.length === 0 && !loading) {
             return (
@@ -637,9 +641,9 @@ export function CreditPortfolioView({
             <div className="overflow-x-auto pb-4">
                 <table className="w-full text-left">
                     <thead className="border-b border-border/50">
-                    {table.getHeaderGroups().map((headerGroup: any) => (
+                    {table.getHeaderGroups().map((headerGroup: HeaderGroup<CreditContact>) => (
                         <tr key={headerGroup.id}>
-                            {headerGroup.headers.map((header: any) => (
+                            {headerGroup.headers.map((header: Header<CreditContact, unknown>) => (
                                 <th key={header.id} className="px-4 py-3 text-muted-foreground font-black text-[10px] uppercase tracking-widest whitespace-nowrap">
                                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                 </th>
@@ -649,7 +653,7 @@ export function CreditPortfolioView({
                     ))}
                 </thead>
                 <tbody className="divide-y divide-border/50">
-                    {table.getRowModel().rows.map((row: any) => (
+                    {table.getRowModel().rows.map((row: Row<CreditContact>) => (
                         <ExpandableContactRow key={row.id} row={row} onRefresh={load} />
                     ))}
                 </tbody>
@@ -726,6 +730,7 @@ export function CreditPortfolioView({
                                 globalFilterFields={["name", "tax_id"]}
                                 searchPlaceholder="Buscar cliente..."
                                 renderCustomView={renderPortfolioCustomView}
+                                createAction={createAction}
                             />
                     </div>
                 </>

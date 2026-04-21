@@ -3,8 +3,6 @@
 import * as React from "react"
 import {
     ColumnDef,
-    ColumnFiltersState,
-    SortingState,
     VisibilityState,
     flexRender,
     getCoreRowModel,
@@ -14,7 +12,6 @@ import {
     getFacetedUniqueValues,
     getFacetedRowModel,
     useReactTable,
-    ExpandedState,
     getExpandedRowModel,
     Row,
     RowSelectionState,
@@ -79,6 +76,8 @@ interface DataTableProps<TData, TValue> {
     customFilterCount?: number
     getSubRows?: (originalRow: TData, index: number) => TData[] | undefined
     autoExpand?: boolean
+    /** Primary create action rendered at the right-most end of the toolbar, after the button group */
+    createAction?: React.ReactNode
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -123,79 +122,22 @@ export function DataTable<TData, TValue>({
     customFilterCount,
     getSubRows,
     autoExpand,
+    createAction,
 }: DataTableProps<TData, TValue>) {
-    const [sorting, setSorting] = React.useState<SortingState>([])
-    const [expanded, setExpanded] = React.useState<ExpandedState>(autoExpand ? true : {})
-    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-    const [globalFilter, setGlobalFilter] = React.useState("")
-
-    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(() => {
+    // Uncontrolled mode: let TanStack Table manage sorting/filters/visibility/
+    // expansion/selection state internally. Previous controlled-state wiring
+    // triggered React 19's "state update on a component that hasn't mounted
+    // yet" warning because TanStack syncs controlled state during render.
+    // For prop-driven column visibility changes we imperatively call
+    // `table.setColumnVisibility` in an effect (post-mount).
+    const initialVisibility = React.useMemo<VisibilityState>(() => {
         const visibility = { ...initialColumnVisibility }
         hiddenColumns.forEach(col => {
             visibility[col] = false
         })
         return visibility
-    })
-    const [rowSelection, setRowSelection] = React.useState({})
-
-    // Guard for async operations/effects during unmount
-    // Initialized to false to prevent updates during constructor/early render
-    const isMounted = React.useRef(false)
-
-    React.useEffect(() => {
-        isMounted.current = true
-        return () => { isMounted.current = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
-
-    const prevInitialVisibility = React.useRef(initialColumnVisibility)
-    const prevHiddenColumns = React.useRef(hiddenColumns)
-    
-    React.useEffect(() => {
-        if (!isMounted.current) return
-        
-        const visibilityChanged = JSON.stringify(prevInitialVisibility.current) !== JSON.stringify(initialColumnVisibility)
-        const hiddenChanged = JSON.stringify(prevHiddenColumns.current) !== JSON.stringify(hiddenColumns)
-        
-        if (visibilityChanged || hiddenChanged) {
-            const newVisibility = { ...initialColumnVisibility }
-            hiddenColumns.forEach(col => {
-                newVisibility[col] = false
-            })
-            setColumnVisibility(newVisibility)
-            prevInitialVisibility.current = initialColumnVisibility
-            prevHiddenColumns.current = hiddenColumns
-        }
-    }, [initialColumnVisibility, hiddenColumns])
-
-    const prevRowSelection = React.useRef(rowSelection)
-    React.useEffect(() => {
-        if (!isMounted.current) return
-        if (JSON.stringify(prevRowSelection.current) !== JSON.stringify(rowSelection)) {
-            onRowSelectionChange?.(rowSelection)
-            prevRowSelection.current = rowSelection
-        }
-    }, [rowSelection, onRowSelectionChange])
-
-    // Guarded setters: prevent TanStack Table from calling setState
-    // synchronously during the initial render (before React commits / mounts).
-    const guardedSetSorting = React.useCallback<typeof setSorting>(
-        (v) => { if (isMounted.current) setSorting(v) }, []
-    )
-    const guardedSetColumnFilters = React.useCallback<typeof setColumnFilters>(
-        (v) => { if (isMounted.current) setColumnFilters(v) }, []
-    )
-    const guardedSetGlobalFilter = React.useCallback<typeof setGlobalFilter>(
-        (v) => { if (isMounted.current) setGlobalFilter(v) }, []
-    )
-    const guardedSetColumnVisibility = React.useCallback<typeof setColumnVisibility>(
-        (v) => { if (isMounted.current) setColumnVisibility(v) }, []
-    )
-    const guardedSetRowSelection = React.useCallback<typeof setRowSelection>(
-        (v) => { if (isMounted.current) setRowSelection(v) }, []
-    )
-    const guardedSetExpanded = React.useCallback<typeof setExpanded>(
-        (v) => { if (isMounted.current) setExpanded(v) }, []
-    )
 
     const table = useReactTable({
         data,
@@ -208,30 +150,46 @@ export function DataTable<TData, TValue>({
         getFacetedUniqueValues: getFacetedUniqueValues(),
         getExpandedRowModel: getExpandedRowModel(),
         getSubRows,
-        onSortingChange: guardedSetSorting,
-        onColumnFiltersChange: guardedSetColumnFilters,
-        onGlobalFilterChange: guardedSetGlobalFilter,
-        onColumnVisibilityChange: guardedSetColumnVisibility,
-        onRowSelectionChange: guardedSetRowSelection,
-        onExpandedChange: guardedSetExpanded,
-        state: {
-            sorting,
-            columnFilters,
-            globalFilter,
-            columnVisibility,
-            rowSelection,
-            expanded,
-        },
+        autoResetPageIndex: false,
+        autoResetExpanded: false,
         initialState: {
             pagination: {
                 pageSize: defaultPageSize,
             },
-            columnVisibility: initialColumnVisibility,
+            columnVisibility: initialVisibility,
             expanded: autoExpand ? true : {},
         },
     })
 
-    const showToolbar = filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction
+    // Sync prop-driven column visibility after mount.
+    const prevInitialVisibility = React.useRef(initialColumnVisibility)
+    const prevHiddenColumns = React.useRef(hiddenColumns)
+    React.useEffect(() => {
+        const visibilityChanged = JSON.stringify(prevInitialVisibility.current) !== JSON.stringify(initialColumnVisibility)
+        const hiddenChanged = JSON.stringify(prevHiddenColumns.current) !== JSON.stringify(hiddenColumns)
+
+        if (visibilityChanged || hiddenChanged) {
+            const newVisibility = { ...initialColumnVisibility }
+            hiddenColumns.forEach(col => {
+                newVisibility[col] = false
+            })
+            table.setColumnVisibility(newVisibility)
+            prevInitialVisibility.current = initialColumnVisibility
+            prevHiddenColumns.current = hiddenColumns
+        }
+    }, [initialColumnVisibility, hiddenColumns, table])
+
+    // Fire parent row-selection callback when TanStack's internal rowSelection changes.
+    const rowSelection = table.getState().rowSelection
+    const prevRowSelection = React.useRef(rowSelection)
+    React.useEffect(() => {
+        if (JSON.stringify(prevRowSelection.current) !== JSON.stringify(rowSelection)) {
+            prevRowSelection.current = rowSelection
+            onRowSelectionChange?.(rowSelection)
+        }
+    }, [rowSelection, onRowSelectionChange])
+
+    const showToolbar = filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction || createAction
     const selectedRows = table.getSelectedRowModel().rows
 
     if (cardMode) {
@@ -315,6 +273,7 @@ export function DataTable<TData, TValue>({
                             customFilters={customFilters}
                             isCustomFiltered={isCustomFiltered}
                             customFilterCount={customFilterCount}
+                            createAction={createAction}
                             batchActions={batchActions && selectedRows.length > 0 ? (
                                 <div className="flex items-center gap-3 bg-foreground text-background px-3 py-1.5 rounded-md shadow-sm border border-white/10 animate-in fade-in slide-in-from-left-2 duration-300">
                                     <div className="flex items-center gap-2 pr-3 border-r border-white/20">
@@ -413,6 +372,7 @@ export function DataTable<TData, TValue>({
                         customFilters={customFilters}
                         isCustomFiltered={isCustomFiltered}
                         customFilterCount={customFilterCount}
+                        createAction={createAction}
                         batchActions={batchActions && selectedRows.length > 0 ? (
                             <div className="flex items-center gap-2 bg-foreground text-background px-3 py-1 rounded-md shadow-sm text-xs font-bold font-heading uppercase tracking-wider animate-in fade-in slide-in-from-left-2 duration-300">
                                 <span>{selectedRows.length} Sel.</span>

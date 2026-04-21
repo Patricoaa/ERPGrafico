@@ -17,9 +17,8 @@ export interface BankStatement {
 }
 
 export interface MatchConfig {
-    field: string
-    operator: 'EXACT' | 'CONTAINS' | 'REGEX' | 'FUZZY'
-    value: string
+    criteria?: string[]
+    min_score?: number
     lookback_days?: number
     amount_tolerance?: number
 }
@@ -34,7 +33,7 @@ export interface ReconciliationRule {
     auto_confirm: boolean
     times_applied: number
     success_rate: number
-    match_config: MatchConfig[]
+    match_config: MatchConfig
 }
 
 export interface TreasuryAccount {

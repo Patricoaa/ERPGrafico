@@ -4,6 +4,8 @@ import { useState, useEffect, lazy, Suspense } from "react"
 import api from "@/lib/api"
 import { SalesOrdersView } from "./SalesOrdersView"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { SaleOrder, SaleOrderLine } from "../../types"
+import { Invoice } from "@/features/billing/types"
 
 // Lazy load heavy components
 const SalesCheckoutWizard = lazy(() => import("./SalesCheckoutWizard"))
@@ -19,17 +21,17 @@ interface SalesOrdersClientViewProps {
 }
 
 export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateModalOpen }: SalesOrdersClientViewProps) {
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
-    const [payingOrder, setPayingOrder] = useState<any | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: string, id: number | string, view: 'details' | 'history' } | null>(null)
+    const [payingOrder, setPayingOrder] = useState<SaleOrder | null>(null)
     const [dispatchingOrder, setDispatchingOrder] = useState<number | null>(null)
-    const [completingFolio, setCompletingFolio] = useState<any | null>(null)
-    const [addingNote, setAddingNote] = useState<any | null>(null)
-    const [checkoutData, setCheckoutData] = useState<any | null>(null)
+    const [completingFolio, setCompletingFolio] = useState<SaleOrder | null>(null)
+    const [addingNote, setAddingNote] = useState<SaleOrder | null>(null)
+    const [checkoutData, setCheckoutData] = useState<{ lines: SaleOrderLine[] } | null>(null)
 
     // Handle creation trigger for Notes view if needed
     useEffect(() => {
         if (isCreateModalOpen && viewMode === 'notes') {
-            setAddingNote(true) // Open Note creation modal
+            setAddingNote({} as SaleOrder) // Open Note creation modal with dummy object (will require selection or handle empty)
             if (setCreateModalOpen) setCreateModalOpen(false)
         }
     }, [isCreateModalOpen, viewMode, setCreateModalOpen])
@@ -62,16 +64,16 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
                             }
                         }}
                         order={payingOrder}
-                        orderLines={(payingOrder?.lines || checkoutData?.lines || []).map((l: any) => ({
+                        orderLines={(payingOrder?.lines || checkoutData?.lines || []).map((l: SaleOrderLine) => ({
                             ...l,
-                            id: l.product,
+                            id: l.product as number,
                             product_name: l.product_name || l.description,
                             name: l.product_name || l.description,
                             code: l.product_code || l.code,
                             qty: l.quantity,
                             unit_price_net: l.unit_price,
                         }))}
-                        total={payingOrder ? parseFloat(payingOrder.total) : (checkoutData?.lines?.reduce((sum: number, l: any) => sum + (l.quantity * (l.unit_price || 0)) * 1.19, 0) || 0)}
+                        total={payingOrder ? parseFloat(payingOrder.total.toString()) : (checkoutData?.lines?.reduce((sum: number, l: SaleOrderLine) => sum + (l.quantity * (l.unit_price || 0)) * 1.19, 0) || 0)}
                         initialCustomerId={payingOrder?.customer?.toString()}
                         initialCustomerName={payingOrder?.customer_name}
                         channel={checkoutData ? "SALE" : "POS"}
@@ -99,8 +101,8 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
                     <DocumentCompletionModal
                         open={!!completingFolio}
                         onOpenChange={(open: boolean) => !open && setCompletingFolio(null)}
-                        invoiceId={completingFolio.related_documents?.invoices?.find((inv: any) => inv.number === 'Draft')?.id || completingFolio.related_documents?.invoices?.[0]?.id}
-                        invoiceType={completingFolio.related_documents?.invoices?.find((inv: any) => inv.number === 'Draft')?.type || "BOLETA"}
+                        invoiceId={completingFolio.related_documents?.invoices?.find((inv: Invoice) => inv.number === 'Draft')?.id || completingFolio.related_documents?.invoices?.[0]?.id}
+                        invoiceType={completingFolio.related_documents?.invoices?.find((inv: Invoice) => inv.number === 'Draft')?.type || "BOLETA"}
                         contactId={completingFolio?.customer || completingFolio?.customer_id}
                         isPurchase={false}
                         onComplete={async (invoiceId, formData) => {

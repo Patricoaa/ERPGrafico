@@ -31,9 +31,10 @@ interface Budget {
 interface BudgetsListViewProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function BudgetsListView({ externalOpen, onExternalOpenChange }: BudgetsListViewProps) {
+export function BudgetsListView({ externalOpen, onExternalOpenChange, createAction }: BudgetsListViewProps) {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
@@ -175,6 +176,7 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange }: BudgetsL
                 globalFilterFields={["name"]}
                 searchPlaceholder="Buscar presupuestos..."
                 useAdvancedFilter={true}
+                createAction={createAction}
             />
 
             {/* Create Modal */}

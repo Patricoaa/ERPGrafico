@@ -1,7 +1,7 @@
 import { AttributeManager } from "@/features/inventory/components/AttributeManager"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
-import Link from "next/link"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 
 interface PageProps {
     searchParams: Promise<{ modal?: string }>
@@ -18,18 +18,17 @@ export default async function AttributesPage({ searchParams }: PageProps) {
                 description="Gestiona los atributos y valores para productos con variaciones."
                 variant="minimal"
                 iconName="tags"
-                titleActions={
-                    <Link href="/inventory/attributes?modal=new">
-                        <PageHeaderButton
-                            iconName="plus"
-                            circular
-                            title="Nuevo Atributo"
-                        />
-                    </Link>
-                }
             />
             <div className="pt-4">
-                <AttributeManager externalOpen={isModalOpen} />
+                <AttributeManager
+                    externalOpen={isModalOpen}
+                    createAction={
+                        <ToolbarCreateButton
+                            label="Nuevo Atributo"
+                            href="/inventory/attributes?modal=new"
+                        />
+                    }
+                />
             </div>
         </div>
     )

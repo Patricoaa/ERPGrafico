@@ -8,13 +8,14 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
+import { Order, OrderLine, PhaseDocument } from "../../types"
 
 interface OriginPhaseProps {
     isNoteMode: boolean
-    activeInvoice: any
-    noteStatuses: any
-    order: any
-    activeDoc: any
+    activeInvoice: Order | null
+    noteStatuses: Record<string, string | boolean | number>
+    order: Order | null
+    activeDoc: Order
     type: 'purchase' | 'sale' | 'obligation'
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
@@ -58,12 +59,12 @@ export function OriginPhase({
         }
     }
 
-    const documents = isNoteMode ? [
+    const documents: PhaseDocument[] = isNoteMode ? [
         {
             type: 'Documento Rectificado',
             number: formatDocumentId('FACT', activeInvoice?.corrected_invoice?.number || '---', activeInvoice?.corrected_invoice?.display_id),
             icon: FileText,
-            id: activeInvoice?.corrected_invoice?.id,
+            id: activeInvoice?.corrected_invoice?.id as number,
             docType: 'invoice',
             actions: []
         },
@@ -131,7 +132,7 @@ export function OriginPhase({
         <PhaseCard
             title="Origen"
             icon={TrendingUp}
-            variant={isNoteMode ? noteStatuses.origin : (activeDoc.status !== 'DRAFT' ? 'success' : 'neutral')}
+            variant={(isNoteMode ? noteStatuses.origin : (activeDoc.status !== 'DRAFT' ? 'success' : 'neutral')) as string}
             isComplete={isNoteMode && noteStatuses.origin === 'success'}
             documents={documents}
             onViewDetail={openDetails}
@@ -144,13 +145,13 @@ export function OriginPhase({
             onOpenChange={onOpenChange}
         >
             <div className="flex flex-col gap-1">
-                {(activeDoc?.lines || activeDoc?.items || []).slice(0, 3).map((line: any, idx: number) => (
+                {(activeDoc?.lines || activeDoc?.items || []).slice(0, 3).map((line: OrderLine, idx: number) => (
                     <div key={idx} className="flex items-start justify-between text-[10px] gap-2 py-0.5 border-b border-white/5 last:border-0">
                         <span className="text-foreground/70 line-clamp-1 leading-tight flex-1">
                             {line.product_name || line.description}
                         </span>
                         <span className="shrink-0 font-black text-primary text-[11px]">
-                            {Math.round(line.quantity)} {line.uom_name || line.unit_name || 'un'}
+                            {Math.round(line.quantity as number)} {line.uom_name || line.unit_name || 'un'}
                         </span>
                     </div>
                 ))}

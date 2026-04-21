@@ -48,14 +48,14 @@ export interface ContactPayload {
 export interface InsightsData {
     sales: {
         count: number
-        orders: any[]
+        orders: Record<string, unknown>[]
     }
     purchases: {
         count: number
-        orders: any[]
+        orders: Record<string, unknown>[]
     }
     work_orders: {
         count: number
-        orders: any[]
+        orders: Record<string, unknown>[]
     }
 }

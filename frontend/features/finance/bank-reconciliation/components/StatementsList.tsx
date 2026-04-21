@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Eye } from "lucide-react"
@@ -14,7 +14,12 @@ import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 
-export function StatementsList({ externalOpen = false }: { externalOpen?: boolean }) {
+interface StatementsListProps {
+    externalOpen?: boolean
+    createAction?: React.ReactNode
+}
+
+export function StatementsList({ externalOpen = false, createAction }: StatementsListProps) {
     const router = useRouter()
     const { fetchStatements, loading } = useReconciliation()
     const [statements, setStatements] = useState<BankStatement[]>([])
@@ -108,7 +113,7 @@ export function StatementsList({ externalOpen = false }: { externalOpen?: boolea
         },
         {
             id: "lines_info",
-            header: ({ column }: any) => <DataTableColumnHeader column={column} title="Líneas" className="justify-center" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Líneas" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex flex-col items-center justify-center w-full">
                     <span className="font-semibold text-xs">{row.original.total_lines} total</span>
@@ -179,6 +184,7 @@ export function StatementsList({ externalOpen = false }: { externalOpen?: boolea
                 ]}
                 useAdvancedFilter={true}
                 defaultPageSize={10}
+                createAction={createAction}
             />
 
             <StatementImportDialog

@@ -11,6 +11,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { useDebounce } from "@/hooks/use-debounce"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { useGroupSearch } from "@/features/users/hooks/useGroupSearch"
 import { AppGroup as Group } from "@/types/entities"
 
@@ -72,7 +73,7 @@ export function GroupSelector({ value, onChange, placeholder = "Seleccionar grup
                 >
                     {selectedGroup ? (
                         <div className="flex items-center gap-2 truncate text-left">
-                            <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                            <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
                                 <Users className="h-4 w-4" />
                             </div>
                             <div className="flex flex-col items-start truncate leading-tight">
@@ -82,7 +83,7 @@ export function GroupSelector({ value, onChange, placeholder = "Seleccionar grup
                         </div>
                     ) : value ? (
                         <div className="flex items-center gap-2 truncate text-left">
-                            <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                            <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
                                 <Users className="h-4 w-4" />
                             </div>
                             <div className="flex flex-col items-start truncate leading-tight">
@@ -112,9 +113,7 @@ export function GroupSelector({ value, onChange, placeholder = "Seleccionar grup
                         {searchLoading ? (
                             <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
                         ) : groups.length === 0 ? (
-                            <div className="p-4 text-sm text-center text-muted-foreground">
-                                No se encontraron grupos.
-                            </div>
+                            <EmptyState context="users" variant="compact" title="No se encontraron grupos" />
                         ) : (
                             groups.map((g) => (
                                 <div

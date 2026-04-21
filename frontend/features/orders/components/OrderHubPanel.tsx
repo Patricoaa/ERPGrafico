@@ -25,6 +25,7 @@ import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { OrderHubIntegrated } from "./OrderHubIntegrated"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { Order } from "../types"
 
 export interface OrderHubPanelProps {
     orderId?: number | null
@@ -82,7 +83,7 @@ export function OrderHubPanel({
         if (type === 'sale' && totalOTs > 0) stages.push(totalOTProgress === 100)
         if (activeDoc.document_type !== 'SERVICE_OBLIGATION') stages.push(logisticsProgress === 100)
         stages.push(billingIsComplete)
-        stages.push((activeDoc.status === 'PAID' || activeDoc.payment_status === 'PAID' || parseFloat(activeDoc.pending_amount || '0') <= 0) && !hubStatuses.hasPendingTransactions)
+        stages.push((activeDoc.status === 'PAID' || activeDoc.payment_status === 'PAID' || parseFloat(String(activeDoc.pending_amount || '0')) <= 0) && !hubStatuses.hasPendingTransactions)
 
         if (stages.every(s => s)) return { label: 'Completado', status: 'success', icon: CheckCircle2 }
         if (stages.some(s => s)) return { label: 'En Progreso', status: 'active', icon: PlayCircle }

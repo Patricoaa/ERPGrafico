@@ -13,11 +13,29 @@ import { Badge } from "@/components/ui/badge"
 import { FileText, Package, Truck, ClipboardList, Download, ExternalLink, Hash } from "lucide-react"
 import { formatCurrency, formatPlainDate } from "@/lib/utils"
 
+interface DocumentItem {
+    id: number | string
+    number?: string | number
+    type_display?: string
+    date?: string
+    created_at?: string
+    total?: number
+    status?: string
+    status_display?: string
+    product_name?: string
+    quantity?: number
+    unit?: string
+    due_date?: string
+    reference?: string
+    items_count?: number
+    pdf_url?: string
+}
+
 interface DocumentListModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     type: 'invoices' | 'receipts' | 'deliveries' | 'work_orders'
-    data: any[]
+    data: DocumentItem[]
     onItemClick?: (type: 'invoice' | 'inventory' | 'work_order', id: number | string) => void
 }
 

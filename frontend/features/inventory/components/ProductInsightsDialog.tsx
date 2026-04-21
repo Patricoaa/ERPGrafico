@@ -1,5 +1,7 @@
 "use client"
 
+import { Skeleton } from "@/components/ui/skeleton"
+
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import {
@@ -103,7 +105,7 @@ interface ProductInsights {
 export function ProductInsightsDialog({ productId, productName, open, onOpenChange }: ProductInsightsDialogProps) {
     const [data, setData] = useState<ProductInsights | null>(null)
     const [loading, setLoading] = useState(false)
-    const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: any } | null>(null)
+    const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: string } | null>(null)
     const [activeWorkOrderId, setActiveWorkOrderId] = useState<number | null>(null)
 
     useEffect(() => {
@@ -158,7 +160,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                 {loading ? (
                     <div className="flex-1 flex flex-col items-center justify-center py-20 gap-4">
                         <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                        <p className="text-sm text-muted-foreground animate-pulse">Analizando datos del producto...</p>
+                        <Skeleton className="h-4 w-[200px]" />
                     </div>
                 ) : !data ? (
                     <div className="flex-1 flex items-center justify-center py-20">
@@ -230,7 +232,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                             <TrendingUp className="h-4 w-4 text-primary" />
                                             Análisis de Precios Unitarios
                                         </h4>
-                                        <div className="rounded-lg border p-4 space-y-3 bg-muted/50">
+                                        <div className="rounded-md border p-4 space-y-3 bg-muted/50">
                                             <div className="flex justify-between items-center">
                                                 <span className="text-xs text-muted-foreground">Precio Promedio de Venta:</span>
                                                 <DataCell.Currency value={data.sales_analysis.avg_price} className="font-bold" />
@@ -252,7 +254,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                             <Factory className="h-4 w-4 text-primary" />
                                             Consumo en Producción
                                         </h4>
-                                        <div className="rounded-lg border p-4 bg-muted/50">
+                                        <div className="rounded-md border p-4 bg-muted/50">
                                             {data.production_usage.length > 0 ? (
                                                 <div className="space-y-3">
                                                     <div className="flex justify-between items-center">
@@ -275,7 +277,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
 
                             {/* HISTORY TAB */}
                             <TabsContent value="history" className="mt-0 space-y-6">
-                                <div className="h-[250px] w-full bg-card rounded-lg border p-4">
+                                <div className="h-[250px] w-full bg-card rounded-md border p-4">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={[...data.price_history].reverse()}>
                                             <defs>
@@ -298,7 +300,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                             <YAxis fontSize={10} />
                                             <RechartsTooltip
                                                 labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
-                                                formatter={(val: any) => [new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(Number(val || 0)), '']}
+                                                formatter={(val) => [new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(Number(val || 0)), '']}
                                             />
                                             <Legend verticalAlign="top" height={36} />
                                             <Area type="monotone" name="Precio Venta" dataKey="sale_price" stroke="var(--primary)" fillOpacity={1} fill="url(#colorSale)" strokeWidth={2} />

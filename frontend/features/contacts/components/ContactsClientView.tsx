@@ -1,5 +1,5 @@
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState, useEffect, lazy, Suspense } from "react"
+import React, { useState, useEffect, lazy, Suspense } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Edit, Trash2, Plus, Building2, User as UserIcon, Banknote } from "lucide-react"
@@ -23,14 +23,15 @@ const ActionConfirmModal = lazy(() => import("@/components/shared/ActionConfirmM
 
 interface ContactsClientViewProps {
     isNewModalOpen?: boolean
+    createAction?: React.ReactNode
 }
 
-export function ContactsClientView({ isNewModalOpen = false }: ContactsClientViewProps) {
+export function ContactsClientView({ isNewModalOpen = false, createAction }: ContactsClientViewProps) {
     const { contacts, deleteContact } = useContacts()
-    const [selectedContact, setSelectedContact] = useState<any>(null)
+    const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
     const [modalOpen, setModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-    const [contactToDelete, setContactToDelete] = useState<any>(null)
+    const [contactToDelete, setContactToDelete] = useState<Contact | null>(null)
     const router = useRouter()
     const searchParams = useSearchParams()
 
@@ -55,7 +56,7 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
         }
     }
 
-    const handleDelete = async (contact: any, isConfirmed = false) => {
+    const handleDelete = async (contact: Contact, isConfirmed = false) => {
         if (!contact) return
         if (!isConfirmed) {
             setContactToDelete(contact)
@@ -84,7 +85,7 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
             cell: ({ row }) => {
-                const contact = row.original as any
+                const contact = row.original as Contact
                 return (
                     <div className="flex items-center justify-center gap-2 w-full">
                         <DataCell.Text>{contact.name}</DataCell.Text>
@@ -210,6 +211,7 @@ export function ContactsClientView({ isNewModalOpen = false }: ContactsClientVie
                 ]}
                 useAdvancedFilter={true}
                 defaultPageSize={20}
+                createAction={createAction}
             />
 
             <Suspense fallback={<LoadingFallback />}>

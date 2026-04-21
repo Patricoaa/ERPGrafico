@@ -18,10 +18,12 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { PricingUtils } from "@/lib/pricing"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { CheckoutLine } from "../../types"
+import { ProductMinimal, UoM } from "@/types/entities"
 
 interface Step1_ProductSelectionProps {
-    orderLines: any[]
-    setOrderLines: (lines: any[] | ((prev: any[]) => any[])) => void
+    orderLines: CheckoutLine[]
+    setOrderLines: (lines: CheckoutLine[] | ((prev: CheckoutLine[]) => CheckoutLine[])) => void
     selectedWarehouseId?: string
     onWarehouseChange?: (id: string) => void
     selectedSupplierId?: string | null
@@ -38,8 +40,8 @@ export function Step1_ProductSelection({
     onWarehouseChange,
     selectedSupplierId
 }: Step1_ProductSelectionProps) {
-    const [products, setProducts] = useState<any[]>([])
-    const [uoms, setUoMs] = useState<any[]>([])
+    const [products, setProducts] = useState<ProductMinimal[]>([])
+    const [uoms, setUoMs] = useState<UoM[]>([])
     const [loading, setLoading] = useState(true)
     const [grossInput, setGrossInput] = useState<string>("")
     const netResult = grossInput ? Math.round(Number(grossInput) / 1.19) : null
@@ -81,7 +83,7 @@ export function Step1_ProductSelection({
         }
     }
 
-    const updateLine = (index: number, fieldOrUpdates: string | Record<string, any>, value?: any) => {
+    const updateLine = (index: number, fieldOrUpdates: keyof CheckoutLine | Partial<CheckoutLine>, value?: any) => {
         setOrderLines(prev => {
             const newLines = [...prev]
             if (typeof fieldOrUpdates === 'string') {

@@ -1,5 +1,7 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
+
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
@@ -12,28 +14,19 @@ import { Pencil, Trash2, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import React from "react"
 
-interface Category {
-    id: number
-    name: string
-    parent: number | null
-    parent_name: string | null
-    asset_account: number | null
-    income_account: number | null
-    expense_account: number | null
-    icon?: string
-}
-
+import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
 import * as LucideIcons from "lucide-react"
 
 interface CategoryListProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryListProps) {
-    const [categories, setCategories] = useState<Category[]>([])
-    const [loading, setLoading] = useState(true)
+export function CategoryList({ externalOpen, onExternalOpenChange, createAction }: CategoryListProps) {
+    const { categories, refetch, deleteCategory } = useCategories()
     const [editingCategory, setEditingCategory] = useState<Category | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -55,18 +48,6 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
         }
     }
 
-    const fetchCategories = useCallback(async () => {
-        try {
-            const response = await api.get('/inventory/categories/')
-            setCategories(response.data.results || response.data)
-        } catch (error) {
-            console.error("Failed to fetch categories", error)
-            toast.error("Error al cargar las categorías.")
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
     const handleDelete = useCallback(async (category: Category | null, isConfirmed = false) => {
         if (!category) return
 
@@ -77,19 +58,14 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
         }
 
         try {
-            await api.delete(`/inventory/categories/${category.id}/`)
+            await deleteCategory(category.id)
             toast.success("Categoría eliminada correctamente.")
             setIsDeleteModalOpen(false)
-            fetchCategories()
         } catch (error) {
             console.error("Error deleting category:", error)
-            toast.error("Error al eliminar la categoría.")
+            showApiError(error, "Error al eliminar la categoría.")
         }
-    }, [fetchCategories])
-
-    useEffect(() => {
-        fetchCategories()
-    }, [fetchCategories])
+    }, [deleteCategory])
 
     const columns = useMemo<ColumnDef<Category>[]>(() => [
         {
@@ -100,9 +76,9 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
                 if (!iconName) return <div className="flex justify-center w-full">-</div>
                 return (
                     <div className="flex items-center justify-center w-full">
-                        <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/30 border border-muted-foreground/10 transition-colors">
+                        <div className="flex items-center justify-center h-8 w-8 rounded-md bg-muted/30 border border-muted-foreground/10 transition-colors">
                             {(() => {
-                                const Icon = (LucideIcons as any)[iconName] || LucideIcons.Package
+                                const Icon = (LucideIcons as Record<string, React.ElementType>)[iconName] || LucideIcons.Package
                                 return <Icon className="h-4 w-4 text-muted-foreground/70" />
                             })()}
                         </div>
@@ -139,14 +115,15 @@ export function CategoryList({ externalOpen, onExternalOpenChange }: CategoryLis
                 columns={columns}
                 data={categories}
                 cardMode
-                isLoading={loading}
+                
                 searchPlaceholder="Buscar categoría por nombre..."
                 globalFilterFields={globalFilterFields}
                 useAdvancedFilter={true}
+                createAction={createAction}
             />
 
             <CategoryForm
-                onSuccess={fetchCategories}
+                onSuccess={refetch}
                 open={isFormOpen || !!externalOpen}
                 onOpenChange={(open) => {
                     if (!open) {

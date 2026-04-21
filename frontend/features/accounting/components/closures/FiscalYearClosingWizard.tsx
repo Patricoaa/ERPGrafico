@@ -99,7 +99,7 @@ export function FiscalYearClosingWizard({
                     <div className="space-y-2">
                         <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest px-1">Validaciones Críticas</p>
                         <div className="grid grid-cols-1 gap-2">
-                            {Object.entries(preview.validations).map(([key, val]: [string, any]) => (
+                            {Object.entries(preview.validations).map(([key, val]: [string, unknown]) => (
                                 <div key={key} className={cn(
                                     "flex items-center justify-between p-3 border rounded-sm transition-colors",
                                     val.passed ? (val.is_warning ? "bg-warning/5 border-warning/30" : "bg-muted/20 border-border/50") : "bg-destructive/5 border-destructive/20"

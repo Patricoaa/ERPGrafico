@@ -3,11 +3,26 @@
 import { useState, useEffect } from "react"
 import api from "@/lib/api"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Loader2 } from "lucide-react"
-import { formatPlainDate } from "@/lib/utils"
+import { TableSkeleton } from "@/components/shared/TableSkeleton"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { formatPlainDate, cn } from "@/lib/utils"
 
-export function SimulationResults({ rule }: { rule: any }) {
-    const [results, setResults] = useState<any[]>([])
+interface SimulationResult {
+    line: {
+        description: string;
+        date: string;
+        amount: number | string;
+    };
+    payment: {
+        partner?: string;
+        reference?: string;
+        amount: number | string;
+    };
+    score: number;
+}
+
+export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
+    const [results, setResults] = useState<SimulationResult[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -30,20 +45,10 @@ export function SimulationResults({ rule }: { rule: any }) {
         simulate()
     }, [rule])
 
-    if (loading) {
-        return (
-            <div className="flex justify-center p-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        )
-    }
+    if (loading) return <TableSkeleton rows={5} columns={3} className="p-8" />
 
     if (results.length === 0) {
-        return (
-            <div className="text-center p-8 text-muted-foreground">
-                No se encontraron coincidencias con esta configuración en las líneas recientes.
-            </div>
-        )
+        return <EmptyState context="search" variant="compact" title="Sin coincidencias" description="Ninguna línea reciente coincide con esta configuración." />
     }
 
     return (

@@ -43,7 +43,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
     const [bomToDelete, setBomToDelete] = useState<BOM | undefined>(undefined)
 
     // Variant support
-    const [variants, setVariants] = useState<any[]>([])
+    const [variants, setVariants] = useState<ProductMinimal[]>([])
     const [selectedVariantId, setSelectedVariantId] = useState<string>("all")
 
     const fetchBoms = async () => {
@@ -151,7 +151,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         )
     }
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<BOM>[] = [
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Lista de Materiales (Receta)" className="justify-center" />,
@@ -168,7 +168,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             accessorKey: "product_id",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Variante / Contexto" className="justify-center" />,
             cell: ({ row }) => {
-                const isBase = row.original.product_id === (product as any).id
+                const isBase = Number(row.original.product) === Number(product?.id)
                 return (
                     <div className="flex items-center justify-center gap-2 w-full">
                         {isBase ? (
@@ -195,7 +195,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 <div className="flex justify-center w-full">
                     <DataCell.NumericFlow 
                         value={row.original.yield_quantity} 
-                        unit={row.original.yield_uom_name || (product as any).uom_name}
+                        unit={row.original.yield_uom_name || product?.uom_name}
                     />
                 </div>
             )
@@ -237,7 +237,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 </div>
             )
         },
-        createActionsColumn<any>({
+        createActionsColumn<BOM>({
             headerLabel: "Opciones",
             renderActions: (item) => (
                 <>

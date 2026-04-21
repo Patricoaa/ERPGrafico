@@ -12,12 +12,12 @@ export interface PurchaseProcessSummarySidebarProps {
     warehouseName?: string
     dteType?: string
     paymentData?: {
-        method: PaymentMethod
+        method: string | null
         amount: number
         pendingDebt?: number
     }
     receiptData?: {
-        type: ReceptionType
+        type: string
     }
 }
 
@@ -26,13 +26,19 @@ const methodLabels: Record<string, string> = {
     'TRANSFER': 'Transferencia',
     'DEBIT': 'Débito',
     'CREDIT': 'Crédito',
-    'CHECK': 'Cheque'
+    'CHECK': 'Cheque',
+    'CARD': 'Tarjeta',
+    'CARD_TERMINAL': 'Tarjeta (Terminal)',
+    'CREDIT_BALANCE': 'Saldo a Favor'
 }
 
 const receiptLabels: Record<string, string> = {
     'immediate': 'Recepción Inmediata (Bodega)',
+    'IMMEDIATE': 'Recepción Inmediata (Bodega)',
     'dispatch': 'Despacho a Domicilio',
-    'provisional': 'Recepción Provisoria'
+    'DEFERRED': 'Recepción Diferida',
+    'provisional': 'Recepción Provisoria',
+    'PARTIAL': 'Recepción Parcial'
 }
 
 const STEPS = [
@@ -94,7 +100,7 @@ export function PurchaseProcessSummarySidebar({
                                 {step.id === 4 && paymentData && (
                                     <div className="space-y-0.5">
                                         <p className="text-xs font-semibold">
-                                            {paymentData.amount > 0 ? methodLabels[paymentData.method] : 'Crédito'}
+                                            {paymentData.method ? (methodLabels[paymentData.method] || paymentData.method) : 'Crédito'}
                                         </p>
                                         <p className="text-xs font-bold">
                                             ${paymentData.amount.toLocaleString()}

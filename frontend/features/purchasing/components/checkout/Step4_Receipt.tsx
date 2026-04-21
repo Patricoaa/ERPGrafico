@@ -22,21 +22,23 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import { ReceiptData, CheckoutLine, PartialReceiptLine } from "../../types"
+import { Warehouse, UoM } from "@/types/entities"
 
 interface Step4_ReceiptProps {
-    receiptData: any
-    setReceiptData: (data: any) => void
-    orderLines?: any[]
+    receiptData: ReceiptData
+    setReceiptData: (data: ReceiptData | ((prev: ReceiptData) => ReceiptData)) => void
+    orderLines?: CheckoutLine[]
 }
 
 // New UoMSelector component
-const UoMSelector = ({ line, currentUom, onUomChange, uoms }: { line: any, currentUom: any, onUomChange: (uomId: number) => void, uoms: any[] }) => {
-    const getFilteredUoMs = (line: any) => {
+const UoMSelector = ({ line, currentUom, onUomChange, uoms }: { line: CheckoutLine, currentUom: number | string | undefined, onUomChange: (uomId: number) => void, uoms: UoM[] }) => {
+    const getFilteredUoMs = (line: CheckoutLine) => {
         if (!line || !uoms.length) return []
-        const productUomId = line.uom?.id || line.uom
+        const productUomId = line.uom?.toString()
         if (!productUomId) return []
 
-        const baseUom = uoms.find(u => u.id.toString() === productUomId.toString())
+        const baseUom = uoms.find(u => u.id.toString() === productUomId)
         if (!baseUom) return []
 
         return uoms.filter(u => u.category === baseUom.category)
@@ -51,7 +53,7 @@ const UoMSelector = ({ line, currentUom, onUomChange, uoms }: { line: any, curre
                 <SelectValue placeholder="Unidad" />
             </SelectTrigger>
             <SelectContent>
-                {getFilteredUoMs(line).map((uom: any) => (
+                {getFilteredUoMs(line).map((uom: UoM) => (
                     <SelectItem key={uom.id} value={uom.id.toString()}>
                         {uom.name}
                     </SelectItem>
@@ -62,8 +64,8 @@ const UoMSelector = ({ line, currentUom, onUomChange, uoms }: { line: any, curre
 }
 
 export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: Step4_ReceiptProps) {
-    const [uoms, setUoMs] = useState<any[]>([])
-    const [warehouses, setWarehouses] = useState<any[]>([])
+    const [uoms, setUoMs] = useState<UoM[]>([])
+    const [warehouses, setWarehouses] = useState<Warehouse[]>([])
 
     useEffect(() => {
         const fetchMetadata = async () => {
@@ -163,7 +165,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
     }, [hasSubscriptions, orderLines, receiptData, setReceiptData, dateString])
 
     const updateSubscriptionDate = (productId: string, date: string) => {
-        setReceiptData((prev: any) => ({
+        setReceiptData((prev: ReceiptData) => ({
             ...prev,
             subscriptionDates: {
                 ...(prev.subscriptionDates || {}),
@@ -172,28 +174,40 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
         }))
     }
 
-    const updatePartialQty = (lineId: any, productId: any, value: string) => {
+    const updatePartialQty = (lineId: number | string | undefined, productId: number | string | undefined, value: string) => {
         const qty = parseFloat(value) || 0;
-        setReceiptData((prev: any) => {
+        setReceiptData((prev: ReceiptData) => {
             const pqs = [...(prev.partialQuantities || [])];
-            const existingIdx = pqs.findIndex((pq: any) => pq.lineId === lineId || (productId && pq.productId === productId));
+            const existingIdx = pqs.findIndex((pq: PartialReceiptLine) => (lineId && pq.lineId === lineId) || (productId && pq.productId === productId));
             if (existingIdx >= 0) {
                 pqs[existingIdx] = { ...pqs[existingIdx], receivedQty: qty };
             } else {
-                pqs.push({ lineId, productId, receivedQty: qty, uom: orderLines.find(l => (lineId && l.id === lineId) || (productId && l.product === productId))?.uom });
+                pqs.push({ 
+                    lineId, 
+                    productId, 
+                    receivedQty: qty, 
+                    orderedQty: orderLines.find(l => (lineId && l.id === lineId) || (productId && l.product === productId))?.quantity || 0,
+                    uom: orderLines.find(l => (lineId && l.id === lineId) || (productId && l.product === productId))?.uom as number | string
+                });
             }
             return { ...prev, partialQuantities: pqs };
         });
     }
 
-    const updatePartialUom = (lineId: any, productId: any, uomId: number) => {
-        setReceiptData((prev: any) => {
+    const updatePartialUom = (lineId: number | string | undefined, productId: number | string | undefined, uomId: number) => {
+        setReceiptData((prev: ReceiptData) => {
             const pqs = [...(prev.partialQuantities || [])];
-            const existingIdx = pqs.findIndex((pq: any) => pq.lineId === lineId || (productId && pq.productId === productId));
+            const existingIdx = pqs.findIndex((pq: PartialReceiptLine) => (lineId && pq.lineId === lineId) || (productId && pq.productId === productId));
             if (existingIdx >= 0) {
                 pqs[existingIdx] = { ...pqs[existingIdx], uom: uomId };
             } else {
-                pqs.push({ lineId, productId, receivedQty: 1, uom: uomId });
+                pqs.push({ 
+                    lineId, 
+                    productId, 
+                    receivedQty: 1, 
+                    orderedQty: orderLines.find(l => (lineId && l.id === lineId) || (productId && l.product === productId))?.quantity || 0,
+                    uom: uomId 
+                });
             }
             return { ...prev, partialQuantities: pqs };
         });

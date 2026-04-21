@@ -25,7 +25,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from "sonner"
 import api from "@/lib/api"
-import { POSReport } from "@/features/pos/components/POSReport"
+import { POSReport, type POSReportData } from "@/features/pos/components/POSReport"
 import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
 import { Numpad } from "@/components/ui/numpad"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
@@ -35,19 +35,7 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { cn, translateStatus, formatCurrency } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { MovementWizard, MovementData } from "@/features/treasury/components/MovementWizard"
-import type { POSSession } from "@/types/pos"
-
-interface POSTerminal {
-    id: number
-    name: string
-    code: string
-    location: string
-    is_active: boolean
-    default_treasury_account: number
-    default_treasury_account_name: string
-    default_treasury_account_balance: number
-    allowed_payment_methods: string[]
-}
+import type { POSSession, POSTerminal, AccountingSettings, TreasuryAccount, POSSessionAudit } from "@/types/pos"
 
 interface SessionControlProps {
     onSessionChange?: (session: POSSession | null) => void
@@ -70,7 +58,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
     const [reportDialogOpen, setReportDialogOpen] = useState(false)
     const [moveDialogOpen, setMoveDialogOpen] = useState(false)
-    const [reportData, setReportData] = useState<any>(null)
+    const [reportData, setReportData] = useState<POSReportData | null>(null)
     const [reportType, setReportType] = useState<"X" | "Z">("X")
     const [terminals, setTerminals] = useState<POSTerminal[]>([])
     const [availableSessions, setAvailableSessions] = useState<POSSession[]>([])
@@ -81,10 +69,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     const [fundSourceId, setFundSourceId] = useState<string | null>(null)
     const [openingJustifyReason, setOpeningJustifyReason] = useState<string>("")
     const [openingJustifyTargetId, setOpeningJustifyTargetId] = useState<string | null>(null)
-    const [accountingSettings, setAccountingSettings] = useState<any>(null)
+    const [accountingSettings, setAccountingSettings] = useState<AccountingSettings | null>(null)
 
     // Fund validation for session opening
-    const [openingSelectedAccount, setOpeningSelectedAccount] = useState<any>(null)
+    const [openingSelectedAccount, setOpeningSelectedAccount] = useState<TreasuryAccount | null>(null)
     const [openingInsufficientFunds, setOpeningInsufficientFunds] = useState(false)
 
     // Shared session selection
@@ -131,7 +119,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     setOpeningSelectedAccount(res.data)
                     // Validate only for surplus (diff > 0 = money coming IN)
                     if (diff > 0 && res.data.current_balance !== undefined) {
-                        const available = res.data.current_balance
+                        const available = res.data.current_balance as number
                         const needed = Math.abs(diff)
                         setOpeningInsufficientFunds(available < needed)
                     } else {
@@ -376,7 +364,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         fetchCurrentSession()
     }
 
-    const handleSessionCloseSuccess = async (audit: any) => {
+    const handleSessionCloseSuccess = async (audit: POSSessionAudit) => {
         // Immediately fetch summary for Z Report
         if (!currentSession) return
 
@@ -733,9 +721,9 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                                     <div className="text-sm text-destructive dark:text-destructive/20">
                                                         <div className="font-bold">Fondos Insuficientes</div>
                                                         <div className="text-xs mt-1 space-y-0.5">
-                                                            <div>Disponible en {openingSelectedAccount.name}: {formatCurrency(openingSelectedAccount.current_balance || 0)}</div>
+                                                            <div>Disponible en {openingSelectedAccount.name as string}: {formatCurrency((openingSelectedAccount.current_balance as number) || 0)}</div>
                                                             <div>Necesario: {formatCurrency(Math.abs(diff))}</div>
-                                                            <div className="font-semibold">Faltante: {formatCurrency(Math.abs(diff) - (openingSelectedAccount.current_balance || 0))}</div>
+                                                            <div className="font-semibold">Faltante: {formatCurrency(Math.abs(diff) - ((openingSelectedAccount.current_balance as number) || 0))}</div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -887,25 +875,18 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 />
             )}
 
-            <BaseModal
-                open={moveDialogOpen}
-                onOpenChange={setMoveDialogOpen}
-                size="md"
-                title="Movimiento de Caja Manual"
-            >
-                <div className="py-2">
-                    {moveDialogOpen && currentSession && (
-                        <MovementWizard
-                            context="pos"
-                            fixedAccountId={currentSession.treasury_account || undefined}
-                            fixedAccountName={currentSession.treasury_account_name}
-                            maxOutboundAmount={currentSession.expected_cash}
-                            onComplete={handleRegisterManualMovement}
-                            onCancel={() => setMoveDialogOpen(false)}
-                        />
-                    )}
-                </div>
-            </BaseModal>
+            {moveDialogOpen && currentSession && (
+                <MovementWizard
+                    open={moveDialogOpen}
+                    onOpenChange={setMoveDialogOpen}
+                    context="pos"
+                    fixedAccountId={currentSession.treasury_account || undefined}
+                    fixedAccountName={currentSession.treasury_account_name}
+                    maxOutboundAmount={currentSession.expected_cash}
+                    onComplete={handleRegisterManualMovement}
+                    onCancel={() => setMoveDialogOpen(false)}
+                />
+            )}
             <ActionConfirmModal
                 open={closeSessionConfirm.isOpen}
                 onOpenChange={(open) => { if (!open) closeSessionConfirm.cancel() }}

@@ -23,6 +23,9 @@ import { WorkOrderMaterials } from "./WorkOrderMaterials"
 import { workOrderSchema, type WorkOrderFormValues, type WorkOrderInitialData } from "@/types/forms"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import type { SaleOrderLine } from "@/features/sales/types"
+import type { Contact } from "@/features/contacts/types"
+import type { UoM, ProductMinimal } from "../../types"
 
 interface WorkOrderFormProps {
     onSuccess?: () => void
@@ -39,8 +42,8 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
 
     const [otType, setOtType] = useState<"LINKED" | "NONE" | null>(null)
     const [loading, setLoading] = useState(false)
-    const [saleLines, setSaleLines] = useState<any[]>([])
-    const [uoms, setUoms] = useState<any[]>([])
+    const [saleLines, setSaleLines] = useState<SaleOrderLine[]>([])
+    const [uoms, setUoms] = useState<UoM[]>([])
     const [loadingLines, setLoadingLines] = useState(false)
 
     // Advanced Manufacturing States
@@ -59,8 +62,8 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     const [folioStart, setFolioStart] = useState("")
     const [printType, setPrintType] = useState<string | null>(null)
 
-    const [selectedContact, setSelectedContact] = useState<any>(null)
-    const [selectedManualProduct, setSelectedManualProduct] = useState<any>(null)
+    const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+    const [selectedManualProduct, setSelectedManualProduct] = useState<ProductMinimal | null>(null)
 
     const form = useForm<WorkOrderFormValues>({
         resolver: zodResolver(workOrderSchema),
@@ -164,8 +167,8 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         if (watchedSaleOrder && watchedSaleOrder !== "__none__" && !initialData?.id) {
             setLoadingLines(true)
             api.get(`/sales/orders/${watchedSaleOrder}/`).then(res => {
-                const lines = res.data.lines || []
-                const filtered = lines.filter((l: any) =>
+                const lines: SaleOrderLine[] = res.data.lines || []
+                const filtered = lines.filter((l: SaleOrderLine) =>
                     l.product_type === 'MANUFACTURABLE' &&
                     l.requires_advanced_manufacturing &&
                     (!l.work_order_summary)
@@ -193,7 +196,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         }
     }, [watchedSaleLineId, saleLines, initialData, form])
 
-    const handleManualProductSelect = (product: any) => {
+    const handleManualProductSelect = (product: ProductMinimal) => {
         setSelectedManualProduct(product)
         if (product) {
             form.setValue('product_description', product.name)

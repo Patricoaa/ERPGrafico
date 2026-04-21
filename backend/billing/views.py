@@ -215,8 +215,6 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if isinstance(direct_credit_approval, str):
             direct_credit_approval = direct_credit_approval.lower() == 'true'
 
-        payment_request_idempotency_key = request.data.get('payment_request_idempotency_key') or None
-
         try:
             invoice = BillingService.pos_checkout(
                 order_data, dte_type, payment_method,
@@ -240,7 +238,6 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 credit_approval_task_id=request.data.get('credit_approval_task_id'),
                 draft_id=request.data.get('draft_id'),
                 direct_credit_approval=direct_credit_approval,
-                payment_request_idempotency_key=payment_request_idempotency_key,
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:

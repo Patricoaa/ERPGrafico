@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import {
     ColumnDef
 } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from "@/components/ui/data-table"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,11 +33,15 @@ interface BOM {
     total_cost: number
 }
 
-export default function BOMsPage() {
+interface BOMsPageProps {
+    createAction?: React.ReactNode
+}
+
+export default function BOMsPage({ createAction }: BOMsPageProps = {}) {
     const [boms, setBoms] = useState<BOM[]>([])
     const [loading, setLoading] = useState(true)
     const [isFormOpen, setIsFormOpen] = useState(false)
-    const [editingBom, setEditingBom] = useState<any | null>(null)
+    const [editingBom, setEditingBom] = useState<BOM & { product_id?: number } | null>(null)
     const searchParams = useSearchParams()
     const router = useRouter()
     const isNewModalOpen = searchParams.get("modal") === "new"
@@ -170,15 +175,10 @@ export default function BOMsPage() {
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    {row.getValue("active") ? (
-                        <Badge className="bg-success hover:bg-success">
-                            <CheckCircle2 className="h-3 w-3 mr-1" /> Activa
-                        </Badge>
-                    ) : (
-                        <Badge variant="outline" className="text-muted-foreground">
-                            <XCircle className="h-3 w-3 mr-1" /> Inactiva
-                        </Badge>
-                    )}
+                    <DataCell.Status 
+                        status={row.getValue("active") ? "active" : "inactive"} 
+                        label={row.getValue("active") ? "Activa" : "Inactiva"}
+                    />
                 </div>
             ),
         },
@@ -224,6 +224,7 @@ export default function BOMsPage() {
                         },
                     ]}
                     useAdvancedFilter={true}
+                    createAction={createAction}
                 />
             </div>
 

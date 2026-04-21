@@ -32,6 +32,8 @@ interface PageTabsProps {
     maxWidth?: string
     className?: string
     variant?: "default" | "minimal" // Keeping for backwards compatibility
+    /** Optional URL for a configuration page, rendered as a gear icon tab at the end */
+    configHref?: string
 }
 
 /**
@@ -39,11 +41,11 @@ interface PageTabsProps {
  * Maps navigation links to a standardized tab-like experience.
  * Supports dropdown sub-tabs if a tab has `subTabs` configured.
  */
-export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, className, variant }: PageTabsProps) {
+export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, className, variant, configHref }: PageTabsProps) {
     return (
         <div className={cn("w-full border-b border-border/40 bg-muted/5", className)}>
             <div className={cn("px-4", maxWidth)}>
-                <nav className="flex justify-start -mb-[1px]">
+                <nav className="flex justify-between items-center -mb-[1px]">
                     <div className="flex gap-1 overflow-x-auto no-scrollbar">
                         {tabs.map((tab) => {
                             const isActive = tab.value === activeValue
@@ -96,7 +98,7 @@ export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, classNam
                                                     <DropdownMenuItem 
                                                         key={`${tab.value}-${sub.value}`} 
                                                         className={cn(
-                                                            "cursor-pointer my-0.5 rounded-[0.2rem] transition-colors duration-200 focus:bg-primary/5 p-0",
+                                                            "cursor-pointer my-0.5 rounded-sm transition-colors duration-200 focus:bg-primary/5 p-0",
                                                             isSubActive ? "bg-primary/10" : ""
                                                         )}
                                                     >
@@ -138,6 +140,25 @@ export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, classNam
                             )
                         })}
                     </div>
+
+                    {configHref && (
+                        <div className="flex items-center gap-1">
+                            <Link
+                                href={configHref}
+                                className={cn(
+                                    "flex items-center justify-center gap-2 px-6 py-3 transition-all duration-300 relative group cursor-pointer",
+                                    "border-b-2 border-transparent hover:border-border/60 text-muted-foreground hover:text-primary hover:bg-muted/10"
+                                )}
+                                scroll={false}
+                                title="Configuración del Módulo"
+                            >
+                                <DynamicIcon 
+                                    name="settings" 
+                                    className="h-4 w-4 transition-transform duration-500 group-hover:rotate-90" 
+                                />
+                            </Link>
+                        </div>
+                    )}
                 </nav>
             </div>
         </div>

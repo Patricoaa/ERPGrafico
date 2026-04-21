@@ -76,7 +76,7 @@ type JournalEntryFormValues = z.infer<typeof journalEntrySchema>
 
 interface JournalEntryFormProps {
     auditSidebar?: React.ReactNode
-    accounts?: any[]
+    accounts?: Record<string, unknown>[]
     onSuccess?: () => void
     initialData?: JournalEntryInitialData
     triggerText?: string
@@ -123,7 +123,7 @@ export function JournalEntryForm({
 
     const [loading, setLoading] = useState(false)
     const [periodCheck, setPeriodCheck] = useState<{ is_closed: boolean; loading: boolean }>({ is_closed: false, loading: false })
-    const [accounts, setAccounts] = useState<any[]>(accountsProp || [])
+    const [accounts, setAccounts] = useState<Record<string, unknown>[]>(accountsProp || [])
 
     // Guard for async operations
     const isMounted = useRef(true)
@@ -149,7 +149,7 @@ export function JournalEntryForm({
             return {
                 ...initialData,
                 date: new Date(initialData.date),
-                items: initialData.items.map((item: any) => ({
+                items: initialData.items.map((item: Record<string, unknown>) => ({
                     ...item,
                     account: item.account.toString(),
                     debit: parseFloat(item.debit),

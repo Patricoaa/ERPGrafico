@@ -51,13 +51,13 @@ export default function CreditAssignmentModal({
     onSuccess 
 }: CreditAssignmentModalProps) {
     const [searchQuery, setSearchQuery] = useState("")
-    const [searchResults, setSearchResults] = useState<any[]>([])
-    const [selectedContact, setSelectedContact] = useState<any>(null)
+    const [searchResults, setSearchResults] = useState<CreditContact[]>([])
+    const [selectedContact, setSelectedContact] = useState<CreditContact | null>(null)
     const [searching, setSearching] = useState(false)
     const { updateContact, isUpdating } = useContactMutations()
 
     const form = useForm<z.infer<typeof creditSchema>>({
-        resolver: zodResolver(creditSchema) as any, // Cast to any to bypass resolver type mismatch
+        resolver: zodResolver(creditSchema),
         defaultValues: {
             credit_limit: null,
         },
@@ -236,8 +236,8 @@ export default function CreditAssignmentModal({
                             </div>
                         </div>
 
-                        <Form {...(form as any)}>
-                            <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6">
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                 <FormField
                                     control={form.control}
                                     name="credit_limit"
@@ -283,7 +283,7 @@ export default function CreditAssignmentModal({
                                     </Button>
                                     <ActionSlideButton
                                         type="submit"
-                                        className="flex-[2] h-12 font-bold shadow-lg shadow-primary/25"
+                                        className="flex-[2] h-12 font-bold shadow-md shadow-primary/25"
                                         disabled={isUpdating}
                                     >
                                         {isUpdating ? "Guardando..." : "Confirmar Asignación"}

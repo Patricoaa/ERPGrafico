@@ -3,11 +3,11 @@
 import { lazy, Suspense, useState, useMemo, useEffect, useRef, useCallback } from "react"
 import { toast } from "sonner"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useSearchParams, useRouter } from "next/navigation"
-import { SettingsSheetRouteWrapper } from "@/components/shared"
 import { PartnerAccountingTab } from "@/features/settings/components/partners/PartnerAccountingTab"
 import Link from "next/link"
 import { BarChart3 } from "lucide-react"
@@ -76,11 +76,25 @@ export default function PartnersSettingsPage() {
             label: "Utilidades", 
             iconName: "pie-chart", 
             href: "/settings/partners?tab=distributions" 
-        }
+        },
+        { 
+            value: "config", 
+            label: "Config", 
+            iconName: "settings", 
+            href: "/settings/partners?tab=config" 
+        },
     ]
 
     const headerConfig = useMemo(() => {
         switch (activeTab) {
+            case "config":
+                return {
+                    title: "Arquitectura Contable de Socios",
+                    description: "Configure las cuentas maestras para el Modelo Híbrido de Capital.",
+                    iconName: "settings" as const,
+                    showAction: false,
+                    showStats: false
+                }
             case "composition":
                 return {
                     title: "Composición Societaria",
@@ -112,6 +126,13 @@ export default function PartnersSettingsPage() {
         }
     }, [activeTab])
 
+    const createAction = headerConfig.showAction && 'actionHref' in headerConfig && headerConfig.actionHref ? (
+        <ToolbarCreateButton
+            label={('actionTitle' in headerConfig && headerConfig.actionTitle) || "Crear"}
+            href={headerConfig.actionHref}
+        />
+    ) : null
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
@@ -119,54 +140,38 @@ export default function PartnersSettingsPage() {
                 description={headerConfig.description}
                 iconName={headerConfig.iconName}
                 variant="minimal"
-                configHref="?config=true"
-                titleActions={
-                    <div className="flex items-center gap-2">
-                        {headerConfig.showStats && (
-                            <Link href="/settings/partners?tab=composition&modal=stats">
-                                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-transparent hover:bg-muted/50 text-muted-foreground/70 hover:text-foreground">
-                                    <BarChart3 className="h-4 w-4" />
-                                </Button>
-                            </Link>
-                        )}
-                        {headerConfig.showAction && headerConfig.actionHref && (
-                            <Link href={headerConfig.actionHref}>
-                                <PageHeaderButton
-                                    iconName="plus"
-                                    circular
-                                    title={headerConfig.actionTitle}
-                                />
-                            </Link>
-                        )}
-                    </div>
-                }
-            />
+            >
+                {headerConfig.showStats && (
+                    <Link href="/settings/partners?tab=composition&modal=stats">
+                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-transparent hover:bg-muted/50 text-muted-foreground/70 hover:text-foreground">
+                            <BarChart3 className="h-4 w-4" />
+                        </Button>
+                    </Link>
+                )}
+            </PageHeader>
 
             <PageTabs tabs={tabs} activeValue={activeTab} />
 
             <div className="pt-4">
                 <Suspense fallback={<LoadingFallback message="Cargando configuración de socios..." />}>
-                    <PartnersSettingsView 
-                        activeTab={activeTab} 
-                        onSavingChange={setSaving}
-                        initialFlowOpen={isNewDistributionModal}
-                        initialAddPartnerOpen={isAddPartnerModal}
-                        initialStatsOpen={isStatsModal}
-                        onModalClose={handleModalClose}
-                    />
+                    {(activeTab === 'composition' || activeTab === 'distributions') && (
+                        <PartnersSettingsView
+                            activeTab={activeTab}
+                            onSavingChange={setSaving}
+                            initialFlowOpen={isNewDistributionModal}
+                            initialAddPartnerOpen={isAddPartnerModal}
+                            initialStatsOpen={isStatsModal}
+                            onModalClose={handleModalClose}
+                            createAction={createAction}
+                        />
+                    )}
+                    {activeTab === 'config' && (
+                        <div className="p-1">
+                            <PartnerAccountingTab onSavingChange={setConfigSaving} />
+                        </div>
+                    )}
                 </Suspense>
             </div>
-
-            <SettingsSheetRouteWrapper
-                sheetId="partner-accounting-settings"
-                title="Arquitectura Contable de Socios"
-                description="Configure las cuentas maestras para el Modelo Híbrido de Capital."
-                tabLabel="Configuración"
-            >
-                <div className="p-1">
-                    <PartnerAccountingTab onSavingChange={setConfigSaving} />
-                </div>
-            </SettingsSheetRouteWrapper>
         </div>
     )
 }

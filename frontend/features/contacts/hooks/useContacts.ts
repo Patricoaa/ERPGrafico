@@ -37,7 +37,7 @@ export function useContactMutations() {
             toast.success('Contacto creado exitosamente')
             queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.lists() })
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             showApiError(error, 'Error al crear el contacto')
         }
     })
@@ -50,7 +50,7 @@ export function useContactMutations() {
             queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.lists() })
             queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.detail(data.id) })
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             showApiError(error, 'Error al actualizar el contacto')
         }
     })
@@ -61,7 +61,7 @@ export function useContactMutations() {
             toast.success('Contacto eliminado exitosamente')
             queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.lists() })
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             console.error(error)
             toast.error('No se pudo eliminar el contacto. Puede que tenga documentos asociados.')
         }

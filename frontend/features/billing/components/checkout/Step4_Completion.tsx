@@ -11,8 +11,8 @@ import { Badge } from "@/components/ui/badge"
 import { formatPlainDate } from "@/lib/utils"
 
 interface Step4_CompletionProps {
-    workflow: any
-    onSuccess: (updatedWorkflow: any) => void
+    workflow: Record<string, unknown>
+    onSuccess: (updatedWorkflow: Record<string, unknown>) => void
 }
 
 export function Step4_Completion({
@@ -47,7 +47,7 @@ export function Step4_Completion({
                 </p>
             </div>
 
-            <Card className="border-2 border-primary/10 shadow-xl overflow-hidden">
+            <Card className="border-2 border-primary/10 shadow-md overflow-hidden">
                 <CardContent className="p-0">
                     <div className="bg-muted/10 p-6 border-b flex justify-between items-center">
                         <div className="flex items-center gap-3">
@@ -95,7 +95,7 @@ export function Step4_Completion({
                 <Button
                     onClick={handleComplete}
                     disabled={loading}
-                    className="group w-full py-8 rounded-lg font-black text-lg transition-all hover:scale-[1.01] active:scale-[0.99] shadow-xl hover:shadow-primary/30"
+                    className="group w-full py-8 rounded-lg font-black text-lg transition-all hover:scale-[1.01] active:scale-[0.99] shadow-md hover:shadow-primary/30"
                 >
                     {loading ? (
                         <>

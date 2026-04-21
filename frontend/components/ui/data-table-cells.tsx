@@ -212,7 +212,7 @@ export const DataCell = {
     // --- Status & Badges ---
 
     /** Mapped status badge - Internally uses the standardized StatusBadge */
-    Status: ({ status, label, map, variant = "subtle", className }: { status: string, label?: string, map?: Record<string, any>, variant?: "default" | "hub" | "dot" | "subtle", className?: string }) => {
+    Status: ({ status, label, map, variant = "subtle", className }: { status: string, label?: string, map?: Record<string, { label: string, className: string }>, variant?: "default" | "hub" | "dot" | "subtle", className?: string }) => {
         return (
             <div className="flex justify-center items-center w-full">
                 <StatusBadge 
@@ -229,17 +229,23 @@ export const DataCell = {
      * Industrial Informational Label (formerly Generic Badge)
      * Follows the text-contract for non-state information: minimalist, sharp, and muted.
      */
-    Badge: ({ children, variant, className, ...props }: { children: ReactNode, variant?: string, className?: string } & HTMLAttributes<HTMLSpanElement>) => (
+    Badge: ({ children, variant, className, ...props }: { children: ReactNode, variant?: "default" | "secondary" | "destructive" | "success" | "warning" | "info" | "outline", className?: string } & HTMLAttributes<HTMLSpanElement>) => (
         <div className="flex justify-center items-center w-full">
-            <span 
-                className={cn(
-                    "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap",
-                    className
-                )} 
-                {...props}
-            >
-                {children}
-            </span>
+            {variant ? (
+                <Badge variant={variant} className={cn("text-[9px] font-bold uppercase px-1.5 py-0 rounded-sm", className)} {...props}>
+                    {children}
+                </Badge>
+            ) : (
+                <span 
+                    className={cn(
+                        "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm border border-border bg-muted/50 text-muted-foreground whitespace-nowrap",
+                        className
+                    )} 
+                    {...props}
+                >
+                    {children}
+                </span>
+            )}
         </div>
     ),
 
@@ -267,12 +273,12 @@ export const DataCell = {
         compact = false, // New prop
         ...props 
     }: { 
-        icon: any, 
+        icon: LucideIcon, 
         onClick?: (e: React.MouseEvent) => void, 
         title?: string, 
         className?: string, 
         color?: string, 
-        variant?: any,
+        variant?: "ghost" | "outline" | "default" | "secondary",
         compact?: boolean
     } & HTMLAttributes<HTMLButtonElement>) => (
         <TooltipProvider delayDuration={400}>

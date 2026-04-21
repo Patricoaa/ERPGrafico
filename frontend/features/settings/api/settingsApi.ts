@@ -89,7 +89,7 @@ export const settingsApi = {
         const billingSettings: Partial<BillingSettings> = {}
         billingFields.forEach(field => {
             if (field in data) {
-                (billingSettings as any)[field] = (data as any)[field]
+                (billingSettings as Record<string, unknown>)[field] = (data as Record<string, unknown>)[field]
             }
         })
         return billingSettings as BillingSettings
@@ -127,7 +127,7 @@ export const settingsApi = {
         const inventorySettings: Partial<InventorySettings> = {}
         inventoryFields.forEach(field => {
             if (field in data) {
-                (inventorySettings as any)[field] = (data as any)[field]
+                (inventorySettings as Record<string, unknown>)[field] = (data as Record<string, unknown>)[field]
             }
         })
         return inventorySettings as InventorySettings

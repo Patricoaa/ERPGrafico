@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -34,6 +35,7 @@ import {
     DollarSign, ShieldCheck, Sparkles,
     CheckCircle2, FileText, ArrowLeft, X
 } from "lucide-react"
+import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { PayrollCard } from "@/features/hr/components/PayrollCard"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
@@ -55,7 +57,7 @@ interface PayrollDetailContentProps {
     onUpdate?: () => void
     isSheet?: boolean
     viewMode?: 'admin' | 'employee'
-    employee?: any
+    employee?: unknown
 }
 
 export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = false, viewMode = 'admin', employee }: PayrollDetailContentProps) {
@@ -96,8 +98,8 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                 setConcepts(conceptsData)
                 setPayments(paymentsData)
             }
-        } catch {
-            toast.error("Error al cargar liquidación")
+        } catch (error) {
+            showApiError(error, "Error al cargar liquidación")
         } finally {
             setLoading(false)
         }
@@ -112,8 +114,8 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
             setPayroll(updated)
             toast.success("Liquidación contabilizada")
             onUpdate?.()
-        } catch (e: any) {
-            toast.error(e?.response?.data?.detail || "Error al contabilizar")
+        } catch (e: unknown) {
+            showApiError(e, "Error al contabilizar")
         } finally {
             setPosting(false)
         }
@@ -131,8 +133,8 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
             setPayroll(updated)
             toast.success("Propuesta generada exitosamente")
             onUpdate?.()
-        } catch (e: any) {
-            toast.error(e?.response?.data?.detail || "Error al generar propuesta")
+        } catch (e: unknown) {
+            showApiError(e, "Error al generar propuesta")
         } finally {
             setGenerating(false)
         }
@@ -145,8 +147,8 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
             onUpdate?.()
             if (onClose) onClose()
             else router.push('/hr/payrolls')
-        } catch {
-            toast.error("Error al eliminar liquidación")
+        } catch (error) {
+            showApiError(error, "Error al eliminar liquidación")
         }
     })
 
@@ -158,18 +160,12 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
             toast.success("Línea eliminada")
             fetchPayroll()
             onUpdate?.()
-        } catch {
-            toast.error("Error al eliminar")
+        } catch (error) {
+            showApiError(error, "Error al eliminar")
         }
     }
 
-    if (loading) {
-        return (
-            <div className="flex h-[400px] flex-1 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-        )
-    }
+    if (loading) return <TableSkeleton rows={8} columns={5} className="flex-1 p-6" />
 
     if (!payroll) return (
         <div className="flex flex-col items-center justify-center p-24 text-muted-foreground gap-4">
@@ -346,7 +342,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                         payments={payments}
                         onEditItem={viewMode === 'admin' ? setEditingItem : undefined}
                         onDeleteItem={viewMode === 'admin' ? handleDeleteItem : undefined}
-                        onAddItem={viewMode === 'admin' ? () => setEditingItem({ payroll: payrollId } as any) : undefined}
+                        onAddItem={viewMode === 'admin' ? () => setEditingItem({ payroll: payrollId } as unknown as PayrollItem) : undefined}
                         isReadOnly={viewMode === 'employee'}
                         showEmployerContributions={viewMode === 'admin'}
                         className={isSheet ? "shadow-2xl shadow-border/20" : ""}
@@ -441,15 +437,15 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
         try {
             const payload = { ...data, concept: parseInt(data.concept), payroll: payrollId }
             if (item) {
-                await updatePayrollItem(payrollId, item.id, payload as any)
+                await updatePayrollItem(payrollId, item.id, payload as unknown as Partial<PayrollItem>)
             } else {
-                await createPayrollItem(payrollId, payload as any)
+                await createPayrollItem(payrollId, payload as unknown as Partial<PayrollItem>)
             }
             onSaved()
             setOpen(false)
             onEditCleared()
-        } catch {
-            toast.error("Error al guardar ítem")
+        } catch (error) {
+            showApiError(error, "Error al guardar ítem")
         } finally {
             setSaving(false)
         }

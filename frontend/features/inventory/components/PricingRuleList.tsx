@@ -1,5 +1,7 @@
 "use client"
 
+import { showApiError } from "@/lib/errors"
+
 import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
@@ -44,9 +46,10 @@ interface PricingRule {
 interface PricingRuleListProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
-export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingRuleListProps) {
+export function PricingRuleList({ externalOpen, onExternalOpenChange, createAction }: PricingRuleListProps) {
     const [rules, setRules] = useState<PricingRule[]>([])
     const [loading, setLoading] = useState(true)
     const [editingRule, setEditingRule] = useState<PricingRule | null>(null)
@@ -75,7 +78,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
             setRules(response.data.results || response.data)
         } catch (error) {
             console.error("Failed to fetch rules", error)
-            toast.error("Error al cargar las reglas de precio.")
+            showApiError(error, "Error al cargar las reglas de precio.")
         } finally {
             setLoading(false)
         }
@@ -88,7 +91,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
             fetchRules()
         } catch (error) {
             console.error("Error deleting rule:", error)
-            toast.error("Error al eliminar la regla.")
+            showApiError(error, "Error al eliminar la regla.")
         }
     })
 
@@ -259,6 +262,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange }: PricingR
                         },
                     ]}
                     useAdvancedFilter={true}
+                    createAction={createAction}
                 />
             </div>
 

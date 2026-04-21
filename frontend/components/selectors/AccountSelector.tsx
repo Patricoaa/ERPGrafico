@@ -10,6 +10,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAccountSearch } from "@/features/accounting/hooks/useAccountSearch"
@@ -96,7 +97,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                     >
                         {selectedAccount ? (
                             <div className="flex items-center gap-2 truncate text-left">
-                                <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                                <div className="p-1.5 rounded-md bg-primary/10 text-primary">
                                     <BookKey className="h-4 w-4" />
                                 </div>
                                 <div className="flex flex-col items-start truncate leading-tight">
@@ -125,7 +126,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                             {accountsLoading ? (
                                 <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
                             ) : filteredAccounts.length === 0 ? (
-                                <div className="p-4 text-sm text-center">No se encontraron cuentas.</div>
+                                <EmptyState context="search" variant="compact" title="No se encontraron cuentas" />
                             ) : (
                                 filteredAccounts.slice(0, 20).map((account) => (
                                     <div
@@ -199,8 +200,8 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                                 ))}
                                 {filteredAccounts.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={3} className="text-center py-4 text-muted-foreground">
-                                            No se encontraron resultados.
+                                        <TableCell colSpan={3}>
+                                            <EmptyState context="search" variant="compact" title="No se encontraron resultados" />
                                         </TableCell>
                                     </TableRow>
                                 )}

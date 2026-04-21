@@ -11,7 +11,7 @@ from django.utils import timezone
 from decimal import Decimal
 from datetime import timedelta
 from typing import List, Dict, Any, Optional
-from .models import BankStatementLine, TreasuryMovement, BankStatement, ReconciliationRule, TerminalBatch, PaymentRequest
+from .models import BankStatementLine, TreasuryMovement, BankStatement, ReconciliationRule, TerminalBatch
 from .rule_service import RuleService
 
 
@@ -742,82 +742,3 @@ class MatchingService:
         }
 
 
-class PaymentRequestBatchReconciler:
-    """
-    Fase 3 — ADR 002.
-
-    Vincula PaymentRequest.COMPLETED con su TerminalBatch por
-    provider + sales_date. Usa sequence_number como clave exacta
-    cuando está disponible; cae a amount + date cuando no.
-    """
-
-    @staticmethod
-    @transaction.atomic
-    def reconcile_batch(batch: TerminalBatch) -> dict:
-        """
-        Asocia los PaymentRequest completados al batch dado.
-
-        Estrategia (en orden de prioridad):
-        1. sequence_number exacto — clave primaria de reconciliación.
-        2. amount + initiated_at__date == sales_date — fallback para PRs
-           donde TUU no devolvió sequenceNumber (edge case).
-
-        Retorna resumen: linked, already_linked, unmatched.
-        """
-        linked = 0
-        already_linked = 0
-        unmatched_sequences: list[str] = []
-
-        # Candidatos: COMPLETED del mismo provider en la misma fecha de ventas,
-        # aún sin batch asignado o ya asignado a ESTE batch (idempotente).
-        candidates = PaymentRequest.objects.filter(
-            provider=batch.provider,
-            status=PaymentRequest.Status.COMPLETED,
-            initiated_at__date=batch.sales_date,
-        ).select_related("device")
-
-        # Indexar por sequence_number para lookup O(1)
-        seq_index: dict[str, PaymentRequest] = {}
-        no_seq: list[PaymentRequest] = []
-        for pr in candidates:
-            if pr.sequence_number:
-                seq_index[pr.sequence_number] = pr
-            else:
-                no_seq.append(pr)
-
-        # Estrategia 1: sequence_number exacto
-        for pr in list(seq_index.values()):
-            if pr.terminal_batch_id == batch.pk:
-                already_linked += 1
-                continue
-            if pr.terminal_batch_id is not None:
-                # Belongs to a different batch — skip, don't overwrite
-                unmatched_sequences.append(pr.sequence_number)
-                continue
-            pr.terminal_batch = batch
-            pr.save(update_fields=["terminal_batch"])
-            linked += 1
-
-        # Estrategia 2: fallback por monto + fecha para PRs sin sequenceNumber
-        for pr in no_seq:
-            if pr.terminal_batch_id == batch.pk:
-                already_linked += 1
-                continue
-            if pr.terminal_batch_id is not None:
-                continue
-            pr.terminal_batch = batch
-            pr.save(update_fields=["terminal_batch"])
-            linked += 1
-
-        return {
-            "batch_id": batch.pk,
-            "sales_date": str(batch.sales_date),
-            "linked": linked,
-            "already_linked": already_linked,
-            "unmatched_sequences": unmatched_sequences,
-        }
-
-    @staticmethod
-    def reconcile_batch_by_id(batch_id: int) -> dict:
-        batch = TerminalBatch.objects.select_related("provider").get(pk=batch_id)
-        return PaymentRequestBatchReconciler.reconcile_batch(batch)

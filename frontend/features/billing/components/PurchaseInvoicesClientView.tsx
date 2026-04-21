@@ -28,7 +28,7 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" | "warning" }> = {
-    'DRAFT': { label: 'Folio Pendiente', variant: 'warning' as any },
+    'DRAFT': { label: 'Folio Pendiente', variant: 'warning' as const },
     'POSTED': { label: 'Publicado', variant: 'info' },
     'PAID': { label: 'Pagado', variant: 'success' },
     'CANCELLED': { label: 'Anulado', variant: 'destructive' },
@@ -36,7 +36,7 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
 
 export function PurchaseInvoicesClientView() {
     const { invoices: documents, refetch: fetchDocuments } = usePurchaseInvoices()
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: string, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
 
     const [payingDoc, setPayingDoc] = useState<any | null>(null)
     const [receivingDoc, setReceivingDoc] = useState<any | null>(null)
@@ -94,7 +94,7 @@ export function PurchaseInvoicesClientView() {
 
     const handleAnnul = (id: number) => annulConfirm.requestConfirm(id)
 
-    const handlePayment = async (data: any) => {
+    const handlePayment = async (data: Record<string, unknown>) => {
         if (!payingDoc) return
         try {
             const formData = new FormData()
@@ -128,7 +128,7 @@ export function PurchaseInvoicesClientView() {
         }
     }
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<Invoice>[] = [
         {
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
@@ -238,7 +238,7 @@ export function PurchaseInvoicesClientView() {
             <DataTable
                 columns={columns}
                 data={documents}
-                onRowClick={(row: any) => {
+                onRowClick={(row: Invoice) => {
                     const isSelected = hubConfig?.invoiceId === row.id
                     if (isSelected && isHubOpen) {
                         closeHub()
@@ -253,7 +253,7 @@ export function PurchaseInvoicesClientView() {
                 }}
                 cardMode={true}
                 currentView={currentView}
-                onViewChange={(v: any) => setCurrentView(v)}
+                onViewChange={(v: 'all' | 'unpaid') => setCurrentView(v)}
                 viewOptions={viewOptions}
                 filterColumn="partner_name"
                 searchPlaceholder="Buscar por proveedor..."
@@ -282,7 +282,7 @@ export function PurchaseInvoicesClientView() {
                     }
                     return (
                         <div className="grid gap-3 pt-2">
-                            {rows.map((row: any) => {
+                            {rows.map((row: Invoice) => {
                                 const inv = row.original
                                 const isSelected = hubConfig?.invoiceId === inv.id
 

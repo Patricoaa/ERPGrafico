@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import { useEffect, useState, useRef } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -52,10 +52,10 @@ interface PurchaseOrder {
         document_attachment: string | null
     } | null
     related_documents?: {
-        invoices: any[]
-        notes: any[]
-        receipts: any[]
-        payments: any[]
+        invoices: Record<string, unknown>[]
+        notes: Record<string, unknown>[]
+        receipts: Record<string, unknown>[]
+        payments: Record<string, unknown>[]
     }
 }
 
@@ -67,14 +67,15 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
 interface PurchasingOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
     externalOpenCheckout?: boolean
+    createAction?: React.ReactNode
 }
 
-export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: PurchasingOrdersClientViewProps) {
+export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction }: PurchasingOrdersClientViewProps) {
     const [orders, setOrders] = useState<PurchaseOrder[]>([])
-    const [notes, setNotes] = useState<any[]>([])
+    const [notes, setNotes] = useState<Record<string, unknown>[]>([])
     const [loading, setLoading] = useState(true)
-    const [editingOrder, setEditingOrder] = useState<any | null>(null)
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
+    const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: string, id: number | string, view: 'details' | 'history' } | null>(null)
     const [invoicingOrder, setInvoicingOrder] = useState<PurchaseOrder | null>(null)
     const [completingInvoice, setCompletingInvoice] = useState<{ id: number, type: string } | null>(null)
     const [checkoutOpen, setCheckoutOpen] = useState(false)
@@ -224,8 +225,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
             })
             const results = response.data.results || response.data
             // Ensure they are strictly notes and related to purchases
-            const purchaseNotes = results.filter((inv: any) =>
-                ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type) && inv.purchase_order
+            const purchaseNotes = results.filter((inv: Record<string, unknown> & { dte_type?: string, purchase_order?: number }) =>
+                ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type || '') && inv.purchase_order
             )
             setNotes(purchaseNotes)
         } catch (error) {
@@ -244,7 +245,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
         }
     }, [viewMode])
 
-    const noteColumns: ColumnDef<any>[] = [
+    const noteColumns: ColumnDef<Record<string, unknown> & { dte_type?: string, dte_type_display?: string, supplier_name?: string, partner_name?: string, status?: string, id?: number }>[] = [
         {
             accessorKey: "dte_type_display",
             header: ({ column }) => (
@@ -497,7 +498,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                     <DataTable
                         columns={viewMode === 'orders' ? columns : noteColumns}
                         data={viewMode === 'orders' ? filteredOrders : filteredNotes}
-                        onRowClick={(row: any) => {
+                        onRowClick={(row: Record<string, unknown> & { id: number }) => {
                             const isSelected = viewMode === "orders" ? hubConfig?.orderId === row.id : hubConfig?.invoiceId === row.id
                             if (isSelected && isHubOpen) {
                                 closeHub()
@@ -511,7 +512,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                         }}
                         cardMode={true}
                         currentView={currentView}
-                        onViewChange={(v: any) => setCurrentView(v)}
+                        onViewChange={(v: 'card' | 'list') => setCurrentView(v)}
                         viewOptions={viewOptions}
                         filterColumn={viewMode === 'orders' ? "supplier_name" : "number"}
                         searchPlaceholder={viewMode === 'orders' ? "Buscar por proveedor..." : "Buscar por folio..."}
@@ -590,7 +591,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                             }
                             return (
                                 <div className="grid gap-3 pt-2">
-                                    {rows.map((row: any) => {
+                                    {rows.map((row: import("@tanstack/react-table").Row<Record<string, unknown> & { id: number }>) => {
                                         const item = row.original
                                         const isSelected = viewMode === 'orders'
                                             ? hubConfig?.orderId === item.id
@@ -617,6 +618,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                                 </div>
                             )
                         } : undefined}
+                        createAction={createAction}
                     />
                 </Tabs>
             )}
@@ -652,7 +654,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                         onOpenChange={(open) => !open && setCompletingInvoice(null)}
                         invoiceId={completingInvoice.id}
                         invoiceType={completingInvoice.type}
-                        contactId={invoicingOrder?.supplier || orders.find(o => o.related_documents?.invoices?.some((i: any) => i.id === completingInvoice.id))?.supplier || undefined}
+                        contactId={invoicingOrder?.supplier || orders.find(o => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === completingInvoice.id))?.supplier || undefined}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
@@ -688,7 +690,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout }: P
                         onOpenChange={setFolioModalOpen}
                         invoiceId={selectedInvoice.id}
                         invoiceType={selectedInvoice.type}
-                        contactId={invoicingOrder?.supplier || orders.find(o => o.related_documents?.invoices?.some((i: any) => i.id === selectedInvoice.id))?.supplier || undefined}
+                        contactId={invoicingOrder?.supplier || orders.find(o => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === selectedInvoice.id))?.supplier || undefined}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {

@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useProductSearch } from "@/features/inventory/hooks/useProductSearch"
+import { EmptyState } from "@/components/shared/EmptyState"
 import { Product } from "@/types/entities"
 
 interface ProductSelectorProps {
@@ -212,7 +213,7 @@ export function ProductSelector({
                     >
                         {selectedProduct ? (
                             <div className="flex items-center gap-2 truncate text-left">
-                                <div className="p-1.5 rounded-lg bg-primary/10 text-primary shrink-0">
+                                <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
                                     <Package className="h-4 w-4" />
                                 </div>
                                 <div className="flex flex-col items-start truncate leading-tight">
@@ -254,7 +255,7 @@ export function ProductSelector({
                                 Buscando productos...
                             </div>
                         ) : filteredProducts.length === 0 ? (
-                            <div className="p-4 text-sm text-center">No se encontraron productos.</div>
+                            <EmptyState context="inventory" variant="compact" title="No se encontraron productos" />
                         ) : (
                             filteredProducts.slice(0, displayLimit).map((product) => {
                                 return (

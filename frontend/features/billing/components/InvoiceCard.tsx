@@ -12,7 +12,7 @@ import { IndustrialCard } from "@/components/shared/IndustrialCard"
 type InvoiceType = 'sale_invoice' | 'purchase_invoice'
 
 interface InvoiceCardProps {
-    item: any
+    item: Record<string, unknown>
     type: InvoiceType
     onClick?: () => void
     onActionSuccess?: () => void
@@ -145,7 +145,7 @@ export function InvoiceCard({ item, type, onClick, onActionSuccess, className, i
                         {/* Associated Adjustments Links (for regular invoices) */}
                         {!isNote && item.adjustments?.length > 0 && (
                             <div className="flex items-center gap-1.5">
-                                {item.adjustments.map((adj: any) => (
+                                {item.adjustments.map((adj: Record<string, unknown>) => (
                                     <Badge 
                                         key={adj.id}
                                         variant="outline" 
@@ -189,7 +189,7 @@ export function InvoiceCard({ item, type, onClick, onActionSuccess, className, i
             {(lines.length > 0 || hasPending) && (
                 <div className="mt-1.5 pt-1.5 border-t border-border/30 flex items-start justify-between gap-4">
                     <div className="flex flex-wrap gap-x-4 gap-y-0.5 flex-1">
-                        {lines.map((line: any, idx: number) => (
+                        {lines.map((line: Record<string, unknown>, idx: number) => (
                             <span key={idx} className="text-[11px] text-muted-foreground/80 flex items-center gap-1">
                                 <span className="font-semibold text-foreground/70">
                                     {Math.round(parseFloat(line.quantity || 0))}

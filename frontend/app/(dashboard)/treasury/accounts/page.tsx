@@ -1,9 +1,9 @@
 import { lazy, Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import Link from "next/link"
 
 const TreasuryAccountsView = lazy(() =>
     import("@/features/treasury").then(module => ({
@@ -33,6 +33,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                     title: "Cuentas de Tesorería",
                     description: "Registre y configure sus cuentas bancarias y de efectivo.",
                     iconName: "landmark",
+                    actionLabel: "Nueva Cuenta",
                     actionHref: "/treasury/accounts?tab=accounts&modal=new"
                 }
             case "banks":
@@ -40,6 +41,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                     title: "Gestión de Bancos",
                     description: "Administre las entidades bancarias globales del sistema.",
                     iconName: "building-2",
+                    actionLabel: "Nuevo Banco",
                     actionHref: "/treasury/accounts?tab=banks&modal=new"
                 }
             case "methods":
@@ -47,14 +49,19 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                     title: "Métodos de Pago",
                     description: "Configure los medios de pago aceptados y sus cuentas vinculadas.",
                     iconName: "credit-card",
+                    actionLabel: "Nuevo Método",
                     actionHref: "/treasury/accounts?tab=methods&modal=new"
                 }
             default:
-                return { title: "Tesorería", description: "", iconName: "banknote", actionHref: null }
+                return { title: "Tesorería", description: "", iconName: "banknote", actionLabel: null, actionHref: null }
         }
     }
 
-    const { title, description, iconName, actionHref } = getHeaderConfig()
+    const { title, description, iconName, actionLabel, actionHref } = getHeaderConfig()
+
+    const createAction = actionLabel && actionHref ? (
+        <ToolbarCreateButton label={actionLabel} href={actionHref} />
+    ) : null
 
     return (
         <div className={LAYOUT_TOKENS.view}>
@@ -63,24 +70,13 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                 description={description}
                 iconName={iconName}
                 variant="minimal"
-                titleActions={
-                    actionHref && (
-                        <Link href={actionHref}>
-                            <PageHeaderButton
-                                iconName="plus"
-                                circular
-                                title="Nuevo"
-                            />
-                        </Link>
-                    )
-                }
             />
 
             <PageTabs tabs={tabs} activeValue={activeTab} />
 
             <div className="pt-4">
                 <Suspense fallback={<LoadingFallback message="Cargando..." />}>
-                    <TreasuryAccountsView activeTab={activeTab} externalOpen={modalOpen} />
+                    <TreasuryAccountsView activeTab={activeTab} externalOpen={modalOpen} createAction={createAction} />
                 </Suspense>
             </div>
         </div>

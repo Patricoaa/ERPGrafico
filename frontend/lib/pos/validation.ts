@@ -1,7 +1,7 @@
 // Validation Utilities
 // Validation rules and helpers for POS
 
-import type { CartItem } from '@/types/pos'
+import type { CartItem, Product } from '@/types/pos'
 
 /**
  * Validate and sanitize quantity input
@@ -26,7 +26,7 @@ export function validateCartPrices(items: CartItem[]): { valid: boolean, invalid
 /**
  * Check if cart has dynamic pricing products without assigned prices
  */
-export function hasDynamicPricingIssues(items: CartItem[], products: any[]): boolean {
+export function hasDynamicPricingIssues(items: CartItem[], products: Product[]): boolean {
     const invalidItems = items.filter(i => {
         const original = products.find(p => p.id === i.id)
         return original?.is_dynamic_pricing && (i.unit_price_net <= 0)
@@ -39,7 +39,7 @@ export function hasDynamicPricingIssues(items: CartItem[], products: any[]): boo
  */
 export function validateCheckoutReady(
     items: CartItem[],
-    products: any[]
+    products: Product[]
 ): { valid: boolean, error?: string } {
     if (items.length === 0) {
         return { valid: false, error: 'El carrito está vacío' }

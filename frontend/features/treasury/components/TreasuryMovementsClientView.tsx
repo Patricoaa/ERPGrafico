@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, lazy, Suspense } from "react"
+import React, { useState, useEffect, lazy, Suspense } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -60,9 +60,10 @@ interface TreasuryMovement {
 
 interface TreasuryMovementsClientViewProps {
     externalOpen?: boolean
+    createAction?: React.ReactNode
 }
 
-export function TreasuryMovementsClientView({ externalOpen }: TreasuryMovementsClientViewProps) {
+export function TreasuryMovementsClientView({ externalOpen, createAction }: TreasuryMovementsClientViewProps) {
     const { openContact, openTreasuryAccount } = useGlobalModalActions()
     const [movements, setMovements] = useState<TreasuryMovement[]>([])
     const [loading, setLoading] = useState(true)
@@ -93,12 +94,12 @@ export function TreasuryMovementsClientView({ externalOpen }: TreasuryMovementsC
         }
     }, [externalOpen])
 
-    const handleViewDetails = (id: number) => {
+    const handleViewDetails = React.useCallback((id: number) => {
         setSelectedMovementId(id)
         setDetailsOpen(true)
-    }
+    }, [])
 
-    const columns: ColumnDef<TreasuryMovement>[] = [
+    const columns = React.useMemo<ColumnDef<TreasuryMovement>[]>(() => [
         {
             accessorKey: "display_id",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
@@ -294,7 +295,7 @@ export function TreasuryMovementsClientView({ externalOpen }: TreasuryMovementsC
                 <DataCell.Action icon={Eye} title="Ver Detalle" onClick={() => handleViewDetails(item.id)} />
             ),
         })
-    ]
+    ], [openTreasuryAccount, handleViewDetails])
 
     return (
         <div className="space-y-6">
@@ -339,6 +340,7 @@ export function TreasuryMovementsClientView({ externalOpen }: TreasuryMovementsC
                             ],
                         },
                     ]}
+                    createAction={createAction}
                 />
             )}
 

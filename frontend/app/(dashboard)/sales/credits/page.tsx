@@ -1,14 +1,12 @@
 import { Metadata } from "next"
 import { Suspense, lazy } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { Tabs } from "@/components/ui/tabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import Link from "next/link"
-import { Plus } from "lucide-react"
 
-// Lazy load feature components
 const CreditPortfolioView = lazy(() =>
     import("@/features/credits").then(m => ({ default: m.CreditPortfolioView }))
 )
@@ -66,6 +64,13 @@ export default async function CreditsPage({ searchParams }: PageProps) {
 
     const { title, description, iconName, showAction } = getHeaderConfig()
 
+    const createAction = showAction ? (
+        <ToolbarCreateButton
+            label="Asignar Crédito"
+            href="/sales/credits?tab=portfolio&modal=new"
+        />
+    ) : null
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <Tabs value={activeTab} className="space-y-4">
@@ -73,13 +78,6 @@ export default async function CreditsPage({ searchParams }: PageProps) {
                     title={title}
                     description={description}
                     iconName={iconName}
-                    titleActions={
-                        showAction && (
-                            <Link href="/sales/credits?tab=portfolio&modal=new">
-                                <PageHeaderButton iconName="plus" circular title="Asignar Crédito" />
-                            </Link>
-                        )
-                    }
                 />
                 <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-md" />
 
@@ -88,9 +86,10 @@ export default async function CreditsPage({ searchParams }: PageProps) {
                         {activeTab === 'blacklist' ? (
                             <BlacklistView />
                         ) : (
-                            <CreditPortfolioView 
-                                activeTab={activeTab as 'portfolio' | 'history'} 
-                                externalOpen={modalOpen} 
+                            <CreditPortfolioView
+                                activeTab={activeTab as 'portfolio' | 'history'}
+                                externalOpen={modalOpen}
+                                createAction={createAction}
                             />
                         )}
                     </Suspense>

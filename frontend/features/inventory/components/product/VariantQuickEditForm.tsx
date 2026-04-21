@@ -1,4 +1,7 @@
+"use client"
+
 import { useState, useEffect } from "react"
+import { Product, ProductBOM, UoM } from "@/types/entities"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -22,18 +25,18 @@ const quickEditSchema = z.object({
 type QuickEditValues = z.infer<typeof quickEditSchema>
 
 interface VariantQuickEditFormProps {
-  variant: any
-  onSaved: (updatedVariant: any) => void
+  variant: Product
+  onSaved: (updatedVariant: Product) => void
   onCancel: () => void
   onTabChange?: (tab: string) => void
 }
 
 export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }: VariantQuickEditFormProps) {
   const [loading, setLoading] = useState(false)
-  const [availableBOMs, setAvailableBOMs] = useState<any[]>([])
+  const [availableBOMs, setAvailableBOMs] = useState<ProductBOM[]>([])
 
   const form = useForm<QuickEditValues>({
-    resolver: zodResolver(quickEditSchema) as any,
+    resolver: zodResolver(quickEditSchema) ,
     defaultValues: {
       sale_price: variant.sale_price || 0,
       code: variant.code || "",
@@ -51,7 +54,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
     fetchUoms()
   }, [variant])
 
-  const [uoms, setUoms] = useState<any[]>([])
+  const [uoms, setUoms] = useState<UoM[]>([])
 
   const fetchUoms = async () => {
     try {
@@ -92,7 +95,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
   }, [form, variant, onSaved]);
 
   return (
-    <div className="flex flex-col h-full bg-card rounded-lg border shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+    <div className="flex flex-col h-full bg-card rounded-md border shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
       <div className="flex items-center justify-between p-4 border-b bg-muted/10">
         <div className="flex items-center gap-3">
            <Layers className="h-4 w-4 text-muted-foreground" />
@@ -178,7 +181,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
                   </span>
                 </div>
                 
-                <div className="p-4 border rounded-lg bg-muted/5 border-dashed space-y-4">
+                <div className="p-4 border rounded-md bg-muted/5 border-dashed space-y-4">
                     <div className="flex items-center justify-between">
                         <p className="text-[11px] font-medium text-muted-foreground">
                             Recetas configuradas: <span className="text-foreground font-bold">{availableBOMs.length}</span>
@@ -190,7 +193,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
                           type="button" 
                           variant="outline" 
                           size="sm" 
-                          className="w-full text-xs h-9 border-dashed rounded-lg gap-2 text-primary hover:bg-primary/5 hover:border-primary/40"
+                          className="w-full text-xs h-9 border-dashed rounded-md gap-2 text-primary hover:bg-primary/5 hover:border-primary/40"
                           onClick={() => onTabChange?.("manufacturing")}
                         >
                             <Plus className="h-3.5 w-3.5" /> Crear Primera Receta
@@ -200,7 +203,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
                             type="button" 
                             variant="secondary" 
                             size="sm" 
-                            className="w-full text-xs h-9 rounded-lg gap-2 font-bold"
+                            className="w-full text-xs h-9 rounded-md gap-2 font-bold"
                             onClick={() => onTabChange?.("manufacturing")}
                          >
                             <Settings2 className="h-3.5 w-3.5" /> Gestionar Listas de Materiales

@@ -7,8 +7,6 @@ import type {
     TreasuryAccountCreatePayload,
     TreasuryAccountUpdatePayload,
     PaymentMethod,
-    PaymentRequest,
-    InitiatePaymentPayload,
 } from '../types'
 
 /**
@@ -52,6 +50,11 @@ export const treasuryApi = {
      */
     deleteTerminal: async (id: number): Promise<void> => {
         await api.delete(`/treasury/pos-terminals/${id}/`)
+    },
+
+    getTerminalDevice: async (id: number): Promise<PaymentTerminalDevice> => {
+        const { data } = await api.get<PaymentTerminalDevice>(`/treasury/terminal-devices/${id}/`)
+        return data
     },
 
     // ========== Treasury Accounts ==========
@@ -127,20 +130,4 @@ export const treasuryApi = {
         return data
     },
 
-    // ========== Payment Requests (ADR 002) ==========
-
-    initiatePayment: async (payload: InitiatePaymentPayload): Promise<PaymentRequest> => {
-        const { data } = await api.post<PaymentRequest>('/treasury/payment-requests/initiate/', payload)
-        return data
-    },
-
-    getPaymentRequest: async (idempotencyKey: string): Promise<PaymentRequest> => {
-        const { data } = await api.get<PaymentRequest>(`/treasury/payment-requests/${idempotencyKey}/`)
-        return data
-    },
-
-    cancelPaymentRequest: async (idempotencyKey: string): Promise<PaymentRequest> => {
-        const { data } = await api.post<PaymentRequest>(`/treasury/payment-requests/${idempotencyKey}/cancel/`)
-        return data
-    },
 }

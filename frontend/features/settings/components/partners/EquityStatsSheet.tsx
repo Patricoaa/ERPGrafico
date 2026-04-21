@@ -38,11 +38,13 @@ const COLORS = [
     'var(--neutral)'
 ]
 
+import { Partner, PartnerSummary } from "@/features/contacts/types/partner"
+
 interface EquityStatsSheetProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    partners: any[]
-    summary: any
+    partners: Partner[]
+    summary: PartnerSummary
 }
 
 export function EquityStatsSheet({ open, onOpenChange, partners, summary }: EquityStatsSheetProps) {
