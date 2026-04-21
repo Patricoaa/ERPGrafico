@@ -1,0 +1,89 @@
+---
+layer: 20-contracts
+doc: hook-contracts
+status: active
+owner: frontend-team
+last_review: 2026-04-21
+stability: contract-changes-require-ADR
+---
+
+# Hook Contracts
+
+Public API of reusable hooks. Feature-local hooks live in `features/[x]/hooks/` and are NOT contracts (scoped to module). Promotion to `/hooks/` requires entry here.
+
+## Conventions (apply to all)
+
+- Name: `use[Entity][Action]` — `useSaleOrders`, `useCreateInvoice`, `useStockValidation`.
+- Return: **domain-named** properties. Never `data`, `mutate`, `error` raw.
+- Errors: handled internally via `showApiError` toast. No `error` in return shape.
+- Loading flags: `isLoading` for initial fetch, `isFetching` for refetch, `isCreating` / `isUpdating` / `isDeleting` for mutations.
+
+```ts
+// ✅ template
+type UseSaleOrdersReturn = {
+  orders: SaleOrder[]
+  isLoading: boolean
+  isFetching: boolean
+  createOrder: (input: SaleOrderInput) => Promise<SaleOrder>
+  isCreating: boolean
+  updateOrder: (id: string, patch: Partial<SaleOrderInput>) => Promise<SaleOrder>
+  isUpdating: boolean
+}
+```
+
+## Global hooks (promoted)
+
+### `useServerDate()` 🟢
+
+Returns authoritative server-side date to avoid client clock drift in fiscal ops.
+
+```ts
+const { serverDate, isLoading } = useServerDate()
+// serverDate: Date | undefined
+```
+
+Invalidated every 60s. Mandatory for folio, period, reconciliation, payroll inputs.
+
+### `useStockValidation(items)` 🟢
+
+```ts
+const { isAvailable, insufficientItems, isValidating } = useStockValidation(lineItems)
+```
+
+| prop/return | type | notes |
+|-------------|------|-------|
+| input | `Array<{sku; qty}>` | line items being added |
+| `isAvailable` | `boolean` | all items have stock |
+| `insufficientItems` | `Array<{sku; available; requested}>` | only populated if `!isAvailable` |
+| `isValidating` | `boolean` | |
+
+### `useFolioValidation(params)` 🟢
+
+```ts
+const { isValidFolio, suggestedNext, isChecking } = useFolioValidation({ documentType, folio })
+```
+
+Rejects gaps + duplicates per fiscal period.
+
+### `useApiMutation<TInput, TOutput>(opts)` 🟢
+
+Generic wrapper over TanStack `useMutation`. Applies JWT, error toast, success toast. Feature hooks build on top.
+
+## Feature-scoped hook examples (reference shape)
+
+Do not import across features. These illustrate the canonical return shape.
+
+| Hook | Returns |
+|------|---------|
+| `useSaleOrders()` | `{ orders, isLoading, createOrder, isCreating, updateOrder, isUpdating }` |
+| `useInvoices(filters)` | `{ invoices, isLoading, refetch, isFetching }` |
+| `useWorkOrderTransitions(id)` | `{ transitions, transition, isTransitioning }` |
+| `useAccountingAccounts()` | `{ accounts, isLoading, isUpdating }` |
+| `useTreasuryReconciliation(accountId)` | `{ lines, match, unmatch, isMatching }` |
+
+## Forbidden
+
+- Exposing `data`, `error`, `mutate` raw from TanStack.
+- Multiple unrelated queries in one hook (split).
+- Calling hooks conditionally (React rule).
+- Importing `@/lib/api` from a component — must go through hook.

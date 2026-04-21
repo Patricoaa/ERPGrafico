@@ -1,0 +1,76 @@
+# ERPGrafico — Documentation Router
+
+> Single entry point for agentic models and humans. Find your intent in the table, jump to the playbook. Do not skip preconditions.
+
+## How to use this documentation
+
+1. **Identify intent** in the Task Routing table below.
+2. **Read preconditions** listed in the target playbook frontmatter.
+3. **Execute steps** in order. Do not skip validation.
+4. **Stop and ask** if a precondition contradicts current code — never invent.
+
+## Layer map
+
+| Layer | Folder | Purpose | When to read |
+|-------|--------|---------|--------------|
+| 00 | `00-context/` | What project is, domain vocabulary, stack | First contact with repo |
+| 10 | `10-architecture/` | How pieces fit together, ADRs | Before structural change |
+| 20 | `20-contracts/` | Public APIs (components, hooks, endpoints, state) | Before consuming or exposing API |
+| 30 | `30-playbooks/` | Step-by-step recipes for common tasks | Every implementation task |
+| 40 | `40-quality/` | Testing, security, observability, performance, CI/CD | Cross-cutting concerns |
+| 90 | `90-governance/` | Rules, policies, decision records | Before proposing deviation |
+
+## Task Routing — intent → playbook
+
+| Intent / Trigger phrases | Playbook | Layer |
+|--------------------------|----------|-------|
+| "new feature", "add module", "create entity CRUD" | [add-feature.md](30-playbooks/add-feature.md) | 30 |
+| "new endpoint", "expose API", "REST route" | [add-endpoint.md](30-playbooks/add-endpoint.md) | 30 |
+| "shared component", "promote to /shared", "reusable UI" | [add-shared-component.md](30-playbooks/add-shared-component.md) | 30 |
+| "modify schema", "add field", "change Zod", "alter form" | [modify-schema.md](30-playbooks/modify-schema.md) | 30 |
+| "migration", "alter table", "new model" | [add-migration.md](30-playbooks/add-migration.md) | 30 |
+| "Celery task", "background job", "scheduled" | [add-background-task.md](30-playbooks/add-background-task.md) | 30 |
+| "bug", "failing test", "unexpected behavior" | [debug-workflow.md](30-playbooks/debug-workflow.md) | 30 |
+| "refactor", "extract", "rename" | [refactor-workflow.md](30-playbooks/refactor-workflow.md) | 30 |
+| "deprecate", "remove feature", "sunset" | [deprecate-feature.md](30-playbooks/deprecate-feature.md) | 30 |
+| "what is X", "domain term", "glossary" | [domain-glossary.md](00-context/domain-glossary.md) | 00 |
+| "architecture", "folder structure", "where does X go" | [frontend-fsd.md](10-architecture/frontend-fsd.md) / [backend-apps.md](10-architecture/backend-apps.md) | 10 |
+| "component API", "prop signature", "StatusBadge usage" | [component-contracts.md](20-contracts/component-contracts.md) | 20 |
+| "hook signature", "return shape" | [hook-contracts.md](20-contracts/hook-contracts.md) | 20 |
+| "entity state", "status values" | [state-map.md](20-contracts/state-map.md) | 20 |
+| "testing strategy", "coverage", "fixtures" | [testing.md](40-quality/testing.md) | 40 |
+| "auth", "permissions", "injection", "security review" | [security.md](40-quality/security.md) | 40 |
+| "logs", "metrics", "traces", "alerting" | [observability.md](40-quality/observability.md) | 40 |
+| "slow", "optimize", "query N+1", "bundle size" | [performance.md](40-quality/performance.md) | 40 |
+| "deploy", "pipeline", "CI failure" | [ci-cd.md](40-quality/ci-cd.md) | 40 |
+| "any type", "TypeScript unknown", "type escape hatch" | [zero-any-policy.md](90-governance/zero-any-policy.md) | 90 |
+| "ADR", "decision record", "major change" | [adr/README.md](10-architecture/adr/README.md) | 10 |
+
+## Global invariants (violate = PR rejected)
+
+1. **Zero `any`** in TypeScript. Use Zod-derived types or `unknown` + guards.
+2. **No raw Tailwind colors** (`bg-red-500`). Only semantic tokens.
+3. **No cross-feature internal imports.** Use barrel exports.
+4. **No direct `@/lib/api` in components.** Wrap in feature hook.
+5. **`StatusBadge`** is the only authorized status renderer.
+6. **All forms** use Zod + `react-hook-form` in `schema.ts`.
+7. **All shared components** handle `loading` / `empty` / `error` states.
+8. **Every public API change** requires ADR.
+
+## Agentic model instructions
+
+You are operating on ERPGrafico. Before any implementation:
+
+- [ ] Matched intent in routing table above
+- [ ] Read target playbook fully
+- [ ] Read all preconditions listed in playbook frontmatter
+- [ ] Verified invariants above are not violated by proposed change
+- [ ] Ran validation commands listed in playbook
+
+If no playbook matches, STOP. Ask user which intent applies or propose new playbook.
+
+## Document lifecycle
+
+- Every doc has frontmatter: `status`, `owner`, `last_review`.
+- Stale if `last_review` > 6 months → CI warning.
+- Contract docs (layer 20) cannot change without ADR.
