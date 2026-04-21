@@ -107,9 +107,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                 className="flex items-center gap-3 pointer-events-auto min-w-0"
                             >
                                 {config.isLoading && (
-                                    <div className="p-2 bg-primary/10 text-primary border border-primary/10 shadow-sm shrink-0 animate-pulse">
+                                    <Skeleton className="p-2 bg-primary/10 text-primary border border-primary/10 shadow-sm shrink-0">
                                         <Loader2 className="h-4 w-4 animate-spin" />
-                                    </div>
+                                    </Skeleton>
                                 )}
 
                                 {/* Texts & Icons Wrapper */}
@@ -129,15 +129,20 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                     {/* Right: Icons & Actions */}
                                     <div className="flex items-center gap-2 mt-[-2px] shrink-0">
                                         {config.status && (
-                                            <div className={cn(
-                                                "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border shrink-0",
-                                                config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
-                                                config.status.type === 'saving' && "bg-primary/20 text-primary border-primary/20 animate-pulse",
-                                                config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
-                                                !config.status.type && "bg-muted text-muted-foreground border-border"
-                                            )}>
-                                                {config.status.label}
-                                            </div>
+                                            config.status.type === 'saving' ? (
+                                                <Skeleton className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">
+                                                    {config.status.label}
+                                                </Skeleton>
+                                            ) : (
+                                                <div className={cn(
+                                                    "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border shrink-0",
+                                                    config.status.type === 'synced' && "bg-success/10 text-success border-success/20",
+                                                    config.status.type === 'error' && "bg-destructive/10 text-destructive border-destructive/20",
+                                                    !config.status.type && "bg-muted text-muted-foreground border-border"
+                                                )}>
+                                                    {config.status.label}
+                                                </div>
+                                            )
                                         )}
 
                                         {config.titleActions && (

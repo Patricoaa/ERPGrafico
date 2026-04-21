@@ -102,18 +102,18 @@ export function LogisticsPhase({
         // 1. Returns for Notes/Orders
         if (Array.isArray(activeDoc.related_returns) && activeDoc.related_returns.length > 0) {
             docs.push(...activeDoc.related_returns.map((doc: Order) => ({
-                type: doc.type,
+                type: (doc as Record<string, unknown>).type as string,
                 number: formatDocumentId('DEV', doc.number || doc.id, doc.display_id),
                 icon: Package,
                 id: doc.id,
-                docType: (doc as any).docType,
+                docType: (doc as Record<string, unknown>).docType as string,
                 status: doc.status,
                 actions: [
                     ...((doc.status !== 'CANCELLED') ? [{
                         icon: Ban,
                         title: 'Anular Devolución',
                         color: 'text-warning hover:bg-warning/10',
-                        onClick: () => handleAnnulLogistics(doc.id, (doc as any).docType)
+                        onClick: () => handleAnnulLogistics(doc.id, (doc as Record<string, unknown>).docType as string)
                     }] : [])
                 ]
             })))
@@ -122,19 +122,19 @@ export function LogisticsPhase({
         // 2. High-level Deliveries/Receipts
         const specificDocs = isSale ? activeDoc.related_documents?.deliveries : (activeDoc.related_documents?.receipts || activeDoc.related_documents?.receptions)
         if (specificDocs && specificDocs.length > 0) {
-            docs.push(...specificDocs.map((doc: any) => ({
+            docs.push(...specificDocs.map((doc: Record<string, unknown>) => ({
                 type: isSale ? 'Despacho' : 'Recepción',
-                number: formatDocumentId(isSale ? 'DES' : 'REC', doc.number || doc.id, doc.display_id),
+                number: formatDocumentId(isSale ? 'DES' : 'REC', (doc.number as string) || (doc.id as number), doc.display_id as string),
                 icon: Package,
-                id: doc.id,
-                docType: doc.docType || (isSale ? 'sale_delivery' : 'inventory'),
-                status: doc.status,
+                id: doc.id as number,
+                docType: (doc.docType as string) || (isSale ? 'sale_delivery' : 'inventory'),
+                status: doc.status as string,
                 actions: [
                     ...((doc.status !== 'CANCELLED' && invoices.some((inv: Order) => inv.status === 'DRAFT')) ? [{
                         icon: Ban,
                         title: isSale ? 'Anular Despacho' : 'Anular Recepción',
                         color: 'text-warning hover:bg-warning/10',
-                        onClick: () => handleAnnulLogistics(doc.id, isSale ? 'sale_delivery' : 'purchase_receipt')
+                        onClick: () => handleAnnulLogistics(doc.id as number, isSale ? 'sale_delivery' : 'purchase_receipt')
                     }] : [])
                 ]
             })))
@@ -142,13 +142,13 @@ export function LogisticsPhase({
 
         // 3. Low-level Stock Moves (only if no high-level docs found to avoid clutter)
         if (docs.length === 0 && (activeDoc.related_stock_moves?.length || 0) > 0) {
-            docs.push(...(activeDoc.related_stock_moves || []).map((m: any) => ({
-                type: m.move_type_display || 'Movimiento',
-                number: formatDocumentId('MOV', m.id, m.display_id),
+            docs.push(...(activeDoc.related_stock_moves || []).map((m: Record<string, unknown>) => ({
+                type: (m.move_type_display as string) || 'Movimiento',
+                number: formatDocumentId('MOV', m.id as number, m.display_id as string),
                 icon: Package,
-                id: m.id,
+                id: m.id as number,
                 docType: 'inventory',
-                status: m.state || 'Realizado',
+                status: (m.state as string) || 'Realizado',
                 actions: []
             })))
         }
@@ -177,10 +177,10 @@ export function LogisticsPhase({
             <PhaseCard
                 title={title}
                 icon={Package}
-                variant={isNoteMode ? (noteStatuses.logistics as any) : (logisticsProgress === 100 ? 'success' : logisticsProgress > 0 ? 'active' : 'neutral')}
+                variant={(isNoteMode ? noteStatuses.logistics : (logisticsProgress === 100 ? 'success' : logisticsProgress > 0 ? 'active' : 'neutral')) as string}
                 documents={logisticsDocs}
                 onViewDetail={openDetails}
-                actions={(isNoteMode ? (registry[isSale ? 'deliveries' : 'receptions']?.actions || registry.returns?.actions || []) : (registry[isSale ? 'deliveries' : 'receptions']?.actions || [])).filter((a: any) => !a.id.includes('view-'))}
+                actions={(isNoteMode ? (registry[isSale ? 'deliveries' : 'receptions']?.actions || registry.returns?.actions || []) : (registry[isSale ? 'deliveries' : 'receptions']?.actions || [])).filter((a: { id: string }) => !a.id.includes('view-'))}
                 emptyMessage={isNoteMode ? "Sin movimientos asociados" : "Sin movimientos"}
                 order={activeDoc}
                 userPermissions={userPermissions}
@@ -208,7 +208,7 @@ export function LogisticsPhase({
                             <div key={idx} className="space-y-0.5">
                                 <div className="flex items-center justify-between text-[10px] gap-2">
                                     <span className="text-foreground/70 line-clamp-1 flex-1 leading-tight">
-                                        {line.product_name || (line as any).description}
+                                        {line.product_name || line.description}
                                     </span>
                                     <span className="shrink-0 font-black text-primary text-[11px]">
                                         {Math.round(showAnimations ? current : 0)} / {Math.round(total)}

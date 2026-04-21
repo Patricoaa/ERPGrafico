@@ -11,6 +11,8 @@ import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 
+import { LucideIcon } from "lucide-react"
+
 export function GlobalHubPanel() {
     const { isHubOpen, hubConfig, closeHub, actionEngineRef, isHubEffectivelyOpen } = useHubPanel()
     const { isSubModalActive } = useGlobalModals()
@@ -48,7 +50,7 @@ export function GlobalHubPanel() {
                         category={{ 
                             id: 'hub-engine', 
                             label: 'Global Engine', 
-                            icon: undefined as unknown as any, 
+                            icon: undefined as unknown as LucideIcon, 
                             actions: Object.values(hubConfig?.type === 'purchase' || hubConfig?.type === 'obligation' ? purchaseOrderActions : saleOrderActions).flatMap(c => c.actions) 
                         }}
                         order={activeDoc}

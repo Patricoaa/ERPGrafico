@@ -297,7 +297,7 @@ export function PhaseCard({
                         {/* Documents List */}
                         <div className={cn("w-full", "space-y-1.5")}>
                             {documents.length > 0 ? (
-                                documents.map((doc: any, i: number) => (
+                                documents.map((doc: PhaseDocument, i: number) => (
                                     <div key={i} className={cn(
                                         "flex items-center justify-between border-border/30 hover:bg-white/5 transition-all duration-300 group/doc",
                                         "rounded-md border-2 min-h-[2.25rem] py-1.5 px-3",
@@ -324,7 +324,7 @@ export function PhaseCard({
                                         </div>
 
                                         <div className="flex items-center gap-0.5 opacity-20 group-hover/doc:opacity-100 transition-opacity">
-                                            {doc.actions?.map((action: any, idx: number) => (
+                                            {doc.actions?.map((action: { title: string, icon: LucideIcon, onClick: () => void, color?: string, isPrimary?: boolean }, idx: number) => (
                                                 <Tooltip key={idx}>
                                                     <TooltipTrigger asChild>
                                                         <Button
