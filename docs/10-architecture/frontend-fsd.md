@@ -46,7 +46,9 @@ frontend/
 | `app/*` → `features/*/components/*` | ❌ use barrel |
 | `features/A` → `features/B/index.ts` | ✅ |
 | `features/A` → `features/B/components/*` | ❌ use barrel |
-| `features/*` → `lib/api` | ✅ (only via hooks) |
+| `features/*/api/*` → `lib/api` | ✅ |
+| `features/*/hooks/*` → `lib/api` | ✅ |
+| `features/*/components/*` → `lib/api` | ❌ wrap in hook |
 | `components/*` → `lib/api` | ❌ wrap in hook |
 | `hooks/*` (global) → `lib/api` | ✅ |
 | `components/ui/*` → anything app-specific | ❌ stays generic |
@@ -71,7 +73,9 @@ Visualization hub. Aggregates SaleOrder + PurchaseOrder + WorkOrder. No backend 
 ```
 lib/api.ts  (axios)
     ↓
-features/[x]/hooks/useEntityList.ts  (TanStack Query)
+features/[x]/api/[entity]Api.ts  (HTTP calls, thin wrapper)
+    ↓
+features/[x]/hooks/use[Entity]List.ts  (TanStack Query, cache management)
     ↓
 features/[x]/components/EntityList.tsx  (UI)
     ↓
