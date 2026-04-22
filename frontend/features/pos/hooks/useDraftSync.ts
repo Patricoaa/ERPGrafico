@@ -251,8 +251,8 @@ export function useDraftSync({
                 const data = err.response.data
                 return {
                     acquired: false,
-                    error: data.error,
-                    locked_by_name: data.locked_by_name,
+                    error: data?.error,
+                    locked_by_name: data?.locked_by_name,
                 }
             }
             return { acquired: false, error: 'Error al bloquear borrador' }

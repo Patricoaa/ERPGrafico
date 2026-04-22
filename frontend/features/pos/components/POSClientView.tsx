@@ -119,7 +119,7 @@ export function POSClientView() {
     }, [])
 
     const { syncDrafts, acquireLock, releaseLock, isLockedByOther, getLockInfo, forceSync, browserSessionKey } = useDraftSync({
-        posSessionId: currentSession?.id || null,
+        posSessionId: currentSession?.id || undefined,
         enabled: !!currentSession?.id,
         onNewDraft: handleNewDraft,
         onDraftUpdated: (draft) => { /* Optional: handle quiet updates */ },
@@ -206,7 +206,7 @@ export function POSClientView() {
     }, [wizardState?.selectedCustomerId, selectedCustomerId, setSelectedCustomerId])
 
     const handleProductClick = (product: Product) => {
-        if (product.has_variants && product.variants_count > 0) {
+        if (product.has_variants && (product.variants_count || 0) > 0) {
             setSelectedProductForVariant(product); setVariantModalOpen(true)
         } else addProductToCart(product)
     }
@@ -320,7 +320,7 @@ export function POSClientView() {
     }
 
     const handleSuspendDraft = async (finalState: CheckoutWizardState) => {
-        await saveDraft(undefined, true, finalState)
+        await saveDraft(undefined, true, finalState as any)
         await releaseCurrentLock()
         setCurrentDraftId(null)
         setWizardState(null)
@@ -343,7 +343,7 @@ export function POSClientView() {
         const isOnlyService = items.every(line => line.product_type === 'SERVICE')
         const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
         const lastStep = (isOnlyService ? 3 : 4) + (hasMfg ? 1 : 0)
-        setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null, notes: '' } } as unknown as Parameters<typeof setWizardState>[0])
+        setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null, notes: '' } } as any)
         setTimeout(() => setPosMode('CHECKOUT'), 0)
     }
 
@@ -517,10 +517,10 @@ export function POSClientView() {
                                 <SalesCheckoutWizardContent
                                     key={currentDraftId || 'checkout-new'}
                                     order={null}
-                                    orderLines={items}
+                                    orderLines={items as any}
                                     total={totals.total_gross}
                                     totalDiscountAmount={totalDiscountAmount}
-                                    onComplete={handleCheckoutComplete}
+                                    onComplete={(data: any) => handleCheckoutComplete(data)}
                                     onCancel={() => setPosMode('SHOPPING')}
                                     onSuspend={handleSuspendDraft}
                                     initialCustomerId={selectedCustomerId?.toString() || (wizardState?.isQuickSale ? defaultCustomerId?.toString() : undefined)}
@@ -529,14 +529,14 @@ export function POSClientView() {
                                     terminalDeviceId={currentSession?.terminal_details?.payment_terminal_device ?? null}
                                     quickSale={wizardState?.isQuickSale}
                                     initialStep={wizardState?.step}
-                                    initialDteData={wizardState?.dteData}
-                                    initialPaymentData={wizardState?.paymentData}
-                                    initialDeliveryData={wizardState?.deliveryData}
+                                    initialDteData={wizardState?.dteData as any}
+                                    initialPaymentData={wizardState?.paymentData as any}
+                                    initialDeliveryData={wizardState?.deliveryData as any}
                                     initialApprovalTaskId={wizardState?.approvalTaskId}
                                     initialIsWaitingApproval={wizardState?.isWaitingApproval}
                                     initialIsApproved={wizardState?.isApproved}
                                     initialDraftId={currentDraftId}
-                                    onStateChange={setWizardState}
+                                    onStateChange={setWizardState as any}
                                     isInline
                                     isSessionHost={user?.id === currentSession?.user}
                                 />
@@ -573,8 +573,8 @@ export function POSClientView() {
                 </div>
             </div>
 
-            <POSVariantSelectorModal open={variantModalOpen} onOpenChange={setVariantModalOpen} product={selectedProductForVariant} onSelect={v => addProductToCart(v as unknown as Parameters<typeof addProductToCart>[0])} items={items} bomCache={bomCache} componentCache={componentCache} calculateMaxQty={calculateMaxQty} />
-            <DraftCartsList open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts} getLockInfo={getLockInfo} />
+            <POSVariantSelectorModal open={variantModalOpen} onOpenChange={setVariantModalOpen} product={selectedProductForVariant} onSelect={v => addProductToCart(v as any)} items={items} bomCache={bomCache as any} componentCache={componentCache as any} calculateMaxQty={calculateMaxQty} />
+            <DraftCartsList open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts as any} getLockInfo={getLockInfo} />
             <NumpadModal open={numpadOpen} onOpenChange={setNumpadOpen} title={numpadConfig?.field === 'qty' ? "Cantidad" : "Precio"} value={numpadValue} onChange={setNumpadValue} onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))} allowDecimal />
             <ScannerFeedback ref={scannerFeedbackRef} />
             <SalesOrdersModal open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
@@ -619,7 +619,7 @@ export function POSClientView() {
                             }}
                             currentType={completedSaleData.sale_order_detail ? "sale_order" : "invoice"}
                             mainTitle="Ticket de Venta"
-                            subTitle={completedSaleData.client_name || "Cliente Contado"}
+                            subTitle={(completedSaleData as any)?.client_name || "Cliente Contado"}
                         />
                     )}
                 </AlertDialogContent>

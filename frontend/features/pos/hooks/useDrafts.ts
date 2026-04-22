@@ -206,12 +206,12 @@ export function useDrafts(options: UseDraftsOptions = {}) {
             toast.success(`Borrador cargado: ${draft.name}`)
         } catch (error: unknown) {
             console.error("Error loading draft:", error)
-            if (error.response?.status === 404) {
+            if ((error as any).response?.status === 404) {
                 toast.error("El borrador ya no existe en el servidor o no pertenece a esta sesión")
                 setCurrentDraftId(null)
                 setWizardState(null)
                 fetchDrafts() // Refresh list
-            } else if (!error.message?.includes('siendo editado')) {
+            } else if (!(error as any).message?.includes('siendo editado')) {
                 toast.error("Error al cargar borrador")
             }
             // Release the lock we acquired if loading failed
