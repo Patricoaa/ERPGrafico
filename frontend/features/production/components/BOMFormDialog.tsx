@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { useForm, useFieldArray, Resolver } from "react-hook-form"
+import { useForm, useFieldArray, Resolver, FieldValues } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -74,7 +74,7 @@ const bomSchema = z.object({
     path: ["lines"]
 })
 
-type BOMFormValues = z.infer<typeof bomSchema>
+type BOMFormValues = z.infer<typeof bomSchema> & FieldValues
 
 interface BOMFormDialogProps {
     open: boolean
@@ -447,12 +447,12 @@ export function BOMFormDialog({
 
             <div className="flex-1 overflow-y-auto px-1">
                 <Form {...form}>
-                    <form id="bom-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+                    <form id="bom-form" onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6 pt-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1">
                             {/* COLUMNA IZQUIERDA: IDENTIFICACIÓN */}
                             <div className="space-y-3">
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
@@ -466,7 +466,7 @@ export function BOMFormDialog({
                                 />
 
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="active"
                                     render={({ field }) => (
                                         <FormItem>
@@ -508,7 +508,7 @@ export function BOMFormDialog({
                             {/* COLUMNA DERECHA: RENDIMIENTO */}
                             <div className="space-y-3">
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="yield_quantity"
                                     render={({ field }) => (
                                         <FormItem>
@@ -529,7 +529,7 @@ export function BOMFormDialog({
                                 />
 
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="yield_uom"
                                     render={({ field }) => (
                                         <FormItem>
@@ -600,7 +600,7 @@ export function BOMFormDialog({
                                                     <TableCell>
                                                         <div className="space-y-1">
                                                             <FormField
-                                                                control={form.control}
+                                                                control={form.control as any}
                                                                 name={`lines.${index}.component`}
                                                                 render={({ field: propField }) => (
                                                                     <FormItem>
@@ -687,7 +687,7 @@ export function BOMFormDialog({
                                                     </TableCell>
                                                     <TableCell>
                                                         <FormField
-                                                            control={form.control}
+                                                            control={form.control as any}
                                                             name={`lines.${index}.quantity`}
                                                             render={({ field }) => (
                                                                 <FormItem>
@@ -701,7 +701,7 @@ export function BOMFormDialog({
                                                     </TableCell>
                                                     <TableCell>
                                                         <FormField
-                                                            control={form.control}
+                                                            control={form.control as any}
                                                             name={`lines.${index}.uom`}
                                                             render={({ field }) => {
                                                                 const quantity = Number(form.watch(`lines.${index}.quantity`)) || 1;
@@ -834,7 +834,7 @@ export function BOMFormDialog({
                                                 <TableRow key={field.id}>
                                                     <TableCell>
                                                         <FormField
-                                                            control={form.control}
+                                                            control={form.control as any}
                                                             name={`service_lines.${index}.component`}
                                                             render={({ field: propField }) => (
                                                                 <FormItem>
