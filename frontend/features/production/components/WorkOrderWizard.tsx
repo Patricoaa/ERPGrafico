@@ -79,7 +79,9 @@ import type {
     WorkOrderTask, 
     WorkOrderStage,
     ProductMinimal,
-    UoM
+    UoM,
+    ProductionAttachment,
+    ProductionComment
 } from "../types"
 
 
@@ -901,7 +903,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                     <span>•</span>
                                                                                     <span>Cant: {m.quantity_planned} {m.uom_name}</span>
                                                                                     <span>•</span>
-                                                                                    <span>{formatCurrency(parseFloat(m.unit_price) * 1.19)} (Bruto) c/u</span>
+                                                                                    <span>{formatCurrency(parseFloat(m.unit_price || "0") * 1.19)} (Bruto) c/u</span>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -909,7 +911,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                             <div className="text-right mr-2">
                                                                                 <p className="text-[10px] font-bold uppercase text-muted-foreground">Total Estimado</p>
                                                                                 <p className="text-sm font-bold text-primary">
-                                                                                    {formatCurrency(parseFloat(m.quantity_planned) * parseFloat(m.unit_price) * 1.19)}
+                                                                                    {formatCurrency(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price || "0") * 1.19)}
                                                                                 </p>
                                                                             </div>
                                                                             {isViewingCurrentStage && !m.purchase_order_number && (
@@ -966,7 +968,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                 </div>
                                                                                 <div className="w-full md:w-40 space-y-2">
                                                                                     <label className="text-xs font-bold uppercase">Unidad</label>
-                                                                                    <UoMSelector product={selectedProductObj} context="bom" value={newMaterialUoM} onChange={setNewMaterialUoM} uoms={uoms} />
+                                                                                    <UoMSelector product={selectedProductObj as any} context="bom" value={newMaterialUoM} onChange={setNewMaterialUoM} uoms={uoms} />
                                                                                 </div>
                                                                             </div>
 
@@ -1115,7 +1117,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         <span>•</span>
                                                                         <span>Cant: {m.quantity_planned} {m.uom_name}</span>
                                                                         <span>•</span>
-                                                                        <span>{formatCurrency(parseFloat(m.unit_price) * 1.19)} (Bruto) c/u</span>
+                                                                        <span>{formatCurrency(parseFloat(m.unit_price || "0") * 1.19)} (Bruto) c/u</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1123,7 +1125,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                 <div className="text-right mr-2">
                                                                     <p className="text-[10px] font-bold uppercase text-muted-foreground">Total Estimado</p>
                                                                     <p className="text-sm font-bold text-primary">
-                                                                        {formatCurrency(parseFloat(m.quantity_planned) * parseFloat(m.unit_price) * 1.19)}
+                                                                        {formatCurrency(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price || "0") * 1.19)}
                                                                     </p>
                                                                 </div>
                                                                 {isViewingCurrentStage && !m.purchase_order_number && (
@@ -1178,7 +1180,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                     <div className="w-full md:w-40 space-y-2">
                                                                         <label className="text-xs font-bold uppercase">Unidad</label>
                                                                         <UoMSelector
-                                                                            product={selectedProductObj}
+                                                                            product={selectedProductObj as any}
                                                                             context="bom"
                                                                             value={newMaterialUoM}
                                                                             onChange={setNewMaterialUoM}
@@ -1457,7 +1459,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             ))}
                                             {/* Rectification input form */}
                                             <RectificationStep
-                                                order={order}
+                                                order={order!}
                                                 onChange={(adjustments, producedQty) => {
                                                     setRectificationAdjustments(adjustments)
                                                     setRectificationProducedQty(producedQty)
@@ -1597,8 +1599,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         <td className="p-2 font-medium">{m.supplier_name}</td>
                                         <td className="p-2">{m.component_name}</td>
                                         <td className="p-2 text-right">{m.quantity_planned}</td>
-                                        <td className="p-2 text-right">{formatCurrency(parseFloat(m.unit_price) * 1.19)}</td>
-                                        <td className="p-2 text-right font-bold">{formatCurrency(parseFloat(m.quantity_planned) * parseFloat(m.unit_price) * 1.19)}</td>
+                                        <td className="p-2 text-right">{formatCurrency(parseFloat(m.unit_price || "0") * 1.19)}</td>
+                                        <td className="p-2 text-right font-bold">{formatCurrency(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price || "0") * 1.19)}</td>
                                     </tr>
                                 ))}
                             </tbody>

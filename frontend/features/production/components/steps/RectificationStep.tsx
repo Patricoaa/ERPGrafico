@@ -18,7 +18,7 @@ import {
     Scale
 } from "lucide-react"
 
-import type { WorkOrder, WorkOrderMaterial } from "../../types"
+import type { WorkOrder, WorkOrderMaterial } from "../../../types"
 
 interface MaterialAdjustment {
     material_id: number
@@ -88,7 +88,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
     }
 
     const hasMeaningfulChanges = materials.some((m: WorkOrderMaterial) => {
-        const diff = getDiff(parseFloat(m.quantity_planned), actualQuantities[m.id] ?? String(m.quantity_planned))
+        const diff = getDiff(Number(m.quantity_planned), actualQuantities[m.id] ?? String(m.quantity_planned))
         return diff !== null && diff !== 0
     }) || (isManualWithInventory && parseFloat(actualProducedQty) !== parseFloat(plannedProducedQty))
 
