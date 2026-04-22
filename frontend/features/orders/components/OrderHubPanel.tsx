@@ -178,7 +178,7 @@ export function OrderHubPanel({
             <ScrollArea className="flex-1 w-full">
                 <div className="px-4 pt-5 pb-4">
                     <OrderHubIntegrated
-                        data={hubData}
+                        data={hubData as any}
                         type={type}
                         onActionSuccess={() => { fetchOrderDetails(); onActionSuccess?.() }}
                         openDetails={openDetails}
