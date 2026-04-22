@@ -12,10 +12,8 @@ export function useNavigationHistory(initialType: TransactionType, initialId: nu
 
     // Reset when initial props change
     useEffect(() => {
-        requestAnimationFrame(() => {
-            setCurrent({ type: initialType, id: initialId })
-            setHistory([])
-        })
+        setCurrent({ type: initialType, id: initialId })
+        setHistory([])
     }, [initialType, initialId])
 
     const navigateTo = (type: TransactionType, id: number | string) => {
