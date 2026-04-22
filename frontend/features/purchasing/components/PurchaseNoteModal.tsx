@@ -295,7 +295,7 @@ export function PurchaseNoteModal({
                     {step < totalSteps ? (
                         <Button
                             onClick={handleNext}
-                            disabled={step === 1 && (isClosed || periodValidating || !documentNumber || !attachment || !isFolioValid)}
+                            disabled={step === 1 && (!isPeriodValid || !documentNumber || !attachment || !isFolioValid)}
                             className="w-40 h-12 font-bold bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all"
                         >
                             Siguiente
@@ -328,8 +328,8 @@ export function PurchaseNoteModal({
                     totalSteps={totalSteps}
                     orderNumber={orderNumber}
                     referenceText={orderNumber ? undefined : (orderDetails?.number ? `Sobre DOC-${orderDetails.number}` : `Sobre Documento #${invoiceId}`)}
-                    supplierName={orderDetails?.supplier_name}
-                    warehouseName={orderDetails?.warehouse_name}
+                    supplierName={(orderDetails as any)?.supplier_name}
+                    warehouseName={(orderDetails as any)?.warehouse_name}
                     noteType={noteType}
                     totals={{
                         net: amountNet,
@@ -354,13 +354,13 @@ export function PurchaseNoteModal({
                                         <Step1_GeneralInfo
                                             noteType={noteType}
                                             setNoteType={setNoteType}
-                                            documentNumber={reference}
-                                            setDocumentNumber={setReference}
+                                            documentNumber={documentNumber}
+                                            setDocumentNumber={setDocumentNumber}
                                             documentDate={documentDate}
                                             setDocumentDate={setDocumentDate}
                                             attachment={attachment}
                                             setAttachment={setAttachment}
-                                            contactId={orderDetails?.supplier}
+                                            contactId={typeof orderDetails?.supplier === 'object' ? (orderDetails?.supplier as any)?.id : orderDetails?.supplier as number | undefined}
                                             onValidityChange={(isValid) => setIsFolioValid(isValid)}
                                             onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
                                         />

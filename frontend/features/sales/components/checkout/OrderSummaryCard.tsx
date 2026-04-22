@@ -6,14 +6,14 @@ import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from "@/lib/pricing"
 
 import { SaleOrderLine } from "../../types"
-import { Partner } from "@/features/contacts/types"
+import { Contact } from "@/types/entities"
 
 interface OrderSummaryCardProps {
     orderLines: SaleOrderLine[]
     total: number
     totalDiscountAmount?: number
     dteType?: string
-    customer?: Partner
+    customer?: Contact
 }
 
 export function OrderSummaryCard({

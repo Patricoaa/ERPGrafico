@@ -32,7 +32,7 @@ export function Step2_Payment({ paymentData, setPaymentData, total, terminalId, 
                 terminalId={terminalId}
                 total={total}
                 paymentData={paymentData as PaymentData}
-                onPaymentDataChange={setPaymentData}
+                onPaymentDataChange={setPaymentData as any}
                 customerCreditBalance={customerCreditBalance}
                 labels={{
                     totalLabel: 'Total a Cobrar',
