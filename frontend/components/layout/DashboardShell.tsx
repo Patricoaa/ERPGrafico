@@ -27,19 +27,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const router = useRouter()
     const pathname = usePathname()
 
-    const [activeCategory, setActiveCategory] = useState<string | null>("dashboard")
+    const activeCategory = pathname.split('/')[1] || "dashboard"
     const [isInboxOpen, setIsInboxOpen] = useState(false)
 
     const { config } = useHeader()
     const { isHubOpen, hubConfig, closeHub, isHubTemporarilyHidden, isDocked, isHubEffectivelyOpen } = useHubPanel()
     const { isSubModalActive } = useGlobalModals()
-
-
-    useEffect(() => {
-        // Sync active category with URL
-        const path = pathname.split('/')[1] || "dashboard"
-        setActiveCategory(path)
-    }, [pathname])
 
 
     // Sync global data attributes for repelling fixed UI elements (like Sheets)

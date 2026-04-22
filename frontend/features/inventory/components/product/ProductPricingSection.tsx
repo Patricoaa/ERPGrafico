@@ -56,7 +56,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                     <div>
                         <p className="font-medium text-warning">Producto con Variantes</p>
                         <p className="text-sm text-warning mt-1">
-                            Los precios se asignan individualmente a cada variante desde la pestaña "Variantes".
+                            Los precios se asignan individualmente a cada variante desde la pestaña &quot;Variantes&quot;.
                         </p>
                     </div>
                 </div>

@@ -128,7 +128,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
                 </>
             ),
         }),
-    ], [deleteWarehouse])
+    ], [handleDelete])
 
     const selectedWarehouses = useMemo(() => {
         // Use indexes from the selection state to filter the warehouses array

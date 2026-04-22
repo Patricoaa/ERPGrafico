@@ -20,6 +20,7 @@ import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 import { getErrorMessage } from "@/lib/errors"
 import { Product, ProductAttributeValue } from "@/types/entities"
+import { Badge } from "@/components/ui/badge"
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditForm } from "./BulkVariantEditForm"
@@ -468,7 +469,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                 <>
                                                     No se han generado variantes para este producto.
                                                     <br />
-                                                    <span className="text-xs mt-1 block">Utilice el botón "Generador" arriba a la derecha.</span>
+                                                    <span className="text-xs mt-1 block">Utilice el botón &quot;Generador&quot; arriba a la derecha.</span>
                                                 </>
                                             )}
                                         </TableCell>

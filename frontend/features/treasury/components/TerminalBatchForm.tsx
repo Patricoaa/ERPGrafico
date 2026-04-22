@@ -47,15 +47,10 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     const [grossAmount, setGrossAmount] = useState<string>("0")
     const [commissionNet, setCommissionNet] = useState<string>("0")
     const [commissionTax, setCommissionTax] = useState<string>("0")
-    const [netDeposit, setNetDeposit] = useState<string>("0")
     const [reference, setReference] = useState("")
     const [selectedMovements, setSelectedMovements] = useState<any[]>([])
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
     const [openSelection, setOpenSelection] = useState(false)
-
-    // Validation State
-    const [isValid, setIsValid] = useState(true)
-    const [diff, setDiff] = useState(0)
 
     // Load providers and deposit methods
     useEffect(() => {
@@ -78,16 +73,14 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
         return () => { isMounted = false }
     }, [])
 
-    // Real-time validation
-    useEffect(() => {
-        const gross = parseFloat(grossAmount) || 0
-        const cNet = parseFloat(commissionNet) || 0
-        const cTax = parseFloat(commissionTax) || 0
+    // Derived values for real-time validation
+    const gross = parseFloat(grossAmount) || 0
+    const cNet = parseFloat(commissionNet) || 0
+    const cTax = parseFloat(commissionTax) || 0
 
-        const calculatedNet = Math.round(gross - (cNet + cTax))
-        setNetDeposit(calculatedNet.toString())
-        setIsValid(gross > 0 && calculatedNet >= 0)
-    }, [grossAmount, commissionNet, commissionTax])
+    const calculatedNet = Math.round(gross - (cNet + cTax))
+    const netDeposit = calculatedNet.toString()
+    const isValid = gross > 0 && calculatedNet >= 0
 
 
     const handleAutoCalculate = async () => {
@@ -361,7 +354,9 @@ function SaleSelectionModal({ open, onOpenChange, providerId, date, onConfirm, i
     useEffect(() => {
         let isMounted = true
         if (open && providerId && date) {
-            setLoading(true)
+            requestAnimationFrame(() => {
+                if (isMounted) setLoading(true)
+            })
             const dateStr = format(date, "yyyy-MM-dd")
             api.get(`/treasury/movements/`, {
                 params: {

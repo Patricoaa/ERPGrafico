@@ -32,14 +32,14 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
         }
     }, [externalOpen])
 
-    useEffect(() => {
-        loadData()
-    }, [])
-
     const loadData = async () => {
         const data = await fetchStatements()
         setStatements(data)
     }
+
+    useEffect(() => {
+        loadData()
+    }, [])
 
     const handleImportSuccess = () => {
         loadData()

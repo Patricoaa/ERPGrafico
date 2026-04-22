@@ -448,7 +448,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                             <CardDescription className="text-xs">
                                 Si se selecciona un <strong>Usuario</strong>, la tarea se asignará directamente a él.
                                 <br />
-                                Si se selecciona un <strong>Grupo</strong>, la tarea quedará en un "Pool" visible para todos los miembros de ese grupo, y cualquiera podrá tomarla.
+                                Si se selecciona un <strong>Grupo</strong>, la tarea quedará en un &quot;Pool&quot; visible para todos los miembros de ese grupo, y cualquiera podrá tomarla.
                             </CardDescription>
                         </CardHeader>
                     </Card>

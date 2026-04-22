@@ -266,7 +266,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                     </div>
 
                     <p className="text-[10px] text-muted-foreground leading-relaxed italic">
-                        Tip: Para eliminar esta diferencia, accede a "Configurar Mapeo" y asigna estas cuentas a una de las categorías 
+                        Tip: Para eliminar esta diferencia, accede a &quot;Configurar Mapeo&quot; y asigna estas cuentas a una de las categorías 
                         (Operación, Inversión o Financiamiento) según corresponda.
                     </p>
                 </div>

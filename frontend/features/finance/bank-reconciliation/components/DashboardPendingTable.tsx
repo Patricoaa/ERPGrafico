@@ -88,7 +88,7 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
                 />
             )
         })
-    ], [])
+    ], [router])
 
     return (
         <div className="col-span-4 lg:col-span-3">

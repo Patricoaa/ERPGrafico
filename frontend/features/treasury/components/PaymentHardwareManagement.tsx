@@ -57,6 +57,26 @@ export function PaymentHardwareManagement({
         }
     }, [externalActiveTab])
 
+    const { providers, isLoading: loadingProviders, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
+    const { devices, isLoading: loadingDevices, refetch: refetchDevices, deleteDevice } = useTerminalDevices()
+
+    const [providerDialogOpen, setProviderDialogOpen] = useState(false)
+    const [editingProvider, setEditingProvider] = useState<PaymentTerminalProvider | null>(null)
+
+    const [deviceDialogOpen, setDeviceDialogOpen] = useState(false)
+    const [editingDevice, setEditingDevice] = useState<PaymentTerminalDevice | null>(null)
+
+    const handleCreateProvider = () => {
+        setEditingProvider(null)
+        setProviderDialogOpen(true)
+    }
+
+    const handleCreateDevice = () => {
+        setEditingDevice(null)
+        setDeviceDialogOpen(true)
+        onExternalDeviceOpenChange?.(false)
+    }
+
     useEffect(() => {
         if (externalDeviceOpen) {
             handleCreateDevice()
@@ -69,36 +89,12 @@ export function PaymentHardwareManagement({
         }
     }, [externalProviderOpen])
 
-    const { providers, isLoading: loadingProviders, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
-    const { devices, isLoading: loadingDevices, refetch: refetchDevices, deleteDevice } = useTerminalDevices()
-
-    const [providerDialogOpen, setProviderDialogOpen] = useState(false)
-    const [editingProvider, setEditingProvider] = useState<PaymentTerminalProvider | null>(null)
-
-    const [deviceDialogOpen, setDeviceDialogOpen] = useState(false)
-    const [editingDevice, setEditingDevice] = useState<PaymentTerminalDevice | null>(null)
-
-    useEffect(() => {
-        if (externalDeviceOpen) {
-            handleCreateDevice()
-        }
-    }, [externalDeviceOpen])
-
-    const handleCreateProvider = () => {
-        setEditingProvider(null)
-        setProviderDialogOpen(true)
-    }
-
     const handleEditProvider = (provider: PaymentTerminalProvider) => {
         setEditingProvider(provider)
         setProviderDialogOpen(true)
     }
 
-    const handleCreateDevice = () => {
-        setEditingDevice(null)
-        setDeviceDialogOpen(true)
-        onExternalDeviceOpenChange?.(false)
-    }
+
 
     const handleEditDevice = (device: PaymentTerminalDevice) => {
         setEditingDevice(device)
