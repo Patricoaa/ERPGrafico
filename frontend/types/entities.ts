@@ -157,6 +157,8 @@ export interface Contact {
     code?: string
     is_default_customer?: boolean
     is_default_vendor?: boolean
+    credit_blocked?: boolean
+    credit_available?: string | number
 }
 
 // ─── Treasury Account ────────────────────────────────────

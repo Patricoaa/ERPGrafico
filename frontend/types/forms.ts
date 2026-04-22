@@ -134,7 +134,7 @@ export interface ProductInitialData extends Partial<Omit<Product, 'boms' | 'prod
     payment_day?: number
     payment_interval_days?: number
     default_invoice_type?: string
-    subscription_supplier?: number | { id: number }
+    subscription_supplier?: number | { id: number; name: string }
     subscription_amount?: number
     subscription_start_date?: string
     auto_activate_subscription?: boolean

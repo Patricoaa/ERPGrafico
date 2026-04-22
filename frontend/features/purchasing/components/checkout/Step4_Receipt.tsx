@@ -99,8 +99,8 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
     }, [orderLines, warehouses, receiptData.warehouseId, setReceiptData, receiptData])
 
     // Detect if order contains services
-    const hasServices = orderLines.some(line => ['SERVICE', 'SUBSCRIPTION'].includes(line.product_type))
-    const allServices = orderLines.every(line => ['SERVICE', 'SUBSCRIPTION'].includes(line.product_type))
+    const hasServices = orderLines.some(line => line.product_type && ['SERVICE', 'SUBSCRIPTION'].includes(line.product_type))
+    const allServices = orderLines.length > 0 && orderLines.every(line => line.product_type && ['SERVICE', 'SUBSCRIPTION'].includes(line.product_type))
     const hasSubscriptions = orderLines.some(line => line.product_type === 'SUBSCRIPTION')
     const receiptLabel = allServices ? 'Confirmación' : (hasServices ? 'Recepción/Confirmación' : 'Recepción')
     const itemLabel = allServices ? 'servicios' : (hasServices ? 'productos/servicios' : 'mercancía')
@@ -137,9 +137,9 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                 partialQuantities: orderLines.map(line => ({
                     lineId: line.id,
                     productId: line.product,
-                    productName: line.name,
-                    orderedQty: line.quantity || line.qty,
-                    receivedQty: line.quantity || line.qty,
+                    productName: line.name || line.product_name,
+                    orderedQty: line.quantity || line.qty || 0,
+                    receivedQty: line.quantity || line.qty || 0,
                     uom: line.uom
                 }))
             })
@@ -154,7 +154,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             const defaultDates: Record<string, string> = {}
             orderLines.forEach(line => {
                 if (line.product_type === 'SUBSCRIPTION') {
-                    const productId = line.product || line.id
+                    const productId = (line.product || line.id)?.toString()
                     if (productId) {
                         defaultDates[productId] = dateString
                     }
@@ -224,7 +224,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                 </Label>
                 <RadioGroup
                     value={receiptData.type}
-                    onValueChange={(val) => setReceiptData({ ...receiptData, type: val })}
+                    onValueChange={(val) => setReceiptData({ ...receiptData, type: val as any })}
                     className="space-y-3"
                 >
                     {receiptTypes.map((type) => (
@@ -263,7 +263,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                             </TableHeader>
                             <TableBody>
                                 {orderLines.map((line, idx) => {
-                                    const pendingQty = line.quantity || line.qty;
+                                    const pendingQty = line.quantity || line.qty || 0;
                                     const currentPartial = (receiptData.partialQuantities || []).find((pq: any) => (line.id && pq.lineId === line.id) || (line.product && pq.productId === line.product));
                                     const currentReceivedQty = currentPartial?.receivedQty ?? 0;
                                     const currentUom = currentPartial?.uom || line.uom;
@@ -302,7 +302,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                 </div>
             )}
 
-            {hasSubscriptions && receiptData.type !== 'DEFERRED' && (
+            {hasSubscriptions && (receiptData.type as string) !== 'DEFERRED' && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
                     <Label className="text-sm font-semibold">Fechas de Inicio de Suscripciones</Label>
                     <div className="rounded-md border">
@@ -315,7 +315,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                             </TableHeader>
                             <TableBody>
                                 {orderLines.filter(line => line.product_type === 'SUBSCRIPTION').map((line, idx) => {
-                                    const productId = line.product || line.id
+                                    const productId = (line.product || line.id)?.toString() || idx.toString()
                                     const currentDate = receiptData.subscriptionDates?.[productId] || dateString || ''
 
                                     return (
@@ -338,7 +338,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                 </div>
             )}
 
-            {receiptData.type !== 'DEFERRED' && (
+            {(receiptData.type as string) !== 'DEFERRED' && (
                 <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-dashed animate-in fade-in">
                     <div className="space-y-2">
                         <Label htmlFor="delivery-ref" className="text-xs font-bold uppercase">
@@ -368,7 +368,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                 </div>
             )}
 
-            {receiptData.type === 'DEFERRED' && (
+            {(receiptData.type as string) === 'DEFERRED' && (
                 <div className="flex items-start gap-3 p-4 bg-warning/10 border border-warning/20 rounded-lg text-warning dark:text-warning/50">
                     <div className="p-2 rounded-lg bg-background border border-warning/20">
                         <FileText className="h-5 w-5" />

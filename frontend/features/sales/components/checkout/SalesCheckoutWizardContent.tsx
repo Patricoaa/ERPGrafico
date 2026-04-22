@@ -924,7 +924,7 @@ export function SalesCheckoutWizardContent({
                         total={currentTotal}
                         totalDiscountAmount={totalDiscountAmount}
                         dteType={dteData.type}
-                        customer={selectedCustomer}
+                        customer={selectedCustomer || undefined}
                     />
                 </div>
             )}
