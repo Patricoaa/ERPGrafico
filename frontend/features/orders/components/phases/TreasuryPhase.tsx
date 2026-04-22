@@ -151,7 +151,7 @@ export function TreasuryPhase({
                                 icon: Hash,
                                 title: 'Ingresar N° Transacción',
                                 color: 'text-warning hover:bg-warning/10',
-                                onClick: () => p.id && setTrForm({ open: true, id: p.id, initialValue: "" })
+                                onClick: () => p.id && setTrForm({ open: true, id: Number(p.id), initialValue: "" })
                             }] : []),
                             ...((p.status !== 'CANCELLED') ? [{
                                 icon: Trash2,
