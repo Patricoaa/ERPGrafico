@@ -189,14 +189,19 @@ export interface ProductMinimal {
     variant_display_name?: string
     product_type?: string
     uom?: UoM | number | string
+    purchase_uom?: number | string
     uom_name?: string
     uom_category?: number
+    last_purchase_price?: string | number
     cost_price?: number | string
     has_variants?: boolean
     track_inventory?: boolean
     requires_bom_validation?: boolean
     requires_advanced_manufacturing?: boolean
     mfg_auto_finalize?: boolean
+    receiving_warehouse?: number | string | { id: number; name: string }
+    preferred_supplier?: number | string | { id: number; name: string }
+    preferred_supplier_name?: string
     attribute_values_data?: {
         id: number
         attribute: string

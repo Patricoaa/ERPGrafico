@@ -18,7 +18,7 @@ import {
     Scale
 } from "lucide-react"
 
-import type { WorkOrder, WorkOrderMaterial } from "../../../types"
+import type { WorkOrder, WorkOrderMaterial } from "../../types"
 
 interface MaterialAdjustment {
     material_id: number

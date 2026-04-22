@@ -120,7 +120,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 // Contact
                 if (mfgData.contact_id) {
                     setSelectedContact({
-                        id: mfgData.contact_id,
+                        id: Number(mfgData.contact_id),
                         name: mfgData.contact_name || "Contacto",
                         tax_id: mfgData.contact_tax_id || ""
                     })
@@ -184,7 +184,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     const watchedSaleLineId = form.watch('sale_line')
     useEffect(() => {
         if (watchedSaleLineId && !initialData?.id) {
-            const selectedLine = saleLines.find(l => l.id.toString() === watchedSaleLineId)
+            const selectedLine = saleLines.find(l => l.id?.toString() === watchedSaleLineId)
             if (selectedLine) {
                 form.setValue('description', `OT: ${selectedLine.product_name || selectedLine.description}`)
                 form.setValue('product_description', selectedLine.product_name || selectedLine.description)
@@ -201,7 +201,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         if (product) {
             form.setValue('product_description', product.name)
             form.setValue('description', `OT: ${product.name}`)
-            if (product.uom?.id) {
+            if (product.uom && typeof product.uom === 'object' && 'id' in product.uom) {
                 form.setValue('uom_id', product.uom.id.toString())
             }
         }
@@ -306,9 +306,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         if (!initialData) return null
         return (
             <div className="flex items-center gap-2">
-                <StatusBadge status={initialData.status} />
+                <StatusBadge status={initialData.status || "DRAFT"} />
                 {initialData.current_stage && (
-                    <StatusBadge status={initialData.status} label={translateStatus(initialData.current_stage)} className="bg-primary/5 text-primary border-primary/10" />
+                    <StatusBadge status={initialData.status || "DRAFT"} label={translateStatus(initialData.current_stage)} className="bg-primary/5 text-primary border-primary/10" />
                 )}
             </div>
         )
