@@ -376,9 +376,9 @@ export const ActionCategory = forwardRef(({
                 <DocumentCompletionModal
                     open={true}
                     onOpenChange={closeModal}
-                    invoiceId={(tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id) as number}
+                    invoiceId={(tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id) as number || 0}
                     invoiceType={(tempInvoiceId ? "FACTURA_ELECTRONICA" : (resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number) as any)?.dte_type as string) || "FACTURA_ELECTRONICA"}
-                    contactId={(((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? order?.customer_id : order?.supplier_id)) as number}
+                    contactId={(((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? (order as any).customer_id : (order as any).supplier_id)) as number || 0}
                     isPurchase={isPurchase}
                     onComplete={async (invoiceId, formData) => {
                         if (!invoiceId) {
@@ -458,7 +458,7 @@ export const ActionCategory = forwardRef(({
                     open={true}
                     onOpenChange={closeModal}
                     orderId={order?.id}
-                    invoiceId={resolvedInvoices?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.id as number}
+                    invoiceId={(resolvedInvoices?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.id as number) || 0}
                     initialType={activeModal === 'create-debit-note' ? 'NOTA_DEBITO' : 'NOTA_CREDITO'}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
@@ -469,7 +469,7 @@ export const ActionCategory = forwardRef(({
                     open={true}
                     onOpenChange={closeModal}
                     type={viewConfig.type as any}
-                    id={viewConfig.id}
+                    id={viewConfig.id as any}
                 />
             )}
 
@@ -496,7 +496,7 @@ export const ActionCategory = forwardRef(({
                         sale_line: (order.lines || order.items || []).find((l: OrderLine) =>
                             l.product_type === 'MANUFACTURABLE' &&
                             l.requires_advanced_manufacturing &&
-                            !l.work_order_summary
+                            !((l as any).work_order_summary)
                         )?.id?.toString()
                     }}
                     onSuccess={() => {

@@ -96,7 +96,7 @@ export function ProductionPhase({
                     type: 'Orden de Trabajo',
                     number: ot.display_id || `OT-${ot.code || ot.id}`,
                     icon: ClipboardList,
-                    id: ot.id,
+                    id: Number(ot.id),
                     docType: 'work_order',
                     status: ot.status,
                     progressValue: ot.production_progress || 0,
@@ -104,11 +104,11 @@ export function ProductionPhase({
                         // Only show OT annulment if invoice is DRAFT and stage is pre-impresion or earlier
                         ...((ot.status !== 'CANCELLED' &&
                             invoices.some((inv: Order) => inv.status === 'DRAFT') &&
-                            ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(ot.current_stage)) ? [{
+                            ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(ot.current_stage as string)) ? [{
                                 icon: Ban,
                                 title: 'Anular OT',
                                 color: 'text-warning hover:bg-warning/10',
-                                onClick: () => handleAnnulWorkOrder(ot.id)
+                                onClick: () => handleAnnulWorkOrder(Number(ot.id))
                             }] : [])
                     ]
                 })) as PhaseDocument[] || []}

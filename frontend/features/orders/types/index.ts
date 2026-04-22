@@ -45,11 +45,14 @@ export interface OrderLine {
     quantity: number | string
     quantity_received?: number | string
     quantity_delivered?: number | string
+    received_quantity?: number | string
+    delivered_quantity?: number | string
     price_unit: number | string
     subtotal: number | string
     is_manufacturable?: boolean
     requires_advanced_manufacturing?: boolean
     work_order_summary?: WorkOrderSummary
+    [key: string]: unknown
 }
 
 export interface Payment {
@@ -61,6 +64,10 @@ export interface Payment {
     amount: number | string
     date?: string
     status?: string
+    payment_method?: string
+    display_id?: string
+    reference?: string
+    [key: string]: unknown
 }
 
 export interface WorkOrder {
@@ -70,6 +77,9 @@ export interface WorkOrder {
     production_progress?: number
     product_name?: string
     quantity?: number | string
+    code?: string
+    current_stage?: string
+    [key: string]: unknown
 }
 
 export interface RelatedDocuments {
@@ -92,6 +102,8 @@ export interface PhaseDocument {
     status?: string
     isWarning?: boolean
     disabled?: boolean
+    icon?: LucideIcon
+    dte_type?: string
     actions?: {
         icon: LucideIcon
         title: string
@@ -139,4 +151,8 @@ export interface Order {
     pos_session?: number | string
     balance?: number | string
     folio?: string
+    production_progress?: number
+    is_cancellable?: boolean
+    warehouse_name?: string
+    [key: string]: unknown
 }

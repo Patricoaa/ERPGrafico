@@ -19,6 +19,7 @@ import {
     ArrowLeft
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import type { TransactionData } from "@/types/transactions"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { formatPlainDate } from "@/lib/utils"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
@@ -193,7 +194,7 @@ export function OrderHubPanel({
             <TransactionViewModal
                 open={detailsModal.open}
                 onOpenChange={(open) => setDetailsModal(prev => ({ ...prev, open }))}
-                type={detailsModal.type}
+                type={detailsModal.type as any}
                 id={Number(detailsModal.id)}
             />
             </div>
