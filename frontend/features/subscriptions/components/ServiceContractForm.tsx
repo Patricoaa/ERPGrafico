@@ -377,7 +377,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                     </div>
 
                 </div>
-                <ActionSlideButton type="submit" size="lg">{initialData ? 'Actualizar Contrato' : 'Crear Contrato'}</ActionSlideButton>
+                <ActionSlideButton type="submit">{initialData ? 'Actualizar Contrato' : 'Crear Contrato'}</ActionSlideButton>
             </form>
         </Form>
     )

@@ -47,6 +47,7 @@ export interface TreasuryAccount {
     bank?: number | null
     bank_name?: string
     account_number?: string | null
+    identifier?: string
 }
 
 export interface TreasuryAccountCreatePayload {
@@ -103,6 +104,7 @@ export interface PaymentTerminalDevice {
     serial_number: string
     model?: string
     status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE'
+    is_active: boolean
     supported_payment_methods?: number[]
 }
 

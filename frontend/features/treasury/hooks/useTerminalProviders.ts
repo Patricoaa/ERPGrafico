@@ -3,6 +3,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import type { PaymentTerminalProvider, PaymentTerminalDevice } from "../types"
+export type { PaymentTerminalProvider, PaymentTerminalDevice }
 
 /**
  * Hook for managing Payment Terminal Providers
