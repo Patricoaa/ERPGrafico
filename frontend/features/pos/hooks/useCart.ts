@@ -83,8 +83,8 @@ export function useCart() {
         } catch (error) {
             console.error("Error fetching price:", error)
             return {
-                net: parseFloat(product.sale_price || "0"),
-                gross: parseFloat(product.sale_price_gross || "0")
+                net: parseFloat(String(product.sale_price || "0")),
+                gross: parseFloat(String(product.sale_price_gross || "0"))
             }
         }
     }, [])
@@ -149,6 +149,8 @@ export function useCart() {
                 defaultUomName,
                 prices.net,
                 prices.gross,
+                0,
+                0,
                 manufacturingData
             )
             addItem(newItem)

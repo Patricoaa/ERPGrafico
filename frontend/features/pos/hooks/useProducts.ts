@@ -37,7 +37,7 @@ export function useProducts() {
             active: true, 
             can_be_sold: true,
             fields: 'id,name,sale_price,sale_price_gross,image,uom_name,internal_code,barcode,product_type,track_inventory,requires_advanced_manufacturing,category,uom,available_uoms,is_favorite'
-        }),
+        }) as unknown as Promise<Product[]>,
         staleTime: 1000 * 60 * 5, 
     })
 
