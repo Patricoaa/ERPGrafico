@@ -50,7 +50,7 @@ export function NoteCheckoutWizard({
         document_number: '',
         document_date: '',
         is_pending: false,
-        attachment: null
+        attachment: null as File | null
     })
     const [paymentData, setPaymentData] = useState<Record<string, unknown>>({
         method: '', // Blank means "Credit" if not selected? User wants implicit Credit.
@@ -340,7 +340,7 @@ export function NoteCheckoutWizard({
                 return (
                     <Step2_Logistics
                         isCreditNote={initialType === 'NOTA_CREDITO'}
-                        data={logisticsData}
+                        data={logisticsData as Record<string, unknown>}
                         setData={setLogisticsData}
                         selectedItems={selectedItems}
                     />
@@ -473,8 +473,8 @@ export function NoteCheckoutWizard({
                         requiresLogistics={requiresLogistics}
                         hasManufacturing={hasManufacturing}
                         itemsCount={selectedItems.length}
-                        dteNumber={registrationData.document_number}
-                        paymentData={paymentData}
+                        dteNumber={registrationData.document_number as string | undefined}
+                        paymentData={paymentData as { method: string; amount: number }}
                     />
                 )}
 

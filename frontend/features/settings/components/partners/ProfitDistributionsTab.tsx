@@ -294,7 +294,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
                 <MassPaymentModal
                     open={state.isMassPaymentOpen}
                     onOpenChange={(v) => setState(prev => ({ ...prev, isMassPaymentOpen: v }))}
-                    resolution={state.selectedResolution}
+                    resolution={state.selectedResolution!}
                     onSuccess={fetchDistributions}
                 />
             )}
@@ -303,7 +303,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
             {state.viewingDist && (
                 <TransactionViewModal
                     open={!!state.viewingDist}
-                    onOpenChange={() => setState(prev => ({ ...prev, viewingDist: null }))}
+                    onOpenChange={() => setState(prev => ({ ...prev, viewingDist: undefined }))}
                     type="profit_distribution"
                     id={state.viewingDist.id}
                 />

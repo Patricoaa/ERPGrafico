@@ -242,7 +242,6 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
             onComplete={handleExecute}
             onClose={() => onOpenChange(false)}
             isCompleting={loading}
-            icon={<ArrowRightLeft className="w-5 h-5" />}
         />
     )
 }

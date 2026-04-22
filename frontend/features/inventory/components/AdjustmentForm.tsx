@@ -45,18 +45,6 @@ import { cn } from "@/lib/utils"
 import { validateAccountingPeriod } from "@/lib/actions/accounting-actions"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
-interface Warehouse {
-    id: number
-    name: string
-}
-
-interface UoM {
-    id: number
-    name: string
-    category: number
-    ratio: number
-    active: boolean
-}
 
 const adjustmentSchema = z.object({
     product_id: z.string().min(1, "Seleccione un producto"),
@@ -95,7 +83,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
     const [isLoading, setIsLoading] = useState(false)
     const [productDetails, setProductDetails] = useState<Product | null>(null)
     const [partners, setPartners] = useState<{ id: number, name: string }[]>([])
-    const [periodStatus, setPeriodStatus] = useState<{ is_closed: boolean; period_name?: string } | null>(null)
+    const [periodStatus, setPeriodStatus] = useState<{ is_closed: boolean; period_name?: string; date?: string; error?: string } | null>(null)
 
     const form = useForm<z.infer<typeof adjustmentSchema>>({
         resolver: zodResolver(adjustmentSchema),

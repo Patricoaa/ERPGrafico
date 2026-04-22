@@ -177,6 +177,7 @@ interface CategoryFormProps {
 }
 
 export function CategoryForm({
+    auditSidebar,
     onSuccess,
     initialData,
     open: openProp,

@@ -34,7 +34,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
     const [accounts, setAccounts] = useState<Account[]>([])
 
     const form = useForm<ServiceContractFormValues>({
-        resolver: zodResolver(serviceContractSchema),
+        resolver: zodResolver(serviceContractSchema) as any,
         defaultValues: {
             name: initialData?.name || "",
             description: initialData?.notes || initialData?.description || "",

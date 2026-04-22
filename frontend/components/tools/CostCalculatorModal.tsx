@@ -289,7 +289,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                     <div className="aspect-square bg-muted/50 flex items-center justify-center relative">
                                                         {product.image ? (
                                                             <img
-                                                                src={resolveMediaUrl(product.image as any)}
+                                                                src={resolveMediaUrl(product.image) ?? undefined}
                                                                 alt={product.name}
                                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                                                             />
@@ -377,7 +377,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                 <div className="col-span-6 flex items-center gap-3 min-w-0">
                                                     <div className="w-8 h-8 rounded-sm bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border">
                                                         {item.product.image ? (
-                                                            <img src={resolveMediaUrl(item.product.image as any)} className="w-full h-full object-cover" />
+                                                            <img src={resolveMediaUrl(item.product.image) ?? undefined} className="w-full h-full object-cover" />
                                                         ) : (
                                                             <DynamicIcon 
                                                                 name={(typeof item.product.category === 'object' ? item.product.category?.icon : categories.find((c: any) => c.id === item.product.category)?.icon) || "Package"} 

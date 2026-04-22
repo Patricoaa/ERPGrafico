@@ -51,13 +51,19 @@ const itemSchema = z.object({
 })
 type ItemFormValues = z.infer<typeof itemSchema>
 
+interface EmployeeBasic {
+    contact_detail?: { name?: string } | null
+    position?: string | null
+    department?: string | null
+}
+
 interface PayrollDetailContentProps {
     payrollId: number
     onClose?: () => void
     onUpdate?: () => void
     isSheet?: boolean
     viewMode?: 'admin' | 'employee'
-    employee?: unknown
+    employee?: EmployeeBasic
 }
 
 export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = false, viewMode = 'admin', employee }: PayrollDetailContentProps) {
