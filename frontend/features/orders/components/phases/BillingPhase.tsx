@@ -24,6 +24,9 @@ interface BillingPhaseProps {
     // Accordion props
     collapsible?: boolean
     isOpen?: boolean
+    isWarning?: boolean
+    disabled?: boolean
+    icon?: LucideIcon
     onOpenChange?: (open: boolean) => void
 }
 
@@ -110,7 +113,7 @@ export function BillingPhase({
             <PhaseCard
                 title="Facturación"
                 icon={FileText}
-                variant={isNoteMode ? noteStatuses.billing : (billingIsComplete ? 'success' : (invoices.length > 0 ? 'active' : 'neutral'))}
+                variant={(isNoteMode ? noteStatuses.billing : (billingIsComplete ? 'success' : (invoices.length > 0 ? 'active' : 'neutral'))) as any}
                 documents={[
                     ...(isNoteMode ? [{
                         type: activeDoc.dte_type_display || 'Nota',
@@ -124,11 +127,11 @@ export function BillingPhase({
                         id: activeDoc.id,
                         docType: 'invoice',
                         status: activeDoc.status,
-                        isWarning: true, // Highlights the row
-                        actions: [] // Removed redundant GitBranch icon
+                        isWarning: true,
+                        actions: []
                     }] : []),
                     ...invoices
-                        .filter((inv: Order) => !isNoteMode || inv.id !== activeDoc.id) // Avoid double entry if already in activeDoc
+                        .filter((inv: Order) => !isNoteMode || inv.id !== activeDoc.id)
                         .map((inv: Order) => ({
                             type: inv.dte_type_display || 'Documento',
                             number: inv.display_id || formatDocumentId(
@@ -140,7 +143,7 @@ export function BillingPhase({
                             ),
                             icon: FileText,
                             color: (inv.dte_type === 'FACTURA_EXENTA' || inv.dte_type === 'BOLETA_EXENTA') ? 'text-warning' : 'text-primary',
-                            id: inv.id,
+                            id: Number(inv.id),
                             docType: 'invoice',
                             status: inv.status,
                             actions: [
@@ -154,7 +157,7 @@ export function BillingPhase({
                                     icon: X,
                                     title: 'Anular Documento',
                                     color: 'text-warning hover:bg-warning/10',
-                                    onClick: () => handleAnnulDocument(inv.id)
+                                    onClick: () => handleAnnulDocument(Number(inv.id))
                                 }] : [])
                             ]
                         })),

@@ -132,7 +132,7 @@ export function OriginPhase({
         <PhaseCard
             title="Origen"
             icon={TrendingUp}
-            variant={(isNoteMode ? noteStatuses.origin : (activeDoc.status !== 'DRAFT' ? 'success' : 'neutral')) as string}
+            variant={(isNoteMode ? noteStatuses.origin : (activeDoc.status === 'CANCELLED' ? 'destructive' : 'success')) as any}
             isComplete={isNoteMode && noteStatuses.origin === 'success'}
             documents={documents}
             onViewDetail={openDetails}
