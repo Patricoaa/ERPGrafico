@@ -1,3 +1,4 @@
+import { Order, WorkOrder } from "../../orders/types"
 export interface Contact {
     id: number
     code: string | null
@@ -50,14 +51,14 @@ export interface ContactPayload {
 export interface InsightsData {
     sales: {
         count: number
-        orders: Record<string, unknown>[]
+        orders: Order[]
     }
     purchases: {
         count: number
-        orders: Record<string, unknown>[]
+        orders: Order[]
     }
     work_orders: {
         count: number
-        orders: Record<string, unknown>[]
+        orders: WorkOrder[]
     }
 }

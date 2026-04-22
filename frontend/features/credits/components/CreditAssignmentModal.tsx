@@ -57,7 +57,7 @@ export default function CreditAssignmentModal({
     const { updateContact, isUpdating } = useContactMutations()
 
     const form = useForm<z.infer<typeof creditSchema>>({
-        resolver: zodResolver(creditSchema),
+        resolver: zodResolver(creditSchema) as any,
         defaultValues: {
             credit_limit: null,
         },
@@ -241,7 +241,7 @@ export default function CreditAssignmentModal({
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6">
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="credit_limit"
                                     render={({ field }) => (
                                         <FormItem>

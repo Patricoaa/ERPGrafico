@@ -235,7 +235,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                     cx="50%"
                                     cy="50%"
                                     labelLine={false}
-                                    label={(props: { name: string; percent?: number }) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`}
+                                    label={((props: { name: string; percent?: number }) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`) as any}
                                     outerRadius={90}
                                     fill="var(--primary)"
                                     dataKey="value"
@@ -244,7 +244,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']} />
+                                <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']) as any} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
@@ -264,7 +264,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                     data={assetsDistribution}
                                     cx="50%"
                                     cy="50%"
-                                    label={(props: { name: string; percent?: number }) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`}
+                                    label={((props: { name: string; percent?: number }) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`) as any}
                                     innerRadius={60}
                                     outerRadius={90}
                                     fill="var(--accent)"
@@ -274,7 +274,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                         <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']} />
+                                <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']) as any} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
@@ -324,7 +324,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis />
-                                <Tooltip formatter={(value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']} />
+                                <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']) as any} />
                                 <Bar dataKey="value" fill={COLORS[3]} />
                             </BarChart>
                         </ResponsiveContainer>
