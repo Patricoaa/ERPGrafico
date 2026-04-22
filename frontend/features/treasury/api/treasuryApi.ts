@@ -7,6 +7,7 @@ import type {
     TreasuryAccountCreatePayload,
     TreasuryAccountUpdatePayload,
     PaymentMethod,
+    PaymentTerminalDevice
 } from '../types'
 
 /**

@@ -238,7 +238,6 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
             open={open}
             onOpenChange={onOpenChange}
             title="Movilizar Utilidades Retenidas"
-            description="Asigna utilidades históricas a dividendos o conviértelas en aportes de capital."
             steps={steps}
             onComplete={handleExecute}
             onClose={() => onOpenChange(false)}

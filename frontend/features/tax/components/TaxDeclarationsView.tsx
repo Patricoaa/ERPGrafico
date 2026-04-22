@@ -45,7 +45,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     const [isLoading, setIsLoading] = useState(true)
     const [isWizardOpen, setIsWizardOpen] = useState(false)
     const [isPaymentOpen, setIsPaymentOpen] = useState(false)
-    const [selectedPeriodId, setSelectedPeriodId] = useState<number | null>(null)
+    const [selectedPeriodId, setSelectedPeriodId] = useState<number | undefined>(undefined)
     const [selectedDeclaration, setSelectedDeclaration] = useState<TaxDeclaration | null>(null)
 
     const handleCloseModal = () => {
@@ -427,7 +427,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 rounded-lg bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
                                                 <span className="text-[10px] font-bold text-primary/60">{period.year}</span>
-                                                <span className="text-sm font-bold text-primary">{period.month_display.substring(0, 3).toUpperCase()}</span>
+                                                <span className="text-sm font-bold text-primary">{period.month_display?.substring(0, 3).toUpperCase() || ''}</span>
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
@@ -527,7 +527,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                 onSuccess={() => {
                     fetchPeriods()
                     setIsWizardOpen(false)
-                    setSelectedPeriodId(null)
+                    setSelectedPeriodId(undefined)
                 }}
                 existingPeriods={periods}
             />

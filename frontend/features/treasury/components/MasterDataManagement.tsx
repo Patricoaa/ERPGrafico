@@ -306,13 +306,13 @@ interface PaymentMethod {
     name: string
     method_type: string
     method_type_display: string
-    treasury_account: number
+    treasury_account: number | { id: number; name?: string }
     treasury_account_name: string
     is_active: boolean
     requires_reference: boolean
     allow_for_sales: boolean
     allow_for_purchases: boolean
-
+    is_terminal_integration?: boolean
 }
 
 interface PaymentMethodManagementProps {
@@ -537,7 +537,7 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: PaymentM
 
                 // Handle both ID and object cases for initialization
                 const acc = method?.treasury_account
-                setAccountId(acc ? (typeof acc === 'object' ? acc.id.toString() : acc.toString()) : null)
+                setAccountId(acc ? (typeof acc === 'object' ? (acc as any).id.toString() : acc.toString()) : null)
 
                 setRequiresRef(method?.requires_reference || false)
                 setAllowSales(method?.allow_for_sales ?? true)

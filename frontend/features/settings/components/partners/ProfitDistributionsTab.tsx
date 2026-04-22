@@ -46,8 +46,8 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
         loading: true,
         isFlowOpen: false,
         isMassPaymentOpen: false,
-        selectedResolution: null as ProfitDistribution | null,
-        viewingDist: null as ProfitDistribution | null
+        selectedResolution: undefined as ProfitDistribution | undefined,
+        viewingDist: undefined as ProfitDistribution | undefined
     })
 
     const isMounted = useRef(false)
@@ -84,7 +84,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
         if (initialFlowOpen) {
             setState(prev => ({
                 ...prev,
-                selectedResolution: null,
+                selectedResolution: undefined,
                 isFlowOpen: initialFlowOpen
             }))
         }
