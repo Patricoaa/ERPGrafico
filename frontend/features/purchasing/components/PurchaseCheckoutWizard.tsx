@@ -311,7 +311,7 @@ export function PurchaseCheckoutWizard({
 
             // Payment data
             if (paymentData.amount > 0) {
-                formData.append('payment_method', paymentData.method)
+                formData.append('payment_method', paymentData.method || "")
                 formData.append('amount', paymentData.amount.toString())
                 formData.append('payment_is_pending', (paymentData.isPending || false).toString())
                 if (paymentData.transactionNumber) formData.append('transaction_number', paymentData.transactionNumber)

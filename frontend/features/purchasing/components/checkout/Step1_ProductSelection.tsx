@@ -71,7 +71,7 @@ export function Step1_ProductSelection({
     const handleAddLine = () => {
         setOrderLines([
             ...orderLines,
-            { product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 }
+            { product: "", product_name: "", quantity: 1, uom: "", uom_name: "", unit_cost: 0, tax_rate: 19 }
         ])
     }
 
@@ -106,7 +106,7 @@ export function Step1_ProductSelection({
                 product: productId,
                 name: product.name,
                 // Removed: id: product.id, which was overwriting line.id
-                unit_cost: parseFloat(product.last_purchase_price) || 0,
+                unit_cost: parseFloat(String(product.last_purchase_price || 0)) || 0,
                 uom: (product.purchase_uom || product.uom)?.toString() || "",
                 uom_name: uoms.find(u => u.id.toString() === ((product.purchase_uom || product.uom)?.toString()))?.name,
                 product_type: product.product_type
@@ -253,7 +253,7 @@ export function Step1_ProductSelection({
                                 </TableCell>
                                 <TableCell>
                                     <UoMSelector
-                                        product={products.find(p => p.id.toString() === (line.product?.toString() || line.id?.toString())) || null}
+                                        product={(products.find(p => p.id.toString() === (line.product?.toString() || line.id?.toString())) || null) as any}
                                         context="purchase"
                                         value={line.uom?.toString() || ""}
                                         onChange={(val) => {

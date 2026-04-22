@@ -183,8 +183,8 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                 pqs[existingIdx] = { ...pqs[existingIdx], receivedQty: qty };
             } else {
                 pqs.push({ 
-                    lineId, 
-                    productId, 
+                    lineId: lineId || 0, 
+                    productId: productId || 0, 
                     receivedQty: qty, 
                     orderedQty: orderLines.find(l => (lineId && l.id === lineId) || (productId && l.product === productId))?.quantity || 0,
                     uom: orderLines.find(l => (lineId && l.id === lineId) || (productId && l.product === productId))?.uom as number | string
@@ -202,8 +202,8 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                 pqs[existingIdx] = { ...pqs[existingIdx], uom: uomId };
             } else {
                 pqs.push({ 
-                    lineId, 
-                    productId, 
+                    lineId: lineId || 0, 
+                    productId: productId || 0, 
                     receivedQty: 1, 
                     orderedQty: orderLines.find(l => (lineId && l.id === lineId) || (productId && l.product === productId))?.quantity || 0,
                     uom: uomId 

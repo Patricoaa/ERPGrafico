@@ -80,7 +80,7 @@ export function AccountForm({
             code: initialData?.code as string || "",
             name: initialData?.name as string || "",
             account_type: (initialData?.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE") || "ASSET",
-            parent: initialData?.parent as string || parentId || undefined,
+            parent: (typeof initialData?.parent === 'object' ? (initialData?.parent as any)?.id?.toString() : initialData?.parent?.toString()) || parentId || undefined,
         },
     })
 
@@ -94,14 +94,14 @@ export function AccountForm({
                     code: initialData.code as string,
                     name: initialData.name as string,
                     account_type: initialData.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE",
-                    parent: (initialData.parent as string) || undefined,
+                    parent: (typeof initialData.parent === 'object' ? (initialData.parent as any)?.id?.toString() : initialData.parent?.toString()) || undefined,
                 })
             } else {
                 form.reset({
                     code: "",
                     name: "",
                     account_type: "ASSET",
-                    parent: undefined,
+                    parent: parentId || undefined,
                 })
             }
         }

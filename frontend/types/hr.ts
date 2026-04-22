@@ -89,6 +89,7 @@ export interface Employee {
   salud_type_display: string
   isapre_amount_uf: string
   jornada_type?: string
+  jornada_type_display?: string
   jornada_hours?: string
   trabajo_pesado?: boolean
   trabajo_agricola?: boolean

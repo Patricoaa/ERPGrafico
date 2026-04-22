@@ -169,7 +169,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
              <div className="pt-4 border-t border-dashed border-primary/20 mt-4 space-y-4">
                  
                  <FormField<BulkEditValues>
-                  control={form.control}
+                  control={form.control as any}
                   name="apply_has_bom"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center space-x-2 space-y-0">
@@ -183,7 +183,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
 
                 {form.watch("apply_has_bom") && (
                     <FormField<BulkEditValues>
-                      control={form.control}
+                      control={form.control as any}
                       name="has_bom"
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 bg-white/50 animate-in fade-in duration-200">
@@ -205,7 +205,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                 )}
 
                 <FormField<BulkEditValues>
-                  control={form.control}
+                  control={form.control as any}
                   name="copy_bom_from"
                   render={({ field }) => (
                     <FormItem className="space-y-2 pt-2 border-t border-dashed border-primary/20">

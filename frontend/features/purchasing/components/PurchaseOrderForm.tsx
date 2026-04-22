@@ -264,7 +264,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                                     if (val) {
                                                                         const prod = products.find(p => p.id.toString() === val)
                                                                         if (prod) {
-                                                                            form.setValue(`lines.${index}.unit_cost`, parseFloat(prod.last_purchase_price) || 0)
+                                                                            form.setValue(`lines.${index}.unit_cost`, parseFloat(String(prod.last_purchase_price || 0)) || 0)
                                                                             form.setValue(`lines.${index}.uom`, (prod.purchase_uom || prod.uom)?.toString() || "")
                                                                         }
                                                                     }
@@ -300,7 +300,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
 
                                                         return (
                                                             <UoMSelector
-                                                                product={selectedProduct || null}
+                                                                product={(selectedProduct || null) as any}
                                                                 context="purchase"
                                                                 value={field.value || ""}
                                                                 onChange={field.onChange}

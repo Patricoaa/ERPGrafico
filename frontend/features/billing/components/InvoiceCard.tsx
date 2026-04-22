@@ -146,7 +146,7 @@ export function InvoiceCard({ item, type, onClick, onActionSuccess, className, i
                         {/* Associated Adjustments Links (for regular invoices) */}
                         {!isNote && item.adjustments && item.adjustments.length > 0 && (
                             <div className="flex items-center gap-1.5">
-                                {item.adjustments.map((adj: any) => (
+                                {item.adjustments?.map((adj: any) => (
                                     <Badge 
                                         key={adj.id}
                                         variant="outline" 
