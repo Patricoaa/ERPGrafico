@@ -310,8 +310,10 @@ export function POSClientView() {
         }
     }
 
-    const handleCheckoutComplete = async (resData: TransactionData) => {
-        setCompletedSaleData(resData)
+    const handleCheckoutComplete = async (resData: TransactionData | CheckoutResponse) => {
+        // Map CheckoutResponse to TransactionData if needed, or just cast if they overlap in usage
+        const transactionData = resData as TransactionData
+        setCompletedSaleData(transactionData)
         await releaseCurrentLock()
         setCurrentDraftId(null); setWizardState(null); clearCart()
         await fetchDrafts(); queryClient.invalidateQueries({ queryKey: ['sales'] })
@@ -517,12 +519,25 @@ export function POSClientView() {
                                 <SalesCheckoutWizardContent
                                     key={currentDraftId || 'checkout-new'}
                                     order={null}
-                                    orderLines={items as any}
+                                    orderLines={items.map(item => ({
+                                        product: item.id,
+                                        product_name: item.name,
+                                        description: item.name,
+                                        quantity: item.qty,
+                                        uom: item.uom || 0,
+                                        uom_name: item.uom_name,
+                                        unit_price: item.unit_price_gross,
+                                        unit_price_net: item.unit_price_net,
+                                        unit_price_gross: item.unit_price_gross,
+                                        tax_rate: (item as any).tax_rate || 19, // Use any briefly for dynamic prop or check Product type
+                                        discount_amount: item.discount_amount,
+                                        discount_percentage: item.discount_percentage,
+                                    })) as any} // Still need any here because SaleOrderLine has many required fields like description
                                     total={totals.total_gross}
                                     totalDiscountAmount={totalDiscountAmount}
-                                    onComplete={(data: any) => handleCheckoutComplete(data)}
+                                    onComplete={(data) => handleCheckoutComplete(data as any)}
                                     onCancel={() => setPosMode('SHOPPING')}
-                                    onSuspend={handleSuspendDraft}
+                                    onSuspend={(state) => handleSuspendDraft(state as any)}
                                     initialCustomerId={selectedCustomerId?.toString() || (wizardState?.isQuickSale ? defaultCustomerId?.toString() : undefined)}
                                     posSessionId={currentSession?.id}
                                     terminalId={currentSession?.terminal}
@@ -536,7 +551,7 @@ export function POSClientView() {
                                     initialIsWaitingApproval={wizardState?.isWaitingApproval}
                                     initialIsApproved={wizardState?.isApproved}
                                     initialDraftId={currentDraftId}
-                                    onStateChange={setWizardState as any}
+                                    onStateChange={(state) => setWizardState(state as any)}
                                     isInline
                                     isSessionHost={user?.id === currentSession?.user}
                                 />

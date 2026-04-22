@@ -161,6 +161,7 @@ export interface BOMLine {
     supplier?: string | number
     supplier_name?: string
     unit_price?: string
+    document_type?: string
     notes?: string
 }
 

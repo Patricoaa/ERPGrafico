@@ -70,7 +70,7 @@ interface LockInfo {
 
 interface DraftCartsListProps {
     posSessionId: number | null
-    onLoadDraft: (draft: DraftCart) => void
+    onLoadDraft: (draft: DraftCart | SyncDraft) => void
     onDraftDeleted?: () => void
     open?: boolean
     onOpenChange?: (open: boolean) => void
