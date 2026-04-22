@@ -12,9 +12,10 @@ import { formatCurrency } from "@/lib/currency"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { Product, PricingRule } from "@/types/entities"
+import { ProductInitialData } from "@/types/forms"
 
 interface ProductPricingTabProps {
-    initialData?: Partial<Product>
+    initialData?: ProductInitialData | Partial<Product>
     pricingRules: PricingRule[]
     fetchPricingRules: () => void
     onOpenRuleDialog: (rule?: PricingRule) => void

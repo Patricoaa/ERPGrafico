@@ -189,7 +189,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
             const today = new Date().toISOString().split('T')[0]
             const status = await validateAccountingPeriod(today)
             if (status.is_closed) {
-                toast.error(`No se puede registrar el ajuste: El periodo ${status.period_name || ''} está cerrado.`, {
+                toast.error(`No se puede registrar el ajuste: El periodo ${(status as any).period_name || ''} está cerrado.`, {
                     icon: <ShieldAlert className="h-4 w-4 text-destructive" />
                 })
                 setIsLoading(false)

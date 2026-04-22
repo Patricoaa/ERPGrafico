@@ -98,6 +98,8 @@ export interface Product {
     // BOM
     boms?: ProductBOM[]
     product_custom_fields?: ProductCustomField[]
+    cost_price?: number | string
+    copy_bom_from?: number | string
 }
 
 export interface ProductBOMLine {
@@ -201,6 +203,7 @@ export interface UoM {
     ratio: number
     uom_type?: string
     active?: boolean
+    category_name?: string
 }
 
 export interface ProductMinimal {

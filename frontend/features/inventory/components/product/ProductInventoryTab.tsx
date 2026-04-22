@@ -15,10 +15,11 @@ import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Product, UoM } from "@/types/entities"
+import { ProductInitialData } from "@/types/forms"
 
 interface ProductInventoryTabProps {
     form: UseFormReturn<ProductFormValues>
-    initialData?: Partial<Product> & { qty_reserved?: number }
+    initialData?: ProductInitialData | (Partial<Product> & { qty_reserved?: number })
     warehouses?: { id: number, name: string }[]
     uoms?: UoM[]
 }
@@ -132,7 +133,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                         className={cn("w-full justify-between font-normal h-10 rounded-md", !field.value && "text-muted-foreground", FORM_STYLES.input)}
                                                     >
                                                         {field.value
-                                                            ? uoms.find((u) => u.id.toString() === field.value?.toString())?.name
+                                                            ? uoms.find((u) => String(u.id) === String(field.value))?.name
                                                             : "Igual a Stock"}
                                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                     </Button>
