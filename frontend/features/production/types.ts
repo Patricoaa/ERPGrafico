@@ -28,12 +28,13 @@ export interface ProductionAttachment {
     id: number
     original_filename: string
     file: string
+    file_size?: string | number
     uploaded_at: string
     uploaded_by_name?: string
 }
 
 export interface WorkOrderTask {
-    id: string
+    id: string | number
     task_type: string
     status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
     assigned_to?: number
@@ -166,11 +167,16 @@ export interface BOMLine {
 export interface BOM {
     id?: number
     product: number
+    product_name?: string
+    product_internal_code?: string
     name: string
     active: boolean
     yield_quantity: number
     yield_uom?: number
+    yield_uom_name?: string
     lines: BOMLine[]
+    notes?: string
+    updated_at?: string
 }
 
 export interface UoM {
@@ -188,7 +194,7 @@ export interface ProductMinimal {
     internal_code?: string
     variant_display_name?: string
     product_type?: string
-    uom?: UoM | number | string
+    uom?: UoM | number | string | { name: string }
     purchase_uom?: number | string
     uom_name?: string
     uom_category?: number

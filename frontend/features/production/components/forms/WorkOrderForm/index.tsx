@@ -112,7 +112,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 setOtType(initialData.sale_order ? "LINKED" : "NONE")
 
                 if (initialData.product) {
-                    setSelectedManualProduct(initialData.product)
+                    setSelectedManualProduct(initialData.product as any)
                 }
 
                 const mfgData = initialData.stage_data || {}
@@ -123,7 +123,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                         id: Number(mfgData.contact_id),
                         name: mfgData.contact_name || "Contacto",
                         tax_id: mfgData.contact_tax_id || ""
-                    })
+                    } as any)
                 } else {
                     setSelectedContact(null)
                 }
