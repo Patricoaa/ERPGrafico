@@ -766,7 +766,17 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                     <p className="text-[10px] text-muted-foreground uppercase">{m.component_code}</p>
                                                                                 </td>
                                                                                 <td className="p-2 text-right font-medium">{m.quantity_planned}</td>
-                                                                                <td className="p-2">{m.uom_name}</td>
+                                                                                <td className="p-2">
+                                                                                    <div className="text-right">
+                                                                                        <p className={cn(
+                                                                                            "text-sm font-bold",
+                                                                                            (m.stock_available ?? 0) >= m.quantity_planned ? "text-success" : "text-destructive"
+                                                                                        )}>
+                                                                                            {(m.stock_available ?? 0)} {m.uom_name}
+                                                                                        </p>
+                                                                                        <p className="text-[10px] text-muted-foreground">Disponible</p>
+                                                                                    </div>
+                                                                                </td>
                                                                                 <td className="p-2 text-right font-bold">{formatCurrency(m.total_cost)}</td>
                                                                                 <td className="p-2">
                                                                                     <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
@@ -1041,7 +1051,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_MATERIAL_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
-                                                    task={task}
+                                                    task={task as any}
                                                     canComplete={canUserCompleteTask(task)}
                                                     onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
                                                     onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
@@ -1061,8 +1071,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                             <div className="flex items-center gap-3">
                                                                 <div className="text-right mr-2">
                                                                     <p className="text-[10px] font-bold uppercase text-muted-foreground">En Bodega</p>
-                                                                    <p className={cn("text-sm font-bold", m.is_available ? "text-success" : "text-destructive")}>
-                                                                        {m.stock_available >= 999999 ? "∞" : m.stock_available} {m.uom_name}
+                                                                    <p className={cn("text-sm font-bold", (m.stock_available ?? 0) >= m.quantity_planned ? "text-success" : "text-destructive")}>
+                                                                        {(m.stock_available ?? 0) >= 999999 ? "∞" : (m.stock_available ?? 0)} {m.uom_name}
                                                                     </p>
                                                                 </div>
                                                                 <StatusBadge status={m.is_available ? 'active' : 'inactive'} label={m.is_available ? 'Disponible' : 'Sin Stock'} size="sm" />
@@ -1256,7 +1266,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_OUTSOURCING_VERIFICATION').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
-                                                    task={task}
+                                                    task={task as any}
                                                     canComplete={canUserCompleteTask(task)}
                                                     onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
                                                     onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
@@ -1337,7 +1347,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                     <div key={att.id} className="flex items-center gap-2 p-2 bg-primary/10/50 rounded border border-primary/10/50 text-xs hover:border-primary/20 transition-colors">
                                                                         <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
                                                                         <div className="flex-1 truncate font-medium text-primary" title={att.original_filename}>{att.original_filename}</div>
-                                                                        <div className="text-[10px] text-muted-foreground shrink-0">{formatBytes(att.file_size)}</div>
+                                                                        <div className="text-[10px] text-muted-foreground shrink-0">{formatBytes(Number(att.file_size || 0))}</div>
                                                                         <Button
                                                                             variant="ghost"
                                                                             size="icon"
@@ -1367,7 +1377,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         <div key={att.id} className="flex items-center gap-2 p-2 bg-white/50 rounded border border-primary/20 text-xs hover:border-primary/40 transition-colors">
                                                                             <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
                                                                             <div className="flex-1 truncate font-medium" title={att.original_filename}>{att.original_filename}</div>
-                                                                            <div className="text-[10px] text-muted-foreground shrink-0">{formatBytes(att.file_size)}</div>
+                                                                            <div className="text-[10px] text-muted-foreground shrink-0">{formatBytes(Number(att.file_size || 0))}</div>
                                                                             <Button
                                                                                 variant="ghost"
                                                                                 size="icon"
@@ -1388,7 +1398,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_PREPRESS_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
-                                                    task={task}
+                                                    task={task as any}
                                                     canComplete={canUserCompleteTask(task)}
                                                     onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
                                                     onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
@@ -1404,7 +1414,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_PRESS_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
-                                                    task={task}
+                                                    task={task as any}
                                                     canComplete={canUserCompleteTask(task)}
                                                     onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
                                                     onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
@@ -1419,7 +1429,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_POSTPRESS_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
-                                                    task={task}
+                                                    task={task as any}
                                                     canComplete={canUserCompleteTask(task)}
                                                     onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
                                                     onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
@@ -1434,7 +1444,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_OUTSOURCING_VERIFICATION_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
-                                                    task={task}
+                                                    task={task as any}
                                                     canComplete={canUserCompleteTask(task)}
                                                     onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
                                                     onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
@@ -1450,7 +1460,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_RECTIFICATION_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
-                                                    task={task}
+                                                    task={task as any}
                                                     canComplete={canUserCompleteTask(task)}
                                                     onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
                                                     onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
@@ -1526,7 +1536,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                     {/* Right Sidebar - Information */}
                     <WizardRightSidebar
-                        order={order}
+                        order={order!}
                         viewingStepIndex={viewingStepIndex}
                         productName={productName}
                         stageData={stageData}

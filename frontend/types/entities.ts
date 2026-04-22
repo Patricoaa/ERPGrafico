@@ -150,7 +150,7 @@ export type ContactType = 'PERSON' | 'COMPANY'
 export interface Contact {
     id: number
     name: string
-    tax_id: string
+    tax_id: string | null
     email?: string
     phone?: string
     contact_type?: ContactType
@@ -225,7 +225,7 @@ export interface ProductMinimal {
     internal_code?: string
     variant_display_name?: string
     product_type?: string
-    uom?: UoM | number | string
+    uom?: UoM | number | string | { name: string }
     uom_name?: string
     uom_category?: number
     cost_price?: number | string
@@ -236,6 +236,9 @@ export interface ProductMinimal {
     requires_bom_validation?: boolean
     requires_advanced_manufacturing?: boolean
     mfg_auto_finalize?: boolean
+    receiving_warehouse?: number | string | { id: number; name: string }
+    preferred_supplier?: number | string | { id: number; name: string }
+    preferred_supplier_name?: string
 }
 
 // ─── User ────────────────────────────────────────────────
