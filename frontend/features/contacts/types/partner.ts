@@ -27,6 +27,13 @@ export interface PartnerStatement {
         id: number;
         name: string;
         tax_id: string;
+        partner_since?: string;
+        created_at?: string;
+        partner_account_detail?: {
+            id: number;
+            name: string;
+            code: string;
+        };
     };
     summary: {
         equity_percentage: string;

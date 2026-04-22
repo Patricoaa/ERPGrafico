@@ -25,7 +25,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 import type { SaleOrderLine } from "@/features/sales/types"
 import type { Contact } from "@/features/contacts/types"
-import type { UoM, ProductMinimal } from "../../types"
+import type { UoM, ProductMinimal } from "../../../types"
 
 interface WorkOrderFormProps {
     onSuccess?: () => void
@@ -424,9 +424,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 {/* Componente extraído: Basic Info */}
                                 <WorkOrderBasicInfo
                                     otType={otType}
-                                    initialData={initialData}
+                                    initialData={initialData as any}
                                     isAutoCreated={isAutoCreated}
-                                    linkedSaleOrder={linkedSaleOrder}
+                                    linkedSaleOrder={linkedSaleOrder as any}
                                     saleLines={saleLines}
                                     loadingLines={loadingLines}
                                     uoms={uoms}

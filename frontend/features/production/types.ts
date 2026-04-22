@@ -14,10 +14,13 @@ export interface WorkOrderMaterial {
     source: "MANUAL" | "BOM"
     is_outsourced: boolean
     is_available?: boolean
+    stock_available?: number
     supplier?: number
     supplier_name?: string
     unit_price?: string
     purchase_order_number?: string
+    purchase_order_id?: number
+    purchase_order_receiving_status?: string
     document_type?: string
 }
 
@@ -37,6 +40,11 @@ export interface WorkOrderTask {
     assigned_group?: string
     assigned_group_name?: string
     data?: Record<string, unknown>
+    title?: string
+    description?: string
+    priority?: string
+    created_by?: string
+    created_at?: string
 }
 
 export interface WorkOrderStage {
@@ -66,7 +74,16 @@ export interface WorkOrder {
     requires_postpress: boolean
     is_manual: boolean
     description?: string
+    product_description?: string
+    specifications?: string
+    specifications_prepress?: string
+    specifications_press?: string
+    specifications_postpress?: string
+    prepress_archive?: string
+    start_date?: string
+    sale_order_delivery_date?: string
     sale_customer_name?: string
+    sale_customer_rut?: string
     sale_order_date?: string
     due_date?: string
     outsourcing_status?: "none" | "partial" | "full"
@@ -96,6 +113,7 @@ export interface WorkOrder {
         uom_id?: string | number
         uom_name?: string
         comments?: ProductionComment[]
+        approval_attachment?: string
     }
     product?: {
         id: string | number
@@ -123,7 +141,6 @@ export interface WorkOrder {
     }
     total_price?: number
     created_at?: string
-    sale_customer_rut?: string
     is_cancellable?: boolean
     checkout_files?: ProductionAttachment[]
     attachments?: ProductionAttachment[]
