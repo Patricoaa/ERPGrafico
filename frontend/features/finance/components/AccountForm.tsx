@@ -94,7 +94,7 @@ export function AccountForm({
                     code: initialData.code as string,
                     name: initialData.name as string,
                     account_type: initialData.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE",
-                    parent: initialData.parent || undefined,
+                    parent: (initialData.parent as string) || undefined,
                 })
             } else {
                 form.reset({
@@ -293,7 +293,7 @@ export function AccountForm({
                          </Form>
                     </div>
 
-                    {initialData?.id && (
+                    {!!initialData?.id && (
                         <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
                             {auditSidebar}
                         </div>

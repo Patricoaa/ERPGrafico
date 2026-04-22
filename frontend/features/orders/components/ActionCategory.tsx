@@ -152,7 +152,7 @@ export const ActionCategory = forwardRef(({
                     return
                 }
 
-                const targetDoc = docs[0]
+                const targetDoc = docs[0] as any
                 const viewType = targetDoc.docType || (actionId === 'view-documents' ? 'invoice' : (isSale ? 'sale_delivery' : 'inventory'))
                 const viewId = actionId === 'view-documents' ? targetDoc.id : (targetDoc.id || targetDoc.stock_move_id)
 
@@ -183,7 +183,7 @@ export const ActionCategory = forwardRef(({
 
     const handleAnnulDocument = async (force: boolean = false) => {
         const invoices = resolvedInvoices
-        const invoice = invoices.find((inv: Order) => inv.number !== 'Draft' && inv.status !== 'CANCELLED')
+        const invoice = invoices.find((inv: any) => inv.number !== 'Draft' && inv.status !== 'CANCELLED')
 
         if (!invoice) {
             toast.error("No se encontró un documento válido para anular")
@@ -247,7 +247,7 @@ export const ActionCategory = forwardRef(({
 
     const handleDeleteDraft = async () => {
         const invoices = resolvedInvoices
-        const draftInvoice = invoices.find((inv: Order) => inv.status === 'DRAFT' || inv.number === 'Draft')
+        const draftInvoice = invoices.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')
 
         if (!draftInvoice) {
             toast.error("No se encontró un borrador para eliminar")
@@ -376,9 +376,9 @@ export const ActionCategory = forwardRef(({
                 <DocumentCompletionModal
                     open={true}
                     onOpenChange={closeModal}
-                    invoiceId={tempInvoiceId || resolvedInvoices?.find((inv: Order) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id}
-                    invoiceType={tempInvoiceId ? undefined : resolvedInvoices?.find((inv: Order) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.dte_type}
-                    contactId={((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? order?.customer_id : order?.supplier_id)}
+                    invoiceId={(tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id) as number}
+                    invoiceType={tempInvoiceId ? undefined : (resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number) as any)?.dte_type as string}
+                    contactId={(((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? order?.customer_id : order?.supplier_id)) as number}
                     isPurchase={isPurchase}
                     onComplete={async (invoiceId, formData) => {
                         if (!invoiceId || invoiceId === 'undefined') {
