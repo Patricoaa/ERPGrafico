@@ -66,17 +66,19 @@ export default function CreditAssignmentModal({
     // Reset when modal opens or contact changes
     useEffect(() => {
         if (open) {
-            if (initialContact) {
-                setSelectedContact(initialContact)
-                form.reset({
-                    credit_limit: initialContact.credit_limit ? Number(initialContact.credit_limit) : null
-                })
-            } else {
-                setSelectedContact(null)
-                form.reset({ credit_limit: null })
-                setSearchQuery("")
-                setSearchResults([])
-            }
+            requestAnimationFrame(() => {
+                if (initialContact) {
+                    setSelectedContact(initialContact)
+                    form.reset({
+                        credit_limit: initialContact.credit_limit ? Number(initialContact.credit_limit) : null
+                    })
+                } else {
+                    setSelectedContact(null)
+                    form.reset({ credit_limit: null })
+                    setSearchQuery("")
+                    setSearchResults([])
+                }
+            })
         }
     }, [open, initialContact, form])
 

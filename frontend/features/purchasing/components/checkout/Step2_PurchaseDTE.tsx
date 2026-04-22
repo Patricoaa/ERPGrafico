@@ -165,7 +165,7 @@ export function Step2_PurchaseDTE({
             {dteData.type === 'BOLETA' && !dteData.isPending && (
                 <div className="flex items-start gap-2 p-3 bg-warning/10 text-warning rounded-lg text-xs leading-tight">
                     <AlertCircle className="h-4 w-4 shrink-0" />
-                    <p>El folio de la boleta es obligatorio. Si no lo tiene ahora, marque "Recibiré el documento luego".</p>
+                    <p>El folio de la boleta es obligatorio. Si no lo tiene ahora, marque &quot;Recibiré el documento luego&quot;.</p>
                 </div>
             )}
 

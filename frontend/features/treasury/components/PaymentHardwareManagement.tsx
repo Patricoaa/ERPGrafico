@@ -53,7 +53,7 @@ export function PaymentHardwareManagement({
 
     useEffect(() => {
         if (externalActiveTab) {
-            setActiveTab(externalActiveTab)
+            requestAnimationFrame(() => setActiveTab(externalActiveTab))
         }
     }, [externalActiveTab])
 
@@ -79,13 +79,13 @@ export function PaymentHardwareManagement({
 
     useEffect(() => {
         if (externalDeviceOpen) {
-            handleCreateDevice()
+            requestAnimationFrame(() => handleCreateDevice())
         }
     }, [externalDeviceOpen])
 
     useEffect(() => {
         if (externalProviderOpen) {
-            handleCreateProvider()
+            requestAnimationFrame(() => handleCreateProvider())
         }
     }, [externalProviderOpen])
 
@@ -326,21 +326,23 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
 
     useEffect(() => {
         if (open) {
-            if (provider) {
-                setName(provider.name)
-                setType(provider.provider_type)
-                setSupplierId(provider.supplier)
-                setReceivableAccount(provider.receivable_account)
-                setExpenseAccount(provider.commission_expense_account)
-                setIvaAccount(provider.commission_iva_account || null)
-            } else {
-                setName("")
-                setType("MANUAL")
-                setSupplierId(null)
-                setReceivableAccount(null)
-                setExpenseAccount(null)
-                setIvaAccount(null)
-            }
+            requestAnimationFrame(() => {
+                if (provider) {
+                    setName(provider.name)
+                    setType(provider.provider_type)
+                    setSupplierId(provider.supplier)
+                    setReceivableAccount(provider.receivable_account)
+                    setExpenseAccount(provider.commission_expense_account)
+                    setIvaAccount(provider.commission_iva_account || null)
+                } else {
+                    setName("")
+                    setType("MANUAL")
+                    setSupplierId(null)
+                    setReceivableAccount(null)
+                    setExpenseAccount(null)
+                    setIvaAccount(null)
+                }
+            })
         }
     }, [open, provider])
 
@@ -478,19 +480,21 @@ function DeviceDialog({ open, onOpenChange, device, providers, onSuccess }: {
 
     useEffect(() => {
         if (open) {
-            if (device) {
-                setName(device.name)
-                setProviderId(device.provider.toString())
-                setSerialNumber(device.serial_number)
-                setModel(device.model || "")
-                setSupportedMethods(device.supported_payment_methods || [])
-            } else {
-                setName("")
-                setProviderId("")
-                setSerialNumber("")
-                setModel("")
-                setSupportedMethods([1, 2])
-            }
+            requestAnimationFrame(() => {
+                if (device) {
+                    setName(device.name)
+                    setProviderId(device.provider.toString())
+                    setSerialNumber(device.serial_number)
+                    setModel(device.model || "")
+                    setSupportedMethods(device.supported_payment_methods || [])
+                } else {
+                    setName("")
+                    setProviderId("")
+                    setSerialNumber("")
+                    setModel("")
+                    setSupportedMethods([1, 2])
+                }
+            })
         }
     }, [open, device])
 

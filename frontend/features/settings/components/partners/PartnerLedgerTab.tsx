@@ -7,7 +7,8 @@ import {
     Wallet,
     Calendar,
     Package,
-    LogOut
+    LogOut,
+    History
 } from "lucide-react"
 import { IndustrialCard } from "@/components/shared/IndustrialCard"
 import { Button } from "@/components/ui/button"

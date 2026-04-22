@@ -43,14 +43,16 @@ export function GroupSelector({ value, onChange, placeholder = "Seleccionar grup
             // Fetch once if we need to map name to object (e.g. initial render)
             fetchGroups()
         } else if (!value) {
-            setSelectedGroup(null)
+            requestAnimationFrame(() => setSelectedGroup(null))
         }
     }, [value])
 
     useEffect(() => {
         if (value && groups.length > 0) {
             const found = groups.find(g => g.name === value)
-            if (found) setSelectedGroup(found)
+            if (found) {
+                requestAnimationFrame(() => setSelectedGroup(found))
+            }
         }
     }, [value, groups])
 

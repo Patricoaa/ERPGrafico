@@ -76,6 +76,7 @@ import { useWindowWidth } from "@/hooks/useWindowWidth"
 
 export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalProps) {
     const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([])
+    const idCounterRef = React.useRef(0)
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
     const { isSheetCollapsed } = useGlobalModals()
@@ -139,8 +140,10 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
 
         const costPrice = Number(product.cost_price) || 0
 
+        idCounterRef.current += 1
+
         const newItem: SelectedItem = {
-            id: `${product.id}-${Date.now()}`,
+            id: `${product.id}-${idCounterRef.current}`,
             product,
             quantity: 1,
             uom_id: selectedUom.id,

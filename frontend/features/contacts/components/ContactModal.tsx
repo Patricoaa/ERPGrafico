@@ -177,7 +177,10 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 
     useEffect(() => {
         if (open && contact?.id && activeTab === "credit") {
-            fetchLedger()
+            const init = async () => {
+                await fetchLedger()
+            }
+            init()
         }
     }, [open, contact?.id, activeTab])
 
@@ -188,37 +191,42 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 
     useEffect(() => {
         if (!open) {
-            setActiveTab("profile")
-            setLedgerData([])
+            requestAnimationFrame(() => {
+                setActiveTab("profile")
+                setLedgerData([])
+            })
             return
         }
-        fetchDefaults()
+        
+        requestAnimationFrame(() => {
+            fetchDefaults()
 
-        if (contact && contact.name) {
-            form.reset({
-                name: contact.name,
-                tax_id: contact.tax_id || "",
-                email: contact.email || "",
-                phone: contact.phone || "",
-                address: contact.address || "",
-                city: contact.city || "",
-                payment_terms: contact.payment_terms || "CONTADO",
-                is_default_customer: !!contact.is_default_customer,
-                is_default_vendor: !!contact.is_default_vendor,
-            })
-        } else if (!contact?.id) {
-            form.reset({
-                name: "",
-                tax_id: "",
-                email: "",
-                phone: "",
-                address: "",
-                city: "",
-                payment_terms: "CONTADO",
-                is_default_customer: false,
-                is_default_vendor: false,
-            })
-        }
+            if (contact && contact.name) {
+                form.reset({
+                    name: contact.name,
+                    tax_id: contact.tax_id || "",
+                    email: contact.email || "",
+                    phone: contact.phone || "",
+                    address: contact.address || "",
+                    city: contact.city || "",
+                    payment_terms: contact.payment_terms || "CONTADO",
+                    is_default_customer: !!contact.is_default_customer,
+                    is_default_vendor: !!contact.is_default_vendor,
+                })
+            } else if (!contact?.id) {
+                form.reset({
+                    name: "",
+                    tax_id: "",
+                    email: "",
+                    phone: "",
+                    address: "",
+                    city: "",
+                    payment_terms: "CONTADO",
+                    is_default_customer: false,
+                    is_default_vendor: false,
+                })
+            }
+        })
     }, [contact, open, form.reset])
 
     const saveContact = async (values: z.infer<typeof contactSchema>) => {

@@ -43,15 +43,19 @@ export function BarcodeDialog({ open, onOpenChange, initialValue = "", onApply }
     // Synchronize state with initialValue when opening
     useEffect(() => {
         if (open) {
-            setBarcodeValue(initialValue || "")
-            // Reset mount flag to force re-render/re-generation
-            setMounted(false)
+            requestAnimationFrame(() => {
+                setBarcodeValue(initialValue || "")
+                // Reset mount flag to force re-render/re-generation
+                setMounted(false)
+            })
             
             // Short delay to allow Dialog to start opening
-            const timer = setTimeout(() => setMounted(true), 50)
+            const timer = setTimeout(() => {
+                requestAnimationFrame(() => setMounted(true))
+            }, 50)
             return () => clearTimeout(timer)
         } else {
-            setMounted(false)
+            requestAnimationFrame(() => setMounted(false))
         }
     }, [open, initialValue])
 

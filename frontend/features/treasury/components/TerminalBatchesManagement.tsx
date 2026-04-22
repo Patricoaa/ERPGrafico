@@ -51,18 +51,18 @@ export function TerminalBatchesManagement({
     const [isMounted, setIsMounted] = useState(false)
 
     useEffect(() => {
-        setIsMounted(true)
+        requestAnimationFrame(() => setIsMounted(true))
     }, [])
 
     useEffect(() => {
         if (isMounted && externalOpenBatch) {
-            setOpenCreate(true)
+            requestAnimationFrame(() => setOpenCreate(true))
         }
     }, [isMounted, externalOpenBatch])
 
     useEffect(() => {
         if (isMounted && externalOpenInvoice) {
-            setOpenInvoice(true)
+            requestAnimationFrame(() => setOpenInvoice(true))
         }
     }, [isMounted, externalOpenInvoice])
 

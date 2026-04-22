@@ -183,7 +183,7 @@ export function AdvancedManufacturingDialog({
                     </motion.div>
                     <div className="space-y-1">
                         <div className="text-3xl font-black tracking-tighter uppercase font-heading text-foreground">Fabricación</div>
-                        <p className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground">{product.name} // REF: {product.code}</p>
+                        <p className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground">{product.name} {"// REF:"} {product.code}</p>
                     </div>
                 </div>
             }

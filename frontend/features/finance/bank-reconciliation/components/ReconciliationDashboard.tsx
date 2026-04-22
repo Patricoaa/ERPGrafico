@@ -39,11 +39,17 @@ export function ReconciliationDashboard() {
     }
 
     useEffect(() => {
-        loadAccounts()
+        const init = async () => {
+            await loadAccounts()
+        }
+        init()
     }, [])
 
     useEffect(() => {
-        loadDashboard()
+        const init = async () => {
+            await loadDashboard()
+        }
+        init()
     }, [selectedAccount])
 
 

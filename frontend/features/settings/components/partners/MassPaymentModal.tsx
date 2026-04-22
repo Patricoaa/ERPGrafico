@@ -202,7 +202,7 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
                             <div>
                                 <h3 className="text-xl font-heading font-black uppercase tracking-tighter">Ejecutar Pagos Masivos</h3>
                                 <p className="text-sm text-muted-foreground max-w-md mt-2">
-                                    Se registrará la salida del dinero de la tesorería y la disminución de la deuda de "Dividendos por Pagar" con {partnersCount} miembros.
+                                    Se registrará la salida del dinero de la tesorería y la disminución de la deuda de &quot;Dividendos por Pagar&quot; con {partnersCount} miembros.
                                 </p>
                             </div>
                         </div>
@@ -234,7 +234,6 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
             }
             steps={steps}
             onComplete={handleExecutePayment}
-            onClose={() => onOpenChange(false)}
             isCompleting={loading}
             completeButtonLabel="Firmar y Transferir"
             size="xl"

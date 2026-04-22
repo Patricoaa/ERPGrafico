@@ -54,24 +54,27 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                     treasuryApi.getBanks(),
                     accountId ? treasuryApi.getAccount(accountId) : Promise.resolve(null)
                 ])
-                setBanks(banksData)
-                if (accountData) {
-                    setAccount(accountData)
-                    setName(accountData.name)
-                    setType(accountData.account_type)
-                    setCurrency(accountData.currency)
-                    setAccountingAccount(accountData.account ? Number(accountData.account) : null)
-                    setBank(accountData.bank ? Number(accountData.bank) : null)
-                    setAccountNumber(accountData.account_number || "")
-                } else {
-                    setAccount(null)
-                    setName("")
-                    setType("CASH")
-                    setCurrency("CLP")
-                    setAccountingAccount(null)
-                    setBank(null)
-                    setAccountNumber("")
-                }
+                
+                requestAnimationFrame(() => {
+                    setBanks(banksData)
+                    if (accountData) {
+                        setAccount(accountData)
+                        setName(accountData.name)
+                        setType(accountData.account_type)
+                        setCurrency(accountData.currency)
+                        setAccountingAccount(accountData.account ? Number(accountData.account) : null)
+                        setBank(accountData.bank ? Number(accountData.bank) : null)
+                        setAccountNumber(accountData.account_number || "")
+                    } else {
+                        setAccount(null)
+                        setName("")
+                        setType("CASH")
+                        setCurrency("CLP")
+                        setAccountingAccount(null)
+                        setBank(null)
+                        setAccountNumber("")
+                    }
+                })
             } catch (err) {
                 console.error("Error fetching account data", err)
             } finally {

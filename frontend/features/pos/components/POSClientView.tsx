@@ -173,7 +173,11 @@ export function POSClientView() {
     const [isSharedSession, setIsSharedSession] = useState(false)
     const draftLoadedFromUrl = useRef(false)
 
-    useEffect(() => { if (typeof window !== 'undefined') setIsSharedSession(!!localStorage.getItem('shared_pos_session_id')) }, [currentSession])
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            requestAnimationFrame(() => setIsSharedSession(!!localStorage.getItem('shared_pos_session_id')))
+        }
+    }, [currentSession])
 
     useEffect(() => {
         const dIdStr = searchParams.get('draftId')
@@ -194,9 +198,12 @@ export function POSClientView() {
     useEffect(() => {
         const wCustId = wizardState?.selectedCustomerId
         if (wCustId && wCustId.toString() !== selectedCustomerId?.toString()) {
-            const parsed = parseInt(wCustId.toString()); if (!isNaN(parsed)) setSelectedCustomerId(parsed)
+            const parsed = parseInt(wCustId.toString());
+            if (!isNaN(parsed)) {
+                requestAnimationFrame(() => setSelectedCustomerId(parsed))
+            }
         }
-    }, [wizardState?.selectedCustomerId, selectedCustomerId])
+    }, [wizardState?.selectedCustomerId, selectedCustomerId, setSelectedCustomerId])
 
     const handleProductClick = (product: Product) => {
         if (product.has_variants && product.variants_count > 0) {

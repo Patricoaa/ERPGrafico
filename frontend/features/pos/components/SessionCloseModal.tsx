@@ -55,7 +55,7 @@ export function SessionCloseModal({
 
     // Sync withdrawalAmount with actualCash by default
     useEffect(() => {
-        setWithdrawalAmount(actualCash)
+        requestAnimationFrame(() => setWithdrawalAmount(actualCash))
     }, [actualCash])
 
     const [step, setStep] = useState(1)
@@ -71,14 +71,16 @@ export function SessionCloseModal({
     // Pre-populate expected cash and default treasury account when modal opens
     useEffect(() => {
         if (open && session) {
-            setActualCash(session.expected_cash.toString())
-            setCloseNotes("")
-            setJustifyReason("")
-            setJustifyTargetId(null)
-            setSelectedAccount(null)
-            setInsufficientFunds(false)
-            setStep(1) // Reset to step 1
-            setCashDestinationId(null) // Force user to pick a valid destination
+            requestAnimationFrame(() => {
+                setActualCash(session.expected_cash.toString())
+                setCloseNotes("")
+                setJustifyReason("")
+                setJustifyTargetId(null)
+                setSelectedAccount(null)
+                setInsufficientFunds(false)
+                setStep(1) // Reset to step 1
+                setCashDestinationId(null) // Force user to pick a valid destination
+            })
         }
     }, [open, session])
 
@@ -86,14 +88,16 @@ export function SessionCloseModal({
     const [fullReportData, setFullReportData] = useState<POSReportData | null>(null)
     useEffect(() => {
         if (open && session) {
-            api.get('/accounting/settings/current/')
-                .then(res => setAccountingSettings(res.data))
-                .catch(err => console.error("Failed to load accounting settings", err))
-            
-            // Fetch full summary to display advanced data (like category sales) in the modal preview
-            api.get(`/treasury/pos-sessions/${session.id}/summary/`)
-                .then(res => setFullReportData(res.data))
-                .catch(err => console.error("Failed to load sumary", err))
+            requestAnimationFrame(() => {
+                api.get('/accounting/settings/current/')
+                    .then(res => requestAnimationFrame(() => setAccountingSettings(res.data)))
+                    .catch(err => console.error("Failed to load accounting settings", err))
+                
+                // Fetch full summary to display advanced data (like category sales) in the modal preview
+                api.get(`/treasury/pos-sessions/${session.id}/summary/`)
+                    .then(res => requestAnimationFrame(() => setFullReportData(res.data)))
+                    .catch(err => console.error("Failed to load sumary", err))
+            })
         }
     }, [open, session])
 
@@ -102,24 +106,30 @@ export function SessionCloseModal({
         if (justifyTargetId && justifyReason === 'TRANSFER') {
             api.get(`/treasury/accounts/${justifyTargetId}/`)
                 .then(res => {
-                    setSelectedAccount(res.data)
-                    // Validate funds for surplus (diff > 0 = money coming IN, source account needs money)
-                    if (diff > 0 && res.data.current_balance !== undefined) {
-                        const available = res.data.current_balance as number
-                        const needed = Math.abs(diff)
-                        setInsufficientFunds(available < needed)
-                    } else {
-                        setInsufficientFunds(false)
-                    }
+                    requestAnimationFrame(() => {
+                        setSelectedAccount(res.data)
+                        // Validate funds for surplus (diff > 0 = money coming IN, source account needs money)
+                        if (diff > 0 && res.data.current_balance !== undefined) {
+                            const available = res.data.current_balance as number
+                            const needed = Math.abs(diff)
+                            setInsufficientFunds(available < needed)
+                        } else {
+                            setInsufficientFunds(false)
+                        }
+                    })
                 })
                 .catch(err => {
                     console.error("Failed to load account details", err)
-                    setSelectedAccount(null)
-                    setInsufficientFunds(false)
+                    requestAnimationFrame(() => {
+                        setSelectedAccount(null)
+                        setInsufficientFunds(false)
+                    })
                 })
         } else {
-            setSelectedAccount(null)
-            setInsufficientFunds(false)
+            requestAnimationFrame(() => {
+                setSelectedAccount(null)
+                setInsufficientFunds(false)
+            })
         }
     }, [justifyTargetId, justifyReason, diff])
 
