@@ -425,7 +425,7 @@ export const ActionCategory = forwardRef(({
                 <PaymentHistoryModal
                     open={true}
                     onOpenChange={closeModal}
-                    order={order}
+                    order={order as any}
                 />
             )}
 

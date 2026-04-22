@@ -103,7 +103,7 @@ export function ProductionPhase({
                     actions: [
                         // Only show OT annulment if invoice is DRAFT and stage is pre-impresion or earlier
                         ...((ot.status !== 'CANCELLED' &&
-                            invoices.some((inv: Order) => inv.status === 'DRAFT') &&
+                            invoices.some((inv: any) => inv.status === 'DRAFT') &&
                             ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(ot.current_stage as string)) ? [{
                                 icon: Ban,
                                 title: 'Anular OT',

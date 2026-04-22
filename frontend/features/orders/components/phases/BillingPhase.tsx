@@ -10,6 +10,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 import { Order, PhaseDocument } from "../../types"
+import { LucideIcon } from "lucide-react"
 
 interface BillingPhaseProps {
     isNoteMode: boolean
@@ -151,7 +152,7 @@ export function BillingPhase({
                                     icon: Trash2,
                                     title: 'Eliminar Borrador',
                                     color: 'text-destructive hover:bg-destructive/10',
-                                    onClick: () => handleDeleteDraft(inv.id)
+                                    onClick: () => handleDeleteDraft(Number(inv.id))
                                 }] : []),
                                 ...((inv.status !== 'CANCELLED' && inv.status !== 'DRAFT') ? [{
                                     icon: X,
