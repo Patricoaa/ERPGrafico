@@ -53,7 +53,8 @@ export function AdvancedManufacturingDialog({
         setPrevOpen(open)
         setPrevProductId(product?.id ?? null)
 
-        const mfgData = product?.manufacturing_data
+        const prod = product as any;
+        const mfgData = prod?.manufacturing_data as any;
 
         if (mfgData) {
             setDesignNeeded(mfgData.design_needed || false)
@@ -66,13 +67,13 @@ export function AdvancedManufacturingDialog({
             setPrintType(mfgData.print_type || null)
 
             if (mfgData.phases) {
-                setEnablePrepress(mfgData.phases.prepress ?? !!product.mfg_enable_prepress)
-                setEnablePress(mfgData.phases.press ?? !!product.mfg_enable_press)
-                setEnablePostpress(mfgData.phases.postpress ?? !!product.mfg_enable_postpress)
+                setEnablePrepress(mfgData.phases.prepress ?? !!prod.mfg_enable_prepress)
+                setEnablePress(mfgData.phases.press ?? !!prod.mfg_enable_press)
+                setEnablePostpress(mfgData.phases.postpress ?? !!prod.mfg_enable_postpress)
             } else {
-                setEnablePrepress(!!product.mfg_enable_prepress)
-                setEnablePress(!!product.mfg_enable_press)
-                setEnablePostpress(!!product.mfg_enable_postpress)
+                setEnablePrepress(!!prod.mfg_enable_prepress)
+                setEnablePress(!!prod.mfg_enable_press)
+                setEnablePostpress(!!prod.mfg_enable_postpress)
             }
 
             if (mfgData.specifications) {
@@ -84,28 +85,28 @@ export function AdvancedManufacturingDialog({
                 setPressSpecs("")
                 setPostpressSpecs("")
             }
-        } else if (product) {
-            setDesignNeeded(!!product.mfg_prepress_design)
+        } else if (prod) {
+            setDesignNeeded(!!prod.mfg_prepress_design)
             setContact(null)
             setDescription("")
             setProductDescription("")
             setDesignFiles([])
-            setFolioEnabled(!!product.mfg_prepress_folio)
+            setFolioEnabled(!!prod.mfg_prepress_folio)
             setFolioStart("")
             setPrepressSpecs("")
             setPressSpecs("")
             setPostpressSpecs("")
 
             // Initialize printType from product flags
-            if (product.mfg_press_offset) setPrintType('offset')
-            else if (product.mfg_press_digital) setPrintType('digital')
-            else if (product.mfg_press_special) setPrintType('especial')
+            if (prod.mfg_press_offset) setPrintType('offset')
+            else if (prod.mfg_press_digital) setPrintType('digital')
+            else if (prod.mfg_press_special) setPrintType('especial')
             else setPrintType(null)
 
             // Initialize switches from product configuration
-            setEnablePrepress(!!product.mfg_enable_prepress)
-            setEnablePress(!!product.mfg_enable_press)
-            setEnablePostpress(!!product.mfg_enable_postpress)
+            setEnablePrepress(!!prod.mfg_enable_prepress)
+            setEnablePress(!!prod.mfg_enable_press)
+            setEnablePostpress(!!prod.mfg_enable_postpress)
         }
     }
 
@@ -183,7 +184,7 @@ export function AdvancedManufacturingDialog({
                     </motion.div>
                     <div className="space-y-1">
                         <div className="text-3xl font-black tracking-tighter uppercase font-heading text-foreground">Fabricación</div>
-                        <p className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground">{product.name} {"// REF:"} {product.code}</p>
+                        <p className="text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground">{(product as any).name} {"// REF:"} {(product as any).code}</p>
                     </div>
                 </div>
             }
@@ -238,7 +239,7 @@ export function AdvancedManufacturingDialog({
                         )}
                     </div>
 
-                    {product.product_type === 'MANUFACTURABLE' && (
+                    {(product as any).product_type === 'MANUFACTURABLE' && (
                         <>
                             {showProductDescription && (
                                 <motion.div
