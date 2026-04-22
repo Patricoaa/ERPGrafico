@@ -50,7 +50,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
 
     useEffect(() => {
         if (externalOpen) {
-            handleCreate()
+            requestAnimationFrame(() => handleCreate())
         }
     }, [externalOpen])
 
@@ -275,25 +275,27 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
 
     useEffect(() => {
         if (open) {
-            fetchMethods()
-            if (terminal) {
-                setName(terminal.name)
-                setCode(terminal.code)
-                setLocation(terminal.location || "")
-                setSerialNumber(terminal.serial_number || "")
-                setIpAddress(terminal.ip_address || "")
-                setDeviceId(terminal.payment_terminal_device?.toString() || "")
-                setSelectedMethodIds(terminal.allowed_payment_methods.map(m => m.id))
-            } else {
-                setName("")
-                setCode("")
-                setLocation("")
-                setSerialNumber("")
-                setIpAddress("")
-                setDeviceId("")
-                setSelectedMethodIds([])
-            }
-            fetchDevices()
+            requestAnimationFrame(() => {
+                fetchMethods()
+                if (terminal) {
+                    setName(terminal.name)
+                    setCode(terminal.code)
+                    setLocation(terminal.location || "")
+                    setSerialNumber(terminal.serial_number || "")
+                    setIpAddress(terminal.ip_address || "")
+                    setDeviceId(terminal.payment_terminal_device?.toString() || "")
+                    setSelectedMethodIds(terminal.allowed_payment_methods.map(m => m.id))
+                } else {
+                    setName("")
+                    setCode("")
+                    setLocation("")
+                    setSerialNumber("")
+                    setIpAddress("")
+                    setDeviceId("")
+                    setSelectedMethodIds([])
+                }
+                fetchDevices()
+            })
         }
     }, [open, terminal])
 
@@ -304,7 +306,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
             
             // Allow if it's for sales
             const collectionMethods = methods.filter((m: any) => m.allow_for_sales === true)
-            setAllMethods(collectionMethods)
+            requestAnimationFrame(() => setAllMethods(collectionMethods))
         } catch (error) {
             console.error("Error fetching methods", error)
         }
@@ -313,7 +315,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
     const fetchDevices = async () => {
         try {
             const res = await api.get('/treasury/terminal-devices/')
-            setAllDevices(res.data.results || res.data)
+            requestAnimationFrame(() => setAllDevices(res.data.results || res.data))
         } catch (error) {
             console.error("Error fetching devices", error)
         }

@@ -38,8 +38,10 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
     // Sync modal with props from URL
     useEffect(() => {
         if (isNewModalOpen) {
-            setSelectedContact(null)
-            setModalOpen(true)
+            requestAnimationFrame(() => {
+                setSelectedContact(null)
+                setModalOpen(true)
+            })
         }
     }, [isNewModalOpen])
 

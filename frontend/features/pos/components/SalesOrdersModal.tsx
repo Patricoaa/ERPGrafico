@@ -30,9 +30,11 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
 
     useEffect(() => {
         if (open) {
-            setShouldRenderContent(true)
+            requestAnimationFrame(() => setShouldRenderContent(true))
         } else {
-            const timer = setTimeout(() => setShouldRenderContent(false), 500)
+            const timer = setTimeout(() => {
+                requestAnimationFrame(() => setShouldRenderContent(false))
+            }, 500)
             return () => clearTimeout(timer)
         }
     }, [open])

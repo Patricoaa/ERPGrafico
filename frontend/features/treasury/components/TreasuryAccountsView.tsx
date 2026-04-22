@@ -73,9 +73,9 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
 
     useEffect(() => {
         if (externalOpen) {
-            handleExternalAction()
+            requestAnimationFrame(() => handleExternalAction());
         }
-    }, [externalOpen])
+    }, [externalOpen]);
 
     const handleDelete = async (id: number) => {
         try {

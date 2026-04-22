@@ -62,8 +62,8 @@ export function HubPanelProvider({
 
     // Auto-close on route change (including search params)
     useEffect(() => {
-        closeHub()
-    }, [pathname, searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
+        requestAnimationFrame(() => closeHub())
+    }, [pathname, searchParams, closeHub])
 
     const isHubEffectivelyOpen = isHubOpen && !isHubTemporarilyHidden
 

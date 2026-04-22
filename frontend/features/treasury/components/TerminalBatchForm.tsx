@@ -41,7 +41,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     // Sync state with server date when available and not yet set
     useEffect(() => {
         if (serverDate && !date) {
-            setDate(serverDate)
+            requestAnimationFrame(() => setDate(serverDate))
         }
     }, [serverDate])
     const [grossAmount, setGrossAmount] = useState<string>("0")
@@ -62,14 +62,16 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                     api.get('/treasury/payment-methods/')
                 ])
                 if (isMounted) {
-                    setProviders(provRes.data.results || provRes.data)
-                    setPaymentMethods(methRes.data.results || methRes.data)
+                    requestAnimationFrame(() => {
+                        setProviders(provRes.data.results || provRes.data)
+                        setPaymentMethods(methRes.data.results || methRes.data)
+                    })
                 }
             } catch (error) {
                 if (isMounted) toast.error("Error al cargar datos")
             }
         }
-        fetchData()
+        requestAnimationFrame(() => fetchData())
         return () => { isMounted = false }
     }, [])
 
@@ -376,21 +378,22 @@ function SaleSelectionModal({ open, onOpenChange, providerId, date, onConfirm, i
                 })
 
                 setMovements(sorted)
-
-                // Initial auto-selection: only sales for the selected date
-                const next = new Set<number>()
-                if (initialSelectedIds.size === 0) {
-                    sorted.forEach((m: any) => {
-                        if (m.date === dateStr) next.add(m.id)
-                    })
-                } else {
-                    initialSelectedIds.forEach(id => {
-                        if (sorted.some((m: any) => m.id === id)) next.add(id)
-                    })
-                }
-                setSelectedIds(next)
+                requestAnimationFrame(() => {
+                    // Initial auto-selection: only sales for the selected date
+                    const next = new Set<number>()
+                    if (initialSelectedIds.size === 0) {
+                        sorted.forEach((m: any) => {
+                            if (m.date === dateStr) next.add(m.id)
+                        })
+                    } else {
+                        initialSelectedIds.forEach(id => {
+                            if (sorted.some((m: any) => m.id === id)) next.add(id)
+                        })
+                    }
+                    setSelectedIds(next)
+                })
             }).finally(() => {
-                if (isMounted) setLoading(false)
+                if (isMounted) requestAnimationFrame(() => setLoading(false))
             })
         }
         return () => { isMounted = false }

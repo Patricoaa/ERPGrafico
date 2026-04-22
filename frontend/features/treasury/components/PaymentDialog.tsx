@@ -130,7 +130,7 @@ export function PaymentDialog({
         if (posSessionId) {
             api.get(`/treasury/pos-sessions/${posSessionId}/`)
                 .then(response => {
-                    setTerminalId(response.data.terminal || null)
+                    requestAnimationFrame(() => setTerminalId(response.data.terminal || null))
                 })
                 .catch(error => {
                     console.error('Error fetching POS session:', error)

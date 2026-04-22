@@ -11,7 +11,7 @@ interface UseWorkOrderSearchReturn {
     fetchSingleOrder: (id: string | number) => Promise<void>
 }
 
-let globalCache: Record<string, WorkOrder[]> = {}
+const globalCache: Record<string, WorkOrder[]> = {}
 
 export function useWorkOrderSearch(): UseWorkOrderSearchReturn {
     const [orders, setOrders] = useState<WorkOrder[]>([])

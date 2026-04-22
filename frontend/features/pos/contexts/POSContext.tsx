@@ -116,7 +116,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
     // Reset customer to default when session changes or initializes
     useEffect(() => {
         if (currentSession?.id && defaultCustomerId && !selectedCustomerId) {
-            setSelectedCustomerId(defaultCustomerId)
+            requestAnimationFrame(() => setSelectedCustomerId(defaultCustomerId))
         }
     }, [currentSession, defaultCustomerId, selectedCustomerId])
 
@@ -124,10 +124,10 @@ export function POSProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (selectedCustomerId && (!selectedCustomer || selectedCustomer.id !== selectedCustomerId)) {
             api.get(`/contacts/${selectedCustomerId}/`)
-                .then(res => setSelectedCustomer(res.data))
+                .then(res => requestAnimationFrame(() => setSelectedCustomer(res.data)))
                 .catch(err => console.error("Error fetching customer in POSContext:", err))
         } else if (!selectedCustomerId) {
-            setSelectedCustomer(null)
+            requestAnimationFrame(() => setSelectedCustomer(null))
         }
     }, [selectedCustomerId])
 
@@ -234,7 +234,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
         setPosMode
     }), [
         currentSession, products, categories, uoms, items, selectedCustomerId, 
-        totalDiscountAmount, currentDraftId, wizardState, bomCache, 
+        selectedCustomer, totalDiscountAmount, currentDraftId, wizardState, bomCache, 
         componentCache, updateBomCache, updateComponentCache, addItem, 
         updateItem, removeItem, clearCart, totals, loading, defaultCustomerId,
         posMode, setPosMode

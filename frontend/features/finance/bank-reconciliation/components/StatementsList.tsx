@@ -28,7 +28,7 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
     // Open import dialog when triggered via URL (?modal=import)
     useEffect(() => {
         if (externalOpen) {
-            setImportDialogOpen(true)
+            requestAnimationFrame(() => setImportDialogOpen(true))
         }
     }, [externalOpen])
 
@@ -38,7 +38,7 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
     }
 
     useEffect(() => {
-        loadData()
+        requestAnimationFrame(() => loadData())
     }, [])
 
     const handleImportSuccess = () => {

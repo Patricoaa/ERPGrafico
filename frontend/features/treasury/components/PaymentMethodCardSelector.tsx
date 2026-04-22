@@ -159,14 +159,18 @@ export function PaymentMethodCardSelector({
             const isValid = methodsForType.some(m => m.treasury_account.toString() === currentAccountId);
 
             if (!isValid) {
-                onPaymentDataChange({
-                    ...paymentData,
-                    treasuryAccountId: methodsForType[0].treasury_account.toString(),
-                    paymentMethodId: methodsForType[0].id
-                });
+                requestAnimationFrame(() => {
+                    onPaymentDataChange({
+                        ...paymentData,
+                        treasuryAccountId: methodsForType[0].treasury_account.toString(),
+                        paymentMethodId: methodsForType[0].id
+                    });
+                })
             }
         } else if (methodsForType.length === 0 && paymentData.treasuryAccountId) {
-            onPaymentDataChange({ ...paymentData, treasuryAccountId: null, paymentMethodId: null });
+            requestAnimationFrame(() => {
+                onPaymentDataChange({ ...paymentData, treasuryAccountId: null, paymentMethodId: null });
+            })
         }
     }, [methodsForType, paymentData.method])
 

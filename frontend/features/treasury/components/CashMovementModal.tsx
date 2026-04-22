@@ -28,7 +28,7 @@ export function CashMovementModal({
     variant = 'standard'
 }: CashMovementModalProps) {
     const handleCompleteWizard = async (data: MovementData) => {
-        let movement_type = data.impact === 'TRANSFER' ? 'TRANSFER' : (data.impact === 'IN' ? 'INBOUND' : 'OUTBOUND');
+        const movement_type = data.impact === 'TRANSFER' ? 'TRANSFER' : (data.impact === 'IN' ? 'INBOUND' : 'OUTBOUND');
 
         try {
             await api.post('/treasury/movements/', {

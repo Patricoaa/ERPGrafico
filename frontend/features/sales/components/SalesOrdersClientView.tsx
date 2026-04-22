@@ -31,8 +31,10 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
     // Handle creation trigger for Notes view if needed
     useEffect(() => {
         if (isCreateModalOpen && viewMode === 'notes') {
-            setAddingNote({} as SaleOrder) // Open Note creation modal with dummy object (will require selection or handle empty)
-            if (setCreateModalOpen) setCreateModalOpen(false)
+            requestAnimationFrame(() => {
+                setAddingNote({} as SaleOrder) // Open Note creation modal with dummy object
+                if (setCreateModalOpen) setCreateModalOpen(false)
+            })
         }
     }, [isCreateModalOpen, viewMode, setCreateModalOpen])
 

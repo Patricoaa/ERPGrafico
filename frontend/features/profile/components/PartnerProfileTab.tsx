@@ -255,7 +255,7 @@ export function PartnerProfileTab({ contactId }: Props) {
 
             </Accordion>
 
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Cargando...</div>}>
                 {selectedMovementId && (
                     <TransactionViewModal
                         open={detailsOpen}

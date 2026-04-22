@@ -24,11 +24,13 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
     const [isProviderModalOpen, setIsProviderModalOpen] = useState(false)
 
     useEffect(() => {
-        if (modal === "new-terminal") setIsTerminalModalOpen(true)
-        if (modal === "new-batch") setIsBatchModalOpen(true)
-        if (modal === "new-invoice") setIsInvoiceModalOpen(true)
-        if (modal === "new-device") setIsDeviceModalOpen(true)
-        if (modal === "new-provider") setIsProviderModalOpen(true)
+        requestAnimationFrame(() => {
+            if (modal === "new-terminal") setIsTerminalModalOpen(true)
+            if (modal === "new-batch") setIsBatchModalOpen(true)
+            if (modal === "new-invoice") setIsInvoiceModalOpen(true)
+            if (modal === "new-device") setIsDeviceModalOpen(true)
+            if (modal === "new-provider") setIsProviderModalOpen(true)
+        })
     }, [modal])
 
     return (
