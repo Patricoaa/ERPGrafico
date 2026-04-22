@@ -377,11 +377,11 @@ export const ActionCategory = forwardRef(({
                     open={true}
                     onOpenChange={closeModal}
                     invoiceId={(tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id) as number}
-                    invoiceType={tempInvoiceId ? undefined : (resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number) as any)?.dte_type as string}
+                    invoiceType={(tempInvoiceId ? "FACTURA_ELECTRONICA" : (resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number) as any)?.dte_type as string) || "FACTURA_ELECTRONICA"}
                     contactId={(((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? order?.customer_id : order?.supplier_id)) as number}
                     isPurchase={isPurchase}
                     onComplete={async (invoiceId, formData) => {
-                        if (!invoiceId || invoiceId === 'undefined') {
+                        if (!invoiceId) {
                             toast.error("Error: No se pudo identificar el borrador de la factura.")
                             throw new Error("Missing invoice ID")
                         }
@@ -433,13 +433,13 @@ export const ActionCategory = forwardRef(({
                 <PaymentModal
                     open={true}
                     onOpenChange={closeModal}
-                    total={order?.total}
-                    pendingAmount={order?.pending_amount ?? order?.total}
+                    total={Number(order?.total || 0)}
+                    pendingAmount={Number(order?.pending_amount ?? order?.total ?? 0)}
                     onConfirm={handlePaymentConfirm}
                     isPurchase={isPurchase}
                     title={activeModal === 'register-payment-return' ? (isSale ? "Registrar Reembolso a Cliente" : "Registrar Reembolso de Proveedor") : undefined}
                     posSessionId={posSessionId}
-                    customerCreditBalance={order?.customer?.credit_balance || order?.customer_name?.credit_balance || 0}
+                    customerCreditBalance={(order?.customer as any)?.credit_balance || (order?.customer_name as any)?.credit_balance || 0}
                     allowCreditBalanceAccumulation={order?.dte_type === 'NOTA_CREDITO'}
                 />
             )}
@@ -448,7 +448,7 @@ export const ActionCategory = forwardRef(({
                 <PaymentReferenceModal
                     open={true}
                     onOpenChange={closeModal}
-                    payments={order?.related_documents?.payments || order?.serialized_payments || []}
+                    payments={(order?.related_documents?.payments || order?.serialized_payments || []) as any}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
             )}
@@ -458,7 +458,7 @@ export const ActionCategory = forwardRef(({
                     open={true}
                     onOpenChange={closeModal}
                     orderId={order?.id}
-                    invoiceId={resolvedInvoices?.find((inv: Order) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.id}
+                    invoiceId={resolvedInvoices?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.id as number}
                     initialType={activeModal === 'create-debit-note' ? 'NOTA_DEBITO' : 'NOTA_CREDITO'}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
@@ -468,7 +468,7 @@ export const ActionCategory = forwardRef(({
                 <TransactionViewModal
                     open={true}
                     onOpenChange={closeModal}
-                    type={viewConfig.type}
+                    type={viewConfig.type as any}
                     id={viewConfig.id}
                 />
             )}
@@ -478,7 +478,7 @@ export const ActionCategory = forwardRef(({
                     open={true}
                     onOpenChange={closeModal}
                     type="work_orders"
-                    data={order?.work_orders || []}
+                    data={(order?.work_orders || []) as any}
                     onItemClick={(type, id) => {
                         setViewConfig({ type, id })
                         setActiveModal('transaction-view')
