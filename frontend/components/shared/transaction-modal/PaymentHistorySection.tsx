@@ -8,7 +8,7 @@ import { formatPlainDate, translatePaymentMethod, formatCurrency } from "@/lib/u
 import type { TransactionData, TransactionType } from "@/types/transactions"
 
 export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo, handleDeletePayment }: { data: TransactionData, currentType: TransactionType, navigateTo: (type: TransactionType, id: number | string) => void, handleDeletePayment: (id: number) => void }) => {
-    const payments = data?.serialized_payments || data?.payments_detail || [];
+    const payments = (data?.serialized_payments || data?.payments_detail || []) as any[];
     if (payments.length === 0) return null;
 
     return (

@@ -37,7 +37,7 @@ export default async function PurchasingPage({ searchParams }: PageProps) {
         return {
             title: viewMode === 'orders' ? "Órdenes de Compra" : "Notas de Crédito y Débito",
             description: viewMode === 'orders' ? "Gestión integral de órdenes de compra y recepciones" : "Gestión de notas de crédito y débito de proveedores",
-            iconName: (viewMode === 'orders' ? "shopping-cart" : "file-text") as const,
+            iconName: (viewMode === 'orders' ? "shopping-cart" : "file-text") as "shopping-cart" | "file-text",
         }
     }
 

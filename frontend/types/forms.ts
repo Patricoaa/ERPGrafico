@@ -295,6 +295,7 @@ export interface UserInitialData {
     username?: string
     primary_role?: string
     functional_groups?: string[]
+    groups?: string[]
     contact?: number
     password?: string
     is_active?: boolean

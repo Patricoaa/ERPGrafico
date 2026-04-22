@@ -20,7 +20,8 @@ export const SidebarSection = ({ title, children }: { title: string, children: R
     </div>
 )
 
-export const SidebarContent = React.memo(({ data, currentType, closeModal }: { data: TransactionData, currentType: string, closeModal: () => void }) => {
+export const SidebarContent = React.memo(({ data: rawData, currentType, closeModal }: { data: TransactionData, currentType: string, closeModal: () => void }) => {
+    const data = rawData as any
     const router = useRouter()
     const { openContact } = useGlobalModalActions()
 
@@ -170,6 +171,11 @@ export const SidebarContent = React.memo(({ data, currentType, closeModal }: { d
                         </SidebarSection>
                     </>
                 )
+            case 'sale_delivery':
+            case 'purchase_receipt':
+                const logisticsTitle = currentType === 'sale_delivery' ? 'Cliente' : 'Proveedor'
+                const logisticsName = currentType === 'sale_delivery' ? (data.customer_name || data.contact_name) : (data.supplier_name || data.contact_name)
+                const logisticsContactId = currentType === 'sale_delivery' ? (data.customer_id || data.contact_id) : (data.supplier_id || data.contact_id)
                 return (
                     <>
                         {renderContactSection(logisticsTitle, logisticsName, logisticsContactId)}

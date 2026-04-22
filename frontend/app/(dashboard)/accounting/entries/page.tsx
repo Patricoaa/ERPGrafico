@@ -42,7 +42,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
     const [entries, setEntries] = useState<JournalEntry[]>([])
     const [accounts, setAccounts] = useState<Record<string, unknown>[]>([])
     const [loading, setLoading] = useState(true)
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: string, id: number | string } | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: 'journal_entry', id: number | string } | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null)
     
@@ -254,7 +254,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
 
                 <JournalEntryForm 
                     accounts={accounts} 
-                    initialData={editingEntry as Record<string, unknown> | undefined}
+                    initialData={editingEntry as unknown as import('@/types/forms').JournalEntryInitialData | undefined}
                     onSuccess={() => {
                         fetchEntries()
                         handleFormOpenChange(false)

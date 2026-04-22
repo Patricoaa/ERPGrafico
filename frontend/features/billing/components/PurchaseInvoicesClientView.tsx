@@ -26,6 +26,7 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
+import { Invoice } from "@/features/billing/types"
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" | "warning" }> = {
     'DRAFT': { label: 'Folio Pendiente', variant: 'warning' as const },
@@ -96,9 +97,10 @@ export function PurchaseInvoicesClientView() {
 
     const handlePayment = async (data: Record<string, unknown>) => {
         if (!payingDoc) return
+        const d = data as any
         try {
             const formData = new FormData()
-            formData.append('amount', data.amount.toString())
+            formData.append('amount', d.amount.toString())
 
             let paymentType = 'OUTBOUND'
             const isCreditNote = payingDoc.dte_type === 'NOTA_CREDITO'
@@ -108,15 +110,15 @@ export function PurchaseInvoicesClientView() {
             formData.append('reference', `${payingDoc.dte_type === 'NOTA_CREDITO' ? 'NC' : payingDoc.dte_type === 'NOTA_DEBITO' ? 'ND' : 'PAGO'}-${payingDoc.number}`)
             formData.append('purchase_order', payingDoc.purchase_order ? payingDoc.purchase_order.toString() : '')
             formData.append('invoice', payingDoc.id.toString())
-            formData.append('payment_method', data.paymentMethod)
+            formData.append('payment_method', d.paymentMethod)
 
-            if (data.transaction_number) formData.append('transaction_number', data.transaction_number)
-            if (data.is_pending_registration !== undefined) formData.append('is_pending_registration', data.is_pending_registration.toString())
-            if (data.treasury_account_id) formData.append('treasury_account_id', data.treasury_account_id)
-            if (data.dteType) formData.append('dte_type', data.dteType)
-            if (data.document_reference) formData.append('document_reference', data.document_reference)
-            if (data.document_date) formData.append('document_date', data.document_date)
-            if (data.document_attachment) formData.append('document_attachment', data.document_attachment)
+            if (d.transaction_number) formData.append('transaction_number', d.transaction_number)
+            if (d.is_pending_registration !== undefined) formData.append('is_pending_registration', d.is_pending_registration.toString())
+            if (d.treasury_account_id) formData.append('treasury_account_id', d.treasury_account_id)
+            if (d.dteType) formData.append('dte_type', d.dteType)
+            if (d.document_reference) formData.append('document_reference', d.document_reference)
+            if (d.document_date) formData.append('document_date', d.document_date)
+            if (d.document_attachment) formData.append('document_attachment', d.document_attachment)
 
             await api.post('/treasury/payments/', formData)
             toast.success("Operación registrada correctamente")
@@ -253,7 +255,7 @@ export function PurchaseInvoicesClientView() {
                 }}
                 cardMode={true}
                 currentView={currentView}
-                onViewChange={(v: 'all' | 'unpaid') => setCurrentView(v)}
+                onViewChange={(v: any) => setCurrentView(v as 'card' | 'list')}
                 viewOptions={viewOptions}
                 filterColumn="partner_name"
                 searchPlaceholder="Buscar por proveedor..."

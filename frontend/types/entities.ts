@@ -278,6 +278,8 @@ export interface NotificationRule {
     id?: number
     notification_type: string
     assigned_user?: number | null
+    assigned_group?: string | null
+    notify_creator?: boolean
     is_active: boolean
     send_email?: boolean
 }

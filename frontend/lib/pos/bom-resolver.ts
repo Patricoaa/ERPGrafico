@@ -96,8 +96,8 @@ export function initializeCachesFromProducts(
                 activeBom.lines?.forEach((line) => {
                     if (line.component && line.component_stock !== undefined) {
                         newComponentCache[line.component] = {
-                            stock: line.component_stock,
-                            uom: line.uom
+                            stock: line.component_stock || 0,
+                            uom: line.uom || 0
                         }
                     }
                 })

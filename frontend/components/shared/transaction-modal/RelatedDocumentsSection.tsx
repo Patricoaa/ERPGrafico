@@ -66,7 +66,8 @@ const textVariants = cva(
 
 export type RelatedDocVariant = VariantProps<typeof documentCardVariants>["variant"]
 
-export const RelatedDocumentsSection = React.memo(({ data, currentType, navigateTo }: { data: TransactionData, currentType: TransactionType, navigateTo: (type: TransactionType, id: number | string) => void }) => {
+export const RelatedDocumentsSection = React.memo(({ data: rawData, currentType, navigateTo }: { data: TransactionData, currentType: TransactionType, navigateTo: (type: TransactionType, id: number | string) => void }) => {
+    const data = rawData as any;
     if (!data) return null;
 
     const renderCard = (type: TransactionType, id: number | string, title: string, subtitle: string, icon: React.ReactNode, variant: RelatedDocVariant = "primary") => (
@@ -87,7 +88,7 @@ export const RelatedDocumentsSection = React.memo(({ data, currentType, navigate
     );
 
     // Collected documents from related_documents or individual fields
-    const relatedDocs = data.related_documents || {};
+    const relatedDocs = (data.related_documents || {}) as any;
     const hasAnyDocuments =
         // Invoice documents
         data.sale_order || data.purchase_order || data.corrected_invoice ||

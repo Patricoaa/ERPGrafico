@@ -21,27 +21,24 @@ import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
-interface BOM {
-    id: number
-    name: string
-    product: number
+import type { BOM } from "@/features/production/types"
+
+interface BOMListItem extends BOM {
     product_name: string
     product_code: string
     product_internal_code?: string
-    active: boolean
     lines_count: number
     total_cost: number
 }
-
 interface BOMsPageProps {
     createAction?: React.ReactNode
 }
 
 export default function BOMsPage({ createAction }: BOMsPageProps = {}) {
-    const [boms, setBoms] = useState<BOM[]>([])
+    const [boms, setBoms] = useState<BOMListItem[]>([])
     const [loading, setLoading] = useState(true)
     const [isFormOpen, setIsFormOpen] = useState(false)
-    const [editingBom, setEditingBom] = useState<BOM & { product_id?: number } | null>(null)
+    const [editingBom, setEditingBom] = useState<BOMListItem | null>(null)
     const searchParams = useSearchParams()
     const router = useRouter()
     const isNewModalOpen = searchParams.get("modal") === "new"
@@ -108,7 +105,7 @@ export default function BOMsPage({ createAction }: BOMsPageProps = {}) {
 
 
 
-    const columns: ColumnDef<BOM>[] = [
+    const columns: import("@tanstack/react-table").ColumnDef<BOMListItem>[] = [
         {
             accessorKey: "product_name",
             header: ({ column }) => (
@@ -182,19 +179,19 @@ export default function BOMsPage({ createAction }: BOMsPageProps = {}) {
                 </div>
             ),
         },
-        createActionsColumn<BOM>({
+        createActionsColumn<BOMListItem>({
             renderActions: (bom) => (
                 <>
                     <DataCell.Action
                         icon={Pencil}
                         title="Editar"
-                        onClick={() => handleEdit(bom.id)}
+                        onClick={() => handleEdit(bom.id!)}
                     />
                     <DataCell.Action
                         icon={Trash2}
                         title="Eliminar"
                         className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(bom.id)}
+                        onClick={() => handleDelete(bom.id!)}
                     />
                 </>
             )
@@ -232,8 +229,12 @@ export default function BOMsPage({ createAction }: BOMsPageProps = {}) {
                 open={isFormOpen}
                 onOpenChange={handleFormClose}
                 onSuccess={fetchBoms}
-                bomToEdit={editingBom}
-                product={editingBom?.product_id || editingBom?.product}
+                bomToEdit={editingBom || undefined}
+                product={editingBom ? { 
+                    id: editingBom.product, 
+                    name: editingBom.product_name, 
+                    code: editingBom.product_code 
+                } as unknown as import('@/features/production/types').ProductMinimal : undefined}
             />
 
             <ActionConfirmModal

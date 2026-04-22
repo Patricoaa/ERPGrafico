@@ -68,23 +68,24 @@ export function SalesInvoicesClientView() {
 
     const handlePayment = async (data: Record<string, unknown>) => {
         if (!payingInv) return
+        const d = data as any
         try {
             const formData = new FormData()
-            formData.append('amount', data.amount.toString())
+            formData.append('amount', d.amount.toString())
             let paymentType = 'INBOUND'
             if (payingInv.dte_type === 'NOTA_CREDITO') paymentType = 'OUTBOUND'
             formData.append('payment_type', paymentType)
             formData.append('reference', `${payingInv.dte_type === 'NOTA_CREDITO' ? 'NC' : payingInv.dte_type === 'NOTA_DEBITO' ? 'ND' : 'PAGO'}-${payingInv.number}`)
             formData.append('sale_order', payingInv.sale_order ? payingInv.sale_order.toString() : '')
             formData.append('invoice', payingInv.id.toString())
-            formData.append('payment_method', data.paymentMethod)
-            if (data.transaction_number) formData.append('transaction_number', data.transaction_number)
-            if (data.is_pending_registration !== undefined) formData.append('is_pending_registration', data.is_pending_registration.toString())
-            if (data.treasury_account_id) formData.append('treasury_account_id', data.treasury_account_id)
-            if (data.dteType) formData.append('dte_type', data.dteType)
-            if (data.documentReference) formData.append('document_reference', data.documentReference)
-            if (data.documentDate) formData.append('document_date', data.documentDate)
-            if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment)
+            formData.append('payment_method', d.paymentMethod)
+            if (d.transaction_number) formData.append('transaction_number', d.transaction_number)
+            if (d.is_pending_registration !== undefined) formData.append('is_pending_registration', d.is_pending_registration.toString())
+            if (d.treasury_account_id) formData.append('treasury_account_id', d.treasury_account_id)
+            if (d.dteType) formData.append('dte_type', d.dteType)
+            if (d.documentReference) formData.append('document_reference', d.documentReference)
+            if (d.documentDate) formData.append('document_date', d.documentDate)
+            if (d.documentAttachment) formData.append('document_attachment', d.documentAttachment)
 
             await treasuryApi.createPayment(formData)
             toast.success("Operación registrada correctamente")
@@ -176,7 +177,7 @@ export function SalesInvoicesClientView() {
                 }}
                 cardMode={true}
                 currentView={currentView}
-                onViewChange={(v: 'all' | 'unpaid') => setCurrentView(v)}
+                onViewChange={(v: any) => setCurrentView(v as 'card' | 'list')}
                 viewOptions={viewOptions}
                 filterColumn="partner_name"
                 searchPlaceholder="Buscar por cliente..."
@@ -209,7 +210,7 @@ export function SalesInvoicesClientView() {
                     }
                     return (
                         <div className="grid gap-3 pt-2">
-                            {rows.map((row: Invoice) => {
+                            {rows.map((row: any) => {
                                 const inv = row.original as Invoice
                                 const isSelected = hubConfig?.invoiceId === inv.id
                                 return (
@@ -245,7 +246,7 @@ export function SalesInvoicesClientView() {
                 <TransactionViewModal
                     open={!!viewingTransaction}
                     onOpenChange={(open) => !open && setViewingTransaction(null)}
-                    type={viewingTransaction.type}
+                    type={viewingTransaction.type as any}
                     id={viewingTransaction.id}
                     view={viewingTransaction.view}
                 />

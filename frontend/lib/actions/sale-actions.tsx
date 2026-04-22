@@ -23,7 +23,7 @@ import {
  * Sale Order Action Registry
  * Defines all available actions for sale orders with permission requirements
  */
-export const saleOrderActions: ActionRegistry = {
+export const saleOrderActions: ActionRegistry<any> = {
     documents: {
         id: 'documents',
         label: 'Documentos',

@@ -22,13 +22,14 @@ export async function wrapApiCall<T>(promise: Promise<any>): Promise<Result<T, A
         const response = await promise;
         return Ok(response.data as T);
     } catch (error: unknown) {
-        if (error.response?.data?.error) {
-            return Err(error.response.data.error as ApiError);
+        const err = error as any;
+        if (err.response?.data?.error) {
+            return Err(err.response.data.error as ApiError);
         }
         return Err({
-            message: error.message || "Ocurrió un error inesperado.",
+            message: err.message || "Ocurrió un error inesperado.",
             code: "UNKNOWN_ERROR",
-            status_code: error.response?.status
+            status_code: err.response?.status
         });
     }
 }

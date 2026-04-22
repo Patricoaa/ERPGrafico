@@ -28,12 +28,12 @@ export function Step3_Registration({
 }: Step3_RegistrationProps) {
 
     const { dateString } = useServerDate()
-    const formData = data || {
+    const formData = (data || {
         document_number: "",
         document_date: "",
         is_pending: false,
         attachment: null
-    }
+    }) as any
 
     // Sync date when server date arrives
     useEffect(() => {

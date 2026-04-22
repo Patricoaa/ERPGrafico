@@ -204,8 +204,8 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                         onClick: (e: React.MouseEvent) => {
                             e.stopPropagation();
                             setOpen(true);
-                            if (trigger.props.onClick) {
-                                trigger.props.onClick(e);
+                            if ((trigger as any).props.onClick) {
+                                (trigger as any).props.onClick(e);
                             }
                         }
                     })

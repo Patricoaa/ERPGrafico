@@ -9,7 +9,7 @@ import { LAYOUT_TOKENS } from "@/lib/styles"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { DownloadSimple, FileText, ChartBar, TrendUp, FadersHorizontal } from "@phosphor-icons/react"
+import { Download, FileText, BarChart, TrendingUp, SlidersHorizontal } from "lucide-react"
 import api, { pollTask } from "@/lib/api"
 import { toast } from "sonner"
 import { ReportTable } from "@/components/shared/ReportTable"
@@ -136,9 +136,10 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
 
     const renderBSDistribution = () => {
         if (!bsData) return null
-        const a = bsData.total_assets || 0
-        const p = bsData.total_liabilities || 0
-        const e = bsData.total_equity || 0
+        const d = bsData as any
+        const a = d.total_assets || 0
+        const p = d.total_liabilities || 0
+        const e = d.total_equity || 0
         const totalSum = a + p + e
         if (totalSum === 0) return null
 
@@ -186,7 +187,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                     onClick={() => setMappingOpen(true)}
                     className="text-[10px] font-black uppercase tracking-[0.2em] text-primary gap-1.5 hover:bg-primary/5 p-0 h-auto"
                 >
-                    <FadersHorizontal className="h-3.5 w-3.5" />
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
                     Configurar Mapeo
                 </Button>
 
@@ -225,45 +226,52 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                     <div className="space-y-10">
                                         {!showComparison && renderBSDistribution()}
                                         <div className="space-y-8">
-                                            <ReportTable
-                                                title="Activos"
-                                                data={bsData.assets}
-                                                totalLabel="Total Activos"
-                                                totalValue={bsData.total_assets}
-                                                totalValueComp={bsData.total_assets_comp}
-                                                compPeriodLabel={compPeriodLabel}
-                                                periodLabel={periodLabel}
-                                                showComparison={showComparison}
-                                                isLoading={loading}
-                                                accentColor="success"
-                                                embedded
-                                            />
-                                            <ReportTable
-                                                title="Pasivos"
-                                                data={bsData.liabilities}
-                                                totalLabel="Total Pasivos"
-                                                totalValue={bsData.total_liabilities}
-                                                totalValueComp={bsData.total_liabilities_comp}
-                                                compPeriodLabel={compPeriodLabel}
-                                                periodLabel={periodLabel}
-                                                showComparison={showComparison}
-                                                isLoading={loading}
-                                                accentColor="destructive"
-                                                embedded
-                                            />
-                                            <ReportTable
-                                                title="Patrimonio"
-                                                data={bsData.equity}
-                                                totalLabel="Total Patrimonio"
-                                                totalValue={bsData.total_equity}
-                                                totalValueComp={bsData.total_equity_comp}
-                                                compPeriodLabel={compPeriodLabel}
-                                                periodLabel={periodLabel}
-                                                showComparison={showComparison}
-                                                isLoading={loading}
-                                                accentColor="primary"
-                                                embedded
-                                            />
+                                            {(() => {
+                                                const d = bsData as any;
+                                                return (
+                                                    <>
+                                                        <ReportTable
+                                                            title="Activos"
+                                                            data={d.assets}
+                                                            totalLabel="Total Activos"
+                                                            totalValue={d.total_assets}
+                                                            totalValueComp={d.total_assets_comp}
+                                                            compPeriodLabel={compPeriodLabel}
+                                                            periodLabel={periodLabel}
+                                                            showComparison={showComparison}
+                                                            isLoading={loading}
+                                                            accentColor="success"
+                                                            embedded
+                                                        />
+                                                        <ReportTable
+                                                            title="Pasivos"
+                                                            data={d.liabilities}
+                                                            totalLabel="Total Pasivos"
+                                                            totalValue={d.total_liabilities}
+                                                            totalValueComp={d.total_liabilities_comp}
+                                                            compPeriodLabel={compPeriodLabel}
+                                                            periodLabel={periodLabel}
+                                                            showComparison={showComparison}
+                                                            isLoading={loading}
+                                                            accentColor="destructive"
+                                                            embedded
+                                                        />
+                                                        <ReportTable
+                                                            title="Patrimonio"
+                                                            data={d.equity}
+                                                            totalLabel="Total Patrimonio"
+                                                            totalValue={d.total_equity}
+                                                            totalValueComp={d.total_equity_comp}
+                                                            compPeriodLabel={compPeriodLabel}
+                                                            periodLabel={periodLabel}
+                                                            showComparison={showComparison}
+                                                            isLoading={loading}
+                                                            accentColor="primary"
+                                                            embedded
+                                                        />
+                                                    </>
+                                                )
+                                            })()}
                                         </div>
                                     </div>
                                 ) : (
@@ -282,47 +290,50 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                 <RenderToolbar />
                                 {plData ? (
                                     <div className="space-y-8">
-                                        {((plData.sections as Array<Record<string, unknown>>) || []).map((section, idx: number) => (
-                                            section.is_total ? (
-                                                <div key={idx} className={cn(
-                                                    "py-6 px-4 flex justify-between items-center rounded-lg my-4 transition-colors",
-                                                    idx === (plData.sections?.length || 0) - 1
-                                                        ? "bg-primary text-primary-foreground shadow-lg"
-                                                        : "bg-muted/50 border"
-                                                )}>
-                                                    <span className="text-lg font-bold uppercase tracking-tight">{section.name}</span>
-                                                    <div className="flex space-x-12 items-center">
-                                                        <div className="text-right">
-                                                            <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (plData.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{periodLabel || 'Actual'}</div>
-                                                            <div className="text-2xl font-black font-mono">
-                                                                {(section.total || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                            </div>
-                                                        </div>
-                                                        {showComparison && (
-                                                            <div className={cn("text-right border-l pl-12", idx === (plData.sections?.length || 0) - 1 ? "border-primary-foreground/30" : "border")}>
-                                                                <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (plData.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{compPeriodLabel || 'Anterior'}</div>
-                                                                <div className={cn("text-2xl font-black font-mono opacity-80", idx === (plData.sections?.length || 0) - 1 ? "text-primary-foreground" : "")}>
-                                                                    {(section.total_comp || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                        {(() => {
+                                            const d = plData as any;
+                                            return (d.sections || []).map((section: any, idx: number) => (
+                                                section.is_total ? (
+                                                    <div key={idx} className={cn(
+                                                        "py-6 px-4 flex justify-between items-center rounded-lg my-4 transition-colors",
+                                                        idx === (d.sections?.length || 0) - 1
+                                                            ? "bg-primary text-primary-foreground shadow-lg"
+                                                            : "bg-muted/50 border"
+                                                    )}>
+                                                        <span className="text-lg font-bold uppercase tracking-tight">{section.name}</span>
+                                                        <div className="flex space-x-12 items-center">
+                                                            <div className="text-right">
+                                                                <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{periodLabel || 'Actual'}</div>
+                                                                <div className="text-2xl font-black font-mono">
+                                                                    {(section.total || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                                                 </div>
                                                             </div>
-                                                        )}
+                                                            {showComparison && (
+                                                                <div className={cn("text-right border-l pl-12", idx === (d.sections?.length || 0) - 1 ? "border-primary-foreground/30" : "border")}>
+                                                                    <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{compPeriodLabel || 'Anterior'}</div>
+                                                                    <div className={cn("text-2xl font-black font-mono opacity-80", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "")}>
+                                                                        {(section.total_comp || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ) : (
-                                                <ReportTable
-                                                    key={idx}
-                                                    title={section.name}
-                                                    data={section.tree}
-                                                    totalLabel={`Total ${section.name}`}
-                                                    totalValue={section.total}
-                                                    totalValueComp={section.total_comp}
-                                                    showComparison={showComparison}
-                                                    isLoading={loading}
-                                                    accentColor={section.name.toLowerCase().includes('ingreso') ? 'success' : section.name.toLowerCase().includes('gasto') || section.name.toLowerCase().includes('costo') ? 'destructive' : 'primary'}
-                                                    embedded
-                                                />
-                                            )
-                                        ))}
+                                                ) : (
+                                                    <ReportTable
+                                                        key={idx}
+                                                        title={section.name}
+                                                        data={section.tree}
+                                                        totalLabel={`Total ${section.name}`}
+                                                        totalValue={section.total}
+                                                        totalValueComp={section.total_comp}
+                                                        showComparison={showComparison}
+                                                        isLoading={loading}
+                                                        accentColor={section.name.toLowerCase().includes('ingreso') ? 'success' : section.name.toLowerCase().includes('gasto') || section.name.toLowerCase().includes('costo') ? 'destructive' : 'primary'}
+                                                        embedded
+                                                    />
+                                                )
+                                            ))
+                                        })()}
                                     </div>
                                 ) : (
                                     <ReportTable data={null} isLoading={loading} showComparison={showComparison} />

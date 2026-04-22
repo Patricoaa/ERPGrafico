@@ -24,6 +24,25 @@ export interface Invoice {
     related_stock_moves?: Record<string, unknown>[]
     // Helper property for filtering
     is_sale_document?: boolean
+    customer_name?: string
+    supplier_name?: string
+    corrected_invoice?: {
+        id: number
+        display_id: string
+    } | null
+    adjustments?: {
+        id: number
+        display_id: string
+        number: string
+    }[]
+    lines?: {
+        quantity: string | number
+        product_name?: string
+        description?: string
+    }[]
+    items?: any[]
+    partner?: number
+    supplier?: number
 }
 
 export interface InvoiceFilters {

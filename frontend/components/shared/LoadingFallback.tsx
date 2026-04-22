@@ -13,14 +13,19 @@ interface LoadingFallbackProps {
      * @deprecated 'spinner' variant removed — see GOVERNANCE.md Rule 10
      */
     variant?: 'table' | 'card' | 'list'
+    /** Optional label text — accepted for API compatibility but not rendered */
+    message?: string
 }
 
 export const LoadingFallback: React.FC<LoadingFallbackProps> = ({
     className = '',
-    variant = 'table'
+    variant = 'table',
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    message: _message,
 }) => {
     if (variant === 'card' || variant === 'list') {
-        return <CardSkeleton className={className} variant={variant} />
+        const skeletonVariant = variant === 'card' ? 'grid' : 'list';
+        return <CardSkeleton className={className} variant={skeletonVariant} />
     }
 
     return <TableSkeleton className={className} />

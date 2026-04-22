@@ -26,18 +26,7 @@ import { translateProductionStage } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
-interface WorkOrder {
-    id: number
-    number: string
-    description: string
-    status: string
-    current_stage: string
-    start_date: string
-    due_date: string
-    sale_customer_name?: string
-    materials?: Record<string, unknown>[]
-}
-
+import type { WorkOrder } from "@/features/production/types"
 const statusOptions = [
     { label: "Borrador", value: "DRAFT" },
     { label: "Planificada", value: "PLANNED" },
@@ -281,7 +270,7 @@ export default function WorkOrdersPage({ createAction }: WorkOrdersPageProps = {
             {/* Hidden Forms */}
             {editingOrder || isFormOpen ? (
                 <WorkOrderForm
-                    initialData={editingOrder}
+                    initialData={editingOrder as any}
                     open={isFormOpen}
                     onOpenChange={handleFormClose}
                     onSuccess={fetchOrders}
