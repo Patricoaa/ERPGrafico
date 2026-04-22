@@ -195,7 +195,7 @@ export function SessionCloseModal({
                     total_manual_outflow: session.total_other_cash_outflow,
                     manual_movements: session.cash_movements as unknown as POSReportData["manual_movements"],
                     sales_by_category: session.sales_by_category as POSReportData["sales_by_category"],
-                    treasury_account_id: typeof session.treasury_account === 'object' ? session.treasury_account.id : session.treasury_account,
+                    treasury_account_id: typeof session.treasury_account === 'object' ? session.treasury_account?.id : (session.treasury_account as number || undefined),
                 }
 
                 return (

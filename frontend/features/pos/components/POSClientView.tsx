@@ -49,6 +49,7 @@ import {
 import { type CheckoutResponse } from '@/features/sales/types'
 import type { Customer, Product, WizardState } from '@/types/pos'
 import type { TransactionData } from '@/types/transactions'
+import { type DraftCart } from './DraftCartsList'
 import type { CheckoutWizardState } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
 // UI Components from Feature
@@ -120,7 +121,7 @@ export function POSClientView() {
     }, [])
 
     const { syncDrafts, acquireLock, releaseLock, isLockedByOther, getLockInfo, forceSync, browserSessionKey } = useDraftSync({
-        posSessionId: currentSession?.id ?? null,
+        posSessionId: (currentSession?.id ?? null) as number | null,
         enabled: !!currentSession?.id,
         onNewDraft: handleNewDraft,
         onDraftUpdated: (draft) => { /* Optional: handle quiet updates */ },
@@ -131,7 +132,7 @@ export function POSClientView() {
                     duration: null, // Keep it visible
                 })
                 // Update local session state to null to trigger clean UI reset
-                setCurrentSession(undefined)
+                setCurrentSession(null)
             }
         }
     })
@@ -311,9 +312,9 @@ export function POSClientView() {
         }
     }
 
-    const handleLoadDraft = async (draft: SyncDraft | any) => {
+    const handleLoadDraft = async (draft: SyncDraft | DraftCart) => {
         await loadDraft(draft.id); setDraftsListOpen(false)
-        if (draft.wizard_state?.step) setPosMode('CHECKOUT')
+        if ('wizard_state' in draft && draft.wizard_state?.step) setPosMode('CHECKOUT')
     }
 
     const handleCheckoutComplete = async (resData: TransactionData | CheckoutResponse) => {
@@ -328,7 +329,11 @@ export function POSClientView() {
     }
 
     const handleSuspendDraft = async (finalState: CheckoutWizardState) => {
-        await saveDraft(undefined, true, finalState as any)
+        try {
+            await saveDraft(undefined, true, finalState as Record<string, unknown>)
+        } catch (error) {
+            console.error("Failed to suspend draft", error)
+        }
         await releaseCurrentLock()
         setCurrentDraftId(null)
         setWizardState(null)

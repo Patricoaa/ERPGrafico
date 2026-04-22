@@ -894,7 +894,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     open={moveDialogOpen}
                     onOpenChange={setMoveDialogOpen}
                     context="pos"
-                    fixedAccountId={typeof currentSession.treasury_account === 'object' ? currentSession.treasury_account.id : (currentSession.treasury_account || undefined)}
+                    fixedAccountId={typeof currentSession.treasury_account === 'object' ? currentSession.treasury_account?.id : (currentSession.treasury_account as number || undefined)}
                     fixedAccountName={currentSession.treasury_account_name}
                     maxOutboundAmount={currentSession.expected_cash}
                     onComplete={handleRegisterManualMovement}

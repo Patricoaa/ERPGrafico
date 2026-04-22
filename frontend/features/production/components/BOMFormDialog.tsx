@@ -166,7 +166,7 @@ export function BOMFormDialog({
     }, [selectedProduct?.id, bomToEdit?.id])
 
     const form = useForm<BOMFormValues>({
-        resolver: zodResolver(bomSchema) as Resolver<BOMFormValues>,
+        resolver: zodResolver(bomSchema),
         defaultValues: {
             name: "",
             active: true,
