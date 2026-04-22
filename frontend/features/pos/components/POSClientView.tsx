@@ -129,7 +129,7 @@ export function POSClientView() {
             if (status === 'CLOSED') {
                 toast.error("Sesión Cerrada", {
                     description: `La sesión ha sido cerrada por ${closedBy || 'otro terminal'}.`,
-                    duration: null, // Keep it visible
+                    duration: 10000, // 10 seconds, enough to see it
                 })
                 // Update local session state to null to trigger clean UI reset
                 setCurrentSession(null)
@@ -330,7 +330,7 @@ export function POSClientView() {
 
     const handleSuspendDraft = async (finalState: CheckoutWizardState) => {
         try {
-            await saveDraft(undefined, true, finalState as Record<string, unknown>)
+            await saveDraft(undefined, true, finalState as unknown as Record<string, unknown>)
         } catch (error) {
             console.error("Failed to suspend draft", error)
         }
