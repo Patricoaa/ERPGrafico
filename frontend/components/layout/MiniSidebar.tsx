@@ -51,8 +51,8 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
 
     const getInitials = () => {
         // Assume user might have a tenant/company name, fallback to "SD"
-        const companyName = (user as Record<string, unknown>)?.tenant_name as string | undefined
-            || (user as Record<string, unknown>)?.company_name as string | undefined;
+        const companyName = (user as any)?.tenant_name as string | undefined
+            || (user as any)?.company_name as string | undefined;
         if (companyName) {
             return companyName.substring(0, 2).toUpperCase()
         }

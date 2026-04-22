@@ -18,6 +18,7 @@ interface SalesOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
     isCreateModalOpen?: boolean
     setCreateModalOpen?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
 export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateModalOpen }: SalesOrdersClientViewProps) {

@@ -78,8 +78,10 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     const [ledgerData, setLedgerData] = useState<Record<string, unknown>[]>([])
     const [loadingLedger, setLoadingLedger] = useState(false)
 
+    const c = contact as any
     const { createContact, updateContact } = useContactMutations()
-    const { data: insightsData, isLoading: loadingInsights, refetch: refetchInsights } = useContactInsights(contact?.id)
+    const { data: insightsData, isLoading: loadingInsights, refetch: refetchInsights } = useContactInsights(c?.id)
+    const ins = insightsData as any
     const { isSheetCollapsed } = useGlobalModals()
     const { closeHub } = useHubPanel()
 
@@ -97,16 +99,16 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 
     const form = useFormWithToast<z.infer<typeof contactSchema>>({
         schema: contactSchema,
-        defaultValues: contact ? {
-            name: contact.name || "",
-            tax_id: contact.tax_id || "",
-            email: contact.email || "",
-            phone: contact.phone || "",
-            address: contact.address || "",
-            city: contact.city || "",
-            payment_terms: contact.payment_terms || "CONTADO",
-            is_default_customer: !!contact.is_default_customer,
-            is_default_vendor: !!contact.is_default_vendor,
+        defaultValues: c ? {
+            name: (c.name || "") as string,
+            tax_id: (c.tax_id || "") as string,
+            email: (c.email || "") as string,
+            phone: (c.phone || "") as string,
+            address: (c.address || "") as string,
+            city: (c.city || "") as string,
+            payment_terms: (c.payment_terms || "CONTADO") as string,
+            is_default_customer: !!c.is_default_customer,
+            is_default_vendor: !!c.is_default_vendor,
         } : {
             name: "",
             tax_id: "",
@@ -129,10 +131,10 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             const cust = custRes.data.results?.[0] || custRes.data?.[0]
             const vend = vendRes.data.results?.[0] || vendRes.data?.[0]
 
-            if (cust && cust.id !== contact?.id) setDefaultCustomer(cust)
+            if (cust && cust.id !== c?.id) setDefaultCustomer(cust)
             else setDefaultCustomer(null)
 
-            if (vend && vend.id !== contact?.id) setDefaultVendor(vend)
+            if (vend && vend.id !== c?.id) setDefaultVendor(vend)
             else setDefaultVendor(null)
 
         } catch (error) {
@@ -141,8 +143,8 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     }
 
     useEffect(() => {
-        if (open && contact?.id && !contact.name) {
-            api.get(`/contacts/${contact.id}/`)
+        if (open && c?.id && !c.name) {
+            api.get(`/contacts/${c.id}/`)
                 .then(res => {
                     form.reset({
                         name: res.data.name || "",
@@ -161,12 +163,12 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                     toast.error("Error al cargar detalles del contacto")
                 })
         }
-    }, [open, contact?.id, contact?.name])
+    }, [open, c?.id, c?.name])
 
     const fetchLedger = () => {
-        if (!contact?.id) return
+        if (!c?.id) return
         setLoadingLedger(true)
-        api.get(`/contacts/${contact.id}/credit_ledger/`)
+        api.get(`/contacts/${c.id}/credit_ledger/`)
             .then(res => setLedgerData(res.data))
             .catch(err => {
                 console.error("Error fetching credit ledger:", err)
@@ -176,13 +178,13 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     }
 
     useEffect(() => {
-        if (open && contact?.id && activeTab === "credit") {
+        if (open && c?.id && activeTab === "credit") {
             const init = async () => {
                 await fetchLedger()
             }
             init()
         }
-    }, [open, contact?.id, activeTab])
+    }, [open, c?.id, activeTab])
 
     const handleActionSuccess = () => {
         refetchInsights()
@@ -197,23 +199,22 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             })
             return
         }
-        
-        requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
             fetchDefaults()
-
-            if (contact && contact.name) {
+ 
+            if (c && c.name) {
                 form.reset({
-                    name: contact.name,
-                    tax_id: contact.tax_id || "",
-                    email: contact.email || "",
-                    phone: contact.phone || "",
-                    address: contact.address || "",
-                    city: contact.city || "",
-                    payment_terms: contact.payment_terms || "CONTADO",
-                    is_default_customer: !!contact.is_default_customer,
-                    is_default_vendor: !!contact.is_default_vendor,
+                    name: c.name as string,
+                    tax_id: (c.tax_id || "") as string,
+                    email: (c.email || "") as string,
+                    phone: (c.phone || "") as string,
+                    address: (c.address || "") as string,
+                    city: (c.city || "") as string,
+                    payment_terms: (c.payment_terms || "CONTADO") as string,
+                    is_default_customer: !!c.is_default_customer,
+                    is_default_vendor: !!c.is_default_vendor,
                 })
-            } else if (!contact?.id) {
+            } else if (!c?.id) {
                 form.reset({
                     name: "",
                     tax_id: "",
@@ -227,17 +228,17 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 })
             }
         })
-    }, [contact, open, form.reset])
+    }, [c, open, form.reset])
 
     const saveContact = async (values: z.infer<typeof contactSchema>) => {
         try {
             let savedContact;
-            if (contact) {
-                savedContact = await updateContact({ id: contact.id, payload: values })
+            if (c?.id) {
+                savedContact = await updateContact({ id: c.id as number, payload: values as any })
             } else {
-                savedContact = await createContact(values as Record<string, unknown>)
+                savedContact = await createContact(values as any)
             }
-            onSuccess(savedContact)
+            onSuccess(savedContact as Record<string, unknown>)
             onOpenChange(false)
         } catch (error) {
             // Error handled by hook
@@ -245,16 +246,16 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     }
 
     const onSubmit = async (values: z.infer<typeof contactSchema>) => {
-        if (values.is_default_customer && defaultCustomer && defaultCustomer.id !== contact?.id) {
+        if (values.is_default_customer && defaultCustomer && (defaultCustomer as any).id !== c?.id) {
             setPendingValues(values)
-            setConfirmReplacement({ type: 'customer', name: defaultCustomer.name })
+            setConfirmReplacement({ type: 'customer', name: (defaultCustomer as any).name })
             setIsConfirmModalOpen(true)
             return
         }
 
-        if (values.is_default_vendor && defaultVendor && defaultVendor.id !== contact?.id) {
+        if (values.is_default_vendor && defaultVendor && (defaultVendor as any).id !== c?.id) {
             setPendingValues(values)
-            setConfirmReplacement({ type: 'vendor', name: defaultVendor.name })
+            setConfirmReplacement({ type: 'vendor', name: (defaultVendor as any).name })
             setIsConfirmModalOpen(true)
             return
         }
@@ -572,6 +573,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 interface InsightsTableProps {
     data: Record<string, unknown>[]
     type: 'sale' | 'purchase' | 'work_order'
+    title: string
     icon: React.ElementType
     onActionSuccess?: () => void
 }
@@ -586,8 +588,8 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         const total = data.length
 
         // Financial (Pending Payment)
-        const pendingPaymentItems = data.filter(item => parseFloat(item.pending_amount) > 0)
-        const totalPendingMoney = pendingPaymentItems.reduce((acc, item) => acc + parseFloat(item.pending_amount), 0)
+        const pendingPaymentItems = data.filter(item => parseFloat((item as any).pending_amount || "0") > 0)
+        const totalPendingMoney = pendingPaymentItems.reduce((acc, item) => acc + parseFloat((item as any).pending_amount || "0"), 0)
 
         // Logistics (Pending Delivery/Receipt)
         // Uses simplified check: not fully delivered/received if items exist
@@ -603,7 +605,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         })
 
         // Work Orders (Pending Completion)
-        const pendingWorkOrders = data.filter(item => item.status !== 'COMPLETED')
+        const pendingWorkOrders = data.filter(item => (item as any).status !== 'COMPLETED')
 
         return {
             total,
@@ -619,7 +621,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
     const filteredData = useMemo(() => {
         switch (activeFilter) {
             case 'financial':
-                return data.filter(item => parseFloat(item.pending_amount) > 0)
+                return data.filter(item => parseFloat((item as any).pending_amount || "0") > 0)
             case 'logistics':
                 return data.filter(item => {
                     const status = getHubStatuses(item)
@@ -631,7 +633,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                     return status.billing !== 'success'
                 })
             case 'pending': // For Work Orders
-                return data.filter(item => item.status !== 'COMPLETED')
+                return data.filter(item => (item as any).status !== 'COMPLETED')
             case 'all':
             default:
                 return data
@@ -642,7 +644,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         {
             accessorKey: "date",
             header: "Fecha",
-            cell: ({ row }) => <DataCell.Date value={row.original.date} />,
+            cell: ({ row }) => <DataCell.Date value={(row.original as any).date} />,
         },
         {
             accessorKey: "display_id",
@@ -656,7 +658,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
 
                 return (
                     <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground tracking-tight">
-                        {row.original.display_id || `${prefix}${row.original.number?.toString().padStart(6, '0')}`}
+                        {(row.original as any).display_id || `${prefix}${(row.original as any).number?.toString().padStart(6, '0')}`}
                     </span>
                 )
             },
@@ -665,19 +667,20 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
             {
                 accessorKey: "total",
                 header: "Total",
-                cell: ({ row }: { row: { original: Record<string, unknown> } }) => <DataCell.Currency value={row.original.total} className="text-left font-bold" />,
+                cell: ({ row }: { row: { original: any } }) => <DataCell.Currency value={row.original.total} className="text-left font-bold" />,
             }
         ] : []),
         {
             id: "status",
             header: "Estados",
             cell: ({ row }) => {
+                const item = row.original as any
                 if (type === 'work_order') {
                     return (
-                        <StatusBadge status={row.original.status} size="sm" />
+                        <StatusBadge status={item.status} size="sm" />
                     )
                 }
-                return <OrderHubStatus order={row.original} />
+                return <OrderHubStatus order={item} />
             }
         },
         createActionsColumn<Record<string, unknown>>({
@@ -686,10 +689,11 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                     icon={LayoutDashboard}
                     title="Gestionar Documento"
                     onClick={() => {
+                        const i = item as any
                         if (type === 'work_order') {
-                            openWorkOrder(item.id)
+                            openWorkOrder(i.id)
                         } else {
-                            openHub({ orderId: item.id, type: type === 'purchase' ? 'purchase' : 'sale' })
+                            openHub({ orderId: i.id, type: type === 'purchase' ? 'purchase' : 'sale' })
                         }
                     }}
                 />
@@ -820,7 +824,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                     showToolbarSort={true}
                     renderCustomView={(table) => (
                         <div className="grid gap-3 pt-2">
-                            {table.getRowModel().rows.map((row: { original: Record<string, unknown>, id: string }) => (
+                            {table.getRowModel().rows.map((row: any) => (
                                 <OrderCard
                                     key={row.original.id}
                                     item={row.original}

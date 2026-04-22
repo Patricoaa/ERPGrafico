@@ -31,7 +31,7 @@ const StatusIcon = ({ status }: { status: string }) => {
         }
     };
 
-    const taxClosed = period.tax_period_id && period.tax_period_status === 'CLOSED';
+    const taxClosed = !!(period.tax_period_id && period.tax_period_status === 'CLOSED');
 
     return (
         <IndustrialCard variant="list" className="p-4 flex flex-col justify-between h-full group transition-all duration-300 hover:border-primary/30">

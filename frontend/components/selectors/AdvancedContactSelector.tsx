@@ -215,8 +215,8 @@ export function AdvancedContactSelector({
                     <ContactModal
                         open={isCreateModalOpen}
                         onOpenChange={setIsCreateModalOpen}
-                        onSuccess={handleCreateSuccess}
-                        contact={initialContactTemplate}
+                        onSuccess={handleCreateSuccess as any}
+                        contact={initialContactTemplate as any}
                     />
                 </Suspense>
             )}

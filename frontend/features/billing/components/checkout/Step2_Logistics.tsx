@@ -27,8 +27,10 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-function UoMSelector({ line, currentUom, onUomChange }: { line: Record<string, unknown>, currentUom: Record<string, unknown>, onUomChange: (uomId: number) => void }) {
-    const [allowedUoms, setAllowedUoms] = useState<Record<string, unknown>[]>([])
+function UoMSelector({ line: l, currentUom: cu, onUomChange }: { line: Record<string, unknown>, currentUom: Record<string, unknown>, onUomChange: (uomId: number) => void }) {
+    const line = l as any
+    const currentUom = cu as any
+    const [allowedUoms, setAllowedUoms] = useState<any[]>([])
 
     useEffect(() => {
         const fetchAllowed = async () => {
@@ -50,7 +52,7 @@ function UoMSelector({ line, currentUom, onUomChange }: { line: Record<string, u
                 <SelectValue />
             </SelectTrigger>
             <SelectContent>
-                {allowedUoms.map((u: Record<string, unknown>) => (
+                {allowedUoms.map((u: any) => (
                     <SelectItem key={u.id} value={u.id.toString()} className="text-[10px]">
                         {u.name}
                     </SelectItem>
@@ -120,13 +122,13 @@ export function Step2_Logistics({
         }
     }
 
-    const formData = data || {
+    const formData = (data || {
         warehouse_id: "",
         date: dateString || "",
         delivery_type: hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE',
         line_data: [],
         notes: ""
-    }
+    }) as any
 
     // Sync date when server date arrives if not already set
     useEffect(() => {
@@ -263,7 +265,8 @@ export function Step2_Logistics({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {selectedItems.map((item) => {
+                                    {selectedItems.map((i: any) => {
+                                        const item = i as any;
                                         const isRestricted = !isCreditNote &&
                                             (item.product_type === 'MANUFACTURABLE' || item.has_bom) &&
                                             !item.mfg_auto_finalize;
@@ -273,7 +276,7 @@ export function Step2_Logistics({
                                             item.has_bom) && !isRestricted;
 
                                         const currentVal = (formData.line_data || [])
-                                            .find((ld: Record<string, unknown>) => ld.line_id === item.line_id)?.quantity ?? 0;
+                                            .find((ld: any) => ld.line_id === item.line_id)?.quantity ?? 0;
 
                                         return (
                                             <TableRow key={item.line_id} className={cn(!isEligible && "bg-muted/30 opacity-70")}>
@@ -300,8 +303,8 @@ export function Step2_Logistics({
                                                         disabled={!isEligible}
                                                         onChange={(e) => {
                                                             const val = parseFloat(e.target.value) || 0;
-                                                            const lines = [...(formData.line_data || [])];
-                                                            const idx = lines.findIndex((ld: Record<string, unknown>) => ld.line_id === item.line_id);
+                                                            const lines = [...(formData.line_data as any[] || [])];
+                                                            const idx = lines.findIndex((ld: any) => ld.line_id === item.line_id);
                                                             if (idx >= 0) {
                                                                 lines[idx] = { ...lines[idx], quantity: val };
                                                             } else {
@@ -315,10 +318,10 @@ export function Step2_Logistics({
                                                 <TableCell className="text-sm text-muted-foreground font-medium">
                                                     <UoMSelector
                                                         line={item}
-                                                        currentUom={(formData.line_data as Record<string, unknown>[] || []).find((ld: Record<string, unknown>) => ld.line_id === item.line_id)?.uom_id || item.uom_id}
+                                                        currentUom={(formData.line_data as any[] || []).find((ld: any) => ld.line_id === item.line_id)?.uom_id || item.uom_id}
                                                         onUomChange={(uomId) => {
-                                                            const lines = [...(formData.line_data || [])];
-                                                            const idx = lines.findIndex((ld: Record<string, unknown>) => ld.line_id === item.line_id);
+                                                            const lines = [...(formData.line_data as any[] || [])];
+                                                            const idx = lines.findIndex((ld: any) => ld.line_id === item.line_id);
                                                             if (idx >= 0) {
                                                                 lines[idx] = { ...lines[idx], uom_id: uomId };
                                                             } else {

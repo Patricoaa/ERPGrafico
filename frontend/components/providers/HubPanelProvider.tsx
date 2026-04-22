@@ -21,6 +21,8 @@ interface HubPanelContextType {
     actionEngineRef: React.RefObject<any>
     triggerAction: (actionId: string) => void
     isHubEffectivelyOpen: boolean // Added unified state
+    /** @deprecated always false — docking feature was removed */
+    isDocked: boolean
 }
 
 const HubPanelContext = createContext<HubPanelContextType | undefined>(undefined)
@@ -76,7 +78,8 @@ export function HubPanelProvider({
         setHubTemporarilyHidden,
         actionEngineRef,
         triggerAction,
-        isHubEffectivelyOpen
+        isHubEffectivelyOpen,
+        isDocked: false,
     }), [openHub, closeHub, isHubOpen, hubConfig, isHubTemporarilyHidden, triggerAction, isHubEffectivelyOpen])
 
     return (

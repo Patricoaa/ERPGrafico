@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "@phosphor-icons/react/dist/ssr";
+import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import React from "react";
 
@@ -28,7 +28,7 @@ export const ActionFoldButton = React.forwardRef<HTMLButtonElement, ActionFoldBu
                     "w-full h-full text-primary-foreground transition-all duration-300 ease-in-out flex items-center justify-center shrink-0",
                     "group-hover:w-[35%] group-hover:justify-center group-hover:pl-1"
                 )}>
-                    {icon || <Plus weight="bold" className="w-5 h-5" />}
+                    {icon || <Plus className="w-5 h-5" />}
                 </div>
 
                 {/* The text */}

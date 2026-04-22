@@ -317,7 +317,7 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
 }) {
     const { createProvider, updateProvider } = useTerminalProviders()
     const [name, setName] = useState("")
-    const [type, setType] = useState("MANUAL")
+    const [type, setType] = useState<PaymentTerminalProvider['provider_type']>("MANUAL")
     const [supplierId, setSupplierId] = useState<number | null>(null)
     const [receivableAccount, setReceivableAccount] = useState<number | null>(null)
     const [expenseAccount, setExpenseAccount] = useState<number | null>(null)
@@ -372,9 +372,9 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
             }
 
             if (provider) {
-                await updateProvider.mutateAsync({ id: provider.id, data })
+                await updateProvider.mutateAsync({ id: provider.id, data: data as any })
             } else {
-                await createProvider.mutateAsync(data)
+                await createProvider.mutateAsync(data as any)
             }
             onSuccess()
             onOpenChange(false)
@@ -405,8 +405,8 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
                     <div className="space-y-2">
                         <Label className={FORM_STYLES.label}>Contacto / Entidad (Proveedor)</Label>
                         <AdvancedContactSelector
-                            value={supplierId}
-                            onChange={setSupplierId}
+                            value={supplierId?.toString() || null}
+                            onChange={(val) => setSupplierId(val ? parseInt(val) : null)}
                             onSelectContact={(contact) => {
                                 if (!name) setName(contact.name)
                             }}
@@ -431,8 +431,8 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
                     <div className="space-y-2">
                         <Label className={FORM_STYLES.label}>Cuenta Puente Recaudación (Activo)</Label>
                         <AccountSelector
-                            value={receivableAccount}
-                            onChange={setReceivableAccount}
+                            value={receivableAccount?.toString() || null}
+                            onChange={(v) => setReceivableAccount(v ? parseInt(v) : null)}
                             accountType="ASSET"
                         />
                     </div>
@@ -440,16 +440,16 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
                         <div className="space-y-2">
                             <Label className={FORM_STYLES.label}>Cuenta Gasto Comisiones</Label>
                             <AccountSelector
-                                value={expenseAccount}
-                                onChange={setExpenseAccount}
+                                value={expenseAccount?.toString() || null}
+                                onChange={(v) => setExpenseAccount(v ? parseInt(v) : null)}
                                 accountType="EXPENSE"
                             />
                         </div>
                         <div className="space-y-2">
                             <Label className={FORM_STYLES.label}>Cuenta IVA Comisiones (Activo)</Label>
                             <AccountSelector
-                                value={ivaAccount}
-                                onChange={setIvaAccount}
+                                value={ivaAccount?.toString() || null}
+                                onChange={(v) => setIvaAccount(v ? parseInt(v) : null)}
                                 accountType="ASSET"
                             />
                         </div>

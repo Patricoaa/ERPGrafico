@@ -11,7 +11,8 @@ interface InvoiceHubStatusProps {
     invoice: Invoice | Record<string, unknown>
 }
 
-export function InvoiceHubStatus({ invoice }: InvoiceHubStatusProps) {
+export function InvoiceHubStatus({ invoice: i }: InvoiceHubStatusProps) {
+    const invoice = i as any
     const statuses = getInvoiceHubStatuses(invoice)
 
     return (

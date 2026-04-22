@@ -192,10 +192,11 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             return userGroups.some((g) => {
                 const groupName = g.toLowerCase()
 
+                const gName = (task.data as any)?.candidate_group
                 return (
                     // Match by name (case-insensitive)
                     (task.assigned_group_name && task.assigned_group_name.toLowerCase() === groupName) ||
-                    (task.data?.candidate_group && task.data.candidate_group.toLowerCase() === groupName) ||
+                    (gName && typeof gName === 'string' && gName.toLowerCase() === groupName) ||
                     // Legacy match
                     (g === task.assigned_group)
                 )
@@ -229,7 +230,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         })
     }
 
-    const STAGES = getFilteredStages(order)
+    const STAGES = getFilteredStages(order as WorkOrder)
     const actualStepIndex = STAGES.findIndex(s => s.id === order?.current_stage)
     const isViewingCurrentStage = viewingStepIndex === actualStepIndex
 
@@ -282,7 +283,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
         try {
             await api.patch(`/production/orders/${orderId}/`, { stage_data: updatedStageData })
-            setOrder((prev: WorkOrder | null) => ({ ...prev, stage_data: updatedStageData }))
+            setOrder((prev: any) => ({ ...prev, stage_data: updatedStageData }))
             toast.success("Comentario registrado")
         } catch (error) {
             toast.error("Error al registrar comentario")
@@ -399,7 +400,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     await Promise.all(tasksToApprove.map((task: WorkOrderTask) => {
                         const notes = taskNotes[task.id]
                         const file = taskFiles[task.id]
-                        return completeTask(task.id, notes, file ? [file] : undefined)
+                        return completeTask(task.id as any, notes, file ? [file] : undefined)
                     }))
                 }
             }
@@ -574,7 +575,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const handleEditMaterial = (material: WorkOrderMaterial) => {
         setEditingMaterialId(material.id)
         setNewMaterialProduct(material.component.toString()) // Assuming component is ID
-        setNewMaterialQty(material.quantity_planned)
+        setNewMaterialQty(material.quantity_planned.toString())
         setNewMaterialUoM(material.uom.toString())
         setIsOutsourced(material.is_outsourced)
         setSelectedSupplierId(material.supplier?.toString() || null)
@@ -664,10 +665,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                 contentClassName="h-full"
                 title={
                     <WizardHeader
-                        order={order}
+                        order={order as WorkOrder}
                         currentStageLabel={STAGES[viewingStepIndex]?.label}
                         onEdit={() => setIsEditOpen(true)}
-                        onOpenCommandCenter={(id: number, type: string) => openHub({ orderId: id, type: type as "WORK_ORDER" | "PURCHASE_ORDER", onActionSuccess: fetchOrder })}
+                        onOpenCommandCenter={(id: number, type: string) => openHub({ orderId: id, type: type as any, onActionSuccess: fetchOrder })}
                         onAnnul={() => handleAnnulOrder()}
                         onDelete={() => setIsDeleteModalOpen(true)}
                         isAnnuling={isAnnuling}
@@ -682,7 +683,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         viewingStepIndex={viewingStepIndex}
                         actualStepIndex={actualStepIndex}
                         onStepClick={setViewingStepIndex}
-                        order={order}
+                        order={order as WorkOrder}
                     />
 
                     {/* Center - Content Area */}
@@ -738,8 +739,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             <div className="space-y-4">
 
                                                 <MaterialAssignmentTabs
-                                                    stockCount={order?.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced).length || 0}
-                                                    outsourcedCount={order?.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced).length || 0}
+                                                    stockCount={order?.materials?.filter((m: any) => !m.is_outsourced).length || 0}
+                                                    outsourcedCount={order?.materials?.filter((m: any) => m.is_outsourced).length || 0}
                                                     showOutsourcedTab={false}
                                                     stockContent={
                                                         <div className="space-y-6">
@@ -855,7 +856,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                 </div>
                                                                                 <div className="w-full md:w-40 space-y-2">
                                                                                     <label className="text-xs font-bold uppercase">Unidad</label>
-                                                                                    <UoMSelector product={selectedProductObj} context="bom" value={newMaterialUoM} onChange={setNewMaterialUoM} uoms={uoms} />
+                                                                                    <UoMSelector product={selectedProductObj as any} context="bom" value={newMaterialUoM} onChange={setNewMaterialUoM} uoms={uoms} />
                                                                                 </div>
                                                                                 <div className="flex gap-2">
                                                                                     <Button variant="outline" size="sm" onClick={() => { setIsAddMaterialOpen(false); resetMaterialForm(); }}>Cancelar</Button>

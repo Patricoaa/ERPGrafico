@@ -149,7 +149,7 @@ export function JournalEntryForm({
             return {
                 ...initialData,
                 date: new Date(initialData.date),
-                items: initialData.items.map((item: Record<string, unknown>) => ({
+                items: initialData.items.map((item: any) => ({
                     ...item,
                     account: item.account.toString(),
                     debit: parseFloat(item.debit),

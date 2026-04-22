@@ -42,6 +42,8 @@ interface PageHeaderProps {
     variant?: 'default' | 'minimal'
     /** Additional CSS classes for the container */
     className?: string
+    /** Optional children rendered inside the header area */
+    children?: React.ReactNode
 }
 
 /**

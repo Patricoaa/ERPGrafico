@@ -23,9 +23,10 @@ interface AccountSelectorProps {
     accountType?: string | string[]
     showAll?: boolean
     isReconcilable?: boolean
+    disabled?: boolean
 }
 
-export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable }: AccountSelectorProps) {
+export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable, disabled = false }: AccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const { accounts: allAccounts, loading: accountsLoading, fetchAccounts } = useAccountSearch()
@@ -93,6 +94,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                         variant="outline"
                         role="combobox"
                         aria-expanded={open}
+                        disabled={disabled}
                         className="flex-1 justify-between overflow-hidden h-auto py-2 px-3"
                     >
                         {selectedAccount ? (

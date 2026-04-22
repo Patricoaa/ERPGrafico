@@ -18,6 +18,8 @@ export interface Contact {
     credit_days?: number | null
     credit_balance_used?: number | null
     credit_available?: number | null
+    credit_blocked?: boolean
+    credit_auto_blocked?: boolean
 }
 
 export interface ContactFilters {

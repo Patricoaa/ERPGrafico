@@ -49,6 +49,7 @@ interface AccountFormProps {
     onSuccess?: () => void
     accounts?: Record<string, unknown>[]
     initialData?: Record<string, unknown>
+    parentId?: string
     triggerText?: React.ReactNode
     triggerVariant?: "default" | "circular"
     open?: boolean
@@ -59,6 +60,7 @@ export function AccountForm({
     onSuccess,
     accounts = [],
     initialData,
+    parentId,
     triggerText = "Nueva Cuenta",
     triggerVariant = "default",
     open: openProp,
@@ -75,10 +77,10 @@ export function AccountForm({
     const form = useForm<AccountFormValues>({
         resolver: zodResolver(accountSchema),
         defaultValues: {
-            code: initialData?.code || "",
-            name: initialData?.name || "",
+            code: initialData?.code as string || "",
+            name: initialData?.name as string || "",
             account_type: (initialData?.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE") || "ASSET",
-            parent: initialData?.parent || undefined,
+            parent: initialData?.parent as string || parentId || undefined,
         },
     })
 
@@ -106,16 +108,16 @@ export function AccountForm({
     }, [open, initialData, form])
 
     // Effect to handle parent changes: Update account_type and suggest categories
-    const parentId = form.watch("parent")
+    const watchParentId = form.watch("parent")
     useEffect(() => {
-        if (!parentId || parentId === "__none__" || parentId === "none") return;
+        if (!watchParentId || watchParentId === "__none__" || watchParentId === "none") return;
         
-        const parent = accounts.find(a => a.id.toString() === parentId.toString());
+        const parent = accounts.find((a: any) => a.id.toString() === watchParentId.toString());
         if (parent) {
             // Force account_type to match parent
-            form.setValue("account_type", parent.account_type);
+            form.setValue("account_type", (parent as any).account_type);
         }
-    }, [parentId, accounts, form])
+    }, [watchParentId, accounts, form])
 
 
     async function onSubmit(data: AccountFormValues) {
@@ -170,9 +172,9 @@ export function AccountForm({
                 }
                 description={
                     <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        {initialData?.code && (
+                        {(initialData as any)?.code && (
                             <>
-                                <span>{initialData.code}</span>
+                                <span>{(initialData as any).code}</span>
                                 <span className="opacity-30">|</span>
                             </>
                         )}

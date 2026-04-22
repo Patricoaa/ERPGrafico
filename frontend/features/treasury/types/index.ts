@@ -6,6 +6,7 @@ export interface Terminal {
     is_active: boolean
     allowed_payment_methods: PaymentMethod[]
     payment_terminal_device?: number
+    payment_terminal_device_name?: string
     default_treasury_account_name?: string
     serial_number?: string
     ip_address?: string

@@ -76,8 +76,8 @@ export function NoteCheckoutWizard({
         (item.product_type === 'MANUFACTURABLE' && !item.has_bom)
     );
 
-    const totalNet = selectedItems.reduce((acc, item) => acc + (item.quantity * item.unit_price), 0)
-    const totalTax = selectedItems.reduce((acc, item) => acc + (item.quantity * item.tax_amount), 0)
+    const totalNet = selectedItems.reduce((acc, item: any) => acc + (Number(item.quantity) * Number(item.unit_price)), 0)
+    const totalTax = selectedItems.reduce((acc, item: any) => acc + (Number(item.quantity) * Number(item.tax_amount)), 0)
     const total = totalNet + totalTax
 
     const isExempt = originalInvoice?.dte_type === 'FACTURA_EXENTA' || originalInvoice?.dte_type === 'BOLETA_EXENTA'
@@ -237,7 +237,8 @@ export function NoteCheckoutWizard({
                 // Clean up manufacturing_data for JSON (File objects can't be stringified)
                 let cleanMfgData = null
                 if (i.manufacturing_data) {
-                    const { design_files, approval_file, ...rest } = i.manufacturing_data
+                    const mfgData = i.manufacturing_data as any
+                    const { design_files, approval_file, ...rest } = mfgData
                     cleanMfgData = {
                         ...rest,
                         design_filenames: (design_files || []).map((f: File) => f.name),
@@ -257,15 +258,16 @@ export function NoteCheckoutWizard({
             })))
 
             // Append manufacturing files per item
-            selectedItems.forEach((item: Record<string, unknown>, itemIdx: number) => {
+            selectedItems.forEach((item: any, itemIdx: number) => {
                 if (item.manufacturing_data) {
-                    if (item.manufacturing_data.design_files) {
-                        item.manufacturing_data.design_files.forEach((file: File, fileIdx: number) => {
+                    const mfgData = item.manufacturing_data as any
+                    if (mfgData.design_files) {
+                        mfgData.design_files.forEach((file: File, fileIdx: number) => {
                             formData.append(`line_${itemIdx}_design_${fileIdx}`, file)
                         })
                     }
-                    if (item.manufacturing_data.approval_file) {
-                        formData.append(`line_${itemIdx}_approval`, item.manufacturing_data.approval_file)
+                    if (mfgData.approval_file) {
+                        formData.append(`line_${itemIdx}_approval`, mfgData.approval_file)
                     }
                 }
             })
@@ -276,10 +278,11 @@ export function NoteCheckoutWizard({
             }
 
             // Registration
-            const { attachment, ...regRest } = registrationData
+            const regData = registrationData as any
+            const { attachment, ...regRest } = regData
             formData.append('registration_data', JSON.stringify(regRest))
             if (attachment) {
-                formData.append('document_attachment', attachment)
+                formData.append('document_attachment', attachment as Blob)
             }
 
             // Payment
@@ -321,7 +324,7 @@ export function NoteCheckoutWizard({
             case 1:
                 return (
                     <Step1_Items
-                        originalInvoice={originalInvoice}
+                        originalInvoice={originalInvoice || {}}
                         selectedItems={selectedItems}
                         setSelectedItems={setSelectedItems}
                         isCreditNote={initialType === 'NOTA_CREDITO'}
@@ -330,8 +333,8 @@ export function NoteCheckoutWizard({
             case 5:
                 return (
                     <Step2_ManufacturingDetails
-                        orderLines={selectedItems}
-                        setOrderLines={setSelectedItems}
+                        orderLines={selectedItems as any}
+                        setOrderLines={setSelectedItems as any}
                     />
                 )
             case 2:
