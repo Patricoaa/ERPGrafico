@@ -284,7 +284,7 @@ export function PurchaseInvoicesClientView() {
                     }
                     return (
                         <div className="grid gap-3 pt-2">
-                            {rows.map((row: Invoice) => {
+                            {rows.map((row: any) => {
                                 const inv = row.original
                                 const isSelected = hubConfig?.invoiceId === inv.id
 
@@ -309,7 +309,7 @@ export function PurchaseInvoicesClientView() {
                     )
                 } : undefined}
             />
-            {viewingTransaction && <TransactionViewModal open={!!viewingTransaction} onOpenChange={(open) => !open && setViewingTransaction(null)} type={viewingTransaction.type} id={viewingTransaction.id} view={viewingTransaction.view} />}
+            {viewingTransaction && <TransactionViewModal open={!!viewingTransaction} onOpenChange={(open) => !open && setViewingTransaction(null)} type={viewingTransaction.type as any} id={viewingTransaction.id} view={viewingTransaction.view} />}
             {payingDoc && <PaymentDialog open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number, document_attachment: null }} />}
             {receivingDoc && receivingDoc.purchase_order && <ReceiptModal open={!!receivingDoc} onOpenChange={(open) => !open && setReceivingDoc(null)} orderId={receivingDoc.purchase_order} onSuccess={fetchDocuments} isRefund={receivingDoc.dte_type === 'NOTA_CREDITO'} />}
             {notingDoc && <PurchaseNoteModal open={!!notingDoc} onOpenChange={(open) => !open && setNotingDoc(null)} orderId={notingDoc.purchase_order} orderNumber={notingDoc.purchase_order_number || notingDoc.purchase_order?.toString()} invoiceId={notingDoc.id} onSuccess={fetchDocuments} />}

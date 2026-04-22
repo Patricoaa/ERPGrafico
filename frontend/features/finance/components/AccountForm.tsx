@@ -91,8 +91,8 @@ export function AccountForm({
         if (open) {
             if (initialData) {
                 form.reset({
-                    code: initialData.code,
-                    name: initialData.name,
+                    code: initialData.code as string,
+                    name: initialData.name as string,
                     account_type: initialData.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE",
                     parent: initialData.parent || undefined,
                 })

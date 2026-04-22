@@ -421,7 +421,7 @@ export function NoteCheckoutWizard({
                         </div>
                         {originalInvoice && (
                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
-                                corrigiendo {originalInvoice.dte_type_display} {originalInvoice.number}
+                                corrigiendo {(originalInvoice as any).dte_type_display} {(originalInvoice as any).number}
                             </p>
                         )}
 

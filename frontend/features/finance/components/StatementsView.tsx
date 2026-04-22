@@ -351,7 +351,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                 <RenderToolbar />
                                 {cfData ? (
                                     <CashFlowTable 
-                                        data={cfData} 
+                                        data={cfData as any} 
                                         embedded 
                                         showComparison={showComparison} 
                                         periodLabel={periodLabel}

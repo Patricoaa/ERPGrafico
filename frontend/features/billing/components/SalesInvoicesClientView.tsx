@@ -116,7 +116,7 @@ export function SalesInvoicesClientView() {
         {
             accessorKey: "partner_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
-            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as Record<string, unknown>).customer as number || (row.original as Record<string, unknown>).partner as number}>{row.getValue("partner_name")}</DataCell.ContactLink>
+            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as any).customer as number || (row.original as any).partner as number}>{row.getValue("partner_name")}</DataCell.ContactLink>
         },
         {
             accessorKey: "total",

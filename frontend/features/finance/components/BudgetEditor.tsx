@@ -143,7 +143,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
             if (budgetRes.data.items) {
                 budgetRes.data.items.forEach((item: BudgetItem) => {
                     if (!currItems[item.account]) currItems[item.account] = {};
-                    currItems[item.account][item.month] = parseFloat(item.amount);
+                    currItems[item.account][item.month] = parseFloat(String(item.amount));
                 });
             }
             setItems(currItems);
