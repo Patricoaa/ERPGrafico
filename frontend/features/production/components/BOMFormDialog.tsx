@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { useForm, useFieldArray } from "react-hook-form"
+import { useForm, useFieldArray, Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -166,7 +166,7 @@ export function BOMFormDialog({
     }, [selectedProduct?.id, bomToEdit?.id])
 
     const form = useForm<BOMFormValues>({
-        resolver: zodResolver(bomSchema),
+        resolver: zodResolver(bomSchema) as Resolver<BOMFormValues>,
         defaultValues: {
             name: "",
             active: true,

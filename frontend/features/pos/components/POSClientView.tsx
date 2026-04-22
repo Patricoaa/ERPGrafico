@@ -46,6 +46,7 @@ import {
     useDraftSync,
     type SyncDraft 
 } from '@/features/pos/hooks'
+import { type CheckoutResponse } from '@/features/sales/types'
 import type { Customer, Product, WizardState } from '@/types/pos'
 import type { TransactionData } from '@/types/transactions'
 import type { CheckoutWizardState } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
@@ -119,7 +120,7 @@ export function POSClientView() {
     }, [])
 
     const { syncDrafts, acquireLock, releaseLock, isLockedByOther, getLockInfo, forceSync, browserSessionKey } = useDraftSync({
-        posSessionId: currentSession?.id || undefined,
+        posSessionId: currentSession?.id ?? null,
         enabled: !!currentSession?.id,
         onNewDraft: handleNewDraft,
         onDraftUpdated: (draft) => { /* Optional: handle quiet updates */ },
@@ -130,7 +131,7 @@ export function POSClientView() {
                     duration: null, // Keep it visible
                 })
                 // Update local session state to null to trigger clean UI reset
-                setCurrentSession(null)
+                setCurrentSession(undefined)
             }
         }
     })
@@ -310,6 +311,11 @@ export function POSClientView() {
         }
     }
 
+    const handleLoadDraft = async (draft: SyncDraft | any) => {
+        await loadDraft(draft.id); setDraftsListOpen(false)
+        if (draft.wizard_state?.step) setPosMode('CHECKOUT')
+    }
+
     const handleCheckoutComplete = async (resData: TransactionData | CheckoutResponse) => {
         // Map CheckoutResponse to TransactionData if needed, or just cast if they overlap in usage
         const transactionData = resData as TransactionData
@@ -347,11 +353,6 @@ export function POSClientView() {
         const lastStep = (isOnlyService ? 3 : 4) + (hasMfg ? 1 : 0)
         setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null, notes: '' } } as any)
         setTimeout(() => setPosMode('CHECKOUT'), 0)
-    }
-
-    const handleLoadDraft = async (draft: SyncDraft) => {
-        await loadDraft(draft.id); setDraftsListOpen(false)
-        if (draft.wizard_state?.step) setPosMode('CHECKOUT')
     }
 
     const quickSaleEligibility = Validation.canQuickSale(items, selectedCustomerId)

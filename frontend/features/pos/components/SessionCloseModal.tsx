@@ -145,9 +145,9 @@ export function SessionCloseModal({
                 actual_cash: parseFloat(actualCash) || 0,
                 withdrawal_amount: parseFloat(withdrawalAmount) || 0,
                 notes: closeNotes,
-                cash_destination_id: cashDestinationId ? parseInt(cashDestinationId) : null,
+                cash_destination_id: cashDestinationId,
                 justify_reason: justifyReason || undefined,
-                justify_target_id: justifyTargetId ? parseInt(justifyTargetId) : null
+                justify_target_id: justifyTargetId ? Number(justifyTargetId) : null
             })
 
             const audit = response.data.audit
@@ -195,7 +195,7 @@ export function SessionCloseModal({
                     total_manual_outflow: session.total_other_cash_outflow,
                     manual_movements: session.cash_movements as unknown as POSReportData["manual_movements"],
                     sales_by_category: session.sales_by_category as POSReportData["sales_by_category"],
-                    treasury_account_id: session.treasury_account,
+                    treasury_account_id: typeof session.treasury_account === 'object' ? session.treasury_account.id : session.treasury_account,
                 }
 
                 return (
