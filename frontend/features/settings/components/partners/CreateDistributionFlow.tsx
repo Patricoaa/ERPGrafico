@@ -203,7 +203,9 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                 destinations: lineDestinations[parseInt(id)].filter(d => d.amount > 0)
             }))
             
-            await partnersApi.updateProfitDistributionLines(draftResolution.id, updates)
+            if (draftResolution) {
+                await partnersApi.updateProfitDistributionLines(draftResolution.id, updates)
+            }
             return true
         } catch (error: unknown) {
             showApiError(error, "Error al actualizar destinos")
@@ -214,10 +216,10 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
     const handleExecute = async () => {
         setLoading(true)
         try {
-            if (draftResolution && draftResolution.status === 'DRAFT') {
-                await partnersApi.approveProfitDistribution(draftResolution.id)
-            }
             if (draftResolution) {
+                if (draftResolution.status === 'DRAFT') {
+                    await partnersApi.approveProfitDistribution(draftResolution.id)
+                }
                 await partnersApi.executeProfitDistribution(draftResolution.id)
             }
             toast.success("Distribución contable ejecutada con éxito")

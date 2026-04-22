@@ -284,8 +284,7 @@ export function EquityCompositionTab({
                         <DataCell.Action
                             icon={Banknote}
                             title="Pagar Dividendos"
-                            className={hasDividends ? "text-primary" : "text-muted-foreground/30"}
-                            disabled={!hasDividends}
+                            className={hasDividends ? "text-primary" : "text-muted-foreground/30 pointer-events-none"}
                             onClick={() => {
                                 setSelectedPartnerId(partner.id)
                                 setIsDividendOpen(true)
@@ -294,8 +293,7 @@ export function EquityCompositionTab({
                         <DataCell.Action
                             icon={ArrowRightLeft}
                             title="Distribuir Utilidades Retenidas"
-                            className={hasEarnings ? "text-primary/70" : "text-muted-foreground/30"}
-                            disabled={!hasEarnings}
+                            className={hasEarnings ? "text-primary/70" : "text-muted-foreground/30 pointer-events-none"}
                             onClick={() => {
                                 setSelectedPartnerId(partner.id)
                                 setIsMobilizeOpen(true)
@@ -405,17 +403,19 @@ export function EquityCompositionTab({
                 partnerId={selectedPartnerId}
                 partnerName={selectedPartnerName}
             />
-            <EquityStatsSheet
-                open={isStatsOpen}
-                onOpenChange={(open) => {
-                    setIsStatsOpen(open)
-                    if (!open) {
-                        onModalClose?.()
-                    }
-                }}
-                partners={partners}
-                summary={summary}
-            />
+            {summary && (
+                <EquityStatsSheet
+                    open={isStatsOpen}
+                    onOpenChange={(open) => {
+                        setIsStatsOpen(open)
+                        if (!open) {
+                            onModalClose?.()
+                        }
+                    }}
+                    partners={partners}
+                    summary={summary}
+                />
+            )}
             <AddPartnerModal
                 open={isAddPartnerOpen}
                 onOpenChange={(open) => {

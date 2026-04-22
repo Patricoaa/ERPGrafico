@@ -3,13 +3,10 @@
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { FileText, Calendar, Hash, Upload, X, ShieldAlert } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { FileText, Calendar, Hash, ShieldAlert } from "lucide-react"
 import { useServerDate } from "@/hooks/useServerDate"
 import { useEffect } from "react"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { cn } from "@/lib/utils"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 
 import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 

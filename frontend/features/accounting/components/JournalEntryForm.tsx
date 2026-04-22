@@ -20,13 +20,6 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import {
     Table,
     TableBody,
     TableCell,
@@ -45,7 +38,7 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { FORM_STYLES } from "@/lib/styles"
 import { useServerDate } from "@/hooks/useServerDate"
 import { validateAccountingPeriod } from "@/lib/actions/accounting-actions"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 // JournalItem and JournalEntry schemas remain the same
@@ -333,205 +326,205 @@ export function JournalEntryForm({
                         <Form {...form}>
                             <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
                                 <div className="grid grid-cols-12 gap-4">
-                            <div className="col-span-3">
-                                <FormField
-                                    control={form.control}
-                                    name="date"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-col">
-                                            <FormLabel className={FORM_STYLES.label}>Fecha</FormLabel>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
+                                    <div className="col-span-3">
+                                        <FormField
+                                            control={form.control}
+                                            name="date"
+                                            render={({ field }) => (
+                                                <FormItem className="flex flex-col">
+                                                    <FormLabel className={FORM_STYLES.label}>Fecha</FormLabel>
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <FormControl>
+                                                                <Button
+                                                                    variant={"outline"}
+                                                                    className={cn(
+                                                                        FORM_STYLES.input,
+                                                                        "w-full pl-3 text-left font-normal",
+                                                                        !field.value && "text-muted-foreground"
+                                                                    )}
+                                                                >
+                                                                    {field.value ? (
+                                                                        format(field.value, "PPP")
+                                                                    ) : (
+                                                                        <span>Seleccione fecha</span>
+                                                                    )}
+                                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                                </Button>
+                                                            </FormControl>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-auto p-0" align="start">
+                                                            <Calendar
+                                                                mode="single"
+                                                                selected={field.value}
+                                                                onSelect={field.onChange}
+                                                                disabled={(date) =>
+                                                                    date > new Date() || date < new Date("1900-01-01")
+                                                                }
+                                                                initialFocus
+                                                            />
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        {periodCheck.is_closed && (
+                                            <Alert variant="destructive" className="mt-2 py-2 px-3 border-destructive/20 bg-destructive/5">
+                                                <ShieldAlert className="h-4 w-4 text-destructive" />
+                                                <AlertDescription className="text-[10px] leading-tight ml-2">
+                                                    Periodo Contable Cerrado
+                                                </AlertDescription>
+                                            </Alert>
+                                        )}
+                                    </div>
+                                    <div className="col-span-6">
+                                        <FormField
+                                            control={form.control}
+                                            name="description"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className={FORM_STYLES.label}>Descripción</FormLabel>
                                                     <FormControl>
-                                                        <Button
-                                                            variant={"outline"}
-                                                            className={cn(
-                                                                FORM_STYLES.input,
-                                                                "w-full pl-3 text-left font-normal",
-                                                                !field.value && "text-muted-foreground"
-                                                            )}
-                                                        >
-                                                            {field.value ? (
-                                                                format(field.value, "PPP")
-                                                            ) : (
-                                                                <span>Seleccione fecha</span>
-                                                            )}
-                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                        </Button>
+                                                        <Input placeholder="Venta de mercadería..." {...field} className={FORM_STYLES.input} />
                                                     </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
-                                                    <Calendar
-                                                        mode="single"
-                                                        selected={field.value}
-                                                        onSelect={field.onChange}
-                                                        disabled={(date) =>
-                                                            date > new Date() || date < new Date("1900-01-01")
-                                                        }
-                                                        initialFocus
-                                                    />
-                                                </PopoverContent>
-                                            </Popover>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                {periodCheck.is_closed && (
-                                    <Alert variant="destructive" className="mt-2 py-2 px-3 border-destructive/20 bg-destructive/5">
-                                        <ShieldAlert className="h-4 w-4 text-destructive" />
-                                        <AlertDescription className="text-[10px] leading-tight ml-2">
-                                            Periodo Contable Cerrado
-                                        </AlertDescription>
-                                    </Alert>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="col-span-3">
+                                        <FormField
+                                            control={form.control}
+                                            name="reference"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className={FORM_STYLES.label}>Referencia</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="FAC-123" {...field} className={FORM_STYLES.input} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="relative py-4">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <span className="w-full border-t border-border" />
+                                    </div>
+                                    <div className="relative flex justify-center text-xs uppercase">
+                                        <span className="bg-background px-2 text-muted-foreground font-semibold tracking-widest text-[10px]">
+                                            LÍNEAS DEL ASIENTO
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="border rounded-md p-2">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow className="hover:bg-transparent border-b">
+                                                <TableHead className={cn(FORM_STYLES.label, "w-[300px] text-center")}>Cuenta</TableHead>
+                                                <TableHead className={cn(FORM_STYLES.label, "text-center")}>Glosa</TableHead>
+                                                <TableHead className={cn(FORM_STYLES.label, "w-[150px] text-center")}>Debe</TableHead>
+                                                <TableHead className={cn(FORM_STYLES.label, "w-[150px] text-center")}>Haber</TableHead>
+                                                <TableHead className="w-[50px] text-center">Acciones</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {fields.map((field, index) => (
+                                                <TableRow key={field.id} className="hover:bg-primary/5 transition-colors">
+                                                    <TableCell className="p-2">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`items.${index}.account`}
+                                                            render={({ field }) => (
+                                                                <FormItem className="space-y-0">
+                                                                    <FormControl>
+                                                                        <AccountSelector
+                                                                            value={field.value}
+                                                                            onChange={field.onChange}
+                                                                        />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="p-2">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`items.${index}.label`}
+                                                            render={({ field }) => (
+                                                                <FormItem className="space-y-0">
+                                                                    <FormControl>
+                                                                        <Input {...field} className={cn(FORM_STYLES.input, "h-8 text-center")} />
+                                                                    </FormControl>
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="p-2">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`items.${index}.debit`}
+                                                            render={({ field }) => (
+                                                                <FormItem className="space-y-0 text-center">
+                                                                    <FormControl>
+                                                                        <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} className={cn(FORM_STYLES.input, "h-8 text-right font-mono font-bold")} />
+                                                                    </FormControl>
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="p-2">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`items.${index}.credit`}
+                                                            render={({ field }) => (
+                                                                <FormItem className="space-y-0 text-center">
+                                                                    <FormControl>
+                                                                        <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} className={cn(FORM_STYLES.input, "h-8 text-right font-mono font-bold")} />
+                                                                    </FormControl>
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="p-2 text-center">
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => remove(index)}
+                                                            className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                                        >
+                                                            <Trash2 className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                    <div className="flex justify-between items-center mt-2 px-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => append({ account: "", label: "", debit: 0, credit: 0 })}
+                                        >
+                                            <Plus className="mr-2 h-4 w-4" /> Agregar Línea
+                                        </Button>
+                                        <TotalBalance control={form.control} />
+                                    </div>
+                                </div>
+
+                                <FormMessage className="text-right" />
+                                {form.formState.errors.items?.root && (
+                                    <div className="text-destructive text-sm text-right font-medium">
+                                        {form.formState.errors.items.root.message}
+                                    </div>
                                 )}
-                            </div>
-                            <div className="col-span-6">
-                                <FormField
-                                    control={form.control}
-                                    name="description"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Descripción</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Venta de mercadería..." {...field} className={FORM_STYLES.input} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                            <div className="col-span-3">
-                                <FormField
-                                    control={form.control}
-                                    name="reference"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Referencia</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="FAC-123" {...field} className={FORM_STYLES.input} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="relative py-4">
-                            <div className="absolute inset-0 flex items-center">
-                                <span className="w-full border-t border-border" />
-                            </div>
-                            <div className="relative flex justify-center text-xs uppercase">
-                                <span className="bg-background px-2 text-muted-foreground font-semibold tracking-widest text-[10px]">
-                                    LÍNEAS DEL ASIENTO
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="border rounded-md p-2">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="hover:bg-transparent border-b">
-                                        <TableHead className={cn(FORM_STYLES.label, "w-[300px] text-center")}>Cuenta</TableHead>
-                                        <TableHead className={cn(FORM_STYLES.label, "text-center")}>Glosa</TableHead>
-                                        <TableHead className={cn(FORM_STYLES.label, "w-[150px] text-center")}>Debe</TableHead>
-                                        <TableHead className={cn(FORM_STYLES.label, "w-[150px] text-center")}>Haber</TableHead>
-                                        <TableHead className="w-[50px] text-center">Acciones</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {fields.map((field, index) => (
-                                        <TableRow key={field.id} className="hover:bg-primary/5 transition-colors">
-                                            <TableCell className="p-2">
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`items.${index}.account`}
-                                                    render={({ field }) => (
-                                                        <FormItem className="space-y-0">
-                                                            <FormControl>
-                                                                <AccountSelector
-                                                                    value={field.value}
-                                                                    onChange={field.onChange}
-                                                                />
-                                                            </FormControl>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="p-2">
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`items.${index}.label`}
-                                                    render={({ field }) => (
-                                                        <FormItem className="space-y-0">
-                                                            <FormControl>
-                                                                <Input {...field} className={cn(FORM_STYLES.input, "h-8 text-center")} />
-                                                            </FormControl>
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="p-2">
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`items.${index}.debit`}
-                                                    render={({ field }) => (
-                                                        <FormItem className="space-y-0 text-center">
-                                                            <FormControl>
-                                                                <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} className={cn(FORM_STYLES.input, "h-8 text-right font-mono font-bold")} />
-                                                            </FormControl>
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="p-2">
-                                                <FormField
-                                                    control={form.control}
-                                                    name={`items.${index}.credit`}
-                                                    render={({ field }) => (
-                                                        <FormItem className="space-y-0 text-center">
-                                                            <FormControl>
-                                                                <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} className={cn(FORM_STYLES.input, "h-8 text-right font-mono font-bold")} />
-                                                            </FormControl>
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="p-2 text-center">
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => remove(index)}
-                                                    className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors"
-                                                >
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                            <div className="flex justify-between items-center mt-2 px-2">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => append({ account: "", label: "", debit: 0, credit: 0 })}
-                                >
-                                    <Plus className="mr-2 h-4 w-4" /> Agregar Línea
-                                </Button>
-                                <TotalBalance control={form.control} />
-                            </div>
-                        </div>
-
-                        <FormMessage className="text-right" />
-                        {form.formState.errors.items?.root && (
-                            <div className="text-destructive text-sm text-right font-medium">
-                                {form.formState.errors.items.root.message}
-                            </div>
-                        )}
                             </form>
                         </Form>
                     </div>

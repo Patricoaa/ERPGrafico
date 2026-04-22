@@ -4,23 +4,18 @@ import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Eye, List, FileBadge, Banknote, Package, Trash2, History, FileEdit, X, MoreVertical, LayoutDashboard, ArrowRight, ArrowLeft } from "lucide-react"
+import { List, FileBadge, LayoutDashboard, ArrowRight, ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
 import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
 import { PurchaseNoteModal } from "@/features/purchasing/components/PurchaseNoteModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
-import { Progress } from "@/components/ui/progress"
 import { DataTable } from "@/components/ui/data-table"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { formatPlainDate } from "@/lib/utils"
 import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -147,10 +142,10 @@ export function PurchaseInvoicesClientView() {
             cell: ({ row }) => {
                 const doc = row.original
                 const label = doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
-                             doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
-                             doc.dte_type === 'BOLETA' ? 'BOL' :
-                             doc.dte_type === 'FACTURA_EXENTA' ? 'FE' :
-                             doc.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FAC'
+                    doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
+                        doc.dte_type === 'BOLETA' ? 'BOL' :
+                            doc.dte_type === 'FACTURA_EXENTA' ? 'FE' :
+                                doc.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FAC'
                 return (
                     <div className="flex items-center gap-2 justify-center w-full" title={doc.dte_type_display || doc.dte_type}>
                         <FileBadge className="h-3.5 w-3.5 text-muted-foreground/50" />
@@ -182,8 +177,8 @@ export function PurchaseInvoicesClientView() {
                 const percentage = total > 0 ? Math.round((paid / total) * 100) : 0
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.Progress 
-                            value={percentage} 
+                        <DataCell.Progress
+                            value={percentage}
                             label={`${percentage}%`}
                             subLabel={paid.toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })}
                             className="w-32"

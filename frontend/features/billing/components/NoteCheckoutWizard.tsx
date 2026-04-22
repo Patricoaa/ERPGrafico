@@ -7,9 +7,7 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import api from "@/lib/api"
-import { ChevronRight, ChevronLeft, Loader2, FileText, CheckCircle2, ArrowRight, X, ShieldAlert } from "lucide-react"
-import { cn } from "@/lib/utils"
-
+import { ChevronRight, ChevronLeft, Loader2, FileText, CheckCircle2, ShieldAlert } from "lucide-react"
 // Sub-components
 import { Step1_Items } from "@/features/billing/components/checkout/Step1_Items"
 import { Step2_Logistics } from "@/features/billing/components/checkout/Step2_Logistics"
@@ -409,21 +407,21 @@ export function NoteCheckoutWizard({
             title={
                 <div className="flex items-center gap-4">
                     <FileText className="h-5 w-5 text-muted-foreground" />
-                        <div className="flex items-center gap-2">
-                            <span className="font-black tracking-tighter uppercase block text-lg">
-                                {title}
+                    <div className="flex items-center gap-2">
+                        <span className="font-black tracking-tighter uppercase block text-lg">
+                            {title}
+                        </span>
+                        {isExempt && (
+                            <span className="px-1.5 py-0.5 bg-success/10 text-success text-[10px] font-black uppercase rounded shadow-sm border border-success/20">
+                                Documento Exento
                             </span>
-                            {isExempt && (
-                                <span className="px-1.5 py-0.5 bg-success/10 text-success text-[10px] font-black uppercase rounded shadow-sm border border-success/20">
-                                    Documento Exento
-                                </span>
-                            )}
-                        </div>
-                        {originalInvoice && (
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
-                                corrigiendo {(originalInvoice as any).dte_type_display} {(originalInvoice as any).number}
-                            </p>
                         )}
+                    </div>
+                    {originalInvoice && (
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
+                            corrigiendo {(originalInvoice as any).dte_type_display} {(originalInvoice as any).number}
+                        </p>
+                    )}
 
                 </div>
             }
