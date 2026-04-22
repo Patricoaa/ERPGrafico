@@ -1,6 +1,7 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -566,7 +567,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                         setIsFormOpen(true)
                     }
                 }}
-                initialData={editingProduct}
+                initialData={editingProduct || undefined}
                 onSuccess={() => {
                     fetchSubscriptions()
                 }}

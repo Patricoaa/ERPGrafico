@@ -17,10 +17,11 @@ import { PricingUtils } from "@/lib/pricing"
 
 import { Checkbox } from "@/components/ui/checkbox"
 import { Product, UoM } from "@/types/entities"
+import { ProductInitialData } from "@/types/forms"
 
 interface ProductPricingSectionProps {
     form: UseFormReturn<ProductFormValues>
-    initialData?: Partial<Product> & { bom_cost?: number, cost_price?: number }
+    initialData?: (ProductInitialData | Partial<Product>) & { bom_cost?: number, cost_price?: number }
     canBeSold?: boolean
     uoms: UoM[]
     forceEdit?: boolean
@@ -34,8 +35,8 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
     const hasVariants = form.watch("has_variants")
 
     // Choice cost: BoM cost for manufacturable products (if available), otherwise weighed average cost
-    const costPrice = (productType === 'MANUFACTURABLE' && initialData?.bom_cost > 0)
-        ? Number(initialData.bom_cost)
+    const costPrice = (productType === 'MANUFACTURABLE' && (initialData?.bom_cost ?? 0) > 0)
+        ? Number(initialData?.bom_cost)
         : Number(initialData?.cost_price || 0)
 
     const marginPercentage = PricingUtils.calculateMargin(salePrice, costPrice)

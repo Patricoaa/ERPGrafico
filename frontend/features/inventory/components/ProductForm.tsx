@@ -1,6 +1,6 @@
 "use client"
 
-import { ProductCategory, UoM, Warehouse, PricingRule, Product } from "@/types/entities"
+import { ProductCategory, UoM, Warehouse, PricingRule, Product, ProductBOM, ProductBOMLine, ProductCustomField } from "@/types/entities"
 
 import { useState, useEffect } from "react"
 import { useWindowWidth } from "@/hooks/useWindowWidth"
@@ -12,12 +12,13 @@ import {
 } from "@/components/ui/sheet"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
-import { useForm, useFieldArray, useWatch, Control, FieldErrors } from "react-hook-form"
+import { useForm, useFieldArray, useWatch, Control, FieldErrors, SubmitHandler, UseFormReturn } from "react-hook-form"
 import { ProductInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import api, { resolveMediaUrl } from "@/lib/api"
 import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, Layers, Factory, AlertCircle, Loader2 } from "lucide-react"
+import { showApiError } from "@/lib/errors"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -48,7 +49,7 @@ interface ProductFormProps {
     auditSidebar?: React.ReactNode
     open: boolean
     onOpenChange: (open: boolean) => void
-    initialData?: ProductInitialData
+    initialData?: any // Bridging discrepancies between local/global Product and ProductInitialData
     onSuccess: () => void
     lockedType?: string
     variantMode?: boolean
@@ -96,8 +97,8 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
 
     const fullWidth = Math.min(windowWidth * 0.95, 1800) // Match the 95vw logic
 
-    const form = useForm<ProductFormValues>({
-        resolver: zodResolver(productSchema),
+    const form: UseFormReturn<ProductFormValues> = useForm<ProductFormValues>({
+        resolver: zodResolver(productSchema) as any,
         defaultValues: {
             code: "",
             internal_code: "",
@@ -349,18 +350,18 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     code: initialData.code || "",
                     internal_code: initialData.internal_code || "",
                     name: initialData.name || "",
-                    category: getId(initialData.category),
+                    category: typeof initialData.category === 'object' ? String((initialData.category as any)?.id) : String(initialData.category || ""),
                     product_type: initialData.product_type || "STORABLE",
                     sale_price: Number(initialData.sale_price) || 0,
                     sale_price_gross: Number(initialData.sale_price_gross) || 0,
                     is_dynamic_pricing: initialData.is_dynamic_pricing ?? false,
-                    uom: getId(initialData.uom),
-                    sale_uom: getId(initialData.sale_uom),
-                    purchase_uom: getId(initialData.purchase_uom),
+                    uom: typeof initialData.uom === 'object' ? String((initialData.uom as any)?.id) : String(initialData.uom || ""),
+                    sale_uom: typeof initialData.sale_uom === 'object' ? String((initialData.sale_uom as any)?.id) : String(initialData.sale_uom || initialData.uom || ""),
+                    purchase_uom: typeof initialData.purchase_uom === 'object' ? String((initialData.purchase_uom as any)?.id) : String(initialData.purchase_uom || initialData.uom || ""),
                     allowed_sale_uoms: (initialData.allowed_sale_uoms && initialData.allowed_sale_uoms.length > 0)
-                        ? initialData.allowed_sale_uoms.map((u) => getId(u))
-                        : (initialData.uom ? [getId(initialData.uom)] : []), // Safeguard: Ensure at least base UoM is allowed
-                    receiving_warehouse: getId(initialData.receiving_warehouse),
+                        ? initialData.allowed_sale_uoms.map((u: any) => typeof u === 'object' ? String(u.id) : String(u))
+                        : (initialData.uom ? [getId(initialData.uom)] : []),
+                    receiving_warehouse: typeof initialData.receiving_warehouse === 'object' ? String((initialData.receiving_warehouse as any)?.id) : String(initialData.receiving_warehouse || ""),
                     track_inventory: initialData.track_inventory ?? true,
                     can_be_sold: initialData.can_be_sold ?? true,
                     can_be_purchased: initialData.can_be_purchased ?? true,
@@ -382,11 +383,11 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     parent_template: initialData.parent_template?.toString() || null,
                     attribute_values: initialData.attribute_values?.map((v: unknown) => String(v)) || [],
                     variant_display_name: initialData.variant_display_name || "",
-                    boms: initialData.boms?.map((b: ProductBOM) => ({
+                    boms: initialData.boms?.map((b: any) => ({
                         id: b.id,
                         name: b.name || "",
                         active: b.active || false,
-                        lines: b.lines.map((l: ProductBOMLine) => ({
+                        lines: b.lines.map((l: any) => ({
                             id: l.id,
                             component: l.component?.toString() || "",
                             quantity: parseFloat(l.quantity) || 0,
@@ -394,9 +395,9 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                             notes: l.notes || ""
                         }))
                     })) || [],
-                    product_custom_fields: initialData.product_custom_fields?.map((pcf: ProductCustomField) => ({
-                        template: pcf.template,
-                        order: pcf.order || 0
+                    product_custom_fields: initialData.product_custom_fields?.map((f: any) => ({
+                        template: f.template,
+                        order: f.order || 0
                     })) || [],
                     recurrence_period: initialData.recurrence_period || "MONTHLY",
                     renewal_notice_days: initialData.renewal_notice_days || 30,
@@ -405,15 +406,15 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     payment_day: initialData.payment_day || undefined,
                     payment_interval_days: initialData.payment_interval_days || undefined,
                     default_invoice_type: initialData.default_invoice_type || undefined,
-                    subscription_supplier: initialData.subscription_supplier?.id?.toString() || initialData.subscription_supplier?.toString() || "",
+                    subscription_supplier: typeof initialData.subscription_supplier === 'object' ? String((initialData.subscription_supplier as any)?.id) : String(initialData.subscription_supplier || ""),
                     subscription_amount: initialData.subscription_amount || undefined,
                     subscription_start_date: initialData.subscription_start_date || "",
                     auto_activate_subscription: initialData.auto_activate_subscription ?? true,
                     is_indefinite: initialData.is_indefinite ?? true,
                     contract_end_date: initialData.contract_end_date || "",
-                    income_account: (initialData.income_account as { id?: number } | undefined)?.id?.toString() || initialData.income_account?.toString() || "",
-                    expense_account: initialData.expense_account?.id?.toString() || initialData.expense_account?.toString() || "",
-                    preferred_supplier: initialData.preferred_supplier?.id?.toString() || initialData.preferred_supplier?.toString() || "",
+                    income_account: typeof initialData.income_account === 'object' ? String((initialData.income_account as any)?.id) : String(initialData.income_account || ""),
+                    expense_account: typeof initialData.expense_account === 'object' ? String((initialData.expense_account as any)?.id) : String(initialData.expense_account || ""),
+                    preferred_supplier: typeof initialData.preferred_supplier === 'object' ? String((initialData.preferred_supplier as any)?.id) : String(initialData.preferred_supplier || ""),
                 })
                 setImagePreview(resolveMediaUrl(initialData.image) || null)
             } else {
