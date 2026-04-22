@@ -13,7 +13,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Trash2, CheckCircle, Eye, Pencil } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { formatPlainDate, cn } from "@/lib/utils"
+import { formatPlainDate } from "@/lib/utils"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
@@ -86,10 +86,6 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         setIsFormOpen(true)
     }
 
-    const handleCreateEntry = () => {
-        setEditingEntry(null)
-        setIsFormOpen(true)
-    }
 
     const fetchEntries = async () => {
         // Only set loading if not already loading to avoid jitter

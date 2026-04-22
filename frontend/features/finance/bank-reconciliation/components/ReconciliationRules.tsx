@@ -41,13 +41,13 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
         }
     }, [externalOpen])
 
-    useEffect(() => { loadData() }, [])
-
     const loadData = async () => {
         const [r, a] = await Promise.all([fetchRules(), fetchAccounts()])
         setRules(r)
         setAccounts(a)
     }
+
+    useEffect(() => { loadData() }, [])
 
     const handleDialogChange = (open: boolean) => {
         setOpenDialog(open)

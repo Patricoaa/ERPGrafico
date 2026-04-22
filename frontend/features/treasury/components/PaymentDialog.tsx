@@ -79,7 +79,7 @@ export function PaymentDialog({
     // Sync document date with server date
     useEffect(() => {
         if (dateString && !documentDate) {
-            setDocumentDate(dateString)
+            requestAnimationFrame(() => setDocumentDate(dateString))
         }
     }, [dateString])
 
@@ -101,27 +101,29 @@ export function PaymentDialog({
     // Reset payment data when modal opens
     useEffect(() => {
         if (open) {
-            setPaymentData({
-                method: null,
-                amount: pendingAmount,
-                treasuryAccountId: null,
-                paymentMethodId: null,
-                transactionNumber: '',
-                isPending: false
-            })
-            setDocumentReference(existingInvoice?.number || "")
-            if (dateString) setDocumentDate(dateString)
-            setDocumentAttachment(null)
-            setIsDocumentPending(false)
-            setIsPeriodValid(true)
+            requestAnimationFrame(() => {
+                setPaymentData({
+                    method: null,
+                    amount: pendingAmount,
+                    treasuryAccountId: null,
+                    paymentMethodId: null,
+                    transactionNumber: '',
+                    isPending: false
+                })
+                setDocumentReference(existingInvoice?.number || "")
+                if (dateString) setDocumentDate(dateString)
+                setDocumentAttachment(null)
+                setIsDocumentPending(false)
+                setIsPeriodValid(true)
 
-            if (existingInvoice) {
-                setDteType(existingInvoice.dte_type)
-            } else {
-                setDteType(isPurchase ? "NONE" : "BOLETA")
-            }
+                if (existingInvoice) {
+                    setDteType(existingInvoice.dte_type)
+                } else {
+                    setDteType(isPurchase ? "NONE" : "BOLETA")
+                }
+            })
         }
-    }, [open, pendingAmount, isPurchase, existingInvoice])
+    }, [open, pendingAmount, isPurchase, existingInvoice, dateString])
 
     // Fetch terminal from POS session
     useEffect(() => {
@@ -134,7 +136,7 @@ export function PaymentDialog({
                     console.error('Error fetching POS session:', error)
                 })
         } else {
-            setTerminalId(null)
+            requestAnimationFrame(() => setTerminalId(null))
         }
     }, [posSessionId])
 

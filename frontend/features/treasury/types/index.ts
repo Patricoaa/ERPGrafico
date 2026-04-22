@@ -23,7 +23,7 @@ export interface TerminalCreatePayload {
     ip_address?: string
 }
 
-export interface TerminalUpdatePayload extends Partial<TerminalCreatePayload> { }
+export type TerminalUpdatePayload = Partial<TerminalCreatePayload>
 
 export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH' | 'BRIDGE' | 'MERCHANT'
 
@@ -60,7 +60,7 @@ export interface TreasuryAccountCreatePayload {
     account_number?: string | null
 }
 
-export interface TreasuryAccountUpdatePayload extends Partial<TreasuryAccountCreatePayload> { }
+export type TreasuryAccountUpdatePayload = Partial<TreasuryAccountCreatePayload>
 
 export interface PaymentMethod {
     id: number

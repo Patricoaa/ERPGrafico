@@ -163,7 +163,7 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                 </>
             ),
         }),
-    ], [])
+    ], [handleDelete])
 
     const selectedUoMs = useMemo(() => {
         return uoms.filter((_, index) => selectedRows[index])

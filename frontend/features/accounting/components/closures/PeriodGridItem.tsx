@@ -14,22 +14,20 @@ interface PeriodGridItemProps {
     isActionLoading: boolean;
 }
 
-export function PeriodGridItem({ period, onClose, onReopen, isActionLoading }: PeriodGridItemProps) {
+const StatusIcon = ({ status }: { status: string }) => {
+    switch (status) {
+        case 'OPEN': return <CheckCircle2 className="w-4 h-4 text-success" />;
+        case 'UNDER_REVIEW': return <Clock className="w-4 h-4 text-warning" />;
+        case 'CLOSED': return <Lock className="w-4 h-4 text-muted-foreground" />;
+        default: return null;
+    }
+};export function PeriodGridItem({ period, onClose, onReopen, isActionLoading }: PeriodGridItemProps) {
     const getStatusToken = (status: string) => {
         switch (status) {
             case 'OPEN': return 'success';
             case 'UNDER_REVIEW': return 'warning';
             case 'CLOSED': return 'info';
             default: return 'generic';
-        }
-    };
-
-    const StatusIcon = () => {
-        switch (period.status) {
-            case 'OPEN': return <CheckCircle2 className="w-4 h-4 text-success" />;
-            case 'UNDER_REVIEW': return <Clock className="w-4 h-4 text-warning" />;
-            case 'CLOSED': return <Lock className="w-4 h-4 text-muted-foreground" />;
-            default: return null;
         }
     };
 
@@ -60,7 +58,7 @@ export function PeriodGridItem({ period, onClose, onReopen, isActionLoading }: P
                     </div>
                 ) : (
                     <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-2 p-2 px-0">
-                        <StatusIcon />
+                        <StatusIcon status={period.status} />
                         <span>{period.status === 'OPEN' ? 'Periodo activo.' : 'En revisión.'}</span>
                     </div>
                 )}

@@ -21,9 +21,10 @@ export const SidebarSection = ({ title, children }: { title: string, children: R
 )
 
 export const SidebarContent = React.memo(({ data, currentType, closeModal }: { data: TransactionData, currentType: string, closeModal: () => void }) => {
-    if (!data) return null
     const router = useRouter()
     const { openContact } = useGlobalModalActions()
+
+    if (!data) return null
 
     const renderStatusSection = () => (
         <SidebarSection title="Estado">

@@ -37,12 +37,6 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingTerminal, setEditingTerminal] = useState<Terminal | null>(null)
 
-    useEffect(() => {
-        if (externalOpen) {
-            handleCreate()
-        }
-    }, [externalOpen])
-
     const handleEdit = (terminal: Terminal) => {
         setEditingTerminal(terminal)
         setDialogOpen(true)
@@ -53,6 +47,12 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
         setDialogOpen(true)
         onExternalOpenChange?.(false)
     }
+
+    useEffect(() => {
+        if (externalOpen) {
+            handleCreate()
+        }
+    }, [externalOpen])
 
     const handleToggleActive = async (terminal: Terminal) => {
         try {
