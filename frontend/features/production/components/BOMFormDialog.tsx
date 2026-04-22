@@ -166,7 +166,7 @@ export function BOMFormDialog({
     }, [selectedProduct?.id, bomToEdit?.id])
 
     const form = useForm<BOMFormValues>({
-        resolver: zodResolver(bomSchema),
+        resolver: zodResolver(bomSchema) as any,
         defaultValues: {
             name: "",
             active: true,
@@ -898,7 +898,7 @@ export function BOMFormDialog({
                                                     </TableCell>
                                                     <TableCell>
                                                         <FormField
-                                                            control={form.control}
+                                                            control={form.control as any}
                                                             name={`service_lines.${index}.supplier`}
                                                             render={({ field: supplierField }) => (
                                                                 <FormItem>
@@ -921,7 +921,7 @@ export function BOMFormDialog({
                                                     </TableCell>
                                                     <TableCell>
                                                         <FormField
-                                                            control={form.control}
+                                                            control={form.control as any}
                                                             name={`service_lines.${index}.quantity`}
                                                             render={({ field }) => (
                                                                 <FormItem>
@@ -935,7 +935,7 @@ export function BOMFormDialog({
                                                     </TableCell>
                                                     <TableCell>
                                                             <FormField
-                                                                control={form.control}
+                                                                control={form.control as any}
                                                                 name={`service_lines.${index}.uom`}
                                                                 render={({ field }) => {
                                                                     return (
@@ -958,7 +958,7 @@ export function BOMFormDialog({
                                                     </TableCell>
                                                     <TableCell>
                                                         <FormField
-                                                            control={form.control}
+                                                            control={form.control as any}
                                                             name={`service_lines.${index}.gross_price`}
                                                             render={({ field }) => (
                                                                 <FormItem>
@@ -979,7 +979,7 @@ export function BOMFormDialog({
                                                     </TableCell>
                                                     <TableCell>
                                                         <FormField
-                                                            control={form.control}
+                                                            control={form.control as any}
                                                             name={`service_lines.${index}.document_type`}
                                                             render={({ field }) => (
                                                                 <FormItem>
