@@ -26,7 +26,7 @@ export function AdvancedManufacturingDialog({
     open, onOpenChange, product, onConfirm
 }: AdvancedManufacturingDialogProps) {
     const [designNeeded, setDesignNeeded] = useState(false)
-    const [contact, setContact] = useState<{ id: number; name: string; tax_id?: string; rut?: string } | null>(null)
+    const [contact, setContact] = useState<{ id: number; name: string; tax_id: string | null; rut?: string | null } | null>(null)
     const [description, setDescription] = useState("")
     const [productDescription, setProductDescription] = useState("")
     const [designFiles, setDesignFiles] = useState<File[]>([])
