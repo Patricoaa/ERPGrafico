@@ -120,13 +120,12 @@ export function InventoryContributionModal({
                 if (data.uom_category) {
                     return api.get<{ results?: UoM[] } | UoM[]>(`/inventory/uoms/?category=${data.uom_category}`)
                         .then(uomRes => {
-                            const uoms = 'results' in uomRes.data ? uomRes.data.results : uomRes.data
-                            if (uoms) {
-                                setProductUoMs(uoms)
-                                const baseId = typeof data.uom === 'object' ? data.uom.id : data.uom
-                                const base = uoms.find((u: UoM) => u.id === baseId)
-                                if (base) setUomId(base.id.toString())
-                            }
+                            const uomData = uomRes.data
+                            const uoms = Array.isArray(uomData) ? uomData : (uomData.results || [])
+                            setProductUoMs(uoms)
+                            const baseId = typeof data.uom === 'object' ? data.uom.id : data.uom
+                            const base = uoms.find((u: UoM) => u.id === baseId)
+                            if (base) setUomId(base.id.toString())
                         })
                 }
             })

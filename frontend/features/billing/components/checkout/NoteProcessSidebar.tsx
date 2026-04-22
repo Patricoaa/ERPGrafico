@@ -1,6 +1,6 @@
 "use client"
 
-import { FileText, Package, Tag, CheckCircle2, CreditCard, ShoppingBag, Truck } from "lucide-react"
+import { FileText, Package, CheckCircle2, CreditCard, ShoppingBag, Truck } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface NoteProcessSidebarProps {

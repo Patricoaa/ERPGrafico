@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, SubmitHandler } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ServiceContractInitialData } from "@/types/forms"
 import * as z from "zod"
@@ -36,20 +36,19 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
     const form = useForm<ServiceContractFormValues>({
         resolver: zodResolver(serviceContractSchema),
         defaultValues: {
-            name: "",
-            description: "",
-            supplier: "",
-            category: "",
-            recurrence_type: "MONTHLY",
-            payment_day: 1,
-            base_amount: 0,
-            is_amount_variable: false,
-            start_date: "",
-            end_date: "",
-            auto_renew: false,
-            expense_account: "inherited",
-            payable_account: "inherited",
-            ...(initialData as unknown as ServiceContractFormValues)
+            name: initialData?.name || "",
+            description: initialData?.notes || initialData?.description || "",
+            supplier: initialData?.supplier?.toString() || "",
+            category: initialData?.category?.toString() || "",
+            recurrence_type: initialData?.recurrence_period || "MONTHLY",
+            payment_day: initialData?.payment_day || 1,
+            base_amount: Number(initialData?.amount || 0),
+            is_amount_variable: initialData?.is_indefinite || false,
+            start_date: initialData?.start_date || "",
+            end_date: initialData?.end_date || "",
+            auto_renew: initialData?.auto_renew || false,
+            expense_account: initialData?.expense_account?.toString() || "inherited",
+            payable_account: initialData?.payable_account?.toString() || "inherited",
         },
     })
 
@@ -57,14 +56,17 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
     useEffect(() => {
         if (initialData) {
             form.reset({
-                recurrence_type: "MONTHLY",
-                payment_day: 1,
-                is_amount_variable: false,
-                auto_renew: false,
-                ...initialData,
-                // Ensure IDs are strings for Select components
-                supplier: initialData.supplier?.toString(),
-                category: initialData.category?.toString(),
+                name: initialData.name || "",
+                description: initialData.notes || initialData.description || "",
+                supplier: initialData.supplier?.toString() || "",
+                category: initialData.category?.toString() || "",
+                recurrence_type: initialData.recurrence_period || "MONTHLY",
+                payment_day: initialData.payment_day || 1,
+                base_amount: Number(initialData.amount || 0),
+                is_amount_variable: initialData.is_indefinite || false,
+                start_date: initialData.start_date || "",
+                end_date: initialData.end_date || "",
+                auto_renew: initialData.auto_renew || false,
                 expense_account: initialData.expense_account?.toString() || "inherited",
                 payable_account: initialData.payable_account?.toString() || "inherited",
             })
@@ -94,7 +96,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
         // We don't force accounts anymore if they are to be "inherited" by default
     }
 
-    async function onSubmit(values: ServiceContractFormValues) {
+    const onSubmit: SubmitHandler<ServiceContractFormValues> = async (values) => {
         try {
             const data = {
                 ...values,

@@ -24,7 +24,6 @@ import { TableSkeleton as SharedTableSkeleton } from "@/components/shared/TableS
 import { cn } from "@/lib/utils"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { SearchX, CheckCircle2, ChevronRight, X } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
 
 import { DataTablePagination } from "./data-table-pagination"
 import { DataTableToolbar } from "./data-table-toolbar"
@@ -136,7 +135,7 @@ export function DataTable<TData, TValue>({
             visibility[col] = false
         })
         return visibility
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     const table = useReactTable({
@@ -216,8 +215,8 @@ export function DataTable<TData, TValue>({
                             onClick={() => onRowClick?.(row.original)}
                         >
                             {row.getVisibleCells().map((cell) => (
-                                <TableCell 
-                                    key={cell.id} 
+                                <TableCell
+                                    key={cell.id}
                                     className="py-4"
                                 >
                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -284,9 +283,9 @@ export function DataTable<TData, TValue>({
                                     </div>
                                     <div className="flex items-center gap-1.5 grayscale hover:grayscale-0 transition-all">
                                         {batchActions}
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
                                             onClick={() => table.toggleAllRowsSelected(false)}
                                             className="h-6 w-6 hover:bg-white/10 text-white/50 hover:text-white rounded-sm"
                                         >

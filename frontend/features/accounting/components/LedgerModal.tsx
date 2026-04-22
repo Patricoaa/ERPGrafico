@@ -17,11 +17,8 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { Badge } from "@/components/ui/badge"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-
 import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
 interface LedgerMovement {
@@ -351,7 +348,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                     id={viewingEntry.id}
                 />
             )}
-            
+
             <ActionConfirmModal
                 open={deleteConfirm.isOpen}
                 onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
