@@ -63,7 +63,7 @@ export function InvoiceCard({ item, type, onClick, onActionSuccess, className, i
 
     // Enrichment Data
     const lines = item.lines || item.items || []
-    const pending = parseFloat(item.pending_amount || 0)
+    const pending = parseFloat(String(item.pending_amount ?? 0))
     const hasPending = displayTotal > 0 && pending > 0
 
     const handleClick = () => {
@@ -144,7 +144,7 @@ export function InvoiceCard({ item, type, onClick, onActionSuccess, className, i
                         )}
 
                         {/* Associated Adjustments Links (for regular invoices) */}
-                        {!isNote && item.adjustments?.length > 0 && (
+                        {!isNote && (item.adjustments?.length ?? 0) > 0 && (
                             <div className="flex items-center gap-1.5">
                                 {item.adjustments.map((adj: any) => (
                                     <Badge 

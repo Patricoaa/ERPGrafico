@@ -641,7 +641,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
 
                         <div className="flex justify-end pt-4">
                             <div className="w-full md:w-1/2">
-                                <OrderTotals control={form.control} />
+                                <OrderTotals control={form.control as any} />
                             </div>
                         </div>
                     </form>

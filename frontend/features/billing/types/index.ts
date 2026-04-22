@@ -2,7 +2,7 @@ export interface Invoice {
     id: number
     number: string | null
     date: string
-    dte_type: 'FACTURA' | 'BOLETA' | 'NOTA_CREDITO' | 'NOTA_DEBITO' | 'GUIA_DESPACHO'
+    dte_type: 'FACTURA' | 'BOLETA' | 'NOTA_CREDITO' | 'NOTA_DEBITO' | 'GUIA_DESPACHO' | 'FACTURA_EXENTA' | 'BOLETA_EXENTA'
     dte_type_display: string
     partner_name: string
     sale_order: number | null

@@ -87,7 +87,7 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
 
     // Selected partner info
     const selectedPartner = partners.find(p => p.id.toString() === formData.contact_id)
-    const subscribedCapital = selectedPartner?.partner_total_contributions || 0
+    const subscribedCapital = Number(selectedPartner?.partner_total_contributions || 0)
     const isReduction = formData.type === "REDUCTION"
     const amountNum = parseFloat(formData.amount) || 0
     const exceedsCapital = isReduction && amountNum > subscribedCapital
@@ -299,7 +299,7 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
     // Seller info
     const seller = partners.find(p => p.id.toString() === formData.from_contact_id)
     const buyer = partners.find(p => p.id.toString() === formData.to_contact_id)
-    const sellerCapital = seller?.partner_total_contributions || 0
+    const sellerCapital = Number(seller?.partner_total_contributions || 0)
     const amountNum = parseFloat(formData.amount) || 0
     const exceedsCapital = amountNum > sellerCapital && sellerCapital > 0
 

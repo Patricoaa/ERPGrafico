@@ -105,7 +105,7 @@ interface ProductInsights {
 export function ProductInsightsDialog({ productId, productName, open, onOpenChange }: ProductInsightsDialogProps) {
     const [data, setData] = useState<ProductInsights | null>(null)
     const [loading, setLoading] = useState(false)
-    const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: string } | null>(null)
+    const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: import("@/types/transactions").TransactionType } | null>(null)
     const [activeWorkOrderId, setActiveWorkOrderId] = useState<number | null>(null)
 
     useEffect(() => {
@@ -393,7 +393,7 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                                                                 if (move.related_type === 'work_order') {
                                                                     setActiveWorkOrderId(move.related_id)
                                                                 } else {
-                                                                    setSelectedTransaction({ id: move.related_id, type: move.related_type })
+                                                                    setSelectedTransaction({ id: move.related_id, type: move.related_type as import("@/types/transactions").TransactionType })
                                                                 }
                                                             }}
                                                         >

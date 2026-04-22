@@ -123,7 +123,7 @@ export function InventoryContributionModal({
                             const uomData = uomRes.data
                             const uoms = Array.isArray(uomData) ? uomData : (uomData.results || [])
                             setProductUoMs(uoms)
-                            const baseId = typeof data.uom === 'object' ? data.uom.id : data.uom
+                            const baseId = typeof data.uom === 'object' && data.uom !== null ? (data.uom as any).id : data.uom
                             const base = uoms.find((u: UoM) => u.id === baseId)
                             if (base) setUomId(base.id.toString())
                         })
@@ -149,7 +149,7 @@ export function InventoryContributionModal({
     }, [open, preSelectedPartnerId])
 
     const selectedUoM = productUoMs.find(u => u.id.toString() === uomId)
-    const baseUoM = typeof productDetails?.uom === 'object' ? productDetails.uom : productUoMs.find(u => u.id === productDetails?.uom)
+    const baseUoM = typeof productDetails?.uom === 'object' && productDetails.uom !== null ? productDetails.uom : productUoMs.find(u => u.id === productDetails?.uom)
     const isCostEditable = moveType === 'IN'
 
     const conversion = React.useMemo(() => {

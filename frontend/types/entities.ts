@@ -200,6 +200,7 @@ export interface UoM {
     category: number
     ratio: number
     uom_type?: string
+    active?: boolean
 }
 
 export interface ProductMinimal {
@@ -313,7 +314,12 @@ export interface CustomFieldTemplate {
 export interface ProductCategory {
     id: number
     name: string
+    prefix?: string | null
+    icon?: string
     parent?: number | null
+    asset_account?: number | string | null
+    income_account?: number | string | null
+    expense_account?: number | string | null
 }
 
 // ─── Warehouse ──────────────────────────────────────

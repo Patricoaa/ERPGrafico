@@ -36,7 +36,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
   const [availableBOMs, setAvailableBOMs] = useState<ProductBOM[]>([])
 
   const form = useForm<QuickEditValues>({
-    resolver: zodResolver(quickEditSchema) ,
+    resolver: zodResolver(quickEditSchema) as any,
     defaultValues: {
       sale_price: variant.sale_price || 0,
       code: variant.code || "",

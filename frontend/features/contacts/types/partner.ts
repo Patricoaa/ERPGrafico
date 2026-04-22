@@ -84,6 +84,7 @@ export interface ProfitDistribution {
     fiscal_year_obj?: number;
     total_paid_dividend_amount?: string;
     total_unpaid_dividend_amount?: string;
+    notes?: string;
 }
 
 export interface PartnerTransactionPayload {

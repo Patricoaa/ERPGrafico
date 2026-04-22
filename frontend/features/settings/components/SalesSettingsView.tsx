@@ -104,7 +104,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
                         name={userField}
                         render={({ field }) => (
                             <UserSelector
-                                value={field.value as string}
+                                value={field.value as number | null}
                                 onChange={field.onChange}
                                 placeholder="Sel. usuario con permiso..."
                             />

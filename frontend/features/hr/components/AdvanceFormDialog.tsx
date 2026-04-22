@@ -219,7 +219,7 @@ export function AdvanceFormDialog({ open, onOpenChange, advance, employees, payr
                     <div className="w-72 border-l bg-muted/5 flex flex-col pt-0 hidden lg:flex">
                         <ActivitySidebar
                             entityId={advance.id}
-                            entityType={"salaryadvance" as "employee" | "contact" | "product" | "sale" | "purchase" | "invoice"}
+                            entityType="salaryadvance"
                             title="Historial"
                             className="h-full border-none"
                         />
