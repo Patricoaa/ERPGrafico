@@ -301,7 +301,13 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Fecha Término</FormLabel>
-                                                <FormControl><Input type="date" {...field} /></FormControl>
+                                                <FormControl>
+                                                    <Input 
+                                                        type="date" 
+                                                        {...field} 
+                                                        value={field.value ?? ""}
+                                                    />
+                                                </FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         )}

@@ -268,24 +268,19 @@ export interface WarehouseInitialData {
 export interface ServiceContractInitialData {
     id?: number
     name?: string
-    supplier?: string | number | { id: number }
-    category?: string
-    expense_account?: string
-    payable_account?: string
-    product?: number | string | { id: number; name?: string }
-    amount?: number | string
+    description?: string
+    notes?: string
+    supplier?: number
+    category?: number
+    recurrence_period?: string
+    payment_day?: number
+    amount?: string | number
+    is_indefinite?: boolean
     start_date?: string
     end_date?: string | null
-    recurrence_period?: string
-    payment_day_type?: string
-    payment_day?: number
-    payment_interval_days?: number
-    default_invoice_type?: string
     auto_renew?: boolean
-    notes?: string
-    status?: string
-    is_indefinite?: boolean
-    income_account?: number | string | { id: number }
+    expense_account?: number | null
+    payable_account?: number | null
 }
 
 // ─── User Form ───────────────────────────────────────────
