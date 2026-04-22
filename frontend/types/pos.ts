@@ -84,7 +84,7 @@ export interface DeliveryData {
 
 export interface WizardState {
     step: number
-    dteData?: DTEData
+    dteData?: DTEData & { attachment?: File | string | null }
     paymentData?: PaymentData
     deliveryData?: DeliveryData
     approvalTaskId?: number | null
@@ -93,7 +93,7 @@ export interface WizardState {
     isLoading?: boolean
     isQuickSale?: boolean
     selectedCustomerName?: string
-    selectedCustomerId?: string | number
+    selectedCustomerId?: string | number | null
     isWaitingPayment?: boolean
 }
 
@@ -155,7 +155,7 @@ export interface POSSession {
         payment_terminal_device?: number
         payment_terminal_device_name?: string
     } | null
-    treasury_account: number
+    treasury_account: number | { id: number; name: string }
     treasury_account_name: string
     user: number
     user_name: string

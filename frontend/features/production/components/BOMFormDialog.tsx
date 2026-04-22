@@ -74,35 +74,7 @@ const bomSchema = z.object({
     path: ["lines"]
 })
 
-type BOMFormValues = {
-    name: string
-    active: boolean
-    yield_quantity: number
-    yield_uom?: string
-    lines: {
-        component: string
-        component_code?: string
-        component_name?: string
-        component_cost?: number
-        quantity: number
-        uom?: string
-        uom_name?: string
-        component_uom_category?: number
-        notes?: string
-    }[]
-    service_lines: {
-        component: string
-        component_name?: string
-        quantity: number
-        uom?: string
-        uom_name?: string
-        supplier: string
-        supplier_name?: string
-        gross_price: number
-        document_type: string
-        notes?: string
-    }[]
-}
+type BOMFormValues = z.infer<typeof bomSchema>
 
 interface BOMFormDialogProps {
     open: boolean

@@ -150,15 +150,18 @@ export type ContactType = 'PERSON' | 'COMPANY'
 export interface Contact {
     id: number
     name: string
+    display_id?: string
     tax_id: string | null
-    email?: string
-    phone?: string
-    contact_type?: ContactType
-    code?: string
+    email: string | null
+    phone: string | null
+    address?: string | null
+    city?: string | null
+    contact_type?: ContactType | 'CUSTOMER' | 'SUPPLIER' | 'BOTH' | 'RELATED' | 'OTHER'
+    code?: string | null
     is_default_customer?: boolean
     is_default_vendor?: boolean
     credit_blocked?: boolean
-    credit_available?: string | number
+    credit_available?: string | number | null
 }
 
 // ─── Treasury Account ────────────────────────────────────

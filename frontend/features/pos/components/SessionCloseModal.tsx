@@ -44,7 +44,7 @@ export function SessionCloseModal({
     const [actualCash, setActualCash] = useState<string>("0")
     const [withdrawalAmount, setWithdrawalAmount] = useState<string>("0")
     const [closeNotes, setCloseNotes] = useState<string>("")
-    const [cashDestinationId, setCashDestinationId] = useState<string | null>(null)
+    const [cashDestinationId, setCashDestinationId] = useState<number | null>(null)
     const [justifyReason, setJustifyReason] = useState<string>("")
     const [justifyTargetId, setJustifyTargetId] = useState<string | null>(null)
     const [submitting, setSubmitting] = useState(false)
@@ -314,7 +314,7 @@ export function SessionCloseModal({
                                             value={justifyTargetId}
                                             onChange={setJustifyTargetId}
                                             placeholder={diff < 0 ? "Seleccione destino..." : "Seleccione origen..."}
-                                            excludeId={typeof session.treasury_account === 'object' ? session.treasury_account?.id : session.treasury_account}
+                                            excludeId={typeof session.treasury_account === 'object' ? session.treasury_account.id : session.treasury_account}
                                             type="CASH"
                                         />
 
@@ -429,10 +429,10 @@ export function SessionCloseModal({
                                 <Label>Destino</Label>
                                 <TreasuryAccountSelector
                                     value={cashDestinationId?.toString()}
-                                    onChange={(val) => setCashDestinationId(Number(val))}
+                                    onChange={(val) => setCashDestinationId(val ? Number(val) : null)}
                                     placeholder="Seleccione destino..."
                                     paymentMethod="CASH"
-                                    excludeId={typeof session.treasury_account === 'object' ? session.treasury_account?.id : session.treasury_account}
+                                    excludeId={typeof session.treasury_account === 'object' ? session.treasury_account.id : session.treasury_account}
                                 />
                             </div>
                         </div>
