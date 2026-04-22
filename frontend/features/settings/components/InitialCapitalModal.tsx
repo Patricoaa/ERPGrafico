@@ -13,6 +13,7 @@ import { Trash2, Plus, Users, Calculator, Info } from "lucide-react"
 import { formatCurrency } from "@/lib/utils"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import type { Partner } from "@/features/contacts/types/partner"
 
 interface InitialCapitalModalProps {
     open: boolean
@@ -36,7 +37,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
         setTotalCapital(total)
     }, [entries])
 
-    const handleAddPartner = (contactId: string | null, contact?: Partner) => {
+    const handleAddPartner = (contactId: string | null, contact?: any) => {
         if (!contactId) return
         
         const id = parseInt(contactId)
