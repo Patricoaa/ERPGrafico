@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import type { SyncDraft } from '@/features/pos/hooks/useDraftSync'
 
-interface DraftCart {
+export interface DraftCart {
     id: number
     name: string
     notes: string
