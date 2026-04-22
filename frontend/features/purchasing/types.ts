@@ -29,7 +29,7 @@ export interface PartialReceiptLine {
     lineId?: number | string
     productId?: number | string
     productName?: string
-    orderedQty: number
+    orderedQty?: number
     receivedQty: number
     uom: number | string
 }
@@ -58,6 +58,8 @@ export interface CheckoutLine {
     tax_rate: number
     product_type?: string
     name?: string // for display in summary
+    receiving_warehouse?: string | number
+    description?: string
 }
 
 export interface DTEData {
@@ -77,14 +79,17 @@ export interface PaymentData {
 }
 
 export interface ReceiptData {
-    type: 'IMMEDIATE' | 'LATER' | 'PARTIAL'
+    type: 'IMMEDIATE' | 'LATER' | 'PARTIAL' | 'DEFERRED'
     deliveryReference: string
     notes: string
     partialQuantities: Array<{
-        lineId: number
-        productId: number
+        lineId?: number | string
+        productId: number | string
         receivedQty: number
         uom: string | number
+        orderedQty?: number
+        productName?: string
     }>
     warehouseId?: string
+    subscriptionDates?: Record<string, string>
 }
