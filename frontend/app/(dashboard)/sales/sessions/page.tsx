@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { POSSessionsView } from "@/features/sales/components/POSSessionsView"
+import { POSSessionsView } from "@/features/sales"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import Link from "next/link"

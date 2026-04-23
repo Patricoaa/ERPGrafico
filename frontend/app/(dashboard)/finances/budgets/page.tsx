@@ -1,6 +1,5 @@
 import React from "react"
-import { BudgetsListView } from "@/features/finance/components/BudgetsListView"
-import { BudgetVarianceView } from "@/features/finance/components/BudgetVarianceView"
+import { BudgetsListView, BudgetVarianceView } from "@/features/finance"
 
 interface BudgetsPageProps {
     externalOpen?: boolean

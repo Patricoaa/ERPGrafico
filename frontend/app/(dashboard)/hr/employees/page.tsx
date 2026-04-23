@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { EmployeeFormDialog } from "@/features/hr/components/EmployeeFormDialog"
+import { EmployeeFormDialog } from "@/features/hr"
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { getEmployees } from "@/lib/hr/api"
 import type { Employee } from "@/types/hr"

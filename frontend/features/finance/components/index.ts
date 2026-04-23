@@ -1,4 +1,7 @@
 export * from './AnalysisView';
+export * from './BudgetsListView';
+export * from './BudgetVarianceView';
+export * from './BudgetDetailView';
 export * from './BIAnalyticsView';
 export * from './BudgetEditor';
 export * from './CashFlowTable';

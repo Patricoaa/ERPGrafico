@@ -6,8 +6,8 @@ import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load feature components
-const SalesInvoicesClientView = lazy(() => import("@/features/billing/components/SalesInvoicesClientView").then(m => ({ default: m.SalesInvoicesClientView })))
-const PurchaseInvoicesClientView = lazy(() => import("@/features/billing/components/PurchaseInvoicesClientView").then(m => ({ default: m.PurchaseInvoicesClientView })))
+const SalesInvoicesClientView = lazy(() => import("@/features/billing").then(m => ({ default: m.SalesInvoicesClientView })))
+const PurchaseInvoicesClientView = lazy(() => import("@/features/billing").then(m => ({ default: m.PurchaseInvoicesClientView })))
 const BillingSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.BillingSettingsView })))
 
 export const metadata: Metadata = {

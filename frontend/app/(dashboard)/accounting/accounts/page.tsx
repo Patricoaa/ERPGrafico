@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { AccountsClientView } from "@/features/accounting/components/AccountsClientView"
+import { AccountsClientView } from "@/features/accounting"
 
 export const metadata: Metadata = {
     title: "Plan de Cuentas | ERPGrafico",

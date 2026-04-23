@@ -14,4 +14,5 @@ export { default as TerminalBatchForm } from './components/TerminalBatchForm'
 export * from './components/TransferModal'
 export * from '@/features/finance/bank-reconciliation/components'
 export * from './components/MasterDataManagement'
+export * from './components/PaymentDialog'
 

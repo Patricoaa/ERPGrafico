@@ -9,7 +9,7 @@ import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load feature components
 const SalesOrdersClientView = lazy(() => import("@/features/sales").then(m => ({ default: m.SalesOrdersClientView })))
-const SalesTerminalsView = lazy(() => import("@/features/sales/components/SalesTerminalsView").then(m => ({ default: m.default })))
+const SalesTerminalsView = lazy(() => import("@/features/sales").then(m => ({ default: m.SalesTerminalsView })))
 const CreditPortfolioView = lazy(() => import("@/features/credits").then(m => ({ default: m.CreditPortfolioView })))
 const BlacklistView = lazy(() => import("@/features/credits").then(m => ({ default: m.BlacklistView })))
 const SalesSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.SalesSettingsView })))

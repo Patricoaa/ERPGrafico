@@ -10,9 +10,9 @@ import { LAYOUT_TOKENS } from "@/lib/styles"
 // Lazy load feature components
 const TreasuryMovementsClientView = lazy(() => import("@/features/treasury").then(m => ({ default: m.TreasuryMovementsClientView })))
 const TreasuryAccountsView = lazy(() => import("@/features/treasury").then(m => ({ default: m.TreasuryAccountsView })))
-const StatementsList = lazy(() => import("@/features/finance/bank-reconciliation/components").then(m => ({ default: m.StatementsList })))
-const ReconciliationDashboard = lazy(() => import("@/features/finance/bank-reconciliation/components").then(m => ({ default: m.ReconciliationDashboard })))
-const ReconciliationRules = lazy(() => import("@/features/finance/bank-reconciliation/components").then(m => ({ default: m.ReconciliationRules })))
+const StatementsList = lazy(() => import("@/features/finance").then(m => ({ default: m.StatementsList })))
+const ReconciliationDashboard = lazy(() => import("@/features/finance").then(m => ({ default: m.ReconciliationDashboard })))
+const ReconciliationRules = lazy(() => import("@/features/finance").then(m => ({ default: m.ReconciliationRules })))
 const TreasurySettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.TreasurySettingsView })))
 
 

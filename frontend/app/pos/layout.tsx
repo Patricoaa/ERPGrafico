@@ -1,7 +1,7 @@
 import AuthGuard from "@/components/auth/AuthGuard"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 import { Toaster } from "@/components/ui/sonner"
-import { POSShell } from "@/features/pos/components"
+import { POSShell } from "@/features/pos"
 
 export default function POSLayout({
     children,

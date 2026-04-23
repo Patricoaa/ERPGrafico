@@ -7,11 +7,11 @@ import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load feature components
-const AccountsView = lazy(() => import("@/features/accounting/components/AccountsClientView").then(m => ({ default: m.AccountsClientView })))
+const AccountsView = lazy(() => import("@/features/accounting").then(m => ({ default: m.AccountsClientView })))
 const EntriesView = lazy(() => import("@/app/(dashboard)/accounting/entries/page").then(m => ({ default: m.default })))
-const ClosuresView = lazy(() => import("@/features/accounting/components").then(m => ({ default: m.AccountingClosuresView })))
-const TrialBalanceView = lazy(() => import("@/features/accounting/components").then(m => ({ default: m.TrialBalanceView })))
-const TaxDeclarationsView = lazy(() => import("@/features/tax/components/TaxDeclarationsView").then(m => ({ default: m.TaxDeclarationsView })))
+const ClosuresView = lazy(() => import("@/features/accounting").then(m => ({ default: m.AccountingClosuresView })))
+const TrialBalanceView = lazy(() => import("@/features/accounting").then(m => ({ default: m.TrialBalanceView })))
+const TaxDeclarationsView = lazy(() => import("@/features/tax").then(m => ({ default: m.TaxDeclarationsView })))
 const AccountingSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.AccountingSettingsView })))
 
 export const metadata: Metadata = {
