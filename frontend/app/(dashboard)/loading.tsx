@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton, CardSkeleton } from "@/components/shared"
 
 export default function DashboardLoading() {
     return (
@@ -11,10 +11,7 @@ export default function DashboardLoading() {
                 <Skeleton className="h-8 w-8 rounded-full" />
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Skeleton className="h-[120px] rounded-xl" />
-                <Skeleton className="h-[120px] rounded-xl" />
-                <Skeleton className="h-[120px] rounded-xl" />
-                <Skeleton className="h-[120px] rounded-xl" />
+                <CardSkeleton count={4} className="h-[120px]" />
             </div>
             <Skeleton className="h-[400px] w-full rounded-xl" />
         </div>

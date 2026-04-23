@@ -9,7 +9,7 @@ import { DateRangeSelector } from "@/features/finance/components/DateRangeSelect
 import { DateRange } from "react-day-picker"
 import { startOfYear, subYears } from "date-fns"
 import { useServerDate } from "@/hooks/useServerDate"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { CardSkeleton } from "@/components/shared"
 import { MappingConfigSheet } from "@/features/finance/components/MappingConfigSheet"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { Button } from "@/components/ui/button"
@@ -17,12 +17,12 @@ import { SlidersHorizontal } from "lucide-react"
 
 const RatiosView = dynamic(() => import("@/features/finance/components/RatiosView").then(mod => mod.RatiosView), {
     ssr: false,
-    loading: () => <LoadingFallback message="Cargando análisis..." />
+    loading: () => <CardSkeleton variant="grid" count={4} />
 })
 
 const BIAnalyticsView = dynamic(() => import("@/features/finance/components/BIAnalyticsView").then(mod => mod.BIAnalyticsView), {
     ssr: false,
-    loading: () => <LoadingFallback message="Cargando BI..." />
+    loading: () => <CardSkeleton variant="grid" count={4} />
 })
 
 interface AnalysisViewProps {

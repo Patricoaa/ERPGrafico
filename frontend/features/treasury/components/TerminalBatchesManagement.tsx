@@ -17,7 +17,7 @@ import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { FormSkeleton } from "@/components/shared"
 import type { DateRange } from "react-day-picker"
 
 // Lazy load feature components
@@ -159,7 +159,7 @@ export function TerminalBatchesManagement({
                 createAction={createAction}
             />
 
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<FormSkeleton />}>
                 <TerminalBatchDialog
                     open={openCreate}
                     onOpenChange={(open: boolean) => {
@@ -174,7 +174,7 @@ export function TerminalBatchesManagement({
                 />
             </Suspense>
 
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<FormSkeleton />}>
                 <MonthlyInvoiceDialog
                     open={openInvoice}
                     onOpenChange={(open: boolean) => {

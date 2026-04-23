@@ -12,7 +12,7 @@ import { Zap } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton, CardSkeleton } from '@/components/shared'
 import { Progress } from '@/components/ui/progress'
 import { SheetCloseButton } from '@/components/shared/SheetCloseButton'
 import api from '@/lib/api'
@@ -158,10 +158,8 @@ export function OrderActionPanel({
 
                 <ScrollArea className="flex-1 px-6">
                     {loading ? (
-                        <div className="space-y-4 py-6">
-                            {[1, 2, 3].map(i => (
-                                <Skeleton key={i} className="h-32 w-full" />
-                            ))}
+                        <div className="py-6">
+                            <CardSkeleton count={3} variant="list" />
                         </div>
                     ) : (
                         <div className="space-y-6 py-6">

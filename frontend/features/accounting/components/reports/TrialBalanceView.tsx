@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTrialBalance } from '../../hooks/useTrialBalance';
-import { LoadingFallback } from '@/components/shared/LoadingFallback';
+import { TableSkeleton } from '@/components/shared';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -30,7 +30,7 @@ export function TrialBalanceView() {
     };
 
     if (isLoading && !data) {
-        return <LoadingFallback variant="card" message="Calculando balance de comprobación..." />;
+        return <TableSkeleton rows={10} columns={8} />;
     }
 
     return (

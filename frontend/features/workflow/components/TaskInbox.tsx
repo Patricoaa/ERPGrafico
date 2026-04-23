@@ -12,8 +12,9 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
-import { useAuth } from "@/contexts/AuthContext"
 import { useRef } from "react"
+import { CardSkeleton } from "@/components/shared"
+import { useAuth } from "@/contexts/AuthContext"
 
 const HUB_STAGE_LABELS: Record<string, string> = {
     origin: 'Origen',
@@ -455,11 +456,7 @@ export function TaskInbox() {
 
                     <TabsContent value="approvals" className="mt-4">
                         {loading ? (
-                            <div className="space-y-2">
-                                {[1, 2, 3].map(i => (
-                                    <div key={i} className="h-20 rounded-md bg-muted/50 animate-pulse" />
-                                ))}
-                            </div>
+                            <CardSkeleton variant="compact" count={3} className="gap-2" />
                         ) : (
                             <>
                                 {approvalsPending.length > 0 && (
@@ -496,11 +493,7 @@ export function TaskInbox() {
 
                     <TabsContent value="tasks" className="mt-4">
                         {loading ? (
-                            <div className="space-y-2">
-                                {[1, 2, 3].map(i => (
-                                    <div key={i} className="h-20 rounded-md bg-muted/50 animate-pulse" />
-                                ))}
-                            </div>
+                            <CardSkeleton variant="compact" count={3} className="gap-2" />
                         ) : operationalTasks.length === 0 ? (
                             <div className="text-center py-12 bg-muted/10 rounded-lg border border-dashed text-muted-foreground">
                                 <ListTodo className="h-8 w-8 mx-auto mb-2 opacity-20" />

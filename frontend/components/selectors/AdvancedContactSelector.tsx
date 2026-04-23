@@ -16,6 +16,7 @@ import { formatRUT } from "@/lib/utils/format"
 import { useContactSearch } from "@/features/contacts/hooks/useContactSearch"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Contact } from "@/types/entities"
+import { CardSkeleton } from "@/components/shared"
 import React, { Suspense } from "react"
 
 const ContactModal = React.lazy(() => import("@/features/contacts/components/ContactModal"))
@@ -165,7 +166,9 @@ export function AdvancedContactSelector({
                     </div>
                     <div className="max-h-[300px] overflow-y-auto space-y-1">
                         {searchLoading ? (
-                            <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
+                            <div className="p-2 space-y-1">
+                                <CardSkeleton variant="compact" count={5} />
+                            </div>
                         ) : contacts.length === 0 ? (
                             <EmptyState
                                 context="search"

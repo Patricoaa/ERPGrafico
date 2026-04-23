@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import api from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { FormSkeleton } from "@/components/shared/FormSkeleton"
+import { FormSkeleton } from "@/components/shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 
 import { purchasingSchema, type PurchasingFormValues } from "./PurchasingSettingsView.schema"

@@ -28,6 +28,7 @@ export * from './CardSkeleton';
 export * from './FormSkeleton';
 export * from './TableSkeleton';
 export * from './SkeletonShell';
+export { Skeleton } from '@/components/ui/skeleton';
 
 // Data Display
 export * from './ColorBar';
@@ -50,7 +51,6 @@ export * from './IndustryMark';
 
 // Loading States
 export * from './LoadingFallback';
-export * from './TableSkeleton';
 
 // Filters & Inputs
 export * from './DatePicker';

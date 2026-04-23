@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUserSearch } from "@/features/users/hooks/useUserSearch"
+import { CardSkeleton } from "@/components/shared"
 import type { AppUser } from "@/types/entities"
 
 interface UserSelectorProps {
@@ -99,7 +100,7 @@ export function UserSelector({ value, onChange, placeholder = "Seleccionar usuar
                     </div>
                     <div className="max-h-[300px] overflow-y-auto space-y-1">
                         {searchLoading ? (
-                            <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
+                            <CardSkeleton count={3} variant="compact" />
                         ) : users.length === 0 ? (
                             <EmptyState context="users" variant="compact" title="No se encontraron usuarios" />
                         ) : (

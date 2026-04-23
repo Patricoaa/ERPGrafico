@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/contexts/AuthContext"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Skeleton } from "@/components/shared"
 
 export default function DashboardPage() {
   const { user, isLoading: loading } = useAuth()

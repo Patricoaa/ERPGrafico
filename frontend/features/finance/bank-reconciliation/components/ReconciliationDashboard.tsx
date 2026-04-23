@@ -8,12 +8,12 @@ import dynamic from "next/dynamic"
 import { DashboardPendingTable } from "./DashboardPendingTable"
 import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { CardSkeleton } from "@/components/shared"
 import type { DashboardKPIData, TrendItem, DashboardPendingItem, TreasuryAccount } from "../types"
 
 const DashboardTrendChart = dynamic(() => import("./DashboardTrendChart").then(mod => mod.DashboardTrendChart), {
     ssr: false,
-    loading: () => <LoadingFallback message="Cargando gráfico..." />
+    loading: () => <CardSkeleton variant="grid" count={2} />
 })
 
 export function ReconciliationDashboard() {

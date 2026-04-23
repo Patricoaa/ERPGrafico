@@ -18,7 +18,7 @@ import { toast } from "sonner"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { Skeleton } from "@/components/ui/skeleton"
+import { CardSkeleton } from "@/components/shared"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
 interface LedgerMovement {
@@ -256,76 +256,64 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
             >
                 <div className="flex flex-col gap-6">
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <Card className="bg-muted/30 border-none shadow-none">
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-xs font-medium text-muted-foreground uppercase">Saldo Inicial</p>
-                                    <Calculator className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                                {loading ? (
-                                    <Skeleton className="h-7 w-24 mt-2" />
-                                ) : (
+                    {loading ? (
+                        <CardSkeleton count={4} variant="grid" />
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <Card className="bg-muted/30 border-none shadow-none">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-medium text-muted-foreground uppercase">Saldo Inicial</p>
+                                        <Calculator className="h-4 w-4 text-muted-foreground" />
+                                    </div>
                                     <div className={`text-xl font-bold mt-1 ${data?.opening_balance && data.opening_balance < 0 ? 'text-destructive' : ''}`}>
                                         ${data?.opening_balance?.toLocaleString() || '0'}
                                     </div>
-                                )}
-                                <p className="text-[10px] text-muted-foreground mt-1">
-                                    Al {dateRange?.from ? format(dateRange.from, "PPP", { locale: es }) : '-'}
-                                </p>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-success/5 border-none shadow-none">
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-xs font-medium text-success uppercase">Cargos (Debe)</p>
-                                    <ArrowUpRight className="h-4 w-4 text-success" />
-                                </div>
-                                {loading ? (
-                                    <Skeleton className="h-7 w-24 mt-2" />
-                                ) : (
+                                    <p className="text-[10px] text-muted-foreground mt-1">
+                                        Al {dateRange?.from ? format(dateRange.from, "PPP", { locale: es }) : '-'}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-success/5 border-none shadow-none">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-medium text-success uppercase">Cargos (Debe)</p>
+                                        <ArrowUpRight className="h-4 w-4 text-success" />
+                                    </div>
                                     <div className="text-xl font-bold mt-1 text-success">
                                         ${data?.period_debit?.toLocaleString() || '0'}
                                     </div>
-                                )}
-                                <p className="text-[10px] text-success/70 mt-1">Total del periodo</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-destructive/5 border-none shadow-none">
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-xs font-medium text-destructive uppercase">Abonos (Haber)</p>
-                                    <ArrowDownRight className="h-4 w-4 text-destructive" />
-                                </div>
-                                {loading ? (
-                                    <Skeleton className="h-7 w-24 mt-2" />
-                                ) : (
+                                    <p className="text-[10px] text-success/70 mt-1">Total del periodo</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-destructive/5 border-none shadow-none">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-medium text-destructive uppercase">Abonos (Haber)</p>
+                                        <ArrowDownRight className="h-4 w-4 text-destructive" />
+                                    </div>
                                     <div className="text-xl font-bold mt-1 text-destructive">
                                         ${data?.period_credit?.toLocaleString() || '0'}
                                     </div>
-                                )}
-                                <p className="text-[10px] text-destructive/70 mt-1">Total del periodo</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-primary/5 border-none shadow-none">
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-xs font-medium text-primary uppercase">Saldo Final</p>
-                                    <Scale className="h-4 w-4 text-primary" />
-                                </div>
-                                {loading ? (
-                                    <Skeleton className="h-7 w-24 mt-2" />
-                                ) : (
+                                    <p className="text-[10px] text-destructive/70 mt-1">Total del periodo</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-primary/5 border-none shadow-none">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-medium text-primary uppercase">Saldo Final</p>
+                                        <Scale className="h-4 w-4 text-primary" />
+                                    </div>
                                     <div className={`text-xl font-bold mt-1 ${data?.closing_balance && data.closing_balance < 0 ? 'text-destructive' : 'text-primary'}`}>
                                         ${data?.closing_balance?.toLocaleString() || '0'}
                                     </div>
-                                )}
-                                <p className="text-[10px] text-muted-foreground mt-1">
-                                    Al {dateRange?.to ? format(dateRange.to, "PPP", { locale: es }) : '-'}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
+                                    <p className="text-[10px] text-muted-foreground mt-1">
+                                        Al {dateRange?.to ? format(dateRange.to, "PPP", { locale: es }) : '-'}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
 
                     <DataTable
                         columns={columns}

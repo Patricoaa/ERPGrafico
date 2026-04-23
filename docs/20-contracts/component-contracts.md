@@ -144,7 +144,8 @@ Está **estrictamente prohibido** el uso excesivo del componente primitivo `<Ske
 | prop | type | default | notes |
 |------|------|---------|-------|
 | `count` | `number` | `3` | Número de tarjetas a renderizar |
-| `variant` | `'grid' \| 'list'` | `'grid'` | Cambia el layout visual |
+| `variant` | `'grid' \| 'list' \| 'product' \| 'compact'` | `'grid'` | `product`: con imagen; `compact`: lista slim |
+| `gridClassName` | `string` | — | Configuración custom de grid (ej. `grid-cols-4`) |
 | `className` | `string` | — | Clases para el contenedor principal |
 
 #### `TableSkeleton`

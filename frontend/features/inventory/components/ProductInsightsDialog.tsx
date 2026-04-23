@@ -1,6 +1,6 @@
 "use client"
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { FormSkeleton } from "@/components/shared"
 
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -158,9 +158,8 @@ export function ProductInsightsDialog({ productId, productName, open, onOpenChan
                 </div>
 
                 {loading ? (
-                    <div className="flex-1 flex flex-col items-center justify-center py-20 gap-4">
-                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                        <Skeleton className="h-4 w-[200px]" />
+                    <div className="p-6">
+                        <FormSkeleton hasTabs tabs={4} cards={1} fields={6} />
                     </div>
                 ) : !data ? (
                     <div className="flex-1 flex items-center justify-center py-20">

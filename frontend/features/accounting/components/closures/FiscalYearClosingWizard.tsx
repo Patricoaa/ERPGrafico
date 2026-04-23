@@ -17,7 +17,7 @@ import {
 import { FiscalYearPreviewResult } from '../../types';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
-import { LoadingFallback } from '@/components/shared/LoadingFallback';
+import { TableSkeleton } from '@/components/shared';
 import { BaseModal } from '@/components/shared/BaseModal';
 
 // Lazy load TrialBalanceView
@@ -294,7 +294,7 @@ export function FiscalYearClosingWizard({
             size="xl"
         >
             <div className="h-full flex flex-col">
-                <Suspense fallback={<LoadingFallback variant="card" message="Cargando reporte de balance..." />}>
+                <Suspense fallback={<TableSkeleton rows={10} columns={5} />}>
                     <TrialBalanceView />
                 </Suspense>
             </div>

@@ -17,8 +17,7 @@ import {
 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Badge } from "@/components/ui/badge"
-
-import { Skeleton } from "@/components/ui/skeleton"
+import { CardSkeleton, Skeleton } from "@/components/shared"
 import { WorkOrder } from "../types"
 
 interface KanbanProps {
@@ -59,32 +58,13 @@ export function WorkOrderKanban({ orders, onTransition, onManage, isLoading }: K
                                 <h3 className="font-bold text-sm uppercase tracking-wider">{stage.label}</h3>
                             </div>
                             <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-white text-muted-foreground whitespace-nowrap">
-                                {isLoading ? <Skeleton className="h-4 w-6" /> : stageOrders.length}
+                                {isLoading ? <Skeleton className="h-3 w-4 rounded" /> : stageOrders.length}
                             </span>
                         </div>
 
                         <div className="p-2 space-y-3 flex-1 overflow-y-auto">
                             {isLoading ? (
-                                <>
-                                    {[1, 2, 3].map((i) => (
-                                        <Card key={i} className="border-none shadow-sm rounded-md opacity-60">
-                                            <CardContent className="p-3 space-y-4">
-                                                <div className="flex gap-2">
-                                                    <Skeleton className="h-5 w-16" />
-                                                    <Skeleton className="h-5 w-12" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Skeleton className="h-4 w-full" />
-                                                    <Skeleton className="h-4 w-2/3" />
-                                                </div>
-                                                <div className="space-y-2 pt-2">
-                                                    <Skeleton className="h-3 w-1/2" />
-                                                    <Skeleton className="h-3 w-1/3" />
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                                </>
+                                <CardSkeleton count={3} variant="list" />
                             ) : (
                                 <>
                                     {stageOrders.map((order) => (

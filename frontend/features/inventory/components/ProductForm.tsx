@@ -23,7 +23,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Skeleton } from "@/components/ui/skeleton"
+import { FormSkeleton } from "@/components/shared"
 
 // Import modular components
 import { productSchema, type ProductFormValues } from "./product/schema"
@@ -708,23 +708,8 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
             <div className="flex-1 flex overflow-hidden">
                 <div className="flex-1 overflow-y-auto scrollbar-thin">
                     {isFetchingInitialData ? (
-                        <div className="p-6 space-y-8 animate-in fade-in duration-500">
-                            <div className="flex items-center gap-4">
-                                <Skeleton className="h-10 w-48 rounded-[0.25rem]" />
-                                <Skeleton className="h-10 w-32 rounded-[0.25rem]" />
-                                <Skeleton className="h-10 w-32 rounded-[0.25rem]" />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                                <div className="md:col-span-3 space-y-4">
-                                    <Skeleton className="h-[250px] w-full rounded-[0.25rem]" />
-                                    <Skeleton className="h-32 w-full rounded-[0.25rem]" />
-                                </div>
-                                <div className="md:col-span-9 space-y-4">
-                                    <Skeleton className="h-16 w-full rounded-[0.25rem]" />
-                                    <Skeleton className="h-40 w-full rounded-[0.25rem]" />
-                                    <Skeleton className="h-64 w-full rounded-[0.25rem]" />
-                                </div>
-                            </div>
+                        <div className="p-6">
+                            <FormSkeleton hasTabs tabs={6} cards={2} fields={5} />
                         </div>
                     ) : (
                         <Form {...form}>

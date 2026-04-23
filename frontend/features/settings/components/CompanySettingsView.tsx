@@ -7,7 +7,6 @@ import * as z from "zod"
 import { toast } from "sonner"
 import { useCompanySettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
@@ -31,6 +30,7 @@ import {
 import ContactModal from "@/features/contacts/components/ContactModal"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
+import { FormSkeleton } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { cn } from "@/lib/utils"
@@ -187,28 +187,7 @@ export function CompanySettingsView({
     }
 
     if (isLoading) {
-        return (
-            <div className="space-y-6">
-                <Card>
-                    <CardHeader>
-                        <Skeleton className="h-6 w-48 mb-2" />
-                        <Skeleton className="h-4 w-64" />
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <Skeleton className="h-20 w-full" />
-                        <div className="grid grid-cols-2 gap-6">
-                            <Skeleton className="h-10 w-full" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-6">
-                            <Skeleton className="h-10 w-full" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                        <Skeleton className="h-32 w-full" />
-                    </CardContent>
-                </Card>
-            </div>
-        )
+        return <FormSkeleton fields={5} className="mt-6" />
     }
 
     return (

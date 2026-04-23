@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+import { TableSkeleton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -358,7 +358,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                     />
                                 ) : (
                                     <div className="p-8">
-                                        <Skeleton className="h-[400px] w-full" />
+                                        <TableSkeleton rows={8} columns={4} />
                                     </div>
                                 )}
                             </CardContent>

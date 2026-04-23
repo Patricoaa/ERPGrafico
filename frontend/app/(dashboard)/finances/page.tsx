@@ -1,9 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { LoadingFallback, PageTabs, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load feature components

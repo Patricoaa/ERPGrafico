@@ -11,8 +11,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useContacts, type Contact } from "@/features/contacts"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import { LoadingFallback, StatusBadge } from "@/components/shared"
 import { cn } from "@/lib/utils"
 
 // Lazy load heavy components

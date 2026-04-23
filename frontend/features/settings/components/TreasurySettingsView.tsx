@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Banknote, ArrowLeftRight, Settings2 } from "lucide-react"
-import { FormSkeleton } from "@/components/shared/FormSkeleton"
+import { FormSkeleton } from "@/components/shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { Separator } from "@/components/ui/separator"
 type SavingStatus = "idle" | "saving" | "synced" | "error"

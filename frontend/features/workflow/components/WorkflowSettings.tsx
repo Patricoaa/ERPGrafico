@@ -19,7 +19,7 @@ import { LucideIcon, CalendarClock, CreditCard, Lock, Bell, BellRing, UserCheck 
 import { Switch } from "@/components/ui/switch"
 
 import { cn } from "@/lib/utils"
-import { Skeleton } from "@/components/ui/skeleton"
+import { CardSkeleton } from "@/components/shared"
 import { WorkflowRule, NotificationRule } from "@/types/entities"
 
 /** Shape of the /workflow/settings/current/ response */
@@ -190,24 +190,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
     if (loading) {
         return (
             <div className="space-y-6">
-                <div className="flex gap-2">
-                    <Skeleton className="h-10 w-32" />
-                    <Skeleton className="h-10 w-32" />
-                    <Skeleton className="h-10 w-32" />
-                </div>
-                <div className="grid gap-4">
-                    {[1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className="flex items-center gap-4 p-3 border rounded-lg bg-card/50">
-                            <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
-                            <div className="flex-1 space-y-2">
-                                <Skeleton className="h-4 w-1/4" />
-                                <Skeleton className="h-3 w-1/2 opacity-50" />
-                            </div>
-                            <Skeleton className="h-10 w-48 shrink-0" />
-                            <Skeleton className="h-8 w-8 rounded-full shrink-0" />
-                        </div>
-                    ))}
-                </div>
+                <CardSkeleton count={5} variant="list" />
             </div>
         )
     }

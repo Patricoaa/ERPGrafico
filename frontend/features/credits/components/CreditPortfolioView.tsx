@@ -29,13 +29,12 @@ import {
 } from "@/components/ui/tooltip"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
+import { TableSkeleton } from "@/components/shared"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, ColumnDef, flexRender } from "@tanstack/react-table"
 import { TableRow, TableCell } from "@/components/ui/table"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import {
@@ -292,9 +291,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onR
                                     </AlertDialog>
 
                                     {loadingLedger ? (
-                                        <div className="space-y-2">
-                                            {[1, 2].map(i => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
-                                        </div>
+                                        <TableSkeleton rows={2} />
                                     ) : ledger && ledger.length > 0 ? (
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-left">
