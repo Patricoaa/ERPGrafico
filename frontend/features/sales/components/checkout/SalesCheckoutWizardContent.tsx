@@ -17,6 +17,7 @@ import { toast } from "sonner"
 import api from "@/lib/api"
 
 import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, AlertTriangle, ShieldAlert, CheckCircle2, FileWarning, Printer } from "lucide-react"
+import { SubmitButton } from "@/components/shared/ActionButtons"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useAuth } from "@/contexts/AuthContext"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -902,14 +903,15 @@ export function SalesCheckoutWizardContent({
                                     >
                                         Pagar en otro terminal
                                     </Button>
-                                    <Button
+                                    <SubmitButton
                                         onClick={handleFinish}
+                                        loading={loading}
                                         disabled={loading || isWaitingApproval}
-                                        className="w-48 bg-success font-bold"
+                                        icon={<Check className="mr-2 h-4 w-4" />}
+                                        className="w-48 bg-success hover:bg-success/90 font-bold text-white"
                                     >
-                                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
                                         Finalizar Venta
-                                    </Button>
+                                    </SubmitButton>
                                 </>
                             )}
                         </div>

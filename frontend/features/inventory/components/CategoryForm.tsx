@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { CancelButton } from "@/components/shared"
 import {
     Form,
     FormControl,
@@ -307,15 +308,9 @@ export function CategoryForm({
                 }
                 footer={
                     <div className="flex justify-end space-x-2 w-full">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setOpen(false)}
-                        >
-                            Cancelar
-                        </Button>
-                        <ActionSlideButton type="submit" form="category-form" disabled={loading}>
-                            {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Categoría"}
+                        <CancelButton onClick={() => setOpen(false)} />
+                        <ActionSlideButton type="submit" form="category-form" loading={loading}>
+                            {initialData ? "Guardar Cambios" : "Crear Categoría"}
                         </ActionSlideButton>
                     </div>
                 }

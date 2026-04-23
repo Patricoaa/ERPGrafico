@@ -261,7 +261,7 @@ export const DataCell = {
      * Incorporates CropFrame and a Ghost Button.
      * - hover:bg-transparent overrides ghost default accent fill; CropFrame is the sole hover feedback.
      * - Tooltip uses the dark sidebar palette for visual consistency.
-     * Enforces rounded-none for Industrial Premium compliance.
+     * Enforces rounded-none for design system compliance.
      */
     Action: ({ 
         icon: Icon, 

@@ -11,6 +11,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { CancelButton } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, UserCog } from "lucide-react"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
@@ -86,11 +87,8 @@ export function PartnerEditModal({ open, onOpenChange, contact, onSuccess }: Pro
             description={`Ajuste la participación de ${contact.name}.`}
             footer={
                 <div className="flex w-full gap-3 justify-end">
-                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-                        Cancelar
-                    </Button>
-                    <ActionSlideButton type="submit" form="partner-edit-form" disabled={submitting} className="font-bold">
-                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
+                    <ActionSlideButton type="submit" form="partner-edit-form" loading={submitting} className="font-bold">
                         Guardar Cambios
                     </ActionSlideButton>
                 </div>

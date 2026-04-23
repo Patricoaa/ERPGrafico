@@ -20,7 +20,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import api from "@/lib/api"
 import { FORM_STYLES } from "@/lib/styles"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
+import { CancelButton, SubmitButton } from "@/components/shared"
 
 interface TerminalBatchFormProps {
     onSuccess: () => void
@@ -316,9 +317,8 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t">
-                <Button type="button" variant="ghost" onClick={onCancel}>Cancelar</Button>
-                <ActionSlideButton type="submit" disabled={loading || !isValid || !providerId || !depositMethodId}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <CancelButton onClick={onCancel} />
+                <ActionSlideButton type="submit" loading={loading} disabled={loading || !isValid || !providerId || !depositMethodId}>
                     Registrar Liquidación
                 </ActionSlideButton>
             </div>
@@ -427,13 +427,14 @@ function SaleSelectionModal({ open, onOpenChange, providerId, date, onConfirm, i
             className="sm:max-w-[600px]"
             footer={(
                 <div className="flex justify-end gap-2 w-full">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button
+                    <CancelButton onClick={() => onOpenChange(false)} />
+                    <SubmitButton
                         onClick={() => onConfirm(movements.filter(m => selectedIds.has(m.id)), selectedIds)}
                         disabled={selectedIds.size === 0}
+                        icon={null}
                     >
                         Confirmar Selección
-                    </Button>
+                    </SubmitButton>
                 </div>
             )}
         >

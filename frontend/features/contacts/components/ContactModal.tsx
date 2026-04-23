@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
 import api from "@/lib/api"
 import { Contact, InsightsData } from "../types"
 import { Order, OrderLine, WorkOrder } from "../../orders/types"
@@ -539,12 +540,13 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             </Form>
 
             <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40 bg-background/80 backdrop-blur-md sticky bottom-0 z-50 mt-auto">
-                <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5">
-                    Cancelar
-                </Button>
-                <Button onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting} className="rounded-lg text-xs font-bold">
+                <CancelButton onClick={() => onOpenChange(false)} />
+                <SubmitButton
+                    loading={form.formState.isSubmitting}
+                    onClick={form.handleSubmit(onSubmit)}
+                >
                     {contact ? "Guardar Cambios" : "Crear Contacto"}
-                </Button>
+                </SubmitButton>
             </div>
 
             <ActionConfirmModal

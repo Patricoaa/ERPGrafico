@@ -21,6 +21,7 @@ import {
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
+import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
@@ -210,31 +211,17 @@ export function InventoryContributionModal({
 
     const footerContent = (
         <div className="flex w-full gap-3 justify-end">
-            <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5"
-            >
-                Cancelar
-            </Button>
-            <Button
+            <CancelButton onClick={() => onOpenChange(false)} />
+            <SubmitButton
                 onClick={handleSubmit}
-                disabled={isLoading}
+                loading={isLoading}
                 className={cn(
                     "rounded-lg text-xs font-bold",
                     moveType === 'IN' ? 'bg-success hover:bg-success/90 text-primary-foreground' : 'bg-destructive hover:bg-destructive/90 text-primary-foreground'
                 )}
             >
-                {isLoading ? (
-                    <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Procesando...
-                    </>
-                ) : (
-                    moveType === 'IN' ? "Registrar Aporte" : "Registrar Retiro"
-                )}
-            </Button>
+                {moveType === 'IN' ? "Registrar Aporte" : "Registrar Retiro"}
+            </SubmitButton>
         </div>
     )
 

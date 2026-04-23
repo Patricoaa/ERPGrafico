@@ -23,7 +23,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { FormSkeleton } from "@/components/shared"
+import { FormSkeleton, LabeledSeparator } from "@/components/shared"
 
 // Import modular components
 import { productSchema, type ProductFormValues } from "./product/schema"
@@ -43,7 +43,8 @@ import { PricingRuleForm } from "@/features/sales/components/PricingRuleForm"
 import { CategoryForm } from "./CategoryForm"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
+import { CancelButton } from "@/components/shared"
 
 interface ProductFormProps {
     auditSidebar?: React.ReactNode
@@ -719,11 +720,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                                 <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
                                     <div className="md:col-span-3 space-y-8">
                                         <div className="space-y-4">
-                                            <div className="flex items-center gap-2 pt-2 pb-2">
-                                                <div className="flex-1 h-px bg-border" />
-                                                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">Imagen</span>
-                                                <div className="flex-1 h-px bg-border" />
-                                            </div>
+                                            <LabeledSeparator label="Imagen" />
                                             <ProductImageUpload
                                                 form={form}
                                                 imagePreview={imagePreview}
@@ -732,11 +729,7 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                                         </div>
 
                                         <div className="space-y-4">
-                                            <div className="flex items-center gap-2 pt-2 pb-2">
-                                                <div className="flex-1 h-px bg-border" />
-                                                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">Tipo de producto</span>
-                                                <div className="flex-1 h-px bg-border" />
-                                            </div>
+                                            <LabeledSeparator label="Tipo de producto" />
                                             <ProductTypeSelector form={form} disabled={!!initialData} lockedType={lockedType} />
                                         </div>
                                     </div>
@@ -881,20 +874,16 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                 </div>
 
                 <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40 bg-background/80 backdrop-blur-md sticky bottom-0 z-50 mt-auto shrink-0">
-                    <Button
-                        variant="outline"
+                    <CancelButton
                         onClick={() => onOpenChange(false)}
                         className="rounded-md text-xs font-bold border-primary/20 hover:bg-primary/5"
-                    >
-                        Cancelar
-                    </Button>
+                    />
                     <ActionSlideButton
                         form="product-form"
                         type="submit"
-                        disabled={loading}
+                        loading={loading}
                         className="rounded-md text-xs font-bold"
                     >
-                        {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
                         {initialData ? 'Guardar Cambios' : 'Crear Producto'}
                     </ActionSlideButton>
                 </div>

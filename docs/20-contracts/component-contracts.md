@@ -20,74 +20,14 @@ Public API of every shared component in `components/shared/`. Consumers import o
 
 ---
 
-## BaseModal 🟢
+## BaseModal / ActionConfirmModal / GenericWizard
 
-Primitiva base de todos los modales del proyecto. Wrappea `Dialog` de Shadcn con layout estructurado (header / scroll area / footer), botón de cierre integrado y variantes de estilo.
+> 📄 Documentación completa en **[component-modal.md](./component-modal.md)**.
 
-> **No consumir directamente en features salvo casos excepcionales.**  
-> Preferir las especializaciones según el caso:
->
-> | Necesito… | Componente |
-> |-----------|-----------|
-> | Confirmar una acción (destructiva o no) | `ActionConfirmModal` |
-> | Flujo paso a paso | `GenericWizard` |
-> | Completar factura con folio + adjunto | `DocumentCompletionModal` |
-> | Modal completamente custom | `BaseModal` (directo) |
+Jerarquía: `BaseModal` (primitiva) → `ActionConfirmModal` | `GenericWizard` | `DocumentCompletionModal`.
+Nunca usar `Dialog` de shadcn directamente en features.
 
-```tsx
-<BaseModal
-  open={open}
-  onOpenChange={setOpen}
-  title="Detalle de orden"
-  description="Revisa los datos antes de confirmar"
-  size="lg"
-  footer={<Button onClick={() => setOpen(false)}>Cerrar</Button>}
->
-  <p>Contenido aquí</p>
-</BaseModal>
-```
 
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `open` | `boolean` | ✅ | — | |
-| `onOpenChange` | `(open: boolean) => void` | ✅ | — | |
-| `title` | `string \| ReactNode` | ✅ | — | Si se omite se inyecta `sr-only` para a11y |
-| `description` | `string \| ReactNode` | ❌ | — | `asChild` si no es string |
-| `children` | `ReactNode` | ✅ | — | Cuerpo del modal |
-| `footer` | `ReactNode` | ❌ | — | Renderizado en `DialogFooter` con fondo `muted/20` |
-| `headerActions` | `ReactNode` | ❌ | — | Slot derecho del header (ej. botones de acción extra) |
-| `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl' \| 'full' \| 'default'` | ❌ | `'default'` | Ver tabla de anchos abajo |
-| `variant` | `'default' \| 'transaction' \| 'wizard' \| 'raw'` | ❌ | `'default'` | Controla estilos de header/footer |
-| `showCloseButton` | `boolean` | ❌ | `true` | Botón X en esquina superior derecha |
-| `hideScrollArea` | `boolean` | ❌ | `false` | Desactiva `ScrollArea`; útil cuando el hijo gestiona su propio scroll |
-| `className` | `string` | ❌ | — | Clases para `DialogContent` |
-| `contentClassName` | `string` | ❌ | — | Clases para el área de contenido (scroll o div) |
-| `headerClassName` | `string` | ❌ | — | Clases para el `DialogHeader` |
-| `footerClassName` | `string` | ❌ | — | Clases para el `DialogFooter` |
-
-### Tamaños (`size`)
-
-| Valor | Ancho máximo |
-|-------|-------------|
-| `xs` | 400 px |
-| `sm` | 500 px |
-| `md` | 700 px |
-| `default` | 512 px (Shadcn base, `sm:max-w-lg`) |
-| `lg` | 900 px |
-| `xl` | 1200 px |
-| `2xl` | 1400 px |
-| `full` | 98 vw × 95 vh |
-
-### Variantes (`variant`)
-
-| Valor | Efecto visual |
-|-------|---------------|
-| `default` | Header con borde inferior, footer con `bg-muted/20` |
-| `transaction` | Header con `bg-primary text-primary-foreground` (sin borde). Usado en `TransactionViewModal` |
-| `wizard` | Header con `border-b pb-2`. Usado internamente por `GenericWizard` |
-| `raw` | Sin bordes en header ni footer; sin `ScrollArea`. Para layouts totalmente custom |
-
-States handled: — (sin estado propio; estado lo gestiona el componente padre).
 
 ---
 
@@ -110,79 +50,12 @@ States handled: — (pure presentational, no async).
 
 ---
 
-## Skeleton family 🟢
+## Skeleton family
 
-Los componentes de esta familia manejan los estados de carga de la aplicación. Es **CRÍTICO** utilizarlos correctamente para evitar "layout shifts" (brincos en la pantalla) y reducir el código repetitivo.
+> 📄 Documentación completa en **[component-skeleton.md](./component-skeleton.md)**.
 
-### 🎭 Regla de Oro: Suspense vs Refetching
-
-El proyecto define dos momentos distintos para los estados de carga, y cada uno usa una estrategia diferente:
-
-#### 1. Carga Inicial (First-Load / Suspense)
-Cuando el usuario navega a una ruta nueva y no hay datos.
-- **Usa:** Wrappers estáticos (`TableSkeleton`, `FormSkeleton`, `CardSkeleton`).
-- **Por qué:** No tienes datos para renderizar el DOM real, así que debes dibujar un "mock" estático que imite la estructura final.
-
-#### 2. Recarga (Refetching / Mutations / Filters)
-Cuando el usuario ya está en la vista, la tabla existe, y solo está filtrando o cambiando de página.
-- **Usa:** `SkeletonShell` envolviendo tu componente real.
-- **Por qué:** Evita desmontar el componente real para poner un esqueleto. El Shell le aplica un "shimmer" (brillo CSS) por encima al DOM existente, congelando la interacción pero manteniendo exactamente el mismo layout. ¡Cero brincos!
-
----
-
-### 🚫 Antipatrones: Skeletons "Ad-hoc"
-
-Está **estrictamente prohibido** el uso excesivo del componente primitivo `<Skeleton />` directamente en las features (ej. `<Skeleton className="h-4 w-32" />`).
-- **Problema:** Infla el código de negocio con clases de Tailwind de diseño y rompe la consistencia.
-- **Solución:** Si necesitas cargar una tabla, usa `<TableSkeleton />`. Si es una vista muy caprichosa (ej. el Header de un perfil), crea un archivo `ProfileHeaderSkeleton.tsx` encapsulando los primitivos, en lugar de mezclarlos con el código de negocio.
-
----
-
-### 📦 Catálogo de Wrappers Compartidos
-
-#### `CardSkeleton`
-| prop | type | default | notes |
-|------|------|---------|-------|
-| `count` | `number` | `3` | Número de tarjetas a renderizar |
-| `variant` | `'grid' \| 'list' \| 'product' \| 'compact'` | `'grid'` | `product`: con imagen; `compact`: lista slim |
-| `gridClassName` | `string` | — | Configuración custom de grid (ej. `grid-cols-4`) |
-| `className` | `string` | — | Clases para el contenedor principal |
-
-#### `TableSkeleton`
-| prop | type | default | notes |
-|------|------|---------|-------|
-| `rows` | `number` | `5` | Filas de la tabla |
-| `columns` | `number` | `5` | Columnas por fila |
-| `className` | `string` | — | Clases para el contenedor principal |
-
-#### `FormSkeleton`
-| prop | type | default | notes |
-|------|------|---------|-------|
-| `fields` | `number` | `4` | Cantidad de campos de formulario por bloque |
-| `cards` | `number` | `1` | Número de bloques/tarjetas lado a lado (1-4) |
-| `hasTabs` | `boolean` | `false` | Renderiza un tab-bar en la parte superior |
-| `tabs` | `number` | `3` | Cantidad de tabs simulados (si `hasTabs` es true) |
-
-#### `SkeletonShell`
-| prop | type | default | notes |
-|------|------|---------|-------|
-| `isLoading` | `boolean` | **Obligatorio** | Activa la animación shimmer y `aria-busy` |
-| `children` | `ReactNode` | **Obligatorio** | El DOM real a "congelar" con el efecto |
-
-#### `PageLayoutSkeleton` (Layout Family) 🆕
-Wrappers de alto nivel para estandarizar la carga de rutas completas.
-
-- **`PageHeaderSkeleton`**: Mock de la barra superior (Título + Descripción + Acciones).
-- **`PageTabsSkeleton`**: Mock de la barra de navegación por pestañas.
-- **`ToolbarSkeleton`**: Mock de la barra de herramientas de tablas (Búsqueda + Botones).
-- **`HubSkeleton`**: Mock especializado para el Command Center (Hub) con sus 4 fases verticales.
-
-| prop | type | default | notes |
-|------|------|---------|-------|
-| `hasTabs` | `boolean` | `false` | Incluye `PageTabsSkeleton` |
-| `tabsCount` | `number` | `3` | Cantidad de pestañas en el skeleton |
-| `hasToolbar` | `boolean` | `false` | Incluye `ToolbarSkeleton` |
-| `contentType` | `'table' \| 'card' \| 'form' \| 'custom'` | `'table'` | Define el cuerpo del skeleton |
+Catálogo: `CardSkeleton` · `TableSkeleton` · `FormSkeleton` · `SkeletonShell` · `PageLayoutSkeleton` · `LoadingFallback`.
+Regla clave: usar wrappers estáticos para first-load, `SkeletonShell` para refetching.
 
 ---
 
@@ -226,34 +99,9 @@ Wrappers de alto nivel para estandarizar la carga de rutas completas.
 
 ---
 
-## ActionConfirmModal 🟢
+## ActionConfirmModal
 
-Reusable confirmation dialog with variant styling and async confirmation support.
-
-```tsx
-<ActionConfirmModal
-  open={open}
-  onOpenChange={setOpen}
-  onConfirm={handleDelete}
-  title="Eliminar orden"
-  description="Esta acción no se puede deshacer."
-  variant="destructive"
-/>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `open` | `boolean` | ✅ | — | |
-| `onOpenChange` | `(open: boolean) => void` | ✅ | — | |
-| `onConfirm` | `() => Promise<void> \| void` | ✅ | — | Shows spinner during async |
-| `title` | `string` | ✅ | — | |
-| `description` | `ReactNode` | ✅ | — | Accepts JSX |
-| `confirmText` | `string` | ❌ | `'Confirmar'` | |
-| `cancelText` | `string` | ❌ | `'Cancelar'` | |
-| `variant` | `'default' \| 'destructive' \| 'warning' \| 'info' \| 'success'` | ❌ | `'default'` | Controls icon + button color |
-| `icon` | `LucideIcon` | ❌ | — | Overrides default variant icon |
-
-States handled: loading (during `onConfirm`), error (console only — caller manages toast).
+> 📄 Ver **[component-modal.md](./component-modal.md)**.
 
 ---
 
@@ -517,53 +365,9 @@ Font: always `font-mono tabular-nums`. Do NOT render quantities with raw JS `.to
 
 ---
 
-## GenericWizard 🟢
+## GenericWizard
 
-Multi-step wizard modal. Handles step navigation, validation, and success screen.
-
-```tsx
-<GenericWizard
-  open={open}
-  onOpenChange={setOpen}
-  title="Crear Orden"
-  steps={[
-    { id: 1, title: 'Datos', component: <Step1 />, isValid: step1Valid },
-    { id: 2, title: 'Líneas', component: <Step2 />, onNext: validateStep2 },
-  ]}
-  onComplete={handleComplete}
-  completeButtonLabel="Crear"
-  isCompleting={isPending}
-/>
-```
-
-```typescript
-interface WizardStep {
-  id: string | number
-  title: string
-  description?: string
-  component: ReactNode
-  isValid?: boolean               // disables Next when false
-  onNext?: () => Promise<boolean | void>  // return false to block advance
-}
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `title` | `string \| ReactNode` | ✅ | — | Modal title |
-| `steps` | `WizardStep[]` | ✅ | — | Min 1 step |
-| `onComplete` | `() => Promise<void>` | ✅ | — | Called on last step confirm |
-| `onClose` | `() => void` | ❌ | — | Called on cancel/close |
-| `initialStep` | `number` | ❌ | `0` | Zero-indexed |
-| `completeButtonLabel` | `string` | ❌ | `'Completar'` | |
-| `completeButtonIcon` | `ReactNode` | ❌ | — | |
-| `isCompleting` | `boolean` | ❌ | `false` | Spinner on complete button |
-| `isLoading` | `boolean` | ❌ | `false` | Full wizard loading state |
-| `successContent` | `ReactNode` | ❌ | — | Shown after `onComplete` resolves |
-| `footerLeft` | `ReactNode` | ❌ | — | Left slot in footer |
-
-Inherits `BaseModal` props except `children`, `title`, `description`, `footer`.
-
-States handled: loading (isLoading), step blocked (isValid=false or onNext returns false), completing (isCompleting), success (successContent).
+> 📄 Ver **[component-modal.md](./component-modal.md)**.
 
 ---
 
@@ -727,23 +531,11 @@ States handled: empty (EmptyState), deleting per-item spinner.
 
 ---
 
-## ToolbarCreateButton 🟢
+## Button family (ToolbarCreateButton / ActionButtons)
 
-Primary toolbar action button. Renders as link when `href` provided.
+> 📄 Documentación completa en **[component-button.md](./component-button.md)**.
 
-```tsx
-<ToolbarCreateButton label="Nueva Orden" icon={PlusCircleIcon} onClick={handleOpen} />
-<ToolbarCreateButton label="Nuevo Producto" href="/inventory/products/new" />
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `label` | `string` | ✅ | — | Uppercase bold text |
-| `icon` | `LucideIcon` | ❌ | `Plus` | Direct icon component |
-| `iconName` | `string` | ❌ | — | Dynamic icon by string name; `icon` takes precedence |
-| `href` | `string` | ❌ | — | Renders as Next.js `<Link>` instead of `<button>` |
-
-Inherits all `Button` props except `children`. Variant defaults to `default` (primary). Height 9 (36px).
+Catálogo: `SubmitButton` · `CancelButton` · `DangerButton` · `IconButton` · `ToolbarCreateButton`.
 
 ---
 
@@ -864,14 +656,9 @@ Botón con animación de deslizamiento para revelar acciones adicionales.
 
 ---
 
-## LoadingFallback 🟡
+## LoadingFallback
 
-Fallback estandarizado para usar en `Suspense` boundaries.
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `message` | `string` | ❌ | `'Cargando...'` | |
-| `className` | `string` | ❌ | — | |
+> 📄 Ver **[component-skeleton.md](./component-skeleton.md)**.
 
 ---
 

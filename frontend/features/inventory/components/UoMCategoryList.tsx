@@ -11,6 +11,7 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
+import { CancelButton, SubmitButton } from "@/components/shared"
 import { Plus, Pencil, Trash2, Ruler } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Input } from "@/components/ui/input"
@@ -215,8 +216,8 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
                 description={currentCategory.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo (ej: Peso, Volumen)."}
                 footer={
                     <div className="flex justify-end gap-2 w-full">
-                        <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleSave} disabled={isSaving}>Guardar</Button>
+                        <CancelButton onClick={() => setIsModalOpen(false)} disabled={isSaving} />
+                        <SubmitButton onClick={handleSave} loading={isSaving}>Guardar</SubmitButton>
                     </div>
                 }
             >

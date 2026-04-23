@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react"
 import { useTreasuryAccounts, type TreasuryAccount, treasuryApi } from "@/features/treasury"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { BaseModal } from "@/components/shared/BaseModal"
 import {
@@ -19,6 +18,7 @@ import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { CancelButton } from "@/components/shared"
 
 interface TreasuryAccountModalProps {
     open: boolean
@@ -148,12 +148,11 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
             className="h-[85vh]"
             footer={
                 <>
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+                    <CancelButton onClick={() => onOpenChange(false)}>
                         {isSystemManaged ? "Cerrar" : "Cancelar"}
-                    </Button>
+                    </CancelButton>
                     {!isSystemManaged && (
-                        <ActionSlideButton type="submit" form="account-form" disabled={isSubmitting || loading}>
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <ActionSlideButton type="submit" form="account-form" loading={isSubmitting || loading} disabled={isSubmitting || loading}>
                             {accountId ? "Guardar Cambios" : "Crear Cuenta"}
                         </ActionSlideButton>
                     )}

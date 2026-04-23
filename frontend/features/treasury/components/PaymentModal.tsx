@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
+import { CancelButton } from "@/components/shared/ActionButtons"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
@@ -18,6 +19,7 @@ import { cn, formatCurrency } from "@/lib/utils"
 import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DocumentAttachmentDropzone, PeriodValidationDateInput, LoadingFallback } from "@/components/shared"
+import { Card } from "@/components/ui/card"
 
 interface PaymentModalProps {
     open: boolean
@@ -152,7 +154,7 @@ export function PaymentModal({
             size="lg"
             footer={(
                 <div className="flex w-full gap-2">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)} className="flex-1">Cancelar</Button>
+                    <CancelButton onClick={() => onOpenChange(false)} className="flex-1" />
                     <Button
                         className="flex-[2] bg-success hover:bg-success/90 h-12 text-lg font-bold"
                         onClick={() => onConfirm({
@@ -218,7 +220,7 @@ export function PaymentModal({
                     )}
 
                     {!hideDteFields && ((isPurchase && (dteType === "BOLETA" || dteType === "FACTURA")) || (!isPurchase && dteType === "FACTURA")) && (
-                        <div className={cn("space-y-4 p-4", FORM_STYLES.card)}>
+                        <Card variant="dashed" className="space-y-4 p-4">
                             {dteType === 'FACTURA' && (
                                 <div className="flex items-center space-x-2 py-1">
                                     <Checkbox
@@ -297,7 +299,7 @@ export function PaymentModal({
                                     </div>
                                 )}
                             </div>
-                        </div>
+                        </Card>
                     )}
 
                     {/* Payment Method Card Selector */}

@@ -3,6 +3,7 @@
 import React from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
+import { CancelButton, SubmitButton } from "@/components/shared"
 import { AlertCircle, ExternalLink, Package } from "lucide-react"
 import Link from "next/link"
 import { Loader2, RefreshCcw } from "lucide-react"
@@ -46,22 +47,19 @@ export function ArchivingRestrictionsModal({
             }
             footer={
                 <div className="flex gap-2 w-full justify-end">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
+                    <CancelButton onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
                         Cerrar
-                    </Button>
+                    </CancelButton>
                     {onRetry && (
-                        <Button
+                        <SubmitButton
                             onClick={onRetry}
-                            disabled={isRetrying}
+                            loading={isRetrying}
                             className="flex-1 sm:flex-none"
+                            icon={<RefreshCcw className="h-4 w-4 mr-2" />}
+                            type="button"
                         >
-                            {isRetrying ? (
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            ) : (
-                                <RefreshCcw className="h-4 w-4 mr-2" />
-                            )}
                             Reintentar Archivado
-                        </Button>
+                        </SubmitButton>
                     )}
                 </div>
             }

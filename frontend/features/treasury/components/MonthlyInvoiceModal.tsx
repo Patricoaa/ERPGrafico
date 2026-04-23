@@ -2,12 +2,12 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { FileText, Calendar, Loader2, Info, FileSpreadsheet } from "lucide-react"
+import { SubmitButton, CancelButton } from "@/components/shared"
+import { FileText, Calendar, Info, FileSpreadsheet } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -117,17 +117,14 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
             }
             footer={
                 <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5">
-                        Cancelar
-                    </Button>
-                    <Button
+                    <CancelButton onClick={() => onOpenChange(false)} className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5" />
+                    <SubmitButton
+                        loading={loading}
                         onClick={handleSubmit}
-                        disabled={loading}
                         className="rounded-lg text-xs font-bold"
                     >
-                        {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
                         {loading ? "Procesando..." : "Generar y Finalizar"}
-                    </Button>
+                    </SubmitButton>
                 </div>
             }
         >

@@ -4,6 +4,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { EmptyState } from "@/components/shared/EmptyState"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
+import { Card } from "@/components/ui/card"
 import { Info, Plus, Pencil, Trash2 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -35,7 +36,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
     return (
         <TabsContent value="pricing" className="mt-0">
             <div className="space-y-4">
-                <div className={cn("flex items-center justify-between p-4 rounded-md border bg-primary/5 border-primary/10 shadow-sm", FORM_STYLES.card)}>
+                <Card variant="dashed" className="flex items-center justify-between p-4 rounded-md border bg-primary/5 border-primary/10 shadow-sm">
                     <div className="flex gap-4 items-center">
                         <Info className="h-5 w-5 text-muted-foreground" />
                         <div>
@@ -53,7 +54,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                         <Plus className="h-4 w-4 mr-2" />
                         Nueva Regla
                     </Button>
-                </div>
+                </Card>
 
                 {!initialData && (
                     <div className="py-12 border-2 border-dashed rounded-md flex flex-col items-center justify-center text-center px-6">

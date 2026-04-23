@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
 import { Loader2, Plus, User, ShieldCheck, ShieldAlert, Check, ChevronsUpDown, Search } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { CancelButton, SubmitButton, LabeledSeparator } from "@/components/shared"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -183,13 +184,10 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
                 contentClassName="p-0"
                 footer={
                     <div className="flex justify-end gap-3 w-full">
-                        <Button variant="outline" onClick={() => setOpen(false)} className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5">
-                            Cancelar
-                        </Button>
-                        <Button onClick={form.handleSubmit(onSubmit)} disabled={loading} className="rounded-lg text-xs font-bold">
-                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <CancelButton onClick={() => setOpen(false)} disabled={loading} className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5" />
+                        <SubmitButton onClick={form.handleSubmit(onSubmit)} loading={loading} className="rounded-lg text-xs font-bold">
                             {initialData ? "Guardar Cambios" : "Crear Usuario"}
-                        </Button>
+                        </SubmitButton>
                     </div>
                 }
             >
@@ -295,11 +293,7 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
                                         <TabsContent value="permissions" className="mt-0 space-y-6 outline-none">
                                             <div className="space-y-6">
                                                 {/* Permisos de Sistema */}
-                                                <div className="flex items-center gap-2 pt-2 pb-2">
-                                                    <div className="flex-1 h-px bg-border" />
-                                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Permisos de Sistema (Rol)</span>
-                                                    <div className="flex-1 h-px bg-border" />
-                                                </div>
+                                                <LabeledSeparator label="Permisos de Sistema (Rol)" />
 
                                                 <FormField
                                                     control={form.control}
@@ -374,11 +368,7 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
 
                                                 {/* Equipos Funcionales */}
                                                 <div className="pt-4">
-                                                    <div className="flex items-center gap-2 pt-2 pb-2 mb-3">
-                                                        <div className="flex-1 h-px bg-border" />
-                                                        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Equipos Funcionales</span>
-                                                        <div className="flex-1 h-px bg-border" />
-                                                    </div>
+                                                    <LabeledSeparator label="Equipos Funcionales" className="mb-3" />
                                                     <p className="text-[10px] text-muted-foreground mb-4 italic text-center">
                                                         Asigne los equipos donde colabora este usuario.
                                                     </p>

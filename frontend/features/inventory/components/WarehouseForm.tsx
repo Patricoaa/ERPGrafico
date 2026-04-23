@@ -8,6 +8,7 @@ import { WarehouseInitialData } from "@/types/forms"
 import * as z from "zod"
 import { Plus, BookOpen, Tag } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { CancelButton } from "@/components/shared"
 import {
     Form,
     FormControl,
@@ -117,15 +118,9 @@ export function WarehouseForm({ auditSidebar,  onSuccess, initialData, open: ope
                 }
                 footer={
                     <div className="flex justify-end gap-2 w-full">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setOpen(false)}
-                        >
-                            Cancelar
-                        </Button>
-                        <ActionSlideButton form="warehouse-form" type="submit" disabled={loading}>
-                            {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Almacén"}
+                        <CancelButton onClick={() => setOpen(false)} />
+                        <ActionSlideButton form="warehouse-form" type="submit" loading={loading}>
+                            {initialData ? "Guardar Cambios" : "Crear Almacén"}
                         </ActionSlideButton>
                     </div>
                 }

@@ -18,6 +18,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { useReconciliation } from "../hooks/useReconciliation"
+import { Card } from "@/components/ui/card"
 import type { ReconciliationRule, TreasuryAccount as Account } from "../types"
 import { SimulationResults } from "./SimulationResults"
 import { FORM_STYLES } from "@/lib/styles"
@@ -248,7 +249,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
                         />
                     </div>
 
-                    <div className={cn("flex items-center justify-between", FORM_STYLES.card)}>
+                    <Card variant="dashed" className="flex items-center justify-between">
                         <div className="space-y-0.5">
                             <Label className={FORM_STYLES.label}>Auto-Confirmar</Label>
                             <p className="text-xs text-muted-foreground">Reconciliar automáticamente si el score es alto</p>
@@ -257,7 +258,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
                             checked={editingRule.auto_confirm}
                             onCheckedChange={checked => setEditingRule({ ...editingRule, auto_confirm: checked })}
                         />
-                    </div>
+                    </Card>
 
                     <div className="space-y-2">
                         <Label className={FORM_STYLES.label}>Criterios de Coincidencia</Label>

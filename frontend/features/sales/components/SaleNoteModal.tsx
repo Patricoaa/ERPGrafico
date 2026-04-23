@@ -4,6 +4,7 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
+import { CancelButton, SubmitButton } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -18,6 +19,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
@@ -196,17 +198,15 @@ export function SaleNoteModal({
             }
             footer={
                 <div className="w-full flex justify-end gap-2 border-t pt-4">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>
-                        Cancelar
-                    </Button>
-                    <Button
+                    <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
+                    <SubmitButton
                         onClick={handleSubmit}
-                        disabled={submitting || !documentNumber || amountNet <= 0 || !isPeriodValid}
-                        className="font-bold h-11 px-8"
+                        disabled={!documentNumber || amountNet <= 0 || !isPeriodValid}
+                        loading={submitting}
+                        className="h-11 px-8"
                     >
-                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Confirmar Registro de Nota
-                    </Button>
+                    </SubmitButton>
                 </div>
             }
         >
@@ -327,7 +327,7 @@ export function SaleNoteModal({
                         />
                     </div>
 
-                    <div className={FORM_STYLES.card + " w-64 space-y-2"}>
+                    <Card variant="dashed" className="w-64 space-y-2">
                         <div className="flex justify-between text-xs text-muted-foreground uppercase font-bold">
                             <span>Neto:</span>
                             <span>{formatCurrency(amountNet)}</span>
@@ -340,7 +340,7 @@ export function SaleNoteModal({
                             <span className="text-sm">TOTAL:</span>
                             <span className="text-xl text-primary">{formatCurrency(total)}</span>
                         </div>
-                    </div>
+                    </Card>
                 </div>
 
                 {noteType === 'NOTA_CREDITO' && (

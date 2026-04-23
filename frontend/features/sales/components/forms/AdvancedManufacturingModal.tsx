@@ -171,14 +171,14 @@ export function AdvancedManufacturingModal({
             open={open}
             onOpenChange={onOpenChange}
             size="full"
-            className="max-w-[1000px] border-primary/30 shadow-[0_30px_60px_rgba(0,0,0,0.5)] p-0 rounded-none border-t-4 border-t-primary"
+            className="max-w-[1000px] border-primary/30 shadow-[0_30px_60px_rgba(0,0,0,0.5)] p-0 border-t-4 border-t-primary"
             hideScrollArea
             title={
                 <div className="flex items-center gap-6 p-4">
                     <motion.div
                         initial={{ rotate: -15, scale: 0.8 }}
                         animate={{ rotate: 0, scale: 1 }}
-                        className="p-4 rounded-none bg-primary text-primary-foreground shadow-xl"
+                        className="p-4 rounded-md bg-primary text-primary-foreground shadow-xl"
                     >
                         <Paintbrush className="h-8 w-8" />
                     </motion.div>
@@ -196,7 +196,7 @@ export function AdvancedManufacturingModal({
                     <div className="flex items-center gap-4 ml-auto">
                         <Button variant="ghost" className="font-bold text-xs uppercase tracking-widest hover:bg-background" onClick={() => onOpenChange(false)}>Anular</Button>
                         <Button
-                            className="px-10 h-12 font-black text-xs uppercase tracking-[0.3em] rounded-none shadow-[8px_8px_0_rgba(var(--primary),0.2)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[10px_10px_0_rgba(var(--primary),0.3)] transition-all"
+                            className="px-10 h-12 font-black text-xs uppercase tracking-[0.3em] shadow-[8px_8px_0_rgba(var(--primary),0.2)] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[10px_10px_0_rgba(var(--primary),0.3)] transition-all"
                             onClick={handleConfirm}
                         >
                             Validar Producción
@@ -251,7 +251,7 @@ export function AdvancedManufacturingModal({
                                     <div className="relative">
                                         <Input
                                             placeholder="DETALLES ESPECÍFICOS DEL PRODUCTO..."
-                                            className="h-12 text-sm font-bold border-2 focus-visible:ring-primary rounded-none"
+                                            className="h-12 text-sm font-bold border-2 focus-visible:ring-primary"
                                             value={productDescription}
                                             onChange={(e) => setProductDescription(e.target.value)}
                                         />
@@ -261,7 +261,7 @@ export function AdvancedManufacturingModal({
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 {/* Pre-Press Column */}
-                                <div className={cn("flex flex-col p-5 border-2 transition-all duration-500 rounded-none", enablePrepress ? "border-primary bg-primary/[0.02]" : "border-border/40 opacity-50")}>
+                                <div className={cn("flex flex-col p-5 border-2 transition-all duration-500 rounded-lg", enablePrepress ? "border-primary bg-primary/[0.02]" : "border-border/40 opacity-50")}>
                                     <div className="flex items-center justify-between mb-6">
                                         <h4 className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
                                             <div className={cn("w-2 h-2 rounded-full", enablePrepress ? "bg-primary animate-pulse" : "bg-muted")} />
@@ -278,7 +278,7 @@ export function AdvancedManufacturingModal({
                                             <Label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Especificaciones</Label>
                                             <Textarea
                                                 placeholder="INGRESAR DATOS TÉCNICOS..."
-                                                className="text-xs font-mono bg-background min-h-[100px] border-none ring-1 ring-border rounded-none focus-visible:ring-2 focus-visible:ring-primary"
+                                                className="text-xs font-mono bg-background min-h-[100px] border-none ring-1 ring-border focus-visible:ring-2 focus-visible:ring-primary"
                                                 value={prepressSpecs}
                                                 onChange={(e) => setPrepressSpecs(e.target.value)}
                                             />
@@ -342,7 +342,7 @@ export function AdvancedManufacturingModal({
                                             <Label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Ficha de Prensa</Label>
                                             <Textarea
                                                 placeholder="DETALLES DE MÁQUINA, TINTAS..."
-                                                className="text-xs font-mono bg-background min-h-[100px] border-none ring-1 ring-border rounded-none focus-visible:ring-2 focus-visible:ring-primary"
+                                                className="text-xs font-mono bg-background min-h-[100px] border-none ring-1 ring-border focus-visible:ring-2 focus-visible:ring-primary"
                                                 value={pressSpecs}
                                                 onChange={(e) => setPressSpecs(e.target.value)}
                                             />
@@ -357,7 +357,7 @@ export function AdvancedManufacturingModal({
                                                         variant={printType === t ? "default" : "outline"}
                                                         size="sm"
                                                         className={cn(
-                                                            "h-9 text-[10px] font-black uppercase tracking-[0.2em] rounded-none border-2",
+                                                            "h-9 text-[10px] font-black uppercase tracking-[0.2em] border-2",
                                                             printType === t ? "border-primary shadow-[4px_4px_0_rgba(var(--primary),0.2)]" : "border-border"
                                                         )}
                                                         onClick={() => setPrintType(t)}>
@@ -402,7 +402,7 @@ export function AdvancedManufacturingModal({
                         </Label>
                         <Textarea
                             placeholder="INSTRUCCIONES CRÍTICAS PARA EL EQUIPO DE PRODUCCIÓN..."
-                            className="min-h-[100px] text-sm font-medium border-2 focus-visible:ring-accent rounded-none shadow-inner"
+                            className="min-h-[100px] text-sm font-medium border-2 focus-visible:ring-accent shadow-inner"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                         />

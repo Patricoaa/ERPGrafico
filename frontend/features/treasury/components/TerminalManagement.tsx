@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { CancelButton, IconButton } from "@/components/shared"
 import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, History, MonitorSmartphone, Smartphone } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -156,9 +157,9 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                             />
                         </div>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8 -mr-2">
+                    <IconButton onClick={onEdit} className="h-8 w-8 -mr-2">
                         <Settings className="h-4 w-4" />
-                    </Button>
+                    </IconButton>
                 </div>
                 {terminal.location && (
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2">
@@ -201,14 +202,12 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                         {terminal.is_active ? <PowerOff className="h-3 w-3 mr-1" /> : <Power className="h-3 w-3 mr-1" />}
                         {terminal.is_active ? "Desactivar" : "Activar"}
                     </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs text-destructive hover:text-destructive/80 hover:bg-destructive/5"
+                    <IconButton
+                        className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
                         onClick={onDelete}
                     >
                         <Trash2 className="h-3 w-3" />
-                    </Button>
+                    </IconButton>
                 </div>
             </CardContent>
         </Card>
@@ -396,9 +395,8 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
             className="h-[90vh]"
             footer={
                 <>
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <ActionSlideButton type="submit" form="terminal-form" disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} />
+                    <ActionSlideButton type="submit" form="terminal-form" loading={loading} disabled={loading}>
                         Guardar Terminal
                     </ActionSlideButton>
                 </>

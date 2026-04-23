@@ -6,11 +6,11 @@
  * Wraps any interactive element and renders animated crop marks on hover.
  * On hover, L-shaped lines grow OUTWARD from each corner — identical geometry
  * to IndustryMark variant="crop" — ensuring visual consistency across the
- * Industrial Premium design system.
+ * Design system.
  *
  * Used on square action buttons in the ERPGrafico topbar.
  *
- * @contract component-contracts.md §9 — Industrial Premium interaction
+ * @contract component-contracts.md §9 — Interaction
  */
 
 import { motion } from "framer-motion"

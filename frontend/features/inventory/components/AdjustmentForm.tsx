@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { CancelButton } from "@/components/shared/ActionButtons"
 import { Input } from "@/components/ui/input"
 import {
     Form,
@@ -530,7 +531,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
 
                 <div className="flex justify-end gap-3 pt-6 pb-2">
                     {onCancel && (
-                        <Button type="button" variant="outline" onClick={onCancel} className="border-primary/20 hover:bg-primary/5 rounded-md text-xs font-bold">Cancelar</Button>
+                        <CancelButton onClick={onCancel} />
                     )}
                     <ActionSlideButton
                         type="submit"

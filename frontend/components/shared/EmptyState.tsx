@@ -46,7 +46,7 @@ const CONTEXT_CONFIG: Record<EmptyStateContext, { icon: LucideIcon; title: strin
 /**
  * Standardized Industrial Empty State
  * 
- * Follows the "Industrial Premium" aesthetic:
+ * Follows the design aesthetic:
  * - Typography: font-heading (Syne) + uppercase + extrabold
  * - Palette: muted-foreground / subtle borders
  * - Layouts: full, compact, minimal

@@ -9,6 +9,7 @@ import * as z from "zod"
 import { createEmployee, updateEmployee, getAFPs, getPayrollConcepts } from '@/features/hr/api/hrApi'
 import type { Employee, AFP, PayrollConcept, EmployeeConceptAmount } from "@/types/hr"
 import { Button } from "@/components/ui/button"
+import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
 import { Input } from "@/components/ui/input"
 import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage
@@ -24,7 +25,7 @@ import { cn } from "@/lib/utils"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
 import {
-    Loader2, Plus, UserCog, ShieldCheck, CalendarCheck2
+    Plus, UserCog, ShieldCheck, CalendarCheck2
 } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { BaseModal, EmptyState } from "@/components/shared"
@@ -189,12 +190,14 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
 
     const footer = (
         <div className="flex justify-end gap-4 w-full">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-sm text-xs font-bold border-primary/20 h-10 px-8 hover:bg-primary/5 transition-all">
-                Cancelar
-            </Button>
-            <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={saving} className="rounded-sm text-xs font-bold min-w-[180px] h-10 transition-all shadow-md hover:shadow-lg active:scale-95">
-                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (employee ? "Guardar Cambios" : "Contratar / Registrar")}
-            </Button>
+            <CancelButton onClick={() => onOpenChange(false)} />
+            <SubmitButton
+                loading={saving}
+                onClick={form.handleSubmit(onSubmit)}
+                className="min-w-[180px]"
+            >
+                {employee ? "Guardar Cambios" : "Contratar / Registrar"}
+            </SubmitButton>
         </div>
     )
 

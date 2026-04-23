@@ -14,6 +14,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { CancelButton, SubmitButton } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -143,13 +144,10 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
                 description="Registre un cambio formal en la participación societaria. Esto afecta el capital suscrito y el saldo por enterar del socio."
                 footer={
                     <div className="flex w-full gap-3 justify-end">
-                        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                            Cancelar
-                        </Button>
-                        <Button onClick={handleSubmit} disabled={loading || exceedsCapital}>
-                            {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                        <SubmitButton onClick={handleSubmit} disabled={exceedsCapital} loading={loading}>
                             Confirmar Movimiento
-                        </Button>
+                        </SubmitButton>
                     </div>
                 }
             >
@@ -359,13 +357,10 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
                 description="Mueva capital suscrito de un socio existente a otro nuevo o actual."
                 footer={
                     <div className="flex w-full gap-3 justify-end">
-                        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                            Cancelar
-                        </Button>
-                        <Button onClick={handleSubmit} disabled={loading || exceedsCapital}>
-                            {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                        <SubmitButton onClick={handleSubmit} disabled={exceedsCapital} loading={loading}>
                             Registrar Transferencia
-                        </Button>
+                        </SubmitButton>
                     </div>
                 }
             >
@@ -577,13 +572,10 @@ export function CapitalContributionModal({ open, onOpenChange, onSuccess }: Moda
             description="Ingrese el capital en efectivo o transferencia a una cuenta de tesorería."
             footer={
                 <div className="flex w-full gap-3 justify-end">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                        Cancelar
-                    </Button>
-                    <Button onClick={handleSubmit} disabled={loading}>
-                        {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                    <SubmitButton onClick={handleSubmit} loading={loading}>
                         Registrar Aporte
-                    </Button>
+                    </SubmitButton>
                 </div>
             }
         >
@@ -721,13 +713,10 @@ export function ProvisionalWithdrawalModal({ open, onOpenChange, onSuccess }: Mo
             description="Adelanto a cuenta de utilidades. Este retiro descontará caja y quedará pendiente de liquidar en el cierre anual."
             footer={
                 <div className="flex w-full gap-3 justify-end">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                        Cancelar
-                    </Button>
-                    <Button variant="destructive" onClick={handleSubmit} disabled={loading}>
-                        {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                    <SubmitButton variant="destructive" onClick={handleSubmit} loading={loading}>
                         Confirmar Egreso
-                    </Button>
+                    </SubmitButton>
                 </div>
             }
         >
@@ -871,13 +860,10 @@ export function DividendPaymentModal({ open, onOpenChange, onSuccess, initialPar
             description="Registre la salida de fondos para el pago de utilidades decretadas."
             footer={
                 <div className="flex w-full gap-3 justify-end">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                        Cancelar
-                    </Button>
-                    <Button onClick={handleSubmit} disabled={loading || !formData.amount}>
-                        {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                    <SubmitButton onClick={handleSubmit} disabled={!formData.amount} loading={loading}>
                         Confirmar Pago
-                    </Button>
+                    </SubmitButton>
                 </div>
             }
         >

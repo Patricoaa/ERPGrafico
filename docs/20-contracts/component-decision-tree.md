@@ -41,7 +41,7 @@ graph TD
 
 - **`MoneyDisplay`**: **Obligatorio** para montos. Nunca uses `Number.prototype.toLocaleString()` en bruto.
 - **`StatusBadge`**: **Obligatorio** para el estado de las entidades (ej. `in_production`, `paid`). Lee `state-map.md`.
-- **`Card` de shadcn**: Reemplazó a `IndustrialCard`. Usa las clases utilitarias de Tailwind (ej. `bg-card rounded-none shadow-2xl`) para replicar estilos. No crees wrappers propietarios para contenedores.
+- **`Card` de shadcn**: Contenedor estándar. [Ver documentación oficial (component-card.md)](./component-card.md). Nunca uses wrappers propietarios y está **estrictamente prohibido** emular tarjetas usando clases utilitarias crudas (ej. `<div className={FORM_STYLES.card}>`). Usa siempre `<Card variant="...">`.
 
 ## 3. Inputs y Formularios (Especializados)
 
