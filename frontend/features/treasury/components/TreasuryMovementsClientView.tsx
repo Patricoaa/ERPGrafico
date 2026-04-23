@@ -15,7 +15,7 @@ import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { FormSkeleton } from "@/components/shared"
 
 // Lazy load heavy components
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
@@ -299,7 +299,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
 
     return (
         <div className="space-y-6">
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<FormSkeleton />}>
                 <CashMovementModal
                     open={openModal}
                     onOpenChange={(open: boolean) => setOpenModal(open)}
@@ -344,7 +344,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 />
             )}
 
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<FormSkeleton />}>
                 <TransactionViewModal
                     open={detailsOpen}
                     onOpenChange={setDetailsOpen}

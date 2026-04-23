@@ -51,7 +51,7 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import dynamic from "next/dynamic"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { FormSkeleton } from "@/components/shared"
 import { EmptyState } from "@/components/shared/EmptyState"
 
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
@@ -87,7 +87,7 @@ import type {
 
 const WorkOrderForm = dynamic(() => import("@/features/production/components/forms/WorkOrderForm").then(mod => mod.WorkOrderForm), {
     ssr: false,
-    loading: () => <LoadingFallback message="Cargando formulario..." />
+    loading: () => <FormSkeleton />
 })
 
 // File validation constants

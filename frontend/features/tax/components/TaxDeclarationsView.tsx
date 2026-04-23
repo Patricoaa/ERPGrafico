@@ -28,8 +28,7 @@ import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TaxPeriod, TaxDeclaration, TaxPaymentData } from "../types"
 import { Row } from "@tanstack/react-table"
-
-import { Skeleton } from "@/components/ui/skeleton"
+import { CardSkeleton, TableSkeleton } from "@/components/shared"
 
 interface TaxDeclarationsViewProps {
     externalOpen?: boolean
@@ -287,69 +286,61 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     return (
         <div className="space-y-6 pt-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/10">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Período Actual</CardTitle>
-                        {isLoading ? (
-                            <Skeleton className="h-8 w-32 mt-1" />
-                        ) : (
-                            <CardDescription className="text-2xl font-bold text-foreground">
-                                {currentPeriodDisplay}
-                            </CardDescription>
-                        )}
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <Skeleton className="h-4 w-24" />
-                        ) : isLatestClosed ? (
-                            <div className="flex items-center gap-2 text-sm text-success font-medium">
-                                <CheckCircle2 className="h-4 w-4" />
-                                Período Cerrado
-                            </div>
-                        ) : (
-                            <div className="flex items-center gap-2 text-sm text-warning font-medium">
-                                <AlertCircle className="h-4 w-4" />
-                                Pendiente de declaración
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                {isLoading ? (
+                    <CardSkeleton count={3} variant="grid" />
+                ) : (
+                    <>
+                        <Card className="bg-gradient-to-br from-primary/5 to-transparent border-primary/10">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">Período Actual</CardTitle>
+                                <CardDescription className="text-2xl font-bold text-foreground">
+                                    {currentPeriodDisplay}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                {isLatestClosed ? (
+                                    <div className="flex items-center gap-2 text-sm text-success font-medium">
+                                        <CheckCircle2 className="h-4 w-4" />
+                                        Período Cerrado
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-2 text-sm text-warning font-medium">
+                                        <AlertCircle className="h-4 w-4" />
+                                        Pendiente de declaración
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
 
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">IVA por Pagar (Estimado)</CardTitle>
-                        {isLoading ? (
-                            <Skeleton className="h-8 w-32 mt-1" />
-                        ) : (
-                            <CardDescription className="text-2xl font-bold text-foreground">
-                                {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(currentVatToPay)}
-                            </CardDescription>
-                        )}
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <Skeleton className="h-4 w-40" />
-                        ) : (
-                            <div className="text-xs text-muted-foreground italic">
-                                Basado en {latestPeriod?.declaration_summary ? 'declaración registrada' : 'información disponible'}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                        <Card>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">IVA por Pagar (Estimado)</CardTitle>
+                                <CardDescription className="text-2xl font-bold text-foreground">
+                                    {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(currentVatToPay)}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-xs text-muted-foreground italic">
+                                    Basado en {latestPeriod?.declaration_summary ? 'declaración registrada' : 'información disponible'}
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Último Remanente</CardTitle>
-                        <CardDescription className="text-2xl font-bold text-foreground">
-                            -
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-sm text-muted-foreground font-medium">
-                            Información no disponible
-                        </div>
-                    </CardContent>
-                </Card>
+                        <Card>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm font-medium text-muted-foreground">Último Remanente</CardTitle>
+                                <CardDescription className="text-2xl font-bold text-foreground">
+                                    -
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-sm text-muted-foreground font-medium">
+                                    Información no disponible
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </>
+                )}
             </div>
 
             <DataTable
@@ -378,22 +369,8 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                     
                     if (isLoading) {
                         return (
-                            <div className="grid gap-3 pt-2">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} className="flex items-center justify-between p-4 bg-muted/20 border border-border/50 rounded-lg opacity-60">
-                                        <div className="flex items-center gap-4">
-                                            <Skeleton className="w-12 h-12 rounded-lg" />
-                                            <div className="space-y-2">
-                                                <Skeleton className="h-5 w-32" />
-                                                <Skeleton className="h-4 w-20" />
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-4">
-                                            <Skeleton className="h-8 w-24" />
-                                            <Skeleton className="h-8 w-24" />
-                                        </div>
-                                    </div>
-                                ))}
+                            <div className="pt-2">
+                                <TableSkeleton rows={5} columns={4} />
                             </div>
                         )
                     }

@@ -3,7 +3,7 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, Clock, AlertTriangle, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Skeleton } from "@/components/ui/skeleton"
+import { CardSkeleton } from "@/components/shared"
 
 import type { DashboardKPIData } from "../types"
 
@@ -14,19 +14,7 @@ interface DashboardKPIsProps {
 
 export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
     if (loading || !data) {
-        return <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map(i => (
-                <Card key={i} className="border-border/40">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <Skeleton className="h-4 w-24 rounded" />
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-8 w-1/2 rounded mb-2" />
-                        <Skeleton className="h-1.5 w-full rounded" />
-                    </CardContent>
-                </Card>
-            ))}
-        </div>
+        return <CardSkeleton count={4} variant="grid" />
     }
 
     const { lines, reconciliation_rate, differences, statements } = data

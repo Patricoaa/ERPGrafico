@@ -27,7 +27,7 @@ import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { 
     POSSearchSkeleton, 
     POSGridSkeleton, 
-    POSCartSkeleton 
+    POSCartItemsSkeleton 
 } from "@/features/pos/components/skeletons/POSLayoutSkeleton"
 
 interface Product {
@@ -283,7 +283,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                             {filteredProducts.map(product => (
                                                 <Card
                                                     key={product.id}
-                                                    className="group cursor-pointer hover:border-primary/50 transition-all active:scale-95 relative flex flex-col overflow-hidden shadow-sm"
+                                                    className="group cursor-pointer hover:shadow-md transition-all border-2 active:scale-95 relative flex flex-col overflow-hidden h-full"
                                                     onClick={() => addItem(product)}
                                                 >
                                                     <div className="aspect-square bg-muted/50 flex items-center justify-center relative">
@@ -300,8 +300,8 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                             />
                                                         )}
                                                         <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                                            <span className="bg-primary text-white shadow-sm border-none px-2 py-1 text-[10px] font-bold uppercase rounded-sm flex items-center">
-                                                                <Plus className="h-3 w-3 mr-1" /> Agregar
+                                                            <span className="bg-primary text-primary-foreground shadow-lg text-[9px] font-bold uppercase px-2 py-1 rounded border border-primary/20 flex items-center gap-1">
+                                                                <Plus className="h-3 w-3" /> Agregar
                                                             </span>
                                                         </div>
                                                     </div>
@@ -357,7 +357,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
 
                             <ScrollArea className="flex-1">
                                 {loading ? (
-                                    <POSCartSkeleton />
+                                    <POSCartItemsSkeleton count={6} />
                                 ) : selectedItems.length === 0 ? (
                                     <div className="h-[300px] flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-4">
                                         <div className="h-16 w-16 rounded-sm bg-muted/50 flex items-center justify-center">

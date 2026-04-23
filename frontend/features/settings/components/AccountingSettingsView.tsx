@@ -3,16 +3,15 @@
 import { useState, useEffect, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Database, Settings2, Receipt, Percent, Coins, TrendingUp } from "lucide-react"
-import { FormSkeleton } from "@/components/shared/FormSkeleton"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Settings2, Receipt, Percent, Coins, TrendingUp } from "lucide-react"
+import { FormSkeleton } from "@/components/shared"
+
 import { PageHeaderButton } from "@/components/shared/PageHeader"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
@@ -23,9 +22,9 @@ import { UseFormReturn } from "react-hook-form"
 
 // --- COMPONENT ---
 
-export function AccountingSettingsView({ activeTab = "structure", onSavingChange }: { 
+export function AccountingSettingsView({ activeTab = "structure", onSavingChange }: {
     activeTab?: string,
-    onSavingChange?: (saving: boolean) => void 
+    onSavingChange?: (saving: boolean) => void
 }) {
     const [currentTab, setCurrentTab] = useState(activeTab)
 

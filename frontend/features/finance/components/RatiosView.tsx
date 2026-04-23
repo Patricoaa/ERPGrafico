@@ -21,7 +21,7 @@ import {
 import api, { pollTask } from '@/lib/api';
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
-import { LoadingFallback } from "@/components/shared/LoadingFallback";
+import { CardSkeleton } from "@/components/shared";
 import { EmptyState } from "@/components/shared/EmptyState";
 
 const COLORS = ['var(--primary)', 'var(--accent)', 'var(--secondary)', 'var(--muted-foreground)', 'var(--warning)', 'var(--destructive)'];
@@ -75,7 +75,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
         loadData();
     }, [date, showComparison, compDate]);
 
-    if (loading) return <LoadingFallback message="Cargando análisis financiero..." />;
+    if (loading) return <CardSkeleton variant="grid" count={4} />;
     if (!data) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
 
     const d = data as any;

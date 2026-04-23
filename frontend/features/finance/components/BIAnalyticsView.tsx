@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -19,7 +19,7 @@ import {
 } from 'recharts';
 import api, { pollTask } from '@/lib/api';
 import { TrendingUp, TrendingDown, Package, DollarSign, Users, ShoppingCart } from 'lucide-react';
-import { LoadingFallback } from "@/components/shared/LoadingFallback";
+import { CardSkeleton } from "@/components/shared";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
@@ -84,7 +84,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
         loadData();
     }, [date]);
 
-    if (loading) return <LoadingFallback message="Cargando analytics..." />;
+    if (loading) return <CardSkeleton variant="grid" count={4} />;
     if (!data) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
 
     const { sales, inventory, performance } = data;

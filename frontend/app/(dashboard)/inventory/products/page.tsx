@@ -2,10 +2,7 @@ import { Metadata } from "next"
 import { Suspense } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ProductList, CategoryList, PricingRuleList } from "@/features/inventory"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { LoadingFallback, PageTabs, PageHeader, ToolbarCreateButton } from "@/components/shared"
 
 import { LAYOUT_TOKENS } from "@/lib/styles"
 

@@ -20,7 +20,7 @@ import {
     AlertCircle
 } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { FormSkeleton } from "@/components/shared/FormSkeleton"
+import { FormSkeleton } from "@/components/shared"
 import {
     Select,
     SelectContent,

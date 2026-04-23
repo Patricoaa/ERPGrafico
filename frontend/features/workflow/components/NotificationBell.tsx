@@ -14,6 +14,7 @@ import { getNotifications, getUnreadNotificationCount, markAllNotificationsRead,
 import { cn, formatPlainDate } from "@/lib/utils"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { CardSkeleton } from "@/components/shared"
 
 export function NotificationBell() {
     const router = useRouter()
@@ -101,7 +102,9 @@ export function NotificationBell() {
                 </div>
                 <ScrollArea className="h-[300px]">
                     {loading ? (
-                        <div className="p-4 text-center text-xs text-muted-foreground">Cargando...</div>
+                        <div className="p-4">
+                            <CardSkeleton variant="compact" count={3} className="gap-2" />
+                        </div>
                     ) : notifications.length === 0 ? (
                         <div className="p-8 text-center text-muted-foreground text-sm">
                             <Bell className="h-8 w-8 mx-auto mb-2 opacity-20" />

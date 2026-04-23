@@ -14,7 +14,6 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, History, MonitorSmartphone, Smartphone } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { FORM_STYLES } from "@/lib/styles"
@@ -29,7 +28,7 @@ interface TerminalManagementProps {
     createAction?: React.ReactNode
 }
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { CardSkeleton } from "@/components/shared"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 export function TerminalManagement({ externalOpen, onExternalOpenChange, createAction }: TerminalManagementProps) {
@@ -82,11 +81,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                 </div>
             )}
             {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {[1, 2, 3].map((i) => (
-                        <TerminalCardSkeleton key={i} />
-                    ))}
-                </div>
+                <CardSkeleton count={3} variant="grid" />
             ) : terminals.length === 0 ? (
                 <EmptyState
                     context="finance"
@@ -125,40 +120,6 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                 variant="destructive"
             />
         </div>
-    )
-}
-
-function TerminalCardSkeleton() {
-    return (
-        <Card className="bg-background border-2 shadow-none">
-            <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                    <div className="space-y-2 w-full">
-                        <Skeleton className="h-5 w-1/2" />
-                        <div className="flex items-center gap-2">
-                            <Skeleton className="h-4 w-12" />
-                            <Skeleton className="h-4 w-16" />
-                        </div>
-                    </div>
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                </div>
-                <Skeleton className="h-3 w-1/3 mt-3" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Skeleton className="h-3 w-1/4" />
-                    <div className="flex flex-wrap gap-1.5">
-                        <Skeleton className="h-5 w-16" />
-                        <Skeleton className="h-5 w-20" />
-                        <Skeleton className="h-5 w-14" />
-                    </div>
-                </div>
-                <div className="pt-2 border-t flex justify-end gap-2">
-                    <Skeleton className="h-7 w-20" />
-                    <Skeleton className="h-7 w-10" />
-                </div>
-            </CardContent>
-        </Card>
     )
 }
 
@@ -303,7 +264,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
         try {
             const res = await api.get('/treasury/payment-methods/')
             const methods = (res.data.results || res.data).filter((m: any) => m.is_active)
-            
+
             // Allow if it's for sales
             const collectionMethods = methods.filter((m: any) => m.allow_for_sales === true)
             requestAnimationFrame(() => setAllMethods(collectionMethods))
@@ -554,11 +515,11 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                 {/* Right Side: Activity Sidebar */}
                 {terminal?.id && (
                     <ActivitySidebar
-                            entityType="terminal"
-                            entityId={terminal.id}
-                            className="h-full border-none"
-                            title="Historial"
-                        />
+                        entityType="terminal"
+                        entityId={terminal.id}
+                        className="h-full border-none"
+                        title="Historial"
+                    />
                 )}
             </div>
         </BaseModal>

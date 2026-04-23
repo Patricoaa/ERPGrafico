@@ -48,6 +48,7 @@ import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { Card, CardContent } from "@/components/ui/card"
 import { getHubStatuses } from '@/features/orders/utils/status'
 import { FORM_STYLES } from "@/lib/styles"
+import { Skeleton, CardSkeleton } from "@/components/shared"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),
@@ -853,9 +854,8 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Order[], 
     if (loading) {
         return (
             <div className="space-y-3">
-                <div className="h-8 bg-muted/50 animate-pulse rounded" />
-                <div className="h-20 bg-muted/20 animate-pulse rounded" />
-                <div className="h-20 bg-muted/20 animate-pulse rounded" />
+                <Skeleton className="h-8 w-full" />
+                <CardSkeleton variant="compact" count={2} className="gap-3" />
             </div>
         )
     }

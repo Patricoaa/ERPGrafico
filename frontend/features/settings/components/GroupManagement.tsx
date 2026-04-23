@@ -11,6 +11,7 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { Plus, Edit, Trash2, Loader2, Users } from "lucide-react"
 import { GroupForm } from "@/features/users/components/GroupForm"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { CardSkeleton } from "@/components/shared"
 
 interface GroupManagementProps {
     externalOpen?: boolean
@@ -104,9 +105,7 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
     return (
         <div className="space-y-4">
             {loading ? (
-                <div className="flex h-[200px] items-center justify-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
+                <CardSkeleton count={5} />
             ) : (
                 <DataTable
                     columns={columns}

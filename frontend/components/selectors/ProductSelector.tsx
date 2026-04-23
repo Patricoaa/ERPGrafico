@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { useProductSearch } from "@/features/inventory/hooks/useProductSearch"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Product } from "@/types/entities"
+import { CardSkeleton } from "@/components/shared"
 
 interface ProductSelectorProps {
     value?: string | number | null
@@ -250,9 +251,8 @@ export function ProductSelector({
                         onScroll={handleScroll}
                     >
                         {searchLoading && filteredProducts.length === 0 ? (
-                            <div className="py-6 text-center text-sm text-muted-foreground flex flex-col items-center gap-2">
-                                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                                Buscando productos...
+                            <div className="p-2 space-y-2">
+                                <CardSkeleton variant="compact" count={5} />
                             </div>
                         ) : filteredProducts.length === 0 ? (
                             <EmptyState context="inventory" variant="compact" title="No se encontraron productos" />

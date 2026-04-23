@@ -6,12 +6,6 @@ import {
     ArrowUpRight,
     ArrowDownLeft,
     Calendar,
-    ArrowDownCircle,
-    ArrowUpCircle,
-    Info,
-    Receipt,
-    Download,
-    Plus,
     Wallet,
     LogOut
 } from "lucide-react"
@@ -27,10 +21,9 @@ import { PartnerStatement, PartnerTransaction } from "@/features/contacts/types/
 import { toast } from "sonner"
 import { formatCurrency, formatPlainDate as formatDate, cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
-import { Skeleton } from "@/components/ui/skeleton"
+import { TableSkeleton } from "@/components/shared"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
@@ -190,7 +183,7 @@ export function PartnerLedgerModal({
                 {/* Visual Handle for "Drawer" feel */}
                 <div className="w-12 h-1.5 bg-muted-foreground/20 rounded-full mx-auto my-4 shrink-0 shadow-inner" />
 
-                <SheetCloseButton 
+                <SheetCloseButton
                     onClick={() => onOpenChange(false)}
                     className="absolute top-4 right-8 z-[60]"
                 />
@@ -209,8 +202,8 @@ export function PartnerLedgerModal({
 
                 <div className="flex-1 overflow-y-auto px-8 pb-8 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent">
                     {loading ? (
-                        <div className="space-y-6 mt-4">
-                            <Skeleton className="h-96 w-full rounded-lg" />
+                        <div className="mt-4">
+                            <TableSkeleton rows={8} columns={5} />
                         </div>
                     ) : (
                         <div className="mt-4 animate-in fade-in duration-500">
