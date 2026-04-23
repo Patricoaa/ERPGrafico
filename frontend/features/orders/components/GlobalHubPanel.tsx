@@ -5,8 +5,8 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { OrderHubPanel } from "@/features/orders/components/OrderHubPanel"
 import { ActionCategory } from "@/features/orders/components/ActionCategory"
-import { saleOrderActions } from "@/lib/actions/sale-actions"
-import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
+import { saleOrderActions } from '@/features/sales/actions'
+import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"

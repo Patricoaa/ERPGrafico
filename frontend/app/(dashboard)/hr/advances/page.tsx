@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { AdvanceFormDialog } from "@/features/hr"
-import { getAdvances, createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/lib/hr/api"
+import { getAdvances, createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls } from '@/features/hr/api/hrApi'
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { PaymentDialog } from "@/features/treasury"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"

@@ -12,8 +12,8 @@ import {
     createPayrollItem, updatePayrollItem, deletePayrollItem,
     getPayrollConcepts, payPrevired, paySalary,
     getPayrollPayments
-} from "@/lib/hr/api"
-import { getEmployeePayrollPreview } from "@/lib/profile/api"
+} from '@/features/hr/api/hrApi'
+import { getEmployeePayrollPreview } from '@/features/profile/api/profileApi'
 import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
 import type { Payroll, PayrollItem, PayrollConcept, PayrollPayment } from "@/types/hr"
 import { Button } from "@/components/ui/button"

@@ -4,8 +4,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { usePOS } from '../contexts/POSContext'
 import type { StockLimits, Product, CartItem } from '@/types/pos'
-import * as StockCalculator from '@/lib/pos/stock-calculator'
-import * as BOMResolver from '@/lib/pos/bom-resolver'
+import * as StockCalculator from '@/features/pos/utils/stock-calculator'
+import * as BOMResolver from '@/features/pos/utils/bom-resolver'
 
 export function useStockValidation() {
     const {

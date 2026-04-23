@@ -46,7 +46,7 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { Card, CardContent } from "@/components/ui/card"
-import { getHubStatuses } from "@/lib/order-status-utils"
+import { getHubStatuses } from '@/features/orders/utils/status'
 import { FORM_STYLES } from "@/lib/styles"
 
 const contactSchema = z.object({

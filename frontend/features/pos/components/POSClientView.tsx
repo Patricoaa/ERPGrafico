@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
 import api from '@/lib/api'
-import * as Validation from '@/lib/pos/validation'
+import * as Validation from '@/features/pos/utils/validation'
 import { cn } from "@/lib/utils"
 import {
     AlertDialog,
@@ -59,7 +59,7 @@ import { SalesCheckoutWizardContent } from '@/features/sales/components/checkout
 // Shared components
 import { SessionControl, SessionControlHandle } from '@/features/pos/components/SessionControl'
 import { ScannerFeedback, ScannerFeedbackHandle } from '@/features/pos/components/ScannerFeedback'
-import { PricingUtils } from '@/lib/pricing'
+import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { SalesOrdersModal } from '@/features/pos/components/SalesOrdersModal'
 import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
 import { Label } from '@/components/ui/label'

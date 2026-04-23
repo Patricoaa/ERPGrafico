@@ -12,7 +12,7 @@ import {
     CreditPortfolioResponse, 
     CreditLedgerEntry, 
     CreditHistoryEntry 
-} from "@/lib/credits/api"
+} from '@/features/credits/api/creditsApi'
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {

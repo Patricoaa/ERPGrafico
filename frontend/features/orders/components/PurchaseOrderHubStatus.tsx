@@ -3,7 +3,7 @@ import React from "react"
 import { FileText, Package, Receipt, Banknote } from "lucide-react"
 import { translateStatus } from "@/lib/utils"
 import { OrderLine, Order } from "../types"
-import { getPurchaseHubStatuses } from "@/lib/purchase-order-status-utils"
+import { getPurchaseHubStatuses } from '@/features/purchasing/utils/status'
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TooltipProvider } from "@/components/ui/tooltip"
 

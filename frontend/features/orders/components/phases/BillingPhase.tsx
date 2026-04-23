@@ -3,12 +3,12 @@ import { getErrorMessage } from "@/lib/errors"
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
 import { FileText, Trash2, X } from "lucide-react"
-import { formatDocumentId } from "@/lib/order-status-utils"
+import { formatDocumentId } from '@/features/orders/utils/status'
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { saleOrderActions } from "@/lib/actions/sale-actions"
-import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
+import { saleOrderActions } from '@/features/sales/actions'
+import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { Order, PhaseDocument } from "../../types"
 import { LucideIcon } from "lucide-react"
 

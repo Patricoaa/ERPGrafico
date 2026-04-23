@@ -6,8 +6,8 @@ import {
     getContactCreditLedger, 
     unblockContact, 
     recoverDebt 
-} from "@/lib/credits/api"
-import { CreditContact, CreditLedgerEntry } from "@/lib/credits/api"
+} from '@/features/credits/api/creditsApi'
+import { CreditContact, CreditLedgerEntry } from '@/features/credits/api/creditsApi'
 import { formatCurrency } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, ColumnDef, flexRender } from "@tanstack/react-table"

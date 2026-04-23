@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Search, ChevronsUpDown, Check } from "lucide-react"
 
 import { formatCurrency } from "@/lib/currency"
-import { PricingUtils } from "@/lib/pricing"
+import { PricingUtils } from '@/features/inventory/utils/pricing'
 
 import { Checkbox } from "@/components/ui/checkbox"
 import { Product, UoM } from "@/types/entities"

@@ -6,7 +6,7 @@ import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { createEmployee, updateEmployee, getAFPs, getPayrollConcepts } from "@/lib/hr/api"
+import { createEmployee, updateEmployee, getAFPs, getPayrollConcepts } from '@/features/hr/api/hrApi'
 import type { Employee, AFP, PayrollConcept, EmployeeConceptAmount } from "@/types/hr"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

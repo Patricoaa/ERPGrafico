@@ -7,8 +7,8 @@ import { Progress } from "@/components/ui/progress"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { saleOrderActions } from "@/lib/actions/sale-actions"
-import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
+import { saleOrderActions } from '@/features/sales/actions'
+import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { Order, OrderLine, PhaseDocument, WorkOrder } from "../../types"
 
 interface ProductionPhaseProps {

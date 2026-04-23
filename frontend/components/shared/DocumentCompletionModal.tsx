@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { FileEdit, Loader2, Upload, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
-import { validateTaxPeriod } from "@/lib/actions/tax-actions"
-import { validateAccountingPeriod } from "@/lib/actions/accounting-actions"
+import { validateTaxPeriod } from '@/features/tax/actions'
+import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { FolioValidationInput } from "./FolioValidationInput"
 import { ShieldAlert } from "lucide-react"
 import { cn } from "@/lib/utils"

@@ -11,7 +11,7 @@ import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountS
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import api from "@/lib/api"
 import { FORM_STYLES } from '@/lib/styles'
-import { validateAccountingPeriod } from '@/lib/actions/accounting-actions'
+import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { toast } from 'sonner'
 import { GenericWizard, WizardStep } from '@/components/shared/GenericWizard'
 

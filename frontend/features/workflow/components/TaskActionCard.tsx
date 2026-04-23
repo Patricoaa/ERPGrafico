@@ -1,6 +1,6 @@
 "use client"
 
-import { Task, TaskAttachment } from "@/lib/workflow/api"
+import { Task, TaskAttachment } from '@/features/workflow/api/workflowApi'
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"

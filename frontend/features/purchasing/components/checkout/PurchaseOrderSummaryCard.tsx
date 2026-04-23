@@ -4,7 +4,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
-import { PricingUtils } from "@/lib/pricing"
+import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { CheckoutLine } from "../../types"
 
 interface PurchaseOrderSummaryCardProps {

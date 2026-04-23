@@ -112,14 +112,61 @@ States handled: — (pure presentational, no async).
 
 ## Skeleton family 🟢
 
-| Component | Use for |
-|-----------|---------|
-| `CardSkeleton` | Card/tile loading |
-| `TableSkeleton` | Tabular data loading |
-| `FormSkeleton` | Form loading after edit-mode entry |
-| `SkeletonShell` | Full-page shell (layout + inner skeletons) |
+Los componentes de esta familia manejan los estados de carga de la aplicación. Es **CRÍTICO** utilizarlos correctamente para evitar "layout shifts" (brincos en la pantalla) y reducir el código repetitivo.
 
-Common props: `rows?`, `columns?`, `className?`.
+### 🎭 Regla de Oro: Suspense vs Refetching
+
+El proyecto define dos momentos distintos para los estados de carga, y cada uno usa una estrategia diferente:
+
+#### 1. Carga Inicial (First-Load / Suspense)
+Cuando el usuario navega a una ruta nueva y no hay datos.
+- **Usa:** Wrappers estáticos (`TableSkeleton`, `FormSkeleton`, `CardSkeleton`).
+- **Por qué:** No tienes datos para renderizar el DOM real, así que debes dibujar un "mock" estático que imite la estructura final.
+
+#### 2. Recarga (Refetching / Mutations / Filters)
+Cuando el usuario ya está en la vista, la tabla existe, y solo está filtrando o cambiando de página.
+- **Usa:** `SkeletonShell` envolviendo tu componente real.
+- **Por qué:** Evita desmontar el componente real para poner un esqueleto. El Shell le aplica un "shimmer" (brillo CSS) por encima al DOM existente, congelando la interacción pero manteniendo exactamente el mismo layout. ¡Cero brincos!
+
+---
+
+### 🚫 Antipatrones: Skeletons "Ad-hoc"
+
+Está **estrictamente prohibido** el uso excesivo del componente primitivo `<Skeleton />` directamente en las features (ej. `<Skeleton className="h-4 w-32" />`).
+- **Problema:** Infla el código de negocio con clases de Tailwind de diseño y rompe la consistencia.
+- **Solución:** Si necesitas cargar una tabla, usa `<TableSkeleton />`. Si es una vista muy caprichosa (ej. el Header de un perfil), crea un archivo `ProfileHeaderSkeleton.tsx` encapsulando los primitivos, en lugar de mezclarlos con el código de negocio.
+
+---
+
+### 📦 Catálogo de Wrappers Compartidos
+
+#### `CardSkeleton`
+| prop | type | default | notes |
+|------|------|---------|-------|
+| `count` | `number` | `3` | Número de tarjetas a renderizar |
+| `variant` | `'grid' \| 'list'` | `'grid'` | Cambia el layout visual |
+| `className` | `string` | — | Clases para el contenedor principal |
+
+#### `TableSkeleton`
+| prop | type | default | notes |
+|------|------|---------|-------|
+| `rows` | `number` | `5` | Filas de la tabla |
+| `columns` | `number` | `5` | Columnas por fila |
+| `className` | `string` | — | Clases para el contenedor principal |
+
+#### `FormSkeleton`
+| prop | type | default | notes |
+|------|------|---------|-------|
+| `fields` | `number` | `4` | Cantidad de campos de formulario por bloque |
+| `cards` | `number` | `1` | Número de bloques/tarjetas lado a lado (1-4) |
+| `hasTabs` | `boolean` | `false` | Renderiza un tab-bar en la parte superior |
+| `tabs` | `number` | `3` | Cantidad de tabs simulados (si `hasTabs` es true) |
+
+#### `SkeletonShell`
+| prop | type | default | notes |
+|------|------|---------|-------|
+| `isLoading` | `boolean` | **Obligatorio** | Activa la animación shimmer y `aria-busy` |
+| `children` | `ReactNode` | **Obligatorio** | El DOM real a "congelar" con el efecto |
 
 ---
 

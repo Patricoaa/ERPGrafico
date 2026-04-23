@@ -14,9 +14,9 @@ import {
     X
 } from "lucide-react"
 import api from "@/lib/api"
-import { validateTaxPeriod } from "@/lib/actions/tax-actions"
+import { validateTaxPeriod } from '@/features/tax/actions'
 import { PurchaseOrderAPI, PurchaseNoteLine } from "../types"
-import { PricingUtils } from "@/lib/pricing"
+import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { toast } from "sonner"
 
 import { ShieldAlert } from "lucide-react"

@@ -1,7 +1,7 @@
 import React from "react"
 import { ClipboardList, Package, Receipt, Banknote, FileText } from "lucide-react"
 import { translateStatus } from "@/lib/utils"
-import { getHubStatuses } from "@/lib/order-status-utils"
+import { getHubStatuses } from '@/features/orders/utils/status'
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Order, OrderLine } from "../types"

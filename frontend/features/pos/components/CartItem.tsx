@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/currency'
-import { PricingUtils } from '@/lib/pricing'
+import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { useDeviceContext, MIN_TOUCH_TARGET } from '@/hooks/useDeviceContext'
 import type { CartItem as CartItemType, Product, UoM } from '@/types/pos'
 

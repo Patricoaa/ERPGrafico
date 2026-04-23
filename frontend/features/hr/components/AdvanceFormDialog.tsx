@@ -6,7 +6,7 @@ import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { updateAdvance } from "@/lib/hr/api"
+import { updateAdvance } from '@/features/hr/api/hrApi'
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"

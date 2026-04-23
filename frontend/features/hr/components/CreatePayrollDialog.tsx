@@ -6,7 +6,7 @@ import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { createPayroll, getEmployees } from "@/lib/hr/api"
+import { createPayroll, getEmployees } from '@/features/hr/api/hrApi'
 import type { Employee } from "@/types/hr"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"

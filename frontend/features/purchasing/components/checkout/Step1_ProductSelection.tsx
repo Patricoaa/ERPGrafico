@@ -16,7 +16,7 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { PricingUtils } from "@/lib/pricing"
+import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { EmptyState } from "@/components/shared/EmptyState"
 import { CheckoutLine } from "../../types"
 import { ProductMinimal, UoM } from "@/types/entities"
