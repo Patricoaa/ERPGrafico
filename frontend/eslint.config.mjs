@@ -79,6 +79,22 @@ const eslintConfig = defineConfig([
   // Cross-feature internal import guard via no-restricted-imports
   // boundaries/dependencies can't do per-feature captures in v6 without complex setup.
   // This blocks features/A from importing features/B internals (components, hooks, api, types).
+
+  // Barrel import enforcement for shared components
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": ["warn", {
+        patterns: [
+          {
+            group: ["@/components/shared/*", "!@/components/shared"],
+            message: "Import from the barrel (@/components/shared), not internal files.",
+          }
+        ]
+      }]
+    }
+  },
+
   {
     files: ["features/**/*.ts", "features/**/*.tsx"],
     rules: {

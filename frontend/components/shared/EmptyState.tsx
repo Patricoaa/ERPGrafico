@@ -1,10 +1,10 @@
 "use client"
 import React from "react"
-import { LucideIcon, Inbox, SearchX, Receipt, Package, Users, Database } from "lucide-react"
+import { LucideIcon, Inbox, SearchX, Receipt, Package, Users, Database, Monitor, Layers, Landmark, ShoppingCart, Truck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { IndustryMark } from "@/components/shared/IndustryMark"
 
-export type EmptyStateContext = 'search' | 'inventory' | 'finance' | 'users' | 'generic' | 'database' | 'production'
+export type EmptyStateContext = 'search' | 'inventory' | 'finance' | 'users' | 'generic' | 'database' | 'production' | 'pos' | 'bom' | 'treasury' | 'sale' | 'purchase'
 export type EmptyStateVariant = 'full' | 'compact' | 'minimal'
 
 interface EmptyStateProps {
@@ -36,6 +36,11 @@ const CONTEXT_CONFIG: Record<EmptyStateContext, { icon: LucideIcon; title: strin
     users: { icon: Users, title: "Sin contactos o usuarios" },
     database: { icon: Database, title: "Error de conexión o base vacía" },
     production: { icon: Package, title: "Sin órdenes o procesos activos" },
+    pos: { icon: Monitor, title: "Sin sesiones o transacciones" },
+    bom: { icon: Layers, title: "Sin componentes de fabricación" },
+    treasury: { icon: Landmark, title: "Sin movimientos de caja" },
+    sale: { icon: ShoppingCart, title: "Sin órdenes de venta" },
+    purchase: { icon: Truck, title: "Sin órdenes de compra" },
 }
 
 /**
