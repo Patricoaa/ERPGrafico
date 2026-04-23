@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { getMyProfile, changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollPdfs } from "@/lib/profile/api"
+import { getMyProfile, changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollPdfs } from '@/features/profile/api/profileApi'
 import type { MyProfile } from "@/types/profile"
 import type { Payroll, SalaryAdvance, PayrollPayment } from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"

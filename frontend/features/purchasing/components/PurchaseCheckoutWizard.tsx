@@ -14,7 +14,7 @@ import api from "@/lib/api"
 import { PurchaseOrderAPI, CheckoutLine, DTEData, ReceiptData } from "../types"
 import { PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 
-import { PricingUtils } from "@/lib/pricing"
+import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Step0_Supplier } from "./checkout/Step0_Supplier"
 import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
 import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart } from "lucide-react"

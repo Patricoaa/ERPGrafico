@@ -2,7 +2,7 @@
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
-import { PricingUtils } from "@/lib/pricing"
+import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Button } from "@/components/ui/button"
 import { Step1_CustomerDTE } from "./Step1_CustomerDTE"
 import { Step2_Payment } from "./Step2_Payment"

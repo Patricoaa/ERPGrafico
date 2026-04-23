@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Check, ChevronsUpDown, Search, Loader2, AlertCircle, Package } from "lucide-react"
 import { cn, translateProductType } from "@/lib/utils"
-import { PricingUtils } from "@/lib/pricing"
+import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Button } from "@/components/ui/button"
 import {
     Tooltip,

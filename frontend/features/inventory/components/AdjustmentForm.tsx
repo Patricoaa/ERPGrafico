@@ -42,7 +42,7 @@ import api from "@/lib/api"
 import { FORM_STYLES } from "@/lib/styles"
 import { Product, UoM, Warehouse } from "@/types/entities"
 import { cn } from "@/lib/utils"
-import { validateAccountingPeriod } from "@/lib/actions/accounting-actions"
+import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 

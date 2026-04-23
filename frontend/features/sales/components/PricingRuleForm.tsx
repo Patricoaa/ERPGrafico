@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Plus, Tags } from "lucide-react"
-import { PricingUtils } from "@/lib/pricing"
+import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 

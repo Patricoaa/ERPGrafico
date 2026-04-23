@@ -37,7 +37,7 @@ import { toast } from "sonner"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { FORM_STYLES } from "@/lib/styles"
 import { useServerDate } from "@/hooks/useServerDate"
-import { validateAccountingPeriod } from "@/lib/actions/accounting-actions"
+import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 

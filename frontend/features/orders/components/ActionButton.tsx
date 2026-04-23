@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Action } from "@/types/actions"
-import { getActionBadgeCount } from "@/lib/actions/utils"
+import { getActionBadgeCount } from '@/lib/action-utils'
 import { cn } from "@/lib/utils"
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"

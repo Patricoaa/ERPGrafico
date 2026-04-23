@@ -17,7 +17,7 @@ import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn, translateProductType, formatCurrency } from "@/lib/utils"
 import { resolveMediaUrl } from "@/lib/api"
-import { PricingUtils } from "@/lib/pricing"
+import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Checkbox } from "@/components/ui/checkbox"
 import { LayoutGrid, List, Download, Trash2, Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsDialog } from "./ArchivingRestrictionsDialog"

@@ -6,7 +6,7 @@ import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useSearchParams } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
-import { getMyProfile } from "@/lib/profile/api"
+import { getMyProfile } from '@/features/profile/api/profileApi'
 import { toast } from "sonner"
 import type { MyProfile } from "@/types/profile"
 import { Loader2 } from "lucide-react"

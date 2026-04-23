@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useMemo, useCallback } from 'react'
-import { validateTaxPeriod } from '@/lib/actions/tax-actions'
-import { validateAccountingPeriod } from '@/lib/actions/accounting-actions'
+import { validateTaxPeriod } from '@/features/tax/actions'
+import { validateAccountingPeriod } from '@/features/accounting/actions'
 
 export function usePeriodValidation() {
     const [isValidating, setIsValidating] = useState(false)

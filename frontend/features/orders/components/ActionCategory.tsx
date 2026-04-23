@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { ActionButton } from "./ActionButton"
 import { Action, ActionCategory as CategoryType } from "@/types/actions"
-import { getActionBadgeCount } from "@/lib/actions/utils"
+import { getActionBadgeCount } from '@/lib/action-utils'
 import dynamic from "next/dynamic"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"

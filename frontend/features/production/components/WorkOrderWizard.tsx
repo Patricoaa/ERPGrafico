@@ -67,7 +67,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { WizardProcessSidebar } from "./WizardProcessSidebar"
-import { completeTask } from "@/lib/workflow/api"
+import { completeTask } from '@/features/workflow/api/workflowApi'
 import { motion, AnimatePresence } from "framer-motion"
 import { WizardHeader } from "./WizardHeader"
 import { WizardStickyFooter } from "./WizardStickyFooter"

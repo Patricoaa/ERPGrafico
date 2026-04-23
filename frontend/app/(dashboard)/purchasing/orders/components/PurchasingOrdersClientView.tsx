@@ -22,7 +22,7 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
 import { PurchaseOrderHubStatus } from "@/features/orders/components/PurchaseOrderHubStatus"
-import { getPurchaseHubStatuses } from "@/lib/purchase-order-status-utils"
+import { getPurchaseHubStatuses } from '@/features/purchasing/utils/status'
 import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
 import { OrderCard } from "@/features/orders/components/OrderCard"
 import { useConfirmAction } from "@/hooks/useConfirmAction"

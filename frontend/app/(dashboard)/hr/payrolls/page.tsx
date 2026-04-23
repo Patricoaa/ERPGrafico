@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { CreatePayrollDialog, PayrollDetailSheet } from "@/features/hr"
-import { getPayrolls, deletePayroll, paySalary, payPrevired, createAdvance } from "@/lib/hr/api"
+import { getPayrolls, deletePayroll, paySalary, payPrevired, createAdvance } from '@/features/hr/api/hrApi'
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import type { Payroll } from "@/types/hr"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
@@ -54,7 +54,7 @@ export default function PayrollsPage({ createAction }: { createAction?: React.Re
             const executeAction = async () => {
                 if (confirm("¿Generar automáticamente liquidaciones borrador para todos los empleados activos este mes?")) {
                     try {
-                        const { triggerDraftPayrolls } = await import("@/lib/hr/api")
+                        const { triggerDraftPayrolls } = await import('@/features/hr/api/hrApi')
                         const res = await triggerDraftPayrolls()
                         toast.success(res.detail)
                         fetchPayrolls()

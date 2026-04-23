@@ -8,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Package, ImageIcon } from "lucide-react"
 import api from "@/lib/api"
 import { formatCurrency } from "@/lib/currency"
-import { PricingUtils } from "@/lib/pricing"
+import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 
