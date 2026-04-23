@@ -20,7 +20,7 @@ import {
     AlertCircle
 } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { FormSkeleton } from "@/components/shared"
+import { FormSkeleton, ToolbarCreateButton } from "@/components/shared"
 import {
     Select,
     SelectContent,
@@ -499,9 +499,7 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
             {concept ? (
                 <DataCell.Action icon={Settings2} title="Configurar" onClick={() => setOpen(true)} />
             ) : (
-                <Button variant="outline" className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-primary/30 text-primary hover:bg-primary/10 transition-all rounded-full shadow-none" onClick={() => setOpen(true)}>
-                    <Plus className="h-3.5 w-3.5 mr-2" /> Nuevo Concepto
-                </Button>
+                <ToolbarCreateButton onClick={() => setOpen(true)} label="Nuevo Concepto" />
             )}
 
             <BaseModal
@@ -516,8 +514,8 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                 description="Defina el comportamiento y la cuenta contable de este ítem de nómina."
                 footer={
                     <div className="flex w-full gap-3 justify-end pt-2 border-t">
-                        <ActionSlideButton type="submit" form="concept-form" disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px]">
-                            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Validar y Guardar Cambios"}
+                        <ActionSlideButton type="submit" form="concept-form" loading={saving} disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px]">
+                            Validar y Guardar Cambios
                         </ActionSlideButton>
                     </div>
                 }
@@ -704,9 +702,7 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
                     <Settings2 className="h-3.5 w-3.5" />
                 </Button>
             ) : (
-                <Button variant="outline" className="h-9 px-4 text-[10px] font-black uppercase tracking-widest bg-transparent border border-primary/30 text-primary hover:bg-primary/10 transition-all rounded-full shadow-none" onClick={() => setOpen(true)}>
-                    <Plus className="h-3.5 w-3.5 mr-2" /> Añadir Institución
-                </Button>
+                <ToolbarCreateButton onClick={() => setOpen(true)} label="Añadir Institución" />
             )}
 
             <BaseModal
@@ -721,8 +717,8 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
                 description="Configure las tasas vigentes para las cotizaciones previsionales."
                 footer={
                     <div className="flex w-full gap-3 justify-end pt-2 border-t">
-                        <ActionSlideButton type="submit" form="afp-form" disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground">
-                            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Guardar Institución"}
+                        <ActionSlideButton type="submit" form="afp-form" loading={saving} disabled={saving} className="w-full h-10 font-black uppercase tracking-widest text-[11px] bg-primary hover:bg-primary/90 text-primary-foreground">
+                            Guardar Institución
                         </ActionSlideButton>
                     </div>
                 }

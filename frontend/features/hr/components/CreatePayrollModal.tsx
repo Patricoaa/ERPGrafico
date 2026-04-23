@@ -10,6 +10,7 @@ import { createPayroll, getEmployees } from '@/features/hr/api/hrApi'
 import type { Employee } from "@/types/hr"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
+import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
 import { Input } from "@/components/ui/input"
 import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage
@@ -17,7 +18,7 @@ import {
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select"
-import { Loader2, Plus, FileText } from "lucide-react"
+import { Plus, FileText } from "lucide-react"
 import { FORM_STYLES } from "@/lib/styles"
 
 const MONTHS = [
@@ -105,24 +106,15 @@ export function CreatePayrollModal({ open, onOpenChange, onSaved, trigger }: Cre
             }
             footer={
                 <div className="flex justify-end gap-3 w-full">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-sm text-xs font-bold border-primary/20 hover:bg-primary/5"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
+                    <CancelButton onClick={() => onOpenChange(false)} />
+                    <SubmitButton
                         form="create-payroll-form"
-                        type="submit"
-                        disabled={saving}
+                        loading={saving}
+                        icon={<FileText className="mr-2 h-3.5 w-3.5" />}
                         className="rounded-sm text-xs font-bold transition-all shadow-lg shadow-primary/20"
                     >
-                        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        <FileText className="mr-2 h-3.5 w-3.5" />
                         Crear Liquidación
-                    </Button>
+                    </SubmitButton>
                 </div>
             }
         >

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { CancelButton } from "@/components/shared/ActionButtons"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import {
@@ -23,7 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Plus, Trash2, Save, Loader2, Info, Workflow, Box, Layers, CheckCircle2, Truck, Package, AlertCircle } from "lucide-react"
+import { Plus, Trash2, Save, Info, Workflow, Box, Layers, CheckCircle2, Truck, Package, AlertCircle } from "lucide-react"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
@@ -331,20 +332,15 @@ export function BOMFormModal({
             }
             footer={
                 <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5">
-                        Cancelar
-                    </Button>
+                    <CancelButton onClick={() => onOpenChange(false)} />
                     <ActionSlideButton
                         form="bom-form"
                         type="submit"
+                        loading={form.formState.isSubmitting}
+                        icon={Save}
                         disabled={form.formState.isSubmitting}
                         className="rounded-md text-xs font-bold"
                     >
-                        {form.formState.isSubmitting ? (
-                            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                            <Save className="mr-2 h-3.5 w-3.5" />
-                        )}
                         {bomToEdit ? "Guardar Cambios" : "Crear Receta"}
                     </ActionSlideButton>
                 </div>

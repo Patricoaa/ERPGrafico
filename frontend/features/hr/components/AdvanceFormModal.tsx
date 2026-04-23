@@ -11,6 +11,7 @@ import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Button } from "@/components/ui/button"
+import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -20,7 +21,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@/components/ui/select"
 import {
-    WalletCards, Loader2, History
+    WalletCards, History
 } from "lucide-react"
 import { FORM_STYLES } from "@/lib/styles"
 
@@ -123,11 +124,10 @@ export function AdvanceFormModal({ open, onOpenChange, advance, employees, payro
             className="h-[80vh]"
             footer={
                 <div className="flex justify-end gap-2 w-full">
-                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button type="submit" form="advance-form" disabled={saving}>
-                        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} />
+                    <SubmitButton form="advance-form" loading={saving}>
                         {advance ? "Actualizar" : "Registrar"}
-                    </Button>
+                    </SubmitButton>
                 </div>
             }
         >

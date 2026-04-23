@@ -9,10 +9,11 @@ import * as z from "zod"
 import { createAbsence, updateAbsence } from '@/features/hr/api/hrApi'
 import type { Absence, Employee } from "@/types/hr"
 import { Button } from "@/components/ui/button"
+import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2, CalendarX2 } from "lucide-react"
+import { CalendarX2 } from "lucide-react"
 import { FORM_STYLES } from "@/lib/styles"
 import { BaseModal, EmptyState } from "@/components/shared"
 
@@ -97,11 +98,10 @@ export function AbsenceFormModal({ open, onOpenChange, absence, employees, onSav
 
     const footer = (
         <div className="flex justify-end gap-2 w-full">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" disabled={saving} onClick={form.handleSubmit(onSubmit)}>
-                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <CancelButton onClick={() => onOpenChange(false)} />
+            <SubmitButton disabled={saving} onClick={form.handleSubmit(onSubmit)} loading={saving}>
                 {absence ? "Actualizar" : "Registrar"}
-            </Button>
+            </SubmitButton>
         </div>
     )
 

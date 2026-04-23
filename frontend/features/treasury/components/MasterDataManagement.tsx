@@ -8,6 +8,7 @@ import {
     Plus, Edit, Trash2, Loader2, CreditCard, Landmark, List, History, Tag, Pencil, Lock
 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { CancelButton } from "@/components/shared"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -140,9 +141,6 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                     </h2>
                     <p className="text-sm text-muted-foreground">Administre las entidades bancarias globales.</p>
                 </div>
-                <Button onClick={openCreate} className="shadow-sm">
-                    <Plus className="mr-2 h-4 w-4" /> Nuevo Banco
-                </Button>
             </div>
 
             <DataTable
@@ -246,9 +244,8 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
             className="h-[80vh]"
             footer={
                 <>
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <ActionSlideButton type="submit" form="bank-form" disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} />
+                    <ActionSlideButton type="submit" form="bank-form" loading={loading} disabled={loading}>
                         {bank ? "Actualizar" : "Crear"}
                     </ActionSlideButton>
                 </>
@@ -598,9 +595,8 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
             className="h-[85vh]"
             footer={
                 <>
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <ActionSlideButton type="submit" form="method-form" disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} />
+                    <ActionSlideButton type="submit" form="method-form" loading={loading} disabled={loading}>
                         {method ? "Actualizar" : "Crear"}
                     </ActionSlideButton>
                 </>

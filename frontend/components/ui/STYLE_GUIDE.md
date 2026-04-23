@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils"
 |-----------|---------------|-------------|
 | **Label** | `text-[10px] font-black uppercase tracking-widest text-muted-foreground` | Small, bold, uppercase labels for forms. |
 | **Input/Select** | `h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary` | Inputs with dashed borders and rounded corners. |
-| **Card** | `rounded-2xl border border-dashed p-4 bg-card/50` | Containers/Cards with dashed borders. |
+| **Card** | *(Deprecado)* | **NO USAR**. Importar y usar `<Card variant="dashed" className="p-4">` desde `@/components/ui/card`. |
 | **Table Header** | `px-3 py-2 font-black text-[10px] uppercase tracking-widest text-muted-foreground` | Consistent table headers. |
 | **Section Header** | `text-[10px] font-black uppercase tracking-widest text-muted-foreground` | Headers for sections within forms. |
 
@@ -40,10 +40,10 @@ import { cn } from "@/lib/utils"
 
 ### Card Section
 ```tsx
-<div className={FORM_STYLES.card}>
+<Card variant="dashed" className="p-4">
     <h3 className={FORM_STYLES.sectionHeader}>Details</h3>
     {/* Content */}
-</div>
+</Card>
 ```
 
 ## Best Practices

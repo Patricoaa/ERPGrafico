@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
+import { CancelButton } from "@/components/shared"
 import { BaseModal } from "@/components/shared/BaseModal"
 
 // ... other imports same
@@ -119,15 +120,8 @@ export function GroupForm({
                 }
                 footer={
                     <div className="flex justify-end space-x-2 w-full">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setOpen(false)}
-                        >
-                            Cancelar
-                        </Button>
-                        <ActionSlideButton type="submit" form="group-form" disabled={isLoading}>
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <CancelButton onClick={() => setOpen(false)} disabled={isLoading} />
+                        <ActionSlideButton type="submit" form="group-form" loading={isLoading}>
                             Guardar
                         </ActionSlideButton>
                     </div>

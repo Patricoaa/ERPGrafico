@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Plus, Trash2, Save, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { CancelButton, IconButton } from "@/components/shared"
 import { EmptyState } from "@/components/shared/EmptyState"
 import {
     Form,
@@ -105,12 +106,9 @@ export function CustomFieldTemplateForm({ open, onOpenChange, onSuccess }: Custo
             title="Nueva Plantilla de Campo Personalizado"
             footer={
                 <div className="flex justify-end gap-3 w-full">
-                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                        Cancelar
-                    </Button>
-                    <ActionSlideButton type="submit" form="custom-field-template-form" disabled={loading}>
-                        {loading ? "Guardando..." : "Crear Plantilla"}
-                        {!loading && <Save className="ml-2 h-4 w-4" />}
+                    <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                    <ActionSlideButton type="submit" form="custom-field-template-form" loading={loading}>
+                        Crear Plantilla
                     </ActionSlideButton>
                 </div>
             }
@@ -208,23 +206,22 @@ export function CustomFieldTemplateForm({ open, onOpenChange, onSuccess }: Custo
                                         }
                                     }}
                                 />
-                                <Button type="button" variant="outline" size="icon" onClick={addOption}>
+                                <IconButton type="button" variant="outline" onClick={addOption}>
                                     <Plus className="h-4 w-4" />
-                                </Button>
+                                </IconButton>
                             </div>
                             <div className="max-h-[150px] overflow-y-auto space-y-2">
                                 {options.map((option, index) => (
                                     <div key={index} className="flex items-center justify-between bg-muted p-2 rounded-md">
                                         <span className="text-sm">{option}</span>
-                                        <Button
+                                        <IconButton
                                             type="button"
                                             variant="ghost"
-                                            size="icon"
                                             className="h-7 w-7 text-destructive"
                                             onClick={() => removeOption(index)}
                                         >
                                             <Trash2 className="h-4 w-4" />
-                                        </Button>
+                                        </IconButton>
                                     </div>
                                 ))}
                                 {options.length === 0 && (

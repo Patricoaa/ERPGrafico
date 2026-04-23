@@ -40,7 +40,7 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 
 18. `StatusBadge` is the ONLY authorized status renderer.
 19. All shared components handle `loading` (Skeleton), `empty` (EmptyState), `error` (toast).
-20. Shared components documented in `20-contracts/component-contracts.md` with full prop table.
+20. Shared components documented in `20-contracts/component-*.md` with full prop table.
 21. Do not modify `components/ui/` (Shadcn base). Extend in `components/shared/`.
 22. Promotion to `components/shared/` requires ≥3 consumers + contract entry.
 

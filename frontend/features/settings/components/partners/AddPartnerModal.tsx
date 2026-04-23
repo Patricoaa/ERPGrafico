@@ -3,6 +3,7 @@
 import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { CancelButton, SubmitButton } from "@/components/shared"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -84,13 +85,10 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
 
     const footerContent = (
         <div className="flex w-full gap-3 justify-end">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                Cancelar
-            </Button>
-            <Button onClick={handleSubmit} disabled={loading || !formData.contact_id || newAmount <= 0}>
-                {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+            <SubmitButton onClick={handleSubmit} disabled={!formData.contact_id || newAmount <= 0} loading={loading}>
                 Confirmar Incorporación
-            </Button>
+            </SubmitButton>
         </div>
     )
 

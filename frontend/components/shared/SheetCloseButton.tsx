@@ -14,7 +14,7 @@ interface SheetCloseButtonProps {
 
 /**
  * Standardized close button for Sheets and Modals.
- * Implements the "Industrial Premium" circular ghost style.
+ * Implements the circular ghost style.
  */
 export function SheetCloseButton({
     onClick,

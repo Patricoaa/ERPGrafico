@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, Plus, Factory, Save, X, Layers, Settings2 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -106,9 +107,9 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
               <h3 className="font-bold text-sm leading-tight">{variant.variant_display_name || variant.name}</h3>
            </div>
         </div>
-        <Button variant="ghost" size="icon" onClick={onCancel} className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0">
+        <IconButton onClick={onCancel} className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0">
           <X className="h-4 w-4" />
-        </Button>
+        </IconButton>
       </div>
 
       <div className="p-5 overflow-y-auto flex-1 scrollbar-thin">

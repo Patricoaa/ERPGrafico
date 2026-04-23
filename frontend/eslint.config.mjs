@@ -132,10 +132,20 @@ const eslintConfig = defineConfig([
           message: "React Query hooks must only be used within feature hooks (features/*/hooks/). Do not import them directly in components."
         }]
       }],
-      "no-restricted-syntax": ["warn", {
-        selector: "CallExpression[callee.property.name='toLocaleString']",
-        message: "Do not use .toLocaleString() for currency or quantities. Use <MoneyDisplay> or <QuantityDisplay> instead to ensure consistent UI across the app."
-      }]
+      "no-restricted-syntax": ["warn", 
+        {
+          selector: "CallExpression[callee.property.name='toLocaleString']",
+          message: "Do not use .toLocaleString() for currency or quantities. Use <MoneyDisplay> or <QuantityDisplay> instead to ensure consistent UI across the app."
+        },
+        {
+          selector: "JSXElement > JSXOpeningElement[name.name='button']",
+          message: "Do not use native <button> elements. Use Shadcn <Button> or the <ActionButtons> primitives (SubmitButton, CancelButton, etc.) from @/components/shared instead."
+        },
+        {
+          selector: "JSXElement[openingElement.name.name='Button'] JSXElement[openingElement.name.name='Loader2']",
+          message: "Violación de Diseño Industrial: No inyecte Loader2 manualmente en Button. Utilice <SubmitButton loading={...}> o <ActionSlideButton loading={...}>."
+        }
+      ]
     }
   }
 ]);

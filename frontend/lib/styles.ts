@@ -3,11 +3,8 @@ export const FORM_STYLES = {
     label: "text-[10px] font-black uppercase tracking-widest text-muted-foreground",
 
     // Inputs & Selects
-    input: "h-10 rounded-none border bg-background focus-visible:ring-primary transition-all duration-200",
-    textarea: "min-h-[100px] rounded-none border bg-background focus-visible:ring-primary transition-all duration-200 resize-none p-4",
-
-    // Cards & Containers (Legacy/Base)
-    card: "rounded-none border border-dashed p-8 bg-card/50",
+    input: "h-10 rounded-md border bg-background focus-visible:ring-primary transition-all duration-200",
+    textarea: "min-h-[100px] rounded-md border bg-background focus-visible:ring-primary transition-all duration-200 resize-none p-4",
 
     // Table Elements
     tableHeader: "px-3 py-2 font-black text-[10px] uppercase tracking-widest text-muted-foreground",

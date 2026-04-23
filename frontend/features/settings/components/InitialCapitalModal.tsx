@@ -4,6 +4,7 @@ import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
+import { CancelButton, SubmitButton, IconButton } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
@@ -104,16 +105,10 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
             description="Defina los socios iniciales y sus aportes para establecer la estructura de capital de la empresa en marcha."
             footer={
                 <div className="flex w-full gap-3 justify-end">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancelar
-                    </Button>
-                    <Button 
-                        onClick={handleSubmit} 
-                        disabled={loading || entries.length === 0}
-                        className="gap-2"
-                    >
-                        {loading ? "Procesando..." : "Guardar y Generar Asiento"}
-                    </Button>
+                    <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                    <SubmitButton onClick={handleSubmit} disabled={entries.length === 0} loading={loading}>
+                        Guardar y Generar Asiento
+                    </SubmitButton>
                 </div>
             }
         >
@@ -188,14 +183,13 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                                                         </span>
                                                     </td>
                                                     <td className="p-3 text-center">
-                                                        <Button
+                                                        <IconButton
                                                             variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                                                             onClick={() => handleRemovePartner(index)}
                                                         >
                                                             <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        </IconButton>
                                                     </td>
                                                 </tr>
                                             )

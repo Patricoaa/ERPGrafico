@@ -5,12 +5,10 @@ import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider,
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { BaseModal, EmptyState, StatusBadge, SubmitButton, CancelButton, IconButton } from "@/components/shared"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import {
     Plus,
     Settings,
@@ -249,8 +247,8 @@ function ProviderCard({ provider, onEdit, onDelete }: { provider: PaymentTermina
                         <StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />
                     </div>
                     <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={onEdit} className="h-7 w-7"><Settings className="h-3.5 w-3.5" /></Button>
-                        <Button variant="ghost" size="icon" onClick={onDelete} className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+                        <IconButton onClick={onEdit} className="h-7 w-7"><Settings className="h-3.5 w-3.5" /></IconButton>
+                        <IconButton onClick={onDelete} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></IconButton>
                     </div>
                 </div>
             </CardHeader>
@@ -271,8 +269,8 @@ function DeviceCard({ device, onEdit, onDelete }: { device: PaymentTerminalDevic
                         <StatusBadge status={device.is_active ? "active" : "inactive"} size="sm" />
                     </div>
                     <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={onEdit} className="h-7 w-7"><Settings className="h-3.5 w-3.5" /></Button>
-                        <Button variant="ghost" size="icon" onClick={onDelete} className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+                        <IconButton onClick={onEdit} className="h-7 w-7"><Settings className="h-3.5 w-3.5" /></IconButton>
+                        <IconButton onClick={onDelete} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></IconButton>
                     </div>
                 </div>
             </CardHeader>
@@ -290,10 +288,10 @@ function DeviceCard({ device, onEdit, onDelete }: { device: PaymentTerminalDevic
                         <span>Soporta:</span>
                         <div className="flex gap-1">
                             {device.supported_payment_methods?.includes(2) && (
-                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-none">DÉBITO</span>
+                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-sm">DÉBITO</span>
                             )}
                             {device.supported_payment_methods?.includes(1) && (
-                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-none">CRÉDITO</span>
+                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-sm">CRÉDITO</span>
                             )}
                             {(!device.supported_payment_methods || device.supported_payment_methods.length === 0) && (
                                 <span className="text-[8px] italic opacity-50">SIN CONFIG</span>
@@ -392,11 +390,10 @@ function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
             description="Configure las cuentas contables para recaudación y comisiones."
             footer={
                 <div className="flex justify-end gap-2">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSubmit} disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} />
+                    <SubmitButton loading={loading} onClick={handleSubmit}>
                         {provider ? "Guardar Cambios" : "Crear Proveedor"}
-                    </Button>
+                    </SubmitButton>
                 </div>
             }
         >
@@ -544,11 +541,10 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
             description="Vincule una terminal física con un proveedor de servicios."
             footer={
                 <div className="flex justify-end gap-2">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSubmit} disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} />
+                    <SubmitButton loading={loading} onClick={handleSubmit}>
                         {device ? "Guardar Cambios" : "Registrar"}
-                    </Button>
+                    </SubmitButton>
                 </div>
             }
         >
@@ -592,7 +588,7 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
                     <div className="grid grid-cols-2 gap-4">
                         <div 
                             className={cn(
-                                "flex items-center space-x-3 p-3 border rounded-none cursor-pointer transition-colors",
+                                "flex items-center space-x-3 p-3 border rounded-md cursor-pointer transition-colors",
                                 supportedMethods.includes(2) ? "bg-primary/5 border-primary/30" : "bg-background border-border"
                             )}
                             onClick={() => toggleMethod(2)}
@@ -605,7 +601,7 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
                         </div>
                         <div 
                             className={cn(
-                                "flex items-center space-x-3 p-3 border rounded-none cursor-pointer transition-colors",
+                                "flex items-center space-x-3 p-3 border rounded-md cursor-pointer transition-colors",
                                 supportedMethods.includes(1) ? "bg-primary/5 border-primary/30" : "bg-background border-border"
                             )}
                             onClick={() => toggleMethod(1)}

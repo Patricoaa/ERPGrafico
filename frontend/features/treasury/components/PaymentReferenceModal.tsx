@@ -10,7 +10,8 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn, formatPlainDate } from "@/lib/utils"
-import { EmptyState, MoneyDisplay } from "@/components/shared"
+import { EmptyState, MoneyDisplay, CancelButton, SubmitButton } from "@/components/shared"
+import { Card } from "@/components/ui/card"
 
 export interface Payment {
     id: number
@@ -86,14 +87,16 @@ export function PaymentReferenceModal({
             size="xs"
             footer={(
                 <div className="flex w-full gap-2">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)} className="flex-1">Cancelar</Button>
-                    <Button
+                    <CancelButton onClick={() => onOpenChange(false)} className="flex-1" />
+                    <SubmitButton
                         className="flex-[2] bg-income hover:bg-income/90 h-12 text-lg font-bold"
                         onClick={handleSave}
-                        disabled={loading || !selectedPaymentId || !transactionNumber}
+                        disabled={!selectedPaymentId || !transactionNumber}
+                        loading={loading}
+                        icon={null}
                     >
-                        {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Guardar Registro"}
-                    </Button>
+                        Guardar Registro
+                    </SubmitButton>
                 </div>
             )}
         >
@@ -124,7 +127,7 @@ export function PaymentReferenceModal({
 
                 {selectedPayment && (
                     <div className="space-y-4">
-                        <div className={cn("flex items-center gap-4 p-4", FORM_STYLES.card)}>
+                        <Card variant="dashed" className="flex items-center gap-4 p-4">
                             <div className="p-3 bg-card border rounded-full shadow-sm">
                                 {selectedPayment.payment_method === 'TRANSFER' ? (
                                     <Landmark className="h-6 w-6 text-primary" />
@@ -138,7 +141,7 @@ export function PaymentReferenceModal({
                                     Pago de {formatPlainDate(selectedPayment.date || selectedPayment.created_at)}
                                 </div>
                             </div>
-                        </div>
+                        </Card>
 
                         <div className="grid gap-2">
                             <Label className="text-[11px] font-bold uppercase text-muted-foreground flex items-center gap-1">

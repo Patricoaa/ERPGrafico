@@ -24,7 +24,8 @@ import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
+import { CancelButton } from "@/components/shared"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 export interface Terminal {
@@ -222,11 +223,8 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
             }
             footer={
                 <div className="flex justify-end gap-2 w-full">
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                        Cancelar
-                    </Button>
-                    <ActionSlideButton type="submit" form="terminal-form" disabled={loading}>
-                        {loading && <Loader2 className="h-3 w-3 mr-2 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} />
+                    <ActionSlideButton type="submit" form="terminal-form" loading={loading}>
                         {terminal ? "Guardar Cambios" : "Crear Terminal"}
                     </ActionSlideButton>
                 </div>

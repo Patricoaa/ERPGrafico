@@ -4,7 +4,7 @@
 
 :root {
   /* 
-   * DESIGN SYSTEM TOKENS - ERPGrafico "Industrial Premium"
+   * DESIGN SYSTEM TOKENS - ERPGrafico
    * Using OKLCH for consistent perceptual lightness and chroma.
    * Strategy: 60-30-10 (Background/Neutrals - Secondary/Borders - Primary/Accent)
    * Pattern: --token-raw stores channels for opacity support in Tailwind v4.
@@ -96,8 +96,8 @@
   --liability-foreground: var(--warning-foreground);
 
   /* GEOMETRY & TYPOGRAPHY */
-  --radius: 0.125rem;
-  /* Micro Radius (2px) — Industrial Premium: near-zero for subpixel rendering quality */
+  --radius: 0.5rem;
+  /* Base Radius (8px) — Balanced Softness aesthetic */
   --ring-raw: 0.65 0.25 301;
   --ring: oklch(var(--ring-raw) / 0.4);
 
@@ -265,6 +265,15 @@
 
   /* SHIMMER ANIMATION */
   --animate-shimmer: shimmer 2s infinite linear;
+
+  /*
+   * NOTCHED INPUT — Fieldset/Legend pattern
+   * CSS-only label-on-border primitive. No JS positioning needed.
+   * Used by <LabeledInput> in components/shared.
+   */
+  --notched-pad-x: 0.75rem;         /* Horizontal padding inside fieldset */
+  --notched-pad-top: 0.35rem;       /* Top padding (space above legend) */
+  --notched-legend-size: 0.625rem;  /* 10px — matches FORM_STYLES.label */
 
   /*
    * GRAPHIC INDUSTRY — Visual Vocabulary Tokens

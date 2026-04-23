@@ -18,6 +18,7 @@ import { useState } from "react"
 import { BOMManager } from "@/features/production/components/BOMManager"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Card } from "@/components/ui/card"
 import { FORM_STYLES } from "@/lib/styles"
 import { Label } from "@/components/ui/label"
 
@@ -131,22 +132,24 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                     const shouldDisable = isExpress && !hasVariants
 
                                     return (
-                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-md border bg-background/50", FORM_STYLES.card)}>
-                                            <div className="space-y-0.5">
-                                                <FormLabel className={FORM_STYLES.label}>Posee Lista de Materiales</FormLabel>
-                                                <FormDescription className="text-[10px]">
-                                                    {shouldDisable
-                                                        ? "Los productos Express requieren Lista de Materiales obligatoria."
-                                                        : "Detección automática por modo seleccionado."}
-                                                </FormDescription>
-                                            </div>
-                                            <FormControl>
-                                                <Switch
-                                                    checked={field.value}
-                                                    onCheckedChange={field.onChange}
-                                                    disabled={shouldDisable}
-                                                />
-                                            </FormControl>
+                                        <FormItem>
+                                            <Card variant="dashed" className="flex items-center justify-between p-4 rounded-md border bg-background/50">
+                                                <div className="space-y-0.5">
+                                                    <FormLabel className={FORM_STYLES.label}>Posee Lista de Materiales</FormLabel>
+                                                    <FormDescription className="text-[10px]">
+                                                        {shouldDisable
+                                                            ? "Los productos Express requieren Lista de Materiales obligatoria."
+                                                            : "Detección automática por modo seleccionado."}
+                                                    </FormDescription>
+                                                </div>
+                                                <FormControl>
+                                                    <Switch
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                        disabled={shouldDisable}
+                                                    />
+                                                </FormControl>
+                                            </Card>
                                         </FormItem>
                                     )
                                 }}
@@ -158,22 +161,24 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                 name="has_variants"
                                 render={({ field }) => (
                                     !variantMode ? (
-                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-md border bg-background/50", FORM_STYLES.card)}>
-                                            <div className="space-y-0.5">
-                                                <FormLabel className={FORM_STYLES.label}>Posee Variantes</FormLabel>
-                                                <FormDescription className="text-[10px]">
-                                                    Permite generar múltiples versiones de este producto.
-                                                </FormDescription>
-                                            </div>
-                                            <FormControl>
-                                                <Switch
-                                                    checked={field.value}
-                                                    onCheckedChange={(val) => {
-                                                        field.onChange(val)
-                                                        // Removed auto-switch to express mode to allow Simple + Variants
-                                                    }}
-                                                />
-                                            </FormControl>
+                                        <FormItem>
+                                            <Card variant="dashed" className="flex items-center justify-between p-4 rounded-md border bg-background/50">
+                                                <div className="space-y-0.5">
+                                                    <FormLabel className={FORM_STYLES.label}>Posee Variantes</FormLabel>
+                                                    <FormDescription className="text-[10px]">
+                                                        Permite generar múltiples versiones de este producto.
+                                                    </FormDescription>
+                                                </div>
+                                                <FormControl>
+                                                    <Switch
+                                                        checked={field.value}
+                                                        onCheckedChange={(val) => {
+                                                            field.onChange(val)
+                                                            // Removed auto-switch to express mode to allow Simple + Variants
+                                                        }}
+                                                    />
+                                                </FormControl>
+                                            </Card>
                                         </FormItem>
                                     ) : <></>
                                 )}

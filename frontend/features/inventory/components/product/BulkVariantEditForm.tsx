@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { CancelButton, SubmitButton, IconButton } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Loader2, Save, X, Sparkles } from "lucide-react"
 import api from "@/lib/api"
@@ -115,9 +116,9 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
            </div>
            <p className="text-[11px] text-primary/80 font-medium">{selectedVariants.length} variantes seleccionadas</p>
         </div>
-        <Button variant="ghost" size="icon" onClick={onCancel} className="h-8 w-8 text-primary/60 hover:text-primary hover:bg-primary/10/50">
+        <IconButton onClick={onCancel} className="h-8 w-8 text-primary/60 hover:text-primary hover:bg-primary/10/50">
           <X className="h-4 w-4" />
-        </Button>
+        </IconButton>
       </div>
 
       <div className="p-4 overflow-y-auto flex-1 scrollbar-thin">
@@ -241,20 +242,17 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
       </div>
 
       <div className="p-4 border-t border-primary/10 bg-white/50 flex justify-end gap-2">
-         <Button variant="outline" size="sm" onClick={onCancel} className="text-xs border-primary/20 text-primary hover:bg-primary/10">
-            Cancelar
-         </Button>
-         <Button 
+         <CancelButton onClick={onCancel} className="text-xs border-primary/20 text-primary hover:bg-primary/10" size="sm" />
+         <SubmitButton 
             type="button" 
             onClick={form.handleSubmit(onSubmit)} 
             size="sm" 
             className="text-xs font-bold shadow-sm bg-primary hover:bg-primary text-white"
-            disabled={loading}
+            loading={loading}
+            icon={<Save className="h-3 w-3 mr-2" />}
          >
-            {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
-            <Save className="h-3 w-3 mr-2" />
             Aplicar a {selectedVariants.length} Variantes
-         </Button>
+         </SubmitButton>
       </div>
     </div>
   )

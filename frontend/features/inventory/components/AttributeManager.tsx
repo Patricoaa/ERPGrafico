@@ -6,8 +6,8 @@ import React, { useEffect, useState, useMemo } from "react"
 import api from "@/lib/api"
 import { Plus, Trash2, Tag, LayoutDashboard, Eye, X, Loader2 } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -22,6 +22,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { CancelButton, SubmitButton, IconButton } from "@/components/shared"
 
 interface ProductAttribute {
     id: number
@@ -252,9 +253,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                                 </button>
                             </DataCell.Badge>
                         ))}
-                        <Button
-                            variant="ghost"
-                            size="icon"
+                        <IconButton
                             className="h-6 w-6 rounded-full bg-primary/5 hover:bg-primary/20 text-primary transition-all duration-300"
                             onClick={() => {
                                 setSelectedAttribute(row.original)
@@ -263,7 +262,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                             title="Añadir valor"
                         >
                             <Plus className="h-3.5 w-3.5" />
-                        </Button>
+                        </IconButton>
                         {values.length === 0 && (
                             <DataCell.Secondary className="text-muted-foreground/40 italic">
                                 Sin valores
@@ -361,11 +360,10 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                 description={selectedAttribute ? "Modifica el nombre o añade nuevos valores al atributo." : "Define un nuevo atributo para generar variaciones de producto (ej: Color, Talla)."}
                 footer={
                     <div className="flex justify-end gap-2 w-full">
-                        <Button variant="outline" onClick={handleCloseModal} disabled={isSaving}>Cancelar</Button>
-                        <Button onClick={handleCreateAttribute} disabled={isSaving}>
-                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <CancelButton onClick={handleCloseModal} disabled={isSaving} />
+                        <SubmitButton onClick={handleCreateAttribute} loading={isSaving}>
                             {selectedAttribute ? "Guardar Cambios" : "Crear Atributo"}
-                        </Button>
+                        </SubmitButton>
                     </div>
                 }
                 hideScrollArea={true}
@@ -403,9 +401,9 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                                         placeholder="Ej: Rojo..."
                                         className={FORM_STYLES.input}
                                     />
-                                    <Button type="button" onClick={addTag} size="icon" variant="secondary" className="shrink-0">
+                                    <IconButton type="button" onClick={addTag} variant="secondary" className="shrink-0">
                                         <Plus className="h-4 w-4" />
-                                    </Button>
+                                    </IconButton>
                                 </div>
                                 
                                 <div className="flex flex-wrap gap-2 pt-2 min-h-[60px] p-3 rounded-md border border-dashed bg-muted/20">
@@ -455,11 +453,10 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
             }
                 footer={
                     <div className="flex justify-end gap-2 w-full">
-                        <Button variant="outline" onClick={() => setIsValueModalOpen(false)} disabled={isSaving}>Cancelar</Button>
-                        <Button onClick={handleCreateValue} disabled={isSaving}>
-                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <CancelButton onClick={() => setIsValueModalOpen(false)} disabled={isSaving} />
+                        <SubmitButton onClick={handleCreateValue} loading={isSaving}>
                             Añadir Valor
-                        </Button>
+                        </SubmitButton>
                     </div>
                 }
             >

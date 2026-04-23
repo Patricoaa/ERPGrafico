@@ -3,6 +3,7 @@
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -116,16 +117,15 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
 
     const footerContent = (
         <div className="flex w-full gap-2 justify-end">
-            <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>
-                Cancelar
-            </Button>
-            <Button
+            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
+            <SubmitButton
+                loading={submitting}
                 onClick={handleSubmit}
                 disabled={submitting || !amount || !fromAccount || !toAccount}
                 className="bg-warning hover:bg-warning/90 text-warning-foreground font-bold px-8 shadow-lg shadow-warning/20"
             >
-                {submitting ? "Registrando..." : "Confirmar Traspaso"}
-            </Button>
+                Confirmar Traspaso
+            </SubmitButton>
         </div>
     )
 

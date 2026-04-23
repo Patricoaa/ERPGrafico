@@ -9,6 +9,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
+import { CancelButton, SubmitButton } from "@/components/shared"
 import { Plus, Pencil, Trash2, Search, ChevronsUpDown, Check, Ruler } from "lucide-react"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { cn } from "@/lib/utils"
@@ -239,10 +240,10 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                 description={currentUoM.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión."}
                 footer={
                     <div className="flex justify-end gap-2 w-full">
-                        <Button variant="outline" onClick={() => setIsUoMModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleSaveUoM} disabled={isSaving}>
-                            {isSaving ? "Guardando..." : "Guardar Unidad"}
-                        </Button>
+                        <CancelButton onClick={() => setIsUoMModalOpen(false)} disabled={isSaving} />
+                        <SubmitButton onClick={handleSaveUoM} loading={isSaving}>
+                            Guardar Unidad
+                        </SubmitButton>
                     </div>
                 }
             >
