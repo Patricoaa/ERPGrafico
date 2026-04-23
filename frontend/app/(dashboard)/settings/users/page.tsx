@@ -9,7 +9,7 @@ import { useSearchParams } from "next/navigation"
 
 // Lazy load the UsersSettingsView component
 const UsersSettingsView = lazy(() =>
-    import("@/features/settings/components/UsersSettingsView").then(module => ({
+    import("@/features/settings").then(module => ({
         default: module.UsersSettingsView
     }))
 )

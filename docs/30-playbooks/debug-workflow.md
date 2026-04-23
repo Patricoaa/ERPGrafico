@@ -31,7 +31,89 @@ last_review: 2026-04-21
 | Form won't submit | Zod schema, `formState.errors` |
 | Wrong status color | state-map.md + StatusBadge variant |
 | Celery task missing | Flower, broker logs, beat schedule |
+| Celery task stuck | Worker process, Redis queue length, task state |
 | Slow query | `django-debug-toolbar`, `EXPLAIN ANALYZE` |
+
+### 2b. Celery debugging
+
+**Step 1 — Check if task was enqueued**
+
+```bash
+# Flower UI (dev)
+http://localhost:5555
+
+# Or Redis CLI
+docker exec -it redis redis-cli
+> LLEN celery          # pending tasks in default queue
+> KEYS celery-task-meta-*   # completed task results
+```
+
+**Step 2 — Check worker is running and received task**
+
+```bash
+# Worker logs
+docker compose logs worker --tail=100 -f
+
+# Or directly
+celery -A config inspect active     # tasks currently executing
+celery -A config inspect reserved   # tasks waiting in worker
+celery -A config inspect scheduled  # eta/countdown tasks
+```
+
+**Step 3 — Check beat schedule (for periodic tasks)**
+
+```bash
+celery -A config inspect scheduled
+
+# Verify task is registered in beat schedule
+python manage.py shell
+>>> from django_celery_beat.models import PeriodicTask
+>>> PeriodicTask.objects.filter(enabled=True).values('name', 'task', 'last_run_at')
+```
+
+**Step 4 — Reproduce task failure directly**
+
+```python
+python manage.py shell
+>>> from [app].tasks import my_task
+>>> my_task.apply(args=[arg1, arg2])   # runs synchronously, shows full traceback
+```
+
+**Step 5 — Inspect task result**
+
+```python
+from celery.result import AsyncResult
+result = AsyncResult('task-uuid-here')
+print(result.state)     # PENDING / STARTED / SUCCESS / FAILURE / RETRY
+print(result.info)      # exception info on FAILURE
+print(result.traceback) # full traceback
+```
+
+**Step 6 — Check idempotency (task ran twice)**
+
+Tasks must be idempotent (safe to run multiple times). Check if the service function has a guard:
+
+```python
+# Correct pattern
+def process_invoice(invoice_id):
+    invoice = Invoice.objects.get(pk=invoice_id)
+    if invoice.status == Invoice.Status.PROCESSED:
+        return  # already done
+    # ... rest of logic
+```
+
+If missing, the duplicate run caused the inconsistency. Add the guard, then correct the data manually.
+
+**Common Celery failure patterns**
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Task never appears in Flower | Not enqueued — service call missing | Check service layer call |
+| Task FAILURE with `DoesNotExist` | Object deleted before task ran | Add `get_or_none` guard at task start |
+| Task runs but no effect | Idempotency guard exits early | Check guard condition |
+| Beat task not firing | Worker started without beat | Start `celery beat` separately |
+| Task stuck in STARTED | Worker crashed mid-task | Restart worker; check `visibility_timeout` |
+| Duplicate task results | No idempotency guard | Add status check at task entry |
 
 ### 3. Write failing test first
 

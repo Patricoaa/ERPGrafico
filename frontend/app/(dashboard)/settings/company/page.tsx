@@ -16,7 +16,7 @@ interface PageProps {
 
 // Lazy load the CompanySettingsView component
 const CompanySettingsView = lazy(() =>
-    import("@/features/settings/components/CompanySettingsView").then(module => ({
+    import("@/features/settings").then(module => ({
         default: module.CompanySettingsView
     }))
 )

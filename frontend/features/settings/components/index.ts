@@ -15,3 +15,4 @@ export * from './AccountingSettingsView';
 export * from './PartnersSettingsView';
 export * from './ProductionSettingsView';
 export * from './PurchasingSettingsView';
+export * from './partners/PartnerAccountingTab';

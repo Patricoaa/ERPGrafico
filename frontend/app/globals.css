@@ -15,17 +15,17 @@
   --background: oklch(var(--background-raw));
   --foreground-raw: 0.12 0.02 240;
   --foreground: oklch(var(--foreground-raw));
-  
+
   --card-raw: 1 0 0;
   --card: oklch(var(--card-raw));
   --card-foreground-raw: 0.12 0.02 240;
   --card-foreground: oklch(var(--card-foreground-raw));
-  
+
   --popover-raw: 1 0 0;
   --popover: oklch(var(--popover-raw));
   --popover-foreground-raw: 0.12 0.02 240;
   --popover-foreground: oklch(var(--popover-foreground-raw));
-  
+
   --muted-raw: 0.95 0.01 240;
   --muted: oklch(var(--muted-raw));
   --muted-foreground-raw: 0.40 0.02 240;
@@ -36,7 +36,7 @@
   --secondary: oklch(var(--secondary-raw));
   --secondary-foreground-raw: 0.20 0.04 240;
   --secondary-foreground: oklch(var(--secondary-foreground-raw));
-  
+
   --border-raw: 0.12 0.02 240;
   --border: oklch(var(--border-raw) / 0.15);
   --input-raw: 0.12 0.02 240;
@@ -47,7 +47,7 @@
   --primary: oklch(var(--primary-raw));
   --primary-foreground-raw: 0.99 0.01 310;
   --primary-foreground: oklch(var(--primary-foreground-raw));
-  
+
   --accent-raw: 0.72 0.14 55;
   --accent: oklch(var(--accent-raw));
   --accent-foreground-raw: 0.15 0.03 55;
@@ -58,19 +58,19 @@
   --destructive: oklch(var(--destructive-raw));
   --destructive-foreground-raw: 0.99 0.01 25;
   --destructive-foreground: oklch(var(--destructive-foreground-raw));
-  
+
   /* Success: Adjusted Hue to 145 per contract. Foreground: Darker for contrast (Light Mode) */
   --success-raw: 0.65 0.18 145;
   --success: oklch(var(--success-raw));
   --success-foreground-raw: 0.20 0.04 145;
   --success-foreground: oklch(var(--success-foreground-raw));
-  
+
   /* Warning: Foreground Darker for contrast (Light Mode) */
   --warning-raw: 0.75 0.20 85;
   --warning: oklch(var(--warning-raw));
   --warning-foreground-raw: 0.20 0.04 85;
   --warning-foreground: oklch(var(--warning-foreground-raw));
-  
+
   /* Info: Foreground Darker for contrast (Light Mode) */
   --info-raw: 0.65 0.20 240;
   --info: oklch(var(--info-raw));
@@ -126,27 +126,27 @@
   --card-foreground-raw: 0.95 0.02 240;
   --popover-raw: 0.14 0.02 240;
   --popover-foreground-raw: 0.95 0.02 240;
-  
+
   --primary-raw: 0.65 0.24 301;
   --primary-foreground-raw: 0.95 0.02 301;
-  
+
   --secondary-raw: 0.25 0.03 240;
   --secondary-foreground-raw: 0.95 0.02 240;
-  
+
   --muted-raw: 0.18 0.02 240;
   --muted-foreground-raw: 0.60 0.02 240;
-  
+
   --accent-raw: 0.75 0.18 55;
   --accent-foreground-raw: 0.10 0.02 55;
-  
+
   --destructive-raw: 0.45 0.18 25;
   --destructive-foreground-raw: 0.95 0.02 25;
-  
+
   --border-raw: 1 0 0;
   --border: oklch(var(--border-raw) / 0.15);
   --input-raw: 1 0 0;
   --input: oklch(var(--input-raw) / 0.1);
-  
+
   --ring-raw: 0.65 0.24 301;
   --ring: oklch(var(--ring-raw) / 0.5);
 

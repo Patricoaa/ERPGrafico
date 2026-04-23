@@ -1,6 +1,6 @@
 "use client"
 
-import { ProfileView } from "@/features/profile/components/ProfileView"
+import { ProfileView } from "@/features/profile"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"

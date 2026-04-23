@@ -1,5 +1,5 @@
 import { Tabs } from "@/components/ui/tabs"
-import { StatementsView } from "@/features/finance/components/StatementsView"
+import { StatementsView } from "@/features/finance"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 

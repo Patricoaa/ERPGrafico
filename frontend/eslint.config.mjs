@@ -1,52 +1,107 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import boundaries from "eslint-plugin-boundaries";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
   ]),
-  // Sprint 1: Type safety & architecture rules
+
+  // FSD boundary enforcement (eslint-plugin-boundaries v6)
+  {
+    plugins: { boundaries },
+    settings: {
+      "boundaries/elements": [
+        { type: "app",              pattern: "app/**/*" },
+        { type: "feature-barrel",  pattern: "features/*/index.ts" },
+        { type: "feature-internal",pattern: "features/*/**/*" },
+        { type: "shared",          pattern: "components/shared/**/*" },
+        { type: "ui",              pattern: "components/ui/**/*" },
+        { type: "hooks",           pattern: "hooks/**/*" },
+        { type: "lib",             pattern: "lib/**/*" },
+      ],
+      "boundaries/ignore": ["**/*.test.*", "**/*.spec.*"],
+    },
+    rules: {
+      "boundaries/dependencies": ["error", {
+        default: "allow",
+        rules: [
+          // app/ must not import feature internals — use barrel
+          {
+            from: ["app"],
+            disallow: ["feature-internal"],
+            message: "app/ must import from features/[name]/index.ts barrel, not internals.",
+          },
+          // ui base stays generic — no app-specific imports
+          {
+            from: ["ui"],
+            disallow: ["feature-internal", "feature-barrel", "app"],
+            message: "components/ui/ is Shadcn base — no app-specific imports.",
+          },
+          // shared components cannot touch lib/api
+          {
+            from: ["shared"],
+            disallow: ["lib"],
+            message: "Shared components must not import @/lib/api. Wrap in a hook.",
+          },
+        ],
+      }],
+    },
+  },
+
+  // Type safety
   {
     files: ["**/*.ts", "**/*.tsx"],
     rules: {
-      // Warn on explicit `any` to gradually improve type safety (T1-T10)
       "@typescript-eslint/no-explicit-any": "warn",
     },
   },
-  // Prevent UI components from importing the API layer directly (A1)
+
+  // Belt-and-suspenders: block lib/api in components/ (catches cross-feature leaks too)
   {
-    files: [
-      "components/**/*.ts",
-      "components/**/*.tsx",
-    ],
+    files: ["components/**/*.ts", "components/**/*.tsx"],
     rules: {
-      "no-restricted-imports": [
-        "warn",
-        {
-          paths: [
-            {
-              name: "@/lib/api",
-              message:
-                "Components should not import @/lib/api directly. Extract API calls to a hook in the corresponding feature module.",
-            },
-          ],
-          patterns: [
-            {
-              group: ["@/lib/api"],
-              message:
-                "Components should not import @/lib/api directly. Extract API calls to a hook in the corresponding feature module.",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": ["warn", {
+        paths: [{
+          name: "@/lib/api",
+          message: "Components must not import @/lib/api directly. Extract to a feature hook.",
+        }],
+      }],
+    },
+  },
+
+  // Cross-feature internal import guard via no-restricted-imports
+  // boundaries/dependencies can't do per-feature captures in v6 without complex setup.
+  // This blocks features/A from importing features/B internals (components, hooks, api, types).
+  {
+    files: ["features/**/*.ts", "features/**/*.tsx"],
+    rules: {
+      "no-restricted-imports": ["error", {
+        patterns: [
+          {
+            group: ["@/features/*/components/*", "@/features/*/components/**"],
+            message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
+          },
+          {
+            group: ["@/features/*/hooks/*", "@/features/*/hooks/**"],
+            message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
+          },
+          {
+            group: ["@/features/*/api/*", "@/features/*/api/**"],
+            message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
+          },
+          {
+            group: ["@/features/*/types/*", "@/features/*/types/**"],
+            message: "Cross-feature: import from barrel (features/[name]/index.ts), not internals.",
+          },
+        ],
+      }],
     },
   },
 ]);

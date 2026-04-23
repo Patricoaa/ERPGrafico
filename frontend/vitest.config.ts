@@ -9,5 +9,15 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     globals: true,
     exclude: ['node_modules', '.next'],
+    coverage: {
+      provider: 'v8',
+      include: ['features/**', 'components/shared/**', 'hooks/**'],
+      exclude: ['**/*.test.*', '**/*.spec.*', 'node_modules', '.next'],
+      thresholds: {
+        lines: 70,
+        branches: 60,
+      },
+      reporter: ['text', 'lcov'],
+    },
   },
 })

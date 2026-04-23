@@ -8,7 +8,7 @@ import Link from "next/link"
 import { Store, Receipt } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-const SalesTerminalsView = lazy(() => import("@/features/sales/components/SalesTerminalsView"))
+const SalesTerminalsView = lazy(() => import("@/features/sales").then(m => ({ default: m.SalesTerminalsView })))
 
 interface PageProps {
     searchParams: Promise<{

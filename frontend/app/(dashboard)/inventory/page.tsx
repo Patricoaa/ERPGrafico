@@ -7,15 +7,15 @@ import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load feature components
-const ProductList = lazy(() => import("@/features/inventory/components/ProductList").then(m => ({ default: m.ProductList })))
-const CategoryList = lazy(() => import("@/features/inventory/components/CategoryList").then(m => ({ default: m.CategoryList })))
-const PricingRuleList = lazy(() => import("@/features/inventory/components/PricingRuleList").then(m => ({ default: m.PricingRuleList })))
-const StockReport = lazy(() => import("@/features/inventory/components/StockReport").then(m => ({ default: m.StockReport })))
-const MovementList = lazy(() => import("@/features/inventory/components/MovementList").then(m => ({ default: m.MovementList })))
-const WarehouseList = lazy(() => import("@/features/inventory/components/WarehouseList").then(m => ({ default: m.WarehouseList })))
-const UoMsView = lazy(() => import("@/features/inventory/components/UoMsView").then(m => ({ default: m.UoMsView })))
-const AttributeManager = lazy(() => import("@/features/inventory/components/AttributeManager").then(m => ({ default: m.AttributeManager })))
-const SubscriptionsView = lazy(() => import("@/features/inventory/components/SubscriptionsView").then(m => ({ default: m.SubscriptionsView })))
+const ProductList = lazy(() => import("@/features/inventory").then(m => ({ default: m.ProductList })))
+const CategoryList = lazy(() => import("@/features/inventory").then(m => ({ default: m.CategoryList })))
+const PricingRuleList = lazy(() => import("@/features/inventory").then(m => ({ default: m.PricingRuleList })))
+const StockReport = lazy(() => import("@/features/inventory").then(m => ({ default: m.StockReport })))
+const MovementList = lazy(() => import("@/features/inventory").then(m => ({ default: m.MovementList })))
+const WarehouseList = lazy(() => import("@/features/inventory").then(m => ({ default: m.WarehouseList })))
+const UoMsView = lazy(() => import("@/features/inventory").then(m => ({ default: m.UoMsView })))
+const AttributeManager = lazy(() => import("@/features/inventory").then(m => ({ default: m.AttributeManager })))
+const SubscriptionsView = lazy(() => import("@/features/inventory").then(m => ({ default: m.SubscriptionsView })))
 const InventorySettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.InventorySettingsView })))
 
 export const metadata: Metadata = {

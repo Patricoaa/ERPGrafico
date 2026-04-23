@@ -1,4 +1,4 @@
-import { POSLayoutSkeleton } from "@/features/pos/components/skeletons/POSLayoutSkeleton"
+import { POSLayoutSkeleton } from "@/features/pos"
 
 export default function Loading() {
     return <POSLayoutSkeleton />

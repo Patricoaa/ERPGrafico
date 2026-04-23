@@ -1,6 +1,6 @@
 import { Tabs } from "@/components/ui/tabs"
 import { PageTabs } from "@/components/shared/PageTabs"
-import { UoMsView } from "@/features/inventory/components/UoMsView"
+import { UoMsView } from "@/features/inventory"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 

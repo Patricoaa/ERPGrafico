@@ -1,4 +1,4 @@
-import { AttributeManager } from "@/features/inventory/components/AttributeManager"
+import { AttributeManager } from "@/features/inventory"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { CreatePayrollDialog } from "@/features/hr/components/CreatePayrollDialog"
+import { CreatePayrollDialog, PayrollDetailSheet } from "@/features/hr"
 import { getPayrolls, deletePayroll, paySalary, payPrevired, createAdvance } from "@/lib/hr/api"
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import type { Payroll } from "@/types/hr"
@@ -17,8 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Loader2, Eye, Trash2, Coins, CreditCard, Wallet } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { cn } from "@/lib/utils"
-import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
-import { PayrollDetailSheet } from "@/features/hr/components/payrolls/PayrollDetailSheet"
+import { PaymentDialog } from "@/features/treasury"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 

@@ -1,4 +1,5 @@
 export * from './DraftCartsList';
+export * from './POSClientView';
 export * from './NumpadModal';
 export * from './PINPadModal';
 export * from './POSReport';

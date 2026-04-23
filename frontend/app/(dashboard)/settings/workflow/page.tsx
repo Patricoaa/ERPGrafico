@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { WorkflowSettings } from "@/features/workflow/components/WorkflowSettings"
+import { WorkflowSettings } from "@/features/workflow"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"

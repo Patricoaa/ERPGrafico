@@ -1,7 +1,6 @@
 "use client"
 
-import { POSProvider } from '@/features/pos/contexts/POSContext'
-import { POSClientView } from '@/features/pos/components/POSClientView'
+import { POSProvider, POSClientView } from '@/features/pos'
 
 export default function POSPage() {
     return (

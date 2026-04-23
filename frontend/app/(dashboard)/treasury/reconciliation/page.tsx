@@ -5,7 +5,7 @@ import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import { StatementsList, ReconciliationDashboard, ReconciliationRules } from "@/features/finance/bank-reconciliation/components"
+import { StatementsList, ReconciliationDashboard, ReconciliationRules } from "@/features/finance"
 
 
 export const metadata: Metadata = {
