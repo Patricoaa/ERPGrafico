@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { useRef } from "react"
-import { CardSkeleton } from "@/components/shared"
+import { CardSkeleton, MoneyDisplay } from "@/components/shared"
 import { useAuth } from "@/contexts/AuthContext"
 
 const HUB_STAGE_LABELS: Record<string, string> = {
@@ -263,9 +263,7 @@ export function TaskInbox() {
                             ) : task.data?.order_total ? (
                                 <div className="flex justify-between items-center">
                                     <span className="opacity-70">Total Orden:</span>
-                                    <span className="font-mono font-bold text-success">
-                                        ${Number(task.data.order_total).toLocaleString('es-CL')}
-                                    </span>
+                                    <MoneyDisplay amount={task.data.order_total} className="text-success" />
                                 </div>
                             ) : null}
                             <div className="flex justify-between items-center pt-1 mt-1 border-t border-border/30">
@@ -329,28 +327,20 @@ export function TaskInbox() {
                             {!task.data?.is_default_customer && task.data?.customer_name !== 'Publico General' && (
                                 <div className="flex justify-between items-center text-destructive/90">
                                     <span className="opacity-70">Deuda Pendiente:</span>
-                                    <span className="font-mono font-bold">
-                                        ${Number(task.data?.customer_debt || 0).toLocaleString('es-CL')}
-                                    </span>
+                                    <MoneyDisplay amount={task.data?.customer_debt || 0} />
                                 </div>
                             )}
                             <div className="flex justify-between items-center">
                                 <span className="opacity-70">Línea de Crédito:</span>
-                                <span className="font-mono font-bold text-success">
-                                    ${Number(task.data?.explicit_credit || task.data?.credit_available || 0).toLocaleString('es-CL')}
-                                </span>
+                                <MoneyDisplay amount={task.data?.explicit_credit || task.data?.credit_available || 0} className="text-success" />
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="opacity-70">Crédito Pre-aprobado:</span>
-                                <span className="font-mono font-bold text-info">
-                                    ${Number(task.data?.pos_credit || 0).toLocaleString('es-CL')}
-                                </span>
+                                <MoneyDisplay amount={task.data?.pos_credit || 0} className="text-info" />
                             </div>
                             <div className="flex justify-between items-center pt-1 mt-1 border-t border-border/30">
                                 <span className="font-bold text-warning">Crédito pendiente de aprobación:</span>
-                                <span className="font-mono font-bold text-warning underline decoration-warning/30 underline-offset-2">
-                                    ${Number(task.data?.required_credit || 0).toLocaleString('es-CL')}
-                                </span>
+                                <MoneyDisplay amount={task.data?.required_credit || 0} className="text-warning underline decoration-warning/30 underline-offset-2" />
                             </div>
                         </div>
 

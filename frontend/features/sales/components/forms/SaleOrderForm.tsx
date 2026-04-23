@@ -9,7 +9,7 @@ import * as z from "zod"
 import { Plus, Trash2, Box, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { BaseModal, ActionSlideButton, MoneyDisplay } from "@/components/shared"
 import {
     Form,
     FormControl,
@@ -45,7 +45,7 @@ import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { useStockValidation } from "@/hooks/useStockValidation"
 import { SaleOrder, SaleOrderLine, SaleOrderPayload } from "../../types"
 import { Product } from "@/features/inventory/types"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+
 
 interface UoM {
     id: number
@@ -80,15 +80,18 @@ const OrderTotals = ({ control }: { control: Control<SaleOrderFormValues> }) => 
     )
 
     return (
-        <div className="space-y-1 text-right pt-4 border-t">
-            <div className="text-sm text-muted-foreground">
-                Subtotal: {totals.net.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+        <div className="space-y-1 text-right pt-4 border-t flex flex-col items-end">
+            <div className="text-sm text-muted-foreground flex gap-1">
+                <span>Subtotal:</span>
+                <MoneyDisplay amount={totals.net} inline />
             </div>
-            <div className="text-sm text-muted-foreground">
-                IVA (19%): {totals.tax.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+            <div className="text-sm text-muted-foreground flex gap-1">
+                <span>IVA (19%):</span>
+                <MoneyDisplay amount={totals.tax} inline />
             </div>
-            <div className="text-lg font-bold">
-                Total: {totals.gross.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+            <div className="text-lg font-bold flex gap-1">
+                <span>Total:</span>
+                <MoneyDisplay amount={totals.gross} inline />
             </div>
         </div>
     )
@@ -586,13 +589,11 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                             }}
                                                                         />
                                                                     ) : (
-                                                                        <span className="font-bold">
-                                                                            {grossPrice.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                                        </span>
+                                                                        <MoneyDisplay amount={grossPrice} className="font-bold" />
                                                                     )}
-                                                                    <span className="text-[9px] text-muted-foreground leading-none">
-                                                                        Neto: {netPrice.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                                    </span>
+                                                                    <div className="text-[9px] text-muted-foreground leading-none flex items-center gap-1">
+                                                                        Neto: <MoneyDisplay amount={netPrice} inline />
+                                                                    </div>
                                                                 </div>
                                                             )
                                                         }}
@@ -608,12 +609,10 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
 
                                                         return (
                                                             <div className="flex flex-col items-end gap-1">
-                                                                <span>
-                                                                    {lineTotal.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                                </span>
-                                                                <span className="text-[9px] text-muted-foreground font-normal leading-none opacity-80">
-                                                                    Neto: {lineNetTotal.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                                </span>
+                                                                <MoneyDisplay amount={lineTotal} />
+                                                                <div className="text-[9px] text-muted-foreground font-normal leading-none opacity-80 flex gap-1">
+                                                                    Neto: <MoneyDisplay amount={lineNetTotal} inline />
+                                                                </div>
                                                             </div>
                                                         )
                                                     })()}

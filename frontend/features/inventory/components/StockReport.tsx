@@ -12,7 +12,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { ProductInsightsDialog } from "@/features/inventory/components/ProductInsightsDialog"
+import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { cn, formatCurrency } from "@/lib/utils"
@@ -195,7 +195,7 @@ export function StockReport() {
                 )}
             </BaseModal>
 
-            <ProductInsightsDialog
+            <ProductInsightsModal
                 open={!!insightsProduct}
                 onOpenChange={(open) => !open && setInsightsProduct(null)}
                 productId={insightsProduct?.id}

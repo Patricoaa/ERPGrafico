@@ -26,7 +26,7 @@ interface BankFormat {
     [key: string]: string
 }
 
-interface StatementImportDialogProps {
+interface StatementImportModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess: () => void
@@ -38,7 +38,7 @@ interface ColumnMapping {
     [key: string]: string | number | null // Field ('date') -> Column Index/Name
 }
 
-export default function StatementImportDialog({ open, onOpenChange, onSuccess }: StatementImportDialogProps) {
+export default function StatementImportModal({ open, onOpenChange, onSuccess }: StatementImportModalProps) {
     const [step, setStep] = useState<Step>('UPLOAD')
     const [file, setFile] = useState<File | null>(null)
     const [treasuryAccountId, setTreasuryAccountId] = useState<string>("")

@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { TableSkeleton, PageHeader, PageTabs } from "@/components/shared"
+import { TableSkeleton, PageHeader, PageTabs, PageHeaderButton } from "@/components/shared"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 

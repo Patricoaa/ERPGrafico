@@ -68,6 +68,8 @@ You are operating on ERPGrafico. Before any implementation:
 - [ ] Matched intent in routing table above
 - [ ] Read target playbook fully
 - [ ] Read all preconditions listed in playbook frontmatter
+- [ ] **UI Pre-flight:** Consulted `docs/20-contracts/component-decision-tree.md` to avoid re-inventing components.
+- [ ] **Styling Pre-flight:** Read `frontend/app/globals.css` to verify available semantic color tokens.
 - [ ] Verified invariants above are not violated by proposed change
 - [ ] Ran validation commands listed in playbook
 

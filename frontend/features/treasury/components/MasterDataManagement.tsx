@@ -156,7 +156,7 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                 createAction={createAction}
             />
 
-            <BankDialog
+            <BankModal
                 open={dialogOpen || !!externalOpen}
                 onOpenChange={(open: boolean) => {
                     setDialogOpen(open)
@@ -187,14 +187,14 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
     )
 }
 
-interface BankDialogProps {
+interface BankModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     bank: Bank | null
     onSuccess: () => void
 }
 
-function BankDialog({ open, onOpenChange, bank, onSuccess }: BankDialogProps) {
+function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
     const [name, setName] = useState("")
     const [code, setCode] = useState("")
     const [swiftCode, setSwiftCode] = useState("")
@@ -470,7 +470,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                 createAction={createAction}
             />
 
-            <PaymentMethodDialog
+            <PaymentMethodModal
                 open={dialogOpen || !!externalOpen}
                 onOpenChange={(open: boolean) => {
                     setDialogOpen(open)
@@ -501,14 +501,14 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
     )
 }
 
-interface PaymentMethodDialogProps {
+interface PaymentMethodModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     method: PaymentMethod | null
     onSuccess: () => void
 }
 
-function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: PaymentMethodDialogProps) {
+function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMethodModalProps) {
     const [name, setName] = useState("")
     const [type, setType] = useState("DEBIT_CARD")
     const [accountId, setAccountId] = useState<string | null>(null)

@@ -24,12 +24,12 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ProductForm } from "@/features/inventory/components/ProductForm"
 import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
-import { ArchivingRestrictionsDialog } from "@/features/inventory/components/ArchivingRestrictionsDialog"
+import { ArchivingRestrictionsModal } from "@/features/inventory/components/ArchivingRestrictionsModal"
 import { DataTable } from "@/components/ui/data-table"
 import type { Product } from "@/types/entities"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { PageHeader, PageHeaderButton, TableSkeleton } from "@/components/shared"
 import { Restriction } from "@/features/inventory/types"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { cn } from "@/lib/utils"
@@ -470,8 +470,8 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
             <div className="space-y-4">
 
                 {loading ? (
-                    <div className="rounded-[0.25rem] border shadow-sm overflow-hidden bg-card p-10 text-center text-muted-foreground">
-                        Cargando suscripciones...
+                    <div className="rounded-[0.25rem] border shadow-sm overflow-hidden bg-card p-4">
+                        <TableSkeleton rows={5} columns={8} />
                     </div>
                 ) : (
                     <div className="space-y-6">
@@ -603,7 +603,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                 subscriptionId={currentHistorySubscriptionId}
             />
 
-            <ArchivingRestrictionsDialog
+            <ArchivingRestrictionsModal
                 open={isRestrictionsDialogOpen}
                 onOpenChange={setIsRestrictionsDialogOpen}
                 productName={currentArchivingProduct?.name || ""}

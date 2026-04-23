@@ -48,7 +48,7 @@ import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { Card, CardContent } from "@/components/ui/card"
 import { getHubStatuses } from '@/features/orders/utils/status'
 import { FORM_STYLES } from "@/lib/styles"
-import { Skeleton, CardSkeleton } from "@/components/shared"
+import { Skeleton, CardSkeleton, TableSkeleton } from "@/components/shared"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),

@@ -14,7 +14,7 @@ import {
     getPayrollPayments
 } from '@/features/hr/api/hrApi'
 import { getEmployeePayrollPreview } from '@/features/profile/api/profileApi'
-import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
+import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import type { Payroll, PayrollItem, PayrollConcept, PayrollPayment } from "@/types/hr"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -357,7 +357,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
             </div>
 
             {/* Dialogs */}
-            <PaymentDialog
+            <PaymentModal
                 open={salaryDialog}
                 onOpenChange={setSalaryDialog}
                 title="Registrar Pago de Sueldo"
@@ -373,7 +373,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                     setSalaryDialog(false)
                 }}
             />
-            <PaymentDialog
+            <PaymentModal
                 open={previredDialog}
                 onOpenChange={setPreviredDialog}
                 title="Registrar Pago de Previred"

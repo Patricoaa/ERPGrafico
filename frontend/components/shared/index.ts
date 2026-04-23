@@ -34,6 +34,7 @@ export { Skeleton } from '@/components/ui/skeleton';
 // Data Display
 export * from './ColorBar';
 export * from './MoneyDisplay';
+export * from './QuantityDisplay';
 export * from './StatusBadge';
 export * from './ReportTable';
 export * from './DataManagement';

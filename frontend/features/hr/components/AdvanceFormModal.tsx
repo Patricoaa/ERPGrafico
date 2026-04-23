@@ -34,7 +34,7 @@ export const advanceSchema = z.object({
 
 export type AdvanceFormValues = z.infer<typeof advanceSchema>
 
-export interface AdvanceFormDialogProps {
+export interface AdvanceFormModalProps {
     open: boolean
     onOpenChange: (o: boolean) => void
     advance: SalaryAdvance | null
@@ -43,7 +43,7 @@ export interface AdvanceFormDialogProps {
     onSaved: (data?: Record<string, unknown>) => void
 }
 
-export function AdvanceFormDialog({ open, onOpenChange, advance, employees, payrolls, onSaved }: AdvanceFormDialogProps) {
+export function AdvanceFormModal({ open, onOpenChange, advance, employees, payrolls, onSaved }: AdvanceFormModalProps) {
     const [saving, setSaving] = useState(false)
 
     const form = useForm<AdvanceFormValues>({

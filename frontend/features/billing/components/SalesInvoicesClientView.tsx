@@ -15,7 +15,7 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { SaleNoteModal } from "@/features/sales"
-import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
+import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -259,7 +259,7 @@ export function SalesInvoicesClientView() {
             )}
 
             {payingInv && (
-                <PaymentDialog
+                <PaymentModal
                     open={!!payingInv}
                     onOpenChange={(open) => !open && setPayingInv(null)}
                     onConfirm={handlePayment}

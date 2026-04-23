@@ -11,6 +11,8 @@ import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Numpad } from "@/components/ui/numpad"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { MoneyDisplay } from "@/components/shared"
+import { formatMoney } from "@/lib/money"
 import { usePOS } from "@/features/pos/contexts/POSContext"
 
 export interface PaymentData {
@@ -237,18 +239,14 @@ export function PaymentMethodCardSelector({
                 <div className={cn("bg-primary/5 rounded-lg border border-primary/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
                     <div>
                         <Label className="text-[10px] font-bold uppercase text-muted-foreground">{totalLabel}</Label>
-                        <p className={cn("font-bold text-primary", compactMode ? "text-lg" : "text-xl")}>
-                            {total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                        </p>
+                        <MoneyDisplay amount={total} className={cn("text-primary", compactMode ? "text-lg" : "text-xl")} />
                     </div>
                 </div>
 
                 <div className={cn("bg-primary/5 rounded-lg border border-primary/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
                     <div>
                         <Label className="text-[10px] font-bold uppercase text-muted-foreground">{amountLabel}</Label>
-                        <p className={cn("font-bold text-primary", compactMode ? "text-lg" : "text-xl")}>
-                            {Number(paymentData.amount || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                        </p>
+                        <MoneyDisplay amount={paymentData.amount || 0} className={cn("text-primary", compactMode ? "text-lg" : "text-xl")} />
                     </div>
                 </div>
 
@@ -264,13 +262,10 @@ export function PaymentMethodCardSelector({
                             <Label className="text-[10px] font-bold uppercase text-muted-foreground">
                                 {difference >= 0 ? differencePositiveLabel : differenceNegativeLabel}
                             </Label>
-                            <p className={cn(
-                                "font-bold",
+                            <MoneyDisplay amount={Math.abs(difference)} className={cn(
                                 difference >= 0 ? "text-success" : "text-warning",
                                 compactMode ? "text-lg" : "text-xl"
-                            )}>
-                                {Math.abs(difference).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                            </p>
+                            )} />
                         </div>
                     </div>
                 )}
@@ -318,7 +313,7 @@ export function PaymentMethodCardSelector({
                                     )}>
                                         {m.id === 'CREDIT_BALANCE' && operation === 'sales' && (
                                             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white px-3 py-1 rounded-full text-xs font-black shadow-md border-2 border-white animate-in zoom-in duration-300 z-10 whitespace-nowrap">
-                                                {customerCreditBalance.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
+                                                <MoneyDisplay amount={customerCreditBalance} inline className="text-white" />
                                             </div>
                                         )}
                                         <m.icon className={cn(
@@ -419,7 +414,7 @@ export function PaymentMethodCardSelector({
                         <Label htmlFor="modal-amount">Monto</Label>
                         <div className="flex flex-col items-center gap-4">
                             <div className="text-4xl font-black tracking-tight text-primary bg-primary/5 px-6 py-2 rounded-lg border-2 border-primary/10 shadow-sm w-full text-center">
-                                ${Number(tempAmount || 0).toLocaleString('es-CL')}
+                                <MoneyDisplay amount={tempAmount || 0} inline />
                             </div>
 
                             <div className="grid grid-cols-3 gap-2 w-full">
@@ -441,7 +436,7 @@ export function PaymentMethodCardSelector({
                                             setTempAmount(newAmount.toString());
                                         }}
                                     >
-                                        +${val.toLocaleString('es-CL')}
+                                        +{formatMoney(val)}
                                     </Button>
                                 ))}
                                 <Button

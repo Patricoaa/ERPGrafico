@@ -38,14 +38,14 @@ const createPayrollSchema = z.object({
 
 export type CreatePayrollValues = z.infer<typeof createPayrollSchema>
 
-export interface CreatePayrollDialogProps {
+export interface CreatePayrollModalProps {
     open: boolean
     onOpenChange: (o: boolean) => void
     onSaved: (id: number) => void
     trigger?: React.ReactNode
 }
 
-export function CreatePayrollDialog({ open, onOpenChange, onSaved, trigger }: CreatePayrollDialogProps) {
+export function CreatePayrollModal({ open, onOpenChange, onSaved, trigger }: CreatePayrollModalProps) {
     const [saving, setSaving] = useState(false)
     const [employees, setEmployees] = useState<Employee[]>([])
 

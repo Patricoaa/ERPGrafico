@@ -15,16 +15,16 @@ import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactS
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 
-interface AdvancedManufacturingDialogProps {
+interface AdvancedManufacturingModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     product: { id: number; manufacturing_data?: Record<string, unknown>;[key: string]: unknown } | null | undefined
     onConfirm: (data: Record<string, unknown>) => void
 }
 
-export function AdvancedManufacturingDialog({
+export function AdvancedManufacturingModal({
     open, onOpenChange, product, onConfirm
-}: AdvancedManufacturingDialogProps) {
+}: AdvancedManufacturingModalProps) {
     const [designNeeded, setDesignNeeded] = useState(false)
     const [contact, setContact] = useState<{ id: number; name: string; tax_id: string | null; rut?: string | null } | null>(null)
     const [description, setDescription] = useState("")

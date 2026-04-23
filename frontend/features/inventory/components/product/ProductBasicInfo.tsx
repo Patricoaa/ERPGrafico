@@ -12,7 +12,7 @@ import { ProductFormValues } from "./schema"
 import { Switch } from "@/components/ui/switch"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
-import { BarcodeDialog } from "@/features/inventory/components/BarcodeDialog"
+import { BarcodeModal } from "@/features/inventory/components/BarcodeModal"
 
 import { useState } from "react"
 import { ProductCategory } from "@/types/entities"
@@ -25,7 +25,7 @@ export interface ProductBasicInfoProps {
 }
 
 export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }: ProductBasicInfoProps) {
-    const [isBarcodeDialogOpen, setIsBarcodeDialogOpen] = useState(false)
+    const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false)
 
     return (
         <div className="space-y-6">
@@ -100,7 +100,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                                 variant="outline"
                                                 size="icon"
                                                 className="shrink-0 h-10 w-10 rounded-md"
-                                                onClick={() => setIsBarcodeDialogOpen(true)}
+                                                onClick={() => setIsBarcodeModalOpen(true)}
                                                 title="Gestionar Código de Barras"
                                             >
                                                 <Barcode className="h-4 w-4" />
@@ -108,9 +108,9 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                         </div>
                                     </FormControl>
                                     <FormMessage />
-                                    <BarcodeDialog
-                                        open={isBarcodeDialogOpen}
-                                        onOpenChange={setIsBarcodeDialogOpen}
+                                    <BarcodeModal
+                                        open={isBarcodeModalOpen}
+                                        onOpenChange={setIsBarcodeModalOpen}
                                         initialValue={field.value}
                                         onApply={(val) => form.setValue("code", val, { shouldDirty: true, shouldValidate: true })}
                                     />

@@ -15,8 +15,7 @@ import {
 import { useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useQuery } from "@tanstack/react-query"
-import { settingsApi } from "@/features/settings/api/settingsApi"
+import { useBillingSettingsQuery } from "@/features/settings"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
@@ -59,11 +58,7 @@ export function Step1_CustomerDTE({
     const { openHub } = useHubPanel()
 
     // Fetch billing settings
-    const { data: settings } = useQuery({
-        queryKey: ["settings-billing"],
-        queryFn: settingsApi.getBillingSettings,
-        staleTime: 1000 * 60 * 5,
-    })
+    const { settings } = useBillingSettingsQuery()
 
     const allowedDteTypes = useMemo(() => {
         if (!settings) return ["BOLETA", "FACTURA", "BOLETA_EXENTA", "FACTURA_EXENTA"]

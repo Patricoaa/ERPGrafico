@@ -17,6 +17,7 @@ import {
     Info,
     Scale
 } from "lucide-react"
+import { QuantityDisplay } from "@/components/shared"
 
 import type { WorkOrder, WorkOrderMaterial } from "../../types"
 
@@ -168,7 +169,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                                                 <div className="text-xs text-muted-foreground">{material.uom_name}</div>
                                             </td>
                                             <td className="px-4 py-3 text-right text-muted-foreground">
-                                                {planned.toLocaleString('es-CL', { maximumFractionDigits: 4 })}
+                                                <QuantityDisplay value={planned} decimals={4} inline />
                                             </td>
                                             <td className="px-4 py-3 text-right">
                                                 <Input
@@ -198,7 +199,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                                                             ? <TrendingUp className="h-3.5 w-3.5" />
                                                             : <TrendingDown className="h-3.5 w-3.5" />
                                                         }
-                                                        {isMore ? "+" : ""}{Number(diff).toLocaleString('es-CL', { maximumFractionDigits: 4 })}
+                                                        {isMore ? "+" : ""}<QuantityDisplay value={diff} decimals={4} inline />
                                                     </span>
                                                 )}
                                             </td>
@@ -231,7 +232,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                         {outsourcedMaterials.map((m: WorkOrderMaterial) => (
                             <div key={m.id} className="flex items-center justify-between text-sm text-muted-foreground py-0.5">
                                 <span>{m.component_name}</span>
-                                <span>{Number(m.quantity_planned).toLocaleString('es-CL', { maximumFractionDigits: 4 })} {m.uom_name}</span>
+                                <QuantityDisplay value={m.quantity_planned} uom={m.uom_name} decimals={4} inline />
                             </div>
                         ))}
                     </div>
@@ -255,8 +256,8 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                     <div className="grid grid-cols-2 gap-4 items-center">
                         <div>
                             <Label className="text-xs text-muted-foreground mb-1.5 block">Cantidad planificada</Label>
-                            <div className="text-lg font-semibold text-foreground">
-                                {Number(plannedProducedQty).toLocaleString('es-CL', { maximumFractionDigits: 4 })}
+                            <div className="text-lg font-semibold text-foreground flex items-center">
+                                <QuantityDisplay value={plannedProducedQty} decimals={4} inline />
                                 <span className="text-sm text-muted-foreground ml-1.5">{order?.product?.uom?.name || "un."}</span>
                             </div>
                         </div>

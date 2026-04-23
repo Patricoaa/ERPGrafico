@@ -39,7 +39,11 @@ Colors in Tailwind v4 must be defined as raw channels in `app/globals.css` to al
 ## Component Guidelines
 
 ### Data Cells
-For legacy and modern pages, all data display should be routed through centralized `DataCell` components. Do not build ad-hoc styled spans or divs for status badges, tags, or money displays.
+For legacy and modern pages, all data display should be routed through centralized `DataCell` components. Do not build ad-hoc styled spans or divs for status badges, tags, or money displays. Use `MoneyDisplay` and `QuantityDisplay` strictly.
+
+### Consumiendo Componentes Base (Shadcn/UI)
+- **Inmutabilidad:** El directorio `components/ui/` contiene componentes autogenerados y nunca debe ser modificado manualmente para añadir lógicas de dominio o negocio.
+- **Extensibilidad:** Si necesitas alterar el comportamiento o los estilos fijos de un componente base, debes crear un *wrapper* o una nueva especialización dentro de `components/shared/` que importe y consuma el primitivo de `ui/`.
 
 ### Visual Regressions to Avoid
 - **Black Primary:** Ensure `primary` is correctly mapped to a raw color that supports opacity, preventing elements from rendering as black.
@@ -48,5 +52,6 @@ For legacy and modern pages, all data display should be routed through centraliz
 
 ## Enforcement
 The design system is enforced through:
-- **Tailwind v4 `@theme` inline:** Single source of truth in `globals.css`.
+- **Tailwind v4 `@theme` inline:** Single source of truth in `globals.css`. Agentes de IA y desarrolladores **deben** leer el archivo `app/globals.css` para conocer los colores de tokens disponibles (`--color-*`). No inventar colores arbitrarios.
 - **Zero-Any / Component Contracts:** Strict TypeScript interfaces ensure components only accept allowed variants (e.g., `variant="default" | "destructive"`).
+- **ESLint:** Reglas que bloquean antipatrones como `.toLocaleString()` directamente en la UI.

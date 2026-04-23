@@ -34,6 +34,7 @@ import { toast } from "sonner"
 import { FORM_STYLES } from "@/lib/styles"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { Skeleton } from "@/components/shared";
 
 // Schema for material lines (stock components)
 const materialLineSchema = z.object({
@@ -76,7 +77,7 @@ const bomSchema = z.object({
 
 type BOMFormValues = z.infer<typeof bomSchema> & FieldValues
 
-interface BOMFormDialogProps {
+interface BOMFormModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     product?: ProductMinimal
@@ -84,13 +85,13 @@ interface BOMFormDialogProps {
     onSuccess: () => void
 }
 
-export function BOMFormDialog({
+export function BOMFormModal({
     open,
     onOpenChange,
     product: initialProduct,
     bomToEdit,
     onSuccess
-}: BOMFormDialogProps) {
+}: BOMFormModalProps) {
     const [loading, setLoading] = useState(false)
     const [selectedProduct, setSelectedProduct] = useState<ProductMinimal | null>(initialProduct || null)
     const [selectedVariant, setSelectedVariant] = useState<ProductMinimal | null>(null)
@@ -386,9 +387,9 @@ export function BOMFormDialog({
                                     </SelectTrigger>
                                     <SelectContent position="popper" sideOffset={8} className="z-[100] rounded-lg overflow-hidden min-w-[320px]">
                                         {loadingVariants ? (
-                                            <div className="p-3 text-[10px] text-center text-muted-foreground flex flex-col items-center gap-2">
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                <span>Cargando variantes...</span>
+                                            <div className="p-3 space-y-2">
+                                                <Skeleton className="h-10 w-full" />
+                                                <Skeleton className="h-10 w-full" />
                                             </div>
                                         ) : variants.length > 0 ? (
                                             <div className="max-h-[300px] overflow-y-auto p-1">

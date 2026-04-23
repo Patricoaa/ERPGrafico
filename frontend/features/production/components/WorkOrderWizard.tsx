@@ -51,7 +51,7 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import dynamic from "next/dynamic"
-import { FormSkeleton } from "@/components/shared"
+import { FormSkeleton, Skeleton } from "@/components/shared"
 import { EmptyState } from "@/components/shared/EmptyState"
 
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
@@ -852,9 +852,14 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                                                 {v.variant_display_name || v.name}
                                                                                                             </SelectItem>
                                                                                                         ))
+                                                                                                    ) : loadingVariants ? (
+                                                                                                        <div className="p-2 space-y-2">
+                                                                                                            <Skeleton className="h-6 w-full" />
+                                                                                                            <Skeleton className="h-6 w-full" />
+                                                                                                        </div>
                                                                                                     ) : (
                                                                                                         <div className="p-2 text-xs text-center italic">
-                                                                                                            {loadingVariants ? "Cargando variantes..." : "Sin variantes disponibles"}
+                                                                                                            Sin variantes disponibles
                                                                                                         </div>
                                                                                                     )}
                                                                                                 </SelectContent>

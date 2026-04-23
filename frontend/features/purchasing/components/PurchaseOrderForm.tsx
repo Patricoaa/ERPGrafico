@@ -10,7 +10,7 @@ import * as z from "zod"
 import { Plus, Trash2 } from "lucide-react"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { BaseModal, ActionSlideButton, MoneyDisplay } from "@/components/shared"
 import {
     Form,
     FormControl,
@@ -42,7 +42,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+
 
 const purchaseLineSchema = z.object({
     id: z.number().optional(),
@@ -81,15 +81,18 @@ const OrderTotals = ({ control }: { control: Control<PurchaseOrderFormValues> })
     const total = subtotal + tax
 
     return (
-        <div className="space-y-1 text-right pt-4 border-t">
-            <div className="text-sm text-muted-foreground">
-                Subtotal: {subtotal.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+        <div className="space-y-1 text-right pt-4 border-t flex flex-col items-end">
+            <div className="text-sm text-muted-foreground flex gap-1">
+                <span>Subtotal:</span>
+                <MoneyDisplay amount={subtotal} inline />
             </div>
-            <div className="text-sm text-muted-foreground">
-                IVA (19%): {tax.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+            <div className="text-sm text-muted-foreground flex gap-1">
+                <span>IVA (19%):</span>
+                <MoneyDisplay amount={tax} inline />
             </div>
-            <div className="text-lg font-bold">
-                Total: {total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+            <div className="text-lg font-bold flex gap-1">
+                <span>Total:</span>
+                <MoneyDisplay amount={total} inline />
             </div>
         </div>
     )
@@ -329,7 +332,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                 />
                                             </TableCell>
                                             <TableCell className="text-right font-medium">
-                                                {(Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_cost`)) || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                <MoneyDisplay amount={Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_cost`)) || 0} />
                                             </TableCell>
                                             <TableCell>
                                                 <Button

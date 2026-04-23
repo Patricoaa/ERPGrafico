@@ -4,6 +4,7 @@ import { FileText, Building2, Tag, CreditCard, Package, Warehouse, CheckCircle2,
 
 import { cn } from "@/lib/utils"
 import { PaymentMethod, ReceptionType } from "@/types/checkout"
+import { MoneyDisplay } from "@/components/shared"
 
 export interface PurchaseProcessSummarySidebarProps {
     currentStep: number
@@ -102,13 +103,11 @@ export function PurchaseProcessSummarySidebar({
                                         <p className="text-xs font-semibold">
                                             {paymentData.method ? (methodLabels[paymentData.method] || paymentData.method) : 'Crédito'}
                                         </p>
-                                        <p className="text-xs font-bold">
-                                            ${paymentData.amount.toLocaleString()}
-                                        </p>
+                                        <MoneyDisplay amount={paymentData.amount} className="text-xs font-bold" />
                                         {paymentData.pendingDebt !== undefined && paymentData.pendingDebt > 0 && (
-                                            <p className="text-[10px] text-warning font-semibold">
-                                                Deuda: ${paymentData.pendingDebt.toLocaleString()}
-                                            </p>
+                                            <div className="text-[10px] text-warning font-semibold flex items-center gap-1">
+                                                Deuda: <MoneyDisplay amount={paymentData.pendingDebt} inline />
+                                            </div>
                                         )}
                                     </div>
                                 )}

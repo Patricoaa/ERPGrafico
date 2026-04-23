@@ -9,14 +9,14 @@ import { Label } from "@/components/ui/label"
 import { Barcode, Download, Printer, RefreshCw, Check } from "lucide-react"
 import { toast } from "sonner"
 
-interface BarcodeDialogProps {
+interface BarcodeModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     initialValue?: string
     onApply: (value: string) => void
 }
 
-export function BarcodeDialog({ open, onOpenChange, initialValue = "", onApply }: BarcodeDialogProps) {
+export function BarcodeModal({ open, onOpenChange, initialValue = "", onApply }: BarcodeModalProps) {
     const [barcodeValue, setBarcodeValue] = useState(initialValue)
     const [mounted, setMounted] = useState(false)
     const barcodeSvgRef = useRef<SVGSVGElement | null>(null)

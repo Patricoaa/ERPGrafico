@@ -496,6 +496,27 @@ Font: always `font-mono font-bold tabular-nums`. Do NOT render currency with raw
 
 ---
 
+## QuantityDisplay 🟢
+
+Componente hermano de `MoneyDisplay` exclusivo para cantidades de producción, inventario y medidas físicas (kg, metros, unidades).
+
+```tsx
+<QuantityDisplay value={150.5} uom="kg" decimals={2} />
+<QuantityDisplay value={diff} showSign />
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `value` | `number \| string \| null \| undefined` | ✅ | — | null/undefined/NaN → dash |
+| `uom` | `string` | ❌ | — | Suffix for Unit of Measure (e.g. 'kg') |
+| `decimals` | `number` | ❌ | `4` | Maximum fraction digits. Standardized to 4 for production precision. |
+| `showSign` | `boolean` | ❌ | `false` | Adds `+` prefix for positive values |
+| `className` | `string` | ❌ | — | Merged via `cn()` |
+
+Font: always `font-mono tabular-nums`. Do NOT render quantities with raw JS `.toLocaleString()` outside this component if they need to be aligned in tables or forms.
+
+---
+
 ## GenericWizard 🟢
 
 Multi-step wizard modal. Handles step navigation, validation, and success screen.

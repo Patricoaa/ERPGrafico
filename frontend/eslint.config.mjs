@@ -120,6 +120,24 @@ const eslintConfig = defineConfig([
       }],
     },
   },
+
+  // UI component data fetching and formatting restrictions
+  {
+    files: ["components/**/*.tsx", "features/*/components/**/*.tsx"],
+    rules: {
+      "no-restricted-imports": ["error", {
+        paths: [{
+          name: "@tanstack/react-query",
+          importNames: ["useQuery", "useMutation", "useSuspenseQuery"],
+          message: "React Query hooks must only be used within feature hooks (features/*/hooks/). Do not import them directly in components."
+        }]
+      }],
+      "no-restricted-syntax": ["warn", {
+        selector: "CallExpression[callee.property.name='toLocaleString']",
+        message: "Do not use .toLocaleString() for currency or quantities. Use <MoneyDisplay> or <QuantityDisplay> instead to ensure consistent UI across the app."
+      }]
+    }
+  }
 ]);
 
 export default eslintConfig;

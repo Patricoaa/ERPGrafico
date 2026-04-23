@@ -11,9 +11,6 @@ import type { Employee, AFP, PayrollConcept, EmployeeConceptAmount } from "@/typ
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
-    Dialog, DialogContent, DialogTitle, DialogTrigger
-} from "@/components/ui/dialog"
-import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage
 } from "@/components/ui/form"
 import {
@@ -30,7 +27,7 @@ import {
     Loader2, Plus, UserCog, ShieldCheck, CalendarCheck2
 } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { BaseModal, EmptyState } from "@/components/shared"
 
 export const employeeSchema = z.object({
     contact: z.string().min(1, "Contacto requerido"),
@@ -56,7 +53,7 @@ export const employeeSchema = z.object({
 
 export type EmployeeFormValues = z.infer<typeof employeeSchema>
 
-export interface EmployeeFormDialogProps {
+export interface EmployeeFormModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     employee: Employee | null
@@ -64,7 +61,7 @@ export interface EmployeeFormDialogProps {
     trigger?: React.ReactNode
 }
 
-export function EmployeeFormDialog({ open, onOpenChange, employee, onSaved, trigger }: EmployeeFormDialogProps) {
+export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigger }: EmployeeFormModalProps) {
     const [saving, setSaving] = useState(false)
     const [afps, setAfps] = useState<AFP[]>([])
 
@@ -190,30 +187,44 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, onSaved, trig
 
     const watchSalud = form.watch("salud_type")
 
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-            <DialogContent className={cn("max-w-6xl p-0 overflow-hidden border-none transition-all duration-300", employee && "max-w-[95vw] 2xl:max-w-[85vw]")}>
-                <div className="flex h-[85vh] overflow-hidden">
-                    <div className="flex-1 flex flex-col overflow-hidden bg-background">
-                        <div className="px-8 py-5 border-b bg-muted/5">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/10 rounded-md">
-                                    <UserCog className="h-5 w-5 text-primary" />
-                                </div>
-                                <div>
-                                    <DialogTitle className="text-lg font-bold tracking-tight">
-                                        {employee ? "Editar Ficha de Empleado" : "Nueva Ficha de Empleado"}
-                                    </DialogTitle>
-                                    {employee && (
-                                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">
-                                            {employee.display_id} • {employee.contact_detail?.name}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
+    const footer = (
+        <div className="flex justify-end gap-4 w-full">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-sm text-xs font-bold border-primary/20 h-10 px-8 hover:bg-primary/5 transition-all">
+                Cancelar
+            </Button>
+            <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={saving} className="rounded-sm text-xs font-bold min-w-[180px] h-10 transition-all shadow-md hover:shadow-lg active:scale-95">
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (employee ? "Guardar Cambios" : "Contratar / Registrar")}
+            </Button>
+        </div>
+    )
 
+    return (
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-md">
+                        <UserCog className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                        <span className="text-lg font-bold tracking-tight">
+                            {employee ? "Editar Ficha de Empleado" : "Nueva Ficha de Empleado"}
+                        </span>
+                        {employee && (
+                            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">
+                                {employee.display_id} • {employee.contact_detail?.name}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            }
+            size={employee ? "full" : "xl"}
+            hideScrollArea
+            footer={footer}
+        >
+            <div className="flex h-[80vh] overflow-hidden">
+                <div className="flex-1 flex flex-col overflow-hidden bg-background">
                         <div className="flex-1 overflow-hidden flex flex-col">
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
@@ -545,15 +556,6 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, onSaved, trig
                                 </form>
                             </Form>
                         </div>
-
-                        <div className="px-8 py-5 border-t bg-muted/5 flex justify-end gap-4 shadow-[0_-1px_3px_rgba(0,0,0,0.02)]">
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="rounded-sm text-xs font-bold border-primary/20 h-10 px-8 hover:bg-primary/5 transition-all">
-                                Cancelar
-                            </Button>
-                            <Button type="submit" onClick={form.handleSubmit(onSubmit)} disabled={saving} className="rounded-sm text-xs font-bold min-w-[180px] h-10 transition-all shadow-md hover:shadow-lg active:scale-95">
-                                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (employee ? "Guardar Cambios" : "Contratar / Registrar")}
-                            </Button>
-                        </div>
                     </div>
 
                     {employee?.id && (
@@ -562,7 +564,6 @@ export function EmployeeFormDialog({ open, onOpenChange, employee, onSaved, trig
                         </div>
                     )}
                 </div>
-            </DialogContent>
-        </Dialog>
+        </BaseModal>
     )
 }
