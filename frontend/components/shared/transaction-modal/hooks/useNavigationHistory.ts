@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import type { TransactionType } from "@/types/transactions"
 
 export interface NavigationEntry {
@@ -10,11 +10,14 @@ export function useNavigationHistory(initialType: TransactionType, initialId: nu
     const [history, setHistory] = useState<NavigationEntry[]>([])
     const [current, setCurrent] = useState<NavigationEntry>({ type: initialType, id: initialId })
 
-    // Reset when initial props change
-    useEffect(() => {
+    const [prevInitial, setPrevInitial] = useState({ type: initialType, id: initialId })
+
+    // Reset state during render if initial props change
+    if (initialType !== prevInitial.type || initialId !== prevInitial.id) {
+        setPrevInitial({ type: initialType, id: initialId })
         setCurrent({ type: initialType, id: initialId })
         setHistory([])
-    }, [initialType, initialId])
+    }
 
     const navigateTo = (type: TransactionType, id: number | string) => {
         setHistory(prev => [...prev, current])
