@@ -34,6 +34,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { Loader2, CreditCard, Landmark, Wallet, ClipboardList } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { Skeleton } from "@/components/shared"
 
 // schema and types remain the same
 const paymentSchema = z.object({
@@ -311,10 +312,7 @@ export function PaymentForm({
                                                     <FormControl>
                                                         <SelectTrigger className="border-primary/20 bg-primary/10/30">
                                                             {isFetchingMethods ? (
-                                                                <div className="flex items-center gap-2 text-muted-foreground">
-                                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                                    Cargando...
-                                                                </div>
+                                                                <Skeleton className="h-4 w-24" />
                                                             ) : (
                                                                 <SelectValue placeholder="Canal de pago..." />
                                                             )}
@@ -393,10 +391,7 @@ export function PaymentForm({
                                                     <FormControl>
                                                         <SelectTrigger>
                                                             {isFetchingInvoices ? (
-                                                                <div className="flex items-center gap-2 text-muted-foreground">
-                                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                                    Cargando...
-                                                                </div>
+                                                                <Skeleton className="h-4 w-24" />
                                                             ) : (
                                                                 <SelectValue placeholder="Seleccione..." />
                                                             )}

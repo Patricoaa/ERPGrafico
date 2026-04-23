@@ -852,12 +852,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Order[], 
     const { openHub } = useHubPanel()
 
     if (loading) {
-        return (
-            <div className="space-y-3">
-                <Skeleton className="h-8 w-full" />
-                <CardSkeleton variant="compact" count={2} className="gap-3" />
-            </div>
-        )
+        return <TableSkeleton rows={5} columns={4} />
     }
 
     if (data.length === 0) {

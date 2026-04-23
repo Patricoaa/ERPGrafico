@@ -75,7 +75,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
             <PageTabs tabs={tabs} activeValue={activeTab} />
 
             <div className="pt-4">
-                <Suspense fallback={<LoadingFallback message="Cargando..." />}>
+                <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                     <TreasuryAccountsView activeTab={activeTab} externalOpen={modalOpen} createAction={createAction} />
                 </Suspense>
             </div>

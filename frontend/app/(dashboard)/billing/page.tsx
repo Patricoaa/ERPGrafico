@@ -1,8 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageTabs, CardSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load feature components
@@ -49,7 +47,7 @@ export default async function BillingPage({ searchParams }: PageProps) {
             <PageTabs tabs={tabs} activeValue={viewMode} />
 
             <div className="pt-2">
-                <Suspense fallback={<LoadingFallback variant="list" />}>
+                <Suspense fallback={<CardSkeleton variant="list" count={5} />}>
                     {viewMode === 'sales' && <SalesInvoicesClientView />}
                     {viewMode === 'purchases' && <PurchaseInvoicesClientView />}
                     {viewMode === 'config' && <BillingSettingsView activeTab={configTab} />}

@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { LoadingFallback, PageTabs, PageHeader, ToolbarCreateButton } from "@/components/shared"
+import { TableSkeleton, PageTabs, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load feature components
@@ -112,7 +112,7 @@ export default async function FinancesPage({ searchParams }: PageProps) {
             <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={tab} />
 
             <div className="pt-2">
-                <Suspense fallback={<LoadingFallback />}>
+                <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                     {viewMode === 'statements' && <StatementsView searchParams={Promise.resolve({ tab })} />}
                     {viewMode === 'analysis' && <AnalysisView searchParams={Promise.resolve({ tab })} />}
                     {viewMode === 'budgets' && <BudgetsView externalOpen={modal === 'new'} tab={tab} createAction={createAction} />}

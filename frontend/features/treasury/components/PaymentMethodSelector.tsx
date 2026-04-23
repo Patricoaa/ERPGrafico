@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Banknote, CreditCard, Building2, ClipboardList } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { Skeleton } from "@/components/shared"
+import { Skeleton, CardSkeleton } from "@/components/shared"
 
 export interface PaymentMethodValue {
     methodType: 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK' | null
@@ -156,7 +156,13 @@ export function PaymentMethodSelector({
     }
 
     if (loading && availableTypes.length === 0) {
-        return <Skeleton className="h-24 w-full rounded-lg" />
+        return (
+            <CardSkeleton 
+                count={4} 
+                gridClassName="grid grid-cols-2 md:grid-cols-4 gap-4" 
+                className="h-[100px]"
+            />
+        )
     }
 
     if (availableTypes.length === 0) {

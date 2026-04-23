@@ -169,6 +169,21 @@ Está **estrictamente prohibido** el uso excesivo del componente primitivo `<Ske
 | `isLoading` | `boolean` | **Obligatorio** | Activa la animación shimmer y `aria-busy` |
 | `children` | `ReactNode` | **Obligatorio** | El DOM real a "congelar" con el efecto |
 
+#### `PageLayoutSkeleton` (Layout Family) 🆕
+Wrappers de alto nivel para estandarizar la carga de rutas completas.
+
+- **`PageHeaderSkeleton`**: Mock de la barra superior (Título + Descripción + Acciones).
+- **`PageTabsSkeleton`**: Mock de la barra de navegación por pestañas.
+- **`ToolbarSkeleton`**: Mock de la barra de herramientas de tablas (Búsqueda + Botones).
+- **`HubSkeleton`**: Mock especializado para el Command Center (Hub) con sus 4 fases verticales.
+
+| prop | type | default | notes |
+|------|------|---------|-------|
+| `hasTabs` | `boolean` | `false` | Incluye `PageTabsSkeleton` |
+| `tabsCount` | `number` | `3` | Cantidad de pestañas en el skeleton |
+| `hasToolbar` | `boolean` | `false` | Incluye `ToolbarSkeleton` |
+| `contentType` | `'table' \| 'card' \| 'form' \| 'custom'` | `'table'` | Define el cuerpo del skeleton |
+
 ---
 
 ## EmptyState 🟢
