@@ -71,7 +71,7 @@ export function WizardHeader({
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => order?.sale_order && onOpenCommandCenter(order.sale_order, 'sale')}
+                    onClick={() => order?.sale_order && onOpenCommandCenter(order.sale_order.id, 'sale')}
                     title="Configuración de Venta"
                     className="h-8 w-8 p-0 hover:bg-background hover:shadow-sm"
                     disabled={!order?.sale_order}

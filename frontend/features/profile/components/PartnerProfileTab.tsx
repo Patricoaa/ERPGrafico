@@ -217,7 +217,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                                         <InfoField 
                                             icon={<CalendarDays className="h-3.5 w-3.5" />} 
                                             label="Socio desde" 
-                                            value={(contact.partner_since || contact.created_at) ? new Date(contact.partner_since || contact.created_at).toLocaleDateString('es-CL') : "—"} 
+                                            value={(contact.partner_since || contact.created_at) ? new Date((contact.partner_since || contact.created_at) as string).toLocaleDateString('es-CL') : "—"} 
                                         />
                                     </div>
                                 </CardContent>
@@ -255,7 +255,7 @@ export function PartnerProfileTab({ contactId }: Props) {
 
             </Accordion>
 
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Cargando...</div>}>
                 {selectedMovementId && (
                     <TransactionViewModal
                         open={detailsOpen}

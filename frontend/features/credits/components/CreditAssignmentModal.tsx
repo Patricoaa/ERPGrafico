@@ -57,7 +57,7 @@ export default function CreditAssignmentModal({
     const { updateContact, isUpdating } = useContactMutations()
 
     const form = useForm<z.infer<typeof creditSchema>>({
-        resolver: zodResolver(creditSchema),
+        resolver: zodResolver(creditSchema) as any,
         defaultValues: {
             credit_limit: null,
         },
@@ -66,17 +66,19 @@ export default function CreditAssignmentModal({
     // Reset when modal opens or contact changes
     useEffect(() => {
         if (open) {
-            if (initialContact) {
-                setSelectedContact(initialContact)
-                form.reset({
-                    credit_limit: initialContact.credit_limit ? Number(initialContact.credit_limit) : null
-                })
-            } else {
-                setSelectedContact(null)
-                form.reset({ credit_limit: null })
-                setSearchQuery("")
-                setSearchResults([])
-            }
+            requestAnimationFrame(() => {
+                if (initialContact) {
+                    setSelectedContact(initialContact)
+                    form.reset({
+                        credit_limit: initialContact.credit_limit ? Number(initialContact.credit_limit) : null
+                    })
+                } else {
+                    setSelectedContact(null)
+                    form.reset({ credit_limit: null })
+                    setSearchQuery("")
+                    setSearchResults([])
+                }
+            })
         }
     }, [open, initialContact, form])
 
@@ -237,9 +239,9 @@ export default function CreditAssignmentModal({
                         </div>
 
                         <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                            <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6">
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="credit_limit"
                                     render={({ field }) => (
                                         <FormItem>

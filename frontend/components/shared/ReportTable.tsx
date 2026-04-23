@@ -9,7 +9,7 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table";
-import { CaretRight, CaretDown, Receipt, Info } from "@phosphor-icons/react";
+import { ChevronRight, ChevronDown, Receipt, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,7 +42,7 @@ interface ReportTableProps {
 
 const RowIcon = ({ isExpanded, hasChildren, level }: { isExpanded: boolean, hasChildren: boolean, level: number }) => {
     if (hasChildren) {
-        return isExpanded ? <CaretDown weight="bold" className="h-4 w-4 text-primary" /> : <CaretRight weight="bold" className="h-4 w-4 text-primary" />;
+        return isExpanded ? <ChevronDown className="h-4 w-4 text-primary" /> : <ChevronRight className="h-4 w-4 text-primary" />;
     }
     return <div className="w-1 h-1 rounded-full bg-muted-foreground/30 flex-shrink-0" />;
 };
@@ -76,7 +76,7 @@ const ReportRow = ({
                                 className={cn("flex-shrink-0", !hasChildren && mode === 'flat' && "cursor-default opacity-50")}
                                 disabled={!hasChildren}
                             >
-                                <RowIcon isExpanded={expanded} hasChildren={hasChildren} level={level} />
+                                <RowIcon isExpanded={expanded} hasChildren={!!hasChildren} level={level} />
                             </button>
                         )}
                         {!hasChildren && mode === 'tree' && <div className="w-6 mr-1 flex justify-center"><div className="w-1 h-1 rounded-full bg-muted-foreground/30" /></div>}

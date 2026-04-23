@@ -9,7 +9,7 @@ interface UseAccountSearchReturn {
     fetchAccounts: (search?: string, isLeaf?: boolean) => Promise<void>
 }
 
-let globalCache: Record<string, Account[]> = {}
+const globalCache: Record<string, Account[]> = {}
 
 export function useAccountSearch(): UseAccountSearchReturn {
     const [accounts, setAccounts] = useState<Account[]>([])

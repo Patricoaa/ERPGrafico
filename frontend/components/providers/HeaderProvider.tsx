@@ -40,7 +40,7 @@ export function HeaderProvider({ children }: { children: React.ReactNode }) {
     // Clear header when navigating to a different page
     // This prevents the old header from lingering on pages that don't define one
     useEffect(() => {
-        clearHeader()
+        requestAnimationFrame(() => clearHeader())
     }, [pathname, clearHeader])
 
     const value = useMemo(() => ({

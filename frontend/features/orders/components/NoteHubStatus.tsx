@@ -11,7 +11,7 @@ interface NoteHubStatusProps {
 }
 
 export function NoteHubStatus({ note }: NoteHubStatusProps) {
-    const statuses = getNoteHubStatuses(note)
+    const statuses = getNoteHubStatuses(note as any)
 
     return (
         <div className="flex items-center gap-1.5">
@@ -25,8 +25,8 @@ export function NoteHubStatus({ note }: NoteHubStatusProps) {
                     tooltip={(() => {
                         const isNoteDocument = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(note.dte_type as string)
                         if (isNoteDocument) {
-                            const source = (note.corrected_invoice as Record<string, unknown>)?.display_id || note.corrected_invoice?.number || "Factura"
-                            const order = (note as Record<string, unknown>).sale_order_number || (note as Record<string, unknown>).purchase_order_number || ""
+                            const source = ((note.corrected_invoice as unknown) as Record<string, unknown>)?.display_id || ((note.corrected_invoice as unknown) as Record<string, unknown>)?.number || "Factura"
+                            const order = (note as unknown as Record<string, unknown>).sale_order_number || (note as unknown as Record<string, unknown>).purchase_order_number || ""
                             return `Origen: ${source}${order ? ` (${order})` : ''}`
                         }
                         return `Documento: ${translateStatus(note.status)}`
@@ -56,7 +56,7 @@ export function NoteHubStatus({ note }: NoteHubStatusProps) {
                     size="sm"
                     icon={Banknote}
                     status={statuses.treasury || 'info'}
-                    tooltip={`Tesorería: ${translateStatus(String((note as Record<string, unknown>).payment_status || note.status))}`}
+                    tooltip={`Tesorería: ${translateStatus(String((note as unknown as Record<string, unknown>).payment_status || note.status))}`}
                 />
 
                 {/* Logistics */}

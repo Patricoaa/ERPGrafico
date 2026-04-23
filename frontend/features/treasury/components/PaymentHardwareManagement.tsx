@@ -53,21 +53,9 @@ export function PaymentHardwareManagement({
 
     useEffect(() => {
         if (externalActiveTab) {
-            setActiveTab(externalActiveTab)
+            requestAnimationFrame(() => setActiveTab(externalActiveTab))
         }
     }, [externalActiveTab])
-
-    useEffect(() => {
-        if (externalDeviceOpen) {
-            handleCreateDevice()
-        }
-    }, [externalDeviceOpen])
-
-    useEffect(() => {
-        if (externalProviderOpen) {
-            handleCreateProvider()
-        }
-    }, [externalProviderOpen])
 
     const { providers, isLoading: loadingProviders, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
     const { devices, isLoading: loadingDevices, refetch: refetchDevices, deleteDevice } = useTerminalDevices()
@@ -78,19 +66,8 @@ export function PaymentHardwareManagement({
     const [deviceDialogOpen, setDeviceDialogOpen] = useState(false)
     const [editingDevice, setEditingDevice] = useState<PaymentTerminalDevice | null>(null)
 
-    useEffect(() => {
-        if (externalDeviceOpen) {
-            handleCreateDevice()
-        }
-    }, [externalDeviceOpen])
-
     const handleCreateProvider = () => {
         setEditingProvider(null)
-        setProviderDialogOpen(true)
-    }
-
-    const handleEditProvider = (provider: PaymentTerminalProvider) => {
-        setEditingProvider(provider)
         setProviderDialogOpen(true)
     }
 
@@ -99,6 +76,25 @@ export function PaymentHardwareManagement({
         setDeviceDialogOpen(true)
         onExternalDeviceOpenChange?.(false)
     }
+
+    useEffect(() => {
+        if (externalDeviceOpen) {
+            requestAnimationFrame(() => handleCreateDevice())
+        }
+    }, [externalDeviceOpen])
+
+    useEffect(() => {
+        if (externalProviderOpen) {
+            requestAnimationFrame(() => handleCreateProvider())
+        }
+    }, [externalProviderOpen])
+
+    const handleEditProvider = (provider: PaymentTerminalProvider) => {
+        setEditingProvider(provider)
+        setProviderDialogOpen(true)
+    }
+
+
 
     const handleEditDevice = (device: PaymentTerminalDevice) => {
         setEditingDevice(device)
@@ -321,7 +317,7 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
 }) {
     const { createProvider, updateProvider } = useTerminalProviders()
     const [name, setName] = useState("")
-    const [type, setType] = useState("MANUAL")
+    const [type, setType] = useState<PaymentTerminalProvider['provider_type']>("MANUAL")
     const [supplierId, setSupplierId] = useState<number | null>(null)
     const [receivableAccount, setReceivableAccount] = useState<number | null>(null)
     const [expenseAccount, setExpenseAccount] = useState<number | null>(null)
@@ -330,21 +326,23 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
 
     useEffect(() => {
         if (open) {
-            if (provider) {
-                setName(provider.name)
-                setType(provider.provider_type)
-                setSupplierId(provider.supplier)
-                setReceivableAccount(provider.receivable_account)
-                setExpenseAccount(provider.commission_expense_account)
-                setIvaAccount(provider.commission_iva_account || null)
-            } else {
-                setName("")
-                setType("MANUAL")
-                setSupplierId(null)
-                setReceivableAccount(null)
-                setExpenseAccount(null)
-                setIvaAccount(null)
-            }
+            requestAnimationFrame(() => {
+                if (provider) {
+                    setName(provider.name)
+                    setType(provider.provider_type)
+                    setSupplierId(provider.supplier)
+                    setReceivableAccount(provider.receivable_account)
+                    setExpenseAccount(provider.commission_expense_account)
+                    setIvaAccount(provider.commission_iva_account || null)
+                } else {
+                    setName("")
+                    setType("MANUAL")
+                    setSupplierId(null)
+                    setReceivableAccount(null)
+                    setExpenseAccount(null)
+                    setIvaAccount(null)
+                }
+            })
         }
     }, [open, provider])
 
@@ -374,9 +372,9 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
             }
 
             if (provider) {
-                await updateProvider.mutateAsync({ id: provider.id, data })
+                await updateProvider.mutateAsync({ id: provider.id, data: data as any })
             } else {
-                await createProvider.mutateAsync(data)
+                await createProvider.mutateAsync(data as any)
             }
             onSuccess()
             onOpenChange(false)
@@ -407,8 +405,8 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
                     <div className="space-y-2">
                         <Label className={FORM_STYLES.label}>Contacto / Entidad (Proveedor)</Label>
                         <AdvancedContactSelector
-                            value={supplierId}
-                            onChange={setSupplierId}
+                            value={supplierId?.toString() || null}
+                            onChange={(val) => setSupplierId(val ? parseInt(val) : null)}
                             onSelectContact={(contact) => {
                                 if (!name) setName(contact.name)
                             }}
@@ -433,8 +431,8 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
                     <div className="space-y-2">
                         <Label className={FORM_STYLES.label}>Cuenta Puente Recaudación (Activo)</Label>
                         <AccountSelector
-                            value={receivableAccount}
-                            onChange={setReceivableAccount}
+                            value={receivableAccount?.toString() || null}
+                            onChange={(v) => setReceivableAccount(v ? parseInt(v) : null)}
                             accountType="ASSET"
                         />
                     </div>
@@ -442,16 +440,16 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
                         <div className="space-y-2">
                             <Label className={FORM_STYLES.label}>Cuenta Gasto Comisiones</Label>
                             <AccountSelector
-                                value={expenseAccount}
-                                onChange={setExpenseAccount}
+                                value={expenseAccount?.toString() || null}
+                                onChange={(v) => setExpenseAccount(v ? parseInt(v) : null)}
                                 accountType="EXPENSE"
                             />
                         </div>
                         <div className="space-y-2">
                             <Label className={FORM_STYLES.label}>Cuenta IVA Comisiones (Activo)</Label>
                             <AccountSelector
-                                value={ivaAccount}
-                                onChange={setIvaAccount}
+                                value={ivaAccount?.toString() || null}
+                                onChange={(v) => setIvaAccount(v ? parseInt(v) : null)}
                                 accountType="ASSET"
                             />
                         </div>
@@ -482,19 +480,21 @@ function DeviceDialog({ open, onOpenChange, device, providers, onSuccess }: {
 
     useEffect(() => {
         if (open) {
-            if (device) {
-                setName(device.name)
-                setProviderId(device.provider.toString())
-                setSerialNumber(device.serial_number)
-                setModel(device.model || "")
-                setSupportedMethods(device.supported_payment_methods || [])
-            } else {
-                setName("")
-                setProviderId("")
-                setSerialNumber("")
-                setModel("")
-                setSupportedMethods([1, 2])
-            }
+            requestAnimationFrame(() => {
+                if (device) {
+                    setName(device.name)
+                    setProviderId(device.provider.toString())
+                    setSerialNumber(device.serial_number)
+                    setModel(device.model || "")
+                    setSupportedMethods(device.supported_payment_methods || [])
+                } else {
+                    setName("")
+                    setProviderId("")
+                    setSerialNumber("")
+                    setModel("")
+                    setSupportedMethods([1, 2])
+                }
+            })
         }
     }, [open, device])
 

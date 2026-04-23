@@ -48,6 +48,14 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         }
     }
 
+    const handleAdd = () => {
+        openTreasuryAccount(null)
+    }
+
+    const handleEdit = (account: TreasuryAccount) => {
+        openTreasuryAccount(account.id)
+    }
+
     const handleExternalAction = () => {
         switch (activeTab) {
             case "accounts":
@@ -65,9 +73,9 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
 
     useEffect(() => {
         if (externalOpen) {
-            handleExternalAction()
+            requestAnimationFrame(() => handleExternalAction());
         }
-    }, [externalOpen])
+    }, [externalOpen]);
 
     const handleDelete = async (id: number) => {
         try {
@@ -75,14 +83,6 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         } catch (error) {
             // Error already handled by hook
         }
-    }
-
-    const handleAdd = () => {
-        openTreasuryAccount(null)
-    }
-
-    const handleEdit = (account: TreasuryAccount) => {
-        openTreasuryAccount(account.id)
     }
 
     const columns: ColumnDef<TreasuryAccount>[] = [

@@ -44,7 +44,7 @@ export function SessionCloseModal({
     const [actualCash, setActualCash] = useState<string>("0")
     const [withdrawalAmount, setWithdrawalAmount] = useState<string>("0")
     const [closeNotes, setCloseNotes] = useState<string>("")
-    const [cashDestinationId, setCashDestinationId] = useState<string | null>(null)
+    const [cashDestinationId, setCashDestinationId] = useState<number | null>(null)
     const [justifyReason, setJustifyReason] = useState<string>("")
     const [justifyTargetId, setJustifyTargetId] = useState<string | null>(null)
     const [submitting, setSubmitting] = useState(false)
@@ -55,7 +55,7 @@ export function SessionCloseModal({
 
     // Sync withdrawalAmount with actualCash by default
     useEffect(() => {
-        setWithdrawalAmount(actualCash)
+        requestAnimationFrame(() => setWithdrawalAmount(actualCash))
     }, [actualCash])
 
     const [step, setStep] = useState(1)
@@ -71,14 +71,16 @@ export function SessionCloseModal({
     // Pre-populate expected cash and default treasury account when modal opens
     useEffect(() => {
         if (open && session) {
-            setActualCash(session.expected_cash.toString())
-            setCloseNotes("")
-            setJustifyReason("")
-            setJustifyTargetId(null)
-            setSelectedAccount(null)
-            setInsufficientFunds(false)
-            setStep(1) // Reset to step 1
-            setCashDestinationId(null) // Force user to pick a valid destination
+            requestAnimationFrame(() => {
+                setActualCash(session.expected_cash.toString())
+                setCloseNotes("")
+                setJustifyReason("")
+                setJustifyTargetId(null)
+                setSelectedAccount(null)
+                setInsufficientFunds(false)
+                setStep(1) // Reset to step 1
+                setCashDestinationId(null) // Force user to pick a valid destination
+            })
         }
     }, [open, session])
 
@@ -86,14 +88,16 @@ export function SessionCloseModal({
     const [fullReportData, setFullReportData] = useState<POSReportData | null>(null)
     useEffect(() => {
         if (open && session) {
-            api.get('/accounting/settings/current/')
-                .then(res => setAccountingSettings(res.data))
-                .catch(err => console.error("Failed to load accounting settings", err))
-            
-            // Fetch full summary to display advanced data (like category sales) in the modal preview
-            api.get(`/treasury/pos-sessions/${session.id}/summary/`)
-                .then(res => setFullReportData(res.data))
-                .catch(err => console.error("Failed to load sumary", err))
+            requestAnimationFrame(() => {
+                api.get('/accounting/settings/current/')
+                    .then(res => requestAnimationFrame(() => setAccountingSettings(res.data)))
+                    .catch(err => console.error("Failed to load accounting settings", err))
+                
+                // Fetch full summary to display advanced data (like category sales) in the modal preview
+                api.get(`/treasury/pos-sessions/${session.id}/summary/`)
+                    .then(res => requestAnimationFrame(() => setFullReportData(res.data)))
+                    .catch(err => console.error("Failed to load sumary", err))
+            })
         }
     }, [open, session])
 
@@ -102,24 +106,30 @@ export function SessionCloseModal({
         if (justifyTargetId && justifyReason === 'TRANSFER') {
             api.get(`/treasury/accounts/${justifyTargetId}/`)
                 .then(res => {
-                    setSelectedAccount(res.data)
-                    // Validate funds for surplus (diff > 0 = money coming IN, source account needs money)
-                    if (diff > 0 && res.data.current_balance !== undefined) {
-                        const available = res.data.current_balance as number
-                        const needed = Math.abs(diff)
-                        setInsufficientFunds(available < needed)
-                    } else {
-                        setInsufficientFunds(false)
-                    }
+                    requestAnimationFrame(() => {
+                        setSelectedAccount(res.data)
+                        // Validate funds for surplus (diff > 0 = money coming IN, source account needs money)
+                        if (diff > 0 && res.data.current_balance !== undefined) {
+                            const available = res.data.current_balance as number
+                            const needed = Math.abs(diff)
+                            setInsufficientFunds(available < needed)
+                        } else {
+                            setInsufficientFunds(false)
+                        }
+                    })
                 })
                 .catch(err => {
                     console.error("Failed to load account details", err)
-                    setSelectedAccount(null)
-                    setInsufficientFunds(false)
+                    requestAnimationFrame(() => {
+                        setSelectedAccount(null)
+                        setInsufficientFunds(false)
+                    })
                 })
         } else {
-            setSelectedAccount(null)
-            setInsufficientFunds(false)
+            requestAnimationFrame(() => {
+                setSelectedAccount(null)
+                setInsufficientFunds(false)
+            })
         }
     }, [justifyTargetId, justifyReason, diff])
 
@@ -135,9 +145,9 @@ export function SessionCloseModal({
                 actual_cash: parseFloat(actualCash) || 0,
                 withdrawal_amount: parseFloat(withdrawalAmount) || 0,
                 notes: closeNotes,
-                cash_destination_id: cashDestinationId ? parseInt(cashDestinationId) : null,
+                cash_destination_id: cashDestinationId,
                 justify_reason: justifyReason || undefined,
-                justify_target_id: justifyTargetId ? parseInt(justifyTargetId) : null
+                justify_target_id: justifyTargetId ? Number(justifyTargetId) : null
             })
 
             const audit = response.data.audit
@@ -185,7 +195,7 @@ export function SessionCloseModal({
                     total_manual_outflow: session.total_other_cash_outflow,
                     manual_movements: session.cash_movements as unknown as POSReportData["manual_movements"],
                     sales_by_category: session.sales_by_category as POSReportData["sales_by_category"],
-                    treasury_account_id: session.treasury_account,
+                    treasury_account_id: typeof session.treasury_account === 'object' ? session.treasury_account?.id : (session.treasury_account as number || undefined),
                 }
 
                 return (
@@ -304,7 +314,7 @@ export function SessionCloseModal({
                                             value={justifyTargetId}
                                             onChange={setJustifyTargetId}
                                             placeholder={diff < 0 ? "Seleccione destino..." : "Seleccione origen..."}
-                                            excludeId={typeof session.treasury_account === 'object' ? session.treasury_account?.id : session.treasury_account}
+                                            excludeId={typeof session.treasury_account === 'object' ? session.treasury_account.id : session.treasury_account}
                                             type="CASH"
                                         />
 
@@ -419,10 +429,10 @@ export function SessionCloseModal({
                                 <Label>Destino</Label>
                                 <TreasuryAccountSelector
                                     value={cashDestinationId?.toString()}
-                                    onChange={(val) => setCashDestinationId(Number(val))}
+                                    onChange={(val) => setCashDestinationId(val ? Number(val) : null)}
                                     placeholder="Seleccione destino..."
                                     paymentMethod="CASH"
-                                    excludeId={typeof session.treasury_account === 'object' ? session.treasury_account?.id : session.treasury_account}
+                                    excludeId={typeof session.treasury_account === 'object' ? session.treasury_account.id : session.treasury_account}
                                 />
                             </div>
                         </div>

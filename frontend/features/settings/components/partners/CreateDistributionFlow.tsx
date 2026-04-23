@@ -120,7 +120,10 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             
             const dests: Record<number, DestinationAllocation[]> = {}
             initialResolution.lines?.forEach((l) => {
-                dests[l.id] = l.destinations || []
+                dests[l.id] = (l.destinations || []).map(d => ({
+                    ...d,
+                    amount: parseFloat(d.amount as unknown as string)
+                }))
                 // if it's loss, auto assign
                 if (initialResolution.is_loss && dests[l.id].length === 0) {
                      dests[l.id] = [{ destination: 'LOSS', amount: Math.abs(parseFloat(l.net_amount)) }]
@@ -166,7 +169,10 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             
             const dests: Record<number, DestinationAllocation[]> = {}
             res.lines?.forEach((l) => {
-                dests[l.id] = l.destinations || []
+                dests[l.id] = (l.destinations || []).map(d => ({
+                    ...d,
+                    amount: parseFloat(d.amount as unknown as string)
+                }))
                 if (res.is_loss && dests[l.id].length === 0) {
                      dests[l.id] = [{ destination: 'LOSS', amount: Math.abs(parseFloat(l.net_amount)) }]
                 }
@@ -203,7 +209,9 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                 destinations: lineDestinations[parseInt(id)].filter(d => d.amount > 0)
             }))
             
-            await partnersApi.updateProfitDistributionLines(draftResolution.id, updates)
+            if (draftResolution) {
+                await partnersApi.updateProfitDistributionLines(draftResolution.id, updates)
+            }
             return true
         } catch (error: unknown) {
             showApiError(error, "Error al actualizar destinos")
@@ -214,10 +222,10 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
     const handleExecute = async () => {
         setLoading(true)
         try {
-            if (draftResolution && draftResolution.status === 'DRAFT') {
-                await partnersApi.approveProfitDistribution(draftResolution.id)
-            }
             if (draftResolution) {
+                if (draftResolution.status === 'DRAFT') {
+                    await partnersApi.approveProfitDistribution(draftResolution.id)
+                }
                 await partnersApi.executeProfitDistribution(draftResolution.id)
             }
             toast.success("Distribución contable ejecutada con éxito")
@@ -445,7 +453,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                             ) : (
                                                 <td className="px-3 py-2 text-[10px] font-bold text-muted-foreground">
                                                     <div className="flex items-center gap-2">
-                                                        <span>Monto Automático a Absorber: {formatCurrency(Math.abs(line.net_amount))}</span>
+                                                        <span>Monto Automático a Absorber: {formatCurrency(Math.abs(parseFloat(line.net_amount)))}</span>
                                                     </div>
                                                 </td>
                                             )}

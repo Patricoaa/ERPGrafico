@@ -46,8 +46,8 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
         loading: true,
         isFlowOpen: false,
         isMassPaymentOpen: false,
-        selectedResolution: null as ProfitDistribution | null,
-        viewingDist: null as ProfitDistribution | null
+        selectedResolution: undefined as ProfitDistribution | undefined,
+        viewingDist: undefined as ProfitDistribution | undefined
     })
 
     const isMounted = useRef(false)
@@ -84,7 +84,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
         if (initialFlowOpen) {
             setState(prev => ({
                 ...prev,
-                selectedResolution: null,
+                selectedResolution: undefined,
                 isFlowOpen: initialFlowOpen
             }))
         }
@@ -294,7 +294,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
                 <MassPaymentModal
                     open={state.isMassPaymentOpen}
                     onOpenChange={(v) => setState(prev => ({ ...prev, isMassPaymentOpen: v }))}
-                    resolution={state.selectedResolution}
+                    resolution={state.selectedResolution!}
                     onSuccess={fetchDistributions}
                 />
             )}
@@ -303,7 +303,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
             {state.viewingDist && (
                 <TransactionViewModal
                     open={!!state.viewingDist}
-                    onOpenChange={() => setState(prev => ({ ...prev, viewingDist: null }))}
+                    onOpenChange={() => setState(prev => ({ ...prev, viewingDist: undefined }))}
                     type="profit_distribution"
                     id={state.viewingDist.id}
                 />

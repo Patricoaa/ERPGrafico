@@ -96,6 +96,13 @@ export function PayrollCard({
     payments,
     className
 }: PayrollCardProps) {
+    const [itemToDelete, setItemToDelete] = React.useState<PayrollItem | null>(null)
+
+    const itemDeleteConfirm = useConfirmAction(async () => {
+        if (onDeleteItem && itemToDelete) onDeleteItem(itemToDelete)
+        setItemToDelete(null)
+    })
+
     if (!payroll) return null
 
     const haberes = payroll.items?.filter(i =>
@@ -140,15 +147,8 @@ export function PayrollCard({
         }))
     ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
-    const [itemToDelete, setItemToDelete] = React.useState<PayrollItem | null>(null)
-
     const totalPaid = unifiedPayments.reduce((acc, p) => acc + p.amount, 0)
     const pendingToPay = netSalary - totalPaid
-
-    const itemDeleteConfirm = useConfirmAction(async () => {
-        if (onDeleteItem && itemToDelete) onDeleteItem(itemToDelete)
-        setItemToDelete(null)
-    })
 
     const handleItemDeleteRequest = (item: PayrollItem) => {
         setItemToDelete(item)
@@ -336,7 +336,7 @@ export function PayrollCard({
                         {payroll.notes && (
                             <div className="p-4 space-y-2">
                                 <span className={FORM_STYLES.label}>Observaciones</span>
-                                <p className="text-xs text-muted-foreground italic leading-relaxed">"{payroll.notes}"</p>
+                                <p className="text-xs text-muted-foreground italic leading-relaxed">&quot;{payroll.notes}&quot;</p>
                             </div>
                         )}
                     </div>

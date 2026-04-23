@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import type { SyncDraft } from '@/features/pos/hooks/useDraftSync'
 
-interface DraftCart {
+export interface DraftCart {
     id: number
     name: string
     notes: string
@@ -70,7 +70,7 @@ interface LockInfo {
 
 interface DraftCartsListProps {
     posSessionId: number | null
-    onLoadDraft: (draft: DraftCart) => void
+    onLoadDraft: (draft: DraftCart | SyncDraft) => void
     onDraftDeleted?: () => void
     open?: boolean
     onOpenChange?: (open: boolean) => void
@@ -125,7 +125,7 @@ export function DraftCartsList({
 
     useEffect(() => {
         if (open && posSessionId) {
-            fetchDrafts()
+            requestAnimationFrame(() => fetchDrafts())
         }
     }, [open, posSessionId])
 
@@ -144,7 +144,7 @@ export function DraftCartsList({
         }
         
         if (hasDiff) {
-            fetchDrafts()
+            requestAnimationFrame(() => fetchDrafts())
         }
     }, [syncDrafts, open])
 
@@ -426,7 +426,7 @@ export function DraftCartsList({
                     <AlertDialogHeader>
                         <AlertDialogTitle>¿Eliminar borrador?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Se eliminará permanentemente <strong>"{confirmDeleteName}"</strong>. Esta acción no se puede deshacer.
+                            Se eliminará permanentemente <strong>&quot;{confirmDeleteName}&quot;</strong>. Esta acción no se puede deshacer.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

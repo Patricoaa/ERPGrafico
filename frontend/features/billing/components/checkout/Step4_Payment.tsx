@@ -39,15 +39,16 @@ export function Step4_Payment({
     // Credit Note -> Purchases
 
     const operation = !isCreditNote ? 'sales' : 'purchases'
+    const d = data as any
 
     // Map internal snake_case data to PaymentData (camelCase)
     const paymentData: PaymentData = {
-        method: data.method as string,
-        amount: data.amount,
-        treasuryAccountId: data.treasury_account_id || null,
+        method: d.method,
+        amount: d.amount,
+        treasuryAccountId: d.treasury_account_id || null,
         paymentMethodId: null, // Not strictly used by logic but part of type
-        transactionNumber: data.transaction_number,
-        isPending: data.is_pending
+        transactionNumber: d.transaction_number,
+        isPending: d.is_pending
     }
 
     const handlePaymentDataChange = (newData: PaymentData) => {

@@ -24,7 +24,7 @@ export function Step4_Completion({
     const handleComplete = async () => {
         try {
             setLoading(true)
-            const res = await api.post(`/billing/note-workflows/${workflow.id}/complete/`)
+            const res = await api.post(`/billing/note-workflows/${(workflow as any).id}/complete/`)
             onSuccess(res.data)
         } catch (error: unknown) {
             console.error("Error completing workflow:", error)
@@ -34,7 +34,7 @@ export function Step4_Completion({
         }
     }
 
-    const { invoice } = workflow
+    const invoice = (workflow as any).invoice as any
 
     return (
         <div className="space-y-8 animate-in fade-in zoom-in duration-500 max-w-2xl mx-auto">

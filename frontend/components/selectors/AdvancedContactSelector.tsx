@@ -51,14 +51,14 @@ export function AdvancedContactSelector({
         if (value && !selectedContact && value.toString() !== singleContact?.id.toString()) {
             fetchSingleContact(value.toString())
         } else if (!value) {
-            setSelectedContact(null)
+            requestAnimationFrame(() => setSelectedContact(null))
         }
     }, [value, selectedContact, singleContact, fetchSingleContact])
 
     // Sync fetched single contact to local state
     useEffect(() => {
         if (singleContact && singleContact.id.toString() === value?.toString()) {
-            setSelectedContact(singleContact)
+            requestAnimationFrame(() => setSelectedContact(singleContact))
         }
     }, [singleContact, value])
 
@@ -215,8 +215,8 @@ export function AdvancedContactSelector({
                     <ContactModal
                         open={isCreateModalOpen}
                         onOpenChange={setIsCreateModalOpen}
-                        onSuccess={handleCreateSuccess}
-                        contact={initialContactTemplate}
+                        onSuccess={handleCreateSuccess as any}
+                        contact={initialContactTemplate as any}
                     />
                 </Suspense>
             )}

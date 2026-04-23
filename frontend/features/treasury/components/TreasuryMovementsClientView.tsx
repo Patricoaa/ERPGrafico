@@ -90,7 +90,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
 
     useEffect(() => {
         if (externalOpen) {
-            setOpenModal(true)
+            requestAnimationFrame(() => setOpenModal(true))
         }
     }, [externalOpen])
 

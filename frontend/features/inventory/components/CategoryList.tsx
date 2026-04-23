@@ -78,7 +78,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
                     <div className="flex items-center justify-center w-full">
                         <div className="flex items-center justify-center h-8 w-8 rounded-md bg-muted/30 border border-muted-foreground/10 transition-colors">
                             {(() => {
-                                const Icon = (LucideIcons as Record<string, React.ElementType>)[iconName] || LucideIcons.Package
+                const Icon = (LucideIcons as unknown as Record<string, React.ElementType>)[iconName] ?? LucideIcons.Package
                                 return <Icon className="h-4 w-4 text-muted-foreground/70" />
                             })()}
                         </div>
@@ -123,7 +123,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
             />
 
             <CategoryForm
-                onSuccess={refetch}
+                onSuccess={() => { void refetch() }}
                 open={isFormOpen || !!externalOpen}
                 onOpenChange={(open) => {
                     if (!open) {

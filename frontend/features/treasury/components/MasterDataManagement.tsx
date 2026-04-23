@@ -63,7 +63,7 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
     }
 
     useEffect(() => {
-        fetchBanks()
+        requestAnimationFrame(() => fetchBanks())
     }, [])
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
@@ -202,9 +202,11 @@ function BankDialog({ open, onOpenChange, bank, onSuccess }: BankDialogProps) {
 
     useEffect(() => {
         if (open) {
-            setName(bank?.name || "")
-            setCode(bank?.code || "")
-            setSwiftCode(bank?.swift_code || "")
+            requestAnimationFrame(() => {
+                setName(bank?.name || "")
+                setCode(bank?.code || "")
+                setSwiftCode(bank?.swift_code || "")
+            })
         }
     }, [open, bank])
 
@@ -304,13 +306,13 @@ interface PaymentMethod {
     name: string
     method_type: string
     method_type_display: string
-    treasury_account: number
+    treasury_account: number | { id: number; name?: string }
     treasury_account_name: string
     is_active: boolean
     requires_reference: boolean
     allow_for_sales: boolean
     allow_for_purchases: boolean
-
+    is_terminal_integration?: boolean
 }
 
 interface PaymentMethodManagementProps {
@@ -338,7 +340,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
     }
 
     useEffect(() => {
-        fetchMethods()
+        requestAnimationFrame(() => fetchMethods())
     }, [])
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
@@ -521,25 +523,26 @@ function PaymentMethodDialog({ open, onOpenChange, method, onSuccess }: PaymentM
         const fetchData = async () => {
             try {
                 const response = await api.get("/treasury/accounts/")
-                setAccounts(response.data)
+                requestAnimationFrame(() => setAccounts(response.data))
             } catch (err) { }
         }
-        fetchData()
+        requestAnimationFrame(() => fetchData())
     }, [])
 
     useEffect(() => {
         if (open) {
-            setName(method?.name || "")
-            setType(method?.method_type || "DEBIT_CARD")
+            requestAnimationFrame(() => {
+                setName(method?.name || "")
+                setType(method?.method_type || "DEBIT_CARD")
 
-            // Handle both ID and object cases for initialization
-            const acc = method?.treasury_account
-            setAccountId(acc ? (typeof acc === 'object' ? acc.id.toString() : acc.toString()) : null)
+                // Handle both ID and object cases for initialization
+                const acc = method?.treasury_account
+                setAccountId(acc ? (typeof acc === 'object' ? (acc as any).id.toString() : acc.toString()) : null)
 
-            setRequiresRef(method?.requires_reference || false)
-            setAllowSales(method?.allow_for_sales ?? true)
-            setAllowPurchases(method?.allow_for_purchases ?? true)
-
+                setRequiresRef(method?.requires_reference || false)
+                setAllowSales(method?.allow_for_sales ?? true)
+                setAllowPurchases(method?.allow_for_purchases ?? true)
+            })
         }
     }, [open, method])
 

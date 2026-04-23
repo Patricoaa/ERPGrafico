@@ -152,7 +152,7 @@ export const ActionCategory = forwardRef(({
                     return
                 }
 
-                const targetDoc = docs[0]
+                const targetDoc = docs[0] as any
                 const viewType = targetDoc.docType || (actionId === 'view-documents' ? 'invoice' : (isSale ? 'sale_delivery' : 'inventory'))
                 const viewId = actionId === 'view-documents' ? targetDoc.id : (targetDoc.id || targetDoc.stock_move_id)
 
@@ -183,7 +183,7 @@ export const ActionCategory = forwardRef(({
 
     const handleAnnulDocument = async (force: boolean = false) => {
         const invoices = resolvedInvoices
-        const invoice = invoices.find((inv: Order) => inv.number !== 'Draft' && inv.status !== 'CANCELLED')
+        const invoice = invoices.find((inv: any) => inv.number !== 'Draft' && inv.status !== 'CANCELLED')
 
         if (!invoice) {
             toast.error("No se encontró un documento válido para anular")
@@ -247,7 +247,7 @@ export const ActionCategory = forwardRef(({
 
     const handleDeleteDraft = async () => {
         const invoices = resolvedInvoices
-        const draftInvoice = invoices.find((inv: Order) => inv.status === 'DRAFT' || inv.number === 'Draft')
+        const draftInvoice = invoices.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft')
 
         if (!draftInvoice) {
             toast.error("No se encontró un borrador para eliminar")
@@ -376,12 +376,12 @@ export const ActionCategory = forwardRef(({
                 <DocumentCompletionModal
                     open={true}
                     onOpenChange={closeModal}
-                    invoiceId={tempInvoiceId || resolvedInvoices?.find((inv: Order) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id}
-                    invoiceType={tempInvoiceId ? undefined : resolvedInvoices?.find((inv: Order) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.dte_type}
-                    contactId={((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? order?.customer_id : order?.supplier_id)}
+                    invoiceId={(tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id) as number || 0}
+                    invoiceType={(tempInvoiceId ? "FACTURA_ELECTRONICA" : (resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number) as any)?.dte_type as string) || "FACTURA_ELECTRONICA"}
+                    contactId={(((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? (order as any).customer_id : (order as any).supplier_id)) as number || 0}
                     isPurchase={isPurchase}
                     onComplete={async (invoiceId, formData) => {
-                        if (!invoiceId || invoiceId === 'undefined') {
+                        if (!invoiceId) {
                             toast.error("Error: No se pudo identificar el borrador de la factura.")
                             throw new Error("Missing invoice ID")
                         }
@@ -425,7 +425,7 @@ export const ActionCategory = forwardRef(({
                 <PaymentHistoryModal
                     open={true}
                     onOpenChange={closeModal}
-                    order={order}
+                    order={order as any}
                 />
             )}
 
@@ -433,13 +433,13 @@ export const ActionCategory = forwardRef(({
                 <PaymentModal
                     open={true}
                     onOpenChange={closeModal}
-                    total={order?.total}
-                    pendingAmount={order?.pending_amount ?? order?.total}
+                    total={Number(order?.total || 0)}
+                    pendingAmount={Number(order?.pending_amount ?? order?.total ?? 0)}
                     onConfirm={handlePaymentConfirm}
                     isPurchase={isPurchase}
                     title={activeModal === 'register-payment-return' ? (isSale ? "Registrar Reembolso a Cliente" : "Registrar Reembolso de Proveedor") : undefined}
                     posSessionId={posSessionId}
-                    customerCreditBalance={order?.customer?.credit_balance || order?.customer_name?.credit_balance || 0}
+                    customerCreditBalance={(order?.customer as any)?.credit_balance || (order?.customer_name as any)?.credit_balance || 0}
                     allowCreditBalanceAccumulation={order?.dte_type === 'NOTA_CREDITO'}
                 />
             )}
@@ -448,7 +448,7 @@ export const ActionCategory = forwardRef(({
                 <PaymentReferenceModal
                     open={true}
                     onOpenChange={closeModal}
-                    payments={order?.related_documents?.payments || order?.serialized_payments || []}
+                    payments={(order?.related_documents?.payments || order?.serialized_payments || []) as any}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
             )}
@@ -458,7 +458,7 @@ export const ActionCategory = forwardRef(({
                     open={true}
                     onOpenChange={closeModal}
                     orderId={order?.id}
-                    invoiceId={resolvedInvoices?.find((inv: Order) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.id}
+                    invoiceId={(resolvedInvoices?.find((inv: any) => inv.status !== 'CANCELLED' && !['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type as string))?.id as number) || 0}
                     initialType={activeModal === 'create-debit-note' ? 'NOTA_DEBITO' : 'NOTA_CREDITO'}
                     onSuccess={() => { closeModal(); onActionSuccess?.() }}
                 />
@@ -468,8 +468,8 @@ export const ActionCategory = forwardRef(({
                 <TransactionViewModal
                     open={true}
                     onOpenChange={closeModal}
-                    type={viewConfig.type}
-                    id={viewConfig.id}
+                    type={viewConfig.type as any}
+                    id={viewConfig.id as any}
                 />
             )}
 
@@ -478,7 +478,7 @@ export const ActionCategory = forwardRef(({
                     open={true}
                     onOpenChange={closeModal}
                     type="work_orders"
-                    data={order?.work_orders || []}
+                    data={(order?.work_orders || []) as any}
                     onItemClick={(type, id) => {
                         setViewConfig({ type, id })
                         setActiveModal('transaction-view')
@@ -496,7 +496,7 @@ export const ActionCategory = forwardRef(({
                         sale_line: (order.lines || order.items || []).find((l: OrderLine) =>
                             l.product_type === 'MANUFACTURABLE' &&
                             l.requires_advanced_manufacturing &&
-                            !l.work_order_summary
+                            !((l as any).work_order_summary)
                         )?.id?.toString()
                     }}
                     onSuccess={() => {

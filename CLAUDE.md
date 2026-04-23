@@ -61,10 +61,8 @@ npm run build             # Production build
 npm run lint              # ESLint
 npm run test              # Vitest (full)
 npm run test -- <path>    # Single file
-npx tsc --noEmit          # Type-check — must pass before PR
+npm run type-check        # Type-check — must pass before PR
 ```
-
-Note: `type-check` script not yet in `package.json`. Add: `"type-check": "tsc --noEmit"`.
 
 ### Backend
 
@@ -75,8 +73,8 @@ python manage.py setup_demo_data
 
 # Tests
 pytest                                # all
-pytest apps/sales/tests -v            # one app
-pytest apps/sales/tests/test_views.py::test_create_order   # one test
+pytest backend/sales/tests -v            # one app
+pytest backend/sales/tests/test_views.py::test_create_order   # one test
 
 # Celery
 celery -A config worker -l INFO

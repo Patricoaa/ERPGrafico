@@ -6,6 +6,7 @@ export interface Terminal {
     is_active: boolean
     allowed_payment_methods: PaymentMethod[]
     payment_terminal_device?: number
+    payment_terminal_device_name?: string
     default_treasury_account_name?: string
     serial_number?: string
     ip_address?: string
@@ -23,7 +24,7 @@ export interface TerminalCreatePayload {
     ip_address?: string
 }
 
-export interface TerminalUpdatePayload extends Partial<TerminalCreatePayload> { }
+export type TerminalUpdatePayload = Partial<TerminalCreatePayload>
 
 export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH' | 'BRIDGE' | 'MERCHANT'
 
@@ -46,6 +47,7 @@ export interface TreasuryAccount {
     bank?: number | null
     bank_name?: string
     account_number?: string | null
+    identifier?: string
 }
 
 export interface TreasuryAccountCreatePayload {
@@ -60,7 +62,7 @@ export interface TreasuryAccountCreatePayload {
     account_number?: string | null
 }
 
-export interface TreasuryAccountUpdatePayload extends Partial<TreasuryAccountCreatePayload> { }
+export type TreasuryAccountUpdatePayload = Partial<TreasuryAccountCreatePayload>
 
 export interface PaymentMethod {
     id: number
@@ -102,6 +104,7 @@ export interface PaymentTerminalDevice {
     serial_number: string
     model?: string
     status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE'
+    is_active: boolean
     supported_payment_methods?: number[]
 }
 

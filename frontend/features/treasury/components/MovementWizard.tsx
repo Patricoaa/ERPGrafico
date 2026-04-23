@@ -115,21 +115,23 @@ export function MovementWizard({
                 const subscribed = parseFloat(p.partner_total_contributions) || 0
                 const balance = parseFloat(p.partner_balance) || 0
                 const pending = Math.max(0, subscribed - balance)
-                setPartnerCapitalInfo({ subscribed, balance, pending })
-            }).catch(() => setPartnerCapitalInfo(null))
+                requestAnimationFrame(() => setPartnerCapitalInfo({ subscribed, balance, pending }))
+            }).catch(() => requestAnimationFrame(() => setPartnerCapitalInfo(null)))
         } else {
-            setPartnerCapitalInfo(null)
+            requestAnimationFrame(() => setPartnerCapitalInfo(null))
         }
     }, [contactId, moveType])
 
     // Skip steps if fixedMoveType is provided
     useEffect(() => {
         if (fixedMoveType && open) {
-            if (context === 'treasury' && fixedMoveType !== 'TRANSFER') {
-                setStepIndex(1) // Go to Account selection
-            } else {
-                setStepIndex(3) // Go to Amount
-            }
+            requestAnimationFrame(() => {
+                if (context === 'treasury' && fixedMoveType !== 'TRANSFER') {
+                    setStepIndex(1) // Go to Account selection
+                } else {
+                    setStepIndex(3) // Go to Amount
+                }
+            })
         }
     }, [fixedMoveType, context, open])
 

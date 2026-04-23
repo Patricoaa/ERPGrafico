@@ -105,7 +105,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
     const { checkAvailability, validateLine, getStockMessage } = useStockValidation()
 
     const form = useForm<SaleOrderFormValues>({
-        resolver: zodResolver(saleOrderSchema),
+        resolver: zodResolver(saleOrderSchema) as any,
         defaultValues: initialData ? {
             ...initialData,
             lines: initialData?.lines?.map((l: SaleOrderLine) => ({
@@ -169,30 +169,32 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
 
     useEffect(() => {
         if (open) {
-            fetchData()
-            if (initialData) {
-                form.reset({
-                    ...initialData,
-                    lines: initialData?.lines?.map((l: SaleOrderLine) => ({
-                        id: l.id,
-                        product: l.product?.toString() || "",
-                        description: l.description,
-                        quantity: l.quantity || 0,
-                        uom: l.uom?.toString() || "",
-                        unit_price: l.unit_price || 0,
-                        unit_price_gross: l.unit_price_gross || (l.unit_price ? PricingUtils.netToGross(l.unit_price) : 0),
-                        tax_rate: l.tax_rate || 19,
-                        custom_specs: l.custom_specs || {},
-                        manufacturing_data: l.manufacturing_data || null,
-                    })) || []
-                })
-            } else {
-                form.reset({
-                    payment_method: "CREDIT",
-                    notes: "",
-                    lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, unit_price_gross: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null }],
-                })
-            }
+            requestAnimationFrame(() => {
+                fetchData()
+                if (initialData) {
+                    form.reset({
+                        ...initialData,
+                        lines: initialData?.lines?.map((l: SaleOrderLine) => ({
+                            id: l.id,
+                            product: l.product?.toString() || "",
+                            description: l.description,
+                            quantity: l.quantity || 0,
+                            uom: l.uom?.toString() || "",
+                            unit_price: l.unit_price || 0,
+                            unit_price_gross: l.unit_price_gross || (l.unit_price ? PricingUtils.netToGross(l.unit_price) : 0),
+                            tax_rate: l.tax_rate || 19,
+                            custom_specs: l.custom_specs || {},
+                            manufacturing_data: l.manufacturing_data || null,
+                        })) || []
+                    })
+                } else {
+                    form.reset({
+                        payment_method: "CREDIT",
+                        notes: "",
+                        lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, unit_price_gross: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null }],
+                    })
+                }
+            })
         }
     }, [open, initialData, form])
 
@@ -266,8 +268,8 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
             });
             onConfirmCheckout({ 
                 ...data, 
-                lines: enrichedLines,
-                customer: (initialData as SaleOrder)?.customer || null,
+                lines: enrichedLines as any,
+                customer: (initialData as any)?.customer || null,
                 date: new Date().toISOString()
             });
             setOpen(false)
@@ -330,7 +332,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                 }
             >
                 <Form {...form}>
-                    <form id="sale-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+                    <form id="sale-order-form" onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6 pt-4">
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <h3 className={FORM_STYLES.sectionHeader}>Líneas de Venta</h3>
@@ -362,14 +364,14 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                             <TableRow key={row.id}>
                                                 <TableCell className="align-top">
                                                     <FormField<SaleOrderFormValues>
-                                                        control={form.control}
+                                                        control={form.control as any}
                                                         name={`lines.${index}.product`}
                                                         render={({ field }) => (
                                                             <div className="space-y-1">
                                                                 <div className="flex gap-2 items-start">
                                                                     <div className="flex-1">
                                                                         <ProductSelector
-                                                                            value={field.value}
+                                                                            value={field.value as any}
                                                                             restrictStock={true}
                                                                             context="sale"
                                                                             onChange={async (value: string | null) => {
@@ -449,14 +451,14 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                 </TableCell>
                                                 <TableCell className="align-top">
                                                     <FormField<SaleOrderFormValues>
-                                                        control={form.control}
+                                                        control={form.control as any}
                                                         name={`lines.${index}.quantity`}
                                                         render={({ field }) => (
                                                             <div className="flex flex-col gap-1">
                                                                 <Input
                                                                     type="number"
                                                                     step="0.01"
-                                                                    {...field}
+                                                                    {...(field as any)}
                                                                     className={cn(
                                                                         "h-8",
                                                                         (() => {
@@ -468,7 +470,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                             if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity || 0
 
                                                                             // Highlight if at max
-                                                                            const currentVal = parseFloat(field.value.toString()) || 0
+                                                                            const currentVal = parseFloat((field as any).value?.toString()) || 0
                                                                             return currentVal >= maxQty && maxQty > 0 ? "border-warning text-warning bg-warning/10" : ""
                                                                         })()
                                                                     )}
@@ -527,7 +529,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                 </TableCell>
                                                 <TableCell className="align-top">
                                                     <FormField<SaleOrderFormValues>
-                                                        control={form.control}
+                                                        control={form.control as any}
                                                         name={`lines.${index}.uom`}
                                                         render={({ field }) => {
                                                             const productId = form.watch(`lines.${index}.product`) || ""
@@ -538,7 +540,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                 <UoMSelector
                                                                     product={selectedProduct || null}
                                                                     context="sale"
-                                                                    value={field.value || ""}
+                                                                    value={(field as any).value || ""}
                                                                     onChange={async (val) => {
                                                                         field.onChange(val)
                                                                         const qty = Number(form.getValues(`lines.${index}.quantity`)) || 1
@@ -560,7 +562,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                 </TableCell>
                                                 <TableCell className="text-right text-xs align-top">
                                                     <FormField<SaleOrderFormValues>
-                                                        control={form.control}
+                                                        control={form.control as any}
                                                         name={`lines.${index}.unit_price_gross`}
                                                         render={({ field }) => {
                                                             const productId = form.watch(`lines.${index}.product`)
@@ -639,7 +641,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
 
                         <div className="flex justify-end pt-4">
                             <div className="w-full md:w-1/2">
-                                <OrderTotals control={form.control} />
+                                <OrderTotals control={form.control as any} />
                             </div>
                         </div>
                     </form>

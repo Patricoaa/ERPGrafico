@@ -13,7 +13,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Trash2, CheckCircle, Eye, Pencil } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { formatPlainDate, cn } from "@/lib/utils"
+import { formatPlainDate } from "@/lib/utils"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
@@ -42,7 +42,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
     const [entries, setEntries] = useState<JournalEntry[]>([])
     const [accounts, setAccounts] = useState<Record<string, unknown>[]>([])
     const [loading, setLoading] = useState(true)
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: string, id: number | string } | null>(null)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: 'journal_entry', id: number | string } | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null)
     
@@ -86,10 +86,6 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         setIsFormOpen(true)
     }
 
-    const handleCreateEntry = () => {
-        setEditingEntry(null)
-        setIsFormOpen(true)
-    }
 
     const fetchEntries = async () => {
         // Only set loading if not already loading to avoid jitter
@@ -258,7 +254,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
 
                 <JournalEntryForm 
                     accounts={accounts} 
-                    initialData={editingEntry as Record<string, unknown> | undefined}
+                    initialData={editingEntry as unknown as import('@/types/forms').JournalEntryInitialData | undefined}
                     onSuccess={() => {
                         fetchEntries()
                         handleFormOpenChange(false)

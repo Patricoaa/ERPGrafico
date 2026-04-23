@@ -111,8 +111,8 @@ interface StatusBadgeProps {
     status: string
     /** Override the default label for this status */
     label?: string
-    /** Visual variant: Standard badge, Hub (circular icon), or Dot */
-    variant?: "default" | "hub" | "dot"
+    /** Visual variant: Standard badge, Hub (circular icon), Dot, or Subtle */
+    variant?: "default" | "hub" | "dot" | "subtle"
     /** Icon to display (required for variant="hub") */
     icon?: LucideIcon
     /** Custom tooltip (used for variant="hub") */

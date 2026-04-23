@@ -31,8 +31,8 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
             try {
                 // Prepare rule data for backend
                 const payload = {
-                    ...rule,
-                    treasury_account_id: rule.treasury_account?.id
+                    ...(rule as any),
+                    treasury_account_id: (rule as any).treasury_account?.id
                 }
                 const response = await api.post('/treasury/reconciliation-rules/simulate/', payload)
                 setResults(response.data.results)

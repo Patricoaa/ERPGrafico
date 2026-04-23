@@ -25,6 +25,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 export interface Terminal {
     id: number

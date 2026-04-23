@@ -22,7 +22,7 @@ import {
  * Purchase Order Action Registry
  * Defines all available actions for purchase orders with permission requirements
  */
-export const purchaseOrderActions: ActionRegistry = {
+export const purchaseOrderActions: ActionRegistry<any> = {
     documents: {
         id: 'documents',
         label: 'Documentos',

@@ -51,7 +51,7 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
 
     useEffect(() => {
         if (serverDate && !date) {
-            setDate(serverDate)
+            requestAnimationFrame(() => setDate(serverDate))
         }
     }, [serverDate])
 

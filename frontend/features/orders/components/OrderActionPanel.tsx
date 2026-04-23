@@ -98,7 +98,7 @@ export function OrderActionPanel({
     const getPaymentProgress = () => {
         if (!order) return { percentage: 0, paid: 0, pending: 0 }
 
-        const total = parseFloat(order.total || 0)
+        const total = parseFloat(String(order.total || 0))
         const pending = order.pending_amount ?? total
         const paid = total - pending
         const percentage = total > 0 ? Math.round((paid / total) * 100) : 0
@@ -127,8 +127,8 @@ export function OrderActionPanel({
                                 <span className="font-mono">
                                     {orderType === 'purchase' ? 'OC' : 'NV'}-{order?.number}
                                 </span>
-                                <Badge variant={getStatusVariant(order?.status)}>
-                                    {getStatusLabel(order?.status)}
+                                <Badge variant={getStatusVariant(order?.status || "")}>
+                                    {getStatusLabel(order?.status || "")}
                                 </Badge>
                             </div>
                         )}
@@ -188,15 +188,15 @@ export function OrderActionPanel({
                                         <Badge
                                             variant={getStatusVariant(
                                                 orderType === 'purchase'
-                                                    ? order?.receiving_status
-                                                    : order?.delivery_status
+                                                    ? (order?.receiving_status || "")
+                                                    : (order?.delivery_status || "")
                                             )}
                                             className="text-xs"
                                         >
                                             {getStatusLabel(
                                                 orderType === 'purchase'
-                                                    ? order?.receiving_status
-                                                    : order?.delivery_status
+                                                    ? (order?.receiving_status || "")
+                                                    : (order?.delivery_status || "")
                                             )}
                                         </Badge>
                                     </div>
@@ -229,7 +229,7 @@ export function OrderActionPanel({
                                         <div className="flex items-center justify-between text-xs">
                                             <span className="text-muted-foreground">Documentos</span>
                                             <Badge variant="outline" className="text-xs">
-                                                {(order.related_documents?.invoices || order.invoices)?.length}
+                                                {(order?.related_documents?.invoices || order?.invoices)?.length}
                                             </Badge>
                                         </div>
                                     </div>
@@ -248,7 +248,7 @@ export function OrderActionPanel({
                                     <ActionCategory
                                         key={key}
                                         category={category}
-                                        order={order}
+                                        order={order!}
                                         userPermissions={userPermissions?.permissions || []}
                                         onActionSuccess={handleActionComplete}
                                     />

@@ -11,7 +11,7 @@ interface UseSaleOrderSearchReturn {
     fetchSingleOrder: (id: string | number) => Promise<void>
 }
 
-let globalCache: Record<string, SaleOrder[]> = {}
+const globalCache: Record<string, SaleOrder[]> = {}
 
 export function useSaleOrderSearch(): UseSaleOrderSearchReturn {
     const [orders, setOrders] = useState<SaleOrder[]>([])

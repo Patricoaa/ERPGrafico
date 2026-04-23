@@ -36,9 +36,11 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
     // Sync with server date
     useEffect(() => {
         if (serverYear && serverMonth && dateString) {
-            if (!year) setYear(serverYear.toString())
-            if (!month) setMonth(serverMonth.toString())
-            if (!date) setDate(dateString)
+            requestAnimationFrame(() => {
+                if (!year) setYear(serverYear.toString())
+                if (!month) setMonth(serverMonth.toString())
+                if (!date) setDate(dateString)
+            })
         }
     }, [serverYear, serverMonth, dateString])
 
@@ -47,7 +49,7 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
         if (open) {
             // Load suppliers (providers)
             api.get("/contacts/?is_supplier=true&has_terminal_payment_method=true").then(res => {
-                if (isMounted) setSuppliers(res.data)
+                if (isMounted) requestAnimationFrame(() => setSuppliers(res.data))
             }).catch(() => {
                 if (isMounted) toast.error("Error al cargar proveedores")
             })

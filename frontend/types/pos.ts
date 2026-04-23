@@ -6,13 +6,13 @@ export interface Product {
     code: string
     internal_code?: string
     name: string
-    sale_price: string
-    sale_price_gross: string
+    sale_price: string | number
+    sale_price_gross: string | number
     current_stock?: number
     qty_reserved?: number
     qty_available?: number
     manufacturable_quantity?: number | null
-    product_type?: 'STORABLE' | 'CONSUMABLE' | 'SERVICE' | 'MANUFACTURABLE' | 'SUBSCRIPTION'
+    product_type?: 'STORABLE' | 'CONSUMABLE' | 'SERVICE' | 'MANUFACTURABLE' | 'SUBSCRIPTION' | string
     track_inventory?: boolean
     variants_count?: number
     has_variants?: boolean
@@ -38,15 +38,7 @@ export interface Product {
         attribute_name: string
         value: string
     }[]
-    sale_price?: string | number
-    sale_price_gross?: string | number
-    qty_available?: number
-    current_stock?: number
-    qty_reserved?: number
-    manufacturable_quantity?: number | null
     has_active_bom?: boolean
-    product_type?: string
-    requires_advanced_manufacturing?: boolean
     boms?: BOM[]
 }
 
@@ -92,7 +84,7 @@ export interface DeliveryData {
 
 export interface WizardState {
     step: number
-    dteData?: DTEData
+    dteData?: DTEData & { attachment?: File | string | null }
     paymentData?: PaymentData
     deliveryData?: DeliveryData
     approvalTaskId?: number | null
@@ -101,8 +93,9 @@ export interface WizardState {
     isLoading?: boolean
     isQuickSale?: boolean
     selectedCustomerName?: string
-    selectedCustomerId?: string | number
+    selectedCustomerId?: string | number | null
     isWaitingPayment?: boolean
+    [key: string]: any // Required for Record<string, unknown> compatibility
 }
 
 export interface CartItem extends Product {
@@ -124,6 +117,7 @@ export interface BOMLine {
     component: number
     quantity: number
     uom: number | null
+    component_stock?: number | null
 }
 
 export interface BOM {
@@ -162,7 +156,7 @@ export interface POSSession {
         payment_terminal_device?: number
         payment_terminal_device_name?: string
     } | null
-    treasury_account: number
+    treasury_account: number | { id: number; name: string }
     treasury_account_name: string
     user: number
     user_name: string

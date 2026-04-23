@@ -41,21 +41,16 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     // Sync state with server date when available and not yet set
     useEffect(() => {
         if (serverDate && !date) {
-            setDate(serverDate)
+            requestAnimationFrame(() => setDate(serverDate))
         }
     }, [serverDate])
     const [grossAmount, setGrossAmount] = useState<string>("0")
     const [commissionNet, setCommissionNet] = useState<string>("0")
     const [commissionTax, setCommissionTax] = useState<string>("0")
-    const [netDeposit, setNetDeposit] = useState<string>("0")
     const [reference, setReference] = useState("")
     const [selectedMovements, setSelectedMovements] = useState<any[]>([])
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
     const [openSelection, setOpenSelection] = useState(false)
-
-    // Validation State
-    const [isValid, setIsValid] = useState(true)
-    const [diff, setDiff] = useState(0)
 
     // Load providers and deposit methods
     useEffect(() => {
@@ -67,27 +62,27 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                     api.get('/treasury/payment-methods/')
                 ])
                 if (isMounted) {
-                    setProviders(provRes.data.results || provRes.data)
-                    setPaymentMethods(methRes.data.results || methRes.data)
+                    requestAnimationFrame(() => {
+                        setProviders(provRes.data.results || provRes.data)
+                        setPaymentMethods(methRes.data.results || methRes.data)
+                    })
                 }
             } catch (error) {
                 if (isMounted) toast.error("Error al cargar datos")
             }
         }
-        fetchData()
+        requestAnimationFrame(() => fetchData())
         return () => { isMounted = false }
     }, [])
 
-    // Real-time validation
-    useEffect(() => {
-        const gross = parseFloat(grossAmount) || 0
-        const cNet = parseFloat(commissionNet) || 0
-        const cTax = parseFloat(commissionTax) || 0
+    // Derived values for real-time validation
+    const gross = parseFloat(grossAmount) || 0
+    const cNet = parseFloat(commissionNet) || 0
+    const cTax = parseFloat(commissionTax) || 0
 
-        const calculatedNet = Math.round(gross - (cNet + cTax))
-        setNetDeposit(calculatedNet.toString())
-        setIsValid(gross > 0 && calculatedNet >= 0)
-    }, [grossAmount, commissionNet, commissionTax])
+    const calculatedNet = Math.round(gross - (cNet + cTax))
+    const netDeposit = calculatedNet.toString()
+    const isValid = gross > 0 && calculatedNet >= 0
 
 
     const handleAutoCalculate = async () => {
@@ -361,7 +356,9 @@ function SaleSelectionModal({ open, onOpenChange, providerId, date, onConfirm, i
     useEffect(() => {
         let isMounted = true
         if (open && providerId && date) {
-            setLoading(true)
+            requestAnimationFrame(() => {
+                if (isMounted) setLoading(true)
+            })
             const dateStr = format(date, "yyyy-MM-dd")
             api.get(`/treasury/movements/`, {
                 params: {
@@ -381,21 +378,22 @@ function SaleSelectionModal({ open, onOpenChange, providerId, date, onConfirm, i
                 })
 
                 setMovements(sorted)
-
-                // Initial auto-selection: only sales for the selected date
-                const next = new Set<number>()
-                if (initialSelectedIds.size === 0) {
-                    sorted.forEach((m: any) => {
-                        if (m.date === dateStr) next.add(m.id)
-                    })
-                } else {
-                    initialSelectedIds.forEach(id => {
-                        if (sorted.some((m: any) => m.id === id)) next.add(id)
-                    })
-                }
-                setSelectedIds(next)
+                requestAnimationFrame(() => {
+                    // Initial auto-selection: only sales for the selected date
+                    const next = new Set<number>()
+                    if (initialSelectedIds.size === 0) {
+                        sorted.forEach((m: any) => {
+                            if (m.date === dateStr) next.add(m.id)
+                        })
+                    } else {
+                        initialSelectedIds.forEach(id => {
+                            if (sorted.some((m: any) => m.id === id)) next.add(id)
+                        })
+                    }
+                    setSelectedIds(next)
+                })
             }).finally(() => {
-                if (isMounted) setLoading(false)
+                if (isMounted) requestAnimationFrame(() => setLoading(false))
             })
         }
         return () => { isMounted = false }

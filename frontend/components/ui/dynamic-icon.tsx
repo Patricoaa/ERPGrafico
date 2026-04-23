@@ -11,15 +11,32 @@ interface DynamicIconProps extends LucideProps {
   name: string
 }
 
+const iconCache = new Map<string, React.LazyExoticComponent<React.ComponentType<any>>>()
+
+const LoadingFallback = () => <div className="animate-pulse bg-muted rounded-full" style={{ width: 24, height: 24 }} />
+
+const getIconComponent = (iconName: keyof typeof dynamicIconImports) => {
+  if (!iconCache.has(iconName)) {
+    iconCache.set(iconName, dynamic(dynamicIconImports[iconName], {
+      loading: LoadingFallback
+    }) as any)
+  }
+  return iconCache.get(iconName)!
+}
+
 export const DynamicIcon = ({ name, ...props }: DynamicIconProps) => {
   const iconName = name ? toKebabCase(name) as keyof typeof dynamicIconImports : undefined
 
-  const Icon = useMemo(() => {
-    if (!iconName || !dynamicIconImports[iconName]) return Package
-    return dynamic(dynamicIconImports[iconName], {
-      loading: () => <div className="animate-pulse bg-muted rounded-full" style={{ width: props.size || 24, height: props.size || 24 }} />
-    })
-  }, [iconName, props.size])
+  // useMemo MUST be called before any conditional return (rules-of-hooks)
+  const IconComponent = useMemo(
+    () => (iconName && dynamicIconImports[iconName] ? getIconComponent(iconName) : null),
+    [iconName]
+  )
 
-  return <Icon {...props} />
+  if (!IconComponent) {
+    return <Package {...props} />
+  }
+
+  // Render through a stable intermediary to avoid "component created during render"
+  return React.createElement(IconComponent, props)
 }

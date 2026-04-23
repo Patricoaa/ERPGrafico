@@ -14,7 +14,14 @@ interface PeriodGridItemProps {
     isActionLoading: boolean;
 }
 
-export function PeriodGridItem({ period, onClose, onReopen, isActionLoading }: PeriodGridItemProps) {
+const StatusIcon = ({ status }: { status: string }) => {
+    switch (status) {
+        case 'OPEN': return <CheckCircle2 className="w-4 h-4 text-success" />;
+        case 'UNDER_REVIEW': return <Clock className="w-4 h-4 text-warning" />;
+        case 'CLOSED': return <Lock className="w-4 h-4 text-muted-foreground" />;
+        default: return null;
+    }
+};export function PeriodGridItem({ period, onClose, onReopen, isActionLoading }: PeriodGridItemProps) {
     const getStatusToken = (status: string) => {
         switch (status) {
             case 'OPEN': return 'success';
@@ -24,16 +31,7 @@ export function PeriodGridItem({ period, onClose, onReopen, isActionLoading }: P
         }
     };
 
-    const StatusIcon = () => {
-        switch (period.status) {
-            case 'OPEN': return <CheckCircle2 className="w-4 h-4 text-success" />;
-            case 'UNDER_REVIEW': return <Clock className="w-4 h-4 text-warning" />;
-            case 'CLOSED': return <Lock className="w-4 h-4 text-muted-foreground" />;
-            default: return null;
-        }
-    };
-
-    const taxClosed = period.tax_period_id && period.tax_period_status === 'CLOSED';
+    const taxClosed = !!(period.tax_period_id && period.tax_period_status === 'CLOSED');
 
     return (
         <IndustrialCard variant="list" className="p-4 flex flex-col justify-between h-full group transition-all duration-300 hover:border-primary/30">
@@ -60,7 +58,7 @@ export function PeriodGridItem({ period, onClose, onReopen, isActionLoading }: P
                     </div>
                 ) : (
                     <div className="text-xs text-muted-foreground flex items-center gap-1.5 mt-2 p-2 px-0">
-                        <StatusIcon />
+                        <StatusIcon status={period.status} />
                         <span>{period.status === 'OPEN' ? 'Periodo activo.' : 'En revisión.'}</span>
                     </div>
                 )}

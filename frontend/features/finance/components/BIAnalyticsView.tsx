@@ -166,7 +166,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="month" />
                             <YAxis />
-                            <Tooltip formatter={(value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Ventas']} />
+                            <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Ventas']) as any} />
                             <Legend />
                             <Line
                                 type="monotone"
@@ -196,7 +196,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis type="number" />
                                 <YAxis dataKey="name" type="category" width={100} />
-                                <Tooltip formatter={(value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Ventas']} />
+                                <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Ventas']) as any} />
                                 <Bar dataKey="amount" fill={COLORS[1]} />
                             </BarChart>
                         </ResponsiveContainer>
@@ -217,7 +217,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                                     cx="50%"
                                     cy="50%"
                                     labelLine={false}
-                                    label={(entry: { category: string }) => `${entry.category}`}
+                                    label={((entry: any) => `${entry.category}`) as any}
                                     outerRadius={80}
                                     fill="var(--primary)"
                                     dataKey="value"
@@ -226,7 +226,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Valor']} />
+                                <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Valor']) as any} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>

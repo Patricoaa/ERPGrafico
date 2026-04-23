@@ -55,7 +55,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
 
     useEffect(() => {
         if (externalOpen) {
-            setNewFYModalOpen(true);
+            requestAnimationFrame(() => setNewFYModalOpen(true));
         }
     }, [externalOpen]);
 

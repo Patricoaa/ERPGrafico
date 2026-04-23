@@ -3,15 +3,13 @@
 import { useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { useRouter, usePathname } from "next/navigation"
-import Link from "next/link"
 import { MiniSidebar } from "@/components/layout/MiniSidebar"
 import { Toaster } from "@/components/ui/sonner"
 import { cn } from "@/lib/utils"
-import { HubPanelProvider, useHubPanel } from "@/components/providers/HubPanelProvider"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { UserActions } from "@/components/layout/UserActions"
 import { useHeader } from "@/components/providers/HeaderProvider"
-import { DynamicIcon } from "@/components/ui/dynamic-icon"
 import { motion, AnimatePresence } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Loader2 } from "lucide-react"
@@ -27,19 +25,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const router = useRouter()
     const pathname = usePathname()
 
-    const [activeCategory, setActiveCategory] = useState<string | null>("dashboard")
+    const activeCategory = pathname.split('/')[1] || "dashboard"
     const [isInboxOpen, setIsInboxOpen] = useState(false)
 
     const { config } = useHeader()
     const { isHubOpen, hubConfig, closeHub, isHubTemporarilyHidden, isDocked, isHubEffectivelyOpen } = useHubPanel()
     const { isSubModalActive } = useGlobalModals()
-
-
-    useEffect(() => {
-        // Sync active category with URL
-        const path = pathname.split('/')[1] || "dashboard"
-        setActiveCategory(path)
-    }, [pathname])
 
 
     // Sync global data attributes for repelling fixed UI elements (like Sheets)
@@ -88,7 +79,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     }
                 }}
             />
-            {/* ── TOP BAR (Moved outside layout shifting) ────────────────────── */}
+
+            {/* ── TOP BAR (Moved outside layout shifting) ────────────────────── */}
             {/* Single 64px bar that aligns: logo zone | title | actions */}
             <div className="absolute top-0 left-0 right-0 h-[64px] flex items-center border-b border-light-200/[0.04] z-30">
 

@@ -7,7 +7,7 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table";
-import { CaretRight, CaretDown, ShieldCheck, ListDashes, Vault } from "@phosphor-icons/react";
+import { ChevronRight, ChevronDown, ShieldCheck, List, Landmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
 
@@ -55,7 +55,7 @@ const AccountRow = ({ node, level = 0, showComparison }: { node: AccountNode, le
                     <div className="flex items-center" style={{ paddingLeft: `${paddingLeft}px` }}>
                         {hasChildren && (
                             <button onClick={() => setExpanded(!expanded)} className="mr-2 text-primary hover:scale-110 transition-transform">
-                                {expanded ? <CaretDown weight="bold" className="h-4 w-4" /> : <CaretRight weight="bold" className="h-4 w-4" />}
+                                {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                             </button>
                         )}
                         {!hasChildren && <div className="w-6 mr-1 flex justify-center"><div className="w-1 h-1 rounded-full bg-muted-foreground/30" /></div>}

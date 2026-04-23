@@ -309,7 +309,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                         </section>
                     </div>
                     {calcData?.drafts_summary && (calcData.drafts_summary.invoices.length > 0 || calcData.drafts_summary.entries.length > 0) && (
-                        <Alert variant="warning" className="border-warning/30 bg-warning/5 rounded-lg p-6">
+                        <Alert variant="default" className="border-warning/30 bg-warning/5 rounded-lg p-6">
                             <AlertCircle className="h-5 w-5 text-warning" />
                             <div className="space-y-4 w-full">
                                 <AlertTitle className="text-sm font-black uppercase tracking-widest text-warning/90">Documentos en Borrador</AlertTitle>
@@ -408,7 +408,13 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
 
     if (isClosed) {
         return (
-            <BaseModal open={isOpen} onOpenChange={onOpenChange} size="xl" showCloseButton={false}>
+            <BaseModal 
+                open={isOpen} 
+                onOpenChange={onOpenChange} 
+                size="xl" 
+                showCloseButton={false}
+                title="Ciclo Finalizado"
+            >
                 <div className="flex flex-col items-center justify-center py-20 text-center space-y-8 animate-in zoom-in-95 duration-500">
                     <CheckCircle2 className="h-12 w-12" />
                     <div className="space-y-3">
@@ -436,7 +442,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                 </div>
             }
             steps={steps}
-            onComplete={handleSaveAndClose}
+            onComplete={async () => { await handleSaveAndClose(); }}
             isCompleting={isLoading}
             completeButtonLabel="Registrar y Finalizar"
             completeButtonIcon={<CheckCircle2 className="h-4 w-4 mr-2" />}

@@ -20,7 +20,7 @@ interface UseProductSearchReturn {
     fetchSingleProduct: (id: string | number) => Promise<void>
 }
 
-let globalCache: Record<string, Product[]> = {}
+const globalCache: Record<string, Product[]> = {}
 
 export function useProductSearch(): UseProductSearchReturn {
     const [products, setProducts] = useState<Product[]>([])

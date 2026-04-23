@@ -46,8 +46,10 @@ import {
     useDraftSync,
     type SyncDraft 
 } from '@/features/pos/hooks'
+import { type CheckoutResponse } from '@/features/sales/types'
 import type { Customer, Product, WizardState } from '@/types/pos'
 import type { TransactionData } from '@/types/transactions'
+import { type DraftCart } from './DraftCartsList'
 import type { CheckoutWizardState } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
 // UI Components from Feature
@@ -119,7 +121,7 @@ export function POSClientView() {
     }, [])
 
     const { syncDrafts, acquireLock, releaseLock, isLockedByOther, getLockInfo, forceSync, browserSessionKey } = useDraftSync({
-        posSessionId: currentSession?.id || null,
+        posSessionId: (currentSession?.id ?? null) as number | null,
         enabled: !!currentSession?.id,
         onNewDraft: handleNewDraft,
         onDraftUpdated: (draft) => { /* Optional: handle quiet updates */ },
@@ -127,7 +129,7 @@ export function POSClientView() {
             if (status === 'CLOSED') {
                 toast.error("Sesión Cerrada", {
                     description: `La sesión ha sido cerrada por ${closedBy || 'otro terminal'}.`,
-                    duration: null, // Keep it visible
+                    duration: 10000, // 10 seconds, enough to see it
                 })
                 // Update local session state to null to trigger clean UI reset
                 setCurrentSession(null)
@@ -173,7 +175,11 @@ export function POSClientView() {
     const [isSharedSession, setIsSharedSession] = useState(false)
     const draftLoadedFromUrl = useRef(false)
 
-    useEffect(() => { if (typeof window !== 'undefined') setIsSharedSession(!!localStorage.getItem('shared_pos_session_id')) }, [currentSession])
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            requestAnimationFrame(() => setIsSharedSession(!!localStorage.getItem('shared_pos_session_id')))
+        }
+    }, [currentSession])
 
     useEffect(() => {
         const dIdStr = searchParams.get('draftId')
@@ -194,12 +200,15 @@ export function POSClientView() {
     useEffect(() => {
         const wCustId = wizardState?.selectedCustomerId
         if (wCustId && wCustId.toString() !== selectedCustomerId?.toString()) {
-            const parsed = parseInt(wCustId.toString()); if (!isNaN(parsed)) setSelectedCustomerId(parsed)
+            const parsed = parseInt(wCustId.toString());
+            if (!isNaN(parsed)) {
+                requestAnimationFrame(() => setSelectedCustomerId(parsed))
+            }
         }
-    }, [wizardState?.selectedCustomerId, selectedCustomerId])
+    }, [wizardState?.selectedCustomerId, selectedCustomerId, setSelectedCustomerId])
 
     const handleProductClick = (product: Product) => {
-        if (product.has_variants && product.variants_count > 0) {
+        if (product.has_variants && (product.variants_count || 0) > 0) {
             setSelectedProductForVariant(product); setVariantModalOpen(true)
         } else addProductToCart(product)
     }
@@ -303,8 +312,15 @@ export function POSClientView() {
         }
     }
 
-    const handleCheckoutComplete = async (resData: TransactionData) => {
-        setCompletedSaleData(resData)
+    const handleLoadDraft = async (draft: SyncDraft | DraftCart) => {
+        await loadDraft(draft.id); setDraftsListOpen(false)
+        if ('wizard_state' in draft && draft.wizard_state?.step) setPosMode('CHECKOUT')
+    }
+
+    const handleCheckoutComplete = async (resData: TransactionData | CheckoutResponse) => {
+        // Map CheckoutResponse to TransactionData if needed, or just cast if they overlap in usage
+        const transactionData = resData as TransactionData
+        setCompletedSaleData(transactionData)
         await releaseCurrentLock()
         setCurrentDraftId(null); setWizardState(null); clearCart()
         await fetchDrafts(); queryClient.invalidateQueries({ queryKey: ['sales'] })
@@ -313,7 +329,11 @@ export function POSClientView() {
     }
 
     const handleSuspendDraft = async (finalState: CheckoutWizardState) => {
-        await saveDraft(undefined, true, finalState)
+        try {
+            await saveDraft(undefined, true, finalState as unknown as Record<string, unknown>)
+        } catch (error) {
+            console.error("Failed to suspend draft", error)
+        }
         await releaseCurrentLock()
         setCurrentDraftId(null)
         setWizardState(null)
@@ -336,13 +356,8 @@ export function POSClientView() {
         const isOnlyService = items.every(line => line.product_type === 'SERVICE')
         const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
         const lastStep = (isOnlyService ? 3 : 4) + (hasMfg ? 1 : 0)
-        setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null, notes: '' } } as unknown as Parameters<typeof setWizardState>[0])
+        setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null, notes: '' } } as any)
         setTimeout(() => setPosMode('CHECKOUT'), 0)
-    }
-
-    const handleLoadDraft = async (draft: SyncDraft) => {
-        await loadDraft(draft.id); setDraftsListOpen(false)
-        if (draft.wizard_state?.step) setPosMode('CHECKOUT')
     }
 
     const quickSaleEligibility = Validation.canQuickSale(items, selectedCustomerId)
@@ -510,26 +525,39 @@ export function POSClientView() {
                                 <SalesCheckoutWizardContent
                                     key={currentDraftId || 'checkout-new'}
                                     order={null}
-                                    orderLines={items}
+                                    orderLines={items.map(item => ({
+                                        product: item.id,
+                                        product_name: item.name,
+                                        description: item.name,
+                                        quantity: item.qty,
+                                        uom: item.uom || 0,
+                                        uom_name: item.uom_name,
+                                        unit_price: item.unit_price_gross,
+                                        unit_price_net: item.unit_price_net,
+                                        unit_price_gross: item.unit_price_gross,
+                                        tax_rate: (item as any).tax_rate || 19, // Use any briefly for dynamic prop or check Product type
+                                        discount_amount: item.discount_amount,
+                                        discount_percentage: item.discount_percentage,
+                                    })) as any} // Still need any here because SaleOrderLine has many required fields like description
                                     total={totals.total_gross}
                                     totalDiscountAmount={totalDiscountAmount}
-                                    onComplete={handleCheckoutComplete}
+                                    onComplete={(data) => handleCheckoutComplete(data as any)}
                                     onCancel={() => setPosMode('SHOPPING')}
-                                    onSuspend={handleSuspendDraft}
+                                    onSuspend={(state) => handleSuspendDraft(state as any)}
                                     initialCustomerId={selectedCustomerId?.toString() || (wizardState?.isQuickSale ? defaultCustomerId?.toString() : undefined)}
                                     posSessionId={currentSession?.id}
                                     terminalId={currentSession?.terminal}
                                     terminalDeviceId={currentSession?.terminal_details?.payment_terminal_device ?? null}
                                     quickSale={wizardState?.isQuickSale}
                                     initialStep={wizardState?.step}
-                                    initialDteData={wizardState?.dteData}
-                                    initialPaymentData={wizardState?.paymentData}
-                                    initialDeliveryData={wizardState?.deliveryData}
+                                    initialDteData={wizardState?.dteData as any}
+                                    initialPaymentData={wizardState?.paymentData as any}
+                                    initialDeliveryData={wizardState?.deliveryData as any}
                                     initialApprovalTaskId={wizardState?.approvalTaskId}
                                     initialIsWaitingApproval={wizardState?.isWaitingApproval}
                                     initialIsApproved={wizardState?.isApproved}
                                     initialDraftId={currentDraftId}
-                                    onStateChange={setWizardState}
+                                    onStateChange={(state) => setWizardState(state as any)}
                                     isInline
                                     isSessionHost={user?.id === currentSession?.user}
                                 />
@@ -566,8 +594,8 @@ export function POSClientView() {
                 </div>
             </div>
 
-            <POSVariantSelectorModal open={variantModalOpen} onOpenChange={setVariantModalOpen} product={selectedProductForVariant} onSelect={v => addProductToCart(v as unknown as Parameters<typeof addProductToCart>[0])} items={items} bomCache={bomCache} componentCache={componentCache} calculateMaxQty={calculateMaxQty} />
-            <DraftCartsList open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts} getLockInfo={getLockInfo} />
+            <POSVariantSelectorModal open={variantModalOpen} onOpenChange={setVariantModalOpen} product={selectedProductForVariant} onSelect={v => addProductToCart(v as any)} items={items} bomCache={bomCache as any} componentCache={componentCache as any} calculateMaxQty={calculateMaxQty} />
+            <DraftCartsList open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts as any} getLockInfo={getLockInfo} />
             <NumpadModal open={numpadOpen} onOpenChange={setNumpadOpen} title={numpadConfig?.field === 'qty' ? "Cantidad" : "Precio"} value={numpadValue} onChange={setNumpadValue} onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))} allowDecimal />
             <ScannerFeedback ref={scannerFeedbackRef} />
             <SalesOrdersModal open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
@@ -612,7 +640,7 @@ export function POSClientView() {
                             }}
                             currentType={completedSaleData.sale_order_detail ? "sale_order" : "invoice"}
                             mainTitle="Ticket de Venta"
-                            subTitle={completedSaleData.client_name || "Cliente Contado"}
+                            subTitle={(completedSaleData as any)?.client_name || "Cliente Contado"}
                         />
                     )}
                 </AlertDialogContent>

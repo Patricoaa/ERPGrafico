@@ -311,9 +311,9 @@ export function PurchaseCheckoutWizard({
 
             // Payment data
             if (paymentData.amount > 0) {
-                formData.append('payment_method', paymentData.method)
+                formData.append('payment_method', paymentData.method || "")
                 formData.append('amount', paymentData.amount.toString())
-                formData.append('payment_is_pending', paymentData.isPending.toString())
+                formData.append('payment_is_pending', (paymentData.isPending || false).toString())
                 if (paymentData.transactionNumber) formData.append('transaction_number', paymentData.transactionNumber)
                 if (paymentData.treasuryAccountId) formData.append('treasury_account_id', paymentData.treasuryAccountId)
                 formData.append('payment_type', 'OUTBOUND')
@@ -472,8 +472,8 @@ export function PurchaseCheckoutWizard({
                                 receiptData={receiptData}
                                 setReceiptData={(data) => {
                                     setReceiptData(data)
-                                    if (data.warehouseId) {
-                                        setSelectedWarehouseId(data.warehouseId)
+                                    if ((data as any).warehouseId) {
+                                        setSelectedWarehouseId((data as any).warehouseId)
                                     }
                                 }}
                                 orderLines={currentOrderLines}

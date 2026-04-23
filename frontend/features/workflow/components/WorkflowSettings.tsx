@@ -253,8 +253,8 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                                         min="1"
                                         max="28"
                                         className="h-7 w-12 text-center text-xs p-0 font-mono"
-                                        defaultValue={recurrentSettings?.[type.dayField]}
-                                        onBlur={(e) => handleUpdateRecurrentSetting(type.dayField, e.target.value)}
+                                        defaultValue={type.dayField ? recurrentSettings?.[type.dayField] : ''}
+                                        onBlur={(e) => type.dayField && handleUpdateRecurrentSetting(type.dayField, e.target.value)}
                                         disabled={saving === type.dayField}
                                     />
                                 </div>
@@ -299,7 +299,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                                         />
                                     ) : (
                                         <UserSelector
-                                            value={rule?.assigned_user ? parseInt(rule.assigned_user) : null}
+                                            value={rule?.assigned_user ? Number(rule.assigned_user) : null}
                                             onChange={(val: number | null) => handleUpdateRule(type.id, val, false)}
                                             disabled={saving === type.id}
                                             placeholder="Añadir usuario..."
@@ -419,7 +419,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                                                 />
                                             ) : (
                                                 <UserSelector
-                                                    value={rule?.assigned_user ? parseInt(rule.assigned_user) : null}
+                                                    value={rule?.assigned_user ? Number(rule.assigned_user) : null}
                                                     onChange={(val: number | null) => handleUpdateNotificationRule(type.id, 'assigned_user', val)}
                                                     placeholder="Añadir usuario..."
                                                 />
@@ -448,7 +448,7 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                             <CardDescription className="text-xs">
                                 Si se selecciona un <strong>Usuario</strong>, la tarea se asignará directamente a él.
                                 <br />
-                                Si se selecciona un <strong>Grupo</strong>, la tarea quedará en un "Pool" visible para todos los miembros de ese grupo, y cualquiera podrá tomarla.
+                                Si se selecciona un <strong>Grupo</strong>, la tarea quedará en un &quot;Pool&quot; visible para todos los miembros de ese grupo, y cualquiera podrá tomarla.
                             </CardDescription>
                         </CardHeader>
                     </Card>

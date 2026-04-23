@@ -152,7 +152,7 @@ export default function StatementImportDialog({ open, onOpenChange, onSuccess }:
             }
             const cols = response.data.columns
             const newMapping = { ...mapping }
-            cols.forEach((col, idx: number) => {
+            cols.forEach((col: any, idx: number) => {
                 const colStr = String(col).toLowerCase()
                 if (colStr.includes('fech') || colStr.includes('date')) newMapping.date = col
                 if (colStr.includes('desc') || colStr.includes('glos') || colStr.includes('detalle')) newMapping.description = col

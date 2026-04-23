@@ -105,7 +105,7 @@ function ProductGridComponent({
                             isTouchPOS && "min-h-[120px]"
                         )}>
                             {product.image ? (
-                                <img src={resolveMediaUrl(product.image)} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                <img src={resolveMediaUrl(product.image)!} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                             ) : (
                                 <DynamicIcon
                                     name={categoryIcon || "Package"}
@@ -239,7 +239,7 @@ function ProductGridComponent({
                                     </span>
                                 ) : (
                                     <>
-                                        {formatCurrency(PricingUtils.netToGross(Number(product.sale_price)))}
+                                        {formatCurrency(PricingUtils.netToGross(Number(product.sale_price || 0)))}
                                         <span className="text-[10px] text-muted-foreground ml-1">c/IVA</span>
                                     </>
                                 )}

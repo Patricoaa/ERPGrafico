@@ -39,9 +39,9 @@ export async function calculateConsumption(
     for (const item of cartItems) {
         if (ignoreItemId && item.cartItemId === ignoreItemId) continue
 
-        let itemRefUomId = (item as any).uom
-        let productDef = products.find(p => p.id === item.id)
-        if (productDef) itemRefUomId = productDef.uom
+        const itemRefUomId_base = (item as any).uom
+        const productDef = products.find(p => p.id === item.id)
+        const itemRefUomId = productDef ? productDef.uom : itemRefUomId_base
 
         const itemFactor = getConversionFactor(item.uom, itemRefUomId, uoms)
         const qtyRef = item.qty * itemFactor

@@ -320,7 +320,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                             {isEditing ? (
                                 <div className={cn("rounded-md border", variantMode && "p-0 border-none bg-transparent")}>
                                     <BOMManager 
-                                        product={initialData} 
+                                        product={initialData as any} 
                                         variantMode={variantMode} 
                                         onBomsChange={(loadedBoms) => {
                                             if (!loadedBoms) return;
@@ -573,7 +573,7 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                                             className="h-8 text-[10px] px-2 w-full justify-between font-normal"
                                                                         >
                                                                             {field.value
-                                                                                ? availableUoms.find((u) => String(u.id) === field.value.toString())?.name as string
+                                                                                ? uoms.find((u) => String(u.id) === String(field.value))?.name
                                                                                 : "-"}
                                                                             <ChevronDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
                                                                         </Button>

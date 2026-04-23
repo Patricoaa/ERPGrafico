@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTrialBalance } from '../../hooks/useTrialBalance';
 import { LoadingFallback } from '@/components/shared/LoadingFallback';
 import { EmptyState } from '@/components/shared/EmptyState';
@@ -8,11 +8,10 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calculator, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import { LAYOUT_TOKENS } from '@/lib/styles';
 
 export function TrialBalanceView() {
     const { data, isLoading, fetchTrialBalance } = useTrialBalance();
-    
+
     // Default dates: current year start to now
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -42,8 +41,8 @@ export function TrialBalanceView() {
                     <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5" /> Desde
                     </label>
-                    <input 
-                        type="date" 
+                    <input
+                        type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
                         className="bg-background border border-input rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
@@ -53,21 +52,20 @@ export function TrialBalanceView() {
                     <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5" /> Hasta
                     </label>
-                    <input 
-                        type="date" 
+                    <input
+                        type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
                         className="bg-background border border-input rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                     />
                 </div>
                 <div className="flex-1" />
-                
+
                 {data && (
-                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${
-                        data.is_balanced 
-                            ? 'bg-success/10 text-success border-success/20' 
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${data.is_balanced
+                            ? 'bg-success/10 text-success border-success/20'
                             : 'bg-warning/10 text-warning border-warning/20'
-                    }`}>
+                        }`}>
                         {data.is_balanced ? (
                             <><CheckCircle2 className="w-3.5 h-3.5" /> Partida Doble Cuadrada</>
                         ) : (
@@ -123,10 +121,10 @@ export function TrialBalanceView() {
                         </table>
                     </div>
                 </ScrollArea>
-                
+
                 {(!data || data.accounts.length === 0) && !isLoading && (
                     <div className="py-12">
-                        <EmptyState 
+                        <EmptyState
                             title="No hay movimientos en este periodo"
                             description="Ajusta las fechas para visualizar el balance de comprobación."
                         />
@@ -140,7 +138,7 @@ export function TrialBalanceView() {
                     Generado automáticamente desde el Libro Mayor
                 </div>
                 <div>
-                   Todos los importes expresados en moneda nacional (CLP)
+                    Todos los importes expresados en moneda nacional (CLP)
                 </div>
             </div>
         </div>

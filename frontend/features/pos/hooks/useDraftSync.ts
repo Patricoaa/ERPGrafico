@@ -79,7 +79,7 @@ export function useDraftSync({
     const [isPolling, setIsPolling] = useState(false)
     const [activeLockDraftId, setActiveLockDraftId] = useState<number | null>(null)
     
-    const browserSessionKey = useRef(getBrowserSessionKey())
+    const [browserSessionKey] = useState(() => getBrowserSessionKey())
     const prevDraftsRef = useRef<SyncDraft[]>([])
     const prevStatusRef = useRef<'OPEN' | 'CLOSED' | null>(null)
     const callbacksRef = useRef({ onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged, onSessionStateChange })
@@ -167,13 +167,15 @@ export function useDraftSync({
     useEffect(() => {
         if (!enabled || !posSessionId) return
 
-        // Initial poll
-        poll()
-        setIsPolling(true)
-
+        // All setState calls are deferred into async callbacks to satisfy react-hooks/set-state-in-effect
+        const initialPollTimer = setTimeout(() => {
+            setIsPolling(true)
+            poll()
+        }, 0)
         const interval = setInterval(poll, pollInterval)
 
         return () => {
+            clearTimeout(initialPollTimer)
             clearInterval(interval)
             setIsPolling(false)
         }
@@ -188,7 +190,7 @@ export function useDraftSync({
             try {
                 await api.post(`/sales/pos-drafts/${activeLockDraftId}/heartbeat/`, {
                     pos_session_id: posSessionId,
-                    session_key: browserSessionKey.current,
+                    session_key: browserSessionKey,
                 })
             } catch (error) {
                 const err = error as { response?: { status?: number } }
@@ -203,7 +205,7 @@ export function useDraftSync({
 
         const interval = setInterval(sendHeartbeat, heartbeatInterval)
         return () => clearInterval(interval)
-    }, [activeLockDraftId, posSessionId, heartbeatInterval])
+    }, [activeLockDraftId, posSessionId, heartbeatInterval, browserSessionKey])
 
     // ── Release lock on page unload ─────────────────────────────
 
@@ -215,7 +217,7 @@ export function useDraftSync({
                 const token = localStorage.getItem('access_token')
                 const body = JSON.stringify({
                     pos_session_id: posSessionId,
-                    session_key: browserSessionKey.current,
+                    session_key: browserSessionKey,
                 })
                 
                 if (navigator.sendBeacon) {
@@ -229,7 +231,7 @@ export function useDraftSync({
 
         window.addEventListener('beforeunload', handleBeforeUnload)
         return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-    }, [activeLockDraftId, posSessionId])
+    }, [activeLockDraftId, posSessionId, browserSessionKey])
 
     // ── Lock API ────────────────────────────────────────────────
 
@@ -239,7 +241,7 @@ export function useDraftSync({
         try {
             await api.post(`/sales/pos-drafts/${draftId}/lock/`, {
                 pos_session_id: posSessionId,
-                session_key: browserSessionKey.current,
+                session_key: browserSessionKey,
             })
             setActiveLockDraftId(draftId)
             return { acquired: true }
@@ -249,13 +251,13 @@ export function useDraftSync({
                 const data = err.response.data
                 return {
                     acquired: false,
-                    error: data.error,
-                    locked_by_name: data.locked_by_name,
+                    error: data?.error,
+                    locked_by_name: data?.locked_by_name,
                 }
             }
             return { acquired: false, error: 'Error al bloquear borrador' }
         }
-    }, [posSessionId])
+    }, [posSessionId, browserSessionKey])
 
     const releaseLock = useCallback(async (draftId?: number) => {
         const targetId = draftId || activeLockDraftId
@@ -264,7 +266,7 @@ export function useDraftSync({
         try {
             await api.post(`/sales/pos-drafts/${targetId}/unlock/`, {
                 pos_session_id: posSessionId,
-                session_key: browserSessionKey.current,
+                session_key: browserSessionKey,
             })
         } catch (error) {
             console.debug('[DraftSync] Unlock failed:', error)
@@ -273,7 +275,7 @@ export function useDraftSync({
         if (targetId === activeLockDraftId) {
             setActiveLockDraftId(null)
         }
-    }, [activeLockDraftId, posSessionId])
+    }, [activeLockDraftId, posSessionId, browserSessionKey])
 
     // ── Helpers ──────────────────────────────────────────────────
 
@@ -281,8 +283,8 @@ export function useDraftSync({
         const draft = syncDrafts.find(d => d.id === draftId)
         if (!draft || !draft.is_locked) return false
         // Locked by someone else (different session key)
-        return draft.lock_session_key !== browserSessionKey.current
-    }, [syncDrafts])
+        return draft.lock_session_key !== browserSessionKey
+    }, [syncDrafts, browserSessionKey])
 
     const getLockInfo = useCallback((draftId: number): { isLocked: boolean, lockedByName: string | null, isOwnLock: boolean } => {
         const draft = syncDrafts.find(d => d.id === draftId)
@@ -292,9 +294,9 @@ export function useDraftSync({
         return {
             isLocked: true,
             lockedByName: draft.locked_by_name,
-            isOwnLock: draft.lock_session_key === browserSessionKey.current,
+            isOwnLock: draft.lock_session_key === browserSessionKey,
         }
-    }, [syncDrafts])
+    }, [syncDrafts, browserSessionKey])
 
     // Force a sync now (useful after save/delete operations)
     const forceSync = useCallback(() => {
@@ -305,7 +307,7 @@ export function useDraftSync({
         syncDrafts,
         isPolling,
         activeLockDraftId,
-        browserSessionKey: browserSessionKey.current,
+        browserSessionKey,
         acquireLock,
         releaseLock,
         isLockedByOther,

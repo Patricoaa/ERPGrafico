@@ -20,6 +20,9 @@ import {
 } from "@/components/ui/select"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
@@ -117,13 +120,12 @@ export function InventoryContributionModal({
                 if (data.uom_category) {
                     return api.get<{ results?: UoM[] } | UoM[]>(`/inventory/uoms/?category=${data.uom_category}`)
                         .then(uomRes => {
-                            const uoms = 'results' in uomRes.data ? uomRes.data.results : uomRes.data
-                            if (uoms) {
-                                setProductUoMs(uoms)
-                                const baseId = typeof data.uom === 'object' ? data.uom.id : data.uom
-                                const base = uoms.find((u: UoM) => u.id === baseId)
-                                if (base) setUomId(base.id.toString())
-                            }
+                            const uomData = uomRes.data
+                            const uoms = Array.isArray(uomData) ? uomData : (uomData.results || [])
+                            setProductUoMs(uoms)
+                            const baseId = typeof data.uom === 'object' && data.uom !== null ? (data.uom as any).id : data.uom
+                            const base = uoms.find((u: UoM) => u.id === baseId)
+                            if (base) setUomId(base.id.toString())
                         })
                 }
             })
@@ -147,7 +149,7 @@ export function InventoryContributionModal({
     }, [open, preSelectedPartnerId])
 
     const selectedUoM = productUoMs.find(u => u.id.toString() === uomId)
-    const baseUoM = typeof productDetails?.uom === 'object' ? productDetails.uom : productUoMs.find(u => u.id === productDetails?.uom)
+    const baseUoM = typeof productDetails?.uom === 'object' && productDetails.uom !== null ? productDetails.uom : productUoMs.find(u => u.id === productDetails?.uom)
     const isCostEditable = moveType === 'IN'
 
     const conversion = React.useMemo(() => {

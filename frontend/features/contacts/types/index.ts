@@ -1,3 +1,4 @@
+import { Order, WorkOrder } from "../../orders/types"
 export interface Contact {
     id: number
     code: string | null
@@ -18,6 +19,8 @@ export interface Contact {
     credit_days?: number | null
     credit_balance_used?: number | null
     credit_available?: number | null
+    credit_blocked?: boolean
+    credit_auto_blocked?: boolean
 }
 
 export interface ContactFilters {
@@ -48,14 +51,14 @@ export interface ContactPayload {
 export interface InsightsData {
     sales: {
         count: number
-        orders: Record<string, unknown>[]
+        orders: Order[]
     }
     purchases: {
         count: number
-        orders: Record<string, unknown>[]
+        orders: Order[]
     }
     work_orders: {
         count: number
-        orders: Record<string, unknown>[]
+        orders: WorkOrder[]
     }
 }

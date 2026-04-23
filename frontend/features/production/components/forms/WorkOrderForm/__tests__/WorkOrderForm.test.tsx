@@ -3,6 +3,15 @@ import { vi, describe, it, expect } from "vitest"
 import { WorkOrderForm } from "../index"
 import React from "react"
 
+// Mock API
+vi.mock("@/lib/api", () => ({
+    default: {
+        get: vi.fn().mockResolvedValue({ data: { results: [], lines: [] } }),
+        post: vi.fn().mockResolvedValue({ data: {} }),
+        put: vi.fn().mockResolvedValue({ data: {} }),
+    }
+}))
+
 // Mock for Next.js Router
 vi.mock("next/navigation", () => ({
     useRouter: () => ({
@@ -38,12 +47,13 @@ describe("WorkOrderForm Unit and Rendering Tests", () => {
         expect(screen.getByText(/¿Qué tipo de orden desea crear?/i)).toBeInTheDocument()
     })
 
-    it("renders the LINKED view when initialData has a sale_order", () => {
+    it("renders the LINKED view when initialData has a sale_order", async () => {
         const mockData = {
             id: 1,
             number: "OT-100",
             sale_order: 55,
-            sale_order_number: "NV-500",
+            sale_order_number: "500",
+            sale_line: { id: 123, product: { name: "Test Product" } },
             status: "DRAFT",
             current_stage: "PREPRESS",
             production_progress: 10,
@@ -55,20 +65,20 @@ describe("WorkOrderForm Unit and Rendering Tests", () => {
         render(<WorkOrderForm open={true} initialData={mockData} onOpenChange={() => {}} />)
         
         // Should show the title with the Number
-        expect(screen.getByText(/Orden de Trabajo #OT-100/i)).toBeInTheDocument()
+        expect(await screen.findByText(/Orden de Trabajo #OT-100/i)).toBeInTheDocument()
         
         // Should show the "Vínculo de Venta" header
-        expect(screen.getByText("Vínculo de Venta")).toBeInTheDocument()
+        expect(await screen.findByText("Vínculo de Venta")).toBeInTheDocument()
         
         // Wait for specific subcomponents texts
-        expect(screen.getByText("NV-500")).toBeInTheDocument()
+        expect(await screen.findByText("NV-500")).toBeInTheDocument()
         expect(screen.getByText("Detalle de Producto en Venta")).toBeInTheDocument()
         expect(screen.getByText("Progreso OT")).toBeInTheDocument()
         
         // Should show Materials Subcomponent titles
-        expect(screen.getByText("Pre-Impresión")).toBeInTheDocument()
-        expect(screen.getByText("Impresión")).toBeInTheDocument()
-        expect(screen.getByText("Post-Impresión")).toBeInTheDocument()
+        expect(screen.getAllByText("Pre-Impresión").length).toBeGreaterThan(0)
+        expect(screen.getAllByText("Impresión").length).toBeGreaterThan(0)
+        expect(screen.getAllByText("Post-Impresión").length).toBeGreaterThan(0)
         
         // The Prepress switch was enabled, verify its sections are visible
         expect(screen.getByText("Diseño Requerido")).toBeInTheDocument()

@@ -72,7 +72,7 @@ export function PhaseCard({
     // Sync with controlled prop
     useEffect(() => {
         if (controlledOpen !== undefined) {
-            setInternalOpen(controlledOpen)
+            requestAnimationFrame(() => setInternalOpen(controlledOpen))
         }
     }, [controlledOpen])
 
