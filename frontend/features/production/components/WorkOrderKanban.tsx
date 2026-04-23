@@ -57,8 +57,8 @@ export function WorkOrderKanban({ orders, onTransition, onManage, isLoading }: K
                                 <Icon className="h-4 w-4 text-muted-foreground" />
                                 <h3 className="font-bold text-sm uppercase tracking-wider">{stage.label}</h3>
                             </div>
-                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-white text-muted-foreground whitespace-nowrap">
-                                {isLoading ? <Skeleton className="h-3 w-4 rounded" /> : stageOrders.length}
+                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-white text-muted-foreground whitespace-nowrap min-w-[20px] flex justify-center">
+                                {isLoading ? <Skeleton className="h-2.5 w-3" /> : stageOrders.length}
                             </span>
                         </div>
 

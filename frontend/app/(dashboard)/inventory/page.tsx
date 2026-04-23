@@ -1,9 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { PageTabs, TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load feature components
@@ -100,7 +97,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
             <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={subView} />
 
             <div className="pt-4">
-                <Suspense fallback={<LoadingFallback />}>
+                <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                     {viewMode === 'products' && (
                         <div className="pt-2">
                             {subView === 'items' && <ProductList externalOpen={modal === 'new'} createAction={createAction} />}

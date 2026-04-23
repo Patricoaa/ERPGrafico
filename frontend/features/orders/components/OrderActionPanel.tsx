@@ -121,7 +121,10 @@ export function OrderActionPanel({
                 <SheetHeader className="px-6 pt-6 pb-4">
                     <SheetTitle className="text-xl">
                         {loading ? (
-                            <Skeleton className="h-7 w-48" />
+                            <div className="flex items-center gap-2">
+                                <Skeleton className="h-7 w-32 font-mono" />
+                                <Skeleton className="h-6 w-20 rounded-full" />
+                            </div>
                         ) : (
                             <div className="flex items-center gap-2">
                                 <span className="font-mono">
@@ -135,7 +138,10 @@ export function OrderActionPanel({
                     </SheetTitle>
                     <SheetDescription>
                         {loading ? (
-                            <Skeleton className="h-4 w-64" />
+                            <div className="flex flex-col gap-2">
+                                <Skeleton className="h-5 w-48" />
+                                <Skeleton className="h-3 w-32" />
+                            </div>
                         ) : (
                             <div className="flex flex-col gap-1">
                                 <span className="text-base font-medium text-foreground">

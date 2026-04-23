@@ -17,6 +17,7 @@ import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
+import { TableSkeleton } from "@/components/shared"
 
 interface SalesOrdersModalProps {
     open: boolean
@@ -122,14 +123,7 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                     <ScrollAreaUI className="flex-1 px-6">
                         <div className="py-6">
                             {shouldRenderContent && (
-                                <Suspense fallback={
-                                    <div className="flex h-full w-full items-center justify-center p-20">
-                                        <div className="flex flex-col items-center gap-4">
-                                            <Loader2 className="h-10 w-10 animate-spin text-primary opacity-50" />
-                                            <p className="text-sm font-medium text-muted-foreground animate-pulse">Cargando datos de ventas...</p>
-                                        </div>
-                                    </div>
-                                }>
+                                <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                                     <SalesOrdersView
                                         posSessionId={posSessionId}
                                         viewMode={viewMode}

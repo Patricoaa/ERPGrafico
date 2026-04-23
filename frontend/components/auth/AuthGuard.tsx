@@ -1,30 +1,26 @@
 "use client"
 
 import { useEffect } from "react"
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 
+/**
+ * AuthGuard protects private routes by redirecting unauthenticated users to the login page.
+ */
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter()
-    const pathname = usePathname()
     const { isAuthenticated, isLoading } = useAuth()
 
-    const isLoginPath = pathname === "/login"
-
     useEffect(() => {
-        if (!isLoading && !isAuthenticated && !isLoginPath) {
+        if (!isLoading && !isAuthenticated) {
             router.push("/login")
         }
-    }, [isLoading, isAuthenticated, isLoginPath, router])
+    }, [isLoading, isAuthenticated, router])
 
-    // While loading or not authenticated (and not on login page), don't show children
-    if (!isLoginPath && (isLoading || !isAuthenticated)) {
+    // While loading or not authenticated, don't show children to prevent content flash
+    if (isLoading || !isAuthenticated) {
         return null
     }
 
-    return (
-        <>
-            {children}
-        </>
-    )
+    return <>{children}</>
 }

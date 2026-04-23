@@ -28,6 +28,7 @@ export * from './CardSkeleton';
 export * from './FormSkeleton';
 export * from './TableSkeleton';
 export * from './SkeletonShell';
+export * from './LayoutSkeletons';
 export { Skeleton } from '@/components/ui/skeleton';
 
 // Data Display

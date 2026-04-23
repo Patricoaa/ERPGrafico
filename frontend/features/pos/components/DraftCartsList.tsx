@@ -23,6 +23,7 @@ import {
     Lock,
     Wallet,
 } from "lucide-react"
+import { CardSkeleton } from "@/components/shared"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -251,9 +252,8 @@ export function DraftCartsList({
             >
                 <div className="py-1">
                     {loading ? (
-                        <div className="flex items-center justify-center py-12 text-muted-foreground">
-                            <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                            <span className="text-sm">Cargando...</span>
+                        <div className="p-4">
+                            <CardSkeleton count={5} variant="list" />
                         </div>
                     ) : drafts.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">

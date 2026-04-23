@@ -1,7 +1,7 @@
 "use client"
 
 import { type ReactNode, lazy, Suspense, useState } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { TableSkeleton } from "@/components/shared"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -60,7 +60,7 @@ export default function UsersSettingsPage() {
             </div>
 
             <div className="mt-6">
-                <Suspense fallback={<LoadingFallback message="Cargando configuración de usuarios..." />}>
+                <Suspense fallback={<TableSkeleton rows={10} columns={5} />}>
                     <UsersSettingsView 
                         activeTab={activeTab} 
                         onActionsChange={setHeaderActions} 

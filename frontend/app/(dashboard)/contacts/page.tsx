@@ -1,9 +1,7 @@
 "use client"
 
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { PageHeader, TableSkeleton, ToolbarCreateButton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useRouter, useSearchParams } from "next/navigation"
 
@@ -36,10 +34,11 @@ export default function ContactsPage() {
                 description="Directorio de contactos."
                 iconName="users-2"
             />
-
-            <Suspense fallback={<LoadingFallback />}>
-                <ContactsClientView isNewModalOpen={isNewModalOpen} createAction={createAction} />
-            </Suspense>
+            <div className="pt-2">
+                <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
+                    <ContactsClientView isNewModalOpen={isNewModalOpen} createAction={createAction} />
+                </Suspense>
+            </div>
         </div>
     )
 }

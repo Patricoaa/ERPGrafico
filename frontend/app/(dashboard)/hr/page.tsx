@@ -1,10 +1,7 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
 import Link from "next/link"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { PageTabs, TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { FileText } from "lucide-react"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -90,7 +87,7 @@ export default async function HRPage({ searchParams }: PageProps) {
             <PageTabs tabs={tabs} activeValue={viewMode} />
 
             <div className="pt-2">
-                <Suspense fallback={<LoadingFallback />}>
+                <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                     {viewMode === 'employees' && <EmployeesView createAction={createAction} />}
                     {viewMode === 'absences' && <AbsencesView createAction={createAction} />}
                     {viewMode === 'advances' && <AdvancesView createAction={createAction} />}

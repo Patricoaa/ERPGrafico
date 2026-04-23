@@ -1,4 +1,4 @@
-import AuthGuard from "@/components/auth/AuthGuard"
+import { AuthGuard } from "@/components/auth"
 import { DashboardShell } from "@/components/layout/DashboardShell"
 import { ErrorBoundary } from "@/components/ui/error-boundary"
 

@@ -1,9 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { PageTabs, TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 const PurchasingOrdersClientView = lazy(() =>
@@ -49,7 +46,7 @@ export default async function PurchasingPage({ searchParams }: PageProps) {
             <PageHeader title={config.title} description={config.description} iconName={config.iconName} variant="minimal" />
             <PageTabs tabs={tabs} activeValue={viewMode} />
             <div className="pt-4">
-                <Suspense fallback={<LoadingFallback />}>
+                <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                     {(viewMode === 'orders' || viewMode === 'notes') && (
                         <PurchasingOrdersClientView viewMode={viewMode} externalOpenCheckout={modalOpen} createAction={createAction} />
                     )}

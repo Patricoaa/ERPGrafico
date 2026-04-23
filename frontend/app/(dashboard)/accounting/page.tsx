@@ -1,8 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { TableSkeleton, PageHeader, PageTabs } from "@/components/shared"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
@@ -66,7 +64,7 @@ export default async function AccountingPage({ searchParams }: PageProps) {
             <PageTabs tabs={tabs} activeValue={viewMode} />
 
             <div className="pt-2">
-                <Suspense fallback={<LoadingFallback />}>
+                <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                     {viewMode === 'ledger' && <AccountsView externalOpen={modal === 'new'} createAction={createAction} />}
                     {viewMode === 'entries' && <EntriesView externalOpen={modal === 'new'} createAction={createAction} />}
                     {viewMode === 'closures' && <ClosuresView externalOpen={modal === 'fy'} />}

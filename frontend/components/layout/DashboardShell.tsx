@@ -12,6 +12,7 @@ import { UserActions } from "@/components/layout/UserActions"
 import { useHeader } from "@/components/providers/HeaderProvider"
 import { motion, AnimatePresence } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
+import { PageHeaderSkeleton } from "@/components/shared"
 import { Loader2 } from "lucide-react"
 import { IndustryMark } from "@/components/shared/IndustryMark"
 
@@ -90,7 +91,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 {/* Center: page title & meta — takes remaining space */}
                 <div className="flex-1 flex items-center gap-4 min-w-0 pointer-events-none">
                     <AnimatePresence mode="wait">
-                        {config && (
+                        {config ? (
                             <motion.div
                                 key={pathname + config.title}
                                 initial={{ opacity: 0, x: -10 }}
@@ -151,6 +152,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                     </div>
                                 )}
                             </motion.div>
+                        ) : (
+                            <PageHeaderSkeleton />
                         )}
                     </AnimatePresence>
                 </div>

@@ -30,7 +30,7 @@ import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { TableSkeleton } from "@/components/shared/TableSkeleton"
+import { TableSkeleton, Skeleton } from "@/components/shared"
 
 const TransactionViewModal = lazy(() => import("@/components/shared/TransactionViewModal"))
 
@@ -255,7 +255,7 @@ export function PartnerProfileTab({ contactId }: Props) {
 
             </Accordion>
 
-            <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Cargando...</div>}>
+            <Suspense fallback={<div className="p-8 flex justify-center"><Skeleton className="h-20 w-full max-w-md" /></div>}>
                 {selectedMovementId && (
                     <TransactionViewModal
                         open={detailsOpen}

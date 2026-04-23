@@ -25,7 +25,7 @@ import { formatPlainDate } from "@/lib/utils"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { OrderHubIntegrated } from "./OrderHubIntegrated"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import { StatusBadge, HubSkeleton } from "@/components/shared"
 import { Order } from "../types"
 
 export interface OrderHubPanelProps {
@@ -93,25 +93,7 @@ export function OrderHubPanel({
     }, [hubData, isNoteMode, activeInvoice, activeDoc, type])
 
     if (!activeDoc) {
-        return (
-            <div className="flex flex-col h-full bg-background/50 backdrop-blur-sm">
-                <div className="flex-1 flex flex-col items-center justify-center p-12 gap-6">
-                    <div className="relative flex items-center justify-center">
-                        <div className="h-20 w-20 border-t-2 border-primary rounded-full animate-spin shadow-[0_0_15px_rgba(var(--primary),0.2)]" />
-                        <div className="absolute inset-0 h-20 w-20 border-2 border-primary/10 rounded-full" />
-                        <ShoppingCart className="absolute h-8 w-8 text-primary/40 animate-pulse" />
-                    </div>
-                    <div className="flex flex-col items-center gap-2">
-                        <span className="text-xs font-heading font-black uppercase tracking-widest text-muted-foreground animate-pulse">
-                            Consolidando Entidad
-                        </span>
-                        <div className="h-1 w-24 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-primary/40 w-1/3 animate-progress transition-all duration-1000 ease-in-out" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )
+        return <HubSkeleton />
     }
 
     const StatusIcon = globalStatus.icon
