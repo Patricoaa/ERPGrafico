@@ -14,7 +14,7 @@ import {
     Info
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
+
 
 const partnerAccountingSchema = z.object({
     partner_capital_social_account: z.union([z.string(), z.number()]).nullable(),
@@ -88,7 +88,7 @@ export function PartnerAccountingTab({ onSavingChange }: PartnerAccountingTabPro
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* 1. Patrimonio Row */}
-                <IndustrialCard variant="industrial" className="md:col-span-2">
+                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card md:col-span-2">
                     <CardHeader className="pb-4 border-b bg-muted/20">
                         <div className="flex items-center gap-3">
                             <Building2 className="h-5 w-5 text-primary" />
@@ -160,10 +160,10 @@ export function PartnerAccountingTab({ onSavingChange }: PartnerAccountingTabPro
                             </form>
                         </Form>
                     </CardContent>
-                </IndustrialCard>
+                </Card>
 
                 {/* 2. Operativas Row */}
-                <IndustrialCard variant="industrial" className="md:col-span-2">
+                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card md:col-span-2">
                     <CardHeader className="pb-4 border-b bg-muted/20">
                         <div className="flex items-center gap-3">
                             <Info className="h-5 w-5 text-primary" />
@@ -216,7 +216,7 @@ export function PartnerAccountingTab({ onSavingChange }: PartnerAccountingTabPro
                             </form>
                         </Form>
                     </CardContent>
-                </IndustrialCard>
+                </Card>
             </div>
             
             {/* Health Check Alert */}

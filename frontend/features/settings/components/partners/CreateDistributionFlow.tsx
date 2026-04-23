@@ -4,6 +4,7 @@ import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
 import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
 import { Input } from "@/components/ui/input"
+import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { 
     Select, 
@@ -31,7 +32,6 @@ import {
     AlertTitle, 
     AlertDescription 
 } from "@/components/ui/alert"
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
 
 interface ModalProps {
     open: boolean
@@ -349,14 +349,14 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             component: (
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <IndustrialCard variant="standard" className="p-4 bg-muted/20">
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-4 bg-muted/20">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Monto a Distribuir</p>
                             <p className="text-xl font-mono font-bold text-primary">{formatCurrency(draftResolution?.net_result || 0)}</p>
-                        </IndustrialCard>
-                        <IndustrialCard variant="standard" className="p-4 bg-muted/20">
+                        </Card>
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-4 bg-muted/20">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Ejercicio</p>
                             <p className="text-xl font-heading font-black">{draftResolution?.fiscal_year}</p>
-                        </IndustrialCard>
+                        </Card>
                     </div>
 
                     <div className="border rounded-sm overflow-hidden min-h-[300px]">

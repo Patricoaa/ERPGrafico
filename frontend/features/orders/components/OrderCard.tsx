@@ -8,7 +8,7 @@ import { NoteHubStatus } from "./NoteHubStatus"
 import { PurchaseOrderHubStatus } from "./PurchaseOrderHubStatus"
 import { cn } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
+import { Card } from "@/components/ui/card"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Order, OrderLine } from "../types"
 
@@ -95,15 +95,14 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
     }
 
     return (
-        <IndustrialCard
-            variant="list"
+        <Card
             role="button"
             tabIndex={0}
             data-order-card="true"
             aria-selected={isSelected}
             data-state={isSelected ? 'selected' : undefined}
             className={cn(
-                "group flex flex-col p-4 relative z-10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 transition-all duration-300",
+                "group flex flex-col p-4 relative z-10 cursor-pointer rounded-none border border-border/50 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1",
                 // SEAMLESS INTEGRATION WITH HUB DOCK
                 isSelected && isHubOpen && "z-[30] !bg-background",
                 // NO SCALE SHIFT - ONLY OPACITY/GRAYSCALE FOR FOCUS
@@ -222,6 +221,6 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
             )}
 
 
-        </IndustrialCard>
+        </Card>
     )
 }

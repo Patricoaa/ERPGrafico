@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import { GenericWizard, WizardStep } from '@/components/shared/GenericWizard';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
     ShieldCheck,
@@ -15,7 +16,6 @@ import {
 } from 'lucide-react';
 import { FiscalYearPreviewResult } from '../../types';
 import { formatCurrency } from '@/lib/utils';
-import { IndustrialCard } from '@/components/shared/IndustrialCard';
 import { cn } from '@/lib/utils';
 import { LoadingFallback } from '@/components/shared/LoadingFallback';
 import { BaseModal } from '@/components/shared/BaseModal';
@@ -125,21 +125,21 @@ export function FiscalYearClosingWizard({
             component: preview ? (
                 <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                        <IndustrialCard variant="standard" className="p-5 border-t-2 border-t-success bg-success/5">
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-5 border-t-2 border-t-success bg-success/5">
                             <p className="text-[10px] font-bold uppercase text-success tracking-widest mb-2">Total Ingresos</p>
                             <p className="text-2xl font-mono font-black text-success">
                                 {formatCurrency(parseFloat(preview.income_total || '0'))}
                             </p>
-                        </IndustrialCard>
-                        <IndustrialCard variant="standard" className="p-5 border-t-2 border-t-destructive bg-destructive/5">
+                        </Card>
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-5 border-t-2 border-t-destructive bg-destructive/5">
                             <p className="text-[10px] font-bold uppercase text-destructive tracking-widest mb-2">Total Egresos</p>
                             <p className="text-2xl font-mono font-black text-destructive">
                                 {formatCurrency(Math.abs(parseFloat(preview.expense_total || '0')))}
                             </p>
-                        </IndustrialCard>
+                        </Card>
                     </div>
 
-                    <IndustrialCard variant="industrial" className="p-6 bg-primary/5 border-primary/20 flex items-center justify-between">
+                    <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card p-6 bg-primary/5 border-primary/20 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold uppercase text-muted-foreground tracking-widest mb-2">Resultado Neto Proyectado</p>
                             <p className="text-3xl font-mono font-black text-foreground tabular-nums tracking-tighter">
@@ -152,7 +152,7 @@ export function FiscalYearClosingWizard({
                         )}>
                             {parseFloat(preview.net_result || '0') >= 0 ? "Utilidad" : "Pérdida"}
                         </div>
-                    </IndustrialCard>
+                    </Card>
                 </div>
             ) : null
         },
