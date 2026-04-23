@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { BaseModal } from "@/components/shared/BaseModal";
+import { BaseModal, LoadingFallback } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -317,9 +317,8 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                             </div>
 
                             {loading && (
-                                <div className="flex flex-col items-center justify-center p-12 space-y-4">
-                                    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                                    <p className="text-sm text-muted-foreground">Cargando cuentas...</p>
+                                <div className="py-12">
+                                    <LoadingFallback message="Cargando cuentas..." />
                                 </div>
                             )}
 

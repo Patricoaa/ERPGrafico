@@ -16,7 +16,7 @@ export interface Restriction {
     link: string
 }
 
-interface ArchivingRestrictionsDialogProps {
+interface ArchivingRestrictionsModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     productName: string
@@ -25,14 +25,14 @@ interface ArchivingRestrictionsDialogProps {
     isRetrying?: boolean
 }
 
-export function ArchivingRestrictionsDialog({
+export function ArchivingRestrictionsModal({
     open,
     onOpenChange,
     productName,
     restrictions,
     onRetry,
     isRetrying = false
-}: ArchivingRestrictionsDialogProps) {
+}: ArchivingRestrictionsModalProps) {
     return (
         <BaseModal
             open={open}

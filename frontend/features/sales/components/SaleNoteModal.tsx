@@ -21,8 +21,7 @@ import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
+import { EmptyState, PeriodValidationDateInput, TableSkeleton } from "@/components/shared"
 
 import { SaleOrderLine, SaleNoteLine } from "../types"
 
@@ -262,7 +261,9 @@ export function SaleNoteModal({
                         <tbody className="divide-y">
                             {loadingOrder ? (
                                 <tr>
-                                    <td colSpan={5} className="py-4 text-center text-muted-foreground italic">Cargando productos...</td>
+                                    <td colSpan={6} className="p-4">
+                                        <TableSkeleton rows={3} columns={6} />
+                                    </td>
                                 </tr>
                             ) : lines.length === 0 ? (
                                 <tr>

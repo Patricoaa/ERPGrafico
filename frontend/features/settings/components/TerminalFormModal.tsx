@@ -54,7 +54,7 @@ export interface TreasuryAccount {
     allows_transfer: boolean
 }
 
-interface TerminalFormDialogProps {
+interface TerminalFormModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     terminal: Terminal | null
@@ -73,7 +73,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>
 
-export function TerminalFormDialog({ open, onOpenChange, terminal, onSuccess }: TerminalFormDialogProps) {
+export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: TerminalFormModalProps) {
     const [loading, setLoading] = useState(false)
     const [treasuryAccounts, setTreasuryAccounts] = useState<TreasuryAccount[]>([])
 

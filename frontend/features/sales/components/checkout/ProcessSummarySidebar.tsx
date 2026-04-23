@@ -2,6 +2,7 @@
 
 import { FileText, User, CreditCard, ShoppingBag, CheckCircle2, Paintbrush } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
+import { MoneyDisplay } from "@/components/shared"
 
 interface ProcessSummarySidebarProps {
     currentStep: number
@@ -101,13 +102,11 @@ export function ProcessSummarySidebar({
                                         <p className="text-xs font-semibold">
                                             {methodLabels[paymentData.method]}
                                         </p>
-                                        <p className="text-xs font-bold">
-                                            ${paymentData.amount.toLocaleString()}
-                                        </p>
+                                        <MoneyDisplay amount={paymentData.amount} className="text-xs font-bold" />
                                         {paymentData.creditAssigned !== undefined && paymentData.creditAssigned > 0 && (
-                                            <p className="text-[10px] text-warning font-semibold">
-                                                Crédito: ${paymentData.creditAssigned.toLocaleString()}
-                                            </p>
+                                            <div className="text-[10px] text-warning font-semibold flex items-center gap-1">
+                                                Crédito: <MoneyDisplay amount={paymentData.creditAssigned} inline />
+                                            </div>
                                         )}
                                     </div>
                                 )}

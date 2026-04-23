@@ -179,7 +179,7 @@ export function PaymentHardwareManagement({
             )}
 
             {/* Dialogs */}
-            <ProviderDialog
+            <ProviderModal
                 open={providerDialogOpen}
                 onOpenChange={(v) => {
                     setProviderDialogOpen(v)
@@ -189,7 +189,7 @@ export function PaymentHardwareManagement({
                 onSuccess={refetchProviders}
             />
 
-            <DeviceDialog
+            <DeviceModal
                 open={deviceDialogOpen}
                 onOpenChange={(v) => {
                     setDeviceDialogOpen(v)
@@ -307,9 +307,9 @@ function DeviceCard({ device, onEdit, onDelete }: { device: PaymentTerminalDevic
 }
 
 /**
- * Dialog for creating/editing Providers
+ * Modal for creating/editing Providers
  */
-function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
+function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
     open: boolean,
     onOpenChange: (v: boolean) => void,
     provider: PaymentTerminalProvider | null,
@@ -461,9 +461,9 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
 }
 
 /**
- * Dialog for creating/editing Devices
+ * Modal for creating/editing Devices
  */
-function DeviceDialog({ open, onOpenChange, device, providers, onSuccess }: {
+function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
     open: boolean,
     onOpenChange: (v: boolean) => void,
     device: PaymentTerminalDevice | null,

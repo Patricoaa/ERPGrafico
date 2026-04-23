@@ -14,7 +14,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageHeader, LoadingFallback } from "@/components/shared"
 import { toast } from "sonner"
 import Link from "next/link"
 
@@ -93,7 +93,7 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
     }
 
     if (loading) {
-        return <div className="flex items-center justify-center h-64 text-muted-foreground">Cargando detalles...</div>
+        return <div className="flex items-center justify-center h-64"><LoadingFallback message="Cargando detalles..." /></div>
     }
 
     if (!budget || !executionData) {

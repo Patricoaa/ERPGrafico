@@ -1,8 +1,5 @@
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import { PageTabs } from "@/components/shared/PageTabs"
+import { LoadingFallback, PageHeader, PageTabs, ToolbarCreateButton, TableSkeleton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 const TreasuryAccountsView = lazy(() =>

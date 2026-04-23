@@ -101,7 +101,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                 </div>
             )}
 
-            <TerminalDialog
+            <TerminalModal
                 open={dialogOpen}
                 onOpenChange={(open) => {
                     setDialogOpen(open)
@@ -215,7 +215,7 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
     )
 }
 
-function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
+function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
     open: boolean
     onOpenChange: (open: boolean) => void
     terminal: Terminal | null

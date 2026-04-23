@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { EmployeeFormDialog } from "@/features/hr"
+import { EmployeeFormModal } from "@/features/hr"
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { getEmployees } from '@/features/hr/api/hrApi'
 import type { Employee } from "@/types/hr"
@@ -158,7 +158,7 @@ export default function EmployeesPage({ createAction }: { createAction?: React.R
                     createAction={createAction}
                 />
             )}
-            <EmployeeFormDialog
+            <EmployeeFormModal
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
                 employee={editingEmployee}

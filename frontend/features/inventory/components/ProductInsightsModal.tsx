@@ -50,7 +50,7 @@ import {
 } from 'recharts'
 import { Card, CardContent } from "@/components/ui/card"
 
-interface ProductInsightsDialogProps {
+interface ProductInsightsModalProps {
     productId: number | null
     productName: string | null
     open: boolean
@@ -102,7 +102,7 @@ interface ProductInsights {
     production_usage: ProductionUsage[]
 }
 
-export function ProductInsightsDialog({ productId, productName, open, onOpenChange }: ProductInsightsDialogProps) {
+export function ProductInsightsModal({ productId, productName, open, onOpenChange }: ProductInsightsModalProps) {
     const [data, setData] = useState<ProductInsights | null>(null)
     const [loading, setLoading] = useState(false)
     const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: import("@/types/transactions").TransactionType } | null>(null)

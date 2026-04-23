@@ -18,7 +18,7 @@ const DocumentCompletionModal = dynamic(() => import("@/components/shared/Docume
 const DeliveryModal = dynamic(() => import("@/features/sales").then(m => m.DeliveryModal))
 const ReceiptModal = dynamic(() => import("@/features/purchasing/components/ReceiptModal").then(m => m.ReceiptModal))
 const PaymentHistoryModal = dynamic(() => import("./PaymentHistoryModal").then(m => m.PaymentHistoryModal))
-const PaymentModal = dynamic(() => import("@/features/treasury/components/PaymentDialog").then(m => m.PaymentDialog))
+const PaymentModal = dynamic(() => import("@/features/treasury/components/PaymentModal").then(m => m.PaymentModal))
 const PaymentReferenceModal = dynamic(() => import("@/features/treasury/components/PaymentReferenceModal").then(m => m.PaymentReferenceModal))
 const NoteCheckoutWizard = dynamic(() => import("@/features/billing/components/NoteCheckoutWizard").then(m => m.NoteCheckoutWizard))
 const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => m.DocumentListModal))

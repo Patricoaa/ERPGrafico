@@ -7,7 +7,7 @@ import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
 import { AlertCircle, Paintbrush, Edit, CheckCircle2 } from "lucide-react"
-import { AdvancedManufacturingDialog } from "../forms/AdvancedManufacturingDialog"
+import { AdvancedManufacturingModal } from "../forms/AdvancedManufacturingModal"
 
 import { SaleOrderLine } from "../../types"
 
@@ -121,7 +121,7 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
             </div>
 
             {editingLine && (
-                <AdvancedManufacturingDialog
+                <AdvancedManufacturingModal
                     open={editingLineIndex !== null}
                     onOpenChange={(open) => !open && setEditingLineIndex(null)}
                     product={{

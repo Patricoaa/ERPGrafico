@@ -17,6 +17,7 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { AdvancedSaleOrderSelector } from "@/components/selectors/AdvancedSaleOrderSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+import { Skeleton } from "@/components/shared"
 
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
@@ -193,7 +194,10 @@ export function WorkOrderBasicInfo({
                                                     </FormControl>
                                                     <SelectContent>
                                                         {loadingLines ? (
-                                                            <SelectItem value="loading" disabled>Cargando líneas...</SelectItem>
+                                                            <div className="p-2 space-y-2">
+                                                                <Skeleton className="h-6 w-full" />
+                                                                <Skeleton className="h-6 w-full" />
+                                                            </div>
                                                         ) : saleLines.length === 0 ? (
                                                             <SelectItem value="none" disabled>No hay ítems fabricables avanzados pendientes</SelectItem>
                                                         ) : (

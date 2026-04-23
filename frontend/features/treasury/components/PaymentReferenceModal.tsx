@@ -10,7 +10,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn, formatPlainDate } from "@/lib/utils"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { EmptyState, MoneyDisplay } from "@/components/shared"
 
 export interface Payment {
     id: number
@@ -110,7 +110,7 @@ export function PaymentReferenceModal({
                                     onClick={() => setSelectedPaymentId(p.id)}
                                 >
                                     <div className="flex w-full justify-between items-center">
-                                        <span className="font-bold">${Number(p.amount).toLocaleString()}</span>
+                                        <MoneyDisplay amount={p.amount} className="font-bold" />
                                         <span className="text-[10px] font-bold uppercase text-muted-foreground opacity-60">
                                             {p.payment_method === 'BANK' || p.payment_method === 'TRANSFER' ? 'Transferencia' : 'Tarjeta'}
                                         </span>
@@ -133,7 +133,7 @@ export function PaymentReferenceModal({
                                 )}
                             </div>
                             <div>
-                                <div className="text-lg font-black">${Number(selectedPayment.amount).toLocaleString()}</div>
+                                <MoneyDisplay amount={selectedPayment.amount} className="text-lg font-black" />
                                 <div className="text-xs text-muted-foreground uppercase font-bold">
                                     Pago de {formatPlainDate(selectedPayment.date || selectedPayment.created_at)}
                                 </div>

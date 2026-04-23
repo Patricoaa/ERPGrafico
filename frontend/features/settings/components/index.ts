@@ -7,7 +7,7 @@ export * from './InventorySettingsView';
 export * from './PartnerEditModal';
 export * from './PartnerSettingsTab';
 export * from './SalesSettingsView';
-export * from './TerminalFormDialog';
+export * from './TerminalFormModal';
 export * from './UsersSettingsView';
 export * from './CustomFieldTemplateForm';
 export * from './TreasurySettingsView';

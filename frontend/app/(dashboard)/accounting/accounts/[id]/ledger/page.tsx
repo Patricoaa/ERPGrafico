@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { TableSkeleton } from "@/components/shared"
 
 export default function AccountLedgerPage() {
     const params = useParams()
@@ -108,7 +109,7 @@ export default function AccountLedgerPage() {
     ]
 
     if (loading) {
-        return <div className="p-6">Cargando...</div>
+        return <div className="p-6"><TableSkeleton rows={10} columns={7} /></div>
     }
 
     if (!account) {

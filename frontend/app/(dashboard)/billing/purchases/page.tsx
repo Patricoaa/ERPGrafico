@@ -12,7 +12,7 @@ import api from "@/lib/api"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
+import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
 import { PurchaseNoteModal } from "@/features/purchasing/components/PurchaseNoteModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
@@ -22,7 +22,7 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { formatPlainDate } from "@/lib/utils"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageHeader, TableSkeleton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -440,8 +440,8 @@ export default function PurchaseInvoicesPage() {
             />
 
             {loading ? (
-                <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-10 text-center">
-                    Cargando documentos...
+                <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-4">
+                    <TableSkeleton rows={5} columns={8} />
                 </div>
             ) : (
                 <div className="">
@@ -519,7 +519,7 @@ export default function PurchaseInvoicesPage() {
 
             {
                 payingDoc && (
-                    <PaymentDialog
+                    <PaymentModal
                         open={!!payingDoc}
                         onOpenChange={(open: boolean) => !open && setPayingDoc(null)}
                         onConfirm={handlePayment as any}

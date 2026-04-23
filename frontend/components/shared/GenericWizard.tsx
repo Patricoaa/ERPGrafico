@@ -6,6 +6,7 @@ import { ActionSlideButton } from "./ActionSlideButton"
 import { Button } from "@/components/ui/button"
 import { Loader2, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { LoadingFallback } from "./LoadingFallback"
 
 export interface WizardStep {
     id: string | number
@@ -208,9 +209,8 @@ export function GenericWizard({
                 (isStepTransitioning || isLoading) && "opacity-50 pointer-events-none"
             )}>
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary/40 mb-4" />
-                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">Cargando datos del asistente...</p>
+                    <div className="py-20">
+                        <LoadingFallback message="Cargando datos del asistente..." />
                     </div>
                 ) : (
                     currentStepData.component

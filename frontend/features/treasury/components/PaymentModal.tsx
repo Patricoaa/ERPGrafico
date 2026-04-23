@@ -17,10 +17,9 @@ import { FORM_STYLES } from "@/lib/styles"
 import { cn, formatCurrency } from "@/lib/utils"
 import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { useServerDate } from "@/hooks/useServerDate"
-import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
+import { DocumentAttachmentDropzone, PeriodValidationDateInput, LoadingFallback } from "@/components/shared"
 
-interface PaymentDialogProps {
+interface PaymentModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     total: number
@@ -53,7 +52,7 @@ interface PaymentDialogProps {
     allowCreditBalanceAccumulation?: boolean
 }
 
-export function PaymentDialog({
+export function PaymentModal({
     open,
     onOpenChange,
     total,
@@ -68,7 +67,7 @@ export function PaymentDialog({
     posSessionId = null,
     customerCreditBalance = 0,
     allowCreditBalanceAccumulation = false
-}: PaymentDialogProps) {
+}: PaymentModalProps) {
     const { dateString } = useServerDate()
     const [dteType, setDteType] = useState("NONE")
     const [documentReference, setDocumentReference] = useState("")
@@ -326,13 +325,12 @@ export function PaymentDialog({
                         />
                     )}
                     {posSessionId && terminalId === null && (
-                        <div className="flex items-center justify-center p-8 text-muted-foreground">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                            <span className="ml-3">Cargando métodos de pago...</span>
+                        <div className="p-8">
+                            <LoadingFallback message="Cargando métodos de pago..." />
                         </div>
                     )}
                 </div>
             </div>
         </BaseModal>
     )
-} export default PaymentDialog
+} export default PaymentModal

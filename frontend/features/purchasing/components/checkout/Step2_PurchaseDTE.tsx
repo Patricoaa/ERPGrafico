@@ -5,8 +5,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { FileText, Receipt, AlertCircle, ShieldAlert } from "lucide-react"
-import { useQuery } from '@tanstack/react-query'
-import { settingsApi } from "@/features/settings/api/settingsApi"
+import { useBillingSettingsQuery } from "@/features/settings"
 import { useMemo, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
@@ -31,11 +30,7 @@ export function Step2_PurchaseDTE({
     onPeriodValidityChange
 }: Step2_PurchaseDTEProps) {
     // Fetch billing settings to get allowed DTE types
-    const { data: settings } = useQuery({
-        queryKey: ['settings-billing'],
-        queryFn: settingsApi.getBillingSettings,
-        staleTime: 1000 * 60 * 5, // 5 minutes
-    })
+    const { settings } = useBillingSettingsQuery()
 
     const allowedDteTypes = useMemo(() => {
         if (!settings) return ['BOLETA', 'FACTURA', 'BOLETA_EXENTA', 'FACTURA_EXENTA'];

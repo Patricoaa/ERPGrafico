@@ -21,8 +21,8 @@ import { FormSkeleton } from "@/components/shared"
 import type { DateRange } from "react-day-picker"
 
 // Lazy load feature components
-const TerminalBatchForm = lazy(() => import("./TerminalBatchForm"))
-const MonthlyInvoiceDialog = lazy(() => import("./MonthlyInvoiceDialog"))
+const LazyTerminalBatchForm = lazy(() => import("./TerminalBatchForm"))
+const MonthlyInvoiceModal = lazy(() => import("./MonthlyInvoiceModal"))
 
 interface TerminalBatchesManagementProps {
     showTitle?: boolean
@@ -160,7 +160,7 @@ export function TerminalBatchesManagement({
             />
 
             <Suspense fallback={<FormSkeleton />}>
-                <TerminalBatchDialog
+                <TerminalBatchModal
                     open={openCreate}
                     onOpenChange={(open: boolean) => {
                         setOpenCreate(open)
@@ -175,7 +175,7 @@ export function TerminalBatchesManagement({
             </Suspense>
 
             <Suspense fallback={<FormSkeleton />}>
-                <MonthlyInvoiceDialog
+                <MonthlyInvoiceModal
                     open={openInvoice}
                     onOpenChange={(open: boolean) => {
                         setOpenInvoice(open)
@@ -187,7 +187,7 @@ export function TerminalBatchesManagement({
     )
 }
 
-function TerminalBatchDialog({ open, onOpenChange, onSuccess }: { open: boolean, onOpenChange: (open: boolean) => void, onSuccess: () => void }) {
+function TerminalBatchModal({ open, onOpenChange, onSuccess }: { open: boolean, onOpenChange: (open: boolean) => void, onSuccess: () => void }) {
     return (
         <BaseModal
             open={open}
@@ -201,7 +201,9 @@ function TerminalBatchDialog({ open, onOpenChange, onSuccess }: { open: boolean,
             }
             description="Ingrese los datos de la liquidación diaria informada por el proveedor del terminal."
         >
-            <TerminalBatchForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} />
+            <Suspense fallback={<FormSkeleton />}>
+                <LazyTerminalBatchForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} />
+            </Suspense>
         </BaseModal>
     )
 }

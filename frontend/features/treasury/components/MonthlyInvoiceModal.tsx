@@ -16,12 +16,12 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
-interface MonthlyInvoiceDialogProps {
+interface MonthlyInvoiceModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
 }
 
-export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialogProps) {
+export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalProps) {
     const { dateString, year: serverYear, month: serverMonth } = useServerDate()
 
     const [loading, setLoading] = useState(false)
@@ -220,4 +220,4 @@ export function MonthlyInvoiceDialog({ open, onOpenChange }: MonthlyInvoiceDialo
     )
 }
 
-export default MonthlyInvoiceDialog
+export default MonthlyInvoiceModal

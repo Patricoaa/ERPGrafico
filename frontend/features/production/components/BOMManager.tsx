@@ -7,7 +7,7 @@ import {
     Plus, Edit, Trash2, Check, Loader2, Workflow, Box, Layers, Copy
 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { BOMFormDialog } from "./BOMFormDialog"
+import { BOMFormModal } from "./BOMFormModal"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -373,7 +373,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 />
             </div>
 
-            <BOMFormDialog
+            <BOMFormModal
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
                 product={
