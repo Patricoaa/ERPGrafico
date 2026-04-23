@@ -12,7 +12,7 @@ import {
     Loader2, Trash2, Pencil, Sparkles, AlertCircle, DollarSign, Clock, CheckCircle2, Plus
 } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
+
 import { cn } from "@/lib/utils"
 import type { Payroll, PayrollItem } from "@/types/hr"
 import { DataCell } from "@/components/ui/data-table-cells"
@@ -156,7 +156,7 @@ export function PayrollCard({
     }
 
     return (
-        <IndustrialCard className={cn("max-w-4xl mx-auto overflow-hidden", className)}>
+        <Card className={cn("max-w-4xl mx-auto overflow-hidden rounded-none shadow-2xl ring-1 ring-border bg-card", className)}>
             <div className="h-2 w-full bg-primary" />
             {/* 1. DOCUMENT HEADER */}
             <CardHeader className="pb-0 pt-8 px-10">
@@ -441,6 +441,6 @@ export function PayrollCard({
                 description={`¿Eliminar línea: ${itemToDelete?.concept_detail?.name || 'Item'}?`}
                 variant="destructive"
             />
-        </IndustrialCard>
+        </Card>
     )
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { IndustrialCard } from '@/components/shared/IndustrialCard';
+import { Card } from '@/components/ui/card';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Button } from '@/components/ui/button';
 import {
@@ -64,7 +64,7 @@ export function FiscalYearCard({
     };
 
     return (
-        <IndustrialCard variant="industrial" className="overflow-hidden mb-8">
+        <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card overflow-hidden mb-8">
             {/* Header / Annual Status */}
             <div className="bg-muted/20 border-b border-border/50 p-5 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
@@ -161,6 +161,6 @@ export function FiscalYearCard({
                     </div>
                 )}
             </div>
-        </IndustrialCard>
+        </Card>
     );
 }

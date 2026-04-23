@@ -1,7 +1,5 @@
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
-import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Settings, Building2, Shield, History, FileText, Database } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Settings, Building2, Shield, History } from "lucide-react"
 import Link from "next/link"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -17,7 +15,7 @@ export default function SettingsPage() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Link href="/settings/company">
-                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-primary">
+                    <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card cursor-pointer hover:border-primary border-t-4 border-t-primary transition-all">
                         <CardHeader className="flex flex-row items-center gap-4">
                             <Building2 className="h-8 w-8 text-primary" />
                             <div>
@@ -25,11 +23,11 @@ export default function SettingsPage() {
                                 <CardDescription>Datos fiscales y logotipos.</CardDescription>
                             </div>
                         </CardHeader>
-                    </IndustrialCard>
+                    </Card>
                 </Link>
 
                 <Link href="/settings/partners">
-                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-accent">
+                    <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card cursor-pointer hover:border-primary border-t-4 border-t-accent transition-all">
                         <CardHeader className="flex flex-row items-center gap-4">
                             <Building2 className="h-8 w-8 text-primary" />
                             <div>
@@ -37,12 +35,11 @@ export default function SettingsPage() {
                                 <CardDescription>Composición societaria y aportes.</CardDescription>
                             </div>
                         </CardHeader>
-                    </IndustrialCard>
+                    </Card>
                 </Link>
 
-
                 <Link href="/settings/users">
-                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-success">
+                    <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card cursor-pointer hover:border-primary border-t-4 border-t-success transition-all">
                         <CardHeader className="flex flex-row items-center gap-4">
                             <Shield className="h-8 w-8 text-primary" />
                             <div>
@@ -50,13 +47,11 @@ export default function SettingsPage() {
                                 <CardDescription>Gestión de accesos y roles.</CardDescription>
                             </div>
                         </CardHeader>
-                    </IndustrialCard>
+                    </Card>
                 </Link>
 
-
-
                 <Link href="/settings/audit">
-                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-muted-foreground/30">
+                    <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card cursor-pointer hover:border-primary border-t-4 border-t-muted-foreground/30 transition-all">
                         <CardHeader className="flex flex-row items-center gap-4">
                             <History className="h-8 w-8 text-primary" />
                             <div>
@@ -64,11 +59,11 @@ export default function SettingsPage() {
                                 <CardDescription>Historial de actividades y logs del sistema.</CardDescription>
                             </div>
                         </CardHeader>
-                    </IndustrialCard>
+                    </Card>
                 </Link>
 
                 <Link href="/settings/workflow">
-                    <IndustrialCard variant="industrial" className="cursor-pointer hover:border-primary border-t-primary">
+                    <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card cursor-pointer hover:border-primary border-t-4 border-t-primary transition-all">
                         <CardHeader className="flex flex-row items-center gap-4">
                             <Settings className="h-8 w-8 text-primary" />
                             <div>
@@ -76,13 +71,11 @@ export default function SettingsPage() {
                                 <CardDescription>Configuración de tareas y asignaciones automáticas.</CardDescription>
                             </div>
                         </CardHeader>
-                    </IndustrialCard>
+                    </Card>
                 </Link>
-
-
             </div>
 
-            <IndustrialCard variant="industrial" className="border-t-border">
+            <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-t-4 border-t-border">
                 <CardHeader>
                     <CardTitle>Información del ERP</CardTitle>
                     <CardDescription>Versión y estado del servidor.</CardDescription>
@@ -97,8 +90,7 @@ export default function SettingsPage() {
                         <span className="text-success font-bold">Conectado</span>
                     </div>
                 </CardContent>
-            </IndustrialCard>
+            </Card>
         </div>
     )
 }
-

@@ -1,5 +1,5 @@
 import React from 'react';
-import { IndustrialCard } from '@/components/shared/IndustrialCard';
+import { Card } from '@/components/ui/card';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { AccountingPeriod } from '../../types';
@@ -34,7 +34,7 @@ const StatusIcon = ({ status }: { status: string }) => {
     const taxClosed = !!(period.tax_period_id && period.tax_period_status === 'CLOSED');
 
     return (
-        <IndustrialCard variant="list" className="p-4 flex flex-col justify-between h-full group transition-all duration-300 hover:border-primary/30">
+        <Card className="p-4 flex flex-col justify-between h-full group transition-all duration-300 rounded-none border border-border/50 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10">
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -112,6 +112,6 @@ const StatusIcon = ({ status }: { status: string }) => {
                     )}
                 </div>
             </div>
-        </IndustrialCard>
+        </Card>
     );
 }

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import React, { useEffect, useState } from "react"
 import {
@@ -10,7 +10,6 @@ import {
     LogOut,
     History
 } from "lucide-react"
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
 import { Button } from "@/components/ui/button"
 import { TableRow, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"

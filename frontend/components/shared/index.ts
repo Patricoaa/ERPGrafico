@@ -23,7 +23,7 @@ export * from './ActionSlideButton';
 export * from './ToolbarCreateButton';
 
 // Cards & Containers
-export * from './IndustrialCard';
+
 export * from './CardSkeleton';
 
 // Data Display

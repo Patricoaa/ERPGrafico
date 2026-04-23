@@ -22,11 +22,3 @@ export const LAYOUT_TOKENS = {
     grid: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6",
 } as const;
 
-export const CARD_TOKENS = {
-    container: "rounded-none border transition-all duration-200",
-    standard: "border-dashed p-4 bg-card/50 shadow-sm",
-    industrial: "shadow-2xl border-none ring-1 ring-border border-t-4 border-t-primary bg-card",
-    elevated: "shadow-[var(--shadow-elevated)] border-none ring-1 ring-primary/15 bg-card",
-    list: "bg-card border border-border/50 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/10 transition-all cursor-pointer",
-    glass: "backdrop-blur-md bg-white/5 border-white/10 shadow-2xl p-4",
-} as const;

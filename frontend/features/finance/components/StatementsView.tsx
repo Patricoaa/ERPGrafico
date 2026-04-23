@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { TabsContent } from "@/components/ui/tabs"
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { Button } from "@/components/ui/button"
@@ -218,7 +217,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
             <div className="max-w-5xl mx-auto w-full pt-4">
                 <TabsContent value="bs" className="mt-0 outline-none">
                     {activeTab === "bs" && (
-                        <IndustrialCard variant="industrial" className="shadow-xl border-t-primary overflow-hidden">
+                        <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card shadow-xl border-t-primary overflow-hidden">
                             <CardContent className="p-10 pt-10">
                                 <ReportHeader title="Situación Financiera" dateRange={date} />
                                 <RenderToolbar />
@@ -278,13 +277,13 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                     <ReportTable data={null} isLoading={loading} showComparison={showComparison} />
                                 )}
                             </CardContent>
-                        </IndustrialCard>
+                        </Card>
                     )}
                 </TabsContent>
 
                 <TabsContent value="pl" className="mt-0 outline-none">
                     {activeTab === "pl" && (
-                        <IndustrialCard variant="industrial" className="shadow-xl border-t-success overflow-hidden">
+                        <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card shadow-xl border-t-success overflow-hidden">
                             <CardContent className="p-10 pt-10">
                                 <ReportHeader title="Estado de Resultados" dateRange={date} />
                                 <RenderToolbar />
@@ -339,13 +338,13 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                     <ReportTable data={null} isLoading={loading} showComparison={showComparison} />
                                 )}
                             </CardContent>
-                        </IndustrialCard>
+                        </Card>
                     )}
                 </TabsContent>
 
                 <TabsContent value="cf" className="mt-0 outline-none">
                     {activeTab === "cf" && (
-                        <IndustrialCard variant="industrial" className="shadow-xl border-t-info overflow-hidden">
+                        <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card shadow-xl border-t-info overflow-hidden">
                             <CardContent className="p-10 pt-10">
                                 <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} />
                                 <RenderToolbar />
@@ -363,7 +362,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                     </div>
                                 )}
                             </CardContent>
-                        </IndustrialCard>
+                        </Card>
                     )}
                 </TabsContent>
             </div>
