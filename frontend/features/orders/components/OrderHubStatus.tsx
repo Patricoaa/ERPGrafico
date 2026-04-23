@@ -11,7 +11,7 @@ interface OrderHubStatusProps {
 }
 
 export function OrderHubStatus({ order }: OrderHubStatusProps) {
-    const statuses = getHubStatuses(order)
+    const statuses = getHubStatuses(order as any)
     // Visible if order has manufacturable items or existing work orders
     const showProduction = (order.work_orders?.length || 0) > 0 || (order.lines || order.items || []).some((l: OrderLine) => l.is_manufacturable)
     const totalOTProgress = (order as Record<string, unknown>).production_progress as number || 0

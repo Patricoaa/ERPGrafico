@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency, formatPlainDate } from "@/lib/utils"
 import { Landmark, Calendar, User, Hash, FileText } from "lucide-react"
-import type { TransactionData } from "@/components/shared/TransactionViewModal"
+import type { TransactionData } from "@/types/transactions"
 
 interface Payment {
     id: number
@@ -37,7 +37,7 @@ export function PaymentHistoryModal({
     onOpenChange,
     order
 }: PaymentHistoryModalProps) {
-    const payments = order.serialized_payments || order.related_documents?.payments || []
+    const payments = (order as any).serialized_payments || (order as any).related_documents?.payments || []
 
     return (
         <BaseModal

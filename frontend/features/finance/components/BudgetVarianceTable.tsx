@@ -9,7 +9,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { CaretRight, CaretDown, WarningCircle } from "@phosphor-icons/react";
+import { ChevronRight, ChevronDown, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -85,7 +85,7 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
                                 onClick={() => setExpanded(!expanded)} 
                                 className="mr-2 h-5 w-5 flex items-center justify-center hover:bg-accent rounded transition-colors"
                             >
-                                {expanded ? <CaretDown weight="bold" className="h-3 w-3" /> : <CaretRight weight="bold" className="h-3 w-3" />}
+                                {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                             </button>
                         ) : (
                             <div className="w-7" />
@@ -97,7 +97,7 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <WarningCircle className="ml-2 h-3.5 w-3.5 text-amber-500 shrink-0" weight="fill" />
+                                        <AlertCircle className="ml-2 h-3.5 w-3.5 text-amber-500 shrink-0" />
                                     </TooltipTrigger>
                                     <TooltipContent>Cuenta no presupuestada con movimientos reales</TooltipContent>
                                 </Tooltip>

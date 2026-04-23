@@ -21,8 +21,9 @@ export function Step1_Items({
     setSelectedItems,
     isCreditNote
 }: Step1_ItemsProps) {
-    const lines = originalInvoice?.lines || []
-    const isExempt = originalInvoice?.dte_type === 'FACTURA_EXENTA' || originalInvoice?.dte_type === 'BOLETA_EXENTA';
+    const inv = originalInvoice as any
+    const lines = inv?.lines || []
+    const isExempt = inv?.dte_type === 'FACTURA_EXENTA' || inv?.dte_type === 'BOLETA_EXENTA';
 
 
     const toggleItem = (lineId: number) => {
@@ -51,8 +52,8 @@ export function Step1_Items({
                     uom_id: line.uom,
                     unit_price: line.unit_price || line.unit_cost || 0,
                     unit_price_gross: line.unit_price_gross || line.unit_price || line.unit_cost || 0,
-                    tax_rate: line.tax_rate ?? (originalInvoice?.dte_type === 'FACTURA_EXENTA' || originalInvoice?.dte_type === 'BOLETA_EXENTA' ? 0 : 19),
-                    tax_amount: (line.unit_price || line.unit_cost || 0) * ((line.tax_rate ?? (originalInvoice?.dte_type === 'FACTURA_EXENTA' || originalInvoice?.dte_type === 'BOLETA_EXENTA' ? 0 : 19)) / 100),
+                    tax_rate: line.tax_rate ?? (inv?.dte_type === 'FACTURA_EXENTA' || inv?.dte_type === 'BOLETA_EXENTA' ? 0 : 19),
+                    tax_amount: (line.unit_price || line.unit_cost || 0) * ((line.tax_rate ?? (inv?.dte_type === 'FACTURA_EXENTA' || inv?.dte_type === 'BOLETA_EXENTA' ? 0 : 19)) / 100),
                     reason: ""
 
                 }
@@ -63,10 +64,11 @@ export function Step1_Items({
     const updateItem = (lineId: number, field: string, value: unknown) => {
         setSelectedItems(selectedItems.map(item => {
             if (item.line_id === lineId) {
-                const updated = { ...item, [field]: value }
+                const d = item as any
+                const updated = { ...d, [field]: value } as any
                 if (field === 'unit_price') {
                     const rate = parseFloat(updated.tax_rate ?? 0) / 100
-                    updated.tax_amount = value * rate
+                    updated.tax_amount = (value as any) * rate
                 }
                 return updated
             }
@@ -107,11 +109,12 @@ export function Step1_Items({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {lines.map((line: Record<string, unknown>) => {
+                        {lines.map((l: any) => {
+                            const line = l as any
                             const selected = isSelected(line.id)
-                            const itemData = getItem(line.id)
+                            const itemData = getItem(line.id) as any
 
-                            const isPurchase = !!originalInvoice?.purchase_order || originalInvoice?.dte_type === 'PURCHASE_INV';
+                            const isPurchase = !!inv?.purchase_order || inv?.dte_type === 'PURCHASE_INV';
 
                             const maxQty = isCreditNote
                                 ? Math.floor(line.quantity_delivered || line.quantity)

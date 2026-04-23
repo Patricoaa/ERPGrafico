@@ -47,14 +47,14 @@ export function AdvancedWorkOrderSelector({
         if (value && !selectedOrder && value !== "__none__" && value !== "none" && value.toString() !== singleOrder?.id.toString()) {
             fetchSingleOrder(value.toString())
         } else if (!value || value === "__none__" || value === "none") {
-            setSelectedOrder(null)
+            requestAnimationFrame(() => setSelectedOrder(null))
         }
     }, [value, selectedOrder, singleOrder, fetchSingleOrder])
 
     // Sync individual order
     useEffect(() => {
         if (singleOrder && singleOrder.id.toString() === value?.toString()) {
-            setSelectedOrder(singleOrder)
+            requestAnimationFrame(() => setSelectedOrder(singleOrder))
         }
     }, [singleOrder, value])
 

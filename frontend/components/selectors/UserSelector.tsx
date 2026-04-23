@@ -34,14 +34,14 @@ export function UserSelector({ value, onChange, placeholder = "Seleccionar usuar
         if (value && !selectedUser && value.toString() !== singleUser?.id.toString()) {
             fetchSingleUser(value.toString())
         } else if (!value) {
-            setSelectedUser(null)
+            requestAnimationFrame(() => setSelectedUser(null))
         }
     }, [value, selectedUser, singleUser, fetchSingleUser])
 
     // Sync fetched single user to local state
     useEffect(() => {
         if (singleUser && singleUser.id === value) {
-            setSelectedUser(singleUser)
+            requestAnimationFrame(() => setSelectedUser(singleUser))
         }
     }, [singleUser, value])
 

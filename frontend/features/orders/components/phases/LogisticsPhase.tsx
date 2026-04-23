@@ -101,19 +101,19 @@ export function LogisticsPhase({
 
         // 1. Returns for Notes/Orders
         if (Array.isArray(activeDoc.related_returns) && activeDoc.related_returns.length > 0) {
-            docs.push(...activeDoc.related_returns.map((doc: Order) => ({
-                type: (doc as Record<string, unknown>).type as string,
+            docs.push(...activeDoc.related_returns.map((doc: any) => ({
+                type: doc.type as string,
                 number: formatDocumentId('DEV', doc.number || doc.id, doc.display_id),
                 icon: Package,
                 id: doc.id,
-                docType: (doc as Record<string, unknown>).docType as string,
+                docType: doc.docType as string,
                 status: doc.status,
                 actions: [
                     ...((doc.status !== 'CANCELLED') ? [{
                         icon: Ban,
                         title: 'Anular Devolución',
                         color: 'text-warning hover:bg-warning/10',
-                        onClick: () => handleAnnulLogistics(doc.id, (doc as Record<string, unknown>).docType as string)
+                        onClick: () => handleAnnulLogistics(doc.id, doc.docType as string)
                     }] : [])
                 ]
             })))
@@ -177,7 +177,7 @@ export function LogisticsPhase({
             <PhaseCard
                 title={title}
                 icon={Package}
-                variant={(isNoteMode ? noteStatuses.logistics : (logisticsProgress === 100 ? 'success' : logisticsProgress > 0 ? 'active' : 'neutral')) as string}
+                variant={(isNoteMode ? noteStatuses.logistics : (logisticsProgress === 100 ? 'success' : logisticsProgress > 0 ? 'active' : 'neutral')) as any}
                 documents={logisticsDocs}
                 onViewDetail={openDetails}
                 actions={(isNoteMode ? (registry[isSale ? 'deliveries' : 'receptions']?.actions || registry.returns?.actions || []) : (registry[isSale ? 'deliveries' : 'receptions']?.actions || [])).filter((a: { id: string }) => !a.id.includes('view-'))}
@@ -201,7 +201,7 @@ export function LogisticsPhase({
                             ? (line.quantity_delivered !== undefined ? 'quantity_delivered' : 'delivered_quantity')
                             : (line.quantity_received !== undefined ? 'quantity_received' : 'received_quantity')
 
-                        const current = parseFloat(line[processedField] || 0)
+                        const current = parseFloat(String(line[processedField as keyof OrderLine] || 0))
                         const pct = Math.min(100, Math.round((current / total) * 100))
 
                         return (

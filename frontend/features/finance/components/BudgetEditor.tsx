@@ -117,6 +117,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
     }, [open, budget]);
 
     const loadData = async () => {
+        if (!budget) return;
         setLoading(true);
         try {
             // Load only budgetable accounts
@@ -142,7 +143,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
             if (budgetRes.data.items) {
                 budgetRes.data.items.forEach((item: BudgetItem) => {
                     if (!currItems[item.account]) currItems[item.account] = {};
-                    currItems[item.account][item.month] = parseFloat(item.amount);
+                    currItems[item.account][item.month] = parseFloat(String(item.amount));
                 });
             }
             setItems(currItems);
@@ -155,6 +156,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
     };
 
     const handleCopyPreviousYear = async () => {
+        if (!budget) return;
         setLoading(true);
         try {
             const res = await api.get(`/accounting/budgets/${budget.id}/previous_year_actuals/`);

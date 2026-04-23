@@ -79,7 +79,10 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
 
     useEffect(() => {
         if (user) {
-            fetchData()
+            const init = async () => {
+                await fetchData()
+            }
+            init()
             const interval = setInterval(fetchData, 30000)
             return () => clearInterval(interval)
         }

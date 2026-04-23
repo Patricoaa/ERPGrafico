@@ -11,7 +11,7 @@ interface UseGroupSearchReturn {
     fetchSingleGroup: (id: string | number) => Promise<void>
 }
 
-let globalCache: Record<string, AppGroup[]> = {}
+const globalCache: Record<string, AppGroup[]> = {}
 
 export function useGroupSearch(): UseGroupSearchReturn {
     const [groups, setGroups] = useState<AppGroup[]>([])

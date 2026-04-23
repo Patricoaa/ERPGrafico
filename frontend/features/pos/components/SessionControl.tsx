@@ -93,16 +93,18 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
     useEffect(() => {
         if (openDialogOpen) {
-            setWizardStep(1)
-            fetchAvailableSessions()
-            fetchTerminals()
-            // Fetch accounting settings for justification logic
-            api.get('/accounting/settings/current/')
-                .then(res => setAccountingSettings(res.data))
-                .catch(err => console.error("Failed to load accounting settings", err))
-            // Reset validation states
-            setOpeningSelectedAccount(null)
-            setOpeningInsufficientFunds(false)
+            requestAnimationFrame(() => {
+                setWizardStep(1)
+                fetchAvailableSessions()
+                fetchTerminals()
+                // Fetch accounting settings for justification logic
+                api.get('/accounting/settings/current/')
+                    .then(res => requestAnimationFrame(() => setAccountingSettings(res.data)))
+                    .catch(err => console.error("Failed to load accounting settings", err))
+                // Reset validation states
+                setOpeningSelectedAccount(null)
+                setOpeningInsufficientFunds(false)
+            })
         }
     }, [openDialogOpen])
 
@@ -116,24 +118,30 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
             api.get(`/treasury/accounts/${openingJustifyTargetId}/`)
                 .then(res => {
-                    setOpeningSelectedAccount(res.data)
-                    // Validate only for surplus (diff > 0 = money coming IN)
-                    if (diff > 0 && res.data.current_balance !== undefined) {
-                        const available = res.data.current_balance as number
-                        const needed = Math.abs(diff)
-                        setOpeningInsufficientFunds(available < needed)
-                    } else {
-                        setOpeningInsufficientFunds(false)
-                    }
+                    requestAnimationFrame(() => {
+                        setOpeningSelectedAccount(res.data)
+                        // Validate only for surplus (diff > 0 = money coming IN)
+                        if (diff > 0 && res.data.current_balance !== undefined) {
+                            const available = res.data.current_balance as number
+                            const needed = Math.abs(diff)
+                            setOpeningInsufficientFunds(available < needed)
+                        } else {
+                            setOpeningInsufficientFunds(false)
+                        }
+                    })
                 })
                 .catch(err => {
                     console.error("Failed to load account", err)
-                    setOpeningSelectedAccount(null)
-                    setOpeningInsufficientFunds(false)
+                    requestAnimationFrame(() => {
+                        setOpeningSelectedAccount(null)
+                        setOpeningInsufficientFunds(false)
+                    })
                 })
         } else {
-            setOpeningSelectedAccount(null)
-            setOpeningInsufficientFunds(false)
+            requestAnimationFrame(() => {
+                setOpeningSelectedAccount(null)
+                setOpeningInsufficientFunds(false)
+            })
         }
     }, [openingJustifyTargetId, openingJustifyReason, selectedTerminalId, openingBalance, terminals])
 
@@ -169,8 +177,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     useEffect(() => {
         const storedSharedId = localStorage.getItem('shared_pos_session_id')
         if (session !== undefined) {
-            setCurrentSession(session)
-            setLoading(false)
+            requestAnimationFrame(() => {
+                setCurrentSession(session)
+                setLoading(false)
+            })
             return
         }
 
@@ -211,11 +221,13 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     // Sync state when session prop changes (controlled mode)
     useEffect(() => {
         if (session !== undefined) {
-            setCurrentSession(session)
-            // If we now have an active session, clear any stale report modal
-            if (session && session.status === 'OPEN') {
-                setReportDialogOpen(false)
-            }
+            requestAnimationFrame(() => {
+                setCurrentSession(session)
+                // If we now have an active session, clear any stale report modal
+                if (session && session.status === 'OPEN') {
+                    setReportDialogOpen(false)
+                }
+            })
         }
     }, [session])
 
@@ -281,8 +293,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
     useEffect(() => {
         if (openDialogOpen) {
-            fetchAvailableSessions()
-            fetchTerminals()
+            requestAnimationFrame(() => {
+                fetchAvailableSessions()
+                fetchTerminals()
+            })
         }
     }, [openDialogOpen])
 
@@ -292,7 +306,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             const terminal = terminals.find(t => t.id === parseInt(selectedTerminalId))
             if (terminal) {
                 if (terminal.default_treasury_account) {
-                    setFundSourceId(terminal.default_treasury_account.toString())
+                    requestAnimationFrame(() => setFundSourceId(terminal.default_treasury_account.toString()))
                 }
             }
         }
@@ -880,7 +894,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     open={moveDialogOpen}
                     onOpenChange={setMoveDialogOpen}
                     context="pos"
-                    fixedAccountId={currentSession.treasury_account || undefined}
+                    fixedAccountId={typeof currentSession.treasury_account === 'object' ? currentSession.treasury_account?.id : (currentSession.treasury_account as number || undefined)}
                     fixedAccountName={currentSession.treasury_account_name}
                     maxOutboundAmount={currentSession.expected_cash}
                     onComplete={handleRegisterManualMovement}

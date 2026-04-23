@@ -37,7 +37,7 @@ export default async function BillingPage({ searchParams }: PageProps) {
             description: viewMode === 'sales'
                 ? "Gestión de boletas, facturas y notas de venta emitidas a clientes."
                 : "Recepción y cuadratura de facturas y notas de crédito de proveedores.",
-            iconName: (viewMode === 'sales' ? "receipt" : "file-badge") as const,
+            iconName: (viewMode === 'sales' ? "receipt" : "file-badge") as "receipt" | "file-badge",
         }
     }
 

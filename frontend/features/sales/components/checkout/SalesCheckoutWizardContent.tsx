@@ -292,7 +292,7 @@ export function SalesCheckoutWizardContent({
                 isWaitingApproval,
                 isQuickSale: quickSale,
                 isWaitingPayment: step === totalSteps
-            })
+            } as any)
         }
     }, [step, dteData, paymentData, deliveryData, approvalTaskId, isWaitingApproval, isApproved, loading, quickSale, onStateChange, selectedCustomerId, selectedCustomerName, totalSteps])
 
@@ -337,7 +337,7 @@ export function SalesCheckoutWizardContent({
             case 'delivery':
                 return <Step3_Delivery deliveryData={deliveryData} setDeliveryData={setDeliveryData} orderLines={currentOrderLines} />
             case 'payment':
-                return <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} customerCreditBalance={Number(selectedCustomer?.credit_balance || 0)} />
+                return <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} customerCreditBalance={Number((selectedCustomer as any)?.credit_balance || 0)} />
             default:
                 return null;
         }
@@ -460,11 +460,11 @@ export function SalesCheckoutWizardContent({
                 lines: currentOrderLines.map((l: SaleOrderLine) => {
                     let cleanMfgData = null
                     if (l.manufacturing_data) {
-                        const { design_files, approval_file, ...rest } = l.manufacturing_data
+                        const { design_files, approval_file, ...rest } = l.manufacturing_data as any
                         cleanMfgData = {
                             ...rest,
-                            design_filenames: (design_files || []).map((f: File) => f.name),
-                            approval_filename: approval_file ? approval_file.name : null
+                            design_filenames: ((design_files as any) || []).map((f: File) => f.name),
+                            approval_filename: approval_file ? (approval_file as any).name : null
                         }
                     }
                     return {
@@ -485,13 +485,13 @@ export function SalesCheckoutWizardContent({
 
             currentOrderLines.forEach((l: SaleOrderLine, lineIdx: number) => {
                 if (l.manufacturing_data) {
-                    if (l.manufacturing_data.design_files) {
-                        l.manufacturing_data.design_files.forEach((file: File, fileIdx: number) => {
+                    if ((l.manufacturing_data as any).design_files) {
+                        (l.manufacturing_data as any).design_files.forEach((file: File, fileIdx: number) => {
                             formData.append(`line_${lineIdx}_design_${fileIdx}`, file)
                         })
                     }
-                    if (l.manufacturing_data.approval_file) {
-                        formData.append(`line_${lineIdx}_approval`, l.manufacturing_data.approval_file)
+                    if ((l.manufacturing_data as any).approval_file) {
+                        formData.append(`line_${lineIdx}_approval`, (l.manufacturing_data as any).approval_file)
                     }
                 }
             })
@@ -924,7 +924,7 @@ export function SalesCheckoutWizardContent({
                         total={currentTotal}
                         totalDiscountAmount={totalDiscountAmount}
                         dteType={dteData.type}
-                        customer={selectedCustomer}
+                        customer={selectedCustomer || undefined}
                     />
                 </div>
             )}
@@ -985,7 +985,7 @@ export function SalesCheckoutWizardContent({
                     </div>
                     <div className="w-full pt-4">
                         <Button
-                            variant="primary"
+                            variant="default"
                             className="w-full h-12 font-bold uppercase tracking-widest text-xs rounded-sm shadow-lg shadow-primary/20"
                             onClick={() => {
                                 setShowInvoiceReminder(false)

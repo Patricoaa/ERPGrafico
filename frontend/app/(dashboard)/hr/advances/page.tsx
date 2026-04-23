@@ -7,30 +7,17 @@ import { getAdvances, createAdvance, updateAdvance, deleteAdvance, getEmployees,
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+
+
 import {
-    Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger
-} from "@/components/ui/dialog"
-import {
-    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
-} from "@/components/ui/table"
-import {
-    Plus, Pencil, Trash2, WalletCards, CheckCircle2, Clock, History
+    Plus, Pencil, Trash2
 } from "lucide-react"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
+
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ColumnDef } from "@tanstack/react-table"
-import { cn } from "@/lib/utils"
-import { FORM_STYLES, LAYOUT_TOKENS } from "@/lib/styles"
 import { useSearchParams } from "next/navigation"
 
 // Advance schemas and types moved to features/hr/components/AdvanceFormDialog
@@ -41,7 +28,7 @@ export default function AdvancesPage({ createAction }: { createAction?: React.Re
     const [employees, setEmployees] = useState<Employee[]>([])
     const [payrolls, setPayrolls] = useState<Payroll[]>([])
     const [loading, setLoading] = useState(true)
-    
+
     // Dialog state synchronized with URL or local edit
     const isNewModalOpen = searchParams.get("modal") === "new"
     const [editingAdvance, setEditingAdvance] = useState<SalaryAdvance | null>(null)
@@ -124,9 +111,9 @@ export default function AdvancesPage({ createAction }: { createAction?: React.Re
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <StatusBadge 
-                        status={row.original.is_discounted ? "DISCOUNTED" : "PENDING"} 
-                        label={row.original.is_discounted ? "Descontado" : "Pendiente"} 
+                    <StatusBadge
+                        status={row.original.is_discounted ? "DISCOUNTED" : "PENDING"}
+                        label={row.original.is_discounted ? "Descontado" : "Pendiente"}
                     />
                 </div>
             )
@@ -214,8 +201,8 @@ export default function AdvancesPage({ createAction }: { createAction?: React.Re
                 hideDteFields={true}
                 onConfirm={async (paymentData) => {
                     try {
-                        await createAdvance({ 
-                            ...tempAdvanceData, 
+                        await createAdvance({
+                            ...tempAdvanceData,
                             ...paymentData,
                             amount: String(paymentData.amount || tempAdvanceData?.amount),
                             date: String(paymentData.documentDate || tempAdvanceData?.date),

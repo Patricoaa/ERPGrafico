@@ -24,14 +24,6 @@ export function ReconciliationDashboard() {
     const [accounts, setAccounts] = useState<TreasuryAccount[]>([])
     const [selectedAccount, setSelectedAccount] = useState<string>("all")
 
-    useEffect(() => {
-        loadAccounts()
-    }, [])
-
-    useEffect(() => {
-        loadDashboard()
-    }, [selectedAccount])
-
     const loadAccounts = async () => {
         const data = await fetchAccounts()
         setAccounts(data)
@@ -45,6 +37,20 @@ export function ReconciliationDashboard() {
             setPending(data.pending)
         }
     }
+
+    useEffect(() => {
+        const init = async () => {
+            await loadAccounts()
+        }
+        init()
+    }, [])
+
+    useEffect(() => {
+        const init = async () => {
+            await loadDashboard()
+        }
+        init()
+    }, [selectedAccount])
 
 
 

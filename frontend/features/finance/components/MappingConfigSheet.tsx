@@ -7,7 +7,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { FadersHorizontal, WarningCircle, MagnifyingGlass, FloppyDisk } from "@phosphor-icons/react"
+import { SlidersHorizontal, AlertCircle, Search, Save, Tag } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAccountMappings, MappingType } from "@/features/finance/hooks/useAccountMappings"
 import { 
@@ -17,7 +17,7 @@ import {
     Account 
 } from "@/features/accounting/types"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Tag } from "@phosphor-icons/react"
+
 import { RowSelectionState } from "@tanstack/react-table"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
@@ -158,7 +158,7 @@ export function MappingConfigSheet({
                 return (
                     <div className="flex items-center gap-2">
                         {!currentValue && (
-                            <WarningCircle className="h-3.5 w-3.5 text-warning shrink-0" />
+                            <AlertCircle className="h-3.5 w-3.5 text-warning shrink-0" />
                         )}
                         <Select 
                             value={currentValue || "none"}
@@ -207,7 +207,7 @@ export function MappingConfigSheet({
 
                 <div className="px-8 pb-4 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-4">
-                        <FadersHorizontal className="h-5 w-5 text-muted-foreground" />
+                        <SlidersHorizontal className="h-5 w-5 text-muted-foreground" />
                         <div className="flex flex-col">
                             <span className="text-xl font-black tracking-tight text-foreground leading-none">{getTitle()}</span>
                             <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-1 opacity-60 flex items-center gap-1.5">
@@ -227,7 +227,7 @@ export function MappingConfigSheet({
                             disabled={!hasChanges || isSaving}
                             className="font-black tracking-widest uppercase text-[10px] h-9"
                         >
-                            <FloppyDisk className="mr-2 h-4 w-4" />
+                            <Save className="mr-2 h-4 w-4" />
                             {isSaving ? "Guardando..." : "Guardar Mapeo"}
                         </Button>
                     </div>

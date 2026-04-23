@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Product, ProductBOM, UoM } from "@/types/entities"
-import { useForm } from "react-hook-form"
+import { useForm, UseFormReturn } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
@@ -35,20 +35,20 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
   const [loading, setLoading] = useState(false)
   const [availableBOMs, setAvailableBOMs] = useState<ProductBOM[]>([])
 
-  const form = useForm<QuickEditValues>({
-    resolver: zodResolver(quickEditSchema) ,
+  const form: UseFormReturn<QuickEditValues> = useForm<QuickEditValues>({
+    resolver: zodResolver(quickEditSchema) as any,
     defaultValues: {
-      sale_price: variant.sale_price || 0,
+      sale_price: Number(variant.sale_price) || 0,
       code: variant.code || "",
-      sale_uom: variant.sale_uom || "",
+      sale_uom: variant.sale_uom?.toString() || "",
     }
   })
 
   useEffect(() => {
     form.reset({
-      sale_price: variant.sale_price || 0,
+      sale_price: Number(variant.sale_price) || 0,
       code: variant.code || "",
-      sale_uom: variant.sale_uom || "",
+      sale_uom: variant.sale_uom?.toString() || "",
     })
     fetchVariantBOMs()
     fetchUoms()
@@ -80,11 +80,11 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
       // Only trigger if a field was actually changed by the user (type === 'change')
       if (type === 'change') {
         const data = form.getValues();
-        const updatedVariant = {
+        const updatedVariant: Product = {
           ...variant,
           sale_price: data.sale_price,
-          code: data.code,
-          sale_uom: data.sale_uom || null,
+          code: data.code || variant.code || "",
+          sale_uom: data.sale_uom ? Number(data.sale_uom) : (typeof variant.sale_uom === 'object' ? variant.sale_uom?.id : variant.sale_uom),
           has_active_bom: true, // Force to true as per user request
           product_type: "MANUFACTURABLE" // All variants are manufacturable now
         };
@@ -116,7 +116,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
           <div className="space-y-6">
              
              <div className="grid grid-cols-2 gap-4">
-                <FormField
+                <FormField<QuickEditValues>
                   control={form.control}
                   name="sale_price"
                   render={({ field }) => (
@@ -129,7 +129,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
                     </FormItem>
                   )}
                 />
-                 <FormField
+                 <FormField<QuickEditValues>
                   control={form.control}
                   name="sale_uom"
                   render={({ field }) => (
@@ -139,7 +139,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
                           field.onChange(val);
                           // Force a change event to trigger the effect immediately for Select
                           form.setValue("sale_uom", val, { shouldDirty: true });
-                      }} value={field.value || ""}>
+                      }} value={String(field.value || "")}>
                         <FormControl>
                           <SelectTrigger className="h-10">
                             <SelectValue placeholder="Seleccione UoM" />
@@ -157,7 +157,7 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
                 />
              </div>
 
-             <FormField
+             <FormField<QuickEditValues>
               control={form.control}
               name="code"
               render={({ field }) => (

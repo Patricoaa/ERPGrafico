@@ -1,0 +1,11 @@
+# Ruff configuration
+line-length = 100
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"] # Line too long (handled by black/prettier if used, but we relax it here)
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401"] # Unused import
+"migrations/*" = ["E501"] # Line too long in migrations

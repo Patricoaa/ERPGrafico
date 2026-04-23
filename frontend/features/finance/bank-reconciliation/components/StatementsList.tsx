@@ -28,18 +28,18 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
     // Open import dialog when triggered via URL (?modal=import)
     useEffect(() => {
         if (externalOpen) {
-            setImportDialogOpen(true)
+            requestAnimationFrame(() => setImportDialogOpen(true))
         }
     }, [externalOpen])
-
-    useEffect(() => {
-        loadData()
-    }, [])
 
     const loadData = async () => {
         const data = await fetchStatements()
         setStatements(data)
     }
+
+    useEffect(() => {
+        requestAnimationFrame(() => loadData())
+    }, [])
 
     const handleImportSuccess = () => {
         loadData()

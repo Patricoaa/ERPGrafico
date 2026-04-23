@@ -27,7 +27,7 @@ interface OrderCardProps {
 export function OrderCard({ item, type, onClick, onActionClick, hideStatus = false, isSelected = false, isHubOpen = false, className, visibleColumns }: OrderCardProps) {
     const isSale = type === 'sale'
     const isNote = type === 'note'
-    const isPurchase = type === 'purchase' || (isNote && ((item as Record<string, unknown>).purchase_order || (item as Record<string, unknown>).purchase_order_id || item.supplier_name))
+    const isPurchase = type === 'purchase' || (isNote && ((item as unknown as Record<string, unknown>).purchase_order || (item as unknown as Record<string, unknown>).purchase_order_id || item.supplier_name))
     const isWorkOrder = type === 'work_order'
     const isLedger = type === 'ledger'
 
@@ -68,9 +68,9 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
         Icon = Monitor
     }
 
-    const itemNumber = item.display_id || (item.number ? (item.number.toString().includes(prefix) ? item.number : `${prefix}-${item.number}`) : '---')
-    const itemName = item.customer_name || item.supplier_name || item.partner_name || item.name || '---'
-    const displayTotal = isLedger ? ((item.balance as number) || (item.pending_amount as number) || 0) : ((item.total as number) || (item.effective_total as number) || 0)
+    const itemNumber = item.display_id || (item.number ? (String(item.number).includes(prefix) ? item.number : `${prefix}-${item.number}`) : '---')
+    const itemName = (typeof item.customer_name === 'object' ? (item.customer_name as any)?.name : item.customer_name) || item.supplier_name || item.partner_name || item.name || '---'
+    const displayTotal = isLedger ? (Number(item.balance || 0) || Number(item.pending_amount || 0) || 0) : (Number(item.total || 0) || Number(item.effective_total || 0) || 0)
 
     // --- Enrichment Data ---
     const lines = item.lines || item.items || []

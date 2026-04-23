@@ -21,6 +21,8 @@ interface HubPanelContextType {
     actionEngineRef: React.RefObject<any>
     triggerAction: (actionId: string) => void
     isHubEffectivelyOpen: boolean // Added unified state
+    /** @deprecated always false — docking feature was removed */
+    isDocked: boolean
 }
 
 const HubPanelContext = createContext<HubPanelContextType | undefined>(undefined)
@@ -62,8 +64,8 @@ export function HubPanelProvider({
 
     // Auto-close on route change (including search params)
     useEffect(() => {
-        closeHub()
-    }, [pathname, searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
+        requestAnimationFrame(() => closeHub())
+    }, [pathname, searchParams, closeHub])
 
     const isHubEffectivelyOpen = isHubOpen && !isHubTemporarilyHidden
 
@@ -76,7 +78,8 @@ export function HubPanelProvider({
         setHubTemporarilyHidden,
         actionEngineRef,
         triggerAction,
-        isHubEffectivelyOpen
+        isHubEffectivelyOpen,
+        isDocked: false,
     }), [openHub, closeHub, isHubOpen, hubConfig, isHubTemporarilyHidden, triggerAction, isHubEffectivelyOpen])
 
     return (

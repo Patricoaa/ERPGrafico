@@ -79,7 +79,9 @@ import type {
     WorkOrderTask, 
     WorkOrderStage,
     ProductMinimal,
-    UoM
+    UoM,
+    ProductionAttachment,
+    ProductionComment
 } from "../types"
 
 
@@ -192,10 +194,11 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             return userGroups.some((g) => {
                 const groupName = g.toLowerCase()
 
+                const gName = (task.data as any)?.candidate_group
                 return (
                     // Match by name (case-insensitive)
                     (task.assigned_group_name && task.assigned_group_name.toLowerCase() === groupName) ||
-                    (task.data?.candidate_group && task.data.candidate_group.toLowerCase() === groupName) ||
+                    (gName && typeof gName === 'string' && gName.toLowerCase() === groupName) ||
                     // Legacy match
                     (g === task.assigned_group)
                 )
@@ -229,7 +232,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         })
     }
 
-    const STAGES = getFilteredStages(order)
+    const STAGES = getFilteredStages(order as WorkOrder)
     const actualStepIndex = STAGES.findIndex(s => s.id === order?.current_stage)
     const isViewingCurrentStage = viewingStepIndex === actualStepIndex
 
@@ -282,7 +285,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
         try {
             await api.patch(`/production/orders/${orderId}/`, { stage_data: updatedStageData })
-            setOrder((prev: WorkOrder | null) => ({ ...prev, stage_data: updatedStageData }))
+            setOrder((prev: any) => ({ ...prev, stage_data: updatedStageData }))
             toast.success("Comentario registrado")
         } catch (error) {
             toast.error("Error al registrar comentario")
@@ -399,7 +402,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     await Promise.all(tasksToApprove.map((task: WorkOrderTask) => {
                         const notes = taskNotes[task.id]
                         const file = taskFiles[task.id]
-                        return completeTask(task.id, notes, file ? [file] : undefined)
+                        return completeTask(task.id as any, notes, file ? [file] : undefined)
                     }))
                 }
             }
@@ -574,7 +577,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const handleEditMaterial = (material: WorkOrderMaterial) => {
         setEditingMaterialId(material.id)
         setNewMaterialProduct(material.component.toString()) // Assuming component is ID
-        setNewMaterialQty(material.quantity_planned)
+        setNewMaterialQty(material.quantity_planned.toString())
         setNewMaterialUoM(material.uom.toString())
         setIsOutsourced(material.is_outsourced)
         setSelectedSupplierId(material.supplier?.toString() || null)
@@ -664,10 +667,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                 contentClassName="h-full"
                 title={
                     <WizardHeader
-                        order={order}
+                        order={order as WorkOrder}
                         currentStageLabel={STAGES[viewingStepIndex]?.label}
                         onEdit={() => setIsEditOpen(true)}
-                        onOpenCommandCenter={(id: number, type: string) => openHub({ orderId: id, type: type as "WORK_ORDER" | "PURCHASE_ORDER", onActionSuccess: fetchOrder })}
+                        onOpenCommandCenter={(id: number, type: string) => openHub({ orderId: id, type: type as any, onActionSuccess: fetchOrder })}
                         onAnnul={() => handleAnnulOrder()}
                         onDelete={() => setIsDeleteModalOpen(true)}
                         isAnnuling={isAnnuling}
@@ -682,7 +685,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         viewingStepIndex={viewingStepIndex}
                         actualStepIndex={actualStepIndex}
                         onStepClick={setViewingStepIndex}
-                        order={order}
+                        order={order as WorkOrder}
                     />
 
                     {/* Center - Content Area */}
@@ -738,8 +741,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             <div className="space-y-4">
 
                                                 <MaterialAssignmentTabs
-                                                    stockCount={order?.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced).length || 0}
-                                                    outsourcedCount={order?.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced).length || 0}
+                                                    stockCount={order?.materials?.filter((m: any) => !m.is_outsourced).length || 0}
+                                                    outsourcedCount={order?.materials?.filter((m: any) => m.is_outsourced).length || 0}
                                                     showOutsourcedTab={false}
                                                     stockContent={
                                                         <div className="space-y-6">
@@ -763,7 +766,17 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                     <p className="text-[10px] text-muted-foreground uppercase">{m.component_code}</p>
                                                                                 </td>
                                                                                 <td className="p-2 text-right font-medium">{m.quantity_planned}</td>
-                                                                                <td className="p-2">{m.uom_name}</td>
+                                                                                <td className="p-2">
+                                                                                    <div className="text-right">
+                                                                                        <p className={cn(
+                                                                                            "text-sm font-bold",
+                                                                                            (m.stock_available ?? 0) >= m.quantity_planned ? "text-success" : "text-destructive"
+                                                                                        )}>
+                                                                                            {(m.stock_available ?? 0)} {m.uom_name}
+                                                                                        </p>
+                                                                                        <p className="text-[10px] text-muted-foreground">Disponible</p>
+                                                                                    </div>
+                                                                                </td>
                                                                                 <td className="p-2 text-right font-bold">{formatCurrency(m.total_cost)}</td>
                                                                                 <td className="p-2">
                                                                                     <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
@@ -855,7 +868,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                 </div>
                                                                                 <div className="w-full md:w-40 space-y-2">
                                                                                     <label className="text-xs font-bold uppercase">Unidad</label>
-                                                                                    <UoMSelector product={selectedProductObj} context="bom" value={newMaterialUoM} onChange={setNewMaterialUoM} uoms={uoms} />
+                                                                                    <UoMSelector product={selectedProductObj as any} context="bom" value={newMaterialUoM} onChange={setNewMaterialUoM} uoms={uoms} />
                                                                                 </div>
                                                                                 <div className="flex gap-2">
                                                                                     <Button variant="outline" size="sm" onClick={() => { setIsAddMaterialOpen(false); resetMaterialForm(); }}>Cancelar</Button>
@@ -900,7 +913,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                     <span>•</span>
                                                                                     <span>Cant: {m.quantity_planned} {m.uom_name}</span>
                                                                                     <span>•</span>
-                                                                                    <span>{formatCurrency(parseFloat(m.unit_price) * 1.19)} (Bruto) c/u</span>
+                                                                                    <span>{formatCurrency(parseFloat(m.unit_price || "0") * 1.19)} (Bruto) c/u</span>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -908,7 +921,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                             <div className="text-right mr-2">
                                                                                 <p className="text-[10px] font-bold uppercase text-muted-foreground">Total Estimado</p>
                                                                                 <p className="text-sm font-bold text-primary">
-                                                                                    {formatCurrency(parseFloat(m.quantity_planned) * parseFloat(m.unit_price) * 1.19)}
+                                                                                    {formatCurrency(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price || "0") * 1.19)}
                                                                                 </p>
                                                                             </div>
                                                                             {isViewingCurrentStage && !m.purchase_order_number && (
@@ -965,7 +978,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                 </div>
                                                                                 <div className="w-full md:w-40 space-y-2">
                                                                                     <label className="text-xs font-bold uppercase">Unidad</label>
-                                                                                    <UoMSelector product={selectedProductObj} context="bom" value={newMaterialUoM} onChange={setNewMaterialUoM} uoms={uoms} />
+                                                                                    <UoMSelector product={selectedProductObj as any} context="bom" value={newMaterialUoM} onChange={setNewMaterialUoM} uoms={uoms} />
                                                                                 </div>
                                                                             </div>
 
@@ -1038,7 +1051,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_MATERIAL_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
-                                                    task={task}
+                                                    task={task as any}
                                                     canComplete={canUserCompleteTask(task)}
                                                     onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
                                                     onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
@@ -1058,8 +1071,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                             <div className="flex items-center gap-3">
                                                                 <div className="text-right mr-2">
                                                                     <p className="text-[10px] font-bold uppercase text-muted-foreground">En Bodega</p>
-                                                                    <p className={cn("text-sm font-bold", m.is_available ? "text-success" : "text-destructive")}>
-                                                                        {m.stock_available >= 999999 ? "∞" : m.stock_available} {m.uom_name}
+                                                                    <p className={cn("text-sm font-bold", (m.stock_available ?? 0) >= m.quantity_planned ? "text-success" : "text-destructive")}>
+                                                                        {(m.stock_available ?? 0) >= 999999 ? "∞" : (m.stock_available ?? 0)} {m.uom_name}
                                                                     </p>
                                                                 </div>
                                                                 <StatusBadge status={m.is_available ? 'active' : 'inactive'} label={m.is_available ? 'Disponible' : 'Sin Stock'} size="sm" />
@@ -1114,7 +1127,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         <span>•</span>
                                                                         <span>Cant: {m.quantity_planned} {m.uom_name}</span>
                                                                         <span>•</span>
-                                                                        <span>{formatCurrency(parseFloat(m.unit_price) * 1.19)} (Bruto) c/u</span>
+                                                                        <span>{formatCurrency(parseFloat(m.unit_price || "0") * 1.19)} (Bruto) c/u</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1122,7 +1135,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                 <div className="text-right mr-2">
                                                                     <p className="text-[10px] font-bold uppercase text-muted-foreground">Total Estimado</p>
                                                                     <p className="text-sm font-bold text-primary">
-                                                                        {formatCurrency(parseFloat(m.quantity_planned) * parseFloat(m.unit_price) * 1.19)}
+                                                                        {formatCurrency(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price || "0") * 1.19)}
                                                                     </p>
                                                                 </div>
                                                                 {isViewingCurrentStage && !m.purchase_order_number && (
@@ -1177,7 +1190,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                     <div className="w-full md:w-40 space-y-2">
                                                                         <label className="text-xs font-bold uppercase">Unidad</label>
                                                                         <UoMSelector
-                                                                            product={selectedProductObj}
+                                                                            product={selectedProductObj as any}
                                                                             context="bom"
                                                                             value={newMaterialUoM}
                                                                             onChange={setNewMaterialUoM}
@@ -1253,7 +1266,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_OUTSOURCING_VERIFICATION').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
-                                                    task={task}
+                                                    task={task as any}
                                                     canComplete={canUserCompleteTask(task)}
                                                     onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
                                                     onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
@@ -1334,7 +1347,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                     <div key={att.id} className="flex items-center gap-2 p-2 bg-primary/10/50 rounded border border-primary/10/50 text-xs hover:border-primary/20 transition-colors">
                                                                         <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
                                                                         <div className="flex-1 truncate font-medium text-primary" title={att.original_filename}>{att.original_filename}</div>
-                                                                        <div className="text-[10px] text-muted-foreground shrink-0">{formatBytes(att.file_size)}</div>
+                                                                        <div className="text-[10px] text-muted-foreground shrink-0">{formatBytes(Number(att.file_size || 0))}</div>
                                                                         <Button
                                                                             variant="ghost"
                                                                             size="icon"
@@ -1364,7 +1377,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         <div key={att.id} className="flex items-center gap-2 p-2 bg-white/50 rounded border border-primary/20 text-xs hover:border-primary/40 transition-colors">
                                                                             <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
                                                                             <div className="flex-1 truncate font-medium" title={att.original_filename}>{att.original_filename}</div>
-                                                                            <div className="text-[10px] text-muted-foreground shrink-0">{formatBytes(att.file_size)}</div>
+                                                                            <div className="text-[10px] text-muted-foreground shrink-0">{formatBytes(Number(att.file_size || 0))}</div>
                                                                             <Button
                                                                                 variant="ghost"
                                                                                 size="icon"
@@ -1385,7 +1398,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_PREPRESS_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
-                                                    task={task}
+                                                    task={task as any}
                                                     canComplete={canUserCompleteTask(task)}
                                                     onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
                                                     onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
@@ -1401,7 +1414,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_PRESS_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
-                                                    task={task}
+                                                    task={task as any}
                                                     canComplete={canUserCompleteTask(task)}
                                                     onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
                                                     onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
@@ -1416,7 +1429,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_POSTPRESS_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
-                                                    task={task}
+                                                    task={task as any}
                                                     canComplete={canUserCompleteTask(task)}
                                                     onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
                                                     onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
@@ -1431,7 +1444,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_OUTSOURCING_VERIFICATION_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
-                                                    task={task}
+                                                    task={task as any}
                                                     canComplete={canUserCompleteTask(task)}
                                                     onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
                                                     onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
@@ -1447,7 +1460,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             {order?.workflow_tasks?.filter((t: WorkOrderTask) => t.task_type === 'OT_RECTIFICATION_APPROVAL').map((task: WorkOrderTask) => (
                                                 <TaskActionCard
                                                     key={task.id}
-                                                    task={task}
+                                                    task={task as any}
                                                     canComplete={canUserCompleteTask(task)}
                                                     onNotesChange={(val) => setTaskNotes(prev => ({ ...prev, [task.id]: val }))}
                                                     onFileChange={(file) => setTaskFiles(prev => ({ ...prev, [task.id]: file }))}
@@ -1456,7 +1469,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                             ))}
                                             {/* Rectification input form */}
                                             <RectificationStep
-                                                order={order}
+                                                order={order!}
                                                 onChange={(adjustments, producedQty) => {
                                                     setRectificationAdjustments(adjustments)
                                                     setRectificationProducedQty(producedQty)
@@ -1523,7 +1536,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                     {/* Right Sidebar - Information */}
                     <WizardRightSidebar
-                        order={order}
+                        order={order!}
                         viewingStepIndex={viewingStepIndex}
                         productName={productName}
                         stageData={stageData}
@@ -1596,8 +1609,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                         <td className="p-2 font-medium">{m.supplier_name}</td>
                                         <td className="p-2">{m.component_name}</td>
                                         <td className="p-2 text-right">{m.quantity_planned}</td>
-                                        <td className="p-2 text-right">{formatCurrency(parseFloat(m.unit_price) * 1.19)}</td>
-                                        <td className="p-2 text-right font-bold">{formatCurrency(parseFloat(m.quantity_planned) * parseFloat(m.unit_price) * 1.19)}</td>
+                                        <td className="p-2 text-right">{formatCurrency(parseFloat(m.unit_price || "0") * 1.19)}</td>
+                                        <td className="p-2 text-right font-bold">{formatCurrency(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price || "0") * 1.19)}</td>
                                     </tr>
                                 ))}
                             </tbody>

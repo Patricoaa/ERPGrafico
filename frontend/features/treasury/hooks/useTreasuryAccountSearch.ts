@@ -11,7 +11,7 @@ interface UseTreasuryAccountSearchReturn {
     fetchSingleAccount: (id: string | number) => Promise<void>
 }
 
-let globalCache: Record<string, TreasuryAccount[]> = {}
+const globalCache: Record<string, TreasuryAccount[]> = {}
 
 export function useTreasuryAccountSearch(): UseTreasuryAccountSearchReturn {
     const [accounts, setAccounts] = useState<TreasuryAccount[]>([])

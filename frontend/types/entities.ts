@@ -98,6 +98,8 @@ export interface Product {
     // BOM
     boms?: ProductBOM[]
     product_custom_fields?: ProductCustomField[]
+    cost_price?: number | string
+    copy_bom_from?: number | string
 }
 
 export interface ProductBOMLine {
@@ -148,13 +150,18 @@ export type ContactType = 'PERSON' | 'COMPANY'
 export interface Contact {
     id: number
     name: string
-    tax_id: string
-    email?: string
-    phone?: string
-    contact_type?: ContactType
-    code?: string
+    display_id?: string
+    tax_id: string | null
+    email: string | null
+    phone: string | null
+    address?: string | null
+    city?: string | null
+    contact_type?: ContactType | 'CUSTOMER' | 'SUPPLIER' | 'BOTH' | 'RELATED' | 'OTHER'
+    code?: string | null
     is_default_customer?: boolean
     is_default_vendor?: boolean
+    credit_blocked?: boolean
+    credit_available?: string | number | null
 }
 
 // ─── Treasury Account ────────────────────────────────────
@@ -190,6 +197,16 @@ export interface WorkOrder {
     product_name: string
     created_at: string
     status: string
+    product_description?: string
+    specifications?: string
+    specifications_prepress?: string
+    specifications_press?: string
+    specifications_postpress?: string
+    prepress_archive?: string
+    start_date?: string
+    sale_order_delivery_date?: string
+    sale_customer_name?: string
+    sale_customer_rut?: string
 }
 
 // ─── UoM (Unit of Measure) ───────────────────────────────
@@ -200,6 +217,8 @@ export interface UoM {
     category: number
     ratio: number
     uom_type?: string
+    active?: boolean
+    category_name?: string
 }
 
 export interface ProductMinimal {
@@ -209,7 +228,7 @@ export interface ProductMinimal {
     internal_code?: string
     variant_display_name?: string
     product_type?: string
-    uom?: UoM | number | string
+    uom?: UoM | number | string | { name: string }
     uom_name?: string
     uom_category?: number
     cost_price?: number | string
@@ -220,6 +239,9 @@ export interface ProductMinimal {
     requires_bom_validation?: boolean
     requires_advanced_manufacturing?: boolean
     mfg_auto_finalize?: boolean
+    receiving_warehouse?: number | string | { id: number; name: string }
+    preferred_supplier?: number | string | { id: number; name: string }
+    preferred_supplier_name?: string
 }
 
 // ─── User ────────────────────────────────────────────────
@@ -278,6 +300,8 @@ export interface NotificationRule {
     id?: number
     notification_type: string
     assigned_user?: number | null
+    assigned_group?: string | null
+    notify_creator?: boolean
     is_active: boolean
     send_email?: boolean
 }
@@ -311,7 +335,12 @@ export interface CustomFieldTemplate {
 export interface ProductCategory {
     id: number
     name: string
+    prefix?: string | null
+    icon?: string
     parent?: number | null
+    asset_account?: number | string | null
+    income_account?: number | string | null
+    expense_account?: number | string | null
 }
 
 // ─── Warehouse ──────────────────────────────────────

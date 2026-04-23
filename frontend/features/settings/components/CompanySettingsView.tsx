@@ -64,8 +64,8 @@ export function CompanySettingsView({
     const [isEditContactOpen, setIsEditContactOpen] = useState(false)
     const fileInputRef = React.useRef<HTMLInputElement>(null)
 
-    const form = useForm<CompanyFormValues>({
-        resolver: zodResolver(companySchema),
+    const form = useForm<any>({
+        resolver: zodResolver(companySchema) as any,
         defaultValues: {
             name: "",
             trade_name: "",
@@ -107,7 +107,7 @@ export function CompanySettingsView({
         fetchContacts()
     }, [])
 
-    const onSubmit = useCallback(async (data: CompanyFormValues) => {
+    const onSubmit = useCallback(async (data: any) => {
         try {
             await updateSettings(data as Partial<CompanySettings>)
             form.reset(data)
@@ -226,7 +226,7 @@ export function CompanySettingsView({
                         <CardContent className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="contact"
                                     render={({ field }) => (
                                         <FormItem className="col-span-2">
@@ -306,7 +306,7 @@ export function CompanySettingsView({
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="trade_name"
                                     render={({ field }) => (
                                         <FormItem>
@@ -319,7 +319,7 @@ export function CompanySettingsView({
                                     )}
                                 />
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="business_activity"
                                     render={({ field }) => (
                                         <FormItem>
@@ -335,7 +335,7 @@ export function CompanySettingsView({
 
                             <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-6", isLinked && "hidden")}>
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
@@ -348,7 +348,7 @@ export function CompanySettingsView({
                                     )}
                                 />
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="tax_id"
                                     render={({ field }) => (
                                         <FormItem>
@@ -369,7 +369,7 @@ export function CompanySettingsView({
 
                             <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-6", isLinked && "hidden")}>
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="email"
                                     render={({ field }) => (
                                         <FormItem>
@@ -384,7 +384,7 @@ export function CompanySettingsView({
                                     )}
                                 />
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="phone"
                                     render={({ field }) => (
                                         <FormItem>
@@ -402,7 +402,7 @@ export function CompanySettingsView({
 
                             <div className={cn(isLinked && "hidden")}>
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="address"
                                     render={({ field }) => (
                                         <FormItem>
@@ -419,7 +419,7 @@ export function CompanySettingsView({
                             </div>
 
                             <FormField
-                                control={form.control}
+                                control={form.control as any}
                                 name="website"
                                 render={({ field }) => (
                                     <FormItem>
@@ -508,7 +508,7 @@ export function CompanySettingsView({
                                     </div>
                                     <div className="flex-1 space-y-4 w-full">
                                         <FormField
-                                            control={form.control}
+                                            control={form.control as any}
                                             name="logo_url"
                                             render={({ field }) => (
                                                 <FormItem>

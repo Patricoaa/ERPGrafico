@@ -2,15 +2,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import api from "@/lib/api";
-import { 
-    AppWindow, 
-    CalendarBlank, 
-    FileArrowDown, 
-    ChartLineUp, 
-    TrendDown, 
-    TrendUp,
+import {
+    CalendarDays,
+    FileDown,
+    TrendingUp,
+    TrendingDown,
     Target
-} from "@phosphor-icons/react";
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
@@ -140,7 +138,7 @@ export function BudgetVarianceView() {
 
                         <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(parseInt(v))}>
                             <SelectTrigger className="w-[140px] h-9 bg-background">
-                                <CalendarBlank className="mr-2 h-4 w-4 text-primary" />
+                                <CalendarDays className="mr-2 h-4 w-4 text-primary" />
                                 <SelectValue placeholder="Mes" />
                             </SelectTrigger>
                             <SelectContent>
@@ -162,7 +160,7 @@ export function BudgetVarianceView() {
                         </Select>
 
                         <Button variant="outline" size="sm" className="h-9">
-                            <FileArrowDown className="mr-2 h-4 w-4" />
+                            <FileDown className="mr-2 h-4 w-4" />
                             Exportar
                         </Button>
                     </div>
@@ -176,7 +174,7 @@ export function BudgetVarianceView() {
                             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Margen Mes</p>
                             <MoneyDisplay amount={summary.month_actual} className="text-2xl font-heading font-bold" />
                             <div className="mt-2 flex items-center gap-1.5">
-                                {summary.month_variance >= 0 ? <TrendUp className="text-emerald-500" /> : <TrendDown className="text-destructive" />}
+                                {summary.month_variance >= 0 ? <TrendingUp className="text-emerald-500" /> : <TrendingDown className="text-destructive" />}
                                 <span className={cn("text-xs font-bold", summary.month_variance >= 0 ? "text-emerald-500" : "text-destructive")}>
                                     {summary.month_perc.toFixed(1)}% ejecución
                                 </span>
@@ -197,7 +195,7 @@ export function BudgetVarianceView() {
                             <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1 text-opacity-80">Margen YTD (Acum.)</p>
                             <MoneyDisplay amount={summary.ytd_actual} className="text-2xl font-heading font-bold" />
                             <div className="mt-2 flex items-center gap-1.5">
-                                {summary.ytd_variance >= 0 ? <TrendUp className="text-emerald-500" /> : <TrendDown className="text-destructive" />}
+                                {summary.ytd_variance >= 0 ? <TrendingUp className="text-emerald-500" /> : <TrendingDown className="text-destructive" />}
                                 <span className={cn("text-xs font-bold", summary.ytd_variance >= 0 ? "text-emerald-500" : "text-destructive")}>
                                     {summary.ytd_perc.toFixed(1)}% objetivos YTD
                                 </span>

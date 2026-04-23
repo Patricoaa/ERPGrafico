@@ -4,7 +4,7 @@ import { useState, useEffect, lazy, Suspense } from "react"
 import api from "@/lib/api"
 import { SalesOrdersView } from "./SalesOrdersView"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { SaleOrder, SaleOrderLine } from "../../types"
+import { SaleOrder, SaleOrderLine } from "../types"
 import { Invoice } from "@/features/billing/types"
 
 // Lazy load heavy components
@@ -18,6 +18,7 @@ interface SalesOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
     isCreateModalOpen?: boolean
     setCreateModalOpen?: (open: boolean) => void
+    createAction?: React.ReactNode
 }
 
 export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateModalOpen }: SalesOrdersClientViewProps) {
@@ -31,8 +32,10 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
     // Handle creation trigger for Notes view if needed
     useEffect(() => {
         if (isCreateModalOpen && viewMode === 'notes') {
-            setAddingNote({} as SaleOrder) // Open Note creation modal with dummy object (will require selection or handle empty)
-            if (setCreateModalOpen) setCreateModalOpen(false)
+            requestAnimationFrame(() => {
+                setAddingNote({} as SaleOrder) // Open Note creation modal with dummy object
+                if (setCreateModalOpen) setCreateModalOpen(false)
+            })
         }
     }, [isCreateModalOpen, viewMode, setCreateModalOpen])
 
@@ -46,8 +49,8 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
                     <TransactionViewModal
                         open={!!viewingTransaction}
                         onOpenChange={(open: boolean) => !open && setViewingTransaction(null)}
-                        type={viewingTransaction.type}
-                        id={viewingTransaction.id}
+                        type={viewingTransaction.type as any}
+                        id={viewingTransaction.id as any}
                         view={viewingTransaction.view}
                     />
                 </Suspense>
@@ -69,7 +72,7 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
                             id: l.product as number,
                             product_name: l.product_name || l.description,
                             name: l.product_name || l.description,
-                            code: l.product_code || l.code,
+                            code: (l as any).product_code || (l as any).code,
                             qty: l.quantity,
                             unit_price_net: l.unit_price,
                         }))}
@@ -101,9 +104,9 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
                     <DocumentCompletionModal
                         open={!!completingFolio}
                         onOpenChange={(open: boolean) => !open && setCompletingFolio(null)}
-                        invoiceId={completingFolio.related_documents?.invoices?.find((inv: Invoice) => inv.number === 'Draft')?.id || completingFolio.related_documents?.invoices?.[0]?.id}
-                        invoiceType={completingFolio.related_documents?.invoices?.find((inv: Invoice) => inv.number === 'Draft')?.type || "BOLETA"}
-                        contactId={completingFolio?.customer || completingFolio?.customer_id}
+                        invoiceId={completingFolio.related_documents?.invoices?.find((inv: Invoice) => inv.number === 'Draft')?.id || completingFolio.related_documents?.invoices?.[0]?.id || 0}
+                        invoiceType={(completingFolio.related_documents?.invoices?.find((inv: Invoice) => inv.number === 'Draft') as any)?.type || "BOLETA"}
+                        contactId={completingFolio?.customer}
                         isPurchase={false}
                         onComplete={async (invoiceId, formData) => {
                             await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {

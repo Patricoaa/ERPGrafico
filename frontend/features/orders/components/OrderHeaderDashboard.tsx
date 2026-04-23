@@ -1,9 +1,8 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
 import { cn, formatCurrency } from "@/lib/utils"
-import { CheckCircle2, Circle, Clock, AlertCircle, PlayCircle, TrendingUp, Package, FileText, Banknote, ClipboardList } from "lucide-react"
+import { TrendingUp, Package, FileText, Banknote, ClipboardList } from "lucide-react"
 
 import { Order } from "../types"
 import { LucideIcon } from "lucide-react"

@@ -79,6 +79,8 @@ export interface CreditLedgerEntry {
 
 export interface CreditHistoryEntry {
     id: number
+    customer_id?: number
+    customer?: number
     number: string
     display_id: string
     customer_name: string

@@ -10,6 +10,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { saleOrderActions } from "@/lib/actions/sale-actions"
 import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
 import { Order, PhaseDocument } from "../../types"
+import { LucideIcon } from "lucide-react"
 
 interface BillingPhaseProps {
     isNoteMode: boolean
@@ -24,6 +25,9 @@ interface BillingPhaseProps {
     // Accordion props
     collapsible?: boolean
     isOpen?: boolean
+    isWarning?: boolean
+    disabled?: boolean
+    icon?: LucideIcon
     onOpenChange?: (open: boolean) => void
 }
 
@@ -110,7 +114,7 @@ export function BillingPhase({
             <PhaseCard
                 title="Facturación"
                 icon={FileText}
-                variant={isNoteMode ? noteStatuses.billing : (billingIsComplete ? 'success' : (invoices.length > 0 ? 'active' : 'neutral'))}
+                variant={(isNoteMode ? noteStatuses.billing : (billingIsComplete ? 'success' : (invoices.length > 0 ? 'active' : 'neutral'))) as any}
                 documents={[
                     ...(isNoteMode ? [{
                         type: activeDoc.dte_type_display || 'Nota',
@@ -124,11 +128,11 @@ export function BillingPhase({
                         id: activeDoc.id,
                         docType: 'invoice',
                         status: activeDoc.status,
-                        isWarning: true, // Highlights the row
-                        actions: [] // Removed redundant GitBranch icon
+                        isWarning: true,
+                        actions: []
                     }] : []),
                     ...invoices
-                        .filter((inv: Order) => !isNoteMode || inv.id !== activeDoc.id) // Avoid double entry if already in activeDoc
+                        .filter((inv: Order) => !isNoteMode || inv.id !== activeDoc.id)
                         .map((inv: Order) => ({
                             type: inv.dte_type_display || 'Documento',
                             number: inv.display_id || formatDocumentId(
@@ -140,7 +144,7 @@ export function BillingPhase({
                             ),
                             icon: FileText,
                             color: (inv.dte_type === 'FACTURA_EXENTA' || inv.dte_type === 'BOLETA_EXENTA') ? 'text-warning' : 'text-primary',
-                            id: inv.id,
+                            id: Number(inv.id),
                             docType: 'invoice',
                             status: inv.status,
                             actions: [
@@ -148,13 +152,13 @@ export function BillingPhase({
                                     icon: Trash2,
                                     title: 'Eliminar Borrador',
                                     color: 'text-destructive hover:bg-destructive/10',
-                                    onClick: () => handleDeleteDraft(inv.id)
+                                    onClick: () => handleDeleteDraft(Number(inv.id))
                                 }] : []),
                                 ...((inv.status !== 'CANCELLED' && inv.status !== 'DRAFT') ? [{
                                     icon: X,
                                     title: 'Anular Documento',
                                     color: 'text-warning hover:bg-warning/10',
-                                    onClick: () => handleAnnulDocument(inv.id)
+                                    onClick: () => handleAnnulDocument(Number(inv.id))
                                 }] : [])
                             ]
                         })),

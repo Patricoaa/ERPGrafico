@@ -79,33 +79,36 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
     if (loading) return <LoadingFallback message="Cargando análisis financiero..." />;
     if (!data) return <EmptyState context="finance" variant="compact" description="No hay datos disponibles para el período seleccionado" />;
 
+    const d = data as any;
+    const cd = compData as any;
+
     const structureData = [
-        { name: 'Pasivos', value: data.structure.total_liabilities },
-        { name: 'Patrimonio', value: data.structure.total_equity },
+        { name: 'Pasivos', value: d.structure.total_liabilities },
+        { name: 'Patrimonio', value: d.structure.total_equity },
     ];
 
     const assetsDistribution = [
-        { name: 'Corrientes', value: data.liquidity.current_assets },
-        { name: 'No Corrientes', value: data.structure.total_assets - data.liquidity.current_assets },
+        { name: 'Corrientes', value: d.liquidity.current_assets },
+        { name: 'No Corrientes', value: d.structure.total_assets - d.liquidity.current_assets },
     ];
 
     // Prepare trend data if comparison is enabled
-    const trendData = showComparison && compData ? [
+    const trendData = showComparison && cd ? [
         {
             period: 'Anterior',
-            liquidez: compData.liquidity.current_ratio,
-            endeudamiento: compData.structure.debt_to_equity,
-            solvencia: compData.solvency.solvency_ratio,
-            mrgn_bruto: (compData.profitability?.gross_margin || 0) * 100,
-            mrgn_neto: (compData.profitability?.net_margin || 0) * 100
+            liquidez: cd.liquidity.current_ratio,
+            endeudamiento: cd.structure.debt_to_equity,
+            solvencia: cd.solvency.solvency_ratio,
+            mrgn_bruto: (cd.profitability?.gross_margin || 0) * 100,
+            mrgn_neto: (cd.profitability?.net_margin || 0) * 100
         },
         {
             period: 'Actual',
-            liquidez: data.liquidity.current_ratio,
-            endeudamiento: data.structure.debt_to_equity,
-            solvencia: data.solvency.solvency_ratio,
-            mrgn_bruto: (data.profitability?.gross_margin || 0) * 100,
-            mrgn_neto: (data.profitability?.net_margin || 0) * 100
+            liquidez: d.liquidity.current_ratio,
+            endeudamiento: d.structure.debt_to_equity,
+            solvencia: d.solvency.solvency_ratio,
+            mrgn_bruto: (d.profitability?.gross_margin || 0) * 100,
+            mrgn_neto: (d.profitability?.net_margin || 0) * 100
         }
     ] : null;
 
@@ -118,10 +121,10 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                         <CardTitle className="text-sm font-medium text-muted-foreground text-primary/70">Ratio de Liquidez</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-primary">{data.liquidity.current_ratio.toFixed(2)}</div>
-                        {showComparison && compData && (
+                        <div className="text-3xl font-bold text-primary">{d.liquidity.current_ratio.toFixed(2)}</div>
+                        {showComparison && cd && (
                             <div className="mt-2 text-xs text-muted-foreground">
-                                vs {compData.liquidity.current_ratio.toFixed(2)} ({((data.liquidity.current_ratio - compData.liquidity.current_ratio) / compData.liquidity.current_ratio * 100).toFixed(1)}%)
+                                vs {cd.liquidity.current_ratio.toFixed(2)} ({((d.liquidity.current_ratio - cd.liquidity.current_ratio) / cd.liquidity.current_ratio * 100).toFixed(1)}%)
                             </div>
                         )}
                         <p className="text-xs text-muted-foreground mt-2">Activo Corriente / Pasivo Corriente</p>
@@ -133,10 +136,10 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                         <CardTitle className="text-sm font-medium text-muted-foreground text-warning/70">Endeudamiento (D/E)</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-primary">{data.structure.debt_to_equity.toFixed(2)}</div>
-                        {showComparison && compData && (
+                        <div className="text-3xl font-bold text-primary">{d.structure.debt_to_equity.toFixed(2)}</div>
+                        {showComparison && cd && (
                             <div className="mt-2 text-xs text-muted-foreground">
-                                vs {compData.structure.debt_to_equity.toFixed(2)} ({((data.structure.debt_to_equity - compData.structure.debt_to_equity) / compData.structure.debt_to_equity * 100).toFixed(1)}%)
+                                vs {cd.structure.debt_to_equity.toFixed(2)} ({((d.structure.debt_to_equity - cd.structure.debt_to_equity) / cd.structure.debt_to_equity * 100).toFixed(1)}%)
                             </div>
                         )}
                         <p className="text-xs text-muted-foreground mt-2">Pasivos Totales / Patrimonio</p>
@@ -148,10 +151,10 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                         <CardTitle className="text-sm font-medium text-muted-foreground text-primary/70">Solvencia</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-primary">{data.solvency.solvency_ratio.toFixed(2)}</div>
-                        {showComparison && compData && (
+                        <div className="text-3xl font-bold text-primary">{d.solvency.solvency_ratio.toFixed(2)}</div>
+                        {showComparison && cd && (
                             <div className="mt-2 text-xs text-muted-foreground">
-                                vs {compData.solvency.solvency_ratio.toFixed(2)} ({((data.solvency.solvency_ratio - compData.solvency.solvency_ratio) / compData.solvency.solvency_ratio * 100).toFixed(1)}%)
+                                vs {cd.solvency.solvency_ratio.toFixed(2)} ({((d.solvency.solvency_ratio - cd.solvency.solvency_ratio) / cd.solvency.solvency_ratio * 100).toFixed(1)}%)
                             </div>
                         )}
                         <p className="text-xs text-muted-foreground mt-2">Activos Totales / Pasivos Totales</p>
@@ -164,7 +167,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold text-primary">
-                            {(data.liquidity.current_assets - data.liquidity.current_liabilities).toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
+                            {(d.liquidity.current_assets - d.liquidity.current_liabilities).toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
                         </div>
                         <p className="text-xs text-muted-foreground mt-2">Activo Corriente - Pasivo Corriente</p>
                     </CardContent>
@@ -175,10 +178,10 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                         <CardTitle className="text-sm font-medium text-muted-foreground text-primary/70">Prueba Ácida</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-primary">{(data.liquidity.acid_test || 0).toFixed(2)}</div>
-                        {showComparison && compData && (
+                        <div className="text-3xl font-bold text-primary">{(d.liquidity.acid_test || 0).toFixed(2)}</div>
+                        {showComparison && cd && (
                             <div className="mt-2 text-xs text-muted-foreground">
-                                vs {(compData.liquidity.acid_test || 0).toFixed(2)} ({compData.liquidity.acid_test ? (((data.liquidity.acid_test - compData.liquidity.acid_test) / compData.liquidity.acid_test) * 100).toFixed(1) : 0}%)
+                                vs {(cd.liquidity.acid_test || 0).toFixed(2)} ({cd.liquidity.acid_test ? (((d.liquidity.acid_test - cd.liquidity.acid_test) / cd.liquidity.acid_test) * 100).toFixed(1) : 0}%)
                             </div>
                         )}
                         <p className="text-xs text-muted-foreground mt-2">(Activo Cte. - Inventario) / Pasivo Cte.</p>
@@ -190,10 +193,10 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                         <CardTitle className="text-sm font-medium text-muted-foreground text-accent/70">Margen Bruto</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-accent">{((data.profitability?.gross_margin || 0) * 100).toFixed(1)}%</div>
-                        {showComparison && compData && (
+                        <div className="text-3xl font-bold text-accent">{((d.profitability?.gross_margin || 0) * 100).toFixed(1)}%</div>
+                        {showComparison && cd && (
                             <div className="mt-2 text-xs text-muted-foreground">
-                                vs {((compData.profitability?.gross_margin || 0) * 100).toFixed(1)}%
+                                vs {((cd.profitability?.gross_margin || 0) * 100).toFixed(1)}%
                             </div>
                         )}
                         <p className="text-xs text-muted-foreground mt-2">Utilidad Bruta / Ingresos Operac.</p>
@@ -205,10 +208,10 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                         <CardTitle className="text-sm font-medium text-muted-foreground text-info/70">Margen Neto</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold text-info">{((data.profitability?.net_margin || 0) * 100).toFixed(1)}%</div>
-                        {showComparison && compData && (
+                        <div className="text-3xl font-bold text-info">{((d.profitability?.net_margin || 0) * 100).toFixed(1)}%</div>
+                        {showComparison && cd && (
                             <div className="mt-2 text-xs text-muted-foreground">
-                                vs {((compData.profitability?.net_margin || 0) * 100).toFixed(1)}%
+                                vs {((cd.profitability?.net_margin || 0) * 100).toFixed(1)}%
                             </div>
                         )}
                         <p className="text-xs text-muted-foreground mt-2">Utilidad Neta / Ingresos Operac.</p>
@@ -232,7 +235,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                     cx="50%"
                                     cy="50%"
                                     labelLine={false}
-                                    label={(props: { name: string; percent?: number }) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`}
+                                    label={((props: { name: string; percent?: number }) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`) as any}
                                     outerRadius={90}
                                     fill="var(--primary)"
                                     dataKey="value"
@@ -241,7 +244,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']} />
+                                <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']) as any} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
@@ -261,7 +264,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                     data={assetsDistribution}
                                     cx="50%"
                                     cy="50%"
-                                    label={(props: { name: string; percent?: number }) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`}
+                                    label={((props: { name: string; percent?: number }) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`) as any}
                                     innerRadius={60}
                                     outerRadius={90}
                                     fill="var(--accent)"
@@ -271,7 +274,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                         <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']} />
+                                <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']) as any} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
@@ -314,14 +317,14 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart
                                 data={[
-                                    { name: 'Activos Corrientes', value: data.liquidity.current_assets },
-                                    { name: 'Pasivos Corrientes', value: data.liquidity.current_liabilities }
+                                    { name: 'Activos Corrientes', value: d.liquidity.current_assets },
+                                    { name: 'Pasivos Corrientes', value: d.liquidity.current_liabilities }
                                 ]}
                             >
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis />
-                                <Tooltip formatter={(value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']} />
+                                <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']) as any} />
                                 <Bar dataKey="value" fill={COLORS[3]} />
                             </BarChart>
                         </ResponsiveContainer>

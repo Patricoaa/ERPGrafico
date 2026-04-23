@@ -11,19 +11,6 @@ export interface ScannerFeedbackHandle {
 export const ScannerFeedback = forwardRef<ScannerFeedbackHandle>((_, ref) => {
     const [flash, setFlash] = useState<"success" | "error" | null>(null)
 
-    useImperativeHandle(ref, () => ({
-        triggerSuccess: () => {
-            setFlash("success")
-            playBeep(800, 0.1)
-            setTimeout(() => setFlash(null), 300)
-        },
-        triggerError: () => {
-            setFlash("error")
-            playBeep(200, 0.3)
-            setTimeout(() => setFlash(null), 500)
-        }
-    }))
-
     const playBeep = (freq: number, duration: number) => {
         try {
             const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
@@ -46,6 +33,19 @@ export const ScannerFeedback = forwardRef<ScannerFeedbackHandle>((_, ref) => {
             console.warn("AudioContext not supported or blocked", e)
         }
     }
+
+    useImperativeHandle(ref, () => ({
+        triggerSuccess: () => {
+            setFlash("success")
+            playBeep(800, 0.1)
+            setTimeout(() => setFlash(null), 300)
+        },
+        triggerError: () => {
+            setFlash("error")
+            playBeep(200, 0.3)
+            setTimeout(() => setFlash(null), 500)
+        }
+    }))
 
     if (!flash) return null
 

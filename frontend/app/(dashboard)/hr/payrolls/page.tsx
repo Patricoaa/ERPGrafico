@@ -114,8 +114,8 @@ export default function PayrollsPage({ createAction }: { createAction?: React.Re
                 await createAdvance({
                     employee: selectedPayroll.employee,
                     payroll: selectedPayroll.id,
-                    amount: data.amount,
-                    date: data.documentDate || new Date().toISOString().split('T')[0],
+                    amount: data.amount as string,
+                    date: (data.documentDate as string) || new Date().toISOString().split('T')[0],
                     notes: "Anticipo de sueldo",
                     ...data
                 })
@@ -214,7 +214,7 @@ export default function PayrollsPage({ createAction }: { createAction?: React.Re
             header: ({ column }) => <DataTableColumnHeader column={column} title="Remuneración" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <StatusBadge status={(row.original as Payroll & Record<string, string>).remuneration_paid_status} />
+                    <StatusBadge status={(row.original as Payroll & Record<string, string>).remuneration_paid_status || ""} />
                 </div>
             )
         },
@@ -223,7 +223,7 @@ export default function PayrollsPage({ createAction }: { createAction?: React.Re
             header: ({ column }) => <DataTableColumnHeader column={column} title="Previred" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <StatusBadge status={(row.original as Payroll & Record<string, string>).previred_paid_status} />
+                    <StatusBadge status={(row.original as Payroll & Record<string, string>).previred_paid_status || ""} />
                 </div>
             )
         },

@@ -61,6 +61,18 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
     'CANCELLED': { label: 'Anulado', variant: 'destructive' },
 }
 
+interface PurchasePaymentData {
+    amount: string | number
+    paymentMethod: string
+    transaction_number?: string
+    is_pending_registration?: boolean
+    treasury_account_id?: string
+    dteType?: string
+    documentReference?: string
+    documentDate?: string
+    documentAttachment?: Blob | string
+}
+
 export default function PurchaseInvoicesPage() {
     const [documents, setDocuments] = useState<PurchaseDocument[]>([])
     const [loading, setLoading] = useState(true)
@@ -144,7 +156,7 @@ export default function PurchaseInvoicesPage() {
 
     const handleAnnul = (id: number) => annulConfirm.requestConfirm(id)
 
-    const handlePayment = async (data: Record<string, unknown>) => {
+    const handlePayment = async (data: PurchasePaymentData) => {
         if (!payingDoc) return
         try {
             const formData = new FormData()
@@ -167,7 +179,7 @@ export default function PurchaseInvoicesPage() {
             if (data.dteType) formData.append('dte_type', data.dteType)
             if (data.documentReference) formData.append('document_reference', data.documentReference)
             if (data.documentDate) formData.append('document_date', data.documentDate)
-            if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment)
+            if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment as Blob)
 
             await api.post('/treasury/payments/', formData)
             toast.success("Operación registrada correctamente")
@@ -473,7 +485,7 @@ export default function PurchaseInvoicesPage() {
                                     return (
                                         <InvoiceCard
                                             key={doc.id}
-                                            item={doc}
+                                            item={doc as any}
                                             type="purchase_invoice"
                                             onClick={() => {
                                                 openHub({
@@ -498,7 +510,7 @@ export default function PurchaseInvoicesPage() {
                     <TransactionViewModal
                         open={!!viewingTransaction}
                         onOpenChange={(open: boolean) => !open && setViewingTransaction(null)}
-                        type={viewingTransaction.type}
+                        type={viewingTransaction.type as any}
                         id={viewingTransaction.id}
                         view={viewingTransaction.view}
                     />
@@ -510,7 +522,7 @@ export default function PurchaseInvoicesPage() {
                     <PaymentDialog
                         open={!!payingDoc}
                         onOpenChange={(open: boolean) => !open && setPayingDoc(null)}
-                        onConfirm={handlePayment}
+                        onConfirm={handlePayment as any}
                         isPurchase={true}
                         total={parseFloat(payingDoc.total)}
                         pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)}

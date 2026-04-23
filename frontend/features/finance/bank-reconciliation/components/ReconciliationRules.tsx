@@ -36,18 +36,22 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
 
     useEffect(() => {
         if (externalOpen) {
-            setEditingRule({ name: '', priority: 10, is_active: true, auto_confirm: false, match_config: { criteria: ['amount_exact'] } })
-            setOpenDialog(true)
+            requestAnimationFrame(() => {
+                setEditingRule({ name: '', priority: 10, is_active: true, auto_confirm: false, match_config: { criteria: ['amount_exact'] } })
+                setOpenDialog(true)
+            })
         }
     }, [externalOpen])
-
-    useEffect(() => { loadData() }, [])
 
     const loadData = async () => {
         const [r, a] = await Promise.all([fetchRules(), fetchAccounts()])
         setRules(r)
         setAccounts(a)
     }
+
+    useEffect(() => { 
+        requestAnimationFrame(() => loadData()) 
+    }, [])
 
     const handleDialogChange = (open: boolean) => {
         setOpenDialog(open)

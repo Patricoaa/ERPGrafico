@@ -21,7 +21,7 @@ interface UseContactSearchReturn {
     fetchSingleContact: (id: string | number) => Promise<void>
 }
 
-let globalCache: Record<string, Contact[]> = {}
+const globalCache: Record<string, Contact[]> = {}
 
 export function useContactSearch(): UseContactSearchReturn {
     const [contacts, setContacts] = useState<Contact[]>([])

@@ -47,6 +47,27 @@ interface EquityStatsSheetProps {
     summary: PartnerSummary
 }
 
+const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-background/95 backdrop-blur border border-border p-3 rounded-lg shadow-xl">
+                <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-2">
+                    {payload[0].name || payload[0].payload.name}
+                </p>
+                {payload.map((entry: any, index: number) => (
+                    <div key={index} className="flex items-center gap-2 mt-1">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                        <span className="text-xs font-medium">
+                            {entry.name}: <span className="font-mono font-bold">{formatCurrency(entry.value)}</span>
+                        </span>
+                    </div>
+                ))}
+            </div>
+        )
+    }
+    return null
+}
+
 export function EquityStatsSheet({ open, onOpenChange, partners, summary }: EquityStatsSheetProps) {
     if (!summary || !partners) return null
 
@@ -64,27 +85,6 @@ export function EquityStatsSheet({ open, onOpenChange, partners, summary }: Equi
         paid: parseFloat(p.partner_total_paid_in),
         pending: parseFloat(p.partner_pending_capital)
     }))
-
-    const CustomTooltip = ({ active, payload }: any) => {
-        if (active && payload && payload.length) {
-            return (
-                <div className="bg-background/95 backdrop-blur border border-border p-3 rounded-lg shadow-xl">
-                    <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground mb-2">
-                        {payload[0].name || payload[0].payload.name}
-                    </p>
-                    {payload.map((entry: any, index: number) => (
-                        <div key={index} className="flex items-center gap-2 mt-1">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                            <span className="text-xs font-medium">
-                                {entry.name}: <span className="font-mono font-bold">{formatCurrency(entry.value)}</span>
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            )
-        }
-        return null
-    }
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange} modal={false}>

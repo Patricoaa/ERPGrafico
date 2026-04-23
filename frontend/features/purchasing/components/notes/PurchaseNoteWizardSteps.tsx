@@ -119,7 +119,7 @@ export function Step1_GeneralInfo({
                             onValidityChange={onValidityChange}
                             contactId={contactId}
                             isPurchase={true}
-                            documentType={noteType}
+                            dteType={noteType}
                             placeholder="Ej: 12345"
                             className="h-12 text-lg font-mono tracking-widest uppercase"
                             autoFocus

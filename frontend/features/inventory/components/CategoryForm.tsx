@@ -92,7 +92,7 @@ const ICON_OPTIONS = [
 ]
 
 function RichIconSelector({ value, onChange }: { value: string, onChange: (val: string) => void }) {
-    const SelectedIcon = (LucideIcons as Record<string, React.ElementType>)[value] || LucideIcons.Package
+    const SelectedIcon = (LucideIcons as any)[value] || LucideIcons.Package
     const selectedLabel = ICON_OPTIONS.find(i => i.name === value)?.label || value
 
     return (
@@ -128,7 +128,7 @@ function RichIconSelector({ value, onChange }: { value: string, onChange: (val: 
                     </div>
                     <div className="h-[250px] overflow-y-auto p-1 grid grid-cols-2 gap-1">
                         {ICON_OPTIONS.map((item) => {
-                            const Icon = (LucideIcons as Record<string, React.ElementType>)[item.name] || LucideIcons.Package
+                            const Icon = (LucideIcons as any)[item.name] || LucideIcons.Package
                             const isSelected = value === item.name
                             return (
                                 <div
@@ -177,6 +177,7 @@ interface CategoryFormProps {
 }
 
 export function CategoryForm({
+    auditSidebar,
     onSuccess,
     initialData,
     open: openProp,
@@ -194,10 +195,10 @@ export function CategoryForm({
         resolver: zodResolver(categorySchema),
         defaultValues: initialData ? {
             ...initialData,
-            parent: initialData.parent?.toString() || "none",
-            asset_account: initialData.asset_account?.toString() || "none",
-            income_account: initialData.income_account?.toString() || "none",
-            expense_account: initialData.expense_account?.toString() || "none",
+            parent: (initialData.parent as any)?.id?.toString() || initialData.parent?.toString() || "none",
+            asset_account: (initialData.asset_account as any)?.id?.toString() || initialData.asset_account?.toString() || "none",
+            income_account: (initialData.income_account as any)?.id?.toString() || initialData.income_account?.toString() || "none",
+            expense_account: (initialData.expense_account as any)?.id?.toString() || initialData.expense_account?.toString() || "none",
         } : {
             name: "",
         },

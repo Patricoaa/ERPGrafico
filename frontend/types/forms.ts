@@ -112,46 +112,7 @@ export interface PaymentInitialData {
 
 // ─── Product Form ────────────────────────────────────────
 
-export interface ProductInitialData {
-    id?: number
-    code?: string
-    internal_code?: string
-    name?: string
-    category?: number | { id: number; name: string }
-    product_type?: string
-    sale_price?: number | string
-    sale_price_gross?: number | string
-    is_dynamic_pricing?: boolean
-    uom?: number | { id: number; name?: string }
-    sale_uom?: number | { id: number; name?: string }
-    purchase_uom?: number | { id: number; name?: string }
-    allowed_sale_uoms?: (number | { id: number })[]
-    receiving_warehouse?: number | { id: number }
-    income_account?: number | { id: number }
-    expense_account?: number | { id: number }
-    preferred_supplier?: number | { id: number }
-    track_inventory?: boolean
-    can_be_sold?: boolean
-    can_be_purchased?: boolean
-    image?: string | null
-    has_bom?: boolean
-    requires_advanced_manufacturing?: boolean
-    mfg_enable_prepress?: boolean
-    mfg_enable_press?: boolean
-    mfg_enable_postpress?: boolean
-    mfg_prepress_design?: boolean
-    mfg_prepress_specs?: boolean
-    mfg_prepress_folio?: boolean
-    mfg_press_offset?: boolean
-    mfg_press_digital?: boolean
-    mfg_postpress_finishing?: boolean
-    mfg_postpress_binding?: boolean
-    mfg_default_delivery_days?: number
-    mfg_auto_finalize?: boolean
-    has_variants?: boolean
-    parent_template?: number | null
-    attribute_values?: (number | string)[]
-    variant_display_name?: string
+export interface ProductInitialData extends Partial<Omit<Product, 'boms' | 'product_custom_fields'>> {
     boms?: Array<{
         id?: number
         name: string
@@ -173,12 +134,14 @@ export interface ProductInitialData {
     payment_day?: number
     payment_interval_days?: number
     default_invoice_type?: string
-    subscription_supplier?: number | { id: number }
+    subscription_supplier?: number | { id: number; name: string }
     subscription_amount?: number
     subscription_start_date?: string
     auto_activate_subscription?: boolean
     is_indefinite?: boolean
     contract_end_date?: string
+    bom_cost?: number
+    qty_reserved?: number
 }
 
 // ─── Journal Entry Form ──────────────────────────────────
@@ -268,24 +231,19 @@ export interface WarehouseInitialData {
 export interface ServiceContractInitialData {
     id?: number
     name?: string
-    supplier?: string | number | { id: number }
-    category?: string
-    expense_account?: string
-    payable_account?: string
-    product?: number | string | { id: number; name?: string }
-    amount?: number | string
+    description?: string
+    notes?: string
+    supplier?: number
+    category?: number
+    recurrence_period?: string
+    payment_day?: number
+    amount?: string | number
+    is_indefinite?: boolean
     start_date?: string
     end_date?: string | null
-    recurrence_period?: string
-    payment_day_type?: string
-    payment_day?: number
-    payment_interval_days?: number
-    default_invoice_type?: string
     auto_renew?: boolean
-    notes?: string
-    status?: string
-    is_indefinite?: boolean
-    income_account?: number | string | { id: number }
+    expense_account?: number | null
+    payable_account?: number | null
 }
 
 // ─── User Form ───────────────────────────────────────────
@@ -295,6 +253,7 @@ export interface UserInitialData {
     username?: string
     primary_role?: string
     functional_groups?: string[]
+    groups?: string[]
     contact?: number
     password?: string
     is_active?: boolean

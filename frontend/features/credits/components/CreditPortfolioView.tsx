@@ -58,6 +58,29 @@ const fmt = (v: string | number | undefined) =>
 const EMPTY_CONTACTS: CreditContact[] = []
 const EMPTY_HISTORY: CreditHistoryEntry[] = []
 
+const agingLabel: Record<string, string> = {
+    current: "Al día",
+    overdue_30: "1-30 días",
+    overdue_60: "31-60 días",
+    overdue_90: "61-90 días",
+    overdue_90plus: "+90 días"
+}
+
+const agingBg: Record<string, string> = {
+    current: "bg-success/5 text-success border-success/20",
+    overdue_30: "bg-warning/5 text-warning border-warning/20",
+    overdue_60: "bg-warning/10 text-warning border-warning/30",
+    overdue_90: "bg-destructive/5 text-destructive border-destructive/20",
+    overdue_90plus: "bg-destructive/10 text-destructive border-destructive/30"
+}
+
+const originBg: Record<string, string> = {
+    MANUAL: "bg-muted text-muted-foreground border-border",
+    SALE: "bg-info/5 text-info border-info/20",
+    ADJUSTMENT: "bg-warning/5 text-warning border-warning/20",
+    REVERSAL: "bg-destructive/5 text-destructive border-destructive/20"
+}
+
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -519,11 +542,14 @@ const historyColumns: ColumnDef<CreditHistoryEntry>[] = [
     {
         accessorKey: "customer_name",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
-        cell: ({ row }) => (
-            <DataCell.ContactLink contactId={(row.original as CreditHistoryEntry).customer_id || (row.original as CreditHistoryEntry).customer}>
-                {row.original.customer_name}
-            </DataCell.ContactLink>
-        )
+        cell: ({ row }) => {
+            const h = row.original as any
+            return (
+                <DataCell.ContactLink contactId={h.customer_id || h.customer}>
+                    {h.customer_name}
+                </DataCell.ContactLink>
+            )
+        }
     },
     {
         accessorKey: "number",

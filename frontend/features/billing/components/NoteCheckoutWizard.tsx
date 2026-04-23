@@ -7,9 +7,7 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import api from "@/lib/api"
-import { ChevronRight, ChevronLeft, Loader2, FileText, CheckCircle2, ArrowRight, X, ShieldAlert } from "lucide-react"
-import { cn } from "@/lib/utils"
-
+import { ChevronRight, ChevronLeft, Loader2, FileText, CheckCircle2, ShieldAlert } from "lucide-react"
 // Sub-components
 import { Step1_Items } from "@/features/billing/components/checkout/Step1_Items"
 import { Step2_Logistics } from "@/features/billing/components/checkout/Step2_Logistics"
@@ -52,7 +50,7 @@ export function NoteCheckoutWizard({
         document_number: '',
         document_date: '',
         is_pending: false,
-        attachment: null
+        attachment: null as File | null
     })
     const [paymentData, setPaymentData] = useState<Record<string, unknown>>({
         method: '', // Blank means "Credit" if not selected? User wants implicit Credit.
@@ -76,8 +74,8 @@ export function NoteCheckoutWizard({
         (item.product_type === 'MANUFACTURABLE' && !item.has_bom)
     );
 
-    const totalNet = selectedItems.reduce((acc, item) => acc + (item.quantity * item.unit_price), 0)
-    const totalTax = selectedItems.reduce((acc, item) => acc + (item.quantity * item.tax_amount), 0)
+    const totalNet = selectedItems.reduce((acc, item: any) => acc + (Number(item.quantity) * Number(item.unit_price)), 0)
+    const totalTax = selectedItems.reduce((acc, item: any) => acc + (Number(item.quantity) * Number(item.tax_amount)), 0)
     const total = totalNet + totalTax
 
     const isExempt = originalInvoice?.dte_type === 'FACTURA_EXENTA' || originalInvoice?.dte_type === 'BOLETA_EXENTA'
@@ -237,7 +235,8 @@ export function NoteCheckoutWizard({
                 // Clean up manufacturing_data for JSON (File objects can't be stringified)
                 let cleanMfgData = null
                 if (i.manufacturing_data) {
-                    const { design_files, approval_file, ...rest } = i.manufacturing_data
+                    const mfgData = i.manufacturing_data as any
+                    const { design_files, approval_file, ...rest } = mfgData
                     cleanMfgData = {
                         ...rest,
                         design_filenames: (design_files || []).map((f: File) => f.name),
@@ -257,15 +256,16 @@ export function NoteCheckoutWizard({
             })))
 
             // Append manufacturing files per item
-            selectedItems.forEach((item: Record<string, unknown>, itemIdx: number) => {
+            selectedItems.forEach((item: any, itemIdx: number) => {
                 if (item.manufacturing_data) {
-                    if (item.manufacturing_data.design_files) {
-                        item.manufacturing_data.design_files.forEach((file: File, fileIdx: number) => {
+                    const mfgData = item.manufacturing_data as any
+                    if (mfgData.design_files) {
+                        mfgData.design_files.forEach((file: File, fileIdx: number) => {
                             formData.append(`line_${itemIdx}_design_${fileIdx}`, file)
                         })
                     }
-                    if (item.manufacturing_data.approval_file) {
-                        formData.append(`line_${itemIdx}_approval`, item.manufacturing_data.approval_file)
+                    if (mfgData.approval_file) {
+                        formData.append(`line_${itemIdx}_approval`, mfgData.approval_file)
                     }
                 }
             })
@@ -276,10 +276,11 @@ export function NoteCheckoutWizard({
             }
 
             // Registration
-            const { attachment, ...regRest } = registrationData
+            const regData = registrationData as any
+            const { attachment, ...regRest } = regData
             formData.append('registration_data', JSON.stringify(regRest))
             if (attachment) {
-                formData.append('document_attachment', attachment)
+                formData.append('document_attachment', attachment as Blob)
             }
 
             // Payment
@@ -321,7 +322,7 @@ export function NoteCheckoutWizard({
             case 1:
                 return (
                     <Step1_Items
-                        originalInvoice={originalInvoice}
+                        originalInvoice={originalInvoice || {}}
                         selectedItems={selectedItems}
                         setSelectedItems={setSelectedItems}
                         isCreditNote={initialType === 'NOTA_CREDITO'}
@@ -330,8 +331,8 @@ export function NoteCheckoutWizard({
             case 5:
                 return (
                     <Step2_ManufacturingDetails
-                        orderLines={selectedItems}
-                        setOrderLines={setSelectedItems}
+                        orderLines={selectedItems as any}
+                        setOrderLines={setSelectedItems as any}
                     />
                 )
             case 2:
@@ -339,7 +340,7 @@ export function NoteCheckoutWizard({
                 return (
                     <Step2_Logistics
                         isCreditNote={initialType === 'NOTA_CREDITO'}
-                        data={logisticsData}
+                        data={logisticsData as Record<string, unknown>}
                         setData={setLogisticsData}
                         selectedItems={selectedItems}
                     />
@@ -406,21 +407,21 @@ export function NoteCheckoutWizard({
             title={
                 <div className="flex items-center gap-4">
                     <FileText className="h-5 w-5 text-muted-foreground" />
-                        <div className="flex items-center gap-2">
-                            <span className="font-black tracking-tighter uppercase block text-lg">
-                                {title}
+                    <div className="flex items-center gap-2">
+                        <span className="font-black tracking-tighter uppercase block text-lg">
+                            {title}
+                        </span>
+                        {isExempt && (
+                            <span className="px-1.5 py-0.5 bg-success/10 text-success text-[10px] font-black uppercase rounded shadow-sm border border-success/20">
+                                Documento Exento
                             </span>
-                            {isExempt && (
-                                <span className="px-1.5 py-0.5 bg-success/10 text-success text-[10px] font-black uppercase rounded shadow-sm border border-success/20">
-                                    Documento Exento
-                                </span>
-                            )}
-                        </div>
-                        {originalInvoice && (
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
-                                corrigiendo {originalInvoice.dte_type_display} {originalInvoice.number}
-                            </p>
                         )}
+                    </div>
+                    {originalInvoice && (
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
+                            corrigiendo {(originalInvoice as any).dte_type_display} {(originalInvoice as any).number}
+                        </p>
+                    )}
 
                 </div>
             }
@@ -472,8 +473,8 @@ export function NoteCheckoutWizard({
                         requiresLogistics={requiresLogistics}
                         hasManufacturing={hasManufacturing}
                         itemsCount={selectedItems.length}
-                        dteNumber={registrationData.document_number}
-                        paymentData={paymentData}
+                        dteNumber={registrationData.document_number as string | undefined}
+                        paymentData={paymentData as { method: string; amount: number }}
                     />
                 )}
 

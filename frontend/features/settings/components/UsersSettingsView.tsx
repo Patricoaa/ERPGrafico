@@ -121,17 +121,23 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
             ),
         },
         createActionsColumn<AppUser>({
-            renderActions: (user) => (
-                <UserForm
-                    initialData={user}
-                    onSuccess={fetchUsers}
-                    trigger={
-                        <div>
-                            <DataCell.Action icon={Edit} title="Editar" />
-                        </div>
-                    }
-                />
-            )
+            renderActions: (user) => {
+                const transformedUser = {
+                    ...user,
+                    groups: user.groups?.map(g => typeof g === 'string' ? g : g.name)
+                }
+                return (
+                    <UserForm
+                        initialData={transformedUser}
+                        onSuccess={fetchUsers}
+                        trigger={
+                            <div>
+                                <DataCell.Action icon={Edit} title="Editar" />
+                            </div>
+                        }
+                    />
+                )
+            }
         })
     ]
 

@@ -18,7 +18,7 @@ import { DataCell } from "@/components/ui/data-table-cells"
 import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
 import { Tabs } from "@/components/ui/tabs"
 import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/features/sales"
-
+import { cn } from "@/lib/utils"
 
 
 interface SalesOrdersViewProps {
@@ -103,13 +103,13 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center items-center"><OrderHubStatus order={row.original} /></div>,
+            cell: ({ row }) => <div className="flex justify-center items-center"><OrderHubStatus order={row.original as any} /></div>,
             meta: { title: "Estado" },
         },
         // Hidden filter columns
         {
             id: "production_status",
-            accessorFn: (row) => getHubStatuses(row).production,
+            accessorFn: (row) => getHubStatuses(row as any).production,
             header: () => null,
             cell: () => null,
             filterFn: (row, id, value) => value.includes(row.getValue(id)),
@@ -117,7 +117,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         },
         {
             id: "logistics_status",
-            accessorFn: (row) => getHubStatuses(row).logistics,
+            accessorFn: (row) => getHubStatuses(row as any).logistics,
             header: () => null,
             cell: () => null,
             filterFn: (row, id, value) => value.includes(row.getValue(id)),
@@ -125,7 +125,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         },
         {
             id: "billing_status",
-            accessorFn: (row) => getHubStatuses(row).billing,
+            accessorFn: (row) => getHubStatuses(row as any).billing,
             header: () => null,
             cell: () => null,
             filterFn: (row, id, value) => value.includes(row.getValue(id)),
@@ -133,7 +133,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         },
         {
             id: "treasury_status",
-            accessorFn: (row) => getHubStatuses(row).treasury,
+            accessorFn: (row) => getHubStatuses(row as any).treasury,
             header: () => null,
             cell: () => null,
             filterFn: (row, id, value) => value.includes(row.getValue(id)),
@@ -187,7 +187,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         {
             accessorKey: "customer_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
-            cell: ({ row }) => <DataCell.ContactLink contactId={row.original.customer || row.original.partner}>{row.original.customer_name || row.original.partner_name}</DataCell.ContactLink>,
+            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as any).customer || row.original.partner}>{(row.original as any).customer_name || row.original.partner_name}</DataCell.ContactLink>,
             meta: { title: "Cliente" },
         },
         {
@@ -201,7 +201,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center items-center">
-                    <NoteHubStatus note={row.original} />
+                    <NoteHubStatus note={row.original as any} />
                 </div>
             ),
         },
@@ -240,23 +240,24 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     return (
         <Tabs value={viewMode} className="w-full flex flex-col h-full">
             <DataTable
-                columns={viewMode === 'orders' ? columns : noteColumns}
-                data={viewMode === 'orders' ? filteredOrders : filteredNotes}
-                onRowClick={(row: Row<SaleOrder | SaleNote>) => {
-                    const isSelected = viewMode === "orders" ? hubConfig?.orderId === row.id : hubConfig?.invoiceId === row.id
+                columns={(viewMode === 'orders' ? columns : noteColumns) as any}
+                data={(viewMode === 'orders' ? filteredOrders : filteredNotes) as any}
+                onRowClick={(row: any) => {
+                    const id = row.original.id
+                    const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
                     if (isSelected && isHubOpen) {
                         closeHub()
                     } else {
                         if (viewMode === "orders") {
-                            openHub({ orderId: row.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
+                            openHub({ orderId: id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
                         } else {
-                            openHub({ orderId: null, invoiceId: row.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
+                            openHub({ orderId: null, invoiceId: id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
                         }
                     }
                 }}
                 cardMode={true}
                     currentView={currentView}
-                    onViewChange={(v: 'list' | 'card') => setCurrentView(v)}
+                    onViewChange={(v) => setCurrentView(v as 'list' | 'card')}
                     viewOptions={viewOptions}
                     isLoading={viewMode === 'notes' ? loadingNotes : false}
                     filterColumn={viewMode === 'orders' ? "customer_name" : "number"}
@@ -344,15 +345,16 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                         }
                         return (
                             <div className="grid gap-3 pt-1">
-                                {rows.map((row: Row<SaleOrder | SaleNote>) => {
-                                    const item = row.original
+                                {rows.map((row) => {
+                                    const item = row.original as any
+                                    const id = Number(item.id)
                                     const isSelected = viewMode === 'orders'
-                                        ? hubConfig?.orderId === item.id
-                                        : hubConfig?.invoiceId === item.id
+                                        ? hubConfig?.orderId === id
+                                        : hubConfig?.invoiceId === id
 
                                     return (
                                         <OrderCard
-                                            key={item.id}
+                                            key={id}
                                             item={item}
                                             isSelected={isSelected}
                                             isHubOpen={isHubOpen}
@@ -363,9 +365,9 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                                                 if (isSelected) {
                                                     closeHub()
                                                 } else if (viewMode === 'orders') {
-                                                    openHub({ orderId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
+                                                    openHub({ orderId: id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
                                                 } else {
-                                                    openHub({ orderId: null, invoiceId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
+                                                    openHub({ orderId: null, invoiceId: id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
                                                 }
                                             }}
                                         />

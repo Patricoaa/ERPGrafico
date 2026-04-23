@@ -20,6 +20,8 @@ import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 import { getErrorMessage } from "@/lib/errors"
 import { Product, ProductAttributeValue } from "@/types/entities"
+import { Badge } from "@/components/ui/badge"
+import { ProductInitialData } from "@/types/forms"
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditForm } from "./BulkVariantEditForm"
@@ -28,7 +30,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface ProductVariantsTabProps {
     form: UseFormReturn<ProductFormValues>
-    initialData?: Partial<Product>
+    initialData?: ProductInitialData | Partial<Product>
     onEditVariant?: (variant: Product) => void
     onTabChange?: (tab: string) => void
 }
@@ -85,7 +87,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
 
     const fetchVariants = async () => {
         try {
-            const res = await api.get(`/inventory/products/?parent_template=${initialData.id}&show_technical_variants=true`)
+            const res = await api.get(`/inventory/products/?parent_template=${initialData?.id}&show_technical_variants=true`)
             setVariants(res.data.results || res.data)
         } catch (error) {
             console.error("Failed to fetch variants", error)
@@ -390,8 +392,8 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                                 {av.value}
                                                             </span>
                                                         ))}
-                                                        {v.attribute_values_data?.length > 2 && (
-                                                            <span className="text-[10px] text-muted-foreground ml-1">+{v.attribute_values_data.length - 2}</span>
+                                                        {(v.attribute_values_data?.length ?? 0) > 2 && (
+                                                            <span className="text-[10px] text-muted-foreground ml-1">+{(v.attribute_values_data?.length ?? 0) - 2}</span>
                                                         )}
                                                     </div>
                                                 </div>
@@ -403,7 +405,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                 {v.has_active_bom ? (
                                                     <span className={cn(
                                                         "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border",
-                                                        v.current_stock > 0 ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20"
+                                                        (v.current_stock ?? 0) > 0 ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20"
                                                     )}>
                                                         STOCK: {v.current_stock || 0}
                                                     </span>
@@ -413,7 +415,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                             Disp
                                                         </span>
                                                     ) : (
-                                                        <Badge className={cn("font-bold px-1.5 py-0 text-[10px] border", v.current_stock > 0 ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20")}>
+                                                        <Badge className={cn("font-bold px-1.5 py-0 text-[10px] border", (v.current_stock ?? 0) > 0 ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20")}>
                                                             {v.current_stock}
                                                         </Badge>
                                                     )
@@ -468,7 +470,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                 <>
                                                     No se han generado variantes para este producto.
                                                     <br />
-                                                    <span className="text-xs mt-1 block">Utilice el botón "Generador" arriba a la derecha.</span>
+                                                    <span className="text-xs mt-1 block">Utilice el botón &quot;Generador&quot; arriba a la derecha.</span>
                                                 </>
                                             )}
                                         </TableCell>

@@ -191,7 +191,7 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                     <div className="w-full max-w-sm animate-in zoom-in-95 duration-200">
                         {reportData && (
                             <POSReport
-                                data={reportData}
+                                data={reportData as any}
                                 type={reportType}
                                 title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
                                 onClose={() => setReportDialogOpen(false)}
@@ -201,7 +201,7 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                 </div>
             )}
 
-            {selectedSession && <SessionCloseModal open={closeDialogOpen} onOpenChange={setCloseDialogOpen} session={selectedSession} onSuccess={handleCloseSuccess} />}
+            {selectedSession && <SessionCloseModal open={closeDialogOpen} onOpenChange={setCloseDialogOpen} session={selectedSession as any} onSuccess={handleCloseSuccess} />}
         </div>
     )
 }

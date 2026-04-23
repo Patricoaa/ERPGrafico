@@ -132,7 +132,7 @@ export function TreasuryPhase({
                 variant={
                     (isNoteMode ? noteStatuses.treasury :
                         ((parseFloat(String(activeDoc.pending_amount || '0')) <= 0 && !hasPendingTransactions) ? 'success' :
-                            (payments.length > 0 || hasPendingTransactions ? 'active' : 'neutral'))) as string
+                            (payments.length > 0 || hasPendingTransactions ? 'active' : 'neutral'))) as any
                 }
                 documents={payments.map((p: Payment) => {
                     const isWriteOff = p.payment_method === 'WRITE_OFF'
@@ -151,13 +151,13 @@ export function TreasuryPhase({
                                 icon: Hash,
                                 title: 'Ingresar N° Transacción',
                                 color: 'text-warning hover:bg-warning/10',
-                                onClick: () => p.id && setTrForm({ open: true, id: p.id, initialValue: "" })
+                                onClick: () => p.id && setTrForm({ open: true, id: Number(p.id), initialValue: "" })
                             }] : []),
                             ...((p.status !== 'CANCELLED') ? [{
                                 icon: Trash2,
                                 title: 'Eliminar/Anular Pago',
                                 color: 'text-destructive hover:bg-destructive/10',
-                                onClick: () => p.id && handleDeletePayment(p.id)
+                                onClick: () => p.id && handleDeletePayment(Number(p.id))
                             }] : [])
                         ]
                     }

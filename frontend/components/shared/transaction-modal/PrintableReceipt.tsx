@@ -111,8 +111,8 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
     }
 
     const renderContextualInfo = () => {
-        const contactName = data.customer_name || data.supplier_name || data.partner_name || data.contact_name
-        const contactRut = data.customer_rut || data.supplier_rut || data.partner_rut
+        const contactName = (data.customer_name || data.supplier_name || data.partner_name || data.contact_name) as string | undefined
+        const contactRut = (data.customer_rut || data.supplier_rut || data.partner_rut) as string | undefined
 
         return (
             <div className="space-y-2 mb-2 text-[11px] leading-tight">
@@ -388,7 +388,7 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
                     <div className="pt-2 pb-1 space-y-1">
                         <div className="flex justify-between text-[10px] font-black uppercase">
                             <span>Medio de Pago:</span>
-                            <span className="font-mono">{translatePaymentMethod(data.payment_method || data.related_documents?.payments?.[0]?.payment_method || 'CASH')}</span>
+                            <span className="font-mono">{translatePaymentMethod(data.payment_method || (data.related_documents as any)?.payments?.[0]?.payment_method || 'CASH')}</span>
                         </div>
                         <div className="flex justify-between text-[10px] font-black uppercase">
                             <span>Pagado:</span>
@@ -415,10 +415,10 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
             {renderTotals()}
  
             {/* Payments Section (Moved from items table to here) */}
-            {data.related_documents?.payments && data.related_documents.payments.length > 0 && (
+            {(data.related_documents as any)?.payments && (data.related_documents as any).payments.length > 0 && (
                 <div className="mt-2 border-t border-dashed border-black/20 pt-2">
                     <p className="text-[8px] font-black uppercase mb-1">Pagos Registrados:</p>
-                    {data.related_documents.payments.map((pay: any, idx: number) => (
+                    {(data.related_documents as any).payments.map((pay: any, idx: number) => (
                         <div key={idx} className="flex justify-between items-center py-0.5">
                             <div className="flex flex-col">
                                 <div className="text-[9px] font-bold uppercase tracking-tight">
@@ -446,7 +446,7 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
                             : (line.qty_delivered !== undefined ? line.qty_delivered : (line.delivery_status === 'ENTREGADO' ? line.quantity : 0))))
                         return delivered < qty
                     })
-                    const deliveryDate = data.expected_delivery_date || data.scheduled_date || data.delivery_date
+                    const deliveryDate = (data.expected_delivery_date || data.scheduled_date || data.delivery_date) as string | undefined
 
                     if (!hasPending && !deliveryDate) return null
 

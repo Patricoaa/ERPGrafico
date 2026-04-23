@@ -44,7 +44,7 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
     const [warehouses, setWarehouses] = useState<Record<string, unknown>[]>([])
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
     const [processQuantities, setProcessQuantities] = useState<{ [pId: number]: number }>({})
-    const [displayLines, setDisplayLines] = useState<InvoiceLine[]>(invoice?.lines || [])
+    const [displayLines, setDisplayLines] = useState<InvoiceLine[]>((invoice?.lines as any) || [])
     const [date, setDate] = useState("")
     const [notes, setNotes] = useState("")
     const [loading, setLoading] = useState(true)
@@ -57,14 +57,14 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
         }
     }, [dateString])
 
-    const isSale = !!invoice?.sale_order || !!invoice?.sale_order_number
+    const isSale = !!invoice?.sale_order || !!(invoice as any)?.sale_order_number
     const isCredit = invoice?.dte_type === 'NOTA_CREDITO'
     // const lines = invoice?.lines || [] // REMOVED: Use displayLines instead
 
     useEffect(() => {
         if (open && invoice) {
             // Reset display lines to props initially while loading fresh data
-            setDisplayLines(invoice.lines || [])
+            setDisplayLines((invoice.lines as any) || [])
             fetchData()
         }
     }, [open, invoice])
@@ -186,7 +186,7 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
                                 value={selectedWarehouse || ''}
                                 onChange={(e) => setSelectedWarehouse(Number(e.target.value))}
                             >
-                                {warehouses.map(w => (
+                                {warehouses.map((w: any) => (
                                     <option key={w.id} value={w.id}>{w.name} ({w.code})</option>
                                 ))}
                             </select>

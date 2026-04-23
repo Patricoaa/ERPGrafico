@@ -11,7 +11,7 @@ interface UseUserSearchReturn {
     fetchSingleUser: (id: string | number) => Promise<void>
 }
 
-let globalCache: Record<string, AppUser[]> = {}
+const globalCache: Record<string, AppUser[]> = {}
 
 export function useUserSearch(): UseUserSearchReturn {
     const [users, setUsers] = useState<AppUser[]>([])

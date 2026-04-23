@@ -7,7 +7,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {
     Warehouse as WarehouseIcon,
-    ShieldAlert
+    ShieldAlert,
+    ArrowDownCircle,
+    ArrowUpCircle,
+    Package,
+    Info
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -41,18 +45,6 @@ import { cn } from "@/lib/utils"
 import { validateAccountingPeriod } from "@/lib/actions/accounting-actions"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
-interface Warehouse {
-    id: number
-    name: string
-}
-
-interface UoM {
-    id: number
-    name: string
-    category: number
-    ratio: number
-    active: boolean
-}
 
 const adjustmentSchema = z.object({
     product_id: z.string().min(1, "Seleccione un producto"),
@@ -91,7 +83,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
     const [isLoading, setIsLoading] = useState(false)
     const [productDetails, setProductDetails] = useState<Product | null>(null)
     const [partners, setPartners] = useState<{ id: number, name: string }[]>([])
-    const [periodStatus, setPeriodStatus] = useState<{ is_closed: boolean; period_name?: string } | null>(null)
+    const [periodStatus, setPeriodStatus] = useState<{ is_closed: boolean; period_name?: string; date?: string; error?: string } | null>(null)
 
     const form = useForm<z.infer<typeof adjustmentSchema>>({
         resolver: zodResolver(adjustmentSchema),
@@ -197,7 +189,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
             const today = new Date().toISOString().split('T')[0]
             const status = await validateAccountingPeriod(today)
             if (status.is_closed) {
-                toast.error(`No se puede registrar el ajuste: El periodo ${status.period_name || ''} está cerrado.`, {
+                toast.error(`No se puede registrar el ajuste: El periodo ${(status as any).period_name || ''} está cerrado.`, {
                     icon: <ShieldAlert className="h-4 w-4 text-destructive" />
                 })
                 setIsLoading(false)

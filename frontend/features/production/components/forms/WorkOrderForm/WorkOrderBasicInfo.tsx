@@ -23,7 +23,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms"
 import type { SaleOrder, SaleOrderLine } from "@/features/sales/types"
 import type { Contact } from "@/features/contacts/types"
-import type { UoM, ProductMinimal } from "../../types"
+import type { UoM, ProductMinimal } from "../../../types"
 
 interface WorkOrderBasicInfoProps {
     otType: "LINKED" | "NONE"
@@ -115,8 +115,8 @@ export function WorkOrderBasicInfo({
                                             value={field.value}
                                             onChange={field.onChange}
                                             disabled={!!initialData}
-                                            customFilter={(order: SaleOrder) =>
-                                                order.lines?.some((l: SaleOrderLine) =>
+                                            customFilter={(order: any) =>
+                                                order.lines?.some((l: any) =>
                                                     l.product_type === 'MANUFACTURABLE' &&
                                                     l.requires_advanced_manufacturing &&
                                                     !l.work_order_summary
@@ -197,8 +197,8 @@ export function WorkOrderBasicInfo({
                                                         ) : saleLines.length === 0 ? (
                                                             <SelectItem value="none" disabled>No hay ítems fabricables avanzados pendientes</SelectItem>
                                                         ) : (
-                                                            saleLines.map((line) => (
-                                                                <SelectItem key={line.id} value={line.id.toString()}>
+                                                            saleLines.map((line: SaleOrderLine) => (
+                                                                <SelectItem key={line.id} value={line.id?.toString() || ""}>
                                                                     {line.product_name || line.description} ({line.quantity} {line.uom_name})
                                                                 </SelectItem>
                                                             ))
@@ -213,7 +213,7 @@ export function WorkOrderBasicInfo({
                                     {watchedSaleLineId && (
                                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-3 bg-background rounded border animate-in fade-in slide-in-from-top-1">
                                             {(() => {
-                                                const l = saleLines.find(x => x.id.toString() === watchedSaleLineId)
+                                                const l = saleLines.find(x => x.id?.toString() === watchedSaleLineId)
                                                 if (!l) return null
                                                 return (
                                                     <>
@@ -223,11 +223,11 @@ export function WorkOrderBasicInfo({
                                                         </div>
                                                         <div>
                                                             <p className="text-[10px] text-muted-foreground uppercase font-bold">Precio Unit.</p>
-                                                            <p className="text-sm font-medium">${parseFloat(l.unit_price).toLocaleString()}</p>
+                                                            <p className="text-sm font-medium">${parseFloat(String(l.unit_price)).toLocaleString()}</p>
                                                         </div>
                                                         <div>
                                                             <p className="text-[10px] text-muted-foreground uppercase font-bold">Subtotal</p>
-                                                            <p className="text-sm font-bold text-primary">${parseFloat(l.subtotal).toLocaleString()}</p>
+                                                            <p className="text-sm font-bold text-primary">${parseFloat(String((l as any).subtotal || 0)).toLocaleString()}</p>
                                                         </div>
                                                     </>
                                                 )
@@ -423,7 +423,7 @@ export function WorkOrderBasicInfo({
                             </div>
                         ) : (
                             <AdvancedContactSelector
-                                onSelectContact={(c) => {
+                                onSelectContact={(c: any) => {
                                     setSelectedContact(c)
                                     form.setValue('contact_id', String(c.id))
                                 }}

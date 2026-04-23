@@ -32,6 +32,9 @@ export interface Product {
     image_catalog?: string
     active: boolean
     is_dynamic_pricing?: boolean
+    cost_price?: string
+    uom_category?: number
+    qty_on_hand?: number
     has_variants?: boolean
     variants?: Product[]
     is_child_variant?: boolean

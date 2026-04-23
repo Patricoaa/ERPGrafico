@@ -13,7 +13,7 @@ export function useWindowWidth(throttleMs = 150, enabled = true): number {
     const [windowWidth, setWindowWidth] = useState(
         typeof window !== 'undefined' ? window.innerWidth : 1200
     )
-    const lastUpdateRef = useRef(Date.now())
+    const lastUpdateRef = useRef(0)
     const rafRef = useRef<number | null>(null)
 
     const handleResize = useCallback(() => {
@@ -39,7 +39,10 @@ export function useWindowWidth(throttleMs = 150, enabled = true): number {
         if (!enabled || typeof window === 'undefined') return
 
         // Sync on mount / when enabled changes
-        setWindowWidth(window.innerWidth)
+        requestAnimationFrame(() => {
+            setWindowWidth(window.innerWidth)
+            lastUpdateRef.current = Date.now()
+        })
 
         window.addEventListener('resize', handleResize, { passive: true })
         return () => {

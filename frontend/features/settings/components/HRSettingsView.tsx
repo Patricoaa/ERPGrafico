@@ -140,7 +140,13 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
     const onSaveGlobal = useCallback(async (data: GlobalHRFormValues) => {
         setSaving(true)
         try {
-            await updateGlobalHRSettings(data)
+            const convertedData = {
+                ...data,
+                account_remuneraciones_por_pagar: data.account_remuneraciones_por_pagar ? Number(data.account_remuneraciones_por_pagar) : null,
+                account_previred_por_pagar: data.account_previred_por_pagar ? Number(data.account_previred_por_pagar) : null,
+                account_anticipos: data.account_anticipos ? Number(data.account_anticipos) : null,
+            }
+            await updateGlobalHRSettings(convertedData)
             globalForm.reset(data)
         } catch {
             toast.error("Error al guardar parámetros globales")
@@ -468,11 +474,15 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
     const onSubmit = async (data: ConceptFormValues) => {
         setSaving(true)
         try {
+            const convertedData = {
+                ...data,
+                account: Number(data.account),
+            }
             if (concept) {
-                await updatePayrollConcept(concept.id, data)
+                await updatePayrollConcept(concept.id, convertedData)
                 toast.success("Concepto actualizado")
             } else {
-                await createPayrollConcept(data)
+                await createPayrollConcept(convertedData)
                 toast.success("Concepto creado")
             }
             onSaved()
@@ -667,11 +677,15 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
     const onSubmit = async (data: AFPFormValues) => {
         setSaving(true)
         try {
+            const convertedData = {
+                ...data,
+                account: data.account ? Number(data.account) : null,
+            }
             if (afp) {
-                await updateAFP(afp.id, data)
+                await updateAFP(afp.id, convertedData)
                 toast.success("AFP actualizada")
             } else {
-                await createAFP(data)
+                await createAFP(convertedData)
                 toast.success("AFP registrada")
             }
             onSaved()

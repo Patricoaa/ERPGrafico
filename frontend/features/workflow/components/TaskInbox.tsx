@@ -116,7 +116,7 @@ export function TaskInbox() {
             openHub({ orderId: task.object_id, type: 'sale', onActionSuccess: () => fetchTasks() })
         } else if (task.task_type?.startsWith('HUB_')) {
             // HUB stage tasks → open Command Center
-            const orderType = task.data?.order_type || 'sale'
+            const orderType = (task.data?.order_type as 'purchase' | 'sale' | 'obligation') || 'sale'
             if (task.data?.is_invoice || task.task_type?.includes('_NC_') || task.task_type?.includes('_ND_')) {
                 openHub({ orderId: null, invoiceId: task.object_id, type: orderType, onActionSuccess: () => fetchTasks() })
             } else {

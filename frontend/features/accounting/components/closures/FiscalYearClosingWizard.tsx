@@ -46,14 +46,13 @@ export function FiscalYearClosingWizard({
     // Reset state when modal opens
     useEffect(() => {
         if (isOpen) {
-            setIsClosed(false);
+            requestAnimationFrame(() => setIsClosed(false));
         }
     }, [isOpen]);
 
     const handleConfirm = async () => {
         await onConfirm();
         setIsClosed(true);
-        return true; // Needed for GenericWizard onNext/onComplete
     };
 
     const steps: WizardStep[] = useMemo(() => [
@@ -99,7 +98,7 @@ export function FiscalYearClosingWizard({
                     <div className="space-y-2">
                         <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest px-1">Validaciones Críticas</p>
                         <div className="grid grid-cols-1 gap-2">
-                            {Object.entries(preview.validations).map(([key, val]: [string, unknown]) => (
+                            {Object.entries(preview.validations).map(([key, val]: [string, any]) => (
                                 <div key={key} className={cn(
                                     "flex items-center justify-between p-3 border rounded-sm transition-colors",
                                     val.passed ? (val.is_warning ? "bg-warning/5 border-warning/30" : "bg-muted/20 border-border/50") : "bg-destructive/5 border-destructive/20"
@@ -229,6 +228,7 @@ export function FiscalYearClosingWizard({
                 onOpenChange={onClose}
                 size="xl"
                 showCloseButton={false}
+                title=""
             >
                 <div className="flex flex-col items-center justify-center p-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
                     <ShieldCheck className="w-10 h-10 text-muted-foreground" />

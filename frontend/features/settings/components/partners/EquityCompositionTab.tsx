@@ -151,7 +151,7 @@ export function EquityCompositionTab({
                     <span className="font-black text-[12px] tracking-tight uppercase leading-none">{row.original.name}</span>
                     <span className="text-[9px] font-mono opacity-50">{row.original.tax_id}</span>
 
-                    {row.original.partner_excess_capital > 0 && (
+                    {Number(row.original.partner_excess_capital) > 0 && (
                         <div className="mt-1.5 p-1.5 bg-warning/10 border border-warning/20 rounded-sm flex items-center gap-2 overflow-hidden ring-1 ring-warning/10">
                             <div className="flex items-center gap-1.5 text-[8px] text-warning font-black uppercase tracking-tighter">
                                 <AlertCircle className="h-2.5 w-2.5 shrink-0" />
@@ -284,8 +284,7 @@ export function EquityCompositionTab({
                         <DataCell.Action
                             icon={Banknote}
                             title="Pagar Dividendos"
-                            className={hasDividends ? "text-primary" : "text-muted-foreground/30"}
-                            disabled={!hasDividends}
+                            className={hasDividends ? "text-primary" : "text-muted-foreground/30 pointer-events-none"}
                             onClick={() => {
                                 setSelectedPartnerId(partner.id)
                                 setIsDividendOpen(true)
@@ -294,8 +293,7 @@ export function EquityCompositionTab({
                         <DataCell.Action
                             icon={ArrowRightLeft}
                             title="Distribuir Utilidades Retenidas"
-                            className={hasEarnings ? "text-primary/70" : "text-muted-foreground/30"}
-                            disabled={!hasEarnings}
+                            className={hasEarnings ? "text-primary/70" : "text-muted-foreground/30 pointer-events-none"}
                             onClick={() => {
                                 setSelectedPartnerId(partner.id)
                                 setIsMobilizeOpen(true)
@@ -405,17 +403,19 @@ export function EquityCompositionTab({
                 partnerId={selectedPartnerId}
                 partnerName={selectedPartnerName}
             />
-            <EquityStatsSheet
-                open={isStatsOpen}
-                onOpenChange={(open) => {
-                    setIsStatsOpen(open)
-                    if (!open) {
-                        onModalClose?.()
-                    }
-                }}
-                partners={partners}
-                summary={summary}
-            />
+            {summary && (
+                <EquityStatsSheet
+                    open={isStatsOpen}
+                    onOpenChange={(open) => {
+                        setIsStatsOpen(open)
+                        if (!open) {
+                            onModalClose?.()
+                        }
+                    }}
+                    partners={partners}
+                    summary={summary}
+                />
+            )}
             <AddPartnerModal
                 open={isAddPartnerOpen}
                 onOpenChange={(open) => {

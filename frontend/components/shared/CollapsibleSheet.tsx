@@ -53,7 +53,7 @@ export function CollapsibleSheet({
     const calculatedWidth = size ? sizeMap[size] : fullWidth
 
     useEffect(() => {
-        setIsMounted(true)
+        requestAnimationFrame(() => setIsMounted(true))
     }, [])
 
     useEffect(() => {
@@ -80,12 +80,18 @@ export function CollapsibleSheet({
         let unmountTimeout: NodeJS.Timeout
 
         if (open || isCollapsed) {
-            setShouldMount(true)
-            setIsHidden(false)
+            requestAnimationFrame(() => {
+                setShouldMount(true)
+                setIsHidden(false)
+            })
         } else {
             // Give 500ms for slide-out before removing from CSS tree and completely unmounting
-            hideTimeout = setTimeout(() => setIsHidden(true), 500)
-            unmountTimeout = setTimeout(() => setShouldMount(false), 500)
+            hideTimeout = setTimeout(() => {
+                requestAnimationFrame(() => setIsHidden(true))
+            }, 500)
+            unmountTimeout = setTimeout(() => {
+                requestAnimationFrame(() => setShouldMount(false))
+            }, 500)
         }
 
         return () => {

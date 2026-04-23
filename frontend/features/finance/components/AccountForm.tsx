@@ -49,6 +49,7 @@ interface AccountFormProps {
     onSuccess?: () => void
     accounts?: Record<string, unknown>[]
     initialData?: Record<string, unknown>
+    parentId?: string
     triggerText?: React.ReactNode
     triggerVariant?: "default" | "circular"
     open?: boolean
@@ -59,6 +60,7 @@ export function AccountForm({
     onSuccess,
     accounts = [],
     initialData,
+    parentId,
     triggerText = "Nueva Cuenta",
     triggerVariant = "default",
     open: openProp,
@@ -75,10 +77,10 @@ export function AccountForm({
     const form = useForm<AccountFormValues>({
         resolver: zodResolver(accountSchema),
         defaultValues: {
-            code: initialData?.code || "",
-            name: initialData?.name || "",
+            code: initialData?.code as string || "",
+            name: initialData?.name as string || "",
             account_type: (initialData?.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE") || "ASSET",
-            parent: initialData?.parent || undefined,
+            parent: (typeof initialData?.parent === 'object' ? (initialData?.parent as any)?.id?.toString() : initialData?.parent?.toString()) || parentId || undefined,
         },
     })
 
@@ -89,33 +91,33 @@ export function AccountForm({
         if (open) {
             if (initialData) {
                 form.reset({
-                    code: initialData.code,
-                    name: initialData.name,
+                    code: initialData.code as string,
+                    name: initialData.name as string,
                     account_type: initialData.account_type as "ASSET" | "LIABILITY" | "EQUITY" | "INCOME" | "EXPENSE",
-                    parent: initialData.parent || undefined,
+                    parent: (typeof initialData.parent === 'object' ? (initialData.parent as any)?.id?.toString() : initialData.parent?.toString()) || undefined,
                 })
             } else {
                 form.reset({
                     code: "",
                     name: "",
                     account_type: "ASSET",
-                    parent: undefined,
+                    parent: parentId || undefined,
                 })
             }
         }
     }, [open, initialData, form])
 
     // Effect to handle parent changes: Update account_type and suggest categories
-    const parentId = form.watch("parent")
+    const watchParentId = form.watch("parent")
     useEffect(() => {
-        if (!parentId || parentId === "__none__" || parentId === "none") return;
+        if (!watchParentId || watchParentId === "__none__" || watchParentId === "none") return;
         
-        const parent = accounts.find(a => a.id.toString() === parentId.toString());
+        const parent = accounts.find((a: any) => a.id.toString() === watchParentId.toString());
         if (parent) {
             // Force account_type to match parent
-            form.setValue("account_type", parent.account_type);
+            form.setValue("account_type", (parent as any).account_type);
         }
-    }, [parentId, accounts, form])
+    }, [watchParentId, accounts, form])
 
 
     async function onSubmit(data: AccountFormValues) {
@@ -170,9 +172,9 @@ export function AccountForm({
                 }
                 description={
                     <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        {initialData?.code && (
+                        {(initialData as any)?.code && (
                             <>
-                                <span>{initialData.code}</span>
+                                <span>{(initialData as any).code}</span>
                                 <span className="opacity-30">|</span>
                             </>
                         )}
@@ -291,7 +293,7 @@ export function AccountForm({
                          </Form>
                     </div>
 
-                    {initialData?.id && (
+                    {!!initialData?.id && (
                         <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
                             {auditSidebar}
                         </div>

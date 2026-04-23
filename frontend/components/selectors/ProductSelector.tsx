@@ -79,14 +79,14 @@ export function ProductSelector({
         if (value && (!selectedProduct || selectedProduct.id.toString() !== value.toString())) {
             fetchSingleProduct(value.toString())
         } else if (!value) {
-            setSelectedProduct(null)
+            requestAnimationFrame(() => setSelectedProduct(null))
         }
     }, [value, selectedProduct, fetchSingleProduct])
 
     // Sync fetched single product to local state
     useEffect(() => {
         if (singleProduct && singleProduct.id.toString() === value?.toString()) {
-            setSelectedProduct(singleProduct)
+            requestAnimationFrame(() => setSelectedProduct(singleProduct))
         }
     }, [singleProduct, value])
 
@@ -130,7 +130,7 @@ export function ProductSelector({
             allProducts = allProducts.filter(customFilter)
         }
 
-        setFilteredProducts(allProducts)
+        requestAnimationFrame(() => setFilteredProducts(allProducts))
     }, [fetchedProducts, allowedTypes, simpleOnly, excludeIds, customFilter])
 
     // Load more entries when scrolling down

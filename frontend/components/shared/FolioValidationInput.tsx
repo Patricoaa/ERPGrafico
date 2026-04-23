@@ -19,6 +19,7 @@ interface FolioValidationInputProps {
     label?: string
     placeholder?: string
     className?: string
+    autoFocus?: boolean
     disabled?: boolean
 }
 
@@ -33,6 +34,7 @@ export function FolioValidationInput({
     label = "N° de Folio",
     placeholder = "Ej: 45223",
     className,
+    autoFocus = false,
     disabled = false
 }: FolioValidationInputProps) {
     const { validateFolio, isValidating, validationResult, clearValidation } = useFolioValidation()
@@ -70,6 +72,7 @@ export function FolioValidationInput({
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     disabled={disabled}
+                    autoFocus={autoFocus}
                     className={cn(
                         validationResult && !validationResult.is_unique && "border-warning pr-10"
                     )}

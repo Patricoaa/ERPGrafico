@@ -7,21 +7,16 @@ import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { List, Eye, Banknote, History, X, FileBadge, Receipt, MoreVertical, Package, LayoutDashboard, ArrowRight, ArrowLeft } from "lucide-react"
+import { LayoutDashboard, ArrowRight, ArrowLeft, List } from "lucide-react"
 import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { Invoice } from "@/features/billing/types"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { toast } from "sonner"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { SaleNoteModal } from "@/features/sales"
 import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { LAYOUT_TOKENS } from "@/lib/styles"
 import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -68,23 +63,24 @@ export function SalesInvoicesClientView() {
 
     const handlePayment = async (data: Record<string, unknown>) => {
         if (!payingInv) return
+        const d = data as any
         try {
             const formData = new FormData()
-            formData.append('amount', data.amount.toString())
+            formData.append('amount', d.amount.toString())
             let paymentType = 'INBOUND'
             if (payingInv.dte_type === 'NOTA_CREDITO') paymentType = 'OUTBOUND'
             formData.append('payment_type', paymentType)
             formData.append('reference', `${payingInv.dte_type === 'NOTA_CREDITO' ? 'NC' : payingInv.dte_type === 'NOTA_DEBITO' ? 'ND' : 'PAGO'}-${payingInv.number}`)
             formData.append('sale_order', payingInv.sale_order ? payingInv.sale_order.toString() : '')
             formData.append('invoice', payingInv.id.toString())
-            formData.append('payment_method', data.paymentMethod)
-            if (data.transaction_number) formData.append('transaction_number', data.transaction_number)
-            if (data.is_pending_registration !== undefined) formData.append('is_pending_registration', data.is_pending_registration.toString())
-            if (data.treasury_account_id) formData.append('treasury_account_id', data.treasury_account_id)
-            if (data.dteType) formData.append('dte_type', data.dteType)
-            if (data.documentReference) formData.append('document_reference', data.documentReference)
-            if (data.documentDate) formData.append('document_date', data.documentDate)
-            if (data.documentAttachment) formData.append('document_attachment', data.documentAttachment)
+            formData.append('payment_method', d.paymentMethod)
+            if (d.transaction_number) formData.append('transaction_number', d.transaction_number)
+            if (d.is_pending_registration !== undefined) formData.append('is_pending_registration', d.is_pending_registration.toString())
+            if (d.treasury_account_id) formData.append('treasury_account_id', d.treasury_account_id)
+            if (d.dteType) formData.append('dte_type', d.dteType)
+            if (d.documentReference) formData.append('document_reference', d.documentReference)
+            if (d.documentDate) formData.append('document_date', d.documentDate)
+            if (d.documentAttachment) formData.append('document_attachment', d.documentAttachment)
 
             await treasuryApi.createPayment(formData)
             toast.success("Operación registrada correctamente")
@@ -115,7 +111,7 @@ export function SalesInvoicesClientView() {
         {
             accessorKey: "partner_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
-            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as Record<string, unknown>).customer as number || (row.original as Record<string, unknown>).partner as number}>{row.getValue("partner_name")}</DataCell.ContactLink>
+            cell: ({ row }) => <DataCell.ContactLink contactId={(row.original as any).customer as number || (row.original as any).partner as number}>{row.getValue("partner_name")}</DataCell.ContactLink>
         },
         {
             accessorKey: "total",
@@ -176,7 +172,7 @@ export function SalesInvoicesClientView() {
                 }}
                 cardMode={true}
                 currentView={currentView}
-                onViewChange={(v: 'all' | 'unpaid') => setCurrentView(v)}
+                onViewChange={(v: any) => setCurrentView(v as 'card' | 'list')}
                 viewOptions={viewOptions}
                 filterColumn="partner_name"
                 searchPlaceholder="Buscar por cliente..."
@@ -209,7 +205,7 @@ export function SalesInvoicesClientView() {
                     }
                     return (
                         <div className="grid gap-3 pt-2">
-                            {rows.map((row: Invoice) => {
+                            {rows.map((row: any) => {
                                 const inv = row.original as Invoice
                                 const isSelected = hubConfig?.invoiceId === inv.id
                                 return (
@@ -245,7 +241,7 @@ export function SalesInvoicesClientView() {
                 <TransactionViewModal
                     open={!!viewingTransaction}
                     onOpenChange={(open) => !open && setViewingTransaction(null)}
-                    type={viewingTransaction.type}
+                    type={viewingTransaction.type as any}
                     id={viewingTransaction.id}
                     view={viewingTransaction.view}
                 />

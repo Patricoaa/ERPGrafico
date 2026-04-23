@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
-import { WarningCircle, CheckCircle, Info, ArrowUpRight, ShieldCheck, ListDashes, Vault } from "@phosphor-icons/react";
+import { AlertCircle, CheckCircle2, Info, ArrowUpRight, ShieldCheck, List, Landmark } from "lucide-react";
 import { BaseModal } from "@/components/shared/BaseModal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,7 +66,7 @@ const SectionHeader = ({ title, showComparison, icon: Icon }: { title: string, s
     <TableRow className="bg-muted/30 font-bold border-t-2 first:border-t-0">
         <TableCell colSpan={showComparison ? 4 : 2} className="py-2.5 px-4">
             <div className="flex items-center gap-2">
-                {Icon && <Icon className="h-3.5 w-3.5 text-primary" weight="bold" />}
+                {Icon && <Icon className="h-3.5 w-3.5 text-primary" />}
                 <span className="uppercase tracking-widest text-[10px] text-muted-foreground">{title}</span>
             </div>
         </TableCell>
@@ -185,7 +185,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
             {!data.is_balanced && (
                 <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-center justify-between animate-in fade-in slide-in-from-top-4">
                     <div className="flex items-center gap-3">
-                        <WarningCircle weight="fill" className="h-6 w-6" />
+                        <AlertCircle className="h-6 w-6" />
                         <div>
                             <h4 className="font-black text-destructive uppercase tracking-tighter text-sm">Discrepancia detectada</h4>
                             <p className="text-xs text-muted-foreground">
@@ -206,7 +206,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
 
             {data.is_balanced && (
                 <div className="bg-success/5 border border-success/20 rounded-lg p-3 flex items-center gap-3">
-                    <CheckCircle className="h-5 w-5 text-success" />
+                    <CheckCircle2 className="h-5 w-5 text-success" />
                     <span className="text-xs font-bold text-success uppercase tracking-widest">Estado: Conciliado con Tesorería</span>
                 </div>
             )}
@@ -266,7 +266,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                     </div>
 
                     <p className="text-[10px] text-muted-foreground leading-relaxed italic">
-                        Tip: Para eliminar esta diferencia, accede a "Configurar Mapeo" y asigna estas cuentas a una de las categorías 
+                        Tip: Para eliminar esta diferencia, accede a &quot;Configurar Mapeo&quot; y asigna estas cuentas a una de las categorías 
                         (Operación, Inversión o Financiamiento) según corresponda.
                     </p>
                 </div>

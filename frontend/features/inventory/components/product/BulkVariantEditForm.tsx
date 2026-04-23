@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, SubmitHandler, UseFormReturn } from "react-hook-form"
 import { Product, UoM } from "@/types/entities"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -22,7 +22,13 @@ const bulkEditSchema = z.object({
   copy_bom_from: z.string().optional(),
 })
 
-type BulkEditValues = z.infer<typeof bulkEditSchema>
+interface BulkEditValues {
+  sale_price?: string
+  sale_uom?: string
+  has_bom?: boolean
+  apply_has_bom?: boolean
+  copy_bom_from?: string
+}
 
 interface BulkVariantEditFormProps {
   selectedVariants: Product[]
@@ -50,21 +56,22 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
     }
   }
 
-  const form = useForm<BulkEditValues>({
-    resolver: zodResolver(bulkEditSchema) ,
+  const form: UseFormReturn<BulkEditValues> = useForm<BulkEditValues>({
+    resolver: zodResolver(bulkEditSchema),
     defaultValues: {
-      sale_price: "",
-      sale_uom: "",
-      has_bom: false,
       apply_has_bom: false,
-      copy_bom_from: "",
+      has_bom: true,
+      sale_price: undefined,
+      sale_uom: undefined,
+      copy_bom_from: undefined,
     }
   })
 
-  const onSubmit = async (data: BulkEditValues) => {
+  const onSubmit: SubmitHandler<BulkEditValues> = async (data) => {
+    setLoading(true)
     const payload: Partial<Product> & { copy_bom_from?: number } = {}
-    if (data.sale_price !== "") payload.sale_price = Number(data.sale_price)
-    if (data.sale_uom !== "") payload.sale_uom = Number(data.sale_uom)
+    if (data.sale_price !== undefined && data.sale_price !== "") payload.sale_price = Number(data.sale_price)
+    if (data.sale_uom !== undefined && data.sale_uom !== "" && data.sale_uom !== "none") payload.sale_uom = Number(data.sale_uom)
     if (data.apply_has_bom) {
         payload.has_bom = data.has_bom
         if (data.has_bom) payload.product_type = "MANUFACTURABLE"
@@ -77,6 +84,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
 
     if (Object.keys(payload).length === 0) {
         toast.info("No se seleccionaron cambios masivos.")
+        setLoading(false)
         return
     }
 
@@ -93,7 +101,8 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
     })
 
     toast.success(`${selectedVariants.length} variantes actualizadas en borrador. Guarde el producto base.`)
-    onSaved(updatedVariants)
+    onSaved(updatedVariants as Product[])
+    setLoading(false)
   }
 
   return (
@@ -119,26 +128,26 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
              </div>
 
              <div className="grid grid-cols-2 gap-4">
-                <FormField
+                <FormField<BulkEditValues>
                   control={form.control}
                   name="sale_price"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs">Precio de Venta</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" {...field} placeholder="Sin cambios" className="h-8 text-sm" />
+                        <Input type="number" step="0.01" {...field} value={String(field.value || "")} placeholder="Sin cambios" className="h-8 text-sm" />
                       </FormControl>
                       <FormMessage className="text-[10px]" />
                     </FormItem>
                   )}
                 />
-                 <FormField
+                 <FormField<BulkEditValues>
                   control={form.control}
                   name="sale_uom"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs">Ud. Medida Venta</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <Select onValueChange={field.onChange} value={String(field.value || "")}>
                         <FormControl>
                           <SelectTrigger className="h-8 text-sm">
                             <SelectValue placeholder="Sin cambios" />
@@ -159,13 +168,13 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
 
              <div className="pt-4 border-t border-dashed border-primary/20 mt-4 space-y-4">
                  
-                 <FormField
-                  control={form.control}
+                 <FormField<BulkEditValues>
+                  control={form.control as any}
                   name="apply_has_bom"
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-center space-x-2 space-y-0">
                       <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        <Checkbox checked={Boolean(field.value)} onCheckedChange={field.onChange} />
                       </FormControl>
                       <FormLabel className="text-xs font-bold text-primary">Actualizar requisito de LdM masivamente</FormLabel>
                     </FormItem>
@@ -173,14 +182,14 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                 />
 
                 {form.watch("apply_has_bom") && (
-                    <FormField
-                      control={form.control}
+                    <FormField<BulkEditValues>
+                      control={form.control as any}
                       name="has_bom"
                       render={({ field }) => (
                         <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 bg-white/50 animate-in fade-in duration-200">
                           <FormControl>
                             <Checkbox
-                              checked={field.value}
+                              checked={Boolean(field.value)}
                               onCheckedChange={field.onChange}
                             />
                           </FormControl>
@@ -195,13 +204,13 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                     />
                 )}
 
-                <FormField
-                  control={form.control}
+                <FormField<BulkEditValues>
+                  control={form.control as any}
                   name="copy_bom_from"
                   render={({ field }) => (
                     <FormItem className="space-y-2 pt-2 border-t border-dashed border-primary/20">
                       <FormLabel className="text-xs font-bold text-primary">Copiar Receta (BOM) desde:</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <Select onValueChange={field.onChange} value={String(field.value || "")}>
                         <FormControl>
                           <SelectTrigger className="h-9 text-sm bg-white/70 border-primary/20">
                             <SelectValue placeholder="Ninguna / Sin cambios" />

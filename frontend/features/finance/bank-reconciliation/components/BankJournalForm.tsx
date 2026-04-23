@@ -117,9 +117,9 @@ export function BankJournalForm({ auditSidebar,  onSuccess, initialData, open: o
             }
             description={
                 <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                    {initialData?.code && (
+                    {(initialData as any)?.code && (
                         <>
-                            <span>{initialData.code}</span>
+                            <span>{(initialData as any).code}</span>
                             <span className="opacity-30">|</span>
                         </>
                     )}
@@ -218,7 +218,7 @@ export function BankJournalForm({ auditSidebar,  onSuccess, initialData, open: o
                 </Form>
                 </div>
 
-                {initialData?.id && (
+                {(initialData as any)?.id && (
                     <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
                         {auditSidebar}
                     </div>

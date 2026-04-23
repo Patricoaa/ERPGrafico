@@ -1,6 +1,7 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -25,6 +26,7 @@ import { ProductForm } from "@/features/inventory/components/ProductForm"
 import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
 import { ArchivingRestrictionsDialog } from "@/features/inventory/components/ArchivingRestrictionsDialog"
 import { DataTable } from "@/components/ui/data-table"
+import type { Product } from "@/types/entities"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
@@ -333,12 +335,6 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                 <div className="flex justify-center">
                     <StatusBadge
                         status={row.getValue("status")}
-                        map={{
-                            ACTIVE: "SUCCESS",
-                            PAUSED: "WARNING",
-                            CANCELLED: "ERROR",
-                            PENDING: "INFO"
-                        }}
                     />
                 </div>
             ),
@@ -571,7 +567,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                         setIsFormOpen(true)
                     }
                 }}
-                initialData={editingProduct}
+                initialData={editingProduct || undefined}
                 onSuccess={() => {
                     fetchSubscriptions()
                 }}

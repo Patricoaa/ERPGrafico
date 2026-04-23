@@ -22,7 +22,7 @@ interface OrderHubData {
     activeDoc: Order
     userPermissions: string[]
     isNoteMode: boolean
-    noteStatuses: Record<string, string>
+    noteStatuses: any
     showProduction: boolean
     showLogistics: boolean
     invoices: Order[]
@@ -93,7 +93,7 @@ export function OrderHubIntegrated({
             if (noteStatuses.treasury !== 'success') openSet.add('treasury')
             if (noteStatuses.logistics !== 'success') openSet.add('logistics')
         } else {
-            const hubStatuses = getHubStatuses(activeDoc)
+            const hubStatuses = getHubStatuses(activeDoc as any)
             if (hubStatuses.origin !== 'success') openSet.add('origin')
             if (hubStatuses.billing !== 'success') openSet.add('billing')
             if (hubStatuses.treasury !== 'success') openSet.add('treasury')

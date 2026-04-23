@@ -30,8 +30,8 @@ export function PurchaseOrderHubStatus({ order }: PurchaseOrderHubStatusProps) {
         receptionProgress = 100
     }
 
-    const pendingAmount = parseFloat(order.pending_amount || 0)
-    const total = parseFloat(order.total || 0)
+    const pendingAmount = typeof order.pending_amount === 'number' ? order.pending_amount : parseFloat(String(order.pending_amount || 0))
+    const total = typeof order.total === 'number' ? order.total : parseFloat(String(order.total || 0))
     const paidPct = total > 0 ? ((1 - (pendingAmount / total)) * 100).toFixed(0) : "0"
 
     return (

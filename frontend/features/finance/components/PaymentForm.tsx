@@ -95,9 +95,9 @@ export function PaymentForm({
         resolver: zodResolver(paymentSchema),
         defaultValues: {
             payment_type: initialData?.payment_type || "INBOUND",
-            payment_method: initialData?.payment_method || "CASH",
+            payment_method: (initialData?.payment_method as any) || "CASH",
             treasury_account: initialData?.treasury_account?.toString() || initialData?.treasury_account_id?.toString() || null,
-            amount: initialData?.amount ? parseFloat(initialData.amount) : 0,
+            amount: initialData?.amount ? parseFloat(String(initialData.amount)) : 0,
             customer_id: (initialData?.payment_type === "INBOUND" ? (initialData?.contact?.toString() || initialData?.customer?.toString() || initialData?.customer_id?.toString()) : "") || "",
             supplier_id: (initialData?.payment_type === "OUTBOUND" ? (initialData?.contact?.toString() || initialData?.supplier?.toString() || initialData?.supplier_id?.toString()) : "") || "",
             invoice_id: initialData?.invoice?.toString() || initialData?.invoice_id?.toString() || "",
@@ -234,7 +234,7 @@ export function PaymentForm({
                             <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg border group-disabled:opacity-60 transition-opacity">
                                 {!initialData && (
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="payment_type"
                                     render={({ field }) => (
                                         <FormItem>
@@ -257,7 +257,7 @@ export function PaymentForm({
                             )}
 
                             <FormField
-                                control={form.control}
+                                control={form.control as any}
                                 name="amount"
                                 render={({ field }) => (
                                     <FormItem className={cn(!initialData ? "" : "col-span-2")}>
@@ -283,7 +283,7 @@ export function PaymentForm({
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="treasury_account"
                                     render={({ field }) => (
                                         <FormItem>
@@ -302,7 +302,7 @@ export function PaymentForm({
 
                                 {availableMethods.length > 0 && (
                                     <FormField
-                                        control={form.control}
+                                        control={form.control as any}
                                         name="payment_method_new"
                                         render={({ field }) => (
                                             <FormItem className="animate-in slide-in-from-top-2 duration-300">
@@ -342,28 +342,49 @@ export function PaymentForm({
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name={paymentType === "INBOUND" ? "customer_id" : "supplier_id"}
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>{paymentType === "INBOUND" ? "Cliente" : "Proveedor"}</FormLabel>
-                                            <FormControl>
-                                                <AdvancedContactSelector
-                                                    value={field.value === "__none__" ? "" : field.value}
-                                                    onChange={(val) => field.onChange(val || "")}
-                                                    contactType={paymentType === "INBOUND" ? "CUSTOMER" : "SUPPLIER"}
-                                                    placeholder="Buscar contacto..."
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                {paymentType === "INBOUND" ? (
+                                    <FormField
+                                        control={form.control as any}
+                                        name="customer_id"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className={FORM_STYLES.label}>Cliente</FormLabel>
+                                                <FormControl>
+                                                    <AdvancedContactSelector
+                                                        value={field.value === "__none__" ? "" : field.value}
+                                                        onChange={(val) => field.onChange(val || "")}
+                                                        contactType="CUSTOMER"
+                                                        placeholder="Buscar contacto..."
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                ) : (
+                                    <FormField
+                                        control={form.control as any}
+                                        name="supplier_id"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel className={FORM_STYLES.label}>Proveedor</FormLabel>
+                                                <FormControl>
+                                                    <AdvancedContactSelector
+                                                        value={field.value === "__none__" ? "" : field.value}
+                                                        onChange={(val) => field.onChange(val || "")}
+                                                        contactType="SUPPLIER"
+                                                        placeholder="Buscar contacto..."
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
 
                                 {!initialData && (
                                     <FormField
-                                        control={form.control}
+                                        control={form.control as any}
                                         name="invoice_id"
                                         render={({ field }) => (
                                             <FormItem>
@@ -398,7 +419,7 @@ export function PaymentForm({
                             </div>
 
                             <FormField
-                                control={form.control}
+                                control={form.control as any}
                                 name="reference"
                                 render={({ field }) => (
                                     <FormItem>
