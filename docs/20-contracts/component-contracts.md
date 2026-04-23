@@ -194,15 +194,22 @@ Wrappers de alto nivel para estandarizar la carga de rutas completas.
   title="Sin órdenes"
   description="Crea la primera para empezar"
   action={<Button>Crear</Button>}
+  variant="full"
+  context="inventory"
 />
 ```
 
-| prop | type | required |
-|------|------|----------|
-| `icon` | `ReactNode` | ❌ |
-| `title` | `string` | ✅ |
-| `description` | `string` | ❌ |
-| `action` | `ReactNode` | ❌ |
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `icon` | `ReactNode` | ❌ | — | Sobrescribe el icono del contexto |
+| `title` | `string` | ❌ | — | Título principal. Si se omite, se usa el por defecto del `context` |
+| `description` | `string` | ❌ | — | Descripción detallada debajo del título |
+| `context` | `EmptyStateContext` | ❌ | `'generic'` | Define icono y título por defecto. Valores: `'search' \| 'inventory' \| 'finance' \| 'users' \| 'generic' \| 'database' \| 'production' \| 'pos' \| 'bom' \| 'treasury' \| 'sale' \| 'purchase'` |
+| `variant` | `'full' \| 'compact' \| 'minimal'` | ❌ | `'full'` | `full`: icono grande con bordes. `compact`: padding reducido. `minimal`: inline flex. |
+| `entityName` | `string` | ❌ | — | Personaliza el título auto-generado (ej. "No hay órdenes para {entityName}") |
+| `action` | `ReactNode` | ❌ | — | Acción principal (derecha/abajo) |
+| `secondaryAction` | `ReactNode` | ❌ | — | Acción secundaria (izquierda/arriba) |
+| `className` | `string` | ❌ | — | Clases adicionales para el contenedor |
 
 ---
 
@@ -792,6 +799,79 @@ Large detail modal for any transaction type. Two-column layout: content (75%) + 
 Features: print (react-to-print), navigation history between related transactions (`useNavigationHistory`), inline payment editing, delete payment confirmation.
 
 States handled: loading (dual spinner), error, populated.
+
+---
+
+## PageHeaderButton 🟡
+
+Botón estandarizado para usar dentro de las acciones de un `PageHeader`.
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `label` | `string` | ✅ | — | |
+| `icon` | `LucideIcon` | ❌ | — | |
+| `onClick` | `() => void` | ❌ | — | |
+| `href` | `string` | ❌ | — | Si se provee, renderiza como `<Link>` |
+| `disabled` | `boolean` | ❌ | `false` | |
+| `variant` | `'default' \| 'outline' \| 'secondary' \| 'ghost'` | ❌ | `'default'` | Variante de Shadcn Button |
+
+---
+
+## ActionFoldButton 🟡
+
+Botón expansible para acciones secundarias.
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `label` | `string` | ✅ | — | |
+| `icon` | `LucideIcon` | ✅ | — | |
+| `onClick` | `() => void` | ✅ | — | |
+| `variant` | `'default' \| 'destructive' \| 'outline' \| 'secondary' \| 'ghost'` | ❌ | `'default'` | |
+
+---
+
+## ActionSlideButton 🟡
+
+Botón con animación de deslizamiento para revelar acciones adicionales.
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `label` | `string` | ✅ | — | |
+| `icon` | `LucideIcon` | ✅ | — | |
+| `onClick` | `() => void` | ✅ | — | |
+| `variant` | `'default' \| 'destructive' \| 'outline' \| 'secondary' \| 'ghost'` | ❌ | `'default'` | |
+
+---
+
+## LoadingFallback 🟡
+
+Fallback estandarizado para usar en `Suspense` boundaries.
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `message` | `string` | ❌ | `'Cargando...'` | |
+| `className` | `string` | ❌ | — | |
+
+---
+
+## SheetCloseButton 🟡
+
+Botón de cierre estandarizado para componentes tipo Sheet/Drawer.
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `onClick` | `() => void` | ✅ | — | |
+| `className` | `string` | ❌ | — | |
+
+---
+
+## Componentes Internos 🔴
+
+Componentes de uso estrictamente interno, no consumir directamente en features:
+
+- `ColorBar`: Componente decorativo
+- `CropFrame`: Utilidad visual para recorte de imágenes
+- `IndustryMark`: Marca de agua de la aplicación
 
 ---
 
