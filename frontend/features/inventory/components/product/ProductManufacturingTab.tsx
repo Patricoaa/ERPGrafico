@@ -1,7 +1,7 @@
 "use client"
 
 import { UoM, Product } from "@/types/entities"
-import { LabeledInput } from "@/components/shared"
+import { LabeledInput, LabeledContainer } from "@/components/shared"
 import { FormField } from "@/components/ui/form"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Switch } from "@/components/ui/switch"
@@ -64,8 +64,10 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                     )}
                                 />
 
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Modo de Producción</label>
+                                <LabeledContainer 
+                                    label="Modo de Producción"
+                                    icon={<Settings2 className="h-4 w-4 opacity-50" />}
+                                >
                                     <Tabs
                                         value={form.watch("requires_advanced_manufacturing") ? "advanced" : (form.watch("mfg_auto_finalize") ? "express" : "simple")}
                                         onValueChange={(value) => {
@@ -87,25 +89,25 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                         }}
                                         className="w-full"
                                     >
-                                        <TabsList className="grid w-full grid-cols-3 h-20 bg-muted/30 p-1 border-2 border-primary/5">
-                                            <TabsTrigger value="simple" className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-background data-[state=active]:border-primary/20 data-[state=active]:shadow-md border-2 border-transparent">
+                                        <TabsList className="grid w-full grid-cols-3 h-20 bg-transparent p-1 border-none shadow-none">
+                                            <TabsTrigger value="simple" className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-muted/30 data-[state=active]:border-primary/20 data-[state=active]:shadow-none border-2 border-transparent">
                                                 <Package className="h-4 w-4" />
                                                 <span className="text-[10px] font-black uppercase tracking-tighter">Simple</span>
                                                 <span className="text-[8px] text-muted-foreground font-medium leading-tight text-center">Manual / Lote</span>
                                             </TabsTrigger>
-                                            <TabsTrigger value="express" className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-background data-[state=active]:border-primary/20 data-[state=active]:shadow-md border-2 border-transparent">
+                                            <TabsTrigger value="express" className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-muted/30 data-[state=active]:border-primary/20 data-[state=active]:shadow-none border-2 border-transparent">
                                                 <Clock className="h-4 w-4" />
                                                 <span className="text-[10px] font-black uppercase tracking-tighter">Express</span>
                                                 <span className="text-[8px] text-muted-foreground font-medium leading-tight text-center">Auto-cierre</span>
                                             </TabsTrigger>
-                                            <TabsTrigger value="advanced" className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-background data-[state=active]:border-primary/20 data-[state=active]:shadow-md border-2 border-transparent">
+                                            <TabsTrigger value="advanced" className="flex flex-col gap-1 py-1 h-full data-[state=active]:bg-muted/30 data-[state=active]:border-primary/20 data-[state=active]:shadow-none border-2 border-transparent">
                                                 <Layers className="h-4 w-4" />
                                                 <span className="text-[10px] font-black uppercase tracking-tighter">Avanzado</span>
                                                 <span className="text-[8px] text-muted-foreground font-medium leading-tight text-center">Wizard Etapas</span>
                                             </TabsTrigger>
                                         </TabsList>
                                     </Tabs>
-                                </div>
+                                </LabeledContainer>
 
                                 <div className="space-y-4">
                                     <FormField<ProductFormValues>

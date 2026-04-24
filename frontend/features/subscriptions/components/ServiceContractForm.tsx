@@ -6,9 +6,7 @@ import { useForm, SubmitHandler } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ServiceContractInitialData } from "@/types/forms"
 import * as z from "zod"
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { Form, FormControl, FormDescription, FormField, FormItem } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { Switch } from "@/components/ui/switch"
@@ -16,8 +14,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import api from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Textarea } from "@/components/ui/textarea"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { LabeledInput } from "@/components/shared/LabeledInput"
+import { LabeledContainer } from "@/components/shared/LabeledContainer"
 
 import { serviceContractSchema, type ServiceContractFormValues } from "./ServiceContractForm.schema"
 import { Account } from "@/types/entities"
@@ -134,22 +133,33 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                             <FormField
                                 control={form.control}
                                 name="name"
-                                render={({ field }) => (
+                                render={({ field, fieldState }) => (
                                     <FormItem>
-                                        <FormLabel>Nombre del Servicio</FormLabel>
-                                        <FormControl><Input placeholder="Ej: Arriendo Oficina" {...field} /></FormControl>
-                                        <FormMessage />
+                                        <FormControl>
+                                            <LabeledInput 
+                                                label="Nombre del Servicio" 
+                                                required 
+                                                placeholder="Ej: Arriendo Oficina" 
+                                                error={fieldState.error?.message}
+                                                {...field} 
+                                            />
+                                        </FormControl>
                                     </FormItem>
                                 )}
                             />
                             <FormField
                                 control={form.control}
                                 name="description"
-                                render={({ field }) => (
+                                render={({ field, fieldState }) => (
                                     <FormItem>
-                                        <FormLabel>Descripción</FormLabel>
-                                        <FormControl><Textarea {...field} /></FormControl>
-                                        <FormMessage />
+                                        <FormControl>
+                                            <LabeledInput 
+                                                as="textarea"
+                                                label="Descripción" 
+                                                error={fieldState.error?.message}
+                                                {...field} 
+                                            />
+                                        </FormControl>
                                     </FormItem>
                                 )}
                             />
@@ -157,38 +167,41 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                 <FormField
                                     control={form.control}
                                     name="supplier"
-                                    render={({ field }) => (
+                                    render={({ field, fieldState }) => (
                                         <FormItem>
-                                            <FormLabel>Proveedor</FormLabel>
                                             <FormControl>
-                                                <AdvancedContactSelector
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    contactType="SUPPLIER"
-                                                    placeholder="Buscar proveedor..."
-                                                />
+                                                <LabeledContainer label="Proveedor" error={fieldState.error?.message} required>
+                                                    <AdvancedContactSelector
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        contactType="SUPPLIER"
+                                                        placeholder="Buscar proveedor..."
+                                                        className="border-0 focus-visible:ring-0 h-8"
+                                                    />
+                                                </LabeledContainer>
                                             </FormControl>
-                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
                                     name="category"
-                                    render={({ field }) => (
+                                    render={({ field, fieldState }) => (
                                         <FormItem>
-                                            <FormLabel>Categoría</FormLabel>
-                                            <Select onValueChange={onCategoryChange} defaultValue={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {categories.map((c) => (
-                                                        <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
+                                            <FormControl>
+                                                <LabeledContainer label="Categoría" error={fieldState.error?.message} required>
+                                                    <Select onValueChange={onCategoryChange} defaultValue={field.value}>
+                                                        <SelectTrigger className="border-0 focus:ring-0 h-8 px-2">
+                                                            <SelectValue placeholder="Seleccionar..." />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {categories.map((c) => (
+                                                                <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </LabeledContainer>
+                                            </FormControl>
                                         </FormItem>
                                     )}
                                 />
@@ -203,32 +216,42 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                 <FormField
                                     control={form.control}
                                     name="recurrence_type"
-                                    render={({ field }) => (
+                                    render={({ field, fieldState }) => (
                                         <FormItem>
-                                            <FormLabel>Frecuencia de Facturación</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="MONTHLY">Mensual</SelectItem>
-                                                    <SelectItem value="QUARTERLY">Trimestral</SelectItem>
-                                                    <SelectItem value="ANNUAL">Anual</SelectItem>
-                                                    <SelectItem value="ONE_TIME">Único</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
+                                            <FormControl>
+                                                <LabeledContainer label="Frecuencia" error={fieldState.error?.message} required>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <SelectTrigger className="border-0 focus:ring-0 h-8 px-2">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="MONTHLY">Mensual</SelectItem>
+                                                            <SelectItem value="QUARTERLY">Trimestral</SelectItem>
+                                                            <SelectItem value="ANNUAL">Anual</SelectItem>
+                                                            <SelectItem value="ONE_TIME">Único</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </LabeledContainer>
+                                            </FormControl>
                                         </FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
                                     name="payment_day"
-                                    render={({ field }) => (
+                                    render={({ field, fieldState }) => (
                                         <FormItem>
-                                            <FormLabel>Día de Pago sugerido</FormLabel>
-                                            <FormControl><Input type="number" min={1} max={31} {...field} /></FormControl>
-                                            <FormMessage />
+                                            <FormControl>
+                                                <LabeledInput 
+                                                    type="number" 
+                                                    min={1} 
+                                                    max={31} 
+                                                    label="Día de Pago" 
+                                                    required 
+                                                    error={fieldState.error?.message}
+                                                    {...field} 
+                                                />
+                                            </FormControl>
                                         </FormItem>
                                     )}
                                 />
@@ -238,19 +261,19 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                 <FormField
                                     control={form.control}
                                     name="base_amount"
-                                    render={({ field }) => (
+                                    render={({ field, fieldState }) => (
                                         <FormItem>
-                                            <FormLabel>Monto Base</FormLabel>
                                             <FormControl>
-                                                <Input
+                                                <LabeledInput
                                                     type="number"
                                                     step="0.01"
+                                                    label="Monto Base"
+                                                    required
+                                                    error={fieldState.error?.message}
                                                     {...field}
                                                     disabled={form.watch("is_amount_variable")}
-                                                    className={form.watch("is_amount_variable") ? "bg-muted" : ""}
                                                 />
                                             </FormControl>
-                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />
@@ -258,9 +281,9 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                     control={form.control}
                                     name="is_amount_variable"
                                     render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border border-dashed p-3 shadow-sm">
                                             <div className="space-y-0.5">
-                                                <FormLabel className="text-sm">Monto Variable</FormLabel>
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Monto Variable</span>
                                                 <FormDescription className="text-[10px]">El monto cambia cada mes</FormDescription>
                                             </div>
                                             <FormControl>
@@ -287,28 +310,34 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                     <FormField
                                         control={form.control}
                                         name="start_date"
-                                        render={({ field }) => (
+                                        render={({ field, fieldState }) => (
                                             <FormItem>
-                                                <FormLabel>Fecha Inicio</FormLabel>
-                                                <FormControl><Input type="date" {...field} /></FormControl>
-                                                <FormMessage />
+                                                <FormControl>
+                                                    <LabeledInput 
+                                                        type="date" 
+                                                        label="Fecha Inicio" 
+                                                        required 
+                                                        error={fieldState.error?.message}
+                                                        {...field} 
+                                                    />
+                                                </FormControl>
                                             </FormItem>
                                         )}
                                     />
                                     <FormField
                                         control={form.control}
                                         name="end_date"
-                                        render={({ field }) => (
+                                        render={({ field, fieldState }) => (
                                             <FormItem>
-                                                <FormLabel>Fecha Término</FormLabel>
                                                 <FormControl>
-                                                    <Input 
+                                                    <LabeledInput 
                                                         type="date" 
+                                                        label="Fecha Término" 
+                                                        error={fieldState.error?.message}
                                                         {...field} 
                                                         value={field.value ?? ""}
                                                     />
                                                 </FormControl>
-                                                <FormMessage />
                                             </FormItem>
                                         )}
                                     />
@@ -317,9 +346,9 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                     control={form.control}
                                     name="auto_renew"
                                     render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border border-dashed p-3 shadow-sm">
                                             <div className="space-y-0.5">
-                                                <FormLabel>Renovación Automática</FormLabel>
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Renovación Automática</span>
                                                 <FormDescription className="text-[10px]">Extender automáticamente</FormDescription>
                                             </div>
                                             <FormControl>
@@ -342,40 +371,46 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                     <FormField
                                         control={form.control}
                                         name="expense_account"
-                                        render={({ field }) => (
+                                        render={({ field, fieldState }) => (
                                             <FormItem>
-                                                <FormLabel>Cuenta Gasto</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value || "inherited"}>
-                                                    <FormControl>
-                                                        <SelectTrigger><SelectValue placeholder="Heredado" /></SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="inherited" className="font-semibold text-primary italic">Heredar de categoría (Recomendado)</SelectItem>
-                                                        {accounts.filter((a) => a.account_type === 'EXPENSE').map((a) => (
-                                                            <SelectItem key={a.id} value={a.id.toString()}>{a.code} - {a.name}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
+                                                <FormControl>
+                                                    <LabeledContainer label="Cuenta Gasto" error={fieldState.error?.message}>
+                                                        <Select onValueChange={field.onChange} value={field.value || "inherited"}>
+                                                            <SelectTrigger className="border-0 focus:ring-0 h-8 px-2">
+                                                                <SelectValue placeholder="Heredado" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="inherited" className="font-semibold text-primary italic">Heredar de categoría (Recomendado)</SelectItem>
+                                                                {accounts.filter((a) => a.account_type === 'EXPENSE').map((a) => (
+                                                                    <SelectItem key={a.id} value={a.id.toString()}>{a.code} - {a.name}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </LabeledContainer>
+                                                </FormControl>
                                             </FormItem>
                                         )}
                                     />
                                     <FormField
                                         control={form.control}
                                         name="payable_account"
-                                        render={({ field }) => (
+                                        render={({ field, fieldState }) => (
                                             <FormItem>
-                                                <FormLabel>Cuenta Pasivo / Provisión</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value || "inherited"}>
-                                                    <FormControl>
-                                                        <SelectTrigger><SelectValue placeholder="Heredado" /></SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="inherited" className="font-semibold text-primary italic">Heredar de categoría (Recomendado)</SelectItem>
-                                                        {accounts.filter((a) => a.account_type === 'LIABILITY').map((a) => (
-                                                            <SelectItem key={a.id} value={a.id.toString()}>{a.code} - {a.name}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
+                                                <FormControl>
+                                                    <LabeledContainer label="Cuenta Pasivo" error={fieldState.error?.message}>
+                                                        <Select onValueChange={field.onChange} value={field.value || "inherited"}>
+                                                            <SelectTrigger className="border-0 focus:ring-0 h-8 px-2">
+                                                                <SelectValue placeholder="Heredado" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="inherited" className="font-semibold text-primary italic">Heredar de categoría (Recomendado)</SelectItem>
+                                                                {accounts.filter((a) => a.account_type === 'LIABILITY').map((a) => (
+                                                                    <SelectItem key={a.id} value={a.id.toString()}>{a.code} - {a.name}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </LabeledContainer>
+                                                </FormControl>
                                             </FormItem>
                                         )}
                                     />

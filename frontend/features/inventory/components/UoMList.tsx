@@ -9,28 +9,20 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { CancelButton, SubmitButton, LabeledInput } from "@/components/shared"
-import { Plus, Pencil, Trash2, Search, ChevronsUpDown, Check, Ruler } from "lucide-react"
+import { CancelButton, SubmitButton, LabeledInput, LabeledContainer } from "@/components/shared"
+import { Pencil, Trash2, Search, ChevronsUpDown, Check, Ruler } from "lucide-react"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Label } from "@/components/ui/label"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from "sonner"
-import { FORM_STYLES } from "@/lib/styles"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
-import { useUoMs, type UoM, type UoMCategory } from "@/features/inventory/hooks/useUoMs"
+import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
 
 interface UoMListProps {
     externalOpen?: boolean
@@ -188,7 +180,7 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
             <DataTable
                 columns={columns}
                 data={uoms}
-                
+
                 cardMode
                 filterColumn="name"
                 searchPlaceholder="Buscar unidad..."
@@ -264,8 +256,7 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                                 />
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <fieldset className="notched-field w-full group transition-all h-[50px]">
-                                        <legend className="notched-legend">Categoría</legend>
+                                    <LabeledContainer label="Categoría" icon={<ChevronsUpDown className="h-4 w-4 opacity-50" />}>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
@@ -276,7 +267,6 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                                                     {currentUoM.category
                                                         ? categories.find(cat => cat.id === currentUoM.category)?.name
                                                         : "Seleccionar categoría..."}
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                 </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
@@ -322,10 +312,9 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                                                 </div>
                                             </PopoverContent>
                                         </Popover>
-                                    </fieldset>
+                                    </LabeledContainer>
 
-                                    <fieldset className="notched-field w-full group transition-all h-[50px]">
-                                        <legend className="notched-legend">Tipo de Unidad</legend>
+                                    <LabeledContainer label="Tipo de Unidad" icon={<ChevronsUpDown className="h-4 w-4 opacity-50" />}>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
@@ -337,7 +326,6 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                                                         currentUoM.uom_type === 'BIGGER' ? 'Más Grande que base' :
                                                             currentUoM.uom_type === 'SMALLER' ? 'Más Pequeña que base' :
                                                                 "Seleccionar tipo..."}
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                 </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
@@ -369,34 +357,33 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                                                 </div>
                                             </PopoverContent>
                                         </Popover>
-                                    </fieldset>
+                                    </LabeledContainer>
                                 </div>
-
-                                {currentUoM.uom_type && currentUoM.uom_type !== 'REFERENCE' && (
-                                    <div className="animate-in fade-in zoom-in-95 duration-300">
-                                        <LabeledInput
-                                            label="Ratio de Conversión"
-                                            required
-                                            type="number"
-                                            step="0.00001"
-                                            value={currentUoM.ratio || ''}
-                                            onChange={e => setCurrentUoM({ ...currentUoM, ratio: e.target.value })}
-                                            className="font-mono font-black text-lg h-11"
-                                            hint={currentUoM.uom_type === 'BIGGER'
-                                                ? 'Cuántas unidades base equivalen a esta unidad'
-                                                : 'Cuántas unidades de estas equivalen a la unidad base'}
-                                        />
-                                    </div>
-                                )}
                             </div>
                         </div>
-                    </div>
 
+                        {currentUoM.uom_type && currentUoM.uom_type !== 'REFERENCE' && (
+                            <div className="animate-in fade-in zoom-in-95 duration-300">
+                                <LabeledInput
+                                    label="Ratio de Conversión"
+                                    required
+                                    type="number"
+                                    step="0.00001"
+                                    value={currentUoM.ratio || ''}
+                                    onChange={e => setCurrentUoM({ ...currentUoM, ratio: e.target.value })}
+                                    className="font-mono font-black text-lg h-11"
+                                    hint={currentUoM.uom_type === 'BIGGER'
+                                        ? 'Cuántas unidades base equivalen a esta unidad'
+                                        : 'Cuántas unidades de estas equivalen a la unidad base'}
+                                />
+                            </div>
+                        )}
+                    </div>
                     {currentUoM.id && (
                         <ActivitySidebar
-                                entityId={currentUoM.id}
-                                entityType="uom"
-                            />
+                            entityId={currentUoM.id}
+                            entityType="uom"
+                        />
                     )}
                 </div>
             </BaseModal>

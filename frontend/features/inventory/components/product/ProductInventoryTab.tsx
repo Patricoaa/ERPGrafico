@@ -2,17 +2,16 @@
 
 import { FormField } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
-import { Package, Settings2, Plus, Warehouse, ChevronsUpDown, Search, Check, Truck, AlertCircle } from "lucide-react"
+import { Package, Warehouse, ChevronsUpDown, Search, Check, Truck, AlertCircle } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { Card } from "@/components/ui/card"
 
-import { useState } from "react"
-import { FORM_STYLES } from "@/lib/styles"
+import { LabeledContainer } from "@/components/shared"
+
+
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Product, UoM } from "@/types/entities"
@@ -46,8 +45,11 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                 control={form.control}
                                 name="uom"
                                 render={({ field, fieldState }) => (
-                                    <fieldset className={cn("notched-field w-full group transition-all h-[50px]", fieldState.error && "error")}>
-                                        <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Unidad de Stock (Base)</legend>
+                                    <LabeledContainer
+                                        label="Unidad de Stock (Base)"
+                                        icon={<Package className="h-4 w-4 text-primary" />}
+                                        error={fieldState.error?.message}
+                                    >
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
@@ -55,14 +57,11 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                     role="combobox"
                                                     className={cn("w-full justify-between font-black text-xs h-full px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
                                                 >
-                                                    <div className="flex items-center gap-2">
-                                                        <Package className="h-4 w-4 text-primary" />
-                                                        <span>
-                                                            {field.value
-                                                                ? uoms.find((u) => u.id.toString() === field.value?.toString())?.name
-                                                                : "Seleccionar unidad base..."}
-                                                        </span>
-                                                    </div>
+                                                    <span>
+                                                        {field.value
+                                                            ? uoms.find((u) => u.id.toString() === field.value?.toString())?.name
+                                                            : "Seleccionar unidad base..."}
+                                                    </span>
                                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                 </Button>
                                             </PopoverTrigger>
@@ -109,7 +108,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                 </div>
                                             </PopoverContent>
                                         </Popover>
-                                    </fieldset>
+                                    </LabeledContainer>
                                 )}
                             />
 
@@ -117,8 +116,11 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                 control={form.control}
                                 name="purchase_uom"
                                 render={({ field, fieldState }) => (
-                                    <fieldset className={cn("notched-field w-full group transition-all h-[50px]", fieldState.error && "error")}>
-                                        <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Unidad de Compra</legend>
+                                    <LabeledContainer
+                                        label="Unidad de Compra"
+                                        icon={<Truck className="h-4 w-4 text-warning" />}
+                                        error={fieldState.error?.message}
+                                    >
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
@@ -126,14 +128,11 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                     role="combobox"
                                                     className={cn("w-full justify-between font-black text-xs h-full px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
                                                 >
-                                                    <div className="flex items-center gap-2">
-                                                        <Truck className="h-4 w-4 text-warning" />
-                                                        <span>
-                                                            {field.value
-                                                                ? uoms.find((u) => String(u.id) === String(field.value))?.name
-                                                                : "Igual a Stock"}
-                                                        </span>
-                                                    </div>
+                                                    <span>
+                                                        {field.value
+                                                            ? uoms.find((u) => String(u.id) === String(field.value))?.name
+                                                            : "Igual a Stock"}
+                                                    </span>
                                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                 </Button>
                                             </PopoverTrigger>
@@ -195,7 +194,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                 </div>
                                             </PopoverContent>
                                         </Popover>
-                                    </fieldset>
+                                    </LabeledContainer>
                                 )}
                             />
 
@@ -211,8 +210,10 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                         const sortedUoms = [...uoms].sort((a, b) => a.name.localeCompare(b.name));
 
                                         return (
-                                            <fieldset className={cn("notched-field w-full group transition-all", fieldState.error && "error")}>
-                                                <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Unidades de Venta Permitidas</legend>
+                                            <LabeledContainer
+                                                label="Unidades de Venta Permitidas"
+                                                error={fieldState.error?.message}
+                                            >
                                                 <div className="flex flex-col gap-4 p-4">
                                                     <div className="flex flex-wrap gap-2 p-3 rounded-md border-2 border-dashed bg-muted/5 min-h-[60px] items-center">
                                                         {!stockCategoryId ? (
@@ -234,8 +235,8 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                                                 type="button"
                                                                                 className={cn(
                                                                                     "px-3 py-1.5 rounded-md text-[10px] transition-all border-2",
-                                                                                    isSelected 
-                                                                                        ? "bg-primary/10 border-primary/40 text-primary font-black shadow-sm" 
+                                                                                    isSelected
+                                                                                        ? "bg-primary/10 border-primary/40 text-primary font-black shadow-sm"
                                                                                         : "bg-background border-primary/5 hover:border-primary/20 text-muted-foreground/60 font-black uppercase tracking-tight",
                                                                                     isBaseUom && "ring-2 ring-primary ring-offset-2"
                                                                                 )}
@@ -263,7 +264,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                         * Solo se muestran unidades de la misma categoría que la unidad base para asegurar conversiones válidas.
                                                     </p>
                                                 </div>
-                                            </fieldset>
+                                            </LabeledContainer>
                                         );
                                     }}
                                 />
@@ -282,27 +283,24 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                         name="track_inventory"
                         render={({ field }) => (
                             <div className="space-y-6">
-                                <div className={cn(
-                                    "flex items-center justify-between p-4 rounded-lg border-2 transition-all",
-                                    field.value ? "bg-success/5 border-success/20" : "bg-background border-dashed border-muted-foreground/20"
-                                )}>
-                                    <div className="space-y-1">
+                                <LabeledContainer
+                                    label="Controlar Stock"
+                                    hint="Habilitar el seguimiento de cantidades físicas en bodegas."
+                                >
+                                    <div className="flex items-center justify-between w-full pr-4 py-1">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs font-black uppercase tracking-widest">Controlar Stock</span>
+                                            <span className="text-xs font-black uppercase tracking-widest">Estado de Inventario</span>
                                             {productType === 'MANUFACTURABLE' && (
                                                 <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">Auto</span>
                                             )}
                                         </div>
-                                        <p className="text-[10px] text-muted-foreground font-medium">
-                                            Habilitar el seguimiento de cantidades físicas en bodegas.
-                                        </p>
+                                        <Switch
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                            disabled={isSwitchDisabled}
+                                        />
                                     </div>
-                                    <Switch
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                        disabled={isSwitchDisabled}
-                                    />
-                                </div>
+                                </LabeledContainer>
 
                                 {field.value && (
                                     <div className="space-y-6 pt-4 animate-in fade-in zoom-in-95 duration-300">
@@ -310,8 +308,11 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                             control={form.control}
                                             name="receiving_warehouse"
                                             render={({ field: whField, fieldState }) => (
-                                                <fieldset className={cn("notched-field w-full group transition-all h-[50px]", fieldState.error && "error")}>
-                                                    <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Bodega de Recepción</legend>
+                                                <LabeledContainer
+                                                    label="Bodega de Recepción"
+                                                    icon={<Warehouse className="h-4 w-4 text-primary" />}
+                                                    error={fieldState.error?.message}
+                                                >
                                                     <Popover>
                                                         <PopoverTrigger asChild>
                                                             <Button
@@ -319,14 +320,11 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                                 role="combobox"
                                                                 className={cn("w-full justify-between font-black text-xs h-full px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !whField.value && "text-muted-foreground")}
                                                             >
-                                                                <div className="flex items-center gap-2">
-                                                                    <Warehouse className="h-4 w-4 text-primary" />
-                                                                    <span>
-                                                                        {whField.value
-                                                                            ? warehouses.find((wh) => wh.id.toString() === whField.value?.toString())?.name
-                                                                            : "Seleccionar bodega por defecto..."}
-                                                                    </span>
-                                                                </div>
+                                                                <span>
+                                                                    {whField.value
+                                                                        ? warehouses.find((wh) => wh.id.toString() === whField.value?.toString())?.name
+                                                                        : "Seleccionar bodega por defecto..."}
+                                                                </span>
                                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                             </Button>
                                                         </PopoverTrigger>
@@ -373,7 +371,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                             </div>
                                                         </PopoverContent>
                                                     </Popover>
-                                                </fieldset>
+                                                </LabeledContainer>
                                             )}
                                         />
 
@@ -381,8 +379,10 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                             control={form.control}
                                             name="preferred_supplier"
                                             render={({ field: supplierField, fieldState }) => (
-                                                <fieldset className={cn("notched-field w-full group transition-all h-[50px]", fieldState.error && "error")}>
-                                                    <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Proveedor Preferencial</legend>
+                                                <LabeledContainer
+                                                    label="Proveedor Preferencial"
+                                                    error={fieldState.error?.message}
+                                                >
                                                     <div className="h-full">
                                                         <AdvancedContactSelector
                                                             value={supplierField.value || ""}
@@ -392,7 +392,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                             className="border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent h-full px-3 text-xs font-black uppercase"
                                                         />
                                                     </div>
-                                                </fieldset>
+                                                </LabeledContainer>
                                             )}
                                         />
 

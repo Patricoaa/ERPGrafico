@@ -33,6 +33,7 @@ function UoMSelector({ line, currentUom, onUomChange }: { line: SaleOrderLine, c
     )
 }
 
+import { LabeledContainer, LabeledInput } from "@/components/shared"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
@@ -291,7 +292,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                     {pendingQty.toLocaleString('es-CL')}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Input
+                                                    <LabeledInput
                                                         type="number"
                                                         step="0.01"
                                                         min="0"
@@ -311,7 +312,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                                                 return { ...prev, partialQuantities: pqs };
                                                             });
                                                         }}
-                                                        className="h-8"
+                                                        className="h-8 text-center"
                                                     />
                                                 </TableCell>
                                                 <TableCell className="text-sm text-muted-foreground font-medium">
@@ -342,33 +343,30 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 )}
 
                 {(deliveryData.type === 'SCHEDULED' || deliveryData.type === 'PARTIAL') && (
-                    <div className="space-y-2">
-                        <Label htmlFor="del-date" className="text-xs font-bold uppercase">
-                            {deliveryData.type === 'PARTIAL' ? 'Fecha para el Resto' : 'Fecha Estimada'}
-                        </Label>
+                    <LabeledContainer label={deliveryData.type === 'PARTIAL' ? 'Fecha para el Resto' : 'Fecha Estimada'}>
                         <div className="relative">
                             <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 id="del-date"
                                 type="date"
-                                className="pl-9"
+                                className="pl-9 border-none shadow-none focus-visible:ring-0 bg-transparent h-9"
                                 value={deliveryData.date || ""}
                                 onChange={(e) => setDeliveryData({ ...deliveryData, date: e.target.value })}
                             />
                         </div>
-                    </div>
+                    </LabeledContainer>
                 )}
 
-                <div className="space-y-2">
-                    <Label htmlFor="del-notes" className="text-xs font-bold uppercase">Notas de Despacho / Observaciones</Label>
+                <LabeledContainer label="Notas de Despacho / Observaciones">
                     <Textarea
                         id="del-notes"
                         placeholder="Dirección, horario preferido, indicaciones especiales..."
                         rows={3}
+                        className="border-none shadow-none focus-visible:ring-0 bg-transparent"
                         value={deliveryData.notes}
                         onChange={(e) => setDeliveryData({ ...deliveryData, notes: e.target.value })}
                     />
-                </div>
+                </LabeledContainer>
             </div>
         </div>
     )

@@ -23,7 +23,7 @@ import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { EmptyState, PeriodValidationDateInput, TableSkeleton } from "@/components/shared"
+import { EmptyState, PeriodValidationDateInput, TableSkeleton, LabeledContainer, LabeledInput } from "@/components/shared"
 
 import { SaleOrderLine, SaleNoteLine } from "../types"
 
@@ -212,10 +212,9 @@ export function SaleNoteModal({
         >
             <div className="space-y-6 py-2">
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Tipo de Nota</Label>
+                    <LabeledContainer label="Tipo de Nota">
                         <Select value={noteType} onValueChange={(val: "NOTA_CREDITO" | "NOTA_DEBITO") => setNoteType(val)}>
-                            <SelectTrigger className={FORM_STYLES.input}>
+                            <SelectTrigger className="border-none shadow-none focus-visible:ring-0 bg-transparent h-9">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -223,27 +222,25 @@ export function SaleNoteModal({
                                 <SelectItem value="NOTA_DEBITO">Nota de Débito (Cargo Adicional)</SelectItem>
                             </SelectContent>
                         </Select>
-                    </div>
+                    </LabeledContainer>
 
-                    <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Número Documento</Label>
+                    <LabeledContainer label="Número Documento">
                         <Input
                             placeholder="Ej: NC-12345"
-                            className={FORM_STYLES.input}
+                            className="border-none shadow-none focus-visible:ring-0 bg-transparent h-9"
                             value={documentNumber}
                             onChange={(e) => setDocumentNumber(e.target.value)}
                         />
-                    </div>
+                    </LabeledContainer>
 
-                    <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Fecha Emisión</Label>
+                    <LabeledContainer label="Fecha Emisión">
                         <PeriodValidationDateInput
                             date={documentDate}
                             onDateChange={setDocumentDate}
                             validationType="both"
                             onValidityChange={setIsPeriodValid}
                         />
-                    </div>
+                    </LabeledContainer>
                 </div>
 
                 <div className="rounded-md border overflow-hidden">
@@ -282,7 +279,7 @@ export function SaleNoteModal({
                                     <td className="px-3 py-2 text-center text-xs text-muted-foreground">{line.uom_name || '-'}</td>
                                     <td className="px-3 py-2 text-center text-muted-foreground font-bold">{line.quantity}</td>
                                     <td className="px-3 py-2">
-                                        <Input
+                                        <LabeledInput
                                             type="number"
                                             className="h-8 text-center font-bold"
                                             value={line.note_quantity}
@@ -299,7 +296,7 @@ export function SaleNoteModal({
                                     <td className="px-3 py-2">
                                         <div className="relative">
                                             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]">$</span>
-                                            <Input
+                                            <LabeledInput
                                                 type="number"
                                                 className={`h-8 pl-5 text-right font-bold ${noteType === 'NOTA_CREDITO' ? 'bg-muted text-muted-foreground' : ''}`}
                                                 value={line.note_unit_price}

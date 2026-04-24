@@ -27,6 +27,7 @@ interface AdvancedWorkOrderSelectorProps {
     label?: string
     error?: string
     placeholder?: string
+    className?: string
 }
 
 export function AdvancedWorkOrderSelector({
@@ -35,7 +36,8 @@ export function AdvancedWorkOrderSelector({
     placeholder = "Vincular a Orden de Trabajo (Opcional)...",
     disabled = false,
     label,
-    error
+    error,
+    className
 }: AdvancedWorkOrderSelectorProps) {
     const { orders, singleOrder, loading: searchLoading, fetchOrders, fetchSingleOrder } = useWorkOrderSearch()
     const [open, setOpen] = useState(false)

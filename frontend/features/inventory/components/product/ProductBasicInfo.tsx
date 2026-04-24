@@ -1,7 +1,7 @@
 "use client"
 
 import { FormField } from "@/components/ui/form"
-import { EmptyState, LabeledInput, LabeledSelect } from "@/components/shared"
+import { EmptyState, LabeledInput, LabeledContainer } from "@/components/shared"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Plus, ShoppingCart, Truck, Search, ChevronsUpDown, Check, Barcode } from "lucide-react"

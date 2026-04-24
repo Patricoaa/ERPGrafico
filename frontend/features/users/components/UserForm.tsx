@@ -10,16 +10,14 @@ import { toast } from "sonner"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
-import { Plus, User, ShieldCheck, ShieldAlert, Check, ChevronsUpDown, Search } from "lucide-react"
+import { Plus, User, ShieldCheck, ShieldAlert } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, SubmitButton, LabeledSeparator, LabeledInput, LabeledSelect } from "@/components/shared"
+import { CancelButton, SubmitButton, LabeledSeparator, LabeledInput, LabeledSelect, LabeledContainer } from "@/components/shared"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { cn } from "@/lib/utils"
 import { AppGroup } from "@/types/entities"
-import { FORM_STYLES } from "@/lib/styles"
 
 const userSchema = z.object({
     username: z.string().min(3, "Mínimo 3 caracteres"),
@@ -215,28 +213,17 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
                                                     name="contact"
                                                     render={({ field, fieldState }) => (
                                                         <div className="md:col-span-2">
-                                                            <fieldset
-                                                                className={cn(
-                                                                    "notched-field",
-                                                                    fieldState.error && "border-destructive"
-                                                                )}
+                                                            <LabeledContainer
+                                                                label="Contacto Vinculado"
+                                                                error={fieldState.error?.message}
+                                                                required
                                                             >
-                                                                <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>
-                                                                    Contacto Vinculado
-                                                                </legend>
-                                                                <div className="p-1">
-                                                                    <AdvancedContactSelector
-                                                                        value={field.value?.toString() || ""}
-                                                                        onChange={(val) => field.onChange(val ? parseInt(val) : 0)}
-                                                                        disabled={!!initialData}
-                                                                    />
-                                                                </div>
-                                                            </fieldset>
-                                                            {fieldState.error && (
-                                                                <p className="mt-1.5 text-[10px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 pl-1">
-                                                                    {fieldState.error.message}
-                                                                </p>
-                                                            )}
+                                                                <AdvancedContactSelector
+                                                                    value={field.value?.toString() || ""}
+                                                                    onChange={(val) => field.onChange(val ? parseInt(val) : 0)}
+                                                                    disabled={!!initialData}
+                                                                />
+                                                            </LabeledContainer>
                                                         </div>
                                                     )}
                                                 />
@@ -265,24 +252,20 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
                                                     control={form.control}
                                                     name="is_active"
                                                     render={({ field }) => (
-                                                        <FormItem className={cn("flex flex-row items-center justify-between rounded-lg p-4 bg-muted/5 border-none")}>
-                                                            <div className="space-y-0.5">
-                                                                <FormLabel className={cn("flex items-center gap-2", FORM_STYLES.label)}>
-                                                                    {field.value ? <ShieldCheck className="h-4 w-4 text-success" /> : <ShieldAlert className="h-4 w-4 text-destructive" />}
-                                                                    Estado del Acceso
-                                                                </FormLabel>
-                                                                <FormDescription className="text-[10px]">
-                                                                    {field.value ? "Acceso al sistema permitido" : "Acceso revocado (Usuario inactivo)"}
-                                                                </FormDescription>
-                                                            </div>
-                                                            <FormControl>
+                                                        <LabeledContainer
+                                                            label="Estado del Acceso"
+                                                            icon={field.value ? <ShieldCheck className="h-4 w-4 text-success" /> : <ShieldAlert className="h-4 w-4 text-destructive" />}
+                                                            hint={field.value ? "Acceso al sistema permitido" : "Acceso revocado (Usuario inactivo)"}
+                                                        >
+                                                            <div className="flex items-center justify-between w-full pr-4">
+                                                                <span className="text-xs font-medium text-muted-foreground">Acceso Habilitado</span>
                                                                 <Switch
                                                                     checked={field.value}
                                                                     onCheckedChange={field.onChange}
-                                                                    className="data-[state=checked]:bg-success"
+                                                                    className="data-[state=checked]:bg-success scale-75"
                                                                 />
-                                                            </FormControl>
-                                                        </FormItem>
+                                                            </div>
+                                                        </LabeledContainer>
                                                     )}
                                                 />
 

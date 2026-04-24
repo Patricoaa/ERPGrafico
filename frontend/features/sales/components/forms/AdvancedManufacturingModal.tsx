@@ -12,6 +12,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+import { LabeledContainer, LabeledInput } from "@/components/shared"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -209,13 +210,12 @@ export function AdvancedManufacturingModal({
 
                 <div className="grid gap-8 p-8 py-6">
                     {/* Contact Row */}
-                    <div className="space-y-3">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">01. Contacto / Referencia</Label>
+                    <LabeledContainer label="01. Contacto / Referencia" labelClassName="text-primary">
                         {contact ? (
                             <motion.div
                                 initial={{ x: -10, opacity: 0 }}
                                 animate={{ x: 0, opacity: 1 }}
-                                className="flex items-center justify-between p-4 bg-primary/5 border-l-4 border-primary"
+                                className="flex items-center justify-between p-2 bg-primary/5 border-l-4 border-primary"
                             >
                                 <div className="flex items-center gap-3 overflow-hidden">
                                     <User className="h-4 w-4 text-primary shrink-0" />
@@ -235,9 +235,10 @@ export function AdvancedManufacturingModal({
                                 onSelectContact={setContact}
                                 onChange={() => { }}
                                 placeholder="IDENTIFICAR CLIENTE O RESPONSABLE..."
+                                className="border-none shadow-none focus-visible:ring-0 h-9"
                             />
                         )}
-                    </div>
+                    </LabeledContainer>
 
                     {(product as any).product_type === 'MANUFACTURABLE' && (
                         <>
@@ -245,17 +246,17 @@ export function AdvancedManufacturingModal({
                                 <motion.div
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
-                                    className="space-y-3"
                                 >
-                                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">02. Descripción del Trabajo</Label>
-                                    <div className="relative">
-                                        <Input
-                                            placeholder="DETALLES ESPECÍFICOS DEL PRODUCTO..."
-                                            className="h-12 text-sm font-bold border-2 focus-visible:ring-primary"
-                                            value={productDescription}
-                                            onChange={(e) => setProductDescription(e.target.value)}
-                                        />
-                                    </div>
+                                    <LabeledContainer label="02. Descripción del Trabajo" labelClassName="text-primary">
+                                        <div className="relative">
+                                            <Input
+                                                placeholder="DETALLES ESPECÍFICOS DEL PRODUCTO..."
+                                                className="h-9 text-sm font-bold border-none shadow-none focus-visible:ring-0 bg-transparent"
+                                                value={productDescription}
+                                                onChange={(e) => setProductDescription(e.target.value)}
+                                            />
+                                        </div>
+                                    </LabeledContainer>
                                 </motion.div>
                             )}
 
@@ -274,15 +275,14 @@ export function AdvancedManufacturingModal({
                                     </div>
 
                                     <div className="space-y-5">
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Especificaciones</Label>
+                                        <LabeledContainer label="Especificaciones" labelClassName="text-[10px] opacity-60">
                                             <Textarea
                                                 placeholder="INGRESAR DATOS TÉCNICOS..."
-                                                className="text-xs font-mono bg-background min-h-[100px] border-none ring-1 ring-border focus-visible:ring-2 focus-visible:ring-primary"
+                                                className="text-xs font-mono bg-background min-h-[100px] border-none shadow-none focus-visible:ring-0"
                                                 value={prepressSpecs}
                                                 onChange={(e) => setPrepressSpecs(e.target.value)}
                                             />
-                                        </div>
+                                        </LabeledContainer>
 
                                         <div className="flex items-center justify-between py-3 border-y border-border/40">
                                             <Label className="text-[10px] font-bold uppercase tracking-wider">Diseño Requerido</Label>
@@ -338,15 +338,14 @@ export function AdvancedManufacturingModal({
                                     </div>
 
                                     <div className="space-y-5">
-                                        <div className="space-y-2">
-                                            <Label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Ficha de Prensa</Label>
+                                        <LabeledContainer label="Ficha de Prensa" labelClassName="text-[10px] opacity-60">
                                             <Textarea
                                                 placeholder="DETALLES DE MÁQUINA, TINTAS..."
-                                                className="text-xs font-mono bg-background min-h-[100px] border-none ring-1 ring-border focus-visible:ring-2 focus-visible:ring-primary"
+                                                className="text-xs font-mono bg-background min-h-[100px] border-none shadow-none focus-visible:ring-0"
                                                 value={pressSpecs}
                                                 onChange={(e) => setPressSpecs(e.target.value)}
                                             />
-                                        </div>
+                                        </LabeledContainer>
 
                                         <div className="space-y-3">
                                             <Label className="text-[10px] font-bold uppercase tracking-wider">Sistema de Impresión</Label>
@@ -382,31 +381,27 @@ export function AdvancedManufacturingModal({
                                         />
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Acabados & Logística</Label>
+                                    <LabeledContainer label="Acabados & Logística" labelClassName="text-[10px] opacity-60">
                                         <Textarea
                                             placeholder="LAMINADO, TROQUEL, CORTE..."
-                                            className="text-xs font-mono bg-background min-h-[100px] border-none ring-1 ring-border rounded-none focus-visible:ring-2 focus-visible:ring-primary"
+                                            className="text-xs font-mono bg-background min-h-[100px] border-none shadow-none focus-visible:ring-0"
                                             value={postpressSpecs}
                                             onChange={(e) => setPostpressSpecs(e.target.value)}
                                         />
-                                    </div>
+                                    </LabeledContainer>
                                 </div>
                             </div>
                         </>
                     )}
 
-                    <div className="space-y-3 border-t border-border pt-8">
-                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-accent flex items-center gap-2">
-                            <FileText className="h-4 w-4" /> Observaciones del Taller
-                        </Label>
+                    <LabeledContainer label="Observaciones del Taller" labelClassName="text-accent" icon={<FileText className="h-4 w-4" />}>
                         <Textarea
                             placeholder="INSTRUCCIONES CRÍTICAS PARA EL EQUIPO DE PRODUCCIÓN..."
-                            className="min-h-[100px] text-sm font-medium border-2 focus-visible:ring-accent shadow-inner"
+                            className="min-h-[100px] text-sm font-medium border-none shadow-none focus-visible:ring-0 bg-transparent"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                         />
-                    </div>
+                    </LabeledContainer>
                 </div>
             </div>
         </BaseModal >
