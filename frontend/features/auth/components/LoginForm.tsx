@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/AuthContext"
+import { LabeledInput } from "@/components/shared"
 
 const formSchema = z.object({
     username: z.string().min(2, {
@@ -107,39 +108,29 @@ export function LoginForm() {
                     <FormField
                         control={form.control}
                         name="username"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Usuario</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        placeholder="nombre de usuario"
-                                        className={cn(FORM_STYLES.input, "h-10")}
-                                        autoComplete="username"
-                                        autoFocus
-                                        {...field}
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                label="Usuario"
+                                placeholder="nombre de usuario"
+                                autoComplete="username"
+                                autoFocus
+                                error={fieldState.error?.message}
+                                {...field}
+                            />
                         )}
                     />
                     <FormField
                         control={form.control}
                         name="password"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Contraseña</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        type="password"
-                                        placeholder="••••••••"
-                                        className={cn(FORM_STYLES.input, "h-10")}
-                                        autoComplete="current-password"
-                                        {...field}
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                type="password"
+                                label="Contraseña"
+                                placeholder="••••••••"
+                                autoComplete="current-password"
+                                error={fieldState.error?.message}
+                                {...field}
+                            />
                         )}
                     />
 

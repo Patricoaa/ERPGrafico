@@ -1,4 +1,4 @@
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
+import { FormField } from "@/components/ui/form"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
@@ -14,10 +14,9 @@ export function ProductTypeSelector({ form, disabled, lockedType }: ProductTypeS
         <FormField<ProductFormValues>
             control={form.control}
             name="product_type"
-            render={({ field }) => (
-                <FormItem className="space-y-4">
+            render={({ field, fieldState }) => (
+                <div className="space-y-4">
 
-                    <FormControl>
                         <RadioGroup
                             onValueChange={(val) => {
                                 field.onChange(val);
@@ -42,20 +41,17 @@ export function ProductTypeSelector({ form, disabled, lockedType }: ProductTypeS
                                 const isDisabled = !!(disabled || isLocked);
 
                                 return (
-                                    <FormItem key={t.id} className={`flex items-center space-x-3 space-y-0 py-2 transition-all ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/30 rounded-md px-2 -mx-2'}`}>
-                                        <FormControl>
-                                            <RadioGroupItem value={t.id} disabled={isDisabled} />
-                                        </FormControl>
-                                        <FormLabel className={`font-medium flex-1 text-sm ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                                    <div key={t.id} className={`flex items-center space-x-3 space-y-0 py-2 transition-all ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-muted/30 rounded-md px-2 -mx-2'}`}>
+                                        <RadioGroupItem value={t.id} disabled={isDisabled} />
+                                        <label className={`font-medium flex-1 text-sm ${isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                                             {t.label}
-                                        </FormLabel>
-                                    </FormItem>
+                                        </label>
+                                    </div>
                                 )
                             })}
                         </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
+                    {fieldState.error && <p className="text-[10px] text-destructive">{fieldState.error.message}</p>}
+                </div>
             )}
         />
     )

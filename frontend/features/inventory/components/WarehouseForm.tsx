@@ -6,22 +6,15 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { WarehouseInitialData } from "@/types/forms"
 import * as z from "zod"
-import { Plus, BookOpen, Tag } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton } from "@/components/shared"
+import { CancelButton, LabeledInput } from "@/components/shared"
 import {
     Form,
-    FormControl,
     FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
-import { FORM_STYLES } from "@/lib/styles"
-import { List, Warehouse } from "lucide-react"
+import { List } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const warehouseSchema = z.object({
@@ -129,49 +122,57 @@ export function WarehouseForm({ auditSidebar,  onSuccess, initialData, open: ope
                     <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
                         <Form {...form}>
                             <form id="warehouse-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Bodega Principal" className={FORM_STYLES.input} {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="code"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="BOD01" className={FORM_STYLES.input} {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <FormField
-                            control={form.control}
-                            name="address"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Dirección</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Av. Principal 123" className={FORM_STYLES.input} {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </form>
-                </Form>
+                                <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 shadow-sm border-primary/10">
+                                    <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Información de Bodega</span>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <FormField
+                                                control={form.control}
+                                                name="name"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="Nombre de Bodega"
+                                                        required
+                                                        placeholder="Ej: Bodega Central"
+                                                        error={fieldState.error?.message}
+                                                        {...field}
+                                                    />
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="code"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="Código Interno"
+                                                        required
+                                                        placeholder="Ej: BOD-01"
+                                                        error={fieldState.error?.message}
+                                                        {...field}
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+
+                                        <FormField
+                                            control={form.control}
+                                            name="address"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Dirección Física"
+                                                    placeholder="Ej: Av. Industrial 1234, Santiago"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+                            </form>
+                        </Form>
                 </div>
 
                 {initialData?.id && (

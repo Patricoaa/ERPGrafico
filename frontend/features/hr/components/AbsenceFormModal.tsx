@@ -10,12 +10,10 @@ import { createAbsence, updateAbsence } from '@/features/hr/api/hrApi'
 import type { Absence, Employee } from "@/types/hr"
 import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
-import { Input } from "@/components/ui/input"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Form, FormField } from "@/components/ui/form"
 import { CalendarX2 } from "lucide-react"
 import { FORM_STYLES } from "@/lib/styles"
-import { BaseModal, EmptyState } from "@/components/shared"
+import { BaseModal, EmptyState, LabeledInput, LabeledSelect } from "@/components/shared"
 
 export const absenceSchema = z.object({
     employee: z.string().min(1, "Empleado requerido"),
@@ -126,92 +124,72 @@ export function AbsenceFormModal({ open, onOpenChange, absence, employees, onSav
                 <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-4 scrollbar-thin">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-1">
-                            <FormField control={form.control} name="employee" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Empleado</FormLabel>
-                                    <Select value={field.value} onValueChange={field.onChange}>
-                                        <FormControl>
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue placeholder="Seleccione empleado" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {employees.map(e => (
-                                                <SelectItem key={e.id} value={e.id.toString()}>
-                                                    {e.contact_detail?.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
+                            <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
+                                <LabeledSelect
+                                    label="Empleado"
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    error={fieldState.error?.message}
+                                    placeholder="Seleccione empleado"
+                                    options={employees.map(e => ({
+                                        value: e.id.toString(),
+                                        label: e.contact_detail?.name || ""
+                                    }))}
+                                />
                             )} />
                             <div className="grid grid-cols-2 gap-4">
-                                <FormField control={form.control} name="absence_type" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Tipo de Inasistencia</FormLabel>
-                                        <Select value={field.value} onValueChange={field.onChange}>
-                                            <FormControl>
-                                                <SelectTrigger className={FORM_STYLES.input}>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="AUSENTISMO">Ausentismo Injustificado</SelectItem>
-                                                <SelectItem value="LICENCIA">Licencia Médica</SelectItem>
-                                                <SelectItem value="PERMISO_SIN_GOCE">Permiso sin Goce de Sueldo</SelectItem>
-                                                <SelectItem value="AUSENCIA_HORAS">Ausencia de Horas</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
+                                <FormField control={form.control} name="absence_type" render={({ field, fieldState }) => (
+                                    <LabeledSelect
+                                        label="Tipo de Inasistencia"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        error={fieldState.error?.message}
+                                        options={[
+                                            { value: "AUSENTISMO", label: "Ausentismo Injustificado" },
+                                            { value: "LICENCIA", label: "Licencia Médica" },
+                                            { value: "PERMISO_SIN_GOCE", label: "Permiso sin Goce de Sueldo" },
+                                            { value: "AUSENCIA_HORAS", label: "Ausencia de Horas" }
+                                        ]}
+                                    />
                                 )} />
-                                <FormField control={form.control} name="days" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Días Totales</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                type="number"
-                                                step="0.5"
-                                                min="0"
-                                                className={FORM_STYLES.input}
-                                                onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                                            />
-                                        </FormControl>
-                                        <p className="text-[10px] text-muted-foreground italic">Para ausencia de horas, calcule su equivalente en días (ej. 0.5).</p>
-                                        <FormMessage />
-                                    </FormItem>
+                                <FormField control={form.control} name="days" render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Días Totales"
+                                        type="number"
+                                        step="0.5"
+                                        min="0"
+                                        hint="Para ausencia de horas, calcule su equivalente en días (ej. 0.5)."
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                    />
                                 )} />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <FormField control={form.control} name="start_date" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Fecha Inicio</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} type="date" className={FORM_STYLES.input} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
+                                <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Fecha Inicio"
+                                        type="date"
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                    />
                                 )} />
-                                <FormField control={form.control} name="end_date" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Fecha Fin</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} type="date" className={FORM_STYLES.input} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
+                                <FormField control={form.control} name="end_date" render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Fecha Fin"
+                                        type="date"
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                    />
                                 )} />
                             </div>
-                            <FormField control={form.control} name="notes" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Notas Adicionales</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} placeholder="Opcional..." className={FORM_STYLES.input} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            <FormField control={form.control} name="notes" render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    label="Notas Adicionales"
+                                    placeholder="Opcional..."
+                                    error={fieldState.error?.message}
+                                    {...field}
+                                />
                             )} />
                         </form>
                     </Form>

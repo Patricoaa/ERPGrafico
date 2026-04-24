@@ -10,7 +10,6 @@ import { format } from "date-fns"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import { PageHeaderButton } from "@/components/shared/PageHeader"
 
 import { cn, translateStatus } from "@/lib/utils"
@@ -23,6 +22,7 @@ import { WorkOrderMaterials } from "./WorkOrderMaterials"
 import { workOrderSchema, type WorkOrderFormValues, type WorkOrderInitialData } from "@/types/forms"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { LabeledInput } from "@/components/shared";
 import type { SaleOrderLine } from "@/features/sales/types"
 import type { Contact } from "@/features/contacts/types"
 import type { UoM, ProductMinimal } from "../../../types"
@@ -383,36 +383,45 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 <Form {...form}>
                     <form id="work-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
 
-                        {/* Initial Choice - Compact */}
+                        {/* Initial Choice - Industrial Style */}
                         {!initialData && !otType && (
-                            <div className="flex flex-col items-center justify-center space-y-4 py-8 max-w-md mx-auto">
-                                <div className="text-center space-y-1 mb-2">
-                                    <h3 className="text-lg font-bold">¿Qué tipo de orden desea crear?</h3>
-                                    <p className="text-sm text-muted-foreground">Seleccione el flujo de trabajo para esta orden.</p>
+                            <div className="flex flex-col items-center justify-center space-y-6 py-12 max-w-lg mx-auto animate-in fade-in zoom-in duration-500">
+                                <div className="text-center space-y-2 mb-4">
+                                    <h3 className="text-xl font-black uppercase tracking-widest text-foreground/80">Configuración de Flujo</h3>
+                                    <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-tight opacity-70">
+                                        Seleccione el origen y protocolo de fabricación
+                                    </p>
                                 </div>
-                                <div className="grid grid-cols-1 w-full gap-3">
+                                <div className="grid grid-cols-1 w-full gap-4">
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="h-16 justify-start px-4 gap-4 hover:border-primary hover:bg-primary/5 group transition-colors"
+                                        className="h-20 justify-start px-6 gap-6 hover:border-primary/50 hover:bg-primary/[0.03] group transition-all duration-300 border-border/60 relative overflow-hidden"
                                         onClick={() => setOtType("LINKED")}
                                     >
-                                        <FileText className="h-5 w-5 text-muted-foreground" />
-                                        <div className="flex flex-col items-start overflow-hidden">
-                                            <span className="font-bold text-sm">Vinculada a Venta</span>
-                                            <span className="text-[10px] text-muted-foreground font-normal truncate">Productos vendidos en una Nota de Venta</span>
+                                        <div className="absolute left-0 top-0 w-1 h-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <div className="bg-primary/10 p-2.5 rounded-lg group-hover:bg-primary/20 transition-colors">
+                                            <FileText className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div className="flex flex-col items-start">
+                                            <span className="font-black text-xs uppercase tracking-widest text-foreground/80">Vincular a Venta</span>
+                                            <span className="text-[10px] text-muted-foreground font-medium mt-0.5">Fabricación bajo demanda para una Nota de Venta (NV)</span>
                                         </div>
                                     </Button>
+
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        className="h-16 justify-start px-4 gap-4 hover:border-warning hover:bg-warning/10 group transition-colors"
+                                        className="h-20 justify-start px-6 gap-6 hover:border-warning/50 hover:bg-warning/[0.03] group transition-all duration-300 border-border/60 relative overflow-hidden"
                                         onClick={() => setOtType("NONE")}
                                     >
-                                        <Plus className="h-5 w-5 text-muted-foreground" />
-                                        <div className="flex flex-col items-start overflow-hidden">
-                                            <span className="font-bold text-sm">Producción Stock (Manual)</span>
-                                            <span className="text-[10px] text-muted-foreground font-normal truncate">Fabricar para inventario o sin venta directa</span>
+                                        <div className="absolute left-0 top-0 w-1 h-full bg-warning opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <div className="bg-warning/10 p-2.5 rounded-lg group-hover:bg-warning/20 transition-colors">
+                                            <Plus className="h-5 w-5 text-warning" />
+                                        </div>
+                                        <div className="flex flex-col items-start">
+                                            <span className="font-black text-xs uppercase tracking-widest text-foreground/80">Producción para Stock</span>
+                                            <span className="text-[10px] text-muted-foreground font-medium mt-0.5">Fabricación manual para inventario o reposición</span>
                                         </div>
                                     </Button>
                                 </div>
@@ -459,14 +468,15 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 <FormField
                                     control={form.control}
                                     name="internal_notes"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Notas Internas (No visible para cliente)</FormLabel>
-                                            <FormControl>
-                                                <Textarea placeholder="Observaciones para el equipo de producción..." className={cn(FORM_STYLES.input, "h-20 py-2")} {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Notas Internas (No visible para cliente)"
+                                            type="textarea"
+                                            placeholder="Observaciones para el equipo de producción..."
+                                            className="h-24 bg-transparent border-border/40 focus:border-primary/40"
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
                                     )}
                                 />
                             </div>

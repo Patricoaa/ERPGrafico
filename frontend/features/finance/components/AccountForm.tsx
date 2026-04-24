@@ -17,16 +17,8 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
+
 import { Button } from "@/components/ui/button"
-import { Switch } from "@/components/ui/switch"
 import api from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { FORM_STYLES } from "@/lib/styles"
@@ -34,6 +26,7 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { AccountPayload } from "@/features/accounting/types"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { LabeledInput, LabeledSelect } from "@/components/shared"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -206,87 +199,72 @@ export function AccountForm({
                                 name="code"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
                                         <FormControl>
-                                            <Input
+                                            <LabeledInput
+                                                label="Código"
                                                 placeholder="Automático"
+                                                disabled
+                                                hint="Se genera automáticamente según la jerarquía."
                                                 {...field}
-                                                readOnly={true}
-                                                disabled={true}
-                                                className={cn(FORM_STYLES.input, "bg-muted cursor-not-allowed opacity-70")}
                                             />
                                         </FormControl>
-                                        <div className="text-[10px] text-muted-foreground italic px-1 pt-1">
-                                            El código se genera automáticamente al guardar según la ubicación jerárquica.
-                                        </div>
-                                        <FormMessage />
                                     </FormItem>
                                 )}
                             />
                                     <FormField
                             control={form.control}
                             name="name"
-                            render={({ field }) => (
+                            render={({ field, fieldState }) => (
                                 <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Caja" className={FORM_STYLES.input} {...field} />
+                                        <LabeledInput
+                                            label="Nombre"
+                                            required
+                                            placeholder="Caja"
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
                                     </FormControl>
-                                    <FormMessage />
                                 </FormItem>
                             )}
                         />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField
-                            control={form.control}
-                            name="account_type"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Tipo</FormLabel>
-                                        <Select 
-                                            onValueChange={field.onChange} 
-                                            value={field.value}
-                                            disabled={!!parentId && parentId !== "__none__" && parentId !== "none"}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger className={cn(FORM_STYLES.input, !!parentId && "bg-muted/50 opacity-80")}>
-                                                    <SelectValue placeholder="Seleccione tipo" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="ASSET">Activo</SelectItem>
-                                                <SelectItem value="LIABILITY">Pasivo</SelectItem>
-                                                <SelectItem value="EQUITY">Patrimonio</SelectItem>
-                                                <SelectItem value="INCOME">Ingreso</SelectItem>
-                                                <SelectItem value="EXPENSE">Gasto</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        {!!parentId && parentId !== "__none__" && parentId !== "none" && (
-                                            <p className="text-[10px] text-warning font-medium mt-1">Heredado de la jerarquía del padre.</p>
+                                        control={form.control}
+                                        name="account_type"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Tipo"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                                disabled={!!parentId && parentId !== "__none__" && parentId !== "none"}
+                                                hint={!!parentId && parentId !== "__none__" && parentId !== "none" ? "Heredado de la jerarquía del padre." : undefined}
+                                                options={[
+                                                    { value: "ASSET", label: "Activo" },
+                                                    { value: "LIABILITY", label: "Pasivo" },
+                                                    { value: "EQUITY", label: "Patrimonio" },
+                                                    { value: "INCOME", label: "Ingreso" },
+                                                    { value: "EXPENSE", label: "Gasto" },
+                                                ]}
+                                            />
                                         )}
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                                    />
                                     <FormField
-                            control={form.control}
-                            name="parent"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Cuenta Padre (Opcional)</FormLabel>
-                                    <FormControl>
-                                        <AccountSelector
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            showAll={true}
-                                            placeholder="Sin padre (Nivel raíz)"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                                        control={form.control}
+                                        name="parent"
+                                        render={({ field, fieldState }) => (
+                                            <AccountSelector
+                                                label="Cuenta Padre (Opcional)"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                showAll={true}
+                                                placeholder="Sin padre (Nivel raíz)"
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
+                                    />
                                 </div>
 
                              </form>

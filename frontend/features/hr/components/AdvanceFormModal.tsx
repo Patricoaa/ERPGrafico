@@ -12,14 +12,8 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import {
-    Form, FormControl, FormField, FormItem, FormLabel, FormMessage
-} from "@/components/ui/form"
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
+import { Form, FormField } from "@/components/ui/form"
+import { LabeledInput, LabeledSelect } from "@/components/shared"
 import {
     WalletCards, History
 } from "lucide-react"
@@ -136,77 +130,74 @@ export function AdvanceFormModal({ open, onOpenChange, advance, employees, payro
                 <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2 scrollbar-thin">
                     <Form {...form}>
                         <form id="advance-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-1">
-                            <FormField control={form.control} name="employee" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Empleado</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue placeholder="Seleccionar empleado..." />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {employees.map(e => (
-                                                <SelectItem key={e.id} value={e.id.toString()}>
-                                                    {e.contact_detail?.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
+                            <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
+                                <LabeledSelect
+                                    label="Empleado"
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    error={fieldState.error?.message}
+                                    placeholder="Seleccionar empleado..."
+                                    options={employees.map(e => ({
+                                        value: e.id.toString(),
+                                        label: e.contact_detail?.name || ""
+                                    }))}
+                                />
                             )} />
 
                             <div className="grid grid-cols-2 gap-4">
-                                <FormField control={form.control} name="amount" render={({ field }) => (
+                                <FormField control={form.control} name="amount" render={({ field, fieldState }) => (
                                     <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Monto ($)</FormLabel>
                                         <FormControl>
-                                            <Input {...field} type="number" placeholder="0" className={FORM_STYLES.input} />
+                                            <LabeledInput
+                                                label="Monto ($)"
+                                                required
+                                                type="number"
+                                                placeholder="0"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
                                         </FormControl>
-                                        <FormMessage />
                                     </FormItem>
                                 )} />
-                                <FormField control={form.control} name="date" render={({ field }) => (
+                                <FormField control={form.control} name="date" render={({ field, fieldState }) => (
                                     <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Fecha Propuesta</FormLabel>
                                         <FormControl>
-                                            <Input {...field} type="date" className={FORM_STYLES.input} />
+                                            <LabeledInput
+                                                label="Fecha Propuesta"
+                                                required
+                                                type="date"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
                                         </FormControl>
-                                        <FormMessage />
                                     </FormItem>
                                 )} />
                             </div>
 
-                            <FormField control={form.control} name="payroll" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Vincular a Liquidación (Obligatorio)</FormLabel>
-                                    <Select 
-                                        onValueChange={field.onChange} 
-                                        value={field.value}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue placeholder="Seleccionar liquidación..." />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {employeePayrolls.map(p => (
-                                                <SelectItem key={p.id} value={p.id.toString()}>
-                                                    {p.display_id} – {p.period_label} ({p.status_display})
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
+                            <FormField control={form.control} name="payroll" render={({ field, fieldState }) => (
+                                <LabeledSelect
+                                    label="Vincular a Liquidación (Obligatorio)"
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    error={fieldState.error?.message}
+                                    placeholder="Seleccionar liquidación..."
+                                    options={employeePayrolls.map(p => ({
+                                        value: p.id.toString(),
+                                        label: `${p.display_id} – ${p.period_label} (${p.status_display})`
+                                    }))}
+                                />
                             )} />
 
                             <FormField control={form.control} name="notes" render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Notas</FormLabel>
                                     <FormControl>
-                                        <Textarea {...field} rows={2} placeholder="Descripción opcional..." className={FORM_STYLES.input} />
+                                        <LabeledInput
+                                            as="textarea"
+                                            label="Notas"
+                                            rows={2}
+                                            placeholder="Descripción opcional..."
+                                            {...field}
+                                        />
                                     </FormControl>
                                 </FormItem>
                             )} />

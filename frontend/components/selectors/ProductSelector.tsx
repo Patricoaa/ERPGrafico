@@ -42,6 +42,8 @@ interface ProductSelectorProps {
     className?: string
     shouldResolveVariants?: boolean
     simpleOnly?: boolean
+    label?: string
+    error?: string
 }
 
 const EMPTY_ARRAY: any[] = []
@@ -62,7 +64,9 @@ export function ProductSelector({
     customDisabled,
     className,
     shouldResolveVariants = true,
-    simpleOnly = false
+    simpleOnly = false,
+    label,
+    error
 }: ProductSelectorProps) {
     const { products: fetchedProducts, singleProduct, loading: searchLoading, fetchProducts, fetchSingleProduct } = useProductSearch()
     const [open, setOpen] = useState(false)
@@ -202,18 +206,31 @@ export function ProductSelector({
     }
 
     return (
-        <div className={cn("w-full min-w-0", className)}>
+        <div className={cn("relative w-full flex flex-col group", className)}>
+            <fieldset 
+                className={cn(
+                    "notched-field w-full group transition-all",
+                    open && "focused",
+                    error && "error",
+                    disabled && "opacity-50 cursor-not-allowed bg-muted/10"
+                )}
+            >
+                {label && (
+                    <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
+                        {label}
+                    </legend>
+                )}
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         role="combobox"
                         aria-expanded={open}
                         disabled={disabled}
-                        className="w-full justify-between h-auto py-2 px-3 min-w-0"
+                        className="w-full justify-between overflow-hidden h-auto py-2 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent min-w-0"
                     >
                         {selectedProduct ? (
-                            <div className="flex items-center gap-2 truncate text-left">
+                            <div className="flex items-center gap-2 truncate text-left w-[calc(100%-20px)]">
                                 <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
                                     <Package className="h-4 w-4" />
                                 </div>
@@ -356,6 +373,12 @@ export function ProductSelector({
                     </div>
                 </PopoverContent>
             </Popover>
+            </fieldset>
+            {error && (
+                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
+                    {error}
+                </p>
+            )}
 
             <BaseModal
                 open={isVariantDialogOpen}

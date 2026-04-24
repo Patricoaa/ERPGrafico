@@ -1,5 +1,5 @@
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { FormField } from "@/components/ui/form"
+import { LabeledInput } from "@/components/shared"
 import { FORM_STYLES } from "@/lib/styles"
 import { Info } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
@@ -82,15 +82,9 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center gap-2 pt-6 pb-2">
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Precios y Costos Base</span>
-                <div className="flex-1 h-px bg-border" />
-            </div>
-
             {/* Only for Manufacturable (Simple or Advanced) */}
             {(productType === 'MANUFACTURABLE' || form.watch("requires_advanced_manufacturing")) && (
-                <div className="flex items-center space-x-2 border-b border-primary/10 pb-4 mb-2">
+                <div className="flex items-center space-x-3 p-3 rounded-md bg-muted/5 border border-primary/10 mb-4">
                     <FormField
                         control={form.control}
                         name="is_dynamic_pricing"
@@ -109,182 +103,191 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                                 />
                                 <Label
                                     htmlFor="is_dynamic_pricing"
-                                    className="text-xs font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                    className="text-xs font-black uppercase tracking-tight cursor-pointer"
                                 >
                                     Precio Gestionable (Dinámico)
                                 </Label>
                             </div>
                         )}
                     />
-                    <span className="text-[10px] text-muted-foreground ml-2 italic">
+                    <span className="text-[10px] text-muted-foreground ml-auto italic">
                         (El precio se asignará manualmente al momento de la venta)
                     </span>
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                <FormField<ProductFormValues>
-                    control={form.control}
-                    name="sale_price"
-                    render={({ field }) => (
-                        <FormItem className={cn(isDynamicPricing && "opacity-50 pointer-events-none")}>
-                            <FormLabel className={FORM_STYLES.label}>Precio Neto</FormLabel>
-                            <FormControl>
-                                <div className="relative group">
-                                    <span className="absolute left-3 top-2.5 text-muted-foreground font-medium text-sm">$</span>
-                                    <Input
-                                        type="number"
-                                        step="1"
-                                        className={cn(FORM_STYLES.input, "pl-7 font-semibold h-10")}
-                                        {...field}
-                                        onChange={handleNetChange}
-                                        disabled={isDynamicPricing}
-                                    />
-                                </div>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-
-                <div className={cn("space-y-2", isDynamicPricing && "opacity-50")}>
-                    <Label className={FORM_STYLES.label}>Impuestos (IVA)</Label>
-                    <div className="h-10 flex items-center px-4 rounded-md bg-muted/20 border border-dashed font-mono text-sm font-medium text-muted-foreground">
-                        + {formatCurrency(salePriceGross - salePrice)}
-                    </div>
+            <div className="relative p-5 pt-8 rounded-lg border-2 bg-card shadow-sm border-primary/10">
+                <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Precios y Márgenes de Venta</span>
                 </div>
-                <FormField<ProductFormValues>
-                    control={form.control}
-                    name="sale_price_gross"
-                    render={({ field }) => (
-                        <FormItem className={cn(isDynamicPricing && "opacity-50 pointer-events-none")}>
-                            <FormLabel className={cn(FORM_STYLES.label, "text-primary")}>Total Bruto</FormLabel>
-                            <FormControl>
-                                <div className="relative group">
-                                    <span className="absolute left-3 top-2.5 text-primary/50 font-medium text-sm">$</span>
-                                    <Input
-                                        type="number"
-                                        step="1"
-                                        className={cn(FORM_STYLES.input, "pl-7 font-bold text-primary border-primary/30 h-10")}
-                                        {...field}
-                                        onChange={handleGrossChange}
-                                        disabled={isDynamicPricing}
-                                    />
-                                </div>
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
 
-                {/* Relocated Sale UoM Field for better proximity to pricing */}
-                <FormField<ProductFormValues>
-                    control={form.control}
-                    name="sale_uom"
-                    render={({ field }) => {
-                        const allowedIds = form.watch("allowed_sale_uoms") || [];
-                        const allowedUoms = uoms.filter(u => allowedIds.includes(u.id.toString()));
-                        const isDisabled = allowedIds.length === 0;
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
+                    <FormField<ProductFormValues>
+                        control={form.control}
+                        name="sale_price"
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                label="Precio Neto"
+                                type="number"
+                                step="1"
+                                icon="$"
+                                disabled={isDynamicPricing}
+                                error={fieldState.error?.message}
+                                {...field}
+                                value={field.value ?? ""}
+                                onChange={(e) => {
+                                    field.onChange(e)
+                                    handleNetChange(e)
+                                }}
+                                className={cn("font-bold text-lg h-11", isDynamicPricing && "opacity-50")}
+                            />
+                        )}
+                    />
 
-                        return (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Unidad de Venta</FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
+                    <div className={cn("flex-1", isDynamicPricing && "opacity-50")}>
+                        <fieldset className="notched-field w-full transition-all bg-muted/30 border-dashed border-2">
+                            <legend className="notched-legend">Impuestos (IVA 19%)</legend>
+                            <div className="h-11 flex items-center px-3 font-mono text-sm font-black text-muted-foreground/60">
+                                + {formatCurrency(salePriceGross - salePrice)}
+                            </div>
+                        </fieldset>
+                    </div>
+
+                    <FormField<ProductFormValues>
+                        control={form.control}
+                        name="sale_price_gross"
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                label="Total Bruto (Venta)"
+                                type="number"
+                                step="1"
+                                icon="$"
+                                disabled={isDynamicPricing}
+                                error={fieldState.error?.message}
+                                {...field}
+                                value={field.value ?? ""}
+                                onChange={(e) => {
+                                    field.onChange(e)
+                                    handleGrossChange(e)
+                                }}
+                                className={cn("font-black text-primary text-xl h-11", isDynamicPricing && "opacity-50")}
+                                containerClassName="border-primary/20"
+                            />
+                        )}
+                    />
+
+                    <FormField<ProductFormValues>
+                        control={form.control}
+                        name="sale_uom"
+                        render={({ field, fieldState }) => {
+                            const allowedIds = form.watch("allowed_sale_uoms") || [];
+                            const allowedUoms = uoms.filter(u => allowedIds.includes(u.id.toString()));
+                            const isDisabled = allowedIds.length === 0;
+
+                            return (
+                                <fieldset className={cn("notched-field w-full transition-all h-[50px]", fieldState.error && "error", isDisabled && "opacity-50 cursor-not-allowed bg-muted/10")}>
+                                    <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Unidad de Venta</legend>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
                                             <Button
-                                                variant="outline"
+                                                variant="ghost"
                                                 role="combobox"
                                                 disabled={isDisabled}
-                                                className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground", FORM_STYLES.input, "bg-background border-none shadow-sm h-10 rounded-md font-medium text-xs")}
+                                                className={cn("w-full justify-between font-black text-xs h-full px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
                                             >
                                                 {field.value
                                                     ? allowedUoms.find((u) => u.id.toString() === field.value.toString())?.name
-                                                    : (isDisabled ? "Añadir UdM primero" : "Predeterminada")}
+                                                    : (isDisabled ? "Añadir UdM" : "Predeterminada")}
                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                        <div className="p-2">
-                                            <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                <input
-                                                    className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                                                    placeholder="Buscar UdM..."
-                                                    onChange={(e) => {
-                                                        const val = e.target.value.toLowerCase()
-                                                        const inputs = document.querySelectorAll('.uom-item')
-                                                        inputs.forEach((el) => {
-                                                            if (el.textContent?.toLowerCase().includes(val)) {
-                                                                (el as HTMLElement).style.display = 'flex'
-                                                            } else {
-                                                                (el as HTMLElement).style.display = 'none'
-                                                            }
-                                                        })
-                                                    }}
-                                                />
-                                            </div>
-                                            <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                {allowedUoms.map((u) => (
-                                                    <div
-                                                        key={u.id}
-                                                        className={cn(
-                                                            "uom-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                            field.value === u.id.toString() && "bg-accent"
-                                                        )}
-                                                        onClick={() => {
-                                                            field.onChange(u.id.toString())
-                                                            document.body.click()
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                            <div className="p-2">
+                                                <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    <input
+                                                        className="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                        placeholder="Buscar UdM..."
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.toLowerCase()
+                                                            const inputs = document.querySelectorAll('.uom-item')
+                                                            inputs.forEach((el) => {
+                                                                if (el.textContent?.toLowerCase().includes(val)) {
+                                                                    (el as HTMLElement).style.display = 'flex'
+                                                                } else {
+                                                                    (el as HTMLElement).style.display = 'none'
+                                                                }
+                                                            })
                                                         }}
-                                                    >
-                                                        <span>{u.name}</span>
-                                                        {field.value === u.id.toString() && (
-                                                            <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                        )}
-                                                    </div>
-                                                ))}
-                                                {allowedUoms.length === 0 && (
-                                                    <EmptyState context="generic" variant="minimal" description="No hay opciones" />
-                                                )}
+                                                    />
+                                                </div>
+                                                <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                    {allowedUoms.map((u) => (
+                                                        <div
+                                                            key={u.id}
+                                                            className={cn(
+                                                                "uom-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                field.value === u.id.toString() && "bg-accent"
+                                                            )}
+                                                            onClick={() => {
+                                                                field.onChange(u.id.toString())
+                                                                document.body.click()
+                                                            }}
+                                                        >
+                                                            <span>{u.name}</span>
+                                                            {field.value === u.id.toString() && (
+                                                                <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                    {allowedUoms.length === 0 && (
+                                                        <EmptyState context="generic" variant="minimal" description="No hay opciones" />
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                            </FormItem>
-                        );
-                    }}
-                />
+                                        </PopoverContent>
+                                    </Popover>
+                                </fieldset>
+                            );
+                        }}
+                    />
+                </div>
 
                 {(initialData || Number(salePrice) > 0) && (
-                    <div className="md:col-span-4 flex flex-col pt-4">
+                    <div className="mt-8 pt-6 border-t flex flex-col gap-4">
                         <div className={cn(
-                            "h-full flex flex-col justify-center p-4 rounded-md border text-sm font-bold shadow-sm transition-all animate-in fade-in zoom-in duration-300",
+                            "flex items-center justify-between p-4 rounded-lg border shadow-inner transition-all duration-500",
                             marginPercentage > 30
-                                ? "bg-success/10 border-success/20 text-success dark:text-success/50"
+                                ? "bg-success/5 border-success/20 text-success"
                                 : marginPercentage > 15
-                                    ? "bg-warning/10 border-warning/20 text-warning dark:text-warning/50"
-                                    : "bg-destructive/10 border-destructive/20 text-destructive dark:text-destructive/50"
+                                    ? "bg-warning/5 border-warning/20 text-warning"
+                                    : "bg-destructive/5 border-destructive/20 text-destructive"
                         )}>
-                            <div className="flex items-center gap-2 mb-1">
-                                <Info className="h-4 w-4 opacity-70" />
-                                <span className="text-[10px] uppercase tracking-wider opacity-70">Costo Base:</span>
-                                <span className="text-base">{formatCurrency(costPrice)}</span>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Costo Base Calculado</span>
+                                <span className="text-xl font-mono font-black">{formatCurrency(costPrice)}</span>
                             </div>
-                            <div className="flex items-center justify-between">
-                                <span className="text-[10px] uppercase tracking-wider opacity-70">Margen de Ganancia:</span>
-                                <span className={cn(
-                                    "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border whitespace-nowrap",
-                                    marginPercentage > 30
-                                        ? "bg-success/10 text-success border-success/20"
-                                        : marginPercentage > 15
-                                            ? "bg-warning/10 text-warning border-warning/20"
-                                            : "bg-destructive/10 text-destructive border-destructive/20"
-                                )}>
-                                    {marginPercentage}%
-                                </span>
+                            
+                            <div className="flex flex-col items-end">
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Margen Comercial Bruto</span>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-32 h-2 bg-muted/30 rounded-full overflow-hidden border border-muted-foreground/10">
+                                        <div 
+                                            className={cn(
+                                                "h-full transition-all duration-1000 ease-out",
+                                                marginPercentage > 30 ? "bg-success" : marginPercentage > 15 ? "bg-warning" : "bg-destructive"
+                                            )} 
+                                            style={{ width: `${Math.min(Math.max(marginPercentage, 0), 100)}%` }} 
+                                        />
+                                    </div>
+                                    <span className="text-lg font-black">{marginPercentage}%</span>
+                                </div>
                             </div>
+                        </div>
+                        
+                        <div className="flex gap-2 p-3 bg-primary/5 rounded border border-primary/10 text-[10px] text-muted-foreground/80">
+                            <Info className="h-4 w-4 text-primary shrink-0" />
+                            <p>El margen se calcula comparando el <strong>Precio Neto</strong> con el <strong>Costo Base</strong> (PMP o Costo de BoM si aplica). Un margen saludable en manufactura suele superar el 30%.</p>
                         </div>
                     </div>
                 )}

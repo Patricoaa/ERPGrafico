@@ -13,14 +13,11 @@ import {
     FormControl,
     FormField,
     FormItem,
-    FormLabel,
-    FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import { Loader2, Users } from "lucide-react"
-import { FORM_STYLES } from "@/lib/styles"
+import { Users } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
+import { LabeledInput } from "@/components/shared"
 import { AppGroup } from "@/types/entities"
 
 const formSchema = z.object({
@@ -132,13 +129,17 @@ export function GroupForm({
                         <FormField
                             control={form.control}
                             name="name"
-                            render={({ field }) => (
+                            render={({ field, fieldState }) => (
                                 <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Ej: Bodega, Ventas..." {...field} className={FORM_STYLES.input} />
+                                        <LabeledInput
+                                            label="Nombre"
+                                            required
+                                            placeholder="Ej: Bodega, Ventas..."
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
                                     </FormControl>
-                                    <FormMessage />
                                 </FormItem>
                             )}
                         />

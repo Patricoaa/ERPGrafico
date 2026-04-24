@@ -43,20 +43,26 @@ graph TD
 - **`StatusBadge`**: **Obligatorio** para el estado de las entidades (ej. `in_production`, `paid`). Lee `state-map.md`.
 - **`Card` de shadcn**: Contenedor estándar. [Ver documentación oficial (component-card.md)](./component-card.md). Nunca uses wrappers propietarios y está **estrictamente prohibido** emular tarjetas usando clases utilitarias crudas (ej. `<div className={FORM_STYLES.card}>`). Usa siempre `<Card variant="...">`.
 
-## 3. Inputs y Formularios (Especializados)
+## 3. Inputs y Formularios
 
-Si es un input simple de texto o número, usa `Input` de shadcn. Para casos complejos de negocio, usa las especializaciones:
+**Regla de entrada:** Para cualquier campo de texto o textarea simple, usa `LabeledInput`. Para casos complejos de negocio, usa las especializaciones.
+
+> [!WARNING]
+> `FORM_STYLES.label` y `FORM_STYLES.input` están **deprecated**. No usarlos en código nuevo.
 
 ```mermaid
 graph TD
     A[¿Qué tipo de Input?]
-    A -->|Subir/Arrastrar Archivo| B(DocumentAttachmentDropzone)
-    A -->|Seleccionar Fecha| C(DatePicker)
-    A -->|Fecha con validación de Cierre| D(PeriodValidationDateInput)
-    A -->|Folio de DTE| E(FolioValidationInput)
-    A -->|Rango de fechas (Filtro)| F(DateRangeFilter)
+    A -->|Texto, número, email, password simple| B(LabeledInput)
+    A -->|Textarea / multiline| B
+    A -->|Subir/Arrastrar Archivo| C(DocumentAttachmentDropzone)
+    A -->|Seleccionar Fecha simple| D(DatePicker)
+    A -->|Fecha con validación de Cierre| E(PeriodValidationDateInput)
+    A -->|Folio de DTE| F(FolioValidationInput)
+    A -->|Rango de fechas - Filtro| G(DateRangeFilter)
 ```
 
+- **`LabeledInput`**: Primitivo estándar. Renderiza `fieldset + legend` (patrón Notched). Soporta `as="textarea"`. Compatible con `react-hook-form` via `{...field}`. Ver [component-input.md](./component-input.md).
 - **`PeriodValidationDateInput`**: Obligatorio en documentos donde la fecha impacte contabilidad o impuestos para validar si el periodo está cerrado.
 - **`FolioValidationInput`**: Úsalo para prevenir folios duplicados por proveedor asíncronamente mientras el usuario tipea.
 

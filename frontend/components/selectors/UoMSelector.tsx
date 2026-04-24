@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label'
 import { Info } from 'lucide-react'
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { cn } from "@/lib/utils"
 
 interface UoM {
     id: number
@@ -30,7 +31,10 @@ interface UoMSelectorProps {
     showConversionHint?: boolean
     disabled?: boolean
     label?: string
+    error?: string
     quantity?: number
+    variant?: 'inline' | 'standalone'
+    className?: string
 }
 
 export function UoMSelector({
@@ -43,7 +47,10 @@ export function UoMSelector({
     showConversionHint = false,
     disabled = false,
     label = 'Unidad',
-    quantity = 1
+    error,
+    quantity = 1,
+    variant = 'inline',
+    className
 }: UoMSelectorProps) {
     // Get filtered UoMs based on context
     const filteredUoMs = useMemo(() => {
@@ -108,21 +115,62 @@ export function UoMSelector({
         )
     }
 
-    return (
-        <div className="flex items-center gap-1.5 min-w-0">
-            <Select onValueChange={onChange} value={value} disabled={disabled || (!product && !categoryId)}>
-                <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Und" />
-                </SelectTrigger>
-                <SelectContent>
-                    {filteredUoMs.map((uom) => (
-                        <SelectItem key={uom.id} value={uom.id.toString()}>
-                            {uom.name}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+    const selectComponent = (
+        <Select onValueChange={onChange} value={value} disabled={disabled || (!product && !categoryId)}>
+            <SelectTrigger className={cn("h-9 w-full", variant === 'standalone' && "border-none shadow-none focus-visible:ring-0 bg-transparent")}>
+                <SelectValue placeholder="Und" />
+            </SelectTrigger>
+            <SelectContent>
+                {filteredUoMs.map((uom) => (
+                    <SelectItem key={uom.id} value={uom.id.toString()}>
+                        {uom.name}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    )
 
+    const wrappedComponent = variant === 'standalone' ? (
+        <div className={cn("relative w-full flex flex-col group", className)}>
+            <fieldset 
+                className={cn(
+                    "notched-field w-full group transition-all",
+                    error && "error",
+                    disabled && "opacity-50 cursor-not-allowed bg-muted/10"
+                )}
+            >
+                {label && (
+                    <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
+                        {label}
+                    </legend>
+                )}
+                <div className="flex items-center gap-1.5 w-full">
+                    {selectComponent}
+                    {conversionHint && (
+                        <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div className="p-1 mr-2 rounded-full hover:bg-muted cursor-help transition-colors shrink-0">
+                                        <Info className="h-4 w-4 text-muted-foreground/70" />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" align="center" className="bg-popover text-popover-foreground border shadow-md font-medium text-xs">
+                                    <p>{conversionHint}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+                </div>
+            </fieldset>
+            {error && (
+                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
+                    {error}
+                </p>
+            )}
+        </div>
+    ) : (
+        <div className={cn("flex items-center gap-1.5 min-w-0", className)}>
+            {selectComponent}
             {conversionHint && (
                 <TooltipProvider delayDuration={0}>
                     <Tooltip>
@@ -139,4 +187,6 @@ export function UoMSelector({
             )}
         </div>
     )
+
+    return wrappedComponent
 }

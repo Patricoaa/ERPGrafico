@@ -29,6 +29,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { LabeledInput } from "@/components/shared"
 
 interface PaymentHardwareManagementProps {
     externalDeviceOpen?: boolean
@@ -362,7 +363,7 @@ function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
             // Fallback: If name is still empty, we use the contact name
             // But we don't have the contact object here unless we store it.
             // Actually, we can just ensure the form doesn't submit without a name, or auto-fill it.
-            
+
             if (!data.name) {
                 toast.error("Por favor, asigne un nombre o seleccione un contacto.")
                 setLoading(false)
@@ -411,13 +412,14 @@ function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
                     </div>
 
                     <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Nombre / Alias</Label>
-                        <Input 
-                            value={name} 
-                            onChange={e => setName(e.target.value)} 
-                            placeholder="Ej: Transbank Local Primary" 
+                        <LabeledInput
+                            label="Nombre / Alias"
+                            required
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            placeholder="Ej: Transbank Local Primary"
+
                         />
-                        <p className="text-[10px] text-muted-foreground italic">Identificador visual para reportes y POS.</p>
                     </div>
                 </div>
 
@@ -496,9 +498,9 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
     }, [open, device])
 
     const toggleMethod = (code: number) => {
-        setSupportedMethods(prev => 
-            prev.includes(code) 
-                ? prev.filter(c => c !== code) 
+        setSupportedMethods(prev =>
+            prev.includes(code)
+                ? prev.filter(c => c !== code)
                 : [...prev, code]
         )
     }
@@ -511,14 +513,14 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
         }
         setLoading(true)
         try {
-                const data = {
-                    name,
-                    provider: parseInt(providerId),
-                    serial_number: serialNumber,
-                    model: model || undefined,
-                    supported_payment_methods: supportedMethods,
-                    is_active: true
-                }
+            const data = {
+                name,
+                provider: parseInt(providerId),
+                serial_number: serialNumber,
+                model: model || undefined,
+                supported_payment_methods: supportedMethods,
+                is_active: true
+            }
 
             if (device) {
                 await updateDevice.mutateAsync({ id: device.id, data })
@@ -549,10 +551,13 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
             }
         >
             <form className="space-y-4 py-2">
-                <div className="space-y-2">
-                    <Label className={FORM_STYLES.label}>Nombre descriptivo</Label>
-                    <Input value={name} onChange={e => setName(e.target.value)} required placeholder="Ej: Maquinita TUU 01" />
-                </div>
+                <LabeledInput
+                    label="Nombre descriptivo"
+                    required
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Ej: Maquinita TUU 01"
+                />
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -569,16 +574,23 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
                             ))}
                         </select>
                     </div>
-                    <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Número de Serie / TID</Label>
-                        <Input value={serialNumber} onChange={e => setSerialNumber(e.target.value)} required placeholder="Número serie físico" />
+                    <div>
+                        <LabeledInput
+                            label="Número de Serie / TID"
+                            required
+                            value={serialNumber}
+                            onChange={e => setSerialNumber(e.target.value)}
+                            placeholder="Número serie físico"
+                        />
                     </div>
                 </div>
 
-                <div className="space-y-2">
-                    <Label className={FORM_STYLES.label}>Modelo (Opcional)</Label>
-                    <Input value={model} onChange={e => setModel(e.target.value)} placeholder="Ej: Pax A920" />
-                </div>
+                <LabeledInput
+                    label="Modelo (Opcional)"
+                    value={model}
+                    onChange={e => setModel(e.target.value)}
+                    placeholder="Ej: Pax A920"
+                />
 
                 <div className="space-y-3 pt-2">
                     <Label className={cn(FORM_STYLES.label, "flex items-center gap-2")}>
@@ -586,7 +598,7 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
                         Capacidades del Hardware
                     </Label>
                     <div className="grid grid-cols-2 gap-4">
-                        <div 
+                        <div
                             className={cn(
                                 "flex items-center space-x-3 p-3 border rounded-md cursor-pointer transition-colors",
                                 supportedMethods.includes(2) ? "bg-primary/5 border-primary/30" : "bg-background border-border"
@@ -599,7 +611,7 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
                                 <p className="text-[9px] text-muted-foreground leading-none">Ventas directas</p>
                             </div>
                         </div>
-                        <div 
+                        <div
                             className={cn(
                                 "flex items-center space-x-3 p-3 border rounded-md cursor-pointer transition-colors",
                                 supportedMethods.includes(1) ? "bg-primary/5 border-primary/30" : "bg-background border-border"

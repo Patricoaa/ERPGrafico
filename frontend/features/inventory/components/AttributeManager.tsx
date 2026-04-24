@@ -6,9 +6,7 @@ import React, { useEffect, useState, useMemo } from "react"
 import api from "@/lib/api"
 import { Plus, Trash2, Tag, LayoutDashboard, Eye, X, Loader2 } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { DataTable } from "@/components/ui/data-table"
@@ -22,7 +20,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { CancelButton, SubmitButton, IconButton } from "@/components/shared"
+import { CancelButton, SubmitButton, IconButton, LabeledInput } from "@/components/shared"
 
 interface ProductAttribute {
     id: number
@@ -372,24 +370,21 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                 <div className="flex flex-1 overflow-hidden min-h-[400px]">
                     <div className="flex-1 overflow-y-auto p-6 space-y-4">
                         <div className="space-y-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="attr-name" className={FORM_STYLES.label}>Nombre del Atributo (ej: Color, Talla)</Label>
-                                <Input
-                                    id="attr-name"
-                                    value={newAttrName}
-                                    onChange={(e) => setNewAttrName(e.target.value)}
-                                    placeholder="Escribe el nombre..."
-                                    className={FORM_STYLES.input}
-                                />
-                            </div>
+                            <LabeledInput
+                                label="Nombre del Atributo (ej: Color, Talla)"
+                                required
+                                id="attr-name"
+                                value={newAttrName}
+                                onChange={(e) => setNewAttrName(e.target.value)}
+                                placeholder="Escribe el nombre..."
+                            />
 
                             <div className="space-y-3">
-                                <div className="flex flex-col gap-1">
-                                    <Label className={FORM_STYLES.label}>Nuevos Valores</Label>
-                                    <p className="text-[10px] text-muted-foreground">Escribe los valores que deseas añadir (ej: Rojo, Azul) y pulsa Enter.</p>
-                                </div>
+                                <p className="text-[10px] text-muted-foreground">Escribe los valores que deseas añadir (ej: Rojo, Azul) y pulsa Enter.</p>
                                 <div className="flex gap-2">
-                                    <Input
+                                    <LabeledInput
+                                        label="Nuevos Valores"
+                                        containerClassName="flex-1"
                                         value={tagInput}
                                         onChange={(e) => setTagInput(e.target.value)}
                                         onKeyDown={(e) => {
@@ -399,9 +394,8 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                                             }
                                         }}
                                         placeholder="Ej: Rojo..."
-                                        className={FORM_STYLES.input}
                                     />
-                                    <IconButton type="button" onClick={addTag} variant="secondary" className="shrink-0">
+                                    <IconButton type="button" onClick={addTag} variant="secondary" className="shrink-0 self-end">
                                         <Plus className="h-4 w-4" />
                                     </IconButton>
                                 </div>
@@ -461,19 +455,17 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                 }
             >
                 <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="val-name" className={FORM_STYLES.label}>Nombre del Valor (ej: Rojo, XL)</Label>
-                        <Input
-                            id="val-name"
-                            value={newValueName}
-                            onChange={(e) => setNewValueName(e.target.value)}
-                            placeholder="Escribe el valor..."
-                            className={FORM_STYLES.input}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") handleCreateValue()
-                            }}
-                        />
-                    </div>
+                    <LabeledInput
+                        label="Nombre del Valor (ej: Rojo, XL)"
+                        required
+                        id="val-name"
+                        value={newValueName}
+                        onChange={(e) => setNewValueName(e.target.value)}
+                        placeholder="Escribe el valor..."
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") handleCreateValue()
+                        }}
+                    />
                 </div>
             </BaseModal>
 

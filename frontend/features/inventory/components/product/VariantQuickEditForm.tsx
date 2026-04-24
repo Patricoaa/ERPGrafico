@@ -5,13 +5,10 @@ import { Product, ProductBOM, UoM } from "@/types/entities"
 import { useForm, UseFormReturn } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import { IconButton } from "@/components/shared"
-import { Checkbox } from "@/components/ui/checkbox"
+import { LabeledInput, LabeledSelect, IconButton } from "@/components/shared"
 import { Loader2, Plus, Factory, Save, X, Layers, Settings2 } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -120,40 +117,33 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
                 <FormField<QuickEditValues>
                   control={form.control}
                   name="sale_price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[11px] font-bold uppercase text-muted-foreground">Precio de Venta</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" {...field} className="h-10 font-bold" />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
+                  render={({ field, fieldState }) => (
+                    <LabeledInput
+                      {...field}
+                      value={field.value ?? ""}
+                      label="Precio de Venta"
+                      type="number"
+                      step="0.01"
+                      error={fieldState.error?.message}
+                      className="h-10 font-bold"
+                    />
                   )}
                 />
                  <FormField<QuickEditValues>
                   control={form.control}
                   name="sale_uom"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[11px] font-bold uppercase text-muted-foreground">Ud. Medida Venta</FormLabel>
-                      <Select onValueChange={(val) => {
+                  render={({ field, fieldState }) => (
+                    <LabeledSelect
+                      label="Ud. Medida Venta"
+                      value={String(field.value || "")}
+                      onChange={(val) => {
                           field.onChange(val);
-                          // Force a change event to trigger the effect immediately for Select
                           form.setValue("sale_uom", val, { shouldDirty: true });
-                      }} value={String(field.value || "")}>
-                        <FormControl>
-                          <SelectTrigger className="h-10">
-                            <SelectValue placeholder="Seleccione UoM" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent align="end">
-                           {uoms.map((u) => (
-                              <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                           ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
+                      }}
+                      options={uoms.map(u => ({ label: u.name, value: u.id.toString() }))}
+                      error={fieldState.error?.message}
+                      className="h-10"
+                    />
                   )}
                 />
              </div>
@@ -161,14 +151,14 @@ export function VariantQuickEditForm({ variant, onSaved, onCancel, onTabChange }
              <FormField<QuickEditValues>
               control={form.control}
               name="code"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-[11px] font-bold uppercase text-muted-foreground">SKU / Código de Barras</FormLabel>
-                  <FormControl>
-                    <Input {...field} className="h-10 font-mono" placeholder="Ej: VAR-001" />
-                  </FormControl>
-                  <FormMessage className="text-[10px]" />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <LabeledInput
+                  {...field}
+                  label="SKU / Código de Barras"
+                  placeholder="Ej: VAR-001"
+                  error={fieldState.error?.message}
+                  className="h-10 font-mono"
+                />
               )}
             />
 

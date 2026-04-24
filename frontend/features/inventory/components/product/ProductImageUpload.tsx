@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
+import { FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { Plus, X } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
@@ -18,8 +18,8 @@ export function ProductImageUpload({ form, imagePreview, setImagePreview }: Prod
             <FormField<ProductFormValues>
                 control={form.control}
                 name="image"
-                render={({ field }) => (
-                    <FormItem>
+                render={({ field, fieldState }) => (
+                    <div className="space-y-1">
                         <div className="relative group w-full h-[143px] rounded-md border-2 border-dashed border-muted-foreground/20 overflow-hidden bg-muted/10 flex items-center justify-center transition-all hover:border-primary/50">
                             {imagePreview ? (
                                 <>
@@ -66,8 +66,8 @@ export function ProductImageUpload({ form, imagePreview, setImagePreview }: Prod
                                 </label>
                             )}
                         </div>
-                        <FormMessage />
-                    </FormItem>
+                        {fieldState.error && <p className="text-[10px] text-destructive">{fieldState.error.message}</p>}
+                    </div>
                 )}
             />
         </div>

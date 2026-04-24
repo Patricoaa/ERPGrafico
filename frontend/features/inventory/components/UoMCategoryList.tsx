@@ -11,11 +11,9 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { CancelButton, SubmitButton } from "@/components/shared"
+import { CancelButton, SubmitButton, LabeledInput } from "@/components/shared"
 import { Plus, Pencil, Trash2, Ruler } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { FORM_STYLES } from "@/lib/styles"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
@@ -223,16 +221,14 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
             >
                 <div className="flex flex-1 overflow-hidden">
                     <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="cat-name" className={FORM_STYLES.label}>Nombre</Label>
-                            <Input
-                                id="cat-name"
-                                className={FORM_STYLES.input}
-                                placeholder="Ej: Peso, Volumen, Unidades"
-                                value={currentCategory.name || ''}
-                                onChange={e => setCurrentCategory({ ...currentCategory, name: e.target.value })}
-                            />
-                        </div>
+                        <LabeledInput
+                            label="Nombre"
+                            required
+                            id="cat-name"
+                            placeholder="Ej: Peso, Volumen, Unidades"
+                            value={currentCategory.name || ''}
+                            onChange={e => setCurrentCategory({ ...currentCategory, name: e.target.value })}
+                        />
                     </div>
 
                     {currentCategory.id && (
