@@ -4,7 +4,6 @@ import { UoM, Product } from "@/types/entities"
 import { LabeledInput } from "@/components/shared"
 import { FormField } from "@/components/ui/form"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
@@ -19,9 +18,6 @@ import { useState } from "react"
 import { BOMManager } from "@/features/production/components/BOMManager"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Card } from "@/components/ui/card"
-import { FORM_STYLES } from "@/lib/styles"
-import { Label } from "@/components/ui/label"
 
 interface ProductManufacturingTabProps {
     form: UseFormReturn<ProductFormValues>
@@ -169,7 +165,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                 {form.watch("requires_advanced_manufacturing") && (
                                     <div className="space-y-4 pt-4 border-t-2 border-dashed animate-in fade-in slide-in-from-top-2 duration-300">
                                         <h4 className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Etapas de Flujo Requeridas</h4>
-                                        
+
                                         <div className="space-y-2">
                                             {[
                                                 { name: "mfg_enable_prepress", label: "Pre-Impresión", icon: <Layers className="h-3 w-3" /> },
@@ -211,9 +207,9 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
 
                             {isEditing ? (
                                 <div className={cn("rounded-md overflow-hidden bg-card border-2 shadow-sm", variantMode && "p-0 border-none bg-transparent shadow-none")}>
-                                    <BOMManager 
-                                        product={initialData as any} 
-                                        variantMode={variantMode} 
+                                    <BOMManager
+                                        product={initialData as any}
+                                        variantMode={variantMode}
                                         onBomsChange={(loadedBoms) => {
                                             if (!loadedBoms) return;
                                             const mapped = loadedBoms.map(b => ({
@@ -308,7 +304,7 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                             control={form.control}
                             name={`boms.${bomIndex}.name`}
                             render={({ field }) => (
-                                <Input
+                                <LabeledInput
                                     {...field}
                                     placeholder="Nombre de la receta"
                                     className="h-7 text-xs font-bold bg-transparent border-transparent focus-visible:border-primary/30 w-[200px] px-0"
@@ -419,7 +415,7 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                     control={form.control}
                                                     name={`boms.${bomIndex}.lines.${index}.quantity`}
                                                     render={({ field }) => (
-                                                        <Input
+                                                        <LabeledInput
                                                             type="number"
                                                             step="0.0001"
                                                             {...field}
@@ -460,19 +456,19 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                         const availableUoms = uoms.filter((u) => uomIds.has(String(u.id)));
 
                                                         return (
-                                                                    <Popover>
-                                                                        <PopoverTrigger asChild>
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                role="combobox"
-                                                                                className="h-8 text-[10px] px-2 w-full justify-between font-normal"
-                                                                            >
-                                                                                {field.value
-                                                                                    ? uoms.find((u) => String(u.id) === String(field.value))?.name
-                                                                                    : "-"}
-                                                                                <ChevronDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
-                                                                            </Button>
-                                                                        </PopoverTrigger>
+                                                            <Popover>
+                                                                <PopoverTrigger asChild>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        role="combobox"
+                                                                        className="h-8 text-[10px] px-2 w-full justify-between font-normal"
+                                                                    >
+                                                                        {field.value
+                                                                            ? uoms.find((u) => String(u.id) === String(field.value))?.name
+                                                                            : "-"}
+                                                                        <ChevronDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                                                                    </Button>
+                                                                </PopoverTrigger>
                                                                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                                                     <div className="p-2">
                                                                         <div className="flex items-center px-3 border rounded-md mb-2 bg-background">

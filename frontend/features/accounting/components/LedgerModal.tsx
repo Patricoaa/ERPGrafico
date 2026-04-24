@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect } from "react"
 import { useServerDate } from "@/hooks/useServerDate"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
@@ -13,34 +13,15 @@ import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import api from "@/lib/api"
-import { toast } from "sonner"
 import { format } from "date-fns"
+import { useLedger } from "@/features/accounting/hooks/useLedger"
+import { useDeleteJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
 import { es } from "date-fns/locale"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { CardSkeleton } from "@/components/shared"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
-interface LedgerMovement {
-    id: number
-    date: string
-    description: string
-    label?: string
-    debit: string | number
-    credit: string | number
-    balance: string | number
-    entry_id: number
-    partner?: string
-    reference?: string
-}
-
-interface LedgerData {
-    movements: LedgerMovement[]
-    opening_balance: number
-    closing_balance: number
-    period_debit: number
-    period_credit: number
-}
+import type { LedgerMovement } from "@/features/accounting/types"
 
 interface LedgerModalProps {
     accountId: number
@@ -52,12 +33,9 @@ interface LedgerModalProps {
 export function LedgerModal({ accountId, accountName, accountCode, trigger }: LedgerModalProps) {
     const { serverDate } = useServerDate()
     const [open, setOpen] = useState(false)
-    const [loading, setLoading] = useState(false)
-    const [data, setData] = useState<LedgerData | null>(null)
     const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>(undefined)
     const [viewingEntry, setViewingEntry] = useState<{ id: number | string } | null>(null)
 
-    // Initialize date range with server date
     useEffect(() => {
         if (serverDate && !dateRange) {
             setDateRange({
@@ -67,38 +45,12 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
         }
     }, [serverDate])
 
-    const fetchLedger = useCallback(async () => {
-        setLoading(true)
-        try {
-            if (!dateRange) return
-            const startStr = format(dateRange.from, 'yyyy-MM-dd')
-            const endStr = format(dateRange.to, 'yyyy-MM-dd')
-            const res = await api.get(`/accounting/accounts/${accountId}/ledger/?start_date=${startStr}&end_date=${endStr}`)
-            setData(res.data)
-        } catch (error) {
-            toast.error("Error al cargar el libro mayor")
-            console.error(error)
-        } finally {
-            setLoading(false)
-        }
-    }, [accountId, dateRange])
+    const startStr = dateRange ? format(dateRange.from, 'yyyy-MM-dd') : ''
+    const endStr = dateRange ? format(dateRange.to, 'yyyy-MM-dd') : ''
+    const { data, isFetching: loading, refetch } = useLedger(accountId, startStr, endStr, { enabled: open })
 
-    useEffect(() => {
-        if (open && dateRange) {
-            fetchLedger()
-        }
-    }, [open, fetchLedger, dateRange])
-
-    const deleteConfirm = useConfirmAction<number>(async (entryId) => {
-        try {
-            await api.delete(`/accounting/entries/${entryId}/`)
-            toast.success("Asiento eliminado correctamente")
-            fetchLedger()
-        } catch (error) {
-            console.error("Error deleting entry:", error)
-            toast.error("Error al eliminar el asiento")
-        }
-    })
+    const deleteMutation = useDeleteJournalEntry({ onSuccess: refetch })
+    const deleteConfirm = useConfirmAction<number>((entryId) => deleteMutation.mutateAsync(entryId))
 
     const handleDeleteEntry = (entryId: number) => deleteConfirm.requestConfirm(entryId)
 

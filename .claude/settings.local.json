@@ -27,7 +27,11 @@
       "Bash(grep -r \"--radius\" c:/Users/patox/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/app/globals.css)",
       "Bash(node -e \"const b = require\\('./node_modules/eslint-plugin-boundaries'\\); const rule = b.rules['dependencies']; console.log\\(JSON.stringify\\(rule.meta.schema, null, 2\\)\\)\")",
       "Bash(node -e \"const b = require\\('./node_modules/eslint-plugin-boundaries'\\); const rule = b.rules['dependencies']; const schema = JSON.stringify\\(rule.meta.schema, null, 2\\); const lines = schema.split\\('\\\\n'\\); const allowIdx = lines.findIndex\\(l => l.includes\\('allow'\\) && l.includes\\('disallow'\\)\\); console.log\\(lines.slice\\(Math.max\\(0,allowIdx-5\\), allowIdx+30\\).join\\('\\\\n'\\)\\)\")",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(grep -rn \"import.*\\\\\\\\.\\\\\\\\./.*[a-zA-Z]\" /c/Users/patox/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features --include=\"*.tsx\")",
+      "Bash(awk '/^class|^def/ {print NR\": \"$0}' /c/Users/patox/Nextcloud/Pato/Aplicaciones/ERPGrafico/backend/accounting/views.py)",
+      "Bash(xargs ls *)",
+      "Bash(grep -rn \": any$\\\\|: any,\" /c/Users/patox/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features --include=\"*.tsx\")"
     ]
   }
 }

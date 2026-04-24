@@ -30,7 +30,6 @@ interface Step1_ProductSelectionProps {
 }
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Label } from "@/components/ui/label"
 import { Calculator, AlertTriangle } from "lucide-react"
 
 export function Step1_ProductSelection({
@@ -179,7 +178,8 @@ export function Step1_ProductSelection({
                                                 </div>
                                                 <p className="text-[11px] text-muted-foreground">Útil para boletas. Ingresa el precio bruto (IVA incluido) para obtener el neto.</p>
                                                 <div className="space-y-1">
-                                                    <Label className="text-[10px] uppercase font-bold">Monto Bruto (c/IVA)</Label>
+                                                <div className="space-y-1.5">
+                                                    <span className="text-[10px] uppercase font-bold text-muted-foreground px-0.5">Monto Bruto (c/IVA)</span>
                                                     <Input
                                                         type="number"
                                                         placeholder="Ej: 11.900"
@@ -227,6 +227,8 @@ export function Step1_ProductSelection({
                                         value={line.product?.toString() || line.id?.toString() || ""}
                                         context="purchase"
                                         onChange={(val) => handleProductChange(index, val)}
+                                        variant="inline"
+                                        placeholder="Seleccionar..."
                                     />
                                     {(() => {
                                         const product = products.find(p => p.id.toString() === (line.product?.toString() || line.id?.toString()))
@@ -268,7 +270,7 @@ export function Step1_ProductSelection({
                                         uoms={uoms}
                                         showConversionHint={true}
                                         quantity={Number(line.quantity || line.qty) || 1}
-                                        label="Unidad"
+                                        variant="inline"
                                     />
                                 </TableCell>
                                 <TableCell>

@@ -7,12 +7,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
 import {
-    Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription
+    Form, FormField
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { CancelButton } from "@/components/shared/ActionButtons"
-import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
@@ -24,18 +23,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Plus, Trash2, Save, Info, Workflow, Box, Layers, CheckCircle2, Truck, Package, AlertCircle } from "lucide-react"
+import { Plus, Trash2, Save, Workflow, Box, CheckCircle2, Truck, Package } from "lucide-react"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import { Label } from "@/components/ui/label"
 import { cn, formatCurrency } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { FORM_STYLES } from "@/lib/styles"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { Skeleton, LabeledInput } from "@/components/shared";
+import { LabeledInput, LabeledSelect } from "@/components/shared";
 
 // Schema for material lines (stock components)
 const materialLineSchema = z.object({
@@ -350,111 +347,61 @@ export function BOMFormModal({
                 <div className="mb-6 pb-6 border-b border-border/40">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
                         <div className={cn(selectedProduct?.has_variants ? "md:col-span-7" : "md:col-span-12")}>
-                            <div className="relative group">
-                                <div className="absolute -top-2 left-3 px-1 bg-background z-10">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 group-focus-within:text-primary transition-colors">
-                                        Producto a fabricar
-                                    </span>
-                                </div>
-                                <ProductSelector
-                                    value={selectedProduct?.id}
-                                    onSelect={(p) => setSelectedProduct(p)}
-                                    onChange={(val) => {
-                                        if (!val) setSelectedProduct(null)
-                                    }}
-                                    placeholder="Seleccionar producto..."
-                                    allowedTypes={['MANUFACTURABLE']}
-                                    shouldResolveVariants={false}
-                                    className="pt-2"
-                                />
-                            </div>
+                            <ProductSelector
+                                label="Producto a fabricar"
+                                value={selectedProduct?.id}
+                                onSelect={(p) => setSelectedProduct(p)}
+                                onChange={(val) => {
+                                    if (!val) setSelectedProduct(null)
+                                }}
+                                placeholder="Seleccionar producto..."
+                                allowedTypes={['MANUFACTURABLE']}
+                                shouldResolveVariants={false}
+                            />
                         </div>
-                        
+
                         {selectedProduct?.has_variants && (
                             <div className="md:col-span-5 animate-in fade-in slide-in-from-left-2 duration-300">
-                                <div className="relative group">
-                                    <div className="absolute -top-2 left-3 px-1 bg-background z-10">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 group-focus-within:text-primary transition-colors">
-                                            Variante del producto
-                                        </span>
-                                    </div>
-                                    <Select
-                                        value={selectedVariant?.id?.toString() || ""}
-                                        onValueChange={(val) => {
-                                            const v = variants.find(varnt => varnt.id.toString() === val)
-                                            setSelectedVariant(v || null)
-                                        }}
-                                        disabled={!!bomToEdit}
-                                    >
-                                        <SelectTrigger className="h-10 w-full rounded-md bg-background border-border shadow-sm transition-all focus:ring-1 focus:ring-primary/20 pt-2">
-                                            <SelectValue placeholder="Seleccione variante..." />
-                                        </SelectTrigger>
-                                        <SelectContent position="popper" sideOffset={8} className="z-[100] rounded-lg overflow-hidden min-w-[320px]">
-                                            {loadingVariants ? (
-                                                <div className="p-3 space-y-2">
-                                                    <Skeleton className="h-10 w-full" />
-                                                    <Skeleton className="h-10 w-full" />
-                                                </div>
-                                            ) : variants.length > 0 ? (
-                                                <div className="max-h-[300px] overflow-y-auto p-1">
-                                                    {variants.map(v => (
-                                                        <SelectItem key={v.id} value={v.id.toString()} className="text-xs rounded-lg py-2 cursor-pointer hover:bg-primary/5">
-                                                            <div className="flex flex-col gap-1 w-full">
-                                                                <div className="flex items-center justify-between gap-2">
-                                                                    <span className="font-bold">{v.variant_display_name || v.name}</span>
-                                                                    <span className="text-[9px] text-muted-foreground uppercase font-mono bg-muted px-1 rounded">{v.internal_code || v.code}</span>
-                                                                </div>
-                                                                
-                                                                {v.attribute_values_data && v.attribute_values_data.length > 0 && (
-                                                                    <div className="flex flex-wrap gap-1 mt-0.5">
-                                                                        {(v as ProductMinimal).attribute_values_data?.map((attr: { id: string | number; value: string }) => (
-                                                                            <span 
-                                                                                key={attr.id} 
-                                                                                className="text-[8px] h-3.5 px-1 py-0 font-bold uppercase rounded border border-primary/20 bg-primary/5 text-primary flex items-center"
-                                                                            >
-                                                                                {attr.value}
-                                                                            </span>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </SelectItem>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="p-4 text-center space-y-2">
-                                                    <AlertCircle className="h-5 w-5 text-warning mx-auto" />
-                                                    <p className="text-[10px] text-muted-foreground italic">No se encontraron variantes disponibles para este producto.</p>
-                                                </div>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                <LabeledSelect
+                                    label="Variante del producto"
+                                    placeholder="Seleccione variante..."
+                                    value={selectedVariant?.id?.toString() || ""}
+                                    onChange={(val) => {
+                                        const v = variants.find(varnt => varnt.id.toString() === val)
+                                        setSelectedVariant(v || null)
+                                    }}
+                                    disabled={!!bomToEdit || loadingVariants}
+                                    options={variants.map(v => ({
+                                        value: v.id.toString(),
+                                        label: `${v.variant_display_name || v.name} (${v.internal_code || v.code})`
+                                    }))}
+                                    hint={variants.length === 0 && !loadingVariants ? "No se encontraron variantes disponibles" : undefined}
+                                />
                             </div>
                         )}
                     </div>
                 </div>
             ) : (
                 <div className="mb-6 pb-4 border-b border-border/40 flex items-center justify-between bg-primary/[0.02] p-4 rounded-lg border border-primary/10">
-                   <div className="flex items-center gap-4">
-                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                           <Box className="h-5 w-5 text-primary" />
-                       </div>
-                       <div className="flex flex-col">
-                           <span className="text-[10px] font-black uppercase text-primary/60 tracking-widest leading-none mb-1">Producto en Edición</span>
-                           <span className="text-sm font-black text-foreground">
-                               {selectedVariant ? (selectedVariant.variant_display_name || selectedVariant.name) : (selectedProduct?.name || "")}
-                           </span>
-                       </div>
-                   </div>
-                   <div className="flex flex-col items-end">
-                       <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-primary text-primary-foreground shadow-sm">
+                    <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Box className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] font-black uppercase text-primary/60 tracking-widest leading-none mb-1">Producto en Edición</span>
+                            <span className="text-sm font-black text-foreground">
+                                {selectedVariant ? (selectedVariant.variant_display_name || selectedVariant.name) : (selectedProduct?.name || "")}
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                        <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-primary text-primary-foreground shadow-sm">
                             Modo Lectura
-                       </span>
-                       {selectedVariant?.internal_code && (
-                           <span className="text-[10px] font-mono text-muted-foreground mt-1">{selectedVariant.internal_code}</span>
-                       )}
-                   </div>
+                        </span>
+                        {selectedVariant?.internal_code && (
+                            <span className="text-[10px] font-mono text-muted-foreground mt-1">{selectedVariant.internal_code}</span>
+                        )}
+                    </div>
                 </div>
             )}
 
@@ -542,25 +489,14 @@ export function BOMFormModal({
                                     control={form.control as any}
                                     name="yield_uom"
                                     render={({ field, fieldState }) => (
-                                        <div className="relative group">
-                                            <div className="absolute -top-2 left-3 px-1 bg-background z-10">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 group-focus-within:text-primary transition-colors">
-                                                    Unidad de Salida
-                                                </span>
-                                            </div>
-                                            <UoMSelector
-                                                value={field.value || ""}
-                                                onChange={field.onChange}
-                                                categoryId={selectedProduct?.uom_category}
-                                                uoms={uoms}
-                                                className="pt-2"
-                                            />
-                                            {fieldState.error && (
-                                                <span className="text-[10px] text-destructive font-bold uppercase mt-1 block px-1">
-                                                    {fieldState.error.message}
-                                                </span>
-                                            )}
-                                        </div>
+                                        <UoMSelector
+                                            label="Unidad de Salida"
+                                            value={field.value || ""}
+                                            onChange={field.onChange}
+                                            categoryId={selectedProduct?.uom_category}
+                                            uoms={uoms}
+                                            error={fieldState.error?.message}
+                                        />
                                     )}
                                 />
                             </div>
@@ -627,7 +563,7 @@ export function BOMFormModal({
                                                                             form.setValue(`lines.${index}.component_name`, p.name)
                                                                             form.setValue(`lines.${index}.component_code`, p.internal_code || p.code)
                                                                             form.setValue(`lines.${index}.component_cost`, Number(p.cost_price || 0))
-                                                                            
+
                                                                             if (p.uom) {
                                                                                 const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
                                                                                 form.setValue(`lines.${index}.uom`, uomId)
@@ -644,9 +580,9 @@ export function BOMFormModal({
                                                                         onChange={(val) => propField.onChange(val)}
                                                                         placeholder="Buscar componente..."
                                                                         allowedTypes={['STORABLE', 'MANUFACTURABLE']}
-                                                                        customFilter={(p: ProductMinimal) => 
-                                                                            !!(p.product_type === 'STORABLE' || 
-                                                                            (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing))
+                                                                        customFilter={(p: ProductMinimal) =>
+                                                                            !!(p.product_type === 'STORABLE' ||
+                                                                                (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing))
                                                                         }
                                                                         excludeIds={selectedProduct ? [selectedProduct.id] : []}
                                                                         shouldResolveVariants={false}
@@ -654,11 +590,11 @@ export function BOMFormModal({
                                                                     />
                                                                 )}
                                                             />
-                                                            
+
                                                             {(() => {
                                                                 const compId = form.watch(`lines.${index}.component`)
                                                                 const lineVars = lineVariantsCache[compId] || []
-                                                                
+
                                                                 if (lineVars.length > 0) {
                                                                     return (
                                                                         <div className="animate-in fade-in slide-in-from-top-1">
@@ -673,9 +609,9 @@ export function BOMFormModal({
                                                                                         form.setValue(`lines.${index}.component_cost`, Number(v.cost_price || 0))
                                                                                         if (v.uom_category) form.setValue(`lines.${index}.component_uom_category`, v.uom_category)
                                                                                         if (v.uom) {
-                                                              const uomId = typeof v.uom === 'object' ? (v.uom as UoM).id.toString() : v.uom.toString()
-                                                              form.setValue(`lines.${index}.uom`, uomId)
-                                                          }
+                                                                                            const uomId = typeof v.uom === 'object' ? (v.uom as UoM).id.toString() : v.uom.toString()
+                                                                                            form.setValue(`lines.${index}.uom`, uomId)
+                                                                                        }
                                                                                     }
                                                                                 }}
                                                                             >
@@ -860,7 +796,7 @@ export function BOMFormModal({
                                                                     {(() => {
                                                                         const compId = form.watch(`service_lines.${index}.component`)
                                                                         const lineVars = lineVariantsCache[compId] || []
-                                                                        
+
                                                                         if (lineVars.length > 0) {
                                                                             return (
                                                                                 <div className="animate-in fade-in slide-in-from-top-1">

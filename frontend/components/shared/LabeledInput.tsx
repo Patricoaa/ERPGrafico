@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils"
 // ─────────────────────────────────────────────────────────────
 
 interface LabeledInputBaseProps {
-    /** Label text rendered inside the fieldset legend (notched border). */
-    label: string
+    /** Label text rendered inside the fieldset legend (notched border). Optional for table usage. */
+    label?: React.ReactNode
     /** Shows a red asterisk * after the label. Does NOT add HTML required attr (use `required` in inputProps). */
     required?: boolean
     /** Error message — turns border red and shows text below the field. */
@@ -115,14 +115,16 @@ export const LabeledInput = forwardRef<
                 data-error={hasError || undefined}
                 data-disabled={disabled || undefined}
             >
-                <legend>
-                    {label}
-                    {required && (
-                        <span className="text-destructive ml-0.5" aria-hidden="true">
-                            *
-                        </span>
-                    )}
-                </legend>
+                {label && (
+                    <legend>
+                        {label}
+                        {required && (
+                            <span className="text-destructive ml-0.5" aria-hidden="true">
+                                *
+                            </span>
+                        )}
+                    </legend>
+                )}
 
                 <div className="flex items-center w-full h-full px-1">
                     {icon && (

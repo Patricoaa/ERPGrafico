@@ -3,21 +3,12 @@
 import React, { useState, useEffect } from "react"
 import { useTreasuryAccounts, type TreasuryAccount, treasuryApi } from "@/features/treasury"
 import { BaseModal } from "@/components/shared/BaseModal"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
+
 import { Loader2, Landmark, CreditCard, Lock } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import { FORM_STYLES } from "@/lib/styles"
-import { cn } from "@/lib/utils"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { CancelButton, LabeledInput } from "@/components/shared"
+
+import { CancelButton, LabeledInput, LabeledSelect, ActionSlideButton } from "@/components/shared"
 
 interface TreasuryAccountModalProps {
     open: boolean
@@ -53,7 +44,7 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                     treasuryApi.getBanks(),
                     accountId ? treasuryApi.getAccount(accountId) : Promise.resolve(null)
                 ])
-                
+
                 requestAnimationFrame(() => {
                     setBanks(banksData)
                     if (accountData) {
@@ -185,56 +176,47 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="grid gap-2">
-                                            <Label className={FORM_STYLES.label}>Tipo</Label>
-                                            <Select value={type} onValueChange={(v: string) => setType(v)} disabled={isSystemManaged || !!accountId}>
-                                                <SelectTrigger className={FORM_STYLES.input}>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="CHECKING">Cuenta Corriente</SelectItem>
-                                                    <SelectItem value="CREDIT_CARD">Tarjeta de Crédito</SelectItem>
-                                                    <SelectItem value="DEBIT_CARD">Tarjeta de Débito</SelectItem>
-                                                    <SelectItem value="CHECKBOOK">Chequera</SelectItem>
-                                                    <SelectItem value="CASH">Efectivo</SelectItem>
-                                                    <SelectItem value="BRIDGE">Cuenta Puente (Clearing)</SelectItem>
-                                                    <SelectItem value="MERCHANT">Cuenta Recaudadora</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label className={FORM_STYLES.label}>Moneda</Label>
-                                            <Select value={currency} onValueChange={setCurrency} disabled={isSystemManaged}>
-                                                <SelectTrigger className={FORM_STYLES.input}>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="CLP">Pesos (CLP)</SelectItem>
-                                                    <SelectItem value="USD">Dólar (USD)</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
+                                        <LabeledSelect
+                                            label="Tipo"
+                                            value={type}
+                                            onChange={(v: string) => setType(v)}
+                                            disabled={isSystemManaged || !!accountId}
+                                            options={[
+                                                { value: "CHECKING", label: "Cuenta Corriente" },
+                                                { value: "CREDIT_CARD", label: "Tarjeta de Crédito" },
+                                                { value: "DEBIT_CARD", label: "Tarjeta de Débito" },
+                                                { value: "CHECKBOOK", label: "Chequera" },
+                                                { value: "CASH", label: "Efectivo" },
+                                                { value: "BRIDGE", label: "Cuenta Puente (Clearing)" },
+                                                { value: "MERCHANT", label: "Cuenta Recaudadora" }
+                                            ]}
+                                        />
+                                        <LabeledSelect
+                                            label="Moneda"
+                                            value={currency}
+                                            onChange={setCurrency}
+                                            disabled={isSystemManaged}
+                                            options={[
+                                                { value: "CLP", label: "Pesos (CLP)" },
+                                                { value: "USD", label: "Dólar (USD)" }
+                                            ]}
+                                        />
                                     </div>
 
                                     {requiresBank(type) && (
-                                        <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
-                                            <Label className={cn(FORM_STYLES.label, "text-info flex items-center gap-1")}>
-                                                <Landmark className="h-3.5 w-3.5" /> Entidad Bancaria
-                                            </Label>
-                                            <Select
+                                        <div className="animate-in slide-in-from-left-2 duration-300">
+                                            <LabeledSelect
+                                                label="Entidad Bancaria"
+                                                placeholder="Seleccione banco..."
                                                 value={bank?.toString() || ""}
-                                                onValueChange={(v) => setBank(v ? Number(v) : null)}
+                                                onChange={(v) => setBank(v ? Number(v) : null)}
                                                 disabled={isSystemManaged}
-                                            >
-                                                <SelectTrigger className={cn(FORM_STYLES.input, "border-info/20 bg-info/5")}>
-                                                    <SelectValue placeholder="Seleccione banco..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {banks.map((b: any) => (
-                                                        <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                                options={banks.map((b: any) => ({
+                                                    value: b.id.toString(),
+                                                    label: b.name
+                                                }))}
+                                                icon={<Landmark className="h-4 w-4" />}
+                                            />
                                         </div>
                                     )}
 
@@ -251,20 +233,16 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                                         </div>
                                     )}
 
-                                    <div className="grid gap-2">
-                                        <Label className={FORM_STYLES.label}>Cuenta Contable</Label>
-                                        <AccountSelector
-                                            value={accountingAccount?.toString() || null}
-                                            onChange={(v) => setAccountingAccount(v ? Number(v) : null)}
-                                            accountType="ASSET"
-                                            isReconcilable={true}
-                                            placeholder="Seleccione cuenta..."
-                                            disabled={isSystemManaged}
-                                        />
-                                        <p className="text-[10px] text-muted-foreground italic">
-                                            Vínculo con el plan de cuentas.
-                                        </p>
-                                    </div>
+                                    <AccountSelector
+                                        label="Cuenta Contable"
+                                        value={accountingAccount?.toString() || null}
+                                        onChange={(v) => setAccountingAccount(v ? Number(v) : null)}
+                                        accountType="ASSET"
+                                        isReconcilable={true}
+                                        placeholder="Seleccione cuenta..."
+                                        disabled={isSystemManaged}
+                                        error={undefined}
+                                    />
                                 </div>
                             </div>
                         </form>

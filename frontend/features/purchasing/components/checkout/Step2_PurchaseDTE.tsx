@@ -1,9 +1,7 @@
 "use client"
 
-import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
 import { FileText, Receipt, AlertCircle, ShieldAlert } from "lucide-react"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useMemo, useEffect } from "react"
@@ -74,7 +72,7 @@ export function Step2_PurchaseDTE({
                     className="flex flex-wrap gap-4 w-full"
                 >
                     {filteredOptions.map((opt) => (
-                        <Label
+                        <label
                             key={opt.id}
                             htmlFor={`type-${opt.id.toLowerCase().replace('_', '-')}`}
                             className={cn(
@@ -86,7 +84,7 @@ export function Step2_PurchaseDTE({
                             <opt.icon className={`mb-3 h-6 w-6 ${opt.color || ''}`} />
                             <span className="text-sm font-medium">{opt.label}</span>
                             <span className="text-[10px] text-muted-foreground mt-1 text-center">Código SII: {opt.code}</span>
-                        </Label>
+                        </label>
                     ))}
                 </RadioGroup>
             </div>
@@ -107,9 +105,9 @@ export function Step2_PurchaseDTE({
                             }
                         }}
                     />
-                    <Label htmlFor="is-pending" className="text-xs font-medium cursor-pointer">
+                    <label htmlFor="is-pending" className="text-xs font-medium cursor-pointer">
                         Recibiré el documento luego
-                    </Label>
+                    </label>
                 </div>
 
                 {!dteData.isPending && (
@@ -126,24 +124,24 @@ export function Step2_PurchaseDTE({
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="date" className="text-xs font-bold uppercase">Fecha Emisión <span className="text-destructive">*</span></Label>
-                            <div>
-                                <PeriodValidationDateInput
-                                    date={dteData.date ? new Date(dteData.date + 'T12:00:00') : undefined}
-                                    onDateChange={(d) => {
-                                        if (d) {
-                                            const year = d.getFullYear()
-                                            const month = String(d.getMonth() + 1).padStart(2, '0')
-                                            const day = String(d.getDate()).padStart(2, '0')
-                                            setDteData({ ...dteData, date: `${year}-${month}-${day}` })
-                                        } else {
-                                            setDteData({ ...dteData, date: "" })
-                                        }
-                                    }}
-                                    validationType="both"
-                                    onValidityChange={onPeriodValidityChange}
-                                />
-                            </div>
+                            <PeriodValidationDateInput
+                                label="Fecha Emisión"
+                                required
+                                date={dteData.date ? new Date(dteData.date + 'T12:00:00') : undefined}
+                                onDateChange={(d) => {
+                                    if (d) {
+                                        const year = d.getFullYear()
+                                        const month = String(d.getMonth() + 1).padStart(2, '0')
+                                        const day = String(d.getDate()).padStart(2, '0')
+                                        setDteData({ ...dteData, date: `${year}-${month}-${day}` })
+                                    } else {
+                                        setDteData({ ...dteData, date: "" })
+                                    }
+                                }}
+                                validationType="both"
+                                onValidityChange={onPeriodValidityChange}
+                                disabled={dteData.isPending}
+                            />
                         </div>
                         <div className="col-span-2">
                             <DocumentAttachmentDropzone

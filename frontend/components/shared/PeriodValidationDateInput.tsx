@@ -1,12 +1,11 @@
 "use client"
 
 import { useEffect } from "react"
-import { Label } from "@/components/ui/label"
-import { AlertCircle, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { usePeriodValidation } from "@/hooks/usePeriodValidation"
 import { cn } from "@/lib/utils"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DatePicker } from "@/components/shared/DatePicker"
+import { LabeledContainer } from "@/components/shared/LabeledContainer"
 import { format } from "date-fns"
 
 interface PeriodValidationDateInputProps {
@@ -52,40 +51,27 @@ export function PeriodValidationDateInput({
     }, [date, validatePeriod, clearPeriodValidation, disabled, validationType])
 
     return (
-        <div className={cn("space-y-2", className)}>
-            {label && (
-                <Label className="text-xs font-bold uppercase">
-                    {label} {required && <span className="text-destructive">*</span>}
-                </Label>
-            )}
-            
-            <div className="relative">
-                <DatePicker
-                    date={date}
-                    onDateChange={onDateChange}
-                    className={cn(
-                        "w-full",
-                        isClosed && "border-warning ring-1 ring-warning"
-                    )}
-                    // Can't pass disabled easily to DatePicker without modifying it if it doesn't support it,
-                    // but we assume it either supports it or we can ignore for now.
-                />
-                
-                {isValidating && (
-                    <div className="absolute right-10 top-2.5 bg-background px-1">
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                    </div>
+        <LabeledContainer
+            label={label}
+            required={required}
+            disabled={disabled}
+            className={className}
+            error={isClosed ? (message || "El periodo contable/tributario está cerrado.") : undefined}
+            suffix={
+                isValidating && (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                )
+            }
+        >
+            <DatePicker
+                date={date}
+                onDateChange={onDateChange}
+                disabled={disabled}
+                className={cn(
+                    "w-full border-0 bg-transparent shadow-none hover:bg-transparent focus-visible:ring-0 h-[34px]",
+                    isClosed && "text-destructive"
                 )}
-            </div>
-            
-            {isClosed && message && (
-                <Alert className="mt-2 py-2 border-warning text-warning bg-transparent animate-in fade-in slide-in-from-top-1 duration-200 [&>svg]:top-1/2 [&>svg]:-translate-y-1/2">
-                    <AlertCircle className="h-4 w-4 stroke-warning" />
-                    <AlertDescription className="text-xs font-medium">
-                        {message}
-                    </AlertDescription>
-                </Alert>
-            )}
-        </div>
+            />
+        </LabeledContainer>
     )
 }

@@ -7,11 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Input } from "@/components/ui/input"
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+import { LabeledInput, LabeledSelect } from "@/components/shared"
 import { Plus, Trash2, Edit, Wand2, CheckCircle2 } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
@@ -214,38 +210,32 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
             >
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Nombre</Label>
-                            <Input value={editingRule.name} onChange={e => setEditingRule({ ...editingRule, name: e.target.value })} className={FORM_STYLES.input} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Cuenta</Label>
-                            <Select
-                                value={editingRule.treasury_account?.id?.toString() || "global"}
-                                onValueChange={val => setEditingRule({
-                                    ...editingRule,
-                                    treasury_account: val === "global" ? null : accounts.find(a => a.id.toString() === val) as Account
-                                })}
-                            >
-                                <SelectTrigger className={FORM_STYLES.input}>
-                                    <SelectValue placeholder="Global (Todas)" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="global">Global (Todas)</SelectItem>
-                                    {accounts.map(acc => (
-                                        <SelectItem key={acc.id} value={acc.id.toString()}>{acc.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        <LabeledInput
+                            label="Nombre"
+                            value={editingRule.name || ""}
+                            onChange={e => setEditingRule({ ...editingRule, name: e.target.value })}
+                        />
+                        <LabeledSelect
+                            label="Cuenta"
+                            value={editingRule.treasury_account?.id?.toString() || "global"}
+                            onChange={val => setEditingRule({
+                                ...editingRule,
+                                treasury_account: val === "global" ? null : accounts.find(a => a.id.toString() === val) as Account
+                            })}
+                            options={[
+                                { value: "global", label: "Global (Todas)" },
+                                ...accounts.map(acc => ({ value: acc.id.toString(), label: acc.name }))
+                            ]}
+                        />
                     </div>
 
                     <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Descripción</Label>
-                        <Textarea
-                            value={editingRule.description}
+                        <LabeledInput
+                            as="textarea"
+                            label="Descripción"
+                            value={editingRule.description || ""}
                             onChange={e => setEditingRule({ ...editingRule, description: e.target.value })}
-                            className={cn("min-h-[80px]", FORM_STYLES.input, "h-auto py-2")}
+                            className="min-h-[80px]"
                         />
                     </div>
 

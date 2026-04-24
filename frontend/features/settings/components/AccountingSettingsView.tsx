@@ -5,15 +5,13 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Settings2, Receipt, Percent, Coins, TrendingUp } from "lucide-react"
-import { FormSkeleton } from "@/components/shared"
+import { FormSkeleton, LabeledInput, LabeledSelect } from "@/components/shared"
 
 import { PageHeaderButton } from "@/components/shared/PageHeader"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 
@@ -179,33 +177,31 @@ function StructureSettings({ onSavingChange }: { onSavingChange?: (saving: boole
                                     <FormField
                                         control={form.control}
                                         name="hierarchy_levels"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-[10px] font-black uppercase text-muted-foreground">Niveles de Jerarquía</FormLabel>
-                                                <Select onValueChange={(val) => field.onChange(parseInt(val))} value={field.value?.toString()}>
-                                                    <FormControl><SelectTrigger className="h-9 rounded-sm"><SelectValue /></SelectTrigger></FormControl>
-                                                    <SelectContent className="text-[10px] font-mono border-2">
-                                                        {[2, 3, 4, 5].map((n) => <SelectItem key={n} value={n.toString()}>{n} Niveles</SelectItem>)}
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormItem>
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Niveles de Jerarquía"
+                                                value={field.value?.toString() || "4"}
+                                                onChange={(val) => field.onChange(parseInt(val))}
+                                                error={fieldState.error?.message}
+                                                options={[2, 3, 4, 5].map((n) => ({ value: n.toString(), label: `${n} Niveles` }))}
+                                            />
                                         )}
                                     />
                                     <FormField
                                         control={form.control}
                                         name="code_separator"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-[10px] font-black uppercase text-muted-foreground">Separador</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl><SelectTrigger className="h-9 rounded-sm"><SelectValue /></SelectTrigger></FormControl>
-                                                    <SelectContent className="text-[10px] font-mono border-2">
-                                                        <SelectItem value=".">Punto ( . )</SelectItem>
-                                                        <SelectItem value="-">Guion ( - )</SelectItem>
-                                                        <SelectItem value="/">Slash ( / )</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormItem>
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Separador"
+                                                value={field.value || "."}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                                options={[
+                                                    { value: ".", label: "Punto ( . )" },
+                                                    { value: "-", label: "Guion ( - )" },
+                                                    { value: "/", label: "Slash ( / )" },
+                                                ]}
+                                            />
                                         )}
                                     />
                                 </div>
@@ -317,16 +313,19 @@ function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) =>
                             <FormField
                                 control={form.control}
                                 name="default_tax_rate"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-widest">IVA Chile (%)</FormLabel>
-                                        <FormControl>
-                                            <div className="relative">
-                                                <Input {...field} type="number" step="0.01" className="h-10 rounded-sm font-mono text-lg" onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)} />
-                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-black">%</span>
-                                            </div>
-                                        </FormControl>
-                                    </FormItem>
+                                render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        name={field.name}
+                                        ref={field.ref}
+                                        onBlur={field.onBlur}
+                                        value={field.value?.toString() || "0"}
+                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                        label="IVA Chile (%)"
+                                        type="number"
+                                        step="0.01"
+                                        error={fieldState.error?.message}
+                                        className="font-mono font-bold"
+                                    />
                                 )}
                             />
                         </CardContent>
@@ -408,11 +407,14 @@ function AccountField({ form, name, label, accountType }: { form: UseFormReturn<
 
 function PrefixField({ form, name, label }: { form: UseFormReturn<AccountingFormValues>, name: keyof AccountingFormValues, label: string }) {
     return (
-        <FormField control={form.control} name={name} render={({ field }) => (
-            <FormItem className="space-y-1">
-                <FormLabel className="text-[9px] font-black uppercase text-muted-foreground/60">{label}</FormLabel>
-                <FormControl><Input {...field} className="h-8 rounded-sm font-mono text-[11px]" /></FormControl>
-            </FormItem>
+        <FormField control={form.control} name={name} render={({ field, fieldState }) => (
+            <LabeledInput
+                {...field}
+                value={field.value?.toString() || ""}
+                label={label}
+                error={fieldState.error?.message}
+                className="font-mono text-[11px]"
+            />
         )} />
     )
 }

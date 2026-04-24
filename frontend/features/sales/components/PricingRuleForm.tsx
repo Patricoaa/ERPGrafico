@@ -6,6 +6,7 @@ import { PricingRuleInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { LabeledInput, LabeledSelect } from "@/components/shared"
 
 // ... other imports same
 import {
@@ -13,24 +14,14 @@ import {
     FormControl,
     FormField,
     FormItem,
-    FormLabel,
-    FormMessage,
+    FormLabel
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+
 import { Checkbox } from "@/components/ui/checkbox"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { Plus, Tags } from "lucide-react"
+import { Tags } from "lucide-react"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
@@ -70,7 +61,7 @@ interface PricingRuleFormProps {
     productName?: string
 }
 
-export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, onOpenChange, productId, productName }: PricingRuleFormProps) {
+export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, onOpenChange, productId, productName }: PricingRuleFormProps) {
     const [uoms, setUoms] = useState<UoM[]>([])
 
     const form = useForm<FormValues>({
@@ -102,7 +93,7 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
                 const getProductId = (p: unknown): number | null => {
                     if (typeof p === 'number') return p
                     if (typeof p === 'string') return parseInt(p) || null
-                    if (p && typeof p === 'object' && 'id' in p) return (p as {id: number}).id || null
+                    if (p && typeof p === 'object' && 'id' in p) return (p as { id: number }).id || null
                     return null
                 }
 
@@ -227,13 +218,11 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
                                             control={form.control}
                                             name="name"
                                             render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className={FORM_STYLES.label}>Nombre de la Regla</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="Ej: Descuento Mayorista" className={FORM_STYLES.input} {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
+                                                <LabeledInput
+                                                    label="Nombre de la Regla"
+                                                    placeholder="Ej: Descuento Mayorista"
+                                                    {...field}
+                                                />
                                             )}
                                         />
                                     </div>
@@ -242,13 +231,12 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
                                             control={form.control}
                                             name="priority"
                                             render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className={FORM_STYLES.label}>Prioridad</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="number" className={FORM_STYLES.input} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
+                                                <LabeledInput
+                                                    label="Prioridad"
+                                                    type="number"
+                                                    {...field}
+                                                    onChange={e => field.onChange(parseInt(e.target.value))}
+                                                />
                                             )}
                                         />
                                     </div>
@@ -259,44 +247,32 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
                                         control={form.control}
                                         name="product"
                                         render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className={FORM_STYLES.label}>Producto Específico (Opcional)</FormLabel>
-                                                <FormControl>
-                                                    <ProductSelector
-                                                        value={field.value?.toString() || null}
-                                                        onChange={(val) => field.onChange(val ? parseInt(val) : null)}
-                                                        disabled={!!productId}
-                                                        placeholder="Si no se selecciona, aplica a todos"
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
+                                            <ProductSelector
+                                                label="Producto Específico (Opcional)"
+                                                value={field.value?.toString() || null}
+                                                onChange={(val) => field.onChange(val ? parseInt(val) : null)}
+                                                disabled={!!productId}
+                                                placeholder="Si no se selecciona, aplica a todos"
+                                            />
                                         )}
                                     />
                                     <FormField
                                         control={form.control}
                                         name="uom"
                                         render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className={FORM_STYLES.label}>Unidad de Medida (Filtro)</FormLabel>
-                                                <Select
-                                                    onValueChange={(val) => field.onChange(val === "none" ? null : parseInt(val))}
-                                                    value={field.value?.toString() || "none"}
-                                                >
-                                                    <FormControl>
-                                                        <SelectTrigger className={FORM_STYLES.input}>
-                                                            <SelectValue placeholder="Base del producto" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="none">Base del producto</SelectItem>
-                                                        {uoms.map((u) => (
-                                                            <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
+                                            <LabeledSelect
+                                                label="Unidad de Medida (Filtro)"
+                                                placeholder="Base del producto"
+                                                onChange={(val: string) => field.onChange(val === "none" ? null : parseInt(val))}
+                                                value={field.value?.toString() || "none"}
+                                                options={[
+                                                    { value: "none", label: "Base del producto" },
+                                                    ...uoms.map((u) => ({
+                                                        value: u.id.toString(),
+                                                        label: u.name
+                                                    }))
+                                                ]}
+                                            />
                                         )}
                                     />
                                 </div>
@@ -314,38 +290,30 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
                                         control={form.control}
                                         name="operator"
                                         render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className={FORM_STYLES.label}>Cuando la Cantidad es...</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger className={FORM_STYLES.input}>
-                                                            <SelectValue placeholder="Operador" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="GE">Mayor o Igual ( {">="} )</SelectItem>
-                                                        <SelectItem value="GT">Mayor que ( {">"} )</SelectItem>
-                                                        <SelectItem value="LE">Menor o Igual ( {"<="} )</SelectItem>
-                                                        <SelectItem value="LT">Menor que ( {"<"} )</SelectItem>
-                                                        <SelectItem value="EQ">Igual a ( = )</SelectItem>
-                                                        <SelectItem value="BT">En el Rango (Entre)</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
+                                            <LabeledSelect
+                                                label="Cuando la Cantidad es..."
+                                                onChange={field.onChange}
+                                                value={field.value}
+                                                options={[
+                                                    { value: "GE", label: "Mayor o Igual ( >= )" },
+                                                    { value: "GT", label: "Mayor que ( > )" },
+                                                    { value: "LE", label: "Menor o Igual ( <= )" },
+                                                    { value: "LT", label: "Menor que ( < )" },
+                                                    { value: "EQ", label: "Igual a ( = )" },
+                                                    { value: "BT", label: "En el Rango (Entre)" }
+                                                ]}
+                                            />
                                         )}
                                     />
                                     <FormField
                                         control={form.control}
                                         name="min_quantity"
                                         render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className={FORM_STYLES.label}>{operator === "BT" ? "Desde" : "Cantidad"}</FormLabel>
-                                                <FormControl>
-                                                    <Input type="number" className={FORM_STYLES.input} {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
+                                            <LabeledInput
+                                                label={operator === "BT" ? "Desde" : "Cantidad"}
+                                                type="number"
+                                                {...field}
+                                            />
                                         )}
                                     />
                                     {operator === "BT" && (
@@ -353,13 +321,12 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
                                             control={form.control}
                                             name="max_quantity"
                                             render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className={FORM_STYLES.label}>Hasta</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="number" className={FORM_STYLES.input} {...field} value={field.value || ""} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
+                                                <LabeledInput
+                                                    label="Hasta"
+                                                    type="number"
+                                                    {...field}
+                                                    value={field.value || ""}
+                                                />
                                             )}
                                         />
                                     )}
@@ -378,22 +345,16 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
                                         control={form.control}
                                         name="rule_type"
                                         render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className={FORM_STYLES.label}>Tipo de Ajuste</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger className={FORM_STYLES.input}>
-                                                            <SelectValue placeholder="Seleccione tipo" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="FIXED">Precio Unitario Fijo</SelectItem>
-                                                        <SelectItem value="PACKAGE_FIXED">Precio de Paquete (Total)</SelectItem>
-                                                        <SelectItem value="DISCOUNT_PERCENTAGE">Porcentaje Descuento</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
+                                            <LabeledSelect
+                                                label="Tipo de Ajuste"
+                                                onChange={field.onChange}
+                                                value={field.value}
+                                                options={[
+                                                    { value: "FIXED", label: "Precio Unitario Fijo" },
+                                                    { value: "PACKAGE_FIXED", label: "Precio de Paquete (Total)" },
+                                                    { value: "DISCOUNT_PERCENTAGE", label: "Porcentaje Descuento" }
+                                                ]}
+                                            />
                                         )}
                                     />
 
@@ -402,13 +363,12 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
                                             control={form.control}
                                             name="discount_percentage"
                                             render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className={FORM_STYLES.label}>Descuento (%)</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="number" className={FORM_STYLES.input} {...field} value={field.value || ""} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
+                                                <LabeledInput
+                                                    label="Descuento (%)"
+                                                    type="number"
+                                                    {...field}
+                                                    value={field.value || ""}
+                                                />
                                             )}
                                         />
                                     ) : (
@@ -417,56 +377,44 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
                                                 control={form.control}
                                                 name="fixed_price"
                                                 render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className={FORM_STYLES.label}>Precio (Neto)</FormLabel>
-                                                        <FormControl>
-                                                            <Input
-                                                                type="number"
-                                                                className={FORM_STYLES.input}
-                                                                {...field}
-                                                                value={field.value || ""}
-                                                                onChange={(e) => {
-                                                                    const val = e.target.value;
-                                                                    field.onChange(val);
-                                                                    if (val) {
-                                                                        const gross = PricingUtils.netToGross(parseFloat(val));
-                                                                        form.setValue("fixed_price_gross", String(gross));
-                                                                    } else {
-                                                                        form.setValue("fixed_price_gross", "");
-                                                                    }
-                                                                }}
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
+                                                    <LabeledInput
+                                                        label="Precio (Neto)"
+                                                        type="number"
+                                                        {...field}
+                                                        value={field.value || ""}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            field.onChange(val);
+                                                            if (val) {
+                                                                const gross = PricingUtils.netToGross(parseFloat(val));
+                                                                form.setValue("fixed_price_gross", String(gross));
+                                                            } else {
+                                                                form.setValue("fixed_price_gross", "");
+                                                            }
+                                                        }}
+                                                    />
                                                 )}
                                             />
                                             <FormField
                                                 control={form.control}
                                                 name="fixed_price_gross"
                                                 render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className={FORM_STYLES.label}>Precio (Bruto)</FormLabel>
-                                                        <FormControl>
-                                                            <Input
-                                                                type="number"
-                                                                className={FORM_STYLES.input}
-                                                                {...field}
-                                                                value={field.value || ""}
-                                                                onChange={(e) => {
-                                                                    const val = e.target.value;
-                                                                    field.onChange(val);
-                                                                    if (val) {
-                                                                        const net = PricingUtils.grossToNet(parseFloat(val));
-                                                                        form.setValue("fixed_price", String(net));
-                                                                    } else {
-                                                                        form.setValue("fixed_price", "");
-                                                                    }
-                                                                }}
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
+                                                    <LabeledInput
+                                                        label="Precio (Bruto)"
+                                                        type="number"
+                                                        {...field}
+                                                        value={field.value || ""}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            field.onChange(val);
+                                                            if (val) {
+                                                                const net = PricingUtils.grossToNet(parseFloat(val));
+                                                                form.setValue("fixed_price", String(net));
+                                                            } else {
+                                                                form.setValue("fixed_price", "");
+                                                            }
+                                                        }}
+                                                    />
                                                 )}
                                             />
                                         </div>
@@ -486,52 +434,50 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
                                         control={form.control}
                                         name="start_date"
                                         render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className={FORM_STYLES.label}>Válida Desde</FormLabel>
-                                                <FormControl>
-                                                    <Input type="date" className={FORM_STYLES.input} {...field} value={field.value || ""} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
+                                            <LabeledInput
+                                                label="Válida Desde"
+                                                type="date"
+                                                {...field}
+                                                value={field.value || ""}
+                                            />
                                         )}
                                     />
+                                    <FormField
+                                        control={form.control}
+                                        name="end_date"
+                                        render={({ field }) => (
+                                            <LabeledInput
+                                                label="Válida Hasta (Opcional)"
+                                                type="date"
+                                                {...field}
+                                                value={field.value || ""}
+                                            />
+                                        )}
+                                    />
+                                </div>
+
                                 <FormField
                                     control={form.control}
-                                    name="end_date"
+                                    name="active"
                                     render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Válida Hasta (Opcional)</FormLabel>
+                                        <FormItem className={cn("flex flex-row items-center space-x-3 space-y-0 p-4 border rounded-lg bg-muted/5")}>
                                             <FormControl>
-                                                <Input type="date" className={FORM_STYLES.input} {...field} value={field.value || ""} />
+                                                <Checkbox
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
                                             </FormControl>
-                                            <FormMessage />
+                                            <div className="space-y-1 leading-none">
+                                                <FormLabel className="text-sm font-bold">La regla se encuentra activa</FormLabel>
+                                                <p className="text-xs text-muted-foreground">Si está desactivada, el sistema la omitirá incluso si se cumplen las condiciones.</p>
+                                            </div>
                                         </FormItem>
                                     )}
                                 />
                             </div>
-
-                            <FormField
-                                control={form.control}
-                                name="active"
-                                render={({ field }) => (
-                                    <FormItem className={cn("flex flex-row items-center space-x-3 space-y-0 p-4 border rounded-lg bg-muted/5")}>
-                                        <FormControl>
-                                            <Checkbox
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                            />
-                                        </FormControl>
-                                        <div className="space-y-1 leading-none">
-                                            <FormLabel className="text-sm font-bold">La regla se encuentra activa</FormLabel>
-                                            <p className="text-xs text-muted-foreground">Si está desactivada, el sistema la omitirá incluso si se cumplen las condiciones.</p>
-                                        </div>
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                    </form>
-                </Form>
-            </div>
+                        </form>
+                    </Form>
+                </div>
 
                 {initialData?.id && (
                     <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">

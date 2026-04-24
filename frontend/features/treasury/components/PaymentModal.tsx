@@ -1,25 +1,17 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react"
+import { BaseModal, LabeledInput, LabeledSelect, DocumentAttachmentDropzone, PeriodValidationDateInput, LoadingFallback } from "@/components/shared"
 import { CancelButton } from "@/components/shared/ActionButtons"
+import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { CreditCard, Banknote, Landmark, Receipt, Hash, ClipboardCheck, Calendar, FileUp, FileText, User } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
-import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Wallet, AlertCircle, Building2, ShieldAlert } from "lucide-react"
-import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
+import { Card } from "@/components/ui/card"
+import { CreditCard, Banknote, Landmark, Receipt, Hash, ClipboardCheck, Calendar, FileUp, FileText, User, Wallet, AlertCircle, Building2, ShieldAlert } from "lucide-react"
 import api from "@/lib/api"
-import { FORM_STYLES } from "@/lib/styles"
-import { cn, formatCurrency } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { useServerDate } from "@/hooks/useServerDate"
-import { DocumentAttachmentDropzone, PeriodValidationDateInput, LoadingFallback } from "@/components/shared"
-import { Card } from "@/components/ui/card"
 
 interface PaymentModalProps {
     open: boolean
@@ -188,31 +180,27 @@ export function PaymentModal({
                 <div className="grid gap-4">
                     {showDteSelector && !hideDteFields && (
                         <div className="grid gap-2">
-                            <Label className="flex items-center gap-2 text-[11px] font-bold uppercase text-muted-foreground">
-                                <Receipt className="h-3 w-3" />
-                                {isPurchase ? "Documento Recibido" : "Documento a Emitir"}
-                            </Label>
-                            <Select value={dteType} onValueChange={setDteType} disabled={!!existingInvoice}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {isPurchase ? (
-                                        <>
-                                            <SelectItem value="NONE">Aún no he recibido el documento</SelectItem>
-                                            <SelectItem value="BOLETA">Boleta Electrónica</SelectItem>
-                                            <SelectItem value="FACTURA">Factura Electrónica</SelectItem>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <SelectItem value="BOLETA">Emitiré una boleta</SelectItem>
-                                            <SelectItem value="FACTURA">Emitiré una factura</SelectItem>
-                                        </>
-                                    )}
-                                </SelectContent>
-                            </Select>
+                            <LabeledSelect
+                                label={
+                                    <span className="flex items-center gap-2">
+                                        <Receipt className="h-3 w-3" />
+                                        {isPurchase ? "Documento Recibido" : "Documento a Emitir"}
+                                    </span>
+                                }
+                                value={dteType}
+                                onChange={setDteType}
+                                disabled={!!existingInvoice}
+                                options={isPurchase ? [
+                                    { value: "NONE", label: "Aún no he recibido el documento" },
+                                    { value: "BOLETA", label: "Boleta Electrónica" },
+                                    { value: "FACTURA", label: "Factura Electrónica" }
+                                ] : [
+                                    { value: "BOLETA", label: "Emitiré una boleta" },
+                                    { value: "FACTURA", label: "Emitiré una factura" }
+                                ]}
+                            />
                             {existingInvoice && (
-                                <p className="text-[10px] text-warning font-medium">
+                                <p className="text-[10px] text-warning font-medium px-1">
                                     * Documento ya registrado anteriormente
                                 </p>
                             )}
@@ -262,10 +250,12 @@ export function PaymentModal({
                             </div>
 
                             <div className={`grid gap-2 ${isDocumentPending ? 'opacity-50' : ''}`}>
-                                <Label className="text-[10px] font-bold uppercase flex items-center gap-1">
-                                    <Hash className="h-3 w-3" /> N° de Folio / Referencia {isPurchase && <span className="text-destructive">*</span>}
-                                </Label>
-                                <Input
+                                <LabeledInput
+                                    label={
+                                        <span className="flex items-center gap-1">
+                                            <Hash className="h-3 w-3" /> N° de Folio / Referencia {isPurchase && <span className="text-destructive">*</span>}
+                                        </span>
+                                    }
                                     placeholder="Ej: 12345"
                                     value={documentReference}
                                     onChange={(e) => setDocumentReference(e.target.value)}

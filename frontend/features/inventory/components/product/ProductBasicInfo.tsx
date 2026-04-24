@@ -8,7 +8,6 @@ import { Plus, ShoppingCart, Truck, Search, ChevronsUpDown, Check, Barcode } fro
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { Switch } from "@/components/ui/switch"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { BarcodeModal } from "@/features/inventory/components/BarcodeModal"
 
@@ -34,9 +33,12 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
                     <div className="md:col-span-2">
-                        <fieldset className="notched-field w-full group transition-all opacity-80 bg-muted/30 border-dashed border-2">
-                            <legend className="notched-legend">ID Sistema</legend>
-                            <div className="flex items-center gap-2 h-11 px-3">
+                        <LabeledContainer
+                            label="ID Sistema"
+                            disabled
+                            className="w-full opacity-80 bg-muted/30 border-dashed"
+                        >
+                            <div className="flex items-center gap-2 h-[34px] px-3">
                                 <span className="text-muted-foreground text-xs font-mono">#</span>
                                 {isEditing ? (
                                     <span className="font-mono font-black text-primary text-sm">
@@ -46,7 +48,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                     <span className="text-[10px] font-bold text-primary/40 uppercase tracking-tighter italic">Auto</span>
                                 )}
                             </div>
-                        </fieldset>
+                        </LabeledContainer>
                     </div>
 
                     <div className="md:col-span-7">
@@ -116,15 +118,19 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                             name="category"
                             render={({ field, fieldState }) => (
                                 <div className="flex gap-2 items-start">
-                                    <fieldset className={cn("notched-field flex-1 group transition-all h-[50px]", fieldState.error && "error", isEditing && "opacity-80 bg-muted/5")}>
-                                        <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Categoría del Producto</legend>
+                                    <LabeledContainer
+                                        label="Categoría del Producto"
+                                        error={fieldState.error?.message}
+                                        disabled={isEditing}
+                                        className={cn("flex-1", isEditing && "opacity-80 bg-muted/5")}
+                                    >
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
                                                     variant="ghost"
                                                     role="combobox"
                                                     disabled={isEditing}
-                                                    className={cn("w-full justify-between font-black text-xs h-full px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
+                                                    className={cn("w-full justify-between font-black text-xs h-[34px] px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
                                                 >
                                                     {field.value
                                                         ? categories.find((cat) => cat.id.toString() === field.value.toString())?.name
@@ -178,7 +184,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                                 </div>
                                             </PopoverContent>
                                         </Popover>
-                                    </fieldset>
+                                    </LabeledContainer>
                                     {!isEditing && (
                                         <Button
                                             type="button"

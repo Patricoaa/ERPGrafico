@@ -3,33 +3,29 @@
 import React, { useEffect, useCallback, useState } from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { useBillingSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-    Loader2,
     Percent,
     Receipt,
     Coins,
     TrendingUp,
     Check,
-    CloudUpload,
     FileText,
     Users
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { PageTabs } from "@/components/shared/PageTabs"
+import { LabeledInput } from "@/components/shared"
 
 import { billingSchema, type BillingFormValues } from "./BillingSettingsView.schema"
 
-export const BillingSettingsView: React.FC<{ 
+export const BillingSettingsView: React.FC<{
     activeTab?: string,
-    onSavingChange?: (saving: boolean) => void 
+    onSavingChange?: (saving: boolean) => void
 }> = ({ activeTab = "accounts", onSavingChange }) => {
     const [currentTab, setCurrentTab] = useState(activeTab)
     const { settings, saving, updateSettings } = useBillingSettings()
@@ -174,22 +170,16 @@ export const BillingSettingsView: React.FC<{
                                         <FormField
                                             control={form.control}
                                             name="default_vat_rate"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">IVA Predeterminado (%)</FormLabel>
-                                                    <FormControl>
-                                                        <div className="relative">
-                                                            <Input
-                                                                {...field}
-                                                                type="number"
-                                                                step="0.01"
-                                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                                            />
-                                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                                                        </div>
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
+                                            render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="IVA Predeterminado (%)"
+                                                    suffix={<span className="text-muted-foreground text-sm">%</span>}
+                                                    type="number"
+                                                    step="0.01"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                />
                                             )}
                                         />
                                         <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 text-[11px] text-primary">
@@ -266,16 +256,16 @@ export const BillingSettingsView: React.FC<{
 
                         <TabsContent value="dtes" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <DTEConfigCard 
-                                    form={form} 
-                                    name="allowed_dte_types_emit" 
-                                    title="Documentos a Emitir (Ventas/POS)" 
+                                <DTEConfigCard
+                                    form={form}
+                                    name="allowed_dte_types_emit"
+                                    title="Documentos a Emitir (Ventas/POS)"
                                     description="Seleccione qué tipos de documentos están habilitados para ser emitidos."
                                 />
-                                <DTEConfigCard 
-                                    form={form} 
-                                    name="allowed_dte_types_receive" 
-                                    title="Documentos a Recibir (Compras)" 
+                                <DTEConfigCard
+                                    form={form}
+                                    name="allowed_dte_types_receive"
+                                    title="Documentos a Recibir (Compras)"
                                     description="Seleccione qué tipos de documentos están habilitados para ser registrados."
                                 />
                             </div>

@@ -104,7 +104,14 @@ export function POSClientView() {
         setPosMode,
     } = usePOS()
 
+
     const { user } = useAuth()
+    
+    // Stable onStateChange for the wizard to break feedback loops
+    const handleWizardStateChange = useCallback((state: any) => {
+        setWizardState(state)
+    }, [setWizardState])
+
     const { addProductToCart, updateQuantity, removeFromCart, clearCart, canCheckout, fetchEffectivePrice } = useCart()
     const { limits: stockLimits, calculateMaxQty } = useStockValidation()
 
@@ -197,12 +204,18 @@ export function POSClientView() {
         return () => clearTimeout(timer)
     }, [items, selectedCustomerId, wizardState, currentSession, loading])
 
+    // 5. Sync selected customer FROM wizard state TO POS context
     useEffect(() => {
         const wCustId = wizardState?.selectedCustomerId
         if (wCustId && wCustId.toString() !== selectedCustomerId?.toString()) {
             const parsed = parseInt(wCustId.toString());
-            if (!isNaN(parsed)) {
-                requestAnimationFrame(() => setSelectedCustomerId(parsed))
+            if (!isNaN(parsed) && parsed !== selectedCustomerId) {
+                // Use rAF to decouple state updates
+                requestAnimationFrame(() => {
+                    if (parsed !== selectedCustomerId) {
+                        setSelectedCustomerId(parsed)
+                    }
+                })
             }
         }
     }, [wizardState?.selectedCustomerId, selectedCustomerId, setSelectedCustomerId])
@@ -557,7 +570,7 @@ export function POSClientView() {
                                     initialIsWaitingApproval={wizardState?.isWaitingApproval}
                                     initialIsApproved={wizardState?.isApproved}
                                     initialDraftId={currentDraftId}
-                                    onStateChange={(state) => setWizardState(state as any)}
+                                    onStateChange={handleWizardStateChange}
                                     isInline
                                     isSessionHost={user?.id === currentSession?.user}
                                 />

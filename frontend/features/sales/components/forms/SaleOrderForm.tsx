@@ -5,27 +5,15 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { Plus, Trash2, Box, Info } from "lucide-react"
+import { Plus, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import api from "@/lib/api"
 import { FORM_STYLES } from "@/lib/styles"
-import { BaseModal, ActionSlideButton, MoneyDisplay } from "@/components/shared"
+import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput } from "@/components/shared"
 import {
     Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+    FormField
 } from "@/components/ui/form"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import {
     Table,
     TableBody,
@@ -34,10 +22,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import api from "@/lib/api"
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
@@ -269,8 +254,8 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                     mfg_auto_finalize: product?.mfg_auto_finalize,
                 };
             });
-            onConfirmCheckout({ 
-                ...data, 
+            onConfirmCheckout({
+                ...data,
                 lines: enrichedLines as any,
                 customer: (initialData as any)?.customer || null,
                 date: new Date().toISOString()
@@ -445,7 +430,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                                 )}
                                                                             </div>
 
-                                                                            </div>
+                                                                        </div>
                                                                     )
                                                                 })()}
                                                             </div>
@@ -458,7 +443,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                         name={`lines.${index}.quantity`}
                                                         render={({ field }) => (
                                                             <div className="flex flex-col gap-1">
-                                                                <Input
+                                                                <LabeledInput
                                                                     type="number"
                                                                     step="0.01"
                                                                     {...(field as any)}
@@ -518,9 +503,9 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                     if (maxQty !== null && maxQty !== Infinity) {
                                                                         return (
                                                                             <div className="flex justify-end">
-                                                                                 <span className="text-[9px] font-mono font-bold text-muted-foreground uppercase opacity-60">
-                                                                                     MAX: {maxQty}
-                                                                                 </span>
+                                                                                <span className="text-[9px] font-mono font-bold text-muted-foreground uppercase opacity-60">
+                                                                                    MAX: {maxQty}
+                                                                                </span>
                                                                             </div>
                                                                         )
                                                                     }
@@ -577,7 +562,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                             return (
                                                                 <div className="flex flex-col items-end gap-1 pt-2 pr-3">
                                                                     {isDynamic ? (
-                                                                        <Input
+                                                                        <LabeledInput
                                                                             type="number"
                                                                             className="h-8 w-24 text-right pr-2"
                                                                             value={grossPrice || ""}

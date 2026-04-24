@@ -4,22 +4,17 @@ import { useState, useEffect } from "react"
 import { useTerminals, type Terminal, type PaymentMethod } from "@/features/treasury"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { CancelButton, IconButton } from "@/components/shared"
+import { CancelButton, IconButton, LabeledInput, LabeledSelect } from "@/components/shared"
 import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, History, MonitorSmartphone, Smartphone } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { FORM_STYLES } from "@/lib/styles"
-import { cn } from "@/lib/utils"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 
 
@@ -407,52 +402,55 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
                 <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
                     <form id="terminal-form" onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Nombre <span className="text-destructive">*</span></Label>
-                                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja 1" required className={FORM_STYLES.input} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Código <span className="text-destructive">*</span></Label>
-                                <Input value={code} onChange={e => setCode(e.target.value)} placeholder="TERM-01" required className={cn(FORM_STYLES.input, "uppercase")} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Ubicación</Label>
-                                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Entrada" className={FORM_STYLES.input} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>IP (Opcional)</Label>
-                                <Input value={ipAddress} onChange={e => setIpAddress(e.target.value)} placeholder="192.168.1.100" className={FORM_STYLES.input} />
-                            </div>
+                            <LabeledInput
+                                label="Nombre"
+                                required
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                placeholder="Ej: Caja 1"
+                            />
+                            <LabeledInput
+                                label="Código"
+                                required
+                                value={code}
+                                onChange={e => setCode(e.target.value)}
+                                placeholder="TERM-01"
+                                className="uppercase"
+                            />
+                            <LabeledInput
+                                label="Ubicación"
+                                value={location}
+                                onChange={e => setLocation(e.target.value)}
+                                placeholder="Ej: Entrada"
+                            />
+                            <LabeledInput
+                                label="IP (Opcional)"
+                                value={ipAddress}
+                                onChange={e => setIpAddress(e.target.value)}
+                                placeholder="192.168.1.100"
+                            />
                         </div>
 
                         <div className="space-y-2 border-l-2 border-primary/30 pl-4 py-1">
-                            <Label className={cn(FORM_STYLES.label, "flex items-center gap-2")}>
-                                <Smartphone className="h-4 w-4 text-primary" />
-                                Integración con Hardware
-                            </Label>
-                            <div className="grid gap-2">
-                                <Select value={deviceId} onValueChange={setDeviceId}>
-                                    <SelectTrigger className={FORM_STYLES.input}>
-                                        <SelectValue placeholder="Sin dispositivo integrado" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">Ninguno (Manual)</SelectItem>
-                                        {allDevices.map(dev => (
-                                            <SelectItem key={dev.id} value={dev.id.toString()}>
-                                                {dev.name} ({dev.provider_name})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <p className="text-[10px] text-muted-foreground italic">
-                                    Vincule este Terminal POS a una maquinita física para automatizar el envío de montos.
-                                </p>
-                            </div>
+                            <LabeledSelect
+                                label="Integración con Hardware"
+                                placeholder="Sin dispositivo integrado"
+                                value={deviceId}
+                                onChange={setDeviceId}
+                                options={[
+                                    { value: "none", label: "Ninguno (Manual)" },
+                                    ...allDevices.map(dev => ({
+                                        value: dev.id.toString(),
+                                        label: `${dev.name} (${dev.provider_name})`
+                                    }))
+                                ]}
+                                hint="Vincule este Terminal POS a una maquinita física para automatizar el envío de montos."
+                            />
                         </div>
 
                         <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
                             <div className="flex justify-between items-center">
-                                <Label className={cn(FORM_STYLES.label, "mb-0")}>Métodos de Pago Permitidos</Label>
+                                <h4 className="text-[11px] font-bold uppercase text-muted-foreground tracking-wider mb-2">Métodos de Pago Permitidos</h4>
                                 <span className="text-[9px] font-mono font-black text-muted-foreground uppercase opacity-70">
                                     {selectedMethodIds.length} seleccionados
                                 </span>

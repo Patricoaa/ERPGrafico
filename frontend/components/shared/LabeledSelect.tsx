@@ -13,16 +13,18 @@ import { SelectProps } from "@radix-ui/react-select"
 
 export interface LabeledSelectOption {
     value: string
-    label: string
+    label: React.ReactNode
 }
 
 export interface LabeledSelectProps extends Omit<SelectProps, "value" | "onValueChange"> {
-    /** Label text rendered inside the fieldset legend (notched border). */
-    label: string
+    /** Label text rendered inside the fieldset legend (notched border). Optional for table usage. */
+    label?: React.ReactNode
     /** Options to render inside the select dropdown. */
     options: LabeledSelectOption[]
     /** Controlled value */
     value?: string
+    /** Icon or symbol shown as a prefix (inside the fieldset). */
+    icon?: React.ReactNode
     /** Callback when value changes */
     onChange?: (value: string) => void
     /** Placeholder when no value is selected */
@@ -63,6 +65,7 @@ export const LabeledSelect = forwardRef<
         disabled,
         open,
         onOpenChange,
+        icon,
         ...rest
     } = props
 
@@ -78,25 +81,34 @@ export const LabeledSelect = forwardRef<
                     disabled && "opacity-50 cursor-not-allowed bg-muted/10"
                 )}
             >
-                <legend
-                    className={cn(
-                        "notched-legend",
-                        hasError && "text-destructive",
-                        disabled && "text-muted-foreground/50"
-                    )}
-                >
-                    {label}
-                    {required && <span className="text-destructive ml-0.5">*</span>}
-                </legend>
+                {label && (
+                    <legend
+                        className={cn(
+                            "notched-legend",
+                            hasError && "text-destructive",
+                            disabled && "text-muted-foreground/50"
+                        )}
+                    >
+                        {label}
+                        {required && <span className="text-destructive ml-0.5">*</span>}
+                    </legend>
+                )}
 
-                <Select
-                    value={value}
-                    onValueChange={onChange}
-                    disabled={disabled}
-                    open={open}
-                    onOpenChange={onOpenChange}
-                    {...rest}
-                >
+                <div className="flex items-center w-full">
+                    {icon && (
+                        <div className="pl-3 flex items-center justify-center text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0">
+                            {icon}
+                        </div>
+                    )}
+
+                    <Select
+                        value={value}
+                        onValueChange={onChange}
+                        disabled={disabled}
+                        open={open}
+                        onOpenChange={onOpenChange}
+                        {...rest}
+                    >
                     <SelectTrigger
                         ref={ref}
                         className={cn(
@@ -115,6 +127,7 @@ export const LabeledSelect = forwardRef<
                         ))}
                     </SelectContent>
                 </Select>
+                </div>
             </fieldset>
 
             {/* Error or Hint Text */}

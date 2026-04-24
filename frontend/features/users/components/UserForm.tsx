@@ -9,19 +9,17 @@ import * as z from "zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
-import { Loader2, Plus, User, ShieldCheck, ShieldAlert, Check, ChevronsUpDown, Search } from "lucide-react"
+import { Plus, User, ShieldCheck, ShieldAlert, Check, ChevronsUpDown, Search } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, SubmitButton, LabeledSeparator, LabeledInput } from "@/components/shared"
+import { CancelButton, SubmitButton, LabeledSeparator, LabeledInput, LabeledSelect } from "@/components/shared"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { AppGroup } from "@/types/entities"
+import { FORM_STYLES } from "@/lib/styles"
 
 const userSchema = z.object({
     username: z.string().min(3, "Mínimo 3 caracteres"),
@@ -41,7 +39,7 @@ interface UserFormProps {
     trigger?: React.ReactNode
 }
 
-export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: UserFormProps) {
+export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: UserFormProps) {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [availableRoles, setAvailableRoles] = useState<[string, string][]>([])
@@ -215,16 +213,31 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
                                                 <FormField
                                                     control={form.control}
                                                     name="contact"
-                                                    render={({ field }) => (
-                                                        <FormItem className="md:col-span-2">
-                                                            <FormLabel className={FORM_STYLES.label}>Contacto Vinculado</FormLabel>
-                                                            <AdvancedContactSelector
-                                                                value={field.value?.toString() || ""}
-                                                                onChange={(val) => field.onChange(val ? parseInt(val) : 0)}
-                                                                disabled={!!initialData}
-                                                            />
-                                                            <FormMessage />
-                                                        </FormItem>
+                                                    render={({ field, fieldState }) => (
+                                                        <div className="md:col-span-2">
+                                                            <fieldset
+                                                                className={cn(
+                                                                    "notched-field",
+                                                                    fieldState.error && "border-destructive"
+                                                                )}
+                                                            >
+                                                                <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>
+                                                                    Contacto Vinculado
+                                                                </legend>
+                                                                <div className="p-1">
+                                                                    <AdvancedContactSelector
+                                                                        value={field.value?.toString() || ""}
+                                                                        onChange={(val) => field.onChange(val ? parseInt(val) : 0)}
+                                                                        disabled={!!initialData}
+                                                                    />
+                                                                </div>
+                                                            </fieldset>
+                                                            {fieldState.error && (
+                                                                <p className="mt-1.5 text-[10px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 pl-1">
+                                                                    {fieldState.error.message}
+                                                                </p>
+                                                            )}
+                                                        </div>
                                                     )}
                                                 />
 
@@ -303,71 +316,17 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
                                                 <FormField
                                                     control={form.control}
                                                     name="primary_role"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <Popover>
-                                                                <PopoverTrigger asChild>
-                                                                    <FormControl>
-                                                                        <Button
-                                                                            variant="outline"
-                                                                            role="combobox"
-                                                                            className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground", FORM_STYLES.input)}
-                                                                        >
-                                                                            {field.value
-                                                                                ? availableRoles.find(([val]) => val === field.value)?.[1]
-                                                                                : "Seleccione un rol de sistema"}
-                                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                                        </Button>
-                                                                    </FormControl>
-                                                                </PopoverTrigger>
-                                                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                                                    <div className="p-2">
-                                                                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                                                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                                            <input
-                                                                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                                                                                placeholder="Buscar rol..."
-                                                                                onChange={(e) => {
-                                                                                    const val = e.target.value.toLowerCase()
-                                                                                    const inputs = document.querySelectorAll('.role-item')
-                                                                                    inputs.forEach((el) => {
-                                                                                        if (el.textContent?.toLowerCase().includes(val)) {
-                                                                                            (el as HTMLElement).style.display = 'flex'
-                                                                                        } else {
-                                                                                            (el as HTMLElement).style.display = 'none'
-                                                                                        }
-                                                                                    })
-                                                                                }}
-                                                                            />
-                                                                        </div>
-                                                                        <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                                            {availableRoles.map(([val, label]) => (
-                                                                                <div
-                                                                                    key={val}
-                                                                                    className={cn(
-                                                                                        "role-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                                        field.value === val && "bg-accent"
-                                                                                    )}
-                                                                                    onClick={() => {
-                                                                                        field.onChange(val)
-                                                                                        document.body.click()
-                                                                                    }}
-                                                                                >
-                                                                                    <span>{label}</span>
-                                                                                    {field.value === val && (
-                                                                                        <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                                                    )}
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    </div>
-                                                                </PopoverContent>
-                                                            </Popover>
-                                                            <FormDescription className="text-xs">
-                                                                Define los permisos técnicos de seguridad.
-                                                            </FormDescription>
-                                                            <FormMessage />
-                                                        </FormItem>
+                                                    render={({ field, fieldState }) => (
+                                                        <LabeledSelect
+                                                            label="Permisos de Sistema (Rol)"
+                                                            placeholder="Seleccione un rol..."
+                                                            required
+                                                            options={availableRoles.map(([val, label]) => ({ value: val, label }))}
+                                                            value={field.value}
+                                                            onChange={field.onChange}
+                                                            error={fieldState.error?.message}
+                                                            hint="Define los permisos técnicos de seguridad."
+                                                        />
                                                     )}
                                                 />
 

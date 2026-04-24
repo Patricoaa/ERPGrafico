@@ -14,19 +14,12 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import { DataCell } from "@/components/ui/data-table-cells"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { Loader2, Check, Search, ChevronsUpDown, MonitorSmartphone } from "lucide-react"
+import { Check, Search, ChevronsUpDown, MonitorSmartphone } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
-import { CancelButton } from "@/components/shared"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { CancelButton, LabeledInput, LabeledSelect } from "@/components/shared"
 
 export interface Terminal {
     id: number
@@ -238,27 +231,26 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                                 <FormField
                                     control={form.control}
                                     name="name"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Ej: Caja Principal" className={FORM_STYLES.input} {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Nombre"
+                                            placeholder="Ej: Caja Principal"
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
                                     name="code"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="TERM-01" className={cn(FORM_STYLES.input, "uppercase")} {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Código"
+                                            placeholder="TERM-01"
+                                            className="uppercase"
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
                                     )}
                                 />
                             </div>
@@ -267,27 +259,25 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                                 <FormField
                                     control={form.control}
                                     name="serial_number"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>N° Serie</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="SN-XXXX" className={FORM_STYLES.input} {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="N° Serie"
+                                            placeholder="SN-XXXX"
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
                                     name="ip_address"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>IP / Red</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="192.168.1.XX" className={FORM_STYLES.input} {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="IP / Red"
+                                            placeholder="192.168.1.XX"
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
                                     )}
                                 />
                             </div>
@@ -295,14 +285,13 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                             <FormField
                                 control={form.control}
                                 name="location"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Ubicación (Opcional)</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Ej: Entrada Principal" className={FORM_STYLES.input} {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
+                                render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Ubicación (Opcional)"
+                                        placeholder="Ej: Entrada Principal"
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                    />
                                 )}
                             />
 
@@ -312,7 +301,7 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                                 render={({ field }) => (
                                     <FormItem className="space-y-2 border rounded-lg p-4 bg-muted/10 shadow-sm">
                                         <div className="flex justify-between items-center mb-2">
-                                            <FormLabel className={cn(FORM_STYLES.label, "mb-0")}>Cuentas Permitidas</FormLabel>
+                                            <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70 mb-0">Cuentas Permitidas</FormLabel>
                                             <span className="text-[9px] font-mono font-black text-muted-foreground uppercase opacity-70">
                                                 {field.value.length} SELECCIONADAS
                                             </span>
@@ -384,83 +373,20 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                                     control={form.control}
                                     name="default_treasury_account"
                                     render={({ field }) => (
-                                        <FormItem className="pt-2">
-                                            <FormLabel className={FORM_STYLES.label}>Cuenta Predeterminada (Inicio de Sesión)</FormLabel>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                        <Button
-                                                            variant="outline"
-                                                            role="combobox"
-                                                            className={cn(FORM_STYLES.input, "w-full justify-between font-normal", !field.value && "text-muted-foreground")}
-                                                        >
-                                                            {field.value === "__none__" || !field.value
-                                                                ? "Seleccione una cuenta predeterminada"
-                                                                : treasuryAccounts.find(acc => acc.id.toString() === field.value)?.name || "Seleccione..."}
-                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                        </Button>
-                                                    </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                                    <div className="p-2">
-                                                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background focus-within:ring-1 focus-within:ring-primary/30">
-                                                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                            <input
-                                                                className={cn("flex h-9 w-full rounded-md bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground")}
-                                                                placeholder="Buscar cuenta..."
-                                                                onChange={(e) => {
-                                                                    const val = e.target.value.toLowerCase()
-                                                                    const inputs = document.querySelectorAll('.account-popover-item')
-                                                                    inputs.forEach((el) => {
-                                                                        if (el.textContent?.toLowerCase().includes(val)) {
-                                                                            (el as HTMLElement).style.display = 'flex'
-                                                                        } else {
-                                                                            (el as HTMLElement).style.display = 'none'
-                                                                        }
-                                                                    })
-                                                                }}
-                                                            />
-                                                        </div>
-                                                        <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                            <div
-                                                                className={cn(
-                                                                    "account-popover-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                    field.value === "__none__" && "bg-accent text-accent-foreground font-bold"
-                                                                )}
-                                                                onClick={() => {
-                                                                    field.onChange("__none__")
-                                                                    document.body.click() // Close popover trick
-                                                                }}
-                                                            >
-                                                                <span>-- Ninguna (Pedir al iniciar) --</span>
-                                                                {field.value === "__none__" && <Check className="ml-auto h-4 w-4 opacity-100" />}
-                                                            </div>
-                                                            {treasuryAccounts
-                                                                .filter(acc => form.watch("allowed_treasury_account_ids").includes(acc.id))
-                                                                .map((account) => (
-                                                                    <div
-                                                                        key={account.id}
-                                                                        className={cn(
-                                                                            "account-popover-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                            field.value === account.id.toString() && "bg-accent text-accent-foreground font-bold"
-                                                                        )}
-                                                                        onClick={() => {
-                                                                            field.onChange(account.id.toString())
-                                                                            document.body.click()
-                                                                        }}
-                                                                    >
-                                                                        <span>{account.name}</span>
-                                                                        {field.value === account.id.toString() && (
-                                                                            <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                                        )}
-                                                                    </div>
-                                                                ))}
-                                                        </div>
-                                                    </div>
-                                                </PopoverContent>
-                                            </Popover>
-                                            <FormMessage />
-                                        </FormItem>
+                                        <div className="pt-2">
+                                            <LabeledSelect
+                                                label="Cuenta Predeterminada (Inicio de Sesión)"
+                                                options={[
+                                                    { value: "__none__", label: "-- Ninguna (Pedir al iniciar) --" },
+                                                    ...treasuryAccounts
+                                                        .filter(acc => form.watch("allowed_treasury_account_ids").includes(acc.id))
+                                                        .map(acc => ({ value: acc.id.toString(), label: acc.name }))
+                                                ]}
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                                value={field.value || ""}
+                                            />
+                                        </div>
                                     )}
                                 />
                             )}
