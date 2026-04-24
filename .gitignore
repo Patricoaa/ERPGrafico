@@ -30,5 +30,5 @@ frontend/build/
 .DS_Store
 Thumbs.db
 #claude
-.claude
-.agents
+.claude/*
+.agents/*

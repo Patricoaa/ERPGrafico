@@ -1,4 +1,3 @@
-import React from "react"
 import { useFormContext } from "react-hook-form"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -16,10 +15,9 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { AdvancedSaleOrderSelector } from "@/components/selectors/AdvancedSaleOrderSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { Skeleton, LabeledInput } from "@/components/shared"
+import { Skeleton, LabeledInput, LabeledContainer } from "@/components/shared"
 
 import { cn } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms"
 import type { SaleOrder, SaleOrderLine } from "@/features/sales/types"
 import type { Contact } from "@/features/contacts/types"
@@ -91,7 +89,7 @@ export function WorkOrderBasicInfo({
                                             {initialData?.sale_order_number ? `NV-${initialData.sale_order_number}` : "Sin NV"}
                                         </span>
                                         <span className="text-muted-foreground">
-                                            - {typeof initialData?.sale_line === 'object' 
+                                            - {typeof initialData?.sale_line === 'object'
                                                 ? (initialData.sale_line?.product?.name || initialData.sale_line?.description || '')
                                                 : ''}
                                         </span>
@@ -111,15 +109,15 @@ export function WorkOrderBasicInfo({
                             control={form.control}
                             name="sale_order"
                             render={({ field }) => (
-                                <div className="relative group">
-                                    <label className="absolute -top-2 left-2 px-1 bg-background text-[10px] font-black uppercase tracking-widest text-muted-foreground transition-colors group-focus-within:text-primary z-10">
-                                        Nota de Venta
-                                    </label>
+                                <LabeledContainer
+                                    label="Nota de Venta"
+                                    icon={<FileText className="h-3.5 w-3.5 opacity-50" />}
+                                >
                                     <AdvancedSaleOrderSelector
                                         value={field.value}
                                         onChange={field.onChange}
                                         disabled={!!initialData}
-                                        className="h-9 border-border/40 focus:border-primary/40 bg-transparent"
+                                        className="h-8 border-0 focus-visible:ring-0 bg-transparent shadow-none"
                                         customFilter={(order: any) =>
                                             order.lines?.some((l: any) =>
                                                 l.product_type === 'MANUFACTURABLE' &&
@@ -128,7 +126,7 @@ export function WorkOrderBasicInfo({
                                             )
                                         }
                                     />
-                                </div>
+                                </LabeledContainer>
                             )}
                         />
                     ) : null}
@@ -182,16 +180,13 @@ export function WorkOrderBasicInfo({
                                         control={form.control}
                                         name="sale_line"
                                         render={({ field }) => (
-                                            <div className="relative group">
-                                                <label className="absolute -top-2 left-2 px-1 bg-background text-[10px] font-black uppercase tracking-widest text-muted-foreground transition-colors group-focus-within:text-primary z-10">
-                                                    Ítem de Venta a Fabricar
-                                                </label>
+                                            <LabeledContainer label="Ítem de Venta a Fabricar">
                                                 <Select
                                                     onValueChange={field.onChange}
                                                     value={field.value}
                                                     disabled={!!initialData}
                                                 >
-                                                    <SelectTrigger className="h-9 border-border/40 focus:border-primary/40 bg-transparent transition-all">
+                                                    <SelectTrigger className="h-8 border-0 focus:ring-0 bg-transparent shadow-none transition-all px-2">
                                                         <SelectValue placeholder="Seleccionar ítem..." />
                                                     </SelectTrigger>
                                                     <SelectContent>
@@ -211,7 +206,7 @@ export function WorkOrderBasicInfo({
                                                         )}
                                                     </SelectContent>
                                                 </Select>
-                                            </div>
+                                            </LabeledContainer>
                                         )}
                                     />
 
@@ -253,22 +248,19 @@ export function WorkOrderBasicInfo({
                             control={form.control}
                             name="product_id"
                             render={({ field }) => (
-                                <div className="relative group">
-                                    <label className="absolute -top-2 left-2 px-1 bg-background text-[10px] font-black uppercase tracking-widest text-muted-foreground transition-colors group-focus-within:text-primary z-10">
-                                        Producto a Fabricar (Stock)
-                                    </label>
+                                <LabeledContainer label="Producto a Fabricar (Stock)">
                                     <ProductSelector
                                         value={field.value}
                                         onChange={field.onChange}
                                         onSelect={handleManualProductSelect}
                                         productType="MANUFACTURABLE"
-                                        className="h-9 border-border/40 focus:border-primary/40 bg-transparent"
+                                        className="h-8 border-0 focus-visible:ring-0 bg-transparent shadow-none"
                                         customFilter={(p: ProductMinimal) =>
                                             !p.requires_advanced_manufacturing &&
                                             !p.mfg_auto_finalize
                                         }
                                     />
-                                </div>
+                                </LabeledContainer>
                             )}
                         />
                     </div>
@@ -297,18 +289,15 @@ export function WorkOrderBasicInfo({
                             control={form.control}
                             name="uom_id"
                             render={({ field }) => (
-                                <div className="relative group">
-                                    <label className="absolute -top-2 left-2 px-1 bg-background text-[10px] font-black uppercase tracking-widest text-muted-foreground transition-colors group-focus-within:text-primary z-10">
-                                        U. Medida
-                                    </label>
+                                <LabeledContainer label="U. Medida">
                                     <UoMSelector
                                         value={field.value || ""}
                                         onChange={field.onChange}
                                         uoms={uoms}
                                         categoryId={selectedManualProduct?.uom_category}
-                                        className="h-9 border-border/40 focus:border-primary/40 bg-transparent"
+                                        className="h-8 border-0 focus:ring-0 bg-transparent shadow-none"
                                     />
-                                </div>
+                                </LabeledContainer>
                             )}
                         />
                     </div>
@@ -320,16 +309,13 @@ export function WorkOrderBasicInfo({
                     control={form.control}
                     name="start_date"
                     render={({ field }) => (
-                        <div className="relative group">
-                            <label className="absolute -top-2 left-2 px-1 bg-background text-[10px] font-black uppercase tracking-widest text-muted-foreground transition-colors group-focus-within:text-primary z-10">
-                                Fecha Inicio
-                            </label>
+                        <LabeledContainer label="Fecha Inicio">
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant={"outline"}
                                         className={cn(
-                                            "w-full h-9 pl-3 text-left font-bold border-border/40 focus:border-primary/40 bg-transparent hover:bg-primary/5 transition-all",
+                                            "w-full h-8 pl-2 text-left font-bold border-0 focus:ring-0 bg-transparent hover:bg-primary/5 transition-all shadow-none",
                                             !field.value && "text-muted-foreground font-normal"
                                         )}
                                     >
@@ -346,23 +332,20 @@ export function WorkOrderBasicInfo({
                                     />
                                 </PopoverContent>
                             </Popover>
-                        </div>
+                        </LabeledContainer>
                     )}
                 />
                 <FormField
                     control={form.control}
                     name="due_date"
                     render={({ field }) => (
-                        <div className="relative group">
-                            <label className="absolute -top-2 left-2 px-1 bg-background text-[10px] font-black uppercase tracking-widest text-muted-foreground transition-colors group-focus-within:text-primary z-10">
-                                Fecha Entrega
-                            </label>
+                        <LabeledContainer label="Fecha Entrega">
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant={"outline"}
                                         className={cn(
-                                            "w-full h-9 pl-3 text-left font-bold border-border/40 focus:border-primary/40 bg-transparent hover:bg-primary/5 transition-all",
+                                            "w-full h-8 pl-2 text-left font-bold border-0 focus:ring-0 bg-transparent hover:bg-primary/5 transition-all shadow-none",
                                             !field.value && "text-muted-foreground font-normal"
                                         )}
                                     >
@@ -379,7 +362,7 @@ export function WorkOrderBasicInfo({
                                     />
                                 </PopoverContent>
                             </Popover>
-                        </div>
+                        </LabeledContainer>
                     )}
                 />
             </div>
@@ -402,17 +385,14 @@ export function WorkOrderBasicInfo({
                             </FormItem>
                         )}
                     />
-                    <div className="relative group">
-                        <label className="absolute -top-2 left-2 px-1 bg-background text-[10px] font-black uppercase tracking-widest text-muted-foreground transition-colors group-focus-within:text-primary z-10">
-                            Contacto Relacionado
-                        </label>
+                    <LabeledContainer label="Contacto Relacionado">
                         {selectedContact ? (
-                            <div className="flex items-center justify-between px-3 h-9 rounded-md bg-primary/5 border border-primary/20 transition-all hover:bg-primary/10">
+                            <div className="flex items-center justify-between px-2 h-8 rounded bg-primary/5 border border-dashed border-primary/20 transition-all hover:bg-primary/10">
                                 <div className="flex items-center gap-2 overflow-hidden">
-                                    <User className="h-3.5 w-3.5 text-primary shrink-0" />
+                                    <User className="h-3 w-3 text-primary shrink-0" />
                                     <div className="flex items-center gap-2 overflow-hidden">
-                                        <span className="text-xs truncate font-bold">{selectedContact.name}</span>
-                                        {selectedContact.tax_id && <span className="text-[10px] font-mono text-muted-foreground/70 opacity-60">[{selectedContact.tax_id}]</span>}
+                                        <span className="text-[11px] truncate font-bold">{selectedContact.name}</span>
+                                        {selectedContact.tax_id && <span className="text-[9px] font-mono text-muted-foreground/70 opacity-60">[{selectedContact.tax_id}]</span>}
                                     </div>
                                 </div>
                                 <Button
@@ -425,7 +405,7 @@ export function WorkOrderBasicInfo({
                                         form.setValue('contact_id', "")
                                     }}
                                 >
-                                    <X className="h-3.5 w-3.5" />
+                                    <X className="h-3 w-3" />
                                 </Button>
                             </div>
                         ) : (
@@ -436,10 +416,10 @@ export function WorkOrderBasicInfo({
                                 }}
                                 onChange={() => { }}
                                 placeholder="Buscar contacto..."
-                                className="h-9 border-border/40 focus:border-primary/40 bg-transparent"
+                                className="h-8 border-0 focus-visible:ring-0 bg-transparent shadow-none"
                             />
                         )}
-                    </div>
+                    </LabeledContainer>
                 </div>
             )}
         </div>

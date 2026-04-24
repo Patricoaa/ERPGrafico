@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
     Plus, Edit, Trash2, Check, Loader2, Workflow, Box, Layers, Copy
 } from "lucide-react"
@@ -19,7 +18,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { Label } from "@/components/ui/label"
+import { LabeledContainer } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
@@ -56,7 +55,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             } else if (product?.id) {
                 params.parent_id = product.id
             }
-            
+
             const res = await api.get(`/production/boms/`, { params })
             setBoms(res.data)
             onBomsChange?.(res.data)
@@ -172,7 +171,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 return (
                     <div className="flex items-center justify-center gap-2 w-full">
                         {isBase ? (
-                            <DataCell.Badge 
+                            <DataCell.Badge
                                 variant="outline"
                                 className="text-[9px] font-black uppercase tracking-widest bg-primary/5 text-primary border-primary/20 h-5 px-1.5"
                             >
@@ -193,8 +192,8 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             header: ({ column }) => <DataTableColumnHeader column={column} title="Rendimiento (Output)" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.NumericFlow 
-                        value={row.original.yield_quantity} 
+                    <DataCell.NumericFlow
+                        value={row.original.yield_quantity}
                         unit={row.original.yield_uom_name || product?.uom_name}
                     />
                 </div>
@@ -205,12 +204,12 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <button 
+                    <button
                         onClick={() => !row.original.active && handleToggleActive(row.original)}
                         className={cn(!row.original.active && "hover:scale-105 transition-transform")}
                     >
-                        <StatusBadge 
-                            status={row.original.active ? "active" : "inactive"} 
+                        <StatusBadge
+                            status={row.original.active ? "active" : "inactive"}
                             className="cursor-pointer"
                         />
                     </button>
@@ -282,20 +281,17 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
 
                     {product?.has_variants && (
                         <div className="mt-4 bg-primary/5 p-5 rounded-md border-2 border-primary/20 shadow-sm transition-all hover:shadow-md animate-in fade-in slide-in-from-top-2 duration-500">
-                            <div className="flex flex-col md:flex-row md:items-center gap-6">
-                                <div className="flex items-center gap-3 shrink-0">
-                                    <Layers className="h-5 w-5 text-muted-foreground" />
-                                    <div>
-                                        <Label className="text-[11px] font-black uppercase tracking-widest text-primary leading-none">Contexto de Manufactura</Label>
-                                        <p className="text-[9px] font-bold text-muted-foreground leading-none mt-1 uppercase tracking-tighter">Seleccione variante para configurar proceso propio.</p>
-                                    </div>
-                                </div>
-                                <div className="flex-1 flex flex-col md:flex-row items-center gap-4">
+                            <div className="flex-1 flex flex-col md:flex-row items-center gap-4">
+                                <LabeledContainer
+                                    label="Contexto de Manufactura"
+                                    icon={<Layers className="h-4 w-4 opacity-50" />}
+                                    className="flex-1"
+                                >
                                     <Select
                                         value={selectedVariantId}
                                         onValueChange={setSelectedVariantId}
                                     >
-                                        <SelectTrigger className="w-full md:w-[360px] h-10 bg-background font-mono shadow-sm rounded-sm border-2 border-primary/20 ring-primary/20 focus:ring-2">
+                                        <SelectTrigger className="border-0 focus:ring-0 h-8 px-2 shadow-none bg-transparent font-mono">
                                             <SelectValue placeholder="Seleccione variante..." />
                                         </SelectTrigger>
                                         <SelectContent align="start" className="rounded-sm border-2">
@@ -312,19 +308,19 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <Button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            handleCreate()
-                                        }}
-                                        className="w-full md:w-auto h-10 px-6 gap-2 rounded-sm font-black uppercase tracking-widest text-[11px] shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
-                                        disabled={selectedVariantId === "all"}
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                        Configurar Receta
-                                    </Button>
-                                </div>
+                                </LabeledContainer>
+                                <Button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleCreate()
+                                    }}
+                                    className="w-full md:w-auto h-10 px-6 gap-2 rounded-sm font-black uppercase tracking-widest text-[11px] shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
+                                    disabled={selectedVariantId === "all"}
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    Configurar Receta
+                                </Button>
                             </div>
                         </div>
                     )}
@@ -353,7 +349,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             )}
 
             <div className="p-0">
-                <DataTable 
+                <DataTable
                     columns={columns}
                     data={boms}
                     isLoading={loading}

@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 import {
     Loader2,
     Trash2,
@@ -50,7 +50,7 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
     activeTab?: string,
     onSavingChange?: (saving: boolean) => void
 }) {
-    const [currentTab, setCurrentTab] = useState(activeTab)
+    // Global Settings Form
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [concepts, setConcepts] = useState<PayrollConcept[]>([])
@@ -224,24 +224,9 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
-            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/50 rounded-md border-2">
-                    <TabsTrigger value="global" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <Settings2 className="h-3.5 w-3.5" />
-                        Globales
-                    </TabsTrigger>
-                    <TabsTrigger value="concepts" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <AlertCircle className="h-3.5 w-3.5" />
-                        Conceptos
-                    </TabsTrigger>
-                    <TabsTrigger value="previsional" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <Loader2 className="h-3.5 w-3.5" />
-                        Previsión
-                    </TabsTrigger>
-                </TabsList>
-
-                {/* --- Tab: Global --- */}
-                <TabsContent value="global" className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
+            {/* --- Tab: Global --- */}
+            {activeTab === "global" && (
+                <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
                     <Form {...globalForm}>
                         <div className="grid gap-6">
                             <Card className="rounded-md border-2">
@@ -355,10 +340,12 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
                             </Card>
                         </div>
                     </Form>
-                </TabsContent>
+                </div>
+            )}
 
-                {/* --- Tab: Conceptos --- */}
-                <TabsContent value="concepts" className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
+            {/* --- Tab: Conceptos --- */}
+            {activeTab === "concepts" && (
+                <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
                     <div className="flex justify-between items-center px-1">
                         <div>
                             <h3 className="text-sm font-black uppercase text-primary tracking-widest">Conceptos de Nómina</h3>
@@ -375,10 +362,12 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
                         isLoading={loading}
                         cardMode={true}
                     />
-                </TabsContent>
+                </div>
+            )}
 
-                {/* --- Tab: Previsión --- */}
-                <TabsContent value="previsional" className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
+            {/* --- Tab: Previsión --- */}
+            {activeTab === "previsional" && (
+                <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
                     <div className="flex justify-between items-center px-1">
                         <div>
                             <h3 className="text-sm font-black uppercase text-primary tracking-widest">Instituciones Previsionales (AFP)</h3>
@@ -412,8 +401,8 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
                             </Card>
                         ))}
                     </div>
-                </TabsContent>
-            </Tabs>
+                </div>
+            )}
 
             <ActionConfirmModal
                 open={conceptDeleteConfirm.isOpen}

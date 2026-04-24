@@ -17,6 +17,9 @@ import { toast } from "sonner"
 import api from "@/lib/api"
 
 import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, AlertTriangle, ShieldAlert, CheckCircle2, FileWarning, Printer } from "lucide-react"
+import { User, Info } from "lucide-react"
+import { LabeledContainer } from "@/components/shared/LabeledContainer"
+import { cn } from "@/lib/utils"
 import { SubmitButton } from "@/components/shared/ActionButtons"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useAuth } from "@/contexts/AuthContext"
@@ -774,80 +777,106 @@ export function SalesCheckoutWizardContent({
 
                         {/* Credit Approval Alert */}
                         {creditApprovalRequired && (
-                            <Alert className={`mb-4 border ${isApproved ? 'border-success/50 bg-success/5' : 'border-warning/50 bg-warning/5'}`}>
-                                {isWaitingApproval ? (
-                                    <Loader2 className="h-4 w-4 text-warning animate-spin" />
-                                ) : isApproved ? (
-                                    <CheckCircle2 className="h-4 w-4 text-success" />
-                                ) : (
-                                    <AlertCircle className="h-4 w-4 text-warning" />
-                                )}
-                                <AlertTitle className={`font-bold ${isApproved ? 'text-success-foreground' : 'text-warning-foreground'}`}>
-                                    {isWaitingApproval ? "Esperando Autorización..." : isApproved ? "Crédito Aprobado" : "Autorización Requerida"}
-                                </AlertTitle>
-                                <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
-                                    <span className={`text-sm ${isApproved ? 'text-success-foreground/80' : 'text-warning-foreground/80'}`}>
-                                        {isWaitingApproval 
-                                            ? "La solicitud ha sido enviada. Consumiendo en tiempo real el estado de la verificación..." 
-                                            : isApproved 
-                                                ? "El supervisor ha verificado y autorizado la línea de crédito. Puede continuar y finalizar la venta." 
-                                                : creditApprovalReason}
-                                    </span>
-                                    {!isApproved && (
-                                        <div className="flex gap-2">
-                                            {isWaitingApproval ? (
-                                                <>
-                                                    <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="border-warning/30 text-warning hover:bg-warning/10">
-                                                        Cancelar
-                                                    </Button>
-                                                    {approvalTaskId && (
-                                                        <Button size="sm" onClick={() => checkApprovalStatus(approvalTaskId, false)} className="bg-warning hover:bg-warning text-white border-none shadow-sm">
-                                                            Verificar Estado
-                                                        </Button>
+                            <Alert className={cn(
+                                "mb-4 border-l-4 rounded-none",
+                                isApproved 
+                                    ? "border-success bg-success/5 shadow-sm" 
+                                    : "border-warning bg-warning/5 shadow-sm"
+                            )}>
+                                <div className="flex items-start gap-4">
+                                    <div className={cn(
+                                        "p-2 rounded-sm",
+                                        isApproved ? "bg-success/10" : "bg-warning/10"
+                                    )}>
+                                        {isWaitingApproval ? (
+                                            <Loader2 className="h-4 w-4 text-warning animate-spin" />
+                                        ) : isApproved ? (
+                                            <CheckCircle2 className="h-4 w-4 text-success" />
+                                        ) : (
+                                            <AlertCircle className="h-4 w-4 text-warning" />
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <AlertTitle className={cn(
+                                            "font-black uppercase tracking-tight text-xs mb-1",
+                                            isApproved ? "text-success" : "text-warning"
+                                        )}>
+                                            {isWaitingApproval ? "Esperando Autorización..." : isApproved ? "Crédito Aprobado" : "Autorización Requerida"}
+                                        </AlertTitle>
+                                        <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                            <span className={cn(
+                                                "text-sm leading-relaxed",
+                                                isApproved ? "text-success-foreground/80" : "text-warning-foreground/80"
+                                            )}>
+                                                {isWaitingApproval 
+                                                    ? "La solicitud ha sido enviada. Consumiendo en tiempo real el estado de la verificación..." 
+                                                    : isApproved 
+                                                        ? "El supervisor ha verificado y autorizado la línea de crédito. Puede continuar y finalizar la venta." 
+                                                        : creditApprovalReason}
+                                            </span>
+                                            {!isApproved && (
+                                                <div className="flex gap-2 shrink-0">
+                                                    {isWaitingApproval ? (
+                                                        <>
+                                                            <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="h-8 border-warning/30 text-warning hover:bg-warning/10 uppercase font-bold text-[10px]">
+                                                                Cancelar
+                                                            </Button>
+                                                            {approvalTaskId && (
+                                                                <Button size="sm" onClick={() => checkApprovalStatus(approvalTaskId, false)} className="h-8 bg-warning hover:bg-warning/90 text-white border-none shadow-sm uppercase font-bold text-[10px]">
+                                                                    Verificar
+                                                                </Button>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="h-8 border-warning/30 text-warning hover:bg-warning/10 uppercase font-bold text-[10px]">
+                                                                Ajustar
+                                                            </Button>
+                                                            {canDirectApprove && (
+                                                                <Button size="sm" variant="secondary" onClick={handleDirectApproval} className="h-8 bg-warning/20 hover:bg-warning/30 text-warning border-none shadow-sm uppercase font-bold text-[10px]">
+                                                                    Aprobar
+                                                                </Button>
+                                                            )}
+                                                            <Button size="sm" onClick={handleRequestApproval} className="h-8 bg-primary hover:bg-primary/90 text-white shadow-sm uppercase font-bold text-[10px]">
+                                                                Solicitar
+                                                            </Button>
+                                                        </>
                                                     )}
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="border-warning/30 text-warning hover:bg-warning/10">
-                                                        Ajustar
-                                                    </Button>
-                                                    {canDirectApprove && (
-                                                        <Button size="sm" variant="secondary" onClick={handleDirectApproval} className="bg-warning hover:bg-warning text-white border-none shadow-sm">
-                                                            Aprobar
-                                                        </Button>
-                                                    )}
-                                                    <Button size="sm" onClick={handleRequestApproval} className="bg-primary hover:bg-primary/90 text-white shadow-sm">
-                                                        Solicitar
-                                                    </Button>
-                                                </>
+                                                </div>
                                             )}
-                                        </div>
-                                    )}
-                                </AlertDescription>
+                                        </AlertDescription>
+                                    </div>
+                                </div>
                             </Alert>
                         )}
 
                         {securityErrorMessage && (
-                            <Alert className="mb-4 border border-destructive/50 bg-destructive/5">
-                                <ShieldAlert className="h-4 w-4 text-destructive" />
-                                <AlertTitle className="font-bold text-destructive">Alerta de Seguridad</AlertTitle>
-                                <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
-                                    <span className="text-sm text-destructive/80">{securityErrorMessage}</span>
-                                    <Button 
-                                        size="sm" 
-                                        variant="outline" 
-                                        onClick={() => {
-                                            setSecurityErrorMessage(null)
-                                            setApprovalTaskId(null)
-                                            setIsApproved(false)
-                                            setIsWaitingApproval(false)
-                                            setCreditApprovalRequired(false)
-                                        }} 
-                                        className="border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0"
-                                    >
-                                        Entendido
-                                    </Button>
-                                </AlertDescription>
+                            <Alert className="mb-4 border-l-4 border-destructive rounded-none bg-destructive/5 shadow-sm">
+                                <div className="flex items-start gap-4">
+                                    <div className="p-2 rounded-sm bg-destructive/10">
+                                        <ShieldAlert className="h-4 w-4 text-destructive" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <AlertTitle className="font-black uppercase tracking-tight text-xs mb-1 text-destructive">Alerta de Seguridad</AlertTitle>
+                                        <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                            <span className="text-sm text-destructive/80 leading-relaxed">{securityErrorMessage}</span>
+                                            <Button 
+                                                size="sm" 
+                                                variant="outline" 
+                                                onClick={() => {
+                                                    setSecurityErrorMessage(null)
+                                                    setApprovalTaskId(null)
+                                                    setIsApproved(false)
+                                                    setIsWaitingApproval(false)
+                                                    setCreditApprovalRequired(false)
+                                                }} 
+                                                className="h-8 border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0 uppercase font-bold text-[10px]"
+                                            >
+                                                Entendido
+                                            </Button>
+                                        </AlertDescription>
+                                    </div>
+                                </div>
                             </Alert>
                         )}
                         
@@ -908,7 +937,7 @@ export function SalesCheckoutWizardContent({
                                         loading={loading}
                                         disabled={loading || isWaitingApproval}
                                         icon={<Check className="mr-2 h-4 w-4" />}
-                                        className="w-48 bg-success hover:bg-success/90 font-bold text-white"
+                                        className="w-48 bg-success hover:bg-success/90 font-black uppercase tracking-widest text-[10px] text-white shadow-lg shadow-success/20"
                                     >
                                         Finalizar Venta
                                     </SubmitButton>

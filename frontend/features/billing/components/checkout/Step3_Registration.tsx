@@ -1,7 +1,6 @@
 "use client"
 
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
+import { LabeledInput } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { FileText, Calendar, Hash, ShieldAlert } from "lucide-react"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -72,34 +71,29 @@ export function Step3_Registration({
                             }
                         }}
                     />
-                    <Label htmlFor="is_pending" className="text-xs font-medium cursor-pointer">
+                    <label htmlFor="is_pending" className="text-xs font-medium cursor-pointer">
                         Emitiré/recibiré la nota luego
-                    </Label>
+                    </label>
                 </div>
 
                 {!formData.is_pending && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
                         {/* Main Info Card */}
                         <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/10">
+                            <LabeledInput
+                                label="N° de Folio"
+                                icon={<Hash className="h-3 w-3" />}
+                                placeholder="Ej: 45223"
+                                className="bg-background"
+                                value={formData.document_number}
+                                onChange={(e) => setData({ ...formData, document_number: e.target.value })}
+                                required
+                            />
                             <div className="space-y-2">
-                                <Label htmlFor="folio" className="text-xs font-bold uppercase flex items-center gap-2">
-                                    <Hash className="h-3 w-3" />
-                                    N° de Folio
-                                    <span className="text-destructive font-black">*</span>
-                                </Label>
-                                <Input
-                                    id="folio"
-                                    placeholder="Ej: 45223"
-                                    className="bg-background"
-                                    value={formData.document_number}
-                                    onChange={(e) => setData({ ...formData, document_number: e.target.value })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="date" className="text-xs font-bold uppercase flex items-center gap-2">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 flex items-center gap-2">
                                     <Calendar className="h-3 w-3" />
                                     Fecha Emisión
-                                </Label>
+                                </label>
                                 <div>
                                     <PeriodValidationDateInput
                                         date={formData.document_date ? new Date(formData.document_date + 'T12:00:00') : undefined}

@@ -3,24 +3,14 @@
 import React, { useEffect, useCallback, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+
 import { useInventorySettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-    Loader2,
-    Check,
-    CloudUpload,
-    Package,
-    ArrowLeftRight,
-    DollarSign,
-} from "lucide-react"
+
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+
 
 import { inventorySchema, type InventoryFormValues } from "./InventorySettingsView.schema"
 import { UseFormReturn, Path } from "react-hook-form"
@@ -99,25 +89,10 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
-            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/50 rounded-md border-2">
-                    <TabsTrigger value="accounts" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <Package className="h-3.5 w-3.5" />
-                        Cuentas
-                    </TabsTrigger>
-                    <TabsTrigger value="adjustments" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <ArrowLeftRight className="h-3.5 w-3.5" />
-                        Ajustes
-                    </TabsTrigger>
-                    <TabsTrigger value="cogs" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <DollarSign className="h-3.5 w-3.5" />
-                        Costo Ventas
-                    </TabsTrigger>
-                </TabsList>
-
-                <Form {...form}>
-                    <form className="mt-6 space-y-6">
-                        <TabsContent value="accounts" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+            <Form {...form}>
+                <form className="mt-6 space-y-6">
+                    {activeTab === "accounts" && (
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Cuentas por Tipo de Producto</CardTitle>
@@ -142,9 +117,11 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
                                     </div>
                                 </CardContent>
                             </Card>
-                        </TabsContent>
+                        </div>
+                    )}
 
-                        <TabsContent value="adjustments" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                    {activeTab === "adjustments" && (
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Cuentas de Ajuste</CardTitle>
@@ -187,9 +164,11 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
                                     />
                                 </CardContent>
                             </Card>
-                        </TabsContent>
+                        </div>
+                    )}
 
-                        <TabsContent value="cogs" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                    {activeTab === "cogs" && (
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Costo de Ventas (COGS)</CardTitle>
@@ -200,10 +179,10 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
                                     <AccountField form={form} name="manufactured_cogs_account" label="Costo Producción (MANUFACTURABLE)" accountType="EXPENSE" />
                                 </CardContent>
                             </Card>
-                        </TabsContent>
-                    </form>
-                </Form>
-            </Tabs>
+                        </div>
+                    )}
+                </form>
+            </Form>
         </div>
     )
 }

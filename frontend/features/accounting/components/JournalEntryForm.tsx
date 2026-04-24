@@ -1,7 +1,7 @@
 "use client"
 
 import { getErrorMessage } from "@/lib/errors"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { JournalEntryInitialData } from "@/types/forms"
@@ -39,7 +39,7 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { LabeledInput, LabeledContainer } from "@/components/shared";
+import { LabeledInput, LabeledContainer, CancelButton, SubmitButton, IconButton } from "@/components/shared";
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -185,21 +185,28 @@ export function JournalEntryForm({
         name: "items",
     })
 
+    const lastResetKey = useRef<string | null>(null)
+
     useEffect(() => {
-        if (open) {
-            if (!initialData) {
-                form.reset({
-                    date: serverDate || new Date(),
-                    description: "",
-                    items: [
-                        { account: "", label: "", debit: 0, credit: 0 },
-                        { account: "", label: "", debit: 0, credit: 0 },
-                    ]
-                })
-            } else {
-                // Force reset with initial data when editing
-                form.reset(defaultValues)
-            }
+        if (!open) {
+            lastResetKey.current = null
+            return
+        }
+        const resetKey = initialData?.id ? `edit-${initialData.id}` : `new-${serverDate?.getTime() ?? 'pending'}`
+        if (lastResetKey.current === resetKey) return
+        lastResetKey.current = resetKey
+
+        if (!initialData) {
+            form.reset({
+                date: serverDate || new Date(),
+                description: "",
+                items: [
+                    { account: "", label: "", debit: 0, credit: 0 },
+                    { account: "", label: "", debit: 0, credit: 0 },
+                ]
+            })
+        } else {
+            form.reset(defaultValues)
         }
     }, [open, initialData, serverDate])
 
@@ -250,9 +257,9 @@ export function JournalEntryForm({
         return (
             <div onClick={() => setOpen(true)}>
                 {triggerVariant === "circular" ? (
-                    <Button size="icon" className="rounded-full h-8 w-8" title="Nuevo Asiento">
+                    <IconButton circular title="Nuevo Asiento" className="h-8 w-8 bg-primary text-primary-foreground hover:bg-primary/90">
                         <Plus className="h-4 w-4" />
-                    </Button>
+                    </IconButton>
                 ) : (
                     <Button variant={initialData ? "ghost" : "default"} size={initialData ? "icon" : "default"}>
                         {initialData ? <Pencil className="h-4 w-4" /> : triggerText}
@@ -288,13 +295,7 @@ export function JournalEntryForm({
                 }
                 footer={
                     <div className="flex justify-end space-x-2 w-full">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setOpen(false)}
-                        >
-                            Cancelar
-                        </Button>
+                        <CancelButton onClick={() => setOpen(false)} />
                         <ActionSlideButton type="submit" form="journal-entry-form" disabled={loading}>
                             {loading ? "Guardando..." : (initialData ? "Actualizar Asiento" : "Crear Asiento")}
                         </ActionSlideButton>
@@ -401,11 +402,11 @@ export function JournalEntryForm({
                                     <Table>
                                         <TableHeader>
                                             <TableRow className="hover:bg-transparent border-b">
-                                                <TableHead className={cn(FORM_STYLES.label, "w-[300px] text-center")}>Cuenta</TableHead>
-                                                <TableHead className={cn(FORM_STYLES.label, "text-center")}>Glosa</TableHead>
-                                                <TableHead className={cn(FORM_STYLES.label, "w-[150px] text-center")}>Debe</TableHead>
-                                                <TableHead className={cn(FORM_STYLES.label, "w-[150px] text-center")}>Haber</TableHead>
-                                                <TableHead className="w-[50px] text-center">Acciones</TableHead>
+                                                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-[300px] text-center">Cuenta</TableHead>
+                                                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center">Glosa</TableHead>
+                                                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-[150px] text-center">Debe</TableHead>
+                                                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-[150px] text-center">Haber</TableHead>
+                                                <TableHead className="w-[50px] text-center"></TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -485,15 +486,13 @@ export function JournalEntryForm({
                                                         />
                                                     </TableCell>
                                                     <TableCell className="p-2 text-center">
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="icon"
+                                                        <IconButton
                                                             onClick={() => remove(index)}
-                                                            className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                                            className="h-8 w-8 text-muted-foreground/30 hover:text-destructive"
+                                                            title="Eliminar línea"
                                                         >
                                                             <Trash2 className="h-3.5 w-3.5" />
-                                                        </Button>
+                                                        </IconButton>
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
@@ -502,11 +501,12 @@ export function JournalEntryForm({
                                     <div className="flex justify-between items-center mt-2 px-2">
                                         <Button
                                             type="button"
-                                            variant="outline"
+                                            variant="ghost"
                                             size="sm"
+                                            className="text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/5"
                                             onClick={() => append({ account: "", label: "", debit: 0, credit: 0 })}
                                         >
-                                            <Plus className="mr-2 h-4 w-4" /> Agregar Línea
+                                            <Plus className="mr-2 h-3.5 w-3.5" /> Agregar Línea
                                         </Button>
                                         <TotalBalance control={form.control} />
                                     </div>

@@ -151,14 +151,11 @@ export function Step1_CustomerDTE({
             )}
 
             {/* ── Customer Selector ───────────────────────────── */}
-            <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                    <User className="h-5 w-5 text-primary" />
-                    <h3 className="font-black tracking-tighter text-foreground uppercase">
-                        Cliente
-                    </h3>
-                </div>
-                <LabeledContainer label="Buscar por Nombre, RUT o Email">
+            <div className="space-y-4">
+                <LabeledContainer 
+                    label="Seleccionar Cliente" 
+                    icon={<User className="h-4 w-4" />}
+                >
                     <AdvancedContactSelector
                         value={selectedCustomerId}
                         onChange={setSelectedCustomerId}
@@ -225,7 +222,7 @@ export function Step1_CustomerDTE({
 
                 {(dteData.type === "FACTURA" || dteData.type === "FACTURA_EXENTA") && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-lg border border-dashed">
+                        <div className="flex items-center space-x-2 px-3 py-2 bg-muted/20 rounded-md border border-dashed">
                             <Checkbox
                                 id="is-pending"
                                 checked={dteData.isPending}
@@ -245,56 +242,64 @@ export function Step1_CustomerDTE({
                                     }
                                 }}
                             />
-                            <Label htmlFor="is-pending" className="text-xs font-medium cursor-pointer">
+                            <Label htmlFor="is-pending" className="text-[10px] font-black uppercase tracking-wider cursor-pointer text-muted-foreground/80">
                                 Emitiré la factura luego
                             </Label>
                         </div>
 
                         {!dteData.isPending && (
-                            <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/10">
+                            <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <FolioValidationInput
-                                        value={dteData.number}
-                                        onChange={(val) => setDteData({ ...dteData, number: val })}
-                                        dteType={dteData.type}
-                                        isPurchase={false}
-                                        onValidityChange={onValidityChange}
-                                        disabled={dteData.isPending}
-                                    />
+                                    <LabeledContainer label="Folio">
+                                        <FolioValidationInput
+                                            value={dteData.number}
+                                            onChange={(val) => setDteData({ ...dteData, number: val })}
+                                            dteType={dteData.type}
+                                            isPurchase={false}
+                                            onValidityChange={onValidityChange}
+                                            disabled={dteData.isPending}
+                                            className="border-none shadow-none focus-visible:ring-0 h-9"
+                                        />
+                                    </LabeledContainer>
                                 </div>
                                 <div>
-                                    <PeriodValidationDateInput
-                                        date={
-                                            dteData.date
-                                                ? new Date(`${dteData.date}T12:00:00`)
-                                                : undefined
-                                        }
-                                        onDateChange={(d) => {
-                                            if (d) {
-                                                const year = d.getFullYear()
-                                                const month = String(d.getMonth() + 1).padStart(2, "0")
-                                                const day = String(d.getDate()).padStart(2, "0")
-                                                setDteData({
-                                                    ...dteData,
-                                                    date: `${year}-${month}-${day}`,
-                                                })
-                                            } else {
-                                                setDteData({ ...dteData, date: "" })
+                                    <LabeledContainer label="Fecha de Emisión">
+                                        <PeriodValidationDateInput
+                                            date={
+                                                dteData.date
+                                                    ? new Date(`${dteData.date}T12:00:00`)
+                                                    : undefined
                                             }
-                                        }}
-                                        validationType="both"
-                                        onValidityChange={onPeriodValidityChange}
-                                    />
+                                            onDateChange={(d) => {
+                                                if (d) {
+                                                    const year = d.getFullYear()
+                                                    const month = String(d.getMonth() + 1).padStart(2, "0")
+                                                    const day = String(d.getDate()).padStart(2, "0")
+                                                    setDteData({
+                                                        ...dteData,
+                                                        date: `${year}-${month}-${day}`,
+                                                    })
+                                                } else {
+                                                    setDteData({ ...dteData, date: "" })
+                                                }
+                                            }}
+                                            validationType="both"
+                                            onValidityChange={onPeriodValidityChange}
+                                            className="border-none shadow-none focus-visible:ring-0 h-9"
+                                        />
+                                    </LabeledContainer>
                                 </div>
                                 <div className="col-span-2">
-                                    <DocumentAttachmentDropzone
-                                        file={dteData.attachment}
-                                        onFileChange={(file) =>
-                                            setDteData({ ...dteData, attachment: file })
-                                        }
-                                        dteType={dteData.type}
-                                        isPending={dteData.isPending}
-                                    />
+                                    <LabeledContainer label="Documento de Respaldo (PDF/XML)">
+                                        <DocumentAttachmentDropzone
+                                            file={dteData.attachment}
+                                            onFileChange={(file) =>
+                                                setDteData({ ...dteData, attachment: file })
+                                            }
+                                            dteType={dteData.type}
+                                            isPending={dteData.isPending}
+                                        />
+                                    </LabeledContainer>
                                 </div>
                             </div>
                         )}

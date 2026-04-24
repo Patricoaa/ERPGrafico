@@ -159,32 +159,8 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
 
                 <RadioGroup
                     value={deliveryData.type}
-                    onValueChange={(val) => {
-                        setDeliveryData((prev: CheckoutDeliveryData) => {
-                            const newType = val as "IMMEDIATE" | "SCHEDULED" | "PARTIAL";
-                            if (newType === 'PARTIAL') {
-                                const partialQuantities = orderLines
-                                    .filter(line => {
-                                        const isSimpleManufacturableWithAvailability = (line.product_type === 'MANUFACTURABLE' || line.has_bom) &&
-                                            !line.requires_advanced_manufacturing &&
-                                            ((line.qty_available || 0) + (line.manufacturable_quantity || 0)) >= (line.qty || line.quantity || 0);
-
-                                        return (line.product_type !== 'MANUFACTURABLE' && !line.has_bom) ||
-                                            line.mfg_auto_finalize ||
-                                            isSimpleManufacturableWithAvailability;
-                                    })
-                                    .map(line => ({
-                                        lineId: line.id!,
-                                        productId: Number(line.product)!,
-                                        dispatchedQty: line.qty || line.quantity || 0,
-                                        uom: line.uom!
-                                    }));
-                                return { ...prev, type: newType, partialQuantities };
-                            }
-                            return { ...prev, type: newType };
-                        });
-                    }}
-                    className="grid gap-3"
+                    onValueChange={(val) => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: val as any }))}
+                    className="grid gap-4"
                 >
                     <Label
                         htmlFor="del-immediate"
@@ -195,42 +171,59 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                         )}
                     >
                         <RadioGroupItem value="IMMEDIATE" id="del-immediate" className="sr-only" disabled={hasRestrictedItems} />
-                        <div className={`p-2 rounded-lg bg-background border ${deliveryData.type === 'IMMEDIATE' ? 'text-primary' : 'text-muted-foreground'}`}>
+                        <div className={cn(
+                            "p-2 rounded-lg bg-background border transition-colors",
+                            deliveryData.type === 'IMMEDIATE' ? 'text-primary border-primary/30' : 'text-muted-foreground'
+                        )}>
                             <Package className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
-                            <span className="text-sm font-bold block">Despacho Inmediato</span>
+                            <span className="text-sm font-bold block">Despacho Inmediata</span>
                             <span className="text-[10px] text-muted-foreground">Rebajar stock y entregar ahora mismo.</span>
                         </div>
                     </Label>
 
-                    <Label
-                        htmlFor="del-scheduled"
-                        className={`flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all ${deliveryData.type === 'SCHEDULED' ? 'border-primary bg-primary/5' : ''}`}
-                    >
-                        <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
-                        <div className={`p-2 rounded-lg bg-background border ${deliveryData.type === 'SCHEDULED' ? 'text-primary' : 'text-muted-foreground'}`}>
-                            <Calendar className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                            <span className="text-sm font-bold block">Programar Entrega</span>
-                            <span className="text-[10px] text-muted-foreground">Reservar para una fecha futura.</span>
-                        </div>
-                    </Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Label
+                            htmlFor="del-scheduled"
+                            className={cn(
+                                "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                                deliveryData.type === 'SCHEDULED' && "border-primary bg-primary/5"
+                            )}
+                        >
+                            <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
+                            <div className={cn(
+                                "p-2 rounded-lg bg-background border transition-colors",
+                                deliveryData.type === 'SCHEDULED' ? 'text-primary border-primary/30' : 'text-muted-foreground'
+                            )}>
+                                <Calendar className="h-5 w-5" />
+                            </div>
+                            <div className="flex-1">
+                                <span className="text-sm font-bold block leading-tight">Programar Entrega</span>
+                                <span className="text-[10px] text-muted-foreground">Reservar para fecha futura.</span>
+                            </div>
+                        </Label>
 
-                    <Label
-                        htmlFor="del-partial"
-                        className={`flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all ${deliveryData.type === 'PARTIAL' ? 'border-primary bg-primary/5' : ''}`}
-                    >
-                        <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
-                        <div className={`p-2 rounded-lg bg-background border ${deliveryData.type === 'PARTIAL' ? 'text-primary' : 'text-muted-foreground'}`}>
-                            <Truck className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1">
-                            <span className="text-sm font-bold block">Despacho Parcial</span>
-                            <span className="text-[10px] text-muted-foreground">Entregar disponibles ahora, programar el resto.</span>
-                        </div>
-                    </Label>
+                        <Label
+                            htmlFor="del-partial"
+                            className={cn(
+                                "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                                deliveryData.type === 'PARTIAL' && "border-primary bg-primary/5"
+                            )}
+                        >
+                            <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
+                            <div className={cn(
+                                "p-2 rounded-lg bg-background border transition-colors",
+                                deliveryData.type === 'PARTIAL' ? 'text-primary border-primary/30' : 'text-muted-foreground'
+                            )}>
+                                <Truck className="h-5 w-5" />
+                            </div>
+                            <div className="flex-1">
+                                <span className="text-sm font-bold block leading-tight">Despacho Parcial</span>
+                                <span className="text-[10px] text-muted-foreground">Entregar disponibles hoy.</span>
+                            </div>
+                        </Label>
+                    </div>
                 </RadioGroup>
             </div>
 
@@ -343,17 +336,17 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 )}
 
                 {(deliveryData.type === 'SCHEDULED' || deliveryData.type === 'PARTIAL') && (
-                    <LabeledContainer label={deliveryData.type === 'PARTIAL' ? 'Fecha para el Resto' : 'Fecha Estimada'}>
-                        <div className="relative">
-                            <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                id="del-date"
-                                type="date"
-                                className="pl-9 border-none shadow-none focus-visible:ring-0 bg-transparent h-9"
-                                value={deliveryData.date || ""}
-                                onChange={(e) => setDeliveryData({ ...deliveryData, date: e.target.value })}
-                            />
-                        </div>
+                    <LabeledContainer 
+                        label={deliveryData.type === 'PARTIAL' ? 'Fecha para el Resto' : 'Fecha Estimada'}
+                        icon={<Calendar className="h-4 w-4" />}
+                    >
+                        <Input
+                            id="del-date"
+                            type="date"
+                            className="border-none shadow-none focus-visible:ring-0 bg-transparent h-9"
+                            value={deliveryData.date || ""}
+                            onChange={(e) => setDeliveryData({ ...deliveryData, date: e.target.value })}
+                        />
                     </LabeledContainer>
                 )}
 

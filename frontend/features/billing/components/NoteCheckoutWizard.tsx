@@ -4,10 +4,11 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { useServerDate } from "@/hooks/useServerDate"
-import { Button } from "@/components/ui/button"
-import { toast } from "sonner"
-import api from "@/lib/api"
 import { ChevronRight, ChevronLeft, Loader2, FileText, CheckCircle2, ShieldAlert } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import api from "@/lib/api"
+import { toast } from "sonner"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
 // Sub-components
 import { Step1_Items } from "@/features/billing/components/checkout/Step1_Items"
 import { Step2_Logistics } from "@/features/billing/components/checkout/Step2_Logistics"
@@ -443,22 +444,19 @@ export function NoteCheckoutWizard({
                             className="w-40 h-12 font-bold shadow-md transition-all"
                             disabled={isStepLoading || (currentStepId === 'dte' && !isPeriodValid)}
                         >
+                            {isStepLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             Siguiente
                             <ChevronRight className="ml-2 h-4 w-4" />
                         </Button>
                     ) : (
-                        <Button
+                        <ActionSlideButton
                             onClick={handleFinish}
                             className="w-48 h-12 bg-success hover:bg-success font-bold shadow-md transition-all"
-                            disabled={loading}
+                            loading={loading}
                         >
-                            {loading ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                                <CheckCircle2 className="mr-2 h-4 w-4" />
-                            )}
+                            <CheckCircle2 className="mr-2 h-4 w-4" />
                             Finalizar Proceso
-                        </Button>
+                        </ActionSlideButton>
                     )}
                 </div>
             }

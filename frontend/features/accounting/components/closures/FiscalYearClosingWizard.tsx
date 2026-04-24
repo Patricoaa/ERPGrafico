@@ -17,7 +17,7 @@ import {
 import { FiscalYearPreviewResult } from '../../types';
 import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
-import { TableSkeleton } from '@/components/shared';
+import { TableSkeleton, LabeledContainer, CancelButton, SubmitButton, IconButton } from '@/components/shared';
 import { BaseModal } from '@/components/shared/BaseModal';
 
 // Lazy load TrialBalanceView
@@ -170,8 +170,10 @@ export function FiscalYearClosingWizard({
                         </AlertDescription>
                     </Alert>
 
-                    <div className="space-y-3">
-                        <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest px-1">Cuenta de Capital/Utilidades</label>
+                    <LabeledContainer 
+                        label="Cuenta de Capital/Utilidades"
+                        labelClassName="text-[10px] font-bold uppercase text-muted-foreground tracking-widest px-1"
+                    >
                         <div className="p-5 border-2 border-primary/30 bg-muted/20 rounded-sm flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <Scale className="w-5 h-5 text-muted-foreground" />
@@ -184,7 +186,7 @@ export function FiscalYearClosingWizard({
                             </div>
                             <CheckCircle2 className="w-6 h-6 text-primary opacity-50" />
                         </div>
-                    </div>
+                    </LabeledContainer>
                 </div>
             ) : null
         },
@@ -241,23 +243,22 @@ export function FiscalYearClosingWizard({
                     </div>
 
                     <div className="flex flex-col gap-3 w-full max-w-sm pt-4">
-                        <Button 
+                        <SubmitButton 
                             className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-[11px] h-11"
                             onClick={() => {
                                 onClose();
                                 window.location.href = `/settings/partners?tab=distributions&modal=new-distribution&yearId=${year}`;
                             }}
+                            icon={<PieChart className="w-4 h-4 mr-2" />}
                         >
-                            <PieChart className="w-4 h-4 mr-2" />
                             Iniciar Distribución de Utilidades
-                        </Button>
-                        <Button 
-                            variant="ghost" 
+                        </SubmitButton>
+                        <CancelButton 
                             className="text-muted-foreground font-bold uppercase tracking-widest text-[10px]"
                             onClick={onClose}
                         >
                             Finalizar Proceso
-                        </Button>
+                        </CancelButton>
                     </div>
                 </div>
             </BaseModal>

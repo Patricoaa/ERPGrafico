@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { PricingRuleInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -83,8 +83,20 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
     const ruleType = form.watch("rule_type")
     const operator = form.watch("operator")
 
+    const lastResetId = useRef<number | undefined>(undefined)
+    const wasOpen = useRef(false)
+
     useEffect(() => {
-        if (open) {
+        if (!open) {
+            wasOpen.current = false
+            return
+        }
+
+        const currentId = initialData?.id
+        const isNewOpen = !wasOpen.current
+        const isNewData = currentId !== lastResetId.current
+
+        if (isNewOpen || isNewData) {
             // Reset form when dialog opens
             if (initialData) {
                 const getProductId = (p: unknown): number | null => {
@@ -128,6 +140,8 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
                     end_date: null,
                 })
             }
+            lastResetId.current = currentId
+            wasOpen.current = true
         }
     }, [open, initialData, productId, form])
 

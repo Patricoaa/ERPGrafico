@@ -6,7 +6,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/shared"
 import { LayoutDashboard, ArrowRight, ArrowLeft, List } from "lucide-react"
 import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
@@ -132,9 +132,8 @@ export function SalesInvoicesClientView() {
                 const isSelected = hubConfig?.invoiceId === item.id
                 return (
                     <div className="flex justify-end pr-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
+                        <IconButton
+                            circular
                             className="h-8 w-8 hover:bg-transparent"
                             onClick={() => {
                                 if (isSelected && isHubOpen) {
@@ -149,7 +148,7 @@ export function SalesInvoicesClientView() {
                             ) : (
                                 <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                             )}
-                        </Button>
+                        </IconButton>
                     </div>
                 )
             },

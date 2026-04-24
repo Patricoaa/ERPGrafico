@@ -19,11 +19,12 @@ export const metadata: Metadata = {
 }
 
 interface PageProps {
-    searchParams: Promise<{ view?: string; sub?: string; modal?: string }>
+    searchParams: Promise<{ view?: string; sub?: string; modal?: string; tab?: string }>
 }
 
 export default async function TreasuryPage({ searchParams }: PageProps) {
-    const { view, sub, modal } = await searchParams
+    const { view, sub, modal, tab } = await searchParams
+    const configTab = tab || "conciliation"
     const viewMode = (view as 'movements' | 'accounts' | 'reconciliation' | 'config') || 'movements'
     const subView = sub || (viewMode === 'accounts' ? 'accounts' : viewMode === 'reconciliation' ? 'statements' : '')
     const isModalOpen = !!modal
@@ -52,7 +53,17 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
                 { value: "rules", label: "Reglas", iconName: "wand-2", href: "/treasury?view=reconciliation&sub=rules" },
             ]
         },
-        { value: "config", label: "Config", iconName: "settings", href: "/treasury?view=config" },
+        { 
+            value: "config", 
+            label: "Config", 
+            iconName: "settings", 
+            href: "/treasury?view=config",
+            subTabs: [
+                { value: "conciliation", label: "Conciliación", href: "/treasury?view=config&tab=conciliation", iconName: "arrow-left-right" },
+                { value: "audit", label: "Arqueo", href: "/treasury?view=config&tab=audit", iconName: "banknote" },
+                { value: "movements", label: "Movimientos", href: "/treasury?view=config&tab=movements", iconName: "settings-2" }
+            ]
+        },
     ]
 
     const getHeaderConfig = () => {
@@ -159,7 +170,7 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
                 variant="minimal"
             />
 
-            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={subView} />
+            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={viewMode === 'config' ? configTab : subView} />
 
             <div className="pt-4">
                 <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
@@ -185,7 +196,7 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
 
                     {viewMode === 'config' && (
                         <div className="pt-2">
-                            <TreasurySettingsView />
+                            <TreasurySettingsView activeTab={configTab} />
                         </div>
                     )}
                 </Suspense>

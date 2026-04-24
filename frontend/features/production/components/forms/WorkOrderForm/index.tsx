@@ -1,7 +1,7 @@
 "use client"
 
 import { getErrorMessage } from "@/lib/errors"
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, FileText } from "lucide-react"
@@ -91,8 +91,20 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         }
     }
 
+    const lastResetId = useRef<string | number | undefined>(undefined)
+    const wasOpen = useRef(false)
+
     useEffect(() => {
-        if (open) {
+        if (!open) {
+            wasOpen.current = false
+            return
+        }
+
+        const currentId = initialData?.id
+        const isNewOpen = !wasOpen.current
+        const isNewData = currentId !== lastResetId.current
+
+        if (isNewOpen || isNewData) {
             fetchUoMs()
             if (initialData) {
                 form.reset({
@@ -157,6 +169,8 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 setSaleLines([])
                 setOtType(null)
             }
+            lastResetId.current = currentId
+            wasOpen.current = true
         }
     }, [open, initialData, form])
 

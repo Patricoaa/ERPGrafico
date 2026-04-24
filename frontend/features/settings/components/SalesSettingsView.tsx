@@ -8,16 +8,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useSalesSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import {
-    TrendingUp,
-    CreditCard,
+
     Percent,
     User as UserIcon,
     Users as UsersIcon,
-    Settings,
-    Wallet,
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { UserSelector } from "@/components/selectors/UserSelector"
@@ -194,30 +190,10 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
-            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-4 h-12 p-1 bg-muted/50 rounded-md border-2">
-                    <TabsTrigger value="income" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <TrendingUp className="h-3.5 w-3.5" />
-                        Ingresos
-                    </TabsTrigger>
-                    <TabsTrigger value="credit" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <CreditCard className="h-3.5 w-3.5" />
-                        Crédito
-                    </TabsTrigger>
-                    <TabsTrigger value="config_pos" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <Settings className="h-3.5 w-3.5" />
-                        POS
-                    </TabsTrigger>
-                    <TabsTrigger value="terminals" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <Wallet className="h-3.5 w-3.5" />
-                        Terminales
-                    </TabsTrigger>
-                </TabsList>
-
-                <Form {...form}>
-
-                    <form className="mt-6 space-y-6">
-                        <TabsContent value="income" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+            <Form {...form}>
+                <form className="mt-6 space-y-6">
+                    {activeTab === "income" && (
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Cuentas de Ingresos Naturales</CardTitle>
@@ -231,9 +207,11 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                     </div>
                                 </CardContent>
                             </Card>
-                        </TabsContent>
+                        </div>
+                    )}
 
-                        <TabsContent value="credit" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                    {activeTab === "credit" && (
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Crédito y Cartera</CardTitle>
@@ -308,9 +286,11 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                     </div>
                                 </CardContent>
                             </Card>
-                        </TabsContent>
+                        </div>
+                    )}
 
-                        <TabsContent value="config_pos" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                    {activeTab === "config_pos" && (
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Parámetros Operativos POS</CardTitle>
@@ -391,9 +371,11 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                     </div>
                                 </CardContent>
                             </Card>
-                        </TabsContent>
+                        </div>
+                    )}
 
-                        <TabsContent value="terminals" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                    {activeTab === "terminals" && (
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Cuentas Puente de Terminales</CardTitle>
@@ -404,10 +386,10 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                     <AccountField form={form} name="terminal_iva_bridge_account" label="Puente IVA Comisión" accountType="ASSET" />
                                 </CardContent>
                             </Card>
-                        </TabsContent>
-                    </form>
-                </Form>
-            </Tabs>
+                        </div>
+                    )}
+                </form>
+            </Form>
         </div>
     )
 }

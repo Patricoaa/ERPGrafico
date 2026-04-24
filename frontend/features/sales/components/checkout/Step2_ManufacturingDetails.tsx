@@ -2,12 +2,14 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
-import { AlertCircle, Paintbrush, Edit, CheckCircle2 } from "lucide-react"
+import { AlertCircle, Paintbrush, Edit, CheckCircle2, Settings2 } from "lucide-react"
 import { AdvancedManufacturingModal } from "../forms/AdvancedManufacturingModal"
+import { LabeledContainer } from "@/components/shared/LabeledContainer"
 
 import { SaleOrderLine } from "../../types"
 
@@ -49,76 +51,92 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
 
     return (
         <div className="space-y-6">
-            <Alert className="bg-primary/5 border-primary/20">
-                <Paintbrush className="h-4 w-4 text-primary" />
-                <AlertTitle className="text-primary font-bold">Detalles de Fabricación</AlertTitle>
-                <AlertDescription>
-                    Revise y confirme los detalles técnicos de los productos a fabricar.
-                </AlertDescription>
-            </Alert>
+            <LabeledContainer
+                label="Detalles de Fabricación"
+                icon={<Paintbrush className="h-4 w-4" />}
+                className="bg-background"
+            >
+                <div className="p-4 space-y-4">
+                    <p className="text-sm text-muted-foreground mb-2">
+                        Revise y confirme los detalles técnicos de los productos a fabricar.
+                    </p>
 
-            <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Producto</TableHead>
-                            <TableHead>Cantidad</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {manufacturableItems.map((item) => {
-                            const hasConfig = !!item.manufacturing_data
-                            return (
-                                <TableRow key={item.originalIndex}>
-                                    <TableCell className="font-medium">
-                                        <div className="flex flex-col gap-1 py-1">
-                                            <span className="font-medium text-xs leading-tight">{item.product_name || item.description}</span>
-                                            <div className="flex flex-wrap gap-1">
-                                                {item.internal_code && (
-                                                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/30 text-muted-foreground opacity-80 whitespace-nowrap">
-                                                        {item.internal_code}
-                                                    </span>
-                                                )}
-                                                {item.code && item.code !== item.internal_code && (
-                                                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/60 text-muted-foreground opacity-80 whitespace-nowrap">
-                                                        {item.code}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{item.qty || item.quantity}</TableCell>
-                                    <TableCell>
-                                        {hasConfig ? (
-                                            <div className="flex items-center gap-1.5 text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-full w-fit">
-                                                <CheckCircle2 className="h-3 w-3" />
-                                                Configurado
-                                            </div>
-                                        ) : (
-                                            <div className="flex items-center gap-1.5 text-xs font-medium text-warning bg-warning/10 px-2 py-1 rounded-full w-fit">
-                                                <AlertCircle className="h-3 w-3" />
-                                                Pendiente
-                                            </div>
-                                        )}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleEditClick(item.originalIndex)}
-                                        >
-                                            <Edit className="mr-2 h-4 w-4" />
-                                            {hasConfig ? "Editar" : "Configurar"}
-                                        </Button>
-                                    </TableCell>
+                    <div className="rounded-sm border border-border/50 overflow-hidden">
+                        <Table>
+                            <TableHeader className="bg-muted/30">
+                                <TableRow className="hover:bg-transparent border-border/50">
+                                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider">Producto</TableHead>
+                                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider">Cantidad</TableHead>
+                                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider">Estado</TableHead>
+                                    <TableHead className="h-10 text-[10px] font-bold uppercase tracking-wider text-right">Acciones</TableHead>
                                 </TableRow>
-                            )
-                        })}
-                    </TableBody>
-                </Table>
-            </div>
+                            </TableHeader>
+                            <TableBody>
+                                {manufacturableItems.map((item) => {
+                                    const hasConfig = !!item.manufacturing_data
+                                    return (
+                                        <TableRow key={item.originalIndex} className="border-border/40 hover:bg-muted/20 transition-colors">
+                                            <TableCell className="py-3">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="font-bold text-xs leading-tight text-foreground/90">
+                                                        {item.product_name || item.description}
+                                                    </span>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {item.internal_code && (
+                                                            <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 bg-primary/5 text-primary">
+                                                                {item.internal_code}
+                                                            </span>
+                                                        )}
+                                                        {item.code && item.code !== item.internal_code && (
+                                                            <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/30 text-muted-foreground">
+                                                                {item.code}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="py-3 font-mono text-xs font-bold">
+                                                {item.qty || item.quantity}
+                                            </TableCell>
+                                            <TableCell className="py-3">
+                                                {hasConfig ? (
+                                                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-success bg-success/10 border border-success/20 px-2 py-1 rounded-sm w-fit">
+                                                        <CheckCircle2 className="h-3 w-3" />
+                                                        Configurado
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-warning bg-warning/10 border border-warning/20 px-2 py-1 rounded-sm w-fit">
+                                                        <AlertCircle className="h-3 w-3" />
+                                                        Pendiente
+                                                    </div>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="py-3 text-right">
+                                                <Button
+                                                    variant={hasConfig ? "outline" : "default"}
+                                                    size="sm"
+                                                    onClick={() => handleEditClick(item.originalIndex)}
+                                                    className={cn(
+                                                        "h-7 text-[10px] font-bold uppercase tracking-tight",
+                                                        !hasConfig && "bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+                                                    )}
+                                                >
+                                                    {hasConfig ? (
+                                                        <Edit className="mr-1.5 h-3 w-3" />
+                                                    ) : (
+                                                        <Settings2 className="mr-1.5 h-3 w-3" />
+                                                    )}
+                                                    {hasConfig ? "Editar" : "Configurar"}
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            </LabeledContainer>
 
             {editingLine && (
                 <AdvancedManufacturingModal

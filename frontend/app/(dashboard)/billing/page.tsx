@@ -25,7 +25,17 @@ export default async function BillingPage({ searchParams }: PageProps) {
     const tabs = [
         { value: "sales", label: "Emitidos (Ventas)", iconName: "receipt", href: "/billing?view=sales" },
         { value: "purchases", label: "Recibidos (Compras)", iconName: "file-badge", href: "/billing?view=purchases" },
-        { value: "config", label: "Config", iconName: "settings", href: "/billing?view=config" },
+        { 
+            value: "config", 
+            label: "Config", 
+            iconName: "settings", 
+            href: "/billing?view=config",
+            subTabs: [
+                { value: "accounts", label: "Cuentas", href: "/billing?view=config&tab=accounts", iconName: "users" },
+                { value: "tax", label: "Impuestos", href: "/billing?view=config&tab=tax", iconName: "percent" },
+                { value: "dtes", label: "Documentos", href: "/billing?view=config&tab=dtes", iconName: "file-text" }
+            ]
+        },
     ]
 
     const getHeaderConfig = () => {
@@ -44,7 +54,7 @@ export default async function BillingPage({ searchParams }: PageProps) {
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader title={config.title} description={config.description} iconName={config.iconName} variant="minimal" />
-            <PageTabs tabs={tabs} activeValue={viewMode} />
+            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={configTab} />
 
             <div className="pt-2">
                 <Suspense fallback={<CardSkeleton variant="list" count={5} />}>
