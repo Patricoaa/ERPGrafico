@@ -1,8 +1,8 @@
 "use client"
 
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
+import { FormField } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
-import { Package, Settings2, Plus, Warehouse, ChevronsUpDown, Search, Check } from "lucide-react"
+import { Package, Settings2, Plus, Warehouse, ChevronsUpDown, Search, Check, Truck, AlertCircle } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { TabsContent } from "@/components/ui/tabs"
@@ -33,50 +33,45 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
     const isSwitchDisabled = productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'SERVICE'
 
     return (
-        <TabsContent value="logistics" className="mt-0 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                    {/* Units of Measure Section */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-2 pt-2 pb-2">
-                            <div className="flex-1 h-px bg-border" />
-                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-                                <Settings2 className="h-3 w-3" /> Unidades de Medida
-                            </span>
-                            <div className="flex-1 h-px bg-border" />
-                        </div>
+        <TabsContent value="logistics" className="mt-0 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                <div className="relative p-5 pt-8 rounded-lg border-2 bg-card shadow-sm border-primary/10">
+                    <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Unidades y Conversión</span>
+                    </div>
 
-                        <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-1 gap-6">
                             <FormField<ProductFormValues>
                                 control={form.control}
                                 name="uom"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <div className="flex items-center gap-2">
-                                            <Package className="h-3.5 w-3.5 text-muted-foreground" />
-                                            <FormLabel className={FORM_STYLES.label}>Unidad de Stock (Base)</FormLabel>
-                                        </div>
+                                render={({ field, fieldState }) => (
+                                    <fieldset className={cn("notched-field w-full group transition-all h-[50px]", fieldState.error && "error")}>
+                                        <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Unidad de Stock (Base)</legend>
                                         <Popover>
                                             <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button
-                                                        variant="outline"
-                                                        role="combobox"
-                                                        className={cn("w-full justify-between font-normal h-10 rounded-md", !field.value && "text-muted-foreground", FORM_STYLES.input)}
-                                                    >
-                                                        {field.value
-                                                            ? uoms.find((u) => u.id.toString() === field.value?.toString())?.name
-                                                            : "Seleccionar unidad..."}
-                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
+                                                <Button
+                                                    variant="ghost"
+                                                    role="combobox"
+                                                    className={cn("w-full justify-between font-black text-xs h-full px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <Package className="h-4 w-4 text-primary" />
+                                                        <span>
+                                                            {field.value
+                                                                ? uoms.find((u) => u.id.toString() === field.value?.toString())?.name
+                                                                : "Seleccionar unidad base..."}
+                                                        </span>
+                                                    </div>
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                                 <div className="p-2">
                                                     <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
                                                         <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                                                         <input
-                                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                            className="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
                                                             placeholder="Buscar UdM..."
                                                             onChange={(e) => {
                                                                 const val = e.target.value.toLowerCase()
@@ -114,38 +109,40 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                 </div>
                                             </PopoverContent>
                                         </Popover>
-                                        <FormMessage />
-                                    </FormItem>
+                                    </fieldset>
                                 )}
                             />
 
                             <FormField<ProductFormValues>
                                 control={form.control}
                                 name="purchase_uom"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Unidad de Compra</FormLabel>
+                                render={({ field, fieldState }) => (
+                                    <fieldset className={cn("notched-field w-full group transition-all h-[50px]", fieldState.error && "error")}>
+                                        <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Unidad de Compra</legend>
                                         <Popover>
                                             <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button
-                                                        variant="outline"
-                                                        role="combobox"
-                                                        className={cn("w-full justify-between font-normal h-10 rounded-md", !field.value && "text-muted-foreground", FORM_STYLES.input)}
-                                                    >
-                                                        {field.value
-                                                            ? uoms.find((u) => String(u.id) === String(field.value))?.name
-                                                            : "Igual a Stock"}
-                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
+                                                <Button
+                                                    variant="ghost"
+                                                    role="combobox"
+                                                    className={cn("w-full justify-between font-black text-xs h-full px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <Truck className="h-4 w-4 text-warning" />
+                                                        <span>
+                                                            {field.value
+                                                                ? uoms.find((u) => String(u.id) === String(field.value))?.name
+                                                                : "Igual a Stock"}
+                                                        </span>
+                                                    </div>
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                                                 <div className="p-2">
                                                     <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
                                                         <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                                                         <input
-                                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                            className="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
                                                             placeholder="Buscar UdM..."
                                                             onChange={(e) => {
                                                                 const val = e.target.value.toLowerCase()
@@ -198,262 +195,228 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                 </div>
                                             </PopoverContent>
                                         </Popover>
-                                        <FormMessage />
-                                    </FormItem>
+                                    </fieldset>
                                 )}
                             />
 
-                            {/* Sale UoM Selection UI */}
                             {form.watch("can_be_sold") && (
                                 <FormField<ProductFormValues>
                                     control={form.control}
                                     name="allowed_sale_uoms"
-                                    render={({ field }) => {
+                                    render={({ field, fieldState }) => {
                                         const stockUomId = form.watch("uom");
                                         const stockUom = uoms.find(u => u.id.toString() === stockUomId?.toString());
                                         const stockCategoryId = stockUom?.category;
-
                                         const selectedIds = field.value || [];
                                         const sortedUoms = [...uoms].sort((a, b) => a.name.localeCompare(b.name));
 
                                         return (
-                                            <FormItem className="space-y-3 pt-4 border-t mt-2">
-                                                <div className="flex items-center justify-between">
-                                                    <FormLabel className={FORM_STYLES.label}>Unidades de Venta Permitidas</FormLabel>
-                                                    {stockUom && (
-                                                        <span className="text-[10px] text-primary/70 font-bold uppercase tracking-tighter">
-                                                            Cat: {stockUom.category_name || "Desconocida"}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-wrap gap-2 p-3 rounded-md border bg-muted/5 min-h-[50px] items-center">
-                                                    {!stockCategoryId ? (
-                                                        <span className="text-[10px] text-muted-foreground italic px-1">
-                                                            Seleccione primero una Unidad de Stock.
-                                                        </span>
-                                                    ) : (
-                                                        <>
-                                                            {sortedUoms
-                                                                .filter(u => u.category === stockCategoryId)
-                                                                .map((u: UoM) => {
-                                                                    const isSelected = selectedIds.includes(u.id.toString());
-                                                                    const isBaseUom = u.id.toString() === stockUomId?.toString();
+                                            <fieldset className={cn("notched-field w-full group transition-all", fieldState.error && "error")}>
+                                                <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Unidades de Venta Permitidas</legend>
+                                                <div className="flex flex-col gap-4 p-4">
+                                                    <div className="flex flex-wrap gap-2 p-3 rounded-md border-2 border-dashed bg-muted/5 min-h-[60px] items-center">
+                                                        {!stockCategoryId ? (
+                                                            <div className="w-full flex items-center justify-center gap-2 text-[10px] text-muted-foreground italic">
+                                                                <AlertCircle className="h-3 w-3" />
+                                                                Defina primero la Unidad de Stock.
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                {sortedUoms
+                                                                    .filter(u => u.category === stockCategoryId)
+                                                                    .map((u: UoM) => {
+                                                                        const isSelected = selectedIds.includes(u.id.toString());
+                                                                        const isBaseUom = u.id.toString() === stockUomId?.toString();
 
-                                                                    return (
-                                                                        <div
-                                                                            key={u.id}
-                                                                            className={cn(
-                                                                                "cursor-pointer px-2 py-1 rounded-full text-[10px] transition-all hover:scale-105 active:scale-95 border",
-                                                                                isSelected ? "bg-primary text-white border-primary shadow-sm font-bold" : "bg-background border-primary/20 hover:bg-muted font-normal text-muted-foreground",
-                                                                                isBaseUom && "ring-1 ring-primary ring-offset-1"
-                                                                            )}
-                                                                            onClick={() => {
-                                                                                if (isSelected) {
-                                                                                    // Don't deselect base UoM
-                                                                                    if (isBaseUom) return;
-                                                                                    const newList = selectedIds.filter((id: string) => id !== u.id.toString());
-                                                                                    field.onChange(newList);
-                                                                                } else {
-                                                                                    const newList = [...selectedIds, u.id.toString()];
-                                                                                    field.onChange(newList);
-                                                                                }
-                                                                            }}
-                                                                        >
-                                                                            {u.name}
-                                                                            {isBaseUom && <span className="ml-1 opacity-70">(BASE)</span>}
-                                                                            {isSelected && !isBaseUom && <Plus className="ml-1.5 h-2.5 w-2.5 inline-block rotate-45" />}
-                                                                        </div>
-                                                                    );
-                                                                })
-                                                            }
-                                                        </>
-                                                    )}
+                                                                        return (
+                                                                            <button
+                                                                                key={u.id}
+                                                                                type="button"
+                                                                                className={cn(
+                                                                                    "px-3 py-1.5 rounded-md text-[10px] transition-all border-2",
+                                                                                    isSelected 
+                                                                                        ? "bg-primary/10 border-primary/40 text-primary font-black shadow-sm" 
+                                                                                        : "bg-background border-primary/5 hover:border-primary/20 text-muted-foreground/60 font-black uppercase tracking-tight",
+                                                                                    isBaseUom && "ring-2 ring-primary ring-offset-2"
+                                                                                )}
+                                                                                onClick={() => {
+                                                                                    if (isSelected) {
+                                                                                        if (isBaseUom) return;
+                                                                                        const newList = selectedIds.filter((id: string) => id !== u.id.toString());
+                                                                                        field.onChange(newList);
+                                                                                    } else {
+                                                                                        const newList = [...selectedIds, u.id.toString()];
+                                                                                        field.onChange(newList);
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                {u.name}
+                                                                                {isBaseUom && <span className="ml-1 opacity-50">(BASE)</span>}
+                                                                            </button>
+                                                                        );
+                                                                    })
+                                                                }
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[9px] text-muted-foreground/80 leading-relaxed italic">
+                                                        * Solo se muestran unidades de la misma categoría que la unidad base para asegurar conversiones válidas.
+                                                    </p>
                                                 </div>
-                                                <FormDescription className="text-[9px]">
-                                                    Seleccione las unidades permitidas para vender este producto. La unidad base siempre es permitida.
-                                                </FormDescription>
-                                                <FormMessage />
-                                            </FormItem>
+                                            </fieldset>
                                         );
                                     }}
                                 />
                             )}
                         </div>
                     </div>
+                </div>
 
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2 pt-2 pb-2">
-                            <div className="flex-1 h-px bg-border" />
-                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-                                <Warehouse className="h-3 w-3" /> Control de Inventario
-                            </span>
-                            <div className="flex-1 h-px bg-border" />
-                        </div>
+                <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 shadow-sm border-primary/10">
+                    <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Control y Abastecimiento</span>
+                    </div>
 
-                        <FormField<ProductFormValues>
-                            control={form.control}
-                            name="track_inventory"
-                            render={({ field }) => (
-                                <div className="space-y-4">
-                                    {productType === 'MANUFACTURABLE' ? (
-                                        <Card variant="dashed" className="flex items-center justify-between p-4 rounded-md border bg-primary/5 border-primary/20">
-                                            <div className="space-y-0.5">
-                                                <div className="flex items-center gap-2">
-                                                    <FormLabel className={FORM_STYLES.label}>Control de Inventario</FormLabel>
-                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-muted/50 border-border/50 text-muted-foreground">Automático</span>
-                                                </div>
-                                                <FormDescription className="text-[10px]">
-                                                    Gestionado por el Modo de Producción seleccionado.
-                                                </FormDescription>
-                                            </div>
-                                            <div className="flex items-center gap-2 cursor-help" title={field.value ? "Activado (Simple/Lote)" : "Desactivado (Sobre Pedido)"}>
-                                                <Switch
-                                                    checked={field.value}
-                                                    disabled
-                                                    className="opacity-50"
-                                                />
-                                            </div>
-                                        </Card>
-                                    ) : (
-                                        <FormItem>
-                                            <Card variant="dashed" className="flex items-center justify-between p-4 rounded-md border bg-background/50">
-                                                <div className="space-y-0.5">
-                                                    <FormLabel className={FORM_STYLES.label}>Controlar Stock</FormLabel>
-                                                    <FormDescription className="text-[10px]">
-                                                        {productType === 'STORABLE' ? 'Obligatorio para productos almacenables.' :
-                                                            productType === 'SERVICE' || productType === 'CONSUMABLE' ? 'Desactivado para servicios y consumibles.' :
-                                                                'Habilitar si desea rastrear cantidades en stock.'}
-                                                    </FormDescription>
-                                                </div>
-                                                <FormControl>
-                                                    <Switch
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                        disabled={isSwitchDisabled}
-                                                    />
-                                                </FormControl>
-                                            </Card>
-                                        </FormItem>
-                                    )}
+                    <FormField<ProductFormValues>
+                        control={form.control}
+                        name="track_inventory"
+                        render={({ field }) => (
+                            <div className="space-y-6">
+                                <div className={cn(
+                                    "flex items-center justify-between p-4 rounded-lg border-2 transition-all",
+                                    field.value ? "bg-success/5 border-success/20" : "bg-background border-dashed border-muted-foreground/20"
+                                )}>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-black uppercase tracking-widest">Controlar Stock</span>
+                                            {productType === 'MANUFACTURABLE' && (
+                                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">Auto</span>
+                                            )}
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground font-medium">
+                                            Habilitar el seguimiento de cantidades físicas en bodegas.
+                                        </p>
+                                    </div>
+                                    <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        disabled={isSwitchDisabled}
+                                    />
+                                </div>
 
-                                    {field.value && (
-                                        <div className="space-y-4 pt-2 border-t mt-4 animate-in fade-in slide-in-from-top-1 bg-background/30 p-4 rounded-md">
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
-                                                name="receiving_warehouse"
-                                                render={({ field: whField }) => (
-                                                    <FormItem className="space-y-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <Warehouse className="h-3.5 w-3.5 text-primary" />
-                                                            <FormLabel className={FORM_STYLES.label}>Bodega de Recepción por Defecto</FormLabel>
-                                                        </div>
-                                                        <Popover>
-                                                            <PopoverTrigger asChild>
-                                                                <FormControl>
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        role="combobox"
-                                                                        className={cn("w-full justify-between font-normal h-10 rounded-md", !whField.value && "text-muted-foreground", FORM_STYLES.input)}
-                                                                    >
+                                {field.value && (
+                                    <div className="space-y-6 pt-4 animate-in fade-in zoom-in-95 duration-300">
+                                        <FormField<ProductFormValues>
+                                            control={form.control}
+                                            name="receiving_warehouse"
+                                            render={({ field: whField, fieldState }) => (
+                                                <fieldset className={cn("notched-field w-full group transition-all h-[50px]", fieldState.error && "error")}>
+                                                    <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Bodega de Recepción</legend>
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                role="combobox"
+                                                                className={cn("w-full justify-between font-black text-xs h-full px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !whField.value && "text-muted-foreground")}
+                                                            >
+                                                                <div className="flex items-center gap-2">
+                                                                    <Warehouse className="h-4 w-4 text-primary" />
+                                                                    <span>
                                                                         {whField.value
                                                                             ? warehouses.find((wh) => wh.id.toString() === whField.value?.toString())?.name
-                                                                            : "Seleccionar bodega..."}
-                                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                                    </Button>
-                                                                </FormControl>
-                                                            </PopoverTrigger>
-                                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                                                <div className="p-2">
-                                                                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                                                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                                        <input
-                                                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                                                                            placeholder="Buscar bodega..."
-                                                                            onChange={(e) => {
-                                                                                const val = e.target.value.toLowerCase()
-                                                                                const inputs = document.querySelectorAll('.wh-item')
-                                                                                inputs.forEach((el) => {
-                                                                                    if (el.textContent?.toLowerCase().includes(val)) {
-                                                                                        (el as HTMLElement).style.display = 'flex'
-                                                                                    } else {
-                                                                                        (el as HTMLElement).style.display = 'none'
-                                                                                    }
-                                                                                })
-                                                                            }}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                                        {warehouses.map((wh) => (
-                                                                            <div
-                                                                                key={wh.id}
-                                                                                className={cn(
-                                                                                    "wh-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                                    whField.value === wh.id.toString() && "bg-accent"
-                                                                                )}
-                                                                                onClick={() => {
-                                                                                    whField.onChange(wh.id.toString())
-                                                                                    document.body.click()
-                                                                                }}
-                                                                            >
-                                                                                <span>{wh.name}</span>
-                                                                                {whField.value === wh.id.toString() && (
-                                                                                    <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                                                )}
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
+                                                                            : "Seleccionar bodega por defecto..."}
+                                                                    </span>
                                                                 </div>
-                                                            </PopoverContent>
-                                                        </Popover>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
+                                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                                            <div className="p-2">
+                                                                <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                    <input
+                                                                        className="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                                        placeholder="Buscar bodega..."
+                                                                        onChange={(e) => {
+                                                                            const val = e.target.value.toLowerCase()
+                                                                            const inputs = document.querySelectorAll('.wh-item')
+                                                                            inputs.forEach((el) => {
+                                                                                if (el.textContent?.toLowerCase().includes(val)) {
+                                                                                    (el as HTMLElement).style.display = 'flex'
+                                                                                } else {
+                                                                                    (el as HTMLElement).style.display = 'none'
+                                                                                }
+                                                                            })
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                                <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                                    {warehouses.map((wh) => (
+                                                                        <div
+                                                                            key={wh.id}
+                                                                            className={cn(
+                                                                                "wh-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                                whField.value === wh.id.toString() && "bg-accent"
+                                                                            )}
+                                                                            onClick={() => {
+                                                                                whField.onChange(wh.id.toString())
+                                                                                document.body.click()
+                                                                            }}
+                                                                        >
+                                                                            <span>{wh.name}</span>
+                                                                            {whField.value === wh.id.toString() && (
+                                                                                <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                </fieldset>
+                                            )}
+                                        />
 
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
-                                                name="preferred_supplier"
-                                                render={({ field: supplierField }) => (
-                                                    <FormItem className="space-y-1 mt-4">
-                                                        <div className="flex items-center gap-2">
-                                                            <Package className="h-3.5 w-3.5 text-primary" />
-                                                            <FormLabel className={FORM_STYLES.label}>Proveedor Preferido</FormLabel>
-                                                        </div>
-                                                        <FormControl>
-                                                            <AdvancedContactSelector
-                                                                value={supplierField.value || ""}
-                                                                onChange={supplierField.onChange}
-                                                                contactType="SUPPLIER"
-                                                                placeholder="Seleccionar proveedor preferido..."
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                    )}
+                                        <FormField<ProductFormValues>
+                                            control={form.control}
+                                            name="preferred_supplier"
+                                            render={({ field: supplierField, fieldState }) => (
+                                                <fieldset className={cn("notched-field w-full group transition-all h-[50px]", fieldState.error && "error")}>
+                                                    <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Proveedor Preferencial</legend>
+                                                    <div className="h-full">
+                                                        <AdvancedContactSelector
+                                                            value={supplierField.value || ""}
+                                                            onChange={supplierField.onChange}
+                                                            contactType="SUPPLIER"
+                                                            placeholder="Buscar proveedor..."
+                                                            className="border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent h-full px-3 text-xs font-black uppercase"
+                                                        />
+                                                    </div>
+                                                </fieldset>
+                                            )}
+                                        />
 
-                                    {field.value && initialData && (
-                                        <Card variant="dashed" className="grid grid-cols-3 gap-2 p-3 bg-muted/20">
-                                            <div className="flex flex-col items-center bg-background rounded p-2 shadow-sm">
-                                                <span className="text-[10px] uppercase text-muted-foreground font-bold">A Mano</span>
-                                                <span className="text-lg font-bold tabular-nums">{initialData.current_stock || 0}</span>
+                                        {initialData && (
+                                            <div className="grid grid-cols-3 gap-4 p-4 rounded-lg bg-background border-2 shadow-inner">
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">A Mano</span>
+                                                    <span className="text-xl font-mono font-black">{initialData.current_stock || 0}</span>
+                                                </div>
+                                                <div className="flex flex-col items-center border-x-2 border-dashed">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-warning mb-1">Reservado</span>
+                                                    <span className="text-xl font-mono font-black text-warning">{initialData.qty_reserved || 0}</span>
+                                                </div>
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-success mb-1">Disponible</span>
+                                                    <span className="text-xl font-mono font-black text-success">{initialData.qty_available || 0}</span>
+                                                </div>
                                             </div>
-                                            <div className="flex flex-col items-center bg-warning/10 rounded p-2 shadow-sm border border-warning/10">
-                                                <span className="text-[10px] uppercase text-warning font-bold">Reservado</span>
-                                                <span className="text-lg font-bold tabular-nums text-warning">{initialData.qty_reserved || 0}</span>
-                                            </div>
-                                            <div className="flex flex-col items-center bg-success/10 rounded p-2 shadow-sm border border-success/10">
-                                                <span className="text-[10px] uppercase text-success font-bold">Disponible</span>
-                                                <span className="text-lg font-bold tabular-nums text-success">{initialData.qty_available || 0}</span>
-                                            </div>
-                                        </Card>
-                                    )}
-                                </div>
-                            )}
-                        />
-                    </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    />
                 </div>
             </div>
         </TabsContent>

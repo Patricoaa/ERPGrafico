@@ -26,6 +26,9 @@ interface AdvancedSaleOrderSelectorProps {
     placeholder?: string
     disabled?: boolean
     customFilter?: (order: any) => boolean
+    label?: string
+    error?: string
+    className?: string
 }
 
 export function AdvancedSaleOrderSelector({
@@ -33,7 +36,10 @@ export function AdvancedSaleOrderSelector({
     onChange,
     placeholder = "Seleccionar nota de venta...",
     disabled = false,
-    customFilter
+    customFilter,
+    label,
+    error,
+    className
 }: AdvancedSaleOrderSelectorProps) {
     const { orders: rawOrders, singleOrder, loading: searchLoading, fetchOrders, fetchSingleOrder } = useSaleOrderSearch()
     const [open, setOpen] = useState(false)
@@ -92,25 +98,38 @@ export function AdvancedSaleOrderSelector({
     }
 
     return (
-        <>
+        <div className={cn("relative w-full flex flex-col group", className)}>
+            <fieldset 
+                className={cn(
+                    "notched-field w-full group transition-all",
+                    open && "focused",
+                    error && "error",
+                    disabled && "opacity-50 cursor-not-allowed bg-muted/10"
+                )}
+            >
+                {label && (
+                    <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
+                        {label}
+                    </legend>
+                )}
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         role="combobox"
                         aria-expanded={open}
                         disabled={disabled}
                         className={cn(
-                            "w-full justify-between h-auto py-2 px-3 bg-background",
+                            "w-full justify-between overflow-hidden h-auto py-2 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
                             disabled && "opacity-50 cursor-not-allowed"
                         )}
                     >
                         {selectedOrder ? (
-                             <div className="flex items-center gap-2 truncate text-left">
+                             <div className="flex items-center gap-2 truncate text-left w-[calc(100%-20px)]">
                                 <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
                                     <FileText className="h-4 w-4" />
                                 </div>
-                                <div className="flex flex-col items-start truncate leading-tight">
+                                <div className="flex flex-col items-start truncate leading-tight w-full overflow-hidden">
                                     <span className="font-medium text-sm truncate w-full">NV-{selectedOrder.number}</span>
                                     <span className="text-[10px] text-muted-foreground truncate w-full leading-tight">
                                         {selectedOrder.customer_name}
@@ -118,7 +137,7 @@ export function AdvancedSaleOrderSelector({
                                 </div>
                             </div>
                         ) : (
-                            <span className="text-muted-foreground">{placeholder}</span>
+                            <span className="text-muted-foreground truncate">{placeholder}</span>
                         )}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -192,6 +211,12 @@ export function AdvancedSaleOrderSelector({
                     </div>
                 </PopoverContent>
             </Popover>
+            </fieldset>
+            {error && (
+                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
+                    {error}
+                </p>
+            )}
 
             {previewId && (
                 <TransactionViewModal
@@ -201,6 +226,6 @@ export function AdvancedSaleOrderSelector({
                     id={previewId}
                 />
             )}
-        </>
+        </div>
     )
 }

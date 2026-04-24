@@ -10,7 +10,7 @@ import * as z from "zod"
 import { Plus, Trash2 } from "lucide-react"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
-import { BaseModal, ActionSlideButton, MoneyDisplay } from "@/components/shared"
+import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput } from "@/components/shared"
 import {
     Form,
     FormControl,
@@ -37,7 +37,6 @@ import {
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
@@ -356,17 +355,17 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                         <FormField
                             control={form.control}
                             name="notes"
-                            render={({ field }) => (
+                            render={({ field, fieldState }) => (
                                 <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Notas / Observaciones</FormLabel>
                                     <FormControl>
-                                        <Textarea
+                                        <LabeledInput
+                                            label="Notas / Observaciones"
+                                            type="textarea"
                                             placeholder="Notas adicionales..."
-                                            className={FORM_STYLES.textarea}
+                                            error={fieldState.error?.message}
                                             {...field}
                                         />
                                     </FormControl>
-                                    <FormMessage />
                                 </FormItem>
                             )}
                         />

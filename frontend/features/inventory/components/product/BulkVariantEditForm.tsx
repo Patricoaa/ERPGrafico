@@ -5,40 +5,30 @@ import { useForm, SubmitHandler, UseFormReturn } from "react-hook-form"
 import { Product, UoM } from "@/types/entities"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { Form, FormField } from "@/components/ui/form"
+import { LabeledInput, LabeledSelect } from "@/components/shared"
 import { CancelButton, SubmitButton, IconButton } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2, Save, X, Sparkles } from "lucide-react"
+import { Save, X, Sparkles, DollarSign, Ruler, Layers, Copy } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 
 const bulkEditSchema = z.object({
-  sale_price: z.string().optional(), // String to allow 'empty' implying no change
+  sale_price: z.string().optional(),
   sale_uom: z.string().optional(),
-  // For BOM assignment
   has_bom: z.boolean().default(false),
   apply_has_bom: z.boolean().default(false),
   copy_bom_from: z.string().optional(),
 })
 
-interface BulkEditValues {
-  sale_price?: string
-  sale_uom?: string
-  has_bom?: boolean
-  apply_has_bom?: boolean
-  copy_bom_from?: string
-}
+type BulkEditValues = z.infer<typeof bulkEditSchema>
 
 interface BulkVariantEditFormProps {
   selectedVariants: Product[]
-  availableVariants?: Product[] // All variants of the product to use as BOM sources
+  availableVariants?: Product[] 
   onSaved: (updatedVariants: Product[]) => void
   onCancel: () => void
 }
-
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export function BulkVariantEditForm({ selectedVariants, availableVariants = [], onSaved, onCancel }: BulkVariantEditFormProps) {
   const [loading, setLoading] = useState(false)
@@ -57,14 +47,14 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
     }
   }
 
-  const form: UseFormReturn<BulkEditValues> = useForm<BulkEditValues>({
+  const form = useForm<BulkEditValues>({
     resolver: zodResolver(bulkEditSchema),
     defaultValues: {
       apply_has_bom: false,
       has_bom: true,
-      sale_price: undefined,
-      sale_uom: undefined,
-      copy_bom_from: undefined,
+      sale_price: "",
+      sale_uom: "",
+      copy_bom_from: "",
     }
   })
 
@@ -89,7 +79,6 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
         return
     }
 
-    // Apply changes locally to the selected variants
     const updatedVariants = selectedVariants.map(v => {
         return {
             ...v,
@@ -107,151 +96,153 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
   }
 
   return (
-    <div className="flex flex-col h-full bg-primary/10/30 rounded-md border border-primary/10 shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
-      <div className="flex items-center justify-between p-4 border-b bg-primary/10/80">
+    <div className="flex flex-col h-full bg-card rounded-lg border-2 border-primary/10 shadow-xl overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
+      <div className="flex items-center justify-between p-5 border-b-2 border-primary/10 bg-primary/5">
         <div>
            <div className="flex items-center gap-2 mb-1">
-               <Sparkles className="h-4 w-4 text-primary" />
-               <h3 className="font-bold text-sm text-primary leading-tight">Edición Masiva</h3>
+               <Sparkles className="h-5 w-5 text-primary" />
+               <h3 className="font-black text-sm uppercase tracking-widest text-primary">Edición Masiva de Variantes</h3>
            </div>
-           <p className="text-[11px] text-primary/80 font-medium">{selectedVariants.length} variantes seleccionadas</p>
+           <p className="text-[10px] text-muted-foreground font-black uppercase tracking-tight">{selectedVariants.length} variantes seleccionadas para modificación</p>
         </div>
-        <IconButton onClick={onCancel} className="h-8 w-8 text-primary/60 hover:text-primary hover:bg-primary/10/50">
+        <IconButton onClick={onCancel} className="h-9 w-9 rounded-full bg-background border-2 border-primary/10 hover:bg-destructive hover:text-white hover:border-destructive transition-all">
           <X className="h-4 w-4" />
         </IconButton>
       </div>
 
-      <div className="p-4 overflow-y-auto flex-1 scrollbar-thin">
+      <div className="p-6 overflow-y-auto flex-1 scrollbar-thin">
         <Form {...form}>
-          <div className="space-y-4">
-             <div className="text-[11px] text-muted-foreground mb-4 leading-relaxed bg-white/50 p-3 rounded-md border border-primary/10/50">
-                 Deje en blanco los campos que <strong>no desea alterar</strong>. Solo se aplicarán los campos con valores rellenados.
+          <div className="space-y-8">
+             <div className="text-[11px] text-primary/80 font-bold leading-relaxed bg-primary/5 p-4 rounded-lg border-2 border-primary/10 border-dashed">
+                 Los campos en blanco <strong>no sufrirán cambios</strong>. Solo se aplicarán las propiedades con valores explícitos.
              </div>
 
-             <div className="grid grid-cols-2 gap-4">
-                <FormField<BulkEditValues>
-                  control={form.control}
-                  name="sale_price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs">Precio de Venta</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.01" {...field} value={String(field.value || "")} placeholder="Sin cambios" className="h-8 text-sm" />
-                      </FormControl>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
-                 <FormField<BulkEditValues>
-                  control={form.control}
-                  name="sale_uom"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs">Ud. Medida Venta</FormLabel>
-                      <Select onValueChange={field.onChange} value={String(field.value || "")}>
-                        <FormControl>
-                          <SelectTrigger className="h-8 text-sm">
-                            <SelectValue placeholder="Sin cambios" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                           <SelectItem value="none" className="italic text-muted-foreground">Sin cambios</SelectItem>
-                           {uoms.map((u) => (
-                              <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                           ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
-             </div>
+             <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 border-primary/10">
+                <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Precios y Logística</span>
+                </div>
 
-             <div className="pt-4 border-t border-dashed border-primary/20 mt-4 space-y-4">
-                 
-                 <FormField<BulkEditValues>
-                  control={form.control as any}
-                  name="apply_has_bom"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                      <FormControl>
-                        <Checkbox checked={Boolean(field.value)} onCheckedChange={field.onChange} />
-                      </FormControl>
-                      <FormLabel className="text-xs font-bold text-primary">Actualizar requisito de LdM masivamente</FormLabel>
-                    </FormItem>
-                  )}
-                />
-
-                {form.watch("apply_has_bom") && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField<BulkEditValues>
-                      control={form.control as any}
-                      name="has_bom"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 bg-white/50 animate-in fade-in duration-200">
-                          <FormControl>
-                            <Checkbox
-                              checked={Boolean(field.value)}
-                              onCheckedChange={field.onChange}
+                        control={form.control}
+                        name="sale_price"
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                {...field}
+                                label="Precio de Venta"
+                                type="number"
+                                step="0.01"
+                                icon={<DollarSign className="h-4 w-4" />}
+                                placeholder="Mantener actual"
+                                error={fieldState.error?.message}
+                                className="font-black h-11"
                             />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel className="text-xs">Todas las seleccionadas requieren Lista de Materiales</FormLabel>
-                            <FormDescription className="text-[10px]">
-                              Forzará a las {selectedVariants.length} variantes a ser Fabricables y requerir LdM.
-                            </FormDescription>
-                          </div>
-                        </FormItem>
-                      )}
+                        )}
                     />
-                )}
-
-                <FormField<BulkEditValues>
-                  control={form.control as any}
-                  name="copy_bom_from"
-                  render={({ field }) => (
-                    <FormItem className="space-y-2 pt-2 border-t border-dashed border-primary/20">
-                      <FormLabel className="text-xs font-bold text-primary">Copiar Receta (BOM) desde:</FormLabel>
-                      <Select onValueChange={field.onChange} value={String(field.value || "")}>
-                        <FormControl>
-                          <SelectTrigger className="h-9 text-sm bg-white/70 border-primary/20">
-                            <SelectValue placeholder="Ninguna / Sin cambios" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="max-h-[300px]">
-                           <SelectItem value="none" className="italic text-muted-foreground">No copiar receta</SelectItem>
-                           {availableVariants
-                             .filter(v => v.has_active_bom)
-                             .map((v) => (
-                               <SelectItem key={v.id} value={v.id.toString()}>
-                                 {v.variant_display_name || v.name} ({v.internal_code || v.code})
-                               </SelectItem>
-                           ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription className="text-[10px]">
-                        Elegir variante que ya tenga una LdM configurada para replicarla.
-                      </FormDescription>
-                      <FormMessage className="text-[10px]" />
-                    </FormItem>
-                  )}
-                />
+                    <FormField<BulkEditValues>
+                        control={form.control}
+                        name="sale_uom"
+                        render={({ field, fieldState }) => (
+                            <LabeledSelect
+                                label="Ud. Medida Venta"
+                                value={(field.value as string) || ""}
+                                onChange={field.onChange}
+                                options={[
+                                    { label: "--- Mantener actual ---", value: "" },
+                                    ...uoms.map(u => ({ label: u.name, value: u.id.toString() }))
+                                ]}
+                                error={fieldState.error?.message}
+                                className="h-11 font-black"
+                            />
+                        )}
+                    />
+                </div>
              </div>
 
+             <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 border-primary/10">
+                <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Configuración Industrial</span>
+                </div>
+
+                <div className="space-y-6">
+                    <FormField<BulkEditValues>
+                        control={form.control}
+                        name="apply_has_bom"
+                        render={({ field }) => (
+                            <div className={cn(
+                                "flex items-center justify-between p-4 rounded-lg border-2 transition-all",
+                                field.value ? "bg-primary/5 border-primary/20" : "bg-background border-dashed border-muted-foreground/20"
+                            )}>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-black uppercase tracking-widest text-primary">Sincronizar Requisito de LdM</label>
+                                    <p className="text-[10px] text-muted-foreground font-medium leading-tight">Actualizar masivamente si las variantes requieren fabricación.</p>
+                                </div>
+                                <Checkbox checked={!!field.value} onCheckedChange={field.onChange} className="h-5 w-5" />
+                            </div>
+                        )}
+                    />
+
+                    {form.watch("apply_has_bom") && (
+                        <FormField<BulkEditValues>
+                            control={form.control}
+                            name="has_bom"
+                            render={({ field }) => (
+                                <div className="flex flex-row items-center justify-between space-x-3 rounded-lg border-2 p-4 bg-background animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="space-y-1 leading-none">
+                                        <label className="text-xs font-bold uppercase">Requieren Lista de Materiales</label>
+                                        <p className="text-[10px] text-muted-foreground font-medium italic">
+                                            Forzará a las {selectedVariants.length} variantes a ser Fabricables.
+                                        </p>
+                                    </div>
+                                    <Checkbox
+                                        checked={!!field.value}
+                                        onCheckedChange={field.onChange}
+                                        className="h-5 w-5"
+                                    />
+                                </div>
+                            )}
+                        />
+                    )}
+
+                    <FormField<BulkEditValues>
+                        control={form.control}
+                        name="copy_bom_from"
+                        render={({ field, fieldState }) => (
+                            <LabeledSelect
+                                label="Copiar Receta (BOM) desde:"
+                                value={(field.value as string) || ""}
+                                onChange={field.onChange}
+                                options={[
+                                    { label: "--- No copiar / Sin cambios ---", value: "" },
+                                    ...availableVariants
+                                        .filter(v => v.has_active_bom)
+                                        .map(v => ({
+                                            label: `${v.variant_display_name || v.name} (${v.internal_code || v.code})`,
+                                            value: v.id.toString()
+                                        }))
+                                ]}
+                                error={fieldState.error?.message}
+                                hint="Elegir una variante origen con LdM configurada para replicarla en todas."
+                                className="h-11 font-black"
+                            />
+                        )}
+                    />
+                </div>
+             </div>
           </div>
         </Form>
       </div>
 
-      <div className="p-4 border-t border-primary/10 bg-white/50 flex justify-end gap-2">
-         <CancelButton onClick={onCancel} className="text-xs border-primary/20 text-primary hover:bg-primary/10" size="sm" />
+      <div className="p-5 border-t-2 border-primary/10 bg-primary/5 flex justify-end gap-3">
+         <CancelButton onClick={onCancel} className="font-black uppercase tracking-widest text-[10px]" />
          <SubmitButton 
             type="button" 
-            onClick={form.handleSubmit(onSubmit)} 
-            size="sm" 
-            className="text-xs font-bold shadow-sm bg-primary hover:bg-primary text-white"
+            onClick={form.handleSubmit(onSubmit) as any} 
+            className="font-black uppercase tracking-widest text-[10px] px-6"
             loading={loading}
-            icon={<Save className="h-3 w-3 mr-2" />}
+            icon={<Save className="h-4 w-4 mr-2" />}
          >
-            Aplicar a {selectedVariants.length} Variantes
+            Actualizar {selectedVariants.length} Variantes
          </SubmitButton>
       </div>
     </div>

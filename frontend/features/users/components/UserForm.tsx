@@ -9,12 +9,11 @@ import * as z from "zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
 import { Loader2, Plus, User, ShieldCheck, ShieldAlert, Check, ChevronsUpDown, Search } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, SubmitButton, LabeledSeparator } from "@/components/shared"
+import { CancelButton, SubmitButton, LabeledSeparator, LabeledInput } from "@/components/shared"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -232,18 +231,19 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
                                                 <FormField
                                                     control={form.control}
                                                     name="username"
-                                                    render={({ field }) => (
+                                                    render={({ field, fieldState }) => (
                                                         <FormItem>
-                                                            <FormLabel className={FORM_STYLES.label}>Nombre de Usuario</FormLabel>
                                                             <FormControl>
-                                                                <Input
-                                                                    {...field}
+                                                                <LabeledInput
+                                                                    label="Nombre de Usuario"
+                                                                    required
                                                                     disabled={!!initialData}
                                                                     placeholder="ej: pmartinez"
-                                                                    className={FORM_STYLES.input}
+                                                                    error={fieldState.error?.message}
+                                                                    hint={initialData ? "El nombre de usuario no puede modificarse" : undefined}
+                                                                    {...field}
                                                                 />
                                                             </FormControl>
-                                                            <FormMessage />
                                                         </FormItem>
                                                     )}
                                                 />
@@ -276,14 +276,19 @@ export function UserForm({ auditSidebar,  initialData, onSuccess, trigger }: Use
                                                 <FormField
                                                     control={form.control}
                                                     name="password"
-                                                    render={({ field }) => (
+                                                    render={({ field, fieldState }) => (
                                                         <FormItem className="md:col-span-2">
-                                                            <FormLabel className={FORM_STYLES.label}>Contraseña {initialData && "(opcional)"}</FormLabel>
                                                             <FormControl>
-                                                                <Input {...field} type="password" placeholder="••••••••" className={FORM_STYLES.input} />
+                                                                <LabeledInput
+                                                                    label={`Contraseña${initialData ? " (opcional)" : ""}`}
+                                                                    required={!initialData}
+                                                                    type="password"
+                                                                    placeholder="••••••••"
+                                                                    hint={!initialData ? "Mínimo 6 caracteres" : undefined}
+                                                                    error={fieldState.error?.message}
+                                                                    {...field}
+                                                                />
                                                             </FormControl>
-                                                            {!initialData && <p className="text-[11px] text-muted-foreground">Mínimo 6 caracteres</p>}
-                                                            <FormMessage />
                                                         </FormItem>
                                                     )}
                                                 />

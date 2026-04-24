@@ -12,11 +12,8 @@ import { Button } from "@/components/ui/button"
 import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
 import { Input } from "@/components/ui/input"
 import {
-    Form, FormControl, FormField, FormItem, FormLabel, FormMessage
+    Form, FormField
 } from "@/components/ui/form"
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import {
     Tabs, TabsContent, TabsList, TabsTrigger
@@ -28,7 +25,7 @@ import {
     Plus, UserCog, ShieldCheck, CalendarCheck2
 } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { BaseModal, EmptyState } from "@/components/shared"
+import { BaseModal, EmptyState, LabeledInput, LabeledSelect } from "@/components/shared"
 
 export const employeeSchema = z.object({
     contact: z.string().min(1, "Contacto requerido"),
@@ -261,80 +258,73 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                                                         <FormField
                                                             control={form.control} name="contact"
-                                                            render={({ field }) => (
-                                                                <FormItem className="col-span-full">
-                                                                    <FormLabel className={FORM_STYLES.label}>Contacto</FormLabel>
-                                                                    <FormControl>
-                                                                        <AdvancedContactSelector
-                                                                            value={field.value || null}
-                                                                            onChange={(val) => field.onChange(val || "")}
-                                                                        />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
+                                                            render={({ field, fieldState }) => (
+                                                                <AdvancedContactSelector
+                                                                    label="Contacto"
+                                                                    value={field.value || null}
+                                                                    onChange={(val) => field.onChange(val || "")}
+                                                                    error={fieldState.error?.message}
+                                                                    containerClassName="col-span-full"
+                                                                />
                                                             )}
                                                         />
-                                                        <FormField control={form.control} name="position" render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel className={FORM_STYLES.label}>Cargo</FormLabel>
-                                                                <FormControl><Input {...field} placeholder="Ej: Vendedor" className={FORM_STYLES.input} /></FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
+                                                        <FormField control={form.control} name="position" render={({ field, fieldState }) => (
+                                                            <LabeledInput
+                                                                label="Cargo"
+                                                                placeholder="Ej: Vendedor"
+                                                                error={fieldState.error?.message}
+                                                                {...field}
+                                                            />
                                                         )} />
-                                                        <FormField control={form.control} name="department" render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel className={FORM_STYLES.label}>Departamento</FormLabel>
-                                                                <FormControl><Input {...field} placeholder="Ventas" className={FORM_STYLES.input} /></FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
+                                                        <FormField control={form.control} name="department" render={({ field, fieldState }) => (
+                                                            <LabeledInput
+                                                                label="Departamento"
+                                                                placeholder="Ventas"
+                                                                error={fieldState.error?.message}
+                                                                {...field}
+                                                            />
                                                         )} />
-                                                        <FormField control={form.control} name="base_salary" render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel className={FORM_STYLES.label}>Sueldo Base ($)</FormLabel>
-                                                                <FormControl><Input {...field} type="number" min="0" className={FORM_STYLES.input} /></FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
+                                                        <FormField control={form.control} name="base_salary" render={({ field, fieldState }) => (
+                                                            <LabeledInput
+                                                                label="Sueldo Base ($)"
+                                                                required
+                                                                type="number"
+                                                                min="0"
+                                                                error={fieldState.error?.message}
+                                                                {...field}
+                                                            />
                                                         )} />
-                                                        <FormField control={form.control} name="contract_type" render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel className={FORM_STYLES.label}>Tipo de Contrato</FormLabel>
-                                                                <Select value={field.value} onValueChange={field.onChange}>
-                                                                    <FormControl>
-                                                                        <SelectTrigger className={FORM_STYLES.input}>
-                                                                            <SelectValue />
-                                                                        </SelectTrigger>
-                                                                    </FormControl>
-                                                                    <SelectContent>
-                                                                        <SelectItem value="INDEFINIDO">Indefinido</SelectItem>
-                                                                        <SelectItem value="PLAZO_FIJO">Plazo Fijo / Obra</SelectItem>
-                                                                    </SelectContent>
-                                                                </Select>
-                                                                <FormMessage />
-                                                            </FormItem>
+                                                        <FormField control={form.control} name="contract_type" render={({ field, fieldState }) => (
+                                                            <LabeledSelect
+                                                                label="Tipo de Contrato"
+                                                                value={field.value}
+                                                                onChange={field.onChange}
+                                                                error={fieldState.error?.message}
+                                                                options={[
+                                                                    { value: "INDEFINIDO", label: "Indefinido" },
+                                                                    { value: "PLAZO_FIJO", label: "Plazo Fijo / Obra" }
+                                                                ]}
+                                                            />
                                                         )} />
-                                                        <FormField control={form.control} name="start_date" render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel className={FORM_STYLES.label}>Fecha Ingreso</FormLabel>
-                                                                <FormControl><Input {...field} type="date" className={FORM_STYLES.input} /></FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
+                                                        <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
+                                                            <LabeledInput
+                                                                label="Fecha Ingreso"
+                                                                type="date"
+                                                                error={fieldState.error?.message}
+                                                                {...field}
+                                                            />
                                                         )} />
-                                                        <FormField control={form.control} name="status" render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel className={FORM_STYLES.label}>Estado Ficha</FormLabel>
-                                                                <Select value={field.value} onValueChange={field.onChange}>
-                                                                    <FormControl>
-                                                                        <SelectTrigger className={FORM_STYLES.input}>
-                                                                            <SelectValue />
-                                                                        </SelectTrigger>
-                                                                    </FormControl>
-                                                                    <SelectContent>
-                                                                        <SelectItem value="ACTIVE">Activo</SelectItem>
-                                                                        <SelectItem value="INACTIVE">Inactivo</SelectItem>
-                                                                    </SelectContent>
-                                                                </Select>
-                                                                <FormMessage />
-                                                            </FormItem>
+                                                        <FormField control={form.control} name="status" render={({ field, fieldState }) => (
+                                                            <LabeledSelect
+                                                                label="Estado Ficha"
+                                                                value={field.value}
+                                                                onChange={field.onChange}
+                                                                error={fieldState.error?.message}
+                                                                options={[
+                                                                    { value: "ACTIVE", label: "Activo" },
+                                                                    { value: "INACTIVE", label: "Inactivo" }
+                                                                ]}
+                                                            />
                                                         )} />
                                                     </div>
                                                 </div>
@@ -354,37 +344,42 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                                                         </div>
 
                                                         <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 gap-y-10">
-                                                            <FormField control={form.control} name="jornada_type" render={({ field }) => (
-                                                                <FormItem className="md:col-span-2">
-                                                                    <FormLabel className={FORM_STYLES.label}>Tipo de Jornada</FormLabel>
-                                                                    <Select value={field.value} onValueChange={field.onChange}>
-                                                                        <FormControl>
-                                                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                                                <SelectValue />
-                                                                        </SelectTrigger>
-                                                                        </FormControl>
-                                                                        <SelectContent>
-                                                                            <SelectItem value="ORDINARIA_22">Ordinaria Art. 22</SelectItem>
-                                                                            <SelectItem value="PARCIAL_40BIS">Parcial Art 40 BIS</SelectItem>
-                                                                            <SelectItem value="EXENTA_22">Exenta Art. 22</SelectItem>
-                                                                            <SelectItem value="EXTRAORDINARIA_30">Extraordinaria Art. 30</SelectItem>
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                </FormItem>
+                                                            <FormField control={form.control} name="jornada_type" render={({ field, fieldState }) => (
+                                                                <LabeledSelect
+                                                                    label="Tipo de Jornada"
+                                                                    value={field.value}
+                                                                    onChange={field.onChange}
+                                                                    error={fieldState.error?.message}
+                                                                    containerClassName="md:col-span-2"
+                                                                    options={[
+                                                                        { value: "ORDINARIA_22", label: "Ordinaria Art. 22" },
+                                                                        { value: "PARCIAL_40BIS", label: "Parcial Art 40 BIS" },
+                                                                        { value: "EXENTA_22", label: "Exenta Art. 22" },
+                                                                        { value: "EXTRAORDINARIA_30", label: "Extraordinaria Art. 30" }
+                                                                    ]}
+                                                                />
                                                             )} />
 
-                                                            <FormField control={form.control} name="dias_pactados" render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel className={FORM_STYLES.label}>Días Pactados</FormLabel>
-                                                                    <FormControl><Input {...field} type="number" min="1" max="31" className={FORM_STYLES.input} onChange={e => field.onChange(parseInt(e.target.value) || 0)} /></FormControl>
-                                                                </FormItem>
+                                                            <FormField control={form.control} name="dias_pactados" render={({ field, fieldState }) => (
+                                                                <LabeledInput
+                                                                    label="Días Pactados"
+                                                                    type="number"
+                                                                    min="1"
+                                                                    max="31"
+                                                                    error={fieldState.error?.message}
+                                                                    {...field}
+                                                                    onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                                                                />
                                                             )} />
 
-                                                            <FormField control={form.control} name="jornada_hours" render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel className={FORM_STYLES.label}>Horas / Sem</FormLabel>
-                                                                    <FormControl><Input {...field} type="number" step="0.5" className={FORM_STYLES.input} /></FormControl>
-                                                                </FormItem>
+                                                            <FormField control={form.control} name="jornada_hours" render={({ field, fieldState }) => (
+                                                                <LabeledInput
+                                                                    label="Horas / Sem"
+                                                                    type="number"
+                                                                    step="0.5"
+                                                                    error={fieldState.error?.message}
+                                                                    {...field}
+                                                                />
                                                             )} />
 
                                                             {/* Switches en fila horizontal */}
@@ -435,78 +430,71 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                                                         </div>
 
                                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-10">
-                                                            <FormField control={form.control} name="afp" render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel className={FORM_STYLES.label}>AFP</FormLabel>
-                                                                    <Select value={field.value || ""} onValueChange={field.onChange}>
-                                                                        <FormControl>
-                                                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                                                <SelectValue placeholder="Seleccione AFP" />
-                                                                            </SelectTrigger>
-                                                                        </FormControl>
-                                                                        <SelectContent>
-                                                                            {afps.map(afp => (
-                                                                                <SelectItem key={afp.id} value={afp.id.toString()}>
-                                                                                    {afp.name} ({afp.percentage}%)
-                                                                                </SelectItem>
-                                                                            ))}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                    <FormMessage />
-                                                                </FormItem>
+                                                            <FormField control={form.control} name="afp" render={({ field, fieldState }) => (
+                                                                <LabeledSelect
+                                                                    label="AFP"
+                                                                    value={field.value || ""}
+                                                                    onChange={field.onChange}
+                                                                    error={fieldState.error?.message}
+                                                                    placeholder="Seleccione AFP"
+                                                                    options={afps.map(afp => ({
+                                                                        value: afp.id.toString(),
+                                                                        label: `${afp.name} (${afp.percentage}%)`
+                                                                    }))}
+                                                                />
                                                             )} />
 
-                                                            <FormField control={form.control} name="salud_type" render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel className={FORM_STYLES.label}>Sistema de Salud</FormLabel>
-                                                                    <Select value={field.value} onValueChange={field.onChange}>
-                                                                        <FormControl>
-                                                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                                                <SelectValue />
-                                                                            </SelectTrigger>
-                                                                        </FormControl>
-                                                                        <SelectContent>
-                                                                            <SelectItem value="FONASA">Fonasa (7%)</SelectItem>
-                                                                            <SelectItem value="ISAPRE">Isapre (Pactado)</SelectItem>
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                </FormItem>
+                                                            <FormField control={form.control} name="salud_type" render={({ field, fieldState }) => (
+                                                                <LabeledSelect
+                                                                    label="Sistema de Salud"
+                                                                    value={field.value}
+                                                                    onChange={field.onChange}
+                                                                    error={fieldState.error?.message}
+                                                                    options={[
+                                                                        { value: "FONASA", label: "Fonasa (7%)" },
+                                                                        { value: "ISAPRE", label: "Isapre (Pactado)" }
+                                                                    ]}
+                                                                />
                                                             )} />
 
                                                             {watchSalud === "ISAPRE" ? (
-                                                                <FormField control={form.control} name="isapre_amount_uf" render={({ field }) => (
-                                                                    <FormItem className="animate-in slide-in-from-top-2 duration-300">
-                                                                        <FormLabel className={FORM_STYLES.label}>Monto Pactado UF</FormLabel>
-                                                                        <FormControl><Input {...field} type="number" step="0.0001" className={FORM_STYLES.input} /></FormControl>
-                                                                        <p className="text-[10px] text-muted-foreground italic mt-1">Se descontará el mayor entre el 7% y este monto.</p>
-                                                                    </FormItem>
+                                                                <FormField control={form.control} name="isapre_amount_uf" render={({ field, fieldState }) => (
+                                                                    <LabeledInput
+                                                                        label="Monto Pactado UF"
+                                                                        type="number"
+                                                                        step="0.0001"
+                                                                        hint="Se descontará el mayor entre el 7% y este monto."
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                        containerClassName="animate-in slide-in-from-top-2 duration-300"
+                                                                    />
                                                                 )} />
                                                             ) : <div className="hidden md:block" />}
 
-                                                            <FormField control={form.control} name="asignacion_familiar" render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel className={FORM_STYLES.label}>Asignación Familiar</FormLabel>
-                                                                    <Select value={field.value} onValueChange={field.onChange}>
-                                                                        <FormControl>
-                                                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                                                <SelectValue />
-                                                                            </SelectTrigger>
-                                                                        </FormControl>
-                                                                        <SelectContent>
-                                                                            <SelectItem value="A">Tramo A</SelectItem>
-                                                                            <SelectItem value="B">Tramo B</SelectItem>
-                                                                            <SelectItem value="C">Tramo C</SelectItem>
-                                                                            <SelectItem value="D">Tramo D</SelectItem>
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                </FormItem>
+                                                            <FormField control={form.control} name="asignacion_familiar" render={({ field, fieldState }) => (
+                                                                <LabeledSelect
+                                                                    label="Asignación Familiar"
+                                                                    value={field.value}
+                                                                    onChange={field.onChange}
+                                                                    error={fieldState.error?.message}
+                                                                    options={[
+                                                                        { value: "A", label: "Tramo A" },
+                                                                        { value: "B", label: "Tramo B" },
+                                                                        { value: "C", label: "Tramo C" },
+                                                                        { value: "D", label: "Tramo D" }
+                                                                    ]}
+                                                                />
                                                             )} />
 
-                                                            <FormField control={form.control} name="cargas_familiares" render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormLabel className={FORM_STYLES.label}>Nº de Cargas</FormLabel>
-                                                                    <FormControl><Input {...field} type="number" min="0" className={FORM_STYLES.input} onChange={e => field.onChange(parseInt(e.target.value) || 0)} /></FormControl>
-                                                                </FormItem>
+                                                            <FormField control={form.control} name="cargas_familiares" render={({ field, fieldState }) => (
+                                                                <LabeledInput
+                                                                    label="Nº de Cargas"
+                                                                    type="number"
+                                                                    min="0"
+                                                                    error={fieldState.error?.message}
+                                                                    {...field}
+                                                                    onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                                                                />
                                                             )} />
                                                         </div>
                                                     </div>
@@ -527,22 +515,18 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                                                     {availableConcepts.length > 0 ? (
                                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                                                             {availableConcepts.map(concept => (
-                                                                <FormItem key={concept.id} className="space-y-3 p-4 rounded-md bg-muted/5 border border-transparent hover:border-primary/10 transition-all group">
-                                                                    <FormLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">{concept.name}</FormLabel>
-                                                                    <FormControl>
-                                                                        <Input
-                                                                            type="number"
-                                                                            step="1"
-                                                                            placeholder="0"
-                                                                            className={cn("h-10 text-sm bg-background/50", FORM_STYLES.input)}
-                                                                            value={(form.watch("concept_amounts")?.[concept.id]) || ""}
-                                                                            onChange={(e) => {
-                                                                                const current = form.getValues("concept_amounts") || {}
-                                                                                form.setValue("concept_amounts", { ...current, [concept.id]: e.target.value }, { shouldDirty: true })
-                                                                            }}
-                                                                        />
-                                                                    </FormControl>
-                                                                </FormItem>
+                                                                <LabeledInput
+                                                                    key={concept.id}
+                                                                    label={concept.name}
+                                                                    type="number"
+                                                                    step="1"
+                                                                    placeholder="0"
+                                                                    value={(form.watch("concept_amounts")?.[concept.id]) || ""}
+                                                                    onChange={(e) => {
+                                                                        const current = form.getValues("concept_amounts") || {}
+                                                                        form.setValue("concept_amounts", { ...current, [concept.id]: e.target.value }, { shouldDirty: true })
+                                                                    }}
+                                                                />
                                                             ))}
                                                         </div>
                                                     ) : (

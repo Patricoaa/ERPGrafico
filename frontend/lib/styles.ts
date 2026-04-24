@@ -1,8 +1,14 @@
 export const FORM_STYLES = {
-    // Labels
+    /**
+     * @deprecated Use `<LabeledInput label="...">` from `@/components/shared` instead.
+     * The LabeledInput component renders label + input as a single notched fieldset primitive.
+     */
     label: "text-[10px] font-black uppercase tracking-widest text-muted-foreground",
 
-    // Inputs & Selects
+    /**
+     * @deprecated Use `<LabeledInput label="...">` from `@/components/shared` instead.
+     * The LabeledInput component renders label + input as a single notched fieldset primitive.
+     */
     input: "h-10 rounded-md border bg-background focus-visible:ring-primary transition-all duration-200",
     textarea: "min-h-[100px] rounded-md border bg-background focus-visible:ring-primary transition-all duration-200 resize-none p-4",
 
@@ -12,6 +18,7 @@ export const FORM_STYLES = {
     // Sections (like lines headers)
     sectionHeader: "text-[10px] font-black uppercase tracking-widest text-muted-foreground",
 } as const;
+
 
 export const LAYOUT_TOKENS = {
     view: "flex-1 space-y-6 p-8 pt-6 animate-in fade-in duration-500",

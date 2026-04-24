@@ -2,54 +2,64 @@
 
 This project uses a standardized set of Tailwind CSS classes for form elements to ensure consistency across the application.
 
-## Usage
+## ⚠️ Deprecation Notice
 
-Import the `FORM_STYLES` constant from `@/lib/styles` and apply it to your components.
+`FORM_STYLES.label` and `FORM_STYLES.input` are **deprecated**. Do not use them in new code.
+Use `<LabeledInput>` from `@/components/shared` instead. See [component-input.md](../../docs/20-contracts/component-input.md).
+
+---
+
+## LabeledInput (Recommended)
+
+The `LabeledInput` component renders a `fieldset + legend` (Notched pattern). The label is embedded in the border with pure CSS — no JavaScript positioning.
 
 ```tsx
-import { FORM_STYLES } from "@/lib/styles"
-import { cn } from "@/lib/utils"
+import { LabeledInput } from "@/components/shared"
 
-// ...
+// Simple input (react-hook-form)
+<FormField
+  control={form.control}
+  name="name"
+  render={({ field, fieldState }) => (
+    <FormItem>
+      <FormControl>
+        <LabeledInput
+          label="Nombre"
+          required
+          placeholder="Ej: Juan Pérez"
+          error={fieldState.error?.message}
+          {...field}
+        />
+      </FormControl>
+      {/* ⚠️ Do NOT add <FormMessage /> — LabeledInput already shows the error */}
+    </FormItem>
+  )}
+/>
 
-<FormLabel className={FORM_STYLES.label}>My Label</FormLabel>
-<Input className={FORM_STYLES.input} />
+// Textarea
+<LabeledInput label="Observaciones" as="textarea" rows={4} hint="Opcional" {...field} />
 ```
 
-## Standard Styles
+---
 
-| Component | Standard Style | Description |
-|-----------|---------------|-------------|
-| **Label** | `text-[10px] font-black uppercase tracking-widest text-muted-foreground` | Small, bold, uppercase labels for forms. |
-| **Input/Select** | `h-10 rounded-xl border-dashed bg-background focus-visible:ring-primary` | Inputs with dashed borders and rounded corners. |
-| **Card** | *(Deprecado)* | **NO USAR**. Importar y usar `<Card variant="dashed" className="p-4">` desde `@/components/ui/card`. |
-| **Table Header** | `px-3 py-2 font-black text-[10px] uppercase tracking-widest text-muted-foreground` | Consistent table headers. |
-| **Section Header** | `text-[10px] font-black uppercase tracking-widest text-muted-foreground` | Headers for sections within forms. |
+## Standard Styles (Legacy — still functional, do not use in new code)
 
-## Examples
+| Component | Standard Style | Status |
+|-----------|---------------|--------|
+| **Label** | `FORM_STYLES.label` | ⚠️ Deprecated — use `LabeledInput` |
+| **Input/Select** | `FORM_STYLES.input` | ⚠️ Deprecated — use `LabeledInput` |
+| **Card** | *(Removed)* | **NO USAR**. Importar y usar `<Card variant="dashed" className="p-4">` |
+| **Table Header** | `FORM_STYLES.tableHeader` | ✅ Active |
+| **Section Header** | `FORM_STYLES.sectionHeader` | ✅ Active |
 
-### Form Field
-```tsx
-<FormItem>
-    <FormLabel className={FORM_STYLES.label}>Name</FormLabel>
-    <FormControl>
-        <Input className={FORM_STYLES.input} {...field} />
-    </FormControl>
-</FormItem>
-```
-
-### Card Section
-```tsx
-<Card variant="dashed" className="p-4">
-    <h3 className={FORM_STYLES.sectionHeader}>Details</h3>
-    {/* Content */}
-</Card>
-```
+---
 
 ## Best Practices
-1. **Always use `FORM_STYLES`** for new forms to ensure they match the design system.
-2. **Use `cn()`** to merge additional classes if needed (e.g., conditional colors or width adjustments).
+
+1. **Always use `LabeledInput`** for new forms — provides the notched Fieldset design pattern.
+2. **Use `cn()`** to merge additional classes if needed:
    ```tsx
-   className={cn(FORM_STYLES.input, isError && "border-destructive")}
+   <LabeledInput label="X" containerClassName={cn("col-span-2", someClass)} {...field} />
    ```
-3. **Avoid arbitrary values** (like `text-[11px]`) unless absolutely necessary. Stick to the standard constants.
+3. **Do not mix patterns** — do not add `<FormLabel>` above a `<LabeledInput>`.
+4. **Error messages** — pass `error={fieldState.error?.message}`. No `<FormMessage>` needed.

@@ -29,6 +29,9 @@ interface AdvancedContactSelectorProps {
     onSelectContact?: (contact: Contact) => void
     disabled?: boolean
     isPartnerOnly?: boolean
+    label?: string
+    error?: string
+    className?: string
 }
 
 export function AdvancedContactSelector({
@@ -38,7 +41,10 @@ export function AdvancedContactSelector({
     contactType,
     onSelectContact,
     disabled,
-    isPartnerOnly
+    isPartnerOnly,
+    label,
+    error,
+    className
 }: AdvancedContactSelectorProps) {
     const { contacts, singleContact, loading: searchLoading, fetchContacts, fetchSingleContact } = useContactSearch()
     const [open, setOpen] = useState(false)
@@ -102,18 +108,31 @@ export function AdvancedContactSelector({
             : null;
 
     return (
-        <>
-            <Popover open={open} onOpenChange={setOpen}>
+        <div className={cn("relative w-full flex flex-col group", className)}>
+            <fieldset 
+                className={cn(
+                    "notched-field w-full group transition-all",
+                    open && "focused",
+                    error && "error",
+                    disabled && "opacity-50 cursor-not-allowed bg-muted/10"
+                )}
+            >
+                {label && (
+                    <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
+                        {label}
+                    </legend>
+                )}
+                <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
-                    variant="outline"
+                    variant="ghost"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full justify-between h-auto py-2 px-3"
+                    className="w-full justify-between overflow-hidden h-auto py-2 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                     disabled={disabled}
                 >
                     {selectedContact ? (
-                        <div className="flex items-center gap-2 truncate text-left">
+                        <div className="flex items-center gap-2 truncate text-left w-[calc(100%-20px)]">
                             <div className={cn("p-1.5 rounded-md shrink-0", disabled ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary")}>
                                 {selectedContact.contact_type === 'COMPANY' ? <Building2 className="h-4 w-4" /> : <User className="h-4 w-4" />}
                             </div>
@@ -212,6 +231,12 @@ export function AdvancedContactSelector({
                 </div>
             </PopoverContent>
         </Popover>
+        </fieldset>
+            {error && (
+                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
+                    {error}
+                </p>
+            )}
 
             {isCreateModalOpen && (
                 <Suspense fallback={<div />}>
@@ -223,6 +248,6 @@ export function AdvancedContactSelector({
                     />
                 </Suspense>
             )}
-        </>
+        </div>
     )
 }

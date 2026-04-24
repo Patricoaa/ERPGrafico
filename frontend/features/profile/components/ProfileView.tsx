@@ -20,7 +20,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ColumnDef } from "@tanstack/react-table"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormField } from "@/components/ui/form"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
@@ -30,7 +30,7 @@ import {
     FileDown, Download, Eye, Clock, CheckCircle2, FileText,
     ChevronDown, ChevronRight
 } from "lucide-react"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { EmptyState, LabeledInput } from "@/components/shared"
 import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
 import { PartnerProfileTab } from "./PartnerProfileTab"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
@@ -299,35 +299,35 @@ function PasswordChangeCard() {
             <CardContent className="p-6">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                        <FormField control={form.control} name="current_password" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Contraseña Actual</FormLabel>
-                                <FormControl>
-                                    <Input {...field} type="password" placeholder="••••••••" className={FORM_STYLES.input} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                        <FormField control={form.control} name="current_password" render={({ field, fieldState }) => (
+                            <LabeledInput
+                                {...field}
+                                label="Contraseña Actual"
+                                type="password"
+                                placeholder="••••••••"
+                                error={fieldState.error?.message}
+                            />
                         )} />
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={form.control} name="new_password" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Nueva Contraseña</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} type="password" placeholder="••••••••" className={FORM_STYLES.input} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            <FormField control={form.control} name="new_password" render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    {...field}
+                                    label="Nueva Contraseña"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    error={fieldState.error?.message}
+                                />
                             )} />
 
-                            <FormField control={form.control} name="confirm_password" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Confirmar Contraseña</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} type="password" placeholder="••••••••" className={FORM_STYLES.input} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            <FormField control={form.control} name="confirm_password" render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    {...field}
+                                    label="Confirmar Contraseña"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    error={fieldState.error?.message}
+                                />
                             )} />
                         </div>
 
@@ -775,51 +775,41 @@ function PinChangeCard() {
             <CardContent className="p-6">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                        <FormField control={form.control} name="current_password" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Contraseña Actual</FormLabel>
-                                <FormControl>
-                                    <Input {...field} type="password" placeholder="••••••••" className={FORM_STYLES.input} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                        <FormField control={form.control} name="current_password" render={({ field, fieldState }) => (
+                            <LabeledInput
+                                {...field}
+                                label="Contraseña Actual"
+                                type="password"
+                                placeholder="••••••••"
+                                error={fieldState.error?.message}
+                            />
                         )} />
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={form.control} name="new_pin" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Nuevo PIN (máx 4 dígitos)</FormLabel>
-                                    <FormControl>
-                                        <Input 
-                                            {...field} 
-                                            type="password" 
-                                            pattern="\d*" 
-                                            inputMode="numeric" 
-                                            placeholder="••••" 
-                                            className={FORM_STYLES.input} 
-                                            maxLength={4}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            <FormField control={form.control} name="new_pin" render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    {...field}
+                                    label="Nuevo PIN (máx 4 dígitos)"
+                                    type="password"
+                                    pattern="\d*"
+                                    inputMode="numeric"
+                                    placeholder="••••"
+                                    maxLength={4}
+                                    error={fieldState.error?.message}
+                                />
                             )} />
 
-                            <FormField control={form.control} name="confirm_pin" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Confirmar PIN</FormLabel>
-                                    <FormControl>
-                                        <Input 
-                                            {...field} 
-                                            type="password" 
-                                            pattern="\d*" 
-                                            inputMode="numeric" 
-                                            placeholder="••••" 
-                                            className={FORM_STYLES.input} 
-                                            maxLength={4}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            <FormField control={form.control} name="confirm_pin" render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    {...field}
+                                    label="Confirmar PIN"
+                                    type="password"
+                                    pattern="\d*"
+                                    inputMode="numeric"
+                                    placeholder="••••"
+                                    maxLength={4}
+                                    error={fieldState.error?.message}
+                                />
                             )} />
                         </div>
 

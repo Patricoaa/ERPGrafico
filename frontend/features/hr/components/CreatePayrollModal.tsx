@@ -12,14 +12,10 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
 import { Input } from "@/components/ui/input"
-import {
-    Form, FormControl, FormField, FormItem, FormLabel, FormMessage
-} from "@/components/ui/form"
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
+import { Form, FormField } from "@/components/ui/form"
 import { Plus, FileText } from "lucide-react"
 import { FORM_STYLES } from "@/lib/styles"
+import { LabeledInput, LabeledSelect } from "@/components/shared"
 
 const MONTHS = [
     { value: 1, label: "Enero" }, { value: 2, label: "Febrero" },
@@ -124,78 +120,54 @@ export function CreatePayrollModal({ open, onOpenChange, onSaved, trigger }: Cre
                     onSubmit={form.handleSubmit(onSubmit)}
                     className="space-y-4 py-2 text-left"
                 >
-                    <FormField control={form.control} name="employee" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className={FORM_STYLES.label}>Empleado</FormLabel>
-                            <Select value={field.value} onValueChange={field.onChange}>
-                                <FormControl>
-                                    <SelectTrigger className={FORM_STYLES.input}>
-                                        <SelectValue placeholder="Seleccionar empleado..." />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {employees.map(e => (
-                                        <SelectItem key={e.id} value={String(e.id)}>
-                                            {e.contact_detail?.name} — {e.contact_detail?.tax_id}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage className="text-[10px]" />
-                        </FormItem>
+                    <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
+                        <LabeledSelect
+                            label="Empleado"
+                            value={field.value}
+                            onChange={field.onChange}
+                            error={fieldState.error?.message}
+                            placeholder="Seleccionar empleado..."
+                            options={employees.map(e => ({
+                                value: String(e.id),
+                                label: `${e.contact_detail?.name} — ${e.contact_detail?.tax_id}`
+                            }))}
+                        />
                     )} />
 
                     <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="period_year" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Año</FormLabel>
-                                <Select value={field.value} onValueChange={field.onChange}>
-                                    <FormControl>
-                                        <SelectTrigger className={FORM_STYLES.input}>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {[currentYear - 1, currentYear, currentYear + 1].map(y => (
-                                            <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage className="text-[10px]" />
-                            </FormItem>
+                        <FormField control={form.control} name="period_year" render={({ field, fieldState }) => (
+                            <LabeledSelect
+                                label="Año"
+                                value={field.value}
+                                onChange={field.onChange}
+                                error={fieldState.error?.message}
+                                options={[currentYear - 1, currentYear, currentYear + 1].map(y => ({
+                                    value: String(y),
+                                    label: String(y)
+                                }))}
+                            />
                         )} />
-                        <FormField control={form.control} name="period_month" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Mes</FormLabel>
-                                <Select value={field.value} onValueChange={field.onChange}>
-                                    <FormControl>
-                                        <SelectTrigger className={FORM_STYLES.input}>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {MONTHS.map(m => (
-                                            <SelectItem key={m.value} value={String(m.value)}>{m.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage className="text-[10px]" />
-                            </FormItem>
+                        <FormField control={form.control} name="period_month" render={({ field, fieldState }) => (
+                            <LabeledSelect
+                                label="Mes"
+                                value={field.value}
+                                onChange={field.onChange}
+                                error={fieldState.error?.message}
+                                options={MONTHS.map(m => ({
+                                    value: String(m.value),
+                                    label: m.label
+                                }))}
+                            />
                         )} />
                     </div>
 
-                    <FormField control={form.control} name="notes" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className={FORM_STYLES.label}>Notas (Opcional)</FormLabel>
-                            <FormControl>
-                                <Input
-                                    {...field}
-                                    className={FORM_STYLES.input}
-                                    placeholder="Información adicional..."
-                                />
-                            </FormControl>
-                            <FormMessage className="text-[10px]" />
-                        </FormItem>
+                    <FormField control={form.control} name="notes" render={({ field, fieldState }) => (
+                        <LabeledInput
+                            label="Notas (Opcional)"
+                            placeholder="Información adicional..."
+                            error={fieldState.error?.message}
+                            {...field}
+                        />
                     )} />
                 </form>
             </Form>

@@ -18,8 +18,6 @@ import {
     Select,
     SelectContent,
     SelectItem,
-    SelectTrigger,
-    SelectValue,
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -28,6 +26,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { WalletCards } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { LabeledInput, LabeledSelect } from "@/components/shared"
 
 const journalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -148,70 +147,60 @@ export function BankJournalForm({ auditSidebar,  onSuccess, initialData, open: o
                     <FormField
                         control={form.control}
                         name="name"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Banco Estado Cta Cte" className={FORM_STYLES.input} {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                label="Nombre"
+                                placeholder="Banco Estado Cta Cte"
+                                error={fieldState.error?.message}
+                                {...field}
+                            />
                         )}
                     />
                     <div className="grid grid-cols-2 gap-4">
                         <FormField
                             control={form.control}
                             name="code"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="BEST-CTE" className={FORM_STYLES.input} {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    label="Código"
+                                    placeholder="BEST-CTE"
+                                    error={fieldState.error?.message}
+                                    {...field}
+                                />
                             )}
                         />
                         <FormField
                             control={form.control}
                             name="currency"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Moneda</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue placeholder="Seleccione moneda" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="CLP">CLP (Peso Chileno)</SelectItem>
-                                            <SelectItem value="USD">USD (Dólar)</SelectItem>
-                                            <SelectItem value="EUR">EUR (Euro)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
+                            render={({ field, fieldState }) => (
+                                <LabeledSelect
+                                    label="Moneda"
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    error={fieldState.error?.message}
+                                    options={[
+                                        { value: "CLP", label: "CLP (Peso Chileno)" },
+                                        { value: "USD", label: "USD (Dólar)" },
+                                        { value: "EUR", label: "EUR (Euro)" }
+                                    ]}
+                                    placeholder="Seleccione moneda"
+                                />
                             )}
                         />
                     </div>
                     <FormField
                         control={form.control}
                         name="account"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Cuenta Contable</FormLabel>
-                                <FormControl>
-                                    <AccountSelector
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        accountType="ASSET"
-                                        isReconcilable={true}
-                                        placeholder="Seleccionar cuenta de banco/caja"
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                        render={({ field, fieldState }) => (
+                            <AccountSelector
+                                value={field.value}
+                                onChange={field.onChange}
+                                accountType="ASSET"
+                                isReconcilable={true}
+                                placeholder="Seleccionar cuenta de banco/caja"
+                                label="Cuenta Contable"
+                                error={fieldState.error?.message}
+                            />
                         )}
                     />
                     </form>

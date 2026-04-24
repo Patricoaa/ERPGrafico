@@ -34,7 +34,7 @@ import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { Loader2, CreditCard, Landmark, Wallet, ClipboardList } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { Skeleton } from "@/components/shared"
+import { Skeleton, LabeledInput, LabeledSelect } from "@/components/shared"
 
 // schema and types remain the same
 const paymentSchema = z.object({
@@ -232,72 +232,67 @@ export function PaymentForm({
                 <Form {...form}>
                     <form id="payment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
                         <fieldset disabled={loading} className="space-y-6 group">
-                            <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg border group-disabled:opacity-60 transition-opacity">
+                            <div className="grid grid-cols-2 gap-4 group-disabled:opacity-60 transition-opacity">
                                 {!initialData && (
+                                    <FormField
+                                        control={form.control as any}
+                                        name="payment_type"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Flujo"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                                options={[
+                                                    { value: "INBOUND", label: "Ingreso (Cobro)" },
+                                                    { value: "OUTBOUND", label: "Egreso (Pago)" }
+                                                ]}
+                                            />
+                                        )}
+                                    />
+                                )}
+
                                 <FormField
                                     control={form.control as any}
-                                    name="payment_type"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Flujo</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger className="bg-white">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="INBOUND">Ingreso (Cobro)</SelectItem>
-                                                    <SelectItem value="OUTBOUND">Egreso (Pago)</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
+                                    name="amount"
+                                    render={({ field, fieldState }) => (
+                                        <div className={cn("relative w-full flex flex-col group", !initialData ? "" : "col-span-2")}>
+                                            <fieldset className={cn("notched-field w-full group", fieldState.error && "error")}>
+                                                <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Monto</legend>
+                                                <div className="relative">
+                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        className="w-full bg-transparent border-none focus:ring-0 pl-7 font-bold text-lg h-9"
+                                                        {...field}
+                                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                    />
+                                                </div>
+                                            </fieldset>
+                                            {fieldState.error && (
+                                                <p className="mt-1 text-[10px] font-medium text-destructive pl-1">
+                                                    {fieldState.error.message}
+                                                </p>
+                                            )}
+                                        </div>
                                     )}
                                 />
-                            )}
-
-                            <FormField
-                                control={form.control as any}
-                                name="amount"
-                                render={({ field }) => (
-                                    <FormItem className={cn(!initialData ? "" : "col-span-2")}>
-                                        <FormLabel className="text-xs font-bold uppercase tracking-wider opacity-70">Monto</FormLabel>
-                                        <FormControl>
-                                            <div className="relative">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
-                                                <Input
-                                                    type="number"
-                                                    step="0.01"
-                                                    className="pl-7 font-bold text-lg bg-white"
-                                                    {...field}
-                                                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                                />
-                                            </div>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
+                            </div>
 
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField
                                     control={form.control as any}
                                     name="treasury_account"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Cuenta de Tesorería</FormLabel>
-                                            <FormControl>
-                                                <TreasuryAccountSelector
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    placeholder="Seleccione cuenta..."
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                    render={({ field, fieldState }) => (
+                                        <TreasuryAccountSelector
+                                            label="Cuenta de Tesorería"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder="Seleccione cuenta..."
+                                            error={fieldState.error?.message}
+                                        />
                                     )}
                                 />
 
@@ -305,35 +300,39 @@ export function PaymentForm({
                                     <FormField
                                         control={form.control as any}
                                         name="payment_method_new"
-                                        render={({ field }) => (
-                                            <FormItem className="animate-in slide-in-from-top-2 duration-300">
-                                                <FormLabel className={FORM_STYLES.label}>Método Detallado</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value || ""} disabled={isFetchingMethods}>
-                                                    <FormControl>
-                                                        <SelectTrigger className="border-primary/20 bg-primary/10/30">
+                                        render={({ field, fieldState }) => (
+                                            <div className="relative w-full flex flex-col group animate-in slide-in-from-top-2 duration-300">
+                                                <fieldset className={cn("notched-field w-full group", fieldState.error && "error")}>
+                                                    <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Método Detallado</legend>
+                                                    <Select onValueChange={field.onChange} value={field.value || ""} disabled={isFetchingMethods}>
+                                                        <SelectTrigger className="border-none shadow-none focus:ring-0 bg-transparent h-9 px-3">
                                                             {isFetchingMethods ? (
                                                                 <Skeleton className="h-4 w-24" />
                                                             ) : (
                                                                 <SelectValue placeholder="Canal de pago..." />
                                                             )}
                                                         </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        {availableMethods.map((m) => (
-                                                            <SelectItem key={m.id} value={m.id.toString()}>
-                                                                <div className="flex items-center gap-2">
-                                                                    {m.method_type === 'CASH' ? <Wallet className="h-3 w-3" /> :
-                                                                        m.method_type === 'TRANSFER' || m.method_type === 'BANK' ? <Landmark className="h-3 w-3" /> :
-                                                                            m.method_type === 'CHECK' ? <ClipboardList className="h-3 w-3" /> :
-                                                                                <CreditCard className="h-3 w-3" />}
-                                                                    {m.name}
-                                                                </div>
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
+                                                        <SelectContent>
+                                                            {availableMethods.map((m) => (
+                                                                <SelectItem key={m.id} value={m.id.toString()}>
+                                                                    <div className="flex items-center gap-2">
+                                                                        {m.method_type === 'CASH' ? <Wallet className="h-3 w-3" /> :
+                                                                            m.method_type === 'TRANSFER' || m.method_type === 'BANK' ? <Landmark className="h-3 w-3" /> :
+                                                                                m.method_type === 'CHECK' ? <ClipboardList className="h-3 w-3" /> :
+                                                                                    <CreditCard className="h-3 w-3" />}
+                                                                        {m.name}
+                                                                    </div>
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </fieldset>
+                                                {fieldState.error && (
+                                                    <p className="mt-1 text-[10px] font-medium text-destructive pl-1">
+                                                        {fieldState.error.message}
+                                                    </p>
+                                                )}
+                                            </div>
                                         )}
                                     />
                                 )}
@@ -344,70 +343,53 @@ export function PaymentForm({
                                     <FormField
                                         control={form.control as any}
                                         name="customer_id"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className={FORM_STYLES.label}>Cliente</FormLabel>
-                                                <FormControl>
-                                                    <AdvancedContactSelector
-                                                        value={field.value === "__none__" ? "" : field.value}
-                                                        onChange={(val) => field.onChange(val || "")}
-                                                        contactType="CUSTOMER"
-                                                        placeholder="Buscar contacto..."
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
+                                        render={({ field, fieldState }) => (
+                                            <AdvancedContactSelector
+                                                label="Cliente"
+                                                value={field.value === "__none__" ? "" : field.value}
+                                                onChange={(val) => field.onChange(val || "")}
+                                                contactType="CUSTOMER"
+                                                placeholder="Buscar contacto..."
+                                                error={fieldState.error?.message}
+                                            />
                                         )}
                                     />
                                 ) : (
                                     <FormField
                                         control={form.control as any}
                                         name="supplier_id"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className={FORM_STYLES.label}>Proveedor</FormLabel>
-                                                <FormControl>
-                                                    <AdvancedContactSelector
-                                                        value={field.value === "__none__" ? "" : field.value}
-                                                        onChange={(val) => field.onChange(val || "")}
-                                                        contactType="SUPPLIER"
-                                                        placeholder="Buscar contacto..."
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
+                                        render={({ field, fieldState }) => (
+                                            <AdvancedContactSelector
+                                                label="Proveedor"
+                                                value={field.value === "__none__" ? "" : field.value}
+                                                onChange={(val) => field.onChange(val || "")}
+                                                contactType="SUPPLIER"
+                                                placeholder="Buscar contacto..."
+                                                error={fieldState.error?.message}
+                                            />
                                         )}
                                     />
                                 )}
-
                                 {!initialData && (
                                     <FormField
                                         control={form.control as any}
                                         name="invoice_id"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className={FORM_STYLES.label}>Vincular Documento (Opcional)</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value || "__none__"} disabled={isFetchingInvoices}>
-                                                    <FormControl>
-                                                        <SelectTrigger>
-                                                            {isFetchingInvoices ? (
-                                                                <Skeleton className="h-4 w-24" />
-                                                            ) : (
-                                                                <SelectValue placeholder="Seleccione..." />
-                                                            )}
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="__none__">Sin vínculo</SelectItem>
-                                                        {orders.map((o) => (
-                                                            <SelectItem key={o.id} value={o.id.toString()}>
-                                                                {o.dte_type_display} #{o.number || 'P'} ({o.total})
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Vincular Documento (Opcional)"
+                                                value={field.value || "__none__"}
+                                                onChange={field.onChange}
+                                                disabled={isFetchingInvoices}
+                                                error={fieldState.error?.message}
+                                                placeholder="Seleccione..."
+                                                options={[
+                                                    { value: "__none__", label: "Sin vínculo" },
+                                                    ...orders.map((o) => ({
+                                                        value: o.id.toString(),
+                                                        label: `${o.dte_type_display} #${o.number || 'P'} (${o.total})`
+                                                    }))
+                                                ]}
+                                            />
                                         )}
                                     />
                                 )}
@@ -416,14 +398,13 @@ export function PaymentForm({
                             <FormField
                                 control={form.control as any}
                                 name="reference"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Referencia / N° Operación</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Ej: Transferencia Banco Estado" {...field} className="bg-white" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
+                                render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Referencia / N° Operación"
+                                        placeholder="Ej: Transferencia Banco Estado"
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                    />
                                 )}
                             />
                         </div>

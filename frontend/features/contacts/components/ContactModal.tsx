@@ -49,7 +49,7 @@ import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { Card, CardContent } from "@/components/ui/card"
 import { getHubStatuses } from '@/features/orders/utils/status'
 import { FORM_STYLES } from "@/lib/styles"
-import { Skeleton, CardSkeleton, TableSkeleton } from "@/components/shared"
+import { Skeleton, CardSkeleton, TableSkeleton, LabeledInput } from "@/components/shared"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),
@@ -404,13 +404,17 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                 <FormField
                                                     control={form.control}
                                                     name="name"
-                                                    render={({ field }) => (
+                                                    render={({ field, fieldState }) => (
                                                         <FormItem>
-                                                            <FormLabel className={FORM_STYLES.label}>Nombre / Razón Social</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="Ej: Juan Pérez o Empresa SpA" {...field} className={FORM_STYLES.input} />
+                                                                <LabeledInput
+                                                                    label="Nombre / Razón Social"
+                                                                    required
+                                                                    placeholder="Ej: Juan Pérez o Empresa SpA"
+                                                                    error={fieldState.error?.message}
+                                                                    {...field}
+                                                                />
                                                             </FormControl>
-                                                            <FormMessage />
                                                         </FormItem>
                                                     )}
                                                 />
@@ -418,18 +422,18 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                 <FormField
                                                     control={form.control}
                                                     name="tax_id"
-                                                    render={({ field }) => (
+                                                    render={({ field, fieldState }) => (
                                                         <FormItem>
-                                                            <FormLabel className={FORM_STYLES.label}>RUT / Tax ID</FormLabel>
                                                             <FormControl>
-                                                                <Input
+                                                                <LabeledInput
+                                                                    label="RUT / Tax ID"
+                                                                    required
                                                                     placeholder="12.345.678-9"
+                                                                    error={fieldState.error?.message}
                                                                     {...field}
                                                                     onChange={(e) => field.onChange(formatRUT(e.target.value))}
-                                                                    className={FORM_STYLES.input}
                                                                 />
                                                             </FormControl>
-                                                            <FormMessage />
                                                         </FormItem>
                                                     )}
                                                 />
@@ -437,13 +441,17 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                 <FormField
                                                     control={form.control}
                                                     name="email"
-                                                    render={({ field }) => (
+                                                    render={({ field, fieldState }) => (
                                                         <FormItem>
-                                                            <FormLabel className={FORM_STYLES.label}>Email</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="ejemplo@correo.com" {...field} className={FORM_STYLES.input} />
+                                                                <LabeledInput
+                                                                    label="Email"
+                                                                    type="email"
+                                                                    placeholder="ejemplo@correo.com"
+                                                                    error={fieldState.error?.message}
+                                                                    {...field}
+                                                                />
                                                             </FormControl>
-                                                            <FormMessage />
                                                         </FormItem>
                                                     )}
                                                 />
@@ -451,13 +459,16 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                 <FormField
                                                     control={form.control}
                                                     name="phone"
-                                                    render={({ field }) => (
+                                                    render={({ field, fieldState }) => (
                                                         <FormItem>
-                                                            <FormLabel className={FORM_STYLES.label}>Teléfono</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="+56 9 ..." {...field} className={FORM_STYLES.input} />
+                                                                <LabeledInput
+                                                                    label="Teléfono"
+                                                                    placeholder="+56 9 ..."
+                                                                    error={fieldState.error?.message}
+                                                                    {...field}
+                                                                />
                                                             </FormControl>
-                                                            <FormMessage />
                                                         </FormItem>
                                                     )}
                                                 />
@@ -466,13 +477,16 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                     <FormField
                                                         control={form.control}
                                                         name="address"
-                                                        render={({ field }) => (
+                                                        render={({ field, fieldState }) => (
                                                             <FormItem>
-                                                                <FormLabel className={FORM_STYLES.label}>Dirección</FormLabel>
                                                                 <FormControl>
-                                                                    <Input placeholder="Calle, Número, Depto" {...field} className={FORM_STYLES.input} />
+                                                                    <LabeledInput
+                                                                        label="Dirección"
+                                                                        placeholder="Calle, Número, Depto"
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                    />
                                                                 </FormControl>
-                                                                <FormMessage />
                                                             </FormItem>
                                                         )}
                                                     />
@@ -481,13 +495,16 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                 <FormField
                                                     control={form.control}
                                                     name="city"
-                                                    render={({ field }) => (
+                                                    render={({ field, fieldState }) => (
                                                         <FormItem>
-                                                            <FormLabel className={FORM_STYLES.label}>Ciudad / Comuna</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="Santiago" {...field} className={FORM_STYLES.input} />
+                                                                <LabeledInput
+                                                                    label="Ciudad / Comuna"
+                                                                    placeholder="Santiago"
+                                                                    error={fieldState.error?.message}
+                                                                    {...field}
+                                                                />
                                                             </FormControl>
-                                                            <FormMessage />
                                                         </FormItem>
                                                     )}
                                                 />

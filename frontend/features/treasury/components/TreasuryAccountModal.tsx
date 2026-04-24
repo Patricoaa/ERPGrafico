@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react"
 import { useTreasuryAccounts, type TreasuryAccount, treasuryApi } from "@/features/treasury"
-import { Input } from "@/components/ui/input"
 import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Select,
@@ -18,7 +17,7 @@ import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { CancelButton } from "@/components/shared"
+import { CancelButton, LabeledInput } from "@/components/shared"
 
 interface TreasuryAccountModalProps {
     open: boolean
@@ -176,12 +175,11 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <div className="grid gap-2">
-                                        <Label className={FORM_STYLES.label}>Nombre de la Cuenta</Label>
-                                        <Input
+                                        <LabeledInput
+                                            label="Nombre de la Cuenta"
                                             value={name}
                                             onChange={e => setName(e.target.value)}
                                             placeholder="Ej: Caja Principal"
-                                            className={FORM_STYLES.input}
                                             required
                                             disabled={isSystemManaged}
                                         />
@@ -241,15 +239,13 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                                     )}
 
                                     {requiresBank(type) && (
-                                        <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
-                                            <Label className={cn(FORM_STYLES.label, "text-info flex items-center gap-1")}>
-                                                <CreditCard className="h-3.5 w-3.5" /> N° de Cuenta Bancaria
-                                            </Label>
-                                            <Input
+                                        <div className="animate-in slide-in-from-left-2 duration-300">
+                                            <LabeledInput
+                                                label="N° de Cuenta Bancaria"
                                                 value={accountNumber}
                                                 onChange={e => setAccountNumber(e.target.value)}
                                                 placeholder="Ej: 0123456789"
-                                                className={cn(FORM_STYLES.input, "border-info/20 bg-info/5")}
+                                                className="border-info/20 bg-info/5"
                                                 disabled={isSystemManaged}
                                             />
                                         </div>

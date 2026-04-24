@@ -252,6 +252,32 @@ States handled: — (pure controlled). Shows count badge when >2 selected; shows
 
 ---
 
+## LabeledInput 🟡
+
+> 📄 Documentación completa en **[component-input.md](./component-input.md)**.
+
+Primitivo único para el par label + campo de texto. Reemplaza el patrón deprecated `FORM_STYLES.label + FORM_STYLES.input`.
+
+```tsx
+<LabeledInput label="Nombre" required error={fieldState.error?.message} {...field} />
+<LabeledInput label="Observaciones" as="textarea" rows={4} {...field} />
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `label` | `string` | ✅ | — | Texto del legend (notched border) |
+| `as` | `'input' \| 'textarea'` | ❌ | `'input'` | |
+| `required` | `boolean` | ❌ | `false` | Muestra `*` automáticamente |
+| `error` | `string` | ❌ | — | Activa estado rojo + `role="alert"` |
+| `hint` | `string` | ❌ | — | Texto de ayuda (oculto si hay error) |
+| `disabled` | `boolean` | ❌ | `false` | |
+| `rows` | `number` | ❌ | `3` | Solo `as="textarea"` |
+| `containerClassName` | `string` | ❌ | — | Clases del wrapper `<div>` |
+
+`forwardRef`-compatible. Pasar `{...field}` de react-hook-form directamente. **No usar `<FormLabel>` ni `<FormMessage>`** junto a este componente.
+
+---
+
 ## FolioValidationInput 🟢
 
 Text input with real-time DTE folio uniqueness validation.

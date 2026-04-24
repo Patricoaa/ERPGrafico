@@ -7,24 +7,11 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect } from "@/components/shared"
 import {
     Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+    FormField
 } from "@/components/ui/form"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import * as LucideIcons from "lucide-react"
@@ -92,14 +79,20 @@ const ICON_OPTIONS = [
     { name: "Wifi", label: "Internet" },
 ]
 
-function RichIconSelector({ value, onChange }: { value: string, onChange: (val: string) => void }) {
+function RichIconSelector({ value, onChange, label, error }: { value: string, onChange: (val: string) => void, label?: string, error?: string }) {
     const SelectedIcon = (LucideIcons as any)[value] || LucideIcons.Package
     const selectedLabel = ICON_OPTIONS.find(i => i.name === value)?.label || value
 
     return (
-        <Popover>
+        <fieldset className={cn("notched-field w-full group transition-all", error && "error")}>
+            {label && <legend className={cn("notched-legend", error && "text-destructive")}>{label}</legend>}
+            <Popover>
             <PopoverTrigger asChild>
-                <Button variant="outline" role="combobox" className={cn("w-full justify-between font-normal", FORM_STYLES.input)}>
+                <Button 
+                    variant="ghost" 
+                    role="combobox" 
+                    className="w-full justify-between h-10 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent font-normal"
+                >
                     <div className="flex items-center gap-2">
                         <SelectedIcon className="h-4 w-4" />
                         <span>{selectedLabel}</span>
@@ -153,6 +146,7 @@ function RichIconSelector({ value, onChange }: { value: string, onChange: (val: 
                 </div>
             </PopoverContent>
         </Popover>
+        </fieldset>
     )
 }
 
@@ -319,140 +313,129 @@ export function CategoryForm({
                     <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
                         <Form {...form}>
                             <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Insumos" className={FORM_STYLES.input} {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="prefix"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Siglas (Prefijo)</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Ej: IMP, DIS, MER" className={FORM_STYLES.input} {...field} value={field.value || ""} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="icon"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Icono</FormLabel>
-                                    <FormControl>
-                                        <RichIconSelector
-                                            value={field.value || "Package"}
-                                            onChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        </div>
-                        <FormField
-                            control={form.control}
-                            name="parent"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Categoría Padre (Opcional)</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || "__none__"}>
-                                        <FormControl>
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue placeholder="Sin padre" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="__none__">Sin padre</SelectItem>
-                                            {categories.filter(cat => cat.id).map((cat) => (
-                                                <SelectItem key={cat.id} value={cat.id.toString()}>
-                                                    {cat.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                                <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 shadow-sm border-primary/10">
+                                    <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Información General</span>
+                                    </div>
 
-                        <div className="flex items-center gap-2 pt-1">
-                            <div className="flex-1 h-px bg-border" />
-                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Cuentas Contables</span>
-                            <div className="flex-1 h-px bg-border" />
-                        </div>
+                                    <div className="space-y-6">
+                                        <FormField
+                                            control={form.control}
+                                            name="name"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Nombre de Categoría"
+                                                    required
+                                                    placeholder="Ej: Insumos de Impresión"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )}
+                                        />
 
-                        <div className="grid grid-cols-3 gap-3">
-                        <FormField
-                            control={form.control}
-                            name="asset_account"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Activo (Inventario)</FormLabel>
-                                    <FormControl>
-                                        <AccountSelector
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="ASSET"
-                                            placeholder="Seleccionar..."
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <FormField
+                                                control={form.control}
+                                                name="prefix"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="Siglas (Prefijo)"
+                                                        placeholder="Ej: IMP"
+                                                        error={fieldState.error?.message}
+                                                        {...field}
+                                                        value={field.value || ""}
+                                                    />
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="icon"
+                                                render={({ field, fieldState }) => (
+                                                    <RichIconSelector
+                                                        label="Icono Visual"
+                                                        value={field.value || "Package"}
+                                                        onChange={field.onChange}
+                                                        error={fieldState.error?.message}
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+
+                                        <FormField
+                                            control={form.control}
+                                            name="parent"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Categoría Superior (Jerarquía)"
+                                                    value={field.value || "none"}
+                                                    onChange={field.onChange}
+                                                    error={fieldState.error?.message}
+                                                    placeholder="Sin padre"
+                                                    options={[
+                                                        { value: "none", label: "Raíz (Sin padre)" },
+                                                        ...categories.filter(cat => cat.id && cat.id !== initialData?.id).map((cat) => ({
+                                                            value: cat.id.toString(),
+                                                            label: cat.name
+                                                        }))
+                                                    ]}
+                                                />
+                                            )}
                                         />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="income_account"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Ingresos (Ventas)</FormLabel>
-                                    <FormControl>
-                                        <AccountSelector
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="INCOME"
-                                            placeholder="Seleccionar..."
+                                    </div>
+                                </div>
+
+                                <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 shadow-sm border-primary/10">
+                                    <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Cuentas Contables por Defecto</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <FormField
+                                            control={form.control}
+                                            name="asset_account"
+                                            render={({ field, fieldState }) => (
+                                                <AccountSelector
+                                                    label="Activo (Inventario)"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    accountType="ASSET"
+                                                    placeholder="Cuenta de activo..."
+                                                    error={fieldState.error?.message}
+                                                />
+                                            )}
                                         />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="expense_account"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Gastos (Costo)</FormLabel>
-                                    <FormControl>
-                                        <AccountSelector
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="EXPENSE"
-                                            placeholder="Seleccionar..."
+                                        <FormField
+                                            control={form.control}
+                                            name="income_account"
+                                            render={({ field, fieldState }) => (
+                                                <AccountSelector
+                                                    label="Ingresos (Ventas)"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    accountType="INCOME"
+                                                    placeholder="Cuenta de ingreso..."
+                                                    error={fieldState.error?.message}
+                                                />
+                                            )}
                                         />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        </div>
-                    </form>
-                </Form>
+                                        <FormField
+                                            control={form.control}
+                                            name="expense_account"
+                                            render={({ field, fieldState }) => (
+                                                <AccountSelector
+                                                    label="Gastos (Costo)"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    accountType="EXPENSE"
+                                                    placeholder="Cuenta de gasto..."
+                                                    error={fieldState.error?.message}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+                            </form>
+                        </Form>
                 </div>
 
                 {initialData?.id && (

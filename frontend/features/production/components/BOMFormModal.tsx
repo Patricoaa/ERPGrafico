@@ -35,7 +35,7 @@ import { toast } from "sonner"
 import { FORM_STYLES } from "@/lib/styles"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { Skeleton } from "@/components/shared";
+import { Skeleton, LabeledInput } from "@/components/shared";
 
 // Schema for material lines (stock components)
 const materialLineSchema = z.object({
@@ -347,98 +347,114 @@ export function BOMFormModal({
             }
         >
             {!initialProduct ? (
-                <div className="mb-4 pb-4 border-b">
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                <div className="mb-6 pb-6 border-b border-border/40">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
                         <div className={cn(selectedProduct?.has_variants ? "md:col-span-7" : "md:col-span-12")}>
-                            <Label className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">
-                                Producto a fabricar
-                            </Label>
-                            <ProductSelector
-                                value={selectedProduct?.id}
-                                onSelect={(p) => setSelectedProduct(p)}
-                                onChange={(val) => {
-                                    if (!val) setSelectedProduct(null)
-                                }}
-                                placeholder="Seleccionar producto..."
-                                allowedTypes={['MANUFACTURABLE']}
-                                shouldResolveVariants={false}
-                            />
+                            <div className="relative group">
+                                <div className="absolute -top-2 left-3 px-1 bg-background z-10">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 group-focus-within:text-primary transition-colors">
+                                        Producto a fabricar
+                                    </span>
+                                </div>
+                                <ProductSelector
+                                    value={selectedProduct?.id}
+                                    onSelect={(p) => setSelectedProduct(p)}
+                                    onChange={(val) => {
+                                        if (!val) setSelectedProduct(null)
+                                    }}
+                                    placeholder="Seleccionar producto..."
+                                    allowedTypes={['MANUFACTURABLE']}
+                                    shouldResolveVariants={false}
+                                    className="pt-2"
+                                />
+                            </div>
                         </div>
                         
                         {selectedProduct?.has_variants && (
                             <div className="md:col-span-5 animate-in fade-in slide-in-from-left-2 duration-300">
-                                <Label className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block">
-                                    Variante del producto
-                                </Label>
-                                <Select
-                                    value={selectedVariant?.id?.toString() || ""}
-                                    onValueChange={(val) => {
-                                        const v = variants.find(varnt => varnt.id.toString() === val)
-                                        setSelectedVariant(v || null)
-                                    }}
-                                    disabled={!!bomToEdit}
-                                >
-                                    <SelectTrigger className="h-10 w-full rounded-lg bg-background border-border shadow-sm transition-all focus:ring-primary/20">
-                                        <SelectValue placeholder="Seleccione variante..." />
-                                    </SelectTrigger>
-                                    <SelectContent position="popper" sideOffset={8} className="z-[100] rounded-lg overflow-hidden min-w-[320px]">
-                                        {loadingVariants ? (
-                                            <div className="p-3 space-y-2">
-                                                <Skeleton className="h-10 w-full" />
-                                                <Skeleton className="h-10 w-full" />
-                                            </div>
-                                        ) : variants.length > 0 ? (
-                                            <div className="max-h-[300px] overflow-y-auto p-1">
-                                                {variants.map(v => (
-                                                    <SelectItem key={v.id} value={v.id.toString()} className="text-xs rounded-lg py-2 cursor-pointer hover:bg-primary/5">
-                                                        <div className="flex flex-col gap-1 w-full">
-                                                            <div className="flex items-center justify-between gap-2">
-                                                                <span className="font-bold">{v.variant_display_name || v.name}</span>
-                                                                <span className="text-[9px] text-muted-foreground uppercase font-mono bg-muted px-1 rounded">{v.internal_code || v.code}</span>
-                                                            </div>
-                                                            
-                                                            {v.attribute_values_data && v.attribute_values_data.length > 0 && (
-                                                                <div className="flex flex-wrap gap-1 mt-0.5">
-                                                                    {(v as ProductMinimal).attribute_values_data?.map((attr: { id: string | number; value: string }) => (
-                                                                        <span 
-                                                                            key={attr.id} 
-                                                                            className="text-[8px] h-3.5 px-1 py-0 font-bold uppercase rounded border border-primary/20 bg-primary/5 text-primary flex items-center"
-                                                                        >
-                                                                            {attr.value}
-                                                                        </span>
-                                                                    ))}
+                                <div className="relative group">
+                                    <div className="absolute -top-2 left-3 px-1 bg-background z-10">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 group-focus-within:text-primary transition-colors">
+                                            Variante del producto
+                                        </span>
+                                    </div>
+                                    <Select
+                                        value={selectedVariant?.id?.toString() || ""}
+                                        onValueChange={(val) => {
+                                            const v = variants.find(varnt => varnt.id.toString() === val)
+                                            setSelectedVariant(v || null)
+                                        }}
+                                        disabled={!!bomToEdit}
+                                    >
+                                        <SelectTrigger className="h-10 w-full rounded-md bg-background border-border shadow-sm transition-all focus:ring-1 focus:ring-primary/20 pt-2">
+                                            <SelectValue placeholder="Seleccione variante..." />
+                                        </SelectTrigger>
+                                        <SelectContent position="popper" sideOffset={8} className="z-[100] rounded-lg overflow-hidden min-w-[320px]">
+                                            {loadingVariants ? (
+                                                <div className="p-3 space-y-2">
+                                                    <Skeleton className="h-10 w-full" />
+                                                    <Skeleton className="h-10 w-full" />
+                                                </div>
+                                            ) : variants.length > 0 ? (
+                                                <div className="max-h-[300px] overflow-y-auto p-1">
+                                                    {variants.map(v => (
+                                                        <SelectItem key={v.id} value={v.id.toString()} className="text-xs rounded-lg py-2 cursor-pointer hover:bg-primary/5">
+                                                            <div className="flex flex-col gap-1 w-full">
+                                                                <div className="flex items-center justify-between gap-2">
+                                                                    <span className="font-bold">{v.variant_display_name || v.name}</span>
+                                                                    <span className="text-[9px] text-muted-foreground uppercase font-mono bg-muted px-1 rounded">{v.internal_code || v.code}</span>
                                                                 </div>
-                                                            )}
-                                                        </div>
-                                                    </SelectItem>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <div className="p-4 text-center space-y-2">
-                                                <AlertCircle className="h-5 w-5 text-warning mx-auto" />
-                                                <p className="text-[10px] text-muted-foreground italic">No se encontraron variantes disponibles para este producto.</p>
-                                            </div>
-                                        )}
-                                    </SelectContent>
-                                </Select>
+                                                                
+                                                                {v.attribute_values_data && v.attribute_values_data.length > 0 && (
+                                                                    <div className="flex flex-wrap gap-1 mt-0.5">
+                                                                        {(v as ProductMinimal).attribute_values_data?.map((attr: { id: string | number; value: string }) => (
+                                                                            <span 
+                                                                                key={attr.id} 
+                                                                                className="text-[8px] h-3.5 px-1 py-0 font-bold uppercase rounded border border-primary/20 bg-primary/5 text-primary flex items-center"
+                                                                            >
+                                                                                {attr.value}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </SelectItem>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="p-4 text-center space-y-2">
+                                                    <AlertCircle className="h-5 w-5 text-warning mx-auto" />
+                                                    <p className="text-[10px] text-muted-foreground italic">No se encontraron variantes disponibles para este producto.</p>
+                                                </div>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         )}
                     </div>
                 </div>
             ) : (
-                <div className="mb-4 pb-3 border-b flex items-center justify-between bg-muted/10 p-4 rounded-md">
-                   <div className="flex items-center gap-3">
-                       <Box className="h-5 w-5 text-muted-foreground" />
+                <div className="mb-6 pb-4 border-b border-border/40 flex items-center justify-between bg-primary/[0.02] p-4 rounded-lg border border-primary/10">
+                   <div className="flex items-center gap-4">
+                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                           <Box className="h-5 w-5 text-primary" />
+                       </div>
                        <div className="flex flex-col">
-                           <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Producto Base (Modo Lectura)</Label>
-                           <span className="text-sm font-bold text-foreground">
+                           <span className="text-[10px] font-black uppercase text-primary/60 tracking-widest leading-none mb-1">Producto en Edición</span>
+                           <span className="text-sm font-black text-foreground">
                                {selectedVariant ? (selectedVariant.variant_display_name || selectedVariant.name) : (selectedProduct?.name || "")}
                            </span>
                        </div>
                    </div>
-                   <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 bg-primary/5 text-primary">
-                        Edición
-                   </span>
+                   <div className="flex flex-col items-end">
+                       <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-primary text-primary-foreground shadow-sm">
+                            Modo Lectura
+                       </span>
+                       {selectedVariant?.internal_code && (
+                           <span className="text-[10px] font-mono text-muted-foreground mt-1">{selectedVariant.internal_code}</span>
+                       )}
+                   </div>
                 </div>
             )}
 
@@ -451,14 +467,15 @@ export function BOMFormModal({
                                 <FormField
                                     control={form.control as any}
                                     name="name"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Nombre de la Receta</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Ej: Versión Estándar 2024" {...field} className={cn(FORM_STYLES.input, "h-9")} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                    render={({ field, fieldState }) => (
+                                        <div className="space-y-1">
+                                            <LabeledInput
+                                                label="Nombre de la Receta"
+                                                placeholder="Ej: Versión Estándar 2024"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        </div>
                                     )}
                                 />
 
@@ -466,38 +483,37 @@ export function BOMFormModal({
                                     control={form.control as any}
                                     name="active"
                                     render={({ field }) => (
-                                        <FormItem>
+                                        <div className={cn(
+                                            "flex items-center gap-3 p-2 rounded-md border transition-all duration-200 shadow-sm",
+                                            field.value ? "bg-primary/[0.03] border-primary/20 ring-1 ring-primary/5" : "bg-muted/[0.03] border-border/60"
+                                        )}>
                                             <div className={cn(
-                                                "flex items-center gap-3 p-2 rounded-lg border border-border/50 transition-colors shadow-sm",
-                                                field.value ? "bg-primary/5 border-primary/20" : "bg-muted/5 border-border"
+                                                "flex h-8 w-8 items-center justify-center rounded-md border transition-colors shadow-sm",
+                                                field.value ? "bg-primary/10 border-primary/20 text-primary" : "bg-background border-border text-muted-foreground/50"
                                             )}>
-                                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background shadow-sm border">
-                                                    {field.value ? (
-                                                        <CheckCircle2 className={cn("h-3.5 w-3.5", field.value ? "text-primary" : "text-muted-foreground")} />
-                                                    ) : (
-                                                        <Workflow className="h-3.5 w-3.5 text-muted-foreground opacity-50" />
-                                                    )}
-                                                </div>
-                                                <div className="flex-1 space-y-0.5">
-                                                    <FormLabel className={cn("text-[10px] font-bold uppercase tracking-widest cursor-pointer",
-                                                        field.value ? "text-primary" : "text-muted-foreground"
-                                                    )}>RECETA ACTIVA</FormLabel>
-                                                    <div className={cn(
-                                                        "text-[9px] font-semibold uppercase tracking-wider",
-                                                        field.value ? "text-primary/70" : "text-muted-foreground/70"
-                                                    )}>
-                                                        {field.value ? "Lista Principal" : "Lista de Respaldo"}
-                                                    </div>
-                                                </div>
-                                                <FormControl>
-                                                    <Switch
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                        className={cn(field.value && "data-[state=checked]:bg-primary scale-75")}
-                                                    />
-                                                </FormControl>
+                                                {field.value ? (
+                                                    <CheckCircle2 className="h-4 w-4" />
+                                                ) : (
+                                                    <Workflow className="h-4 w-4" />
+                                                )}
                                             </div>
-                                        </FormItem>
+                                            <div className="flex-1 space-y-0">
+                                                <span className={cn("text-[10px] font-black uppercase tracking-widest cursor-pointer block",
+                                                    field.value ? "text-primary" : "text-muted-foreground/60"
+                                                )}>RECETA ACTIVA</span>
+                                                <div className={cn(
+                                                    "text-[9px] font-bold uppercase tracking-tight",
+                                                    field.value ? "text-primary/60" : "text-muted-foreground/40"
+                                                )}>
+                                                    {field.value ? "Lista Principal" : "Lista de Respaldo"}
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                                className={cn(field.value && "data-[state=checked]:bg-primary scale-75")}
+                                            />
+                                        </div>
                                     )}
                                 />
                             </div>
@@ -507,40 +523,44 @@ export function BOMFormModal({
                                 <FormField
                                     control={form.control as any}
                                     name="yield_quantity"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Rendimiento / Producción</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="number"
-                                                    min="0.0001"
-                                                    step="any"
-                                                    placeholder="1"
-                                                    {...field}
-                                                    className={cn(FORM_STYLES.input, "h-9")}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                    render={({ field, fieldState }) => (
+                                        <div className="space-y-1">
+                                            <LabeledInput
+                                                label="Rendimiento / Producción"
+                                                type="number"
+                                                min="0.0001"
+                                                step="any"
+                                                placeholder="1"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        </div>
                                     )}
                                 />
 
                                 <FormField
                                     control={form.control as any}
                                     name="yield_uom"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Unidad de Salida</FormLabel>
-                                            <FormControl>
-                                                <UoMSelector
-                                                    value={field.value || ""}
-                                                    onChange={field.onChange}
-                                                    categoryId={selectedProduct?.uom_category}
-                                                    uoms={uoms}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                    render={({ field, fieldState }) => (
+                                        <div className="relative group">
+                                            <div className="absolute -top-2 left-3 px-1 bg-background z-10">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/70 group-focus-within:text-primary transition-colors">
+                                                    Unidad de Salida
+                                                </span>
+                                            </div>
+                                            <UoMSelector
+                                                value={field.value || ""}
+                                                onChange={field.onChange}
+                                                categoryId={selectedProduct?.uom_category}
+                                                uoms={uoms}
+                                                className="pt-2"
+                                            />
+                                            {fieldState.error && (
+                                                <span className="text-[10px] text-destructive font-bold uppercase mt-1 block px-1">
+                                                    {fieldState.error.message}
+                                                </span>
+                                            )}
+                                        </div>
                                     )}
                                 />
                             </div>
@@ -593,50 +613,45 @@ export function BOMFormModal({
                                         </TableHeader>
                                         <TableBody>
                                             {materialFields.map((field, index) => (
-                                                <TableRow key={field.id}>
-                                                    <TableCell>
+                                                <TableRow key={field.id} className="hover:bg-muted/10 transition-colors">
+                                                    <TableCell className="py-2">
                                                         <div className="space-y-1">
                                                             <FormField
                                                                 control={form.control as any}
                                                                 name={`lines.${index}.component`}
                                                                 render={({ field: propField }) => (
-                                                                    <FormItem>
-                                                                        <FormControl>
-                                                                            <ProductSelector
-                                                                                value={propField.value}
-                                                                                onSelect={(p) => {
-                                                                                    propField.onChange(p.id.toString())
-                                                                                    form.setValue(`lines.${index}.component_name`, p.name)
-                                                                                    form.setValue(`lines.${index}.component_code`, p.internal_code || p.code)
-                                                                                    form.setValue(`lines.${index}.component_cost`, Number(p.cost_price || 0))
-                                                                                    
-                                                                                    if (p.uom) {
-                                                                                        const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
-                                                                                        form.setValue(`lines.${index}.uom`, uomId)
-                                                                                        form.setValue(`lines.${index}.uom_name`, p.uom_name || (typeof p.uom === 'object' ? p.uom.name : ""))
-                                                                                    }
-                                                                                    if (p.uom_category) {
-                                                                                        form.setValue(`lines.${index}.component_uom_category`, p.uom_category)
-                                                                                    }
+                                                                    <ProductSelector
+                                                                        value={propField.value}
+                                                                        onSelect={(p) => {
+                                                                            propField.onChange(p.id.toString())
+                                                                            form.setValue(`lines.${index}.component_name`, p.name)
+                                                                            form.setValue(`lines.${index}.component_code`, p.internal_code || p.code)
+                                                                            form.setValue(`lines.${index}.component_cost`, Number(p.cost_price || 0))
+                                                                            
+                                                                            if (p.uom) {
+                                                                                const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
+                                                                                form.setValue(`lines.${index}.uom`, uomId)
+                                                                                form.setValue(`lines.${index}.uom_name`, p.uom_name || (typeof p.uom === 'object' ? p.uom.name : ""))
+                                                                            }
+                                                                            if (p.uom_category) {
+                                                                                form.setValue(`lines.${index}.component_uom_category`, p.uom_category)
+                                                                            }
 
-                                                                                    if (p.has_variants) {
-                                                                                        fetchLineVariants(p.id, index)
-                                                                                    }
-                                                                                }}
-                                                                                onChange={(val) => propField.onChange(val)}
-                                                                                placeholder="Buscar componente..."
-                                                                                allowedTypes={['STORABLE', 'MANUFACTURABLE']}
-                                                                                customFilter={(p: ProductMinimal) => 
-                                                                                    !!(p.product_type === 'STORABLE' || 
-                                                                                    (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing))
-                                                                                }
-                                                                                excludeIds={selectedProduct ? [selectedProduct.id] : []}
-                                                                                shouldResolveVariants={false}
-                                                                                className="h-8 text-xs"
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
+                                                                            if (p.has_variants) {
+                                                                                fetchLineVariants(p.id, index)
+                                                                            }
+                                                                        }}
+                                                                        onChange={(val) => propField.onChange(val)}
+                                                                        placeholder="Buscar componente..."
+                                                                        allowedTypes={['STORABLE', 'MANUFACTURABLE']}
+                                                                        customFilter={(p: ProductMinimal) => 
+                                                                            !!(p.product_type === 'STORABLE' || 
+                                                                            (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing))
+                                                                        }
+                                                                        excludeIds={selectedProduct ? [selectedProduct.id] : []}
+                                                                        shouldResolveVariants={false}
+                                                                        className="h-8 text-xs border-transparent hover:border-border/60 focus:border-primary/40 bg-transparent"
+                                                                    />
                                                                 )}
                                                             />
                                                             
@@ -687,12 +702,7 @@ export function BOMFormModal({
                                                             control={form.control as any}
                                                             name={`lines.${index}.quantity`}
                                                             render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormControl>
-                                                                        <Input type="number" step="1" {...field} className={cn(FORM_STYLES.input, "h-8")} />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
+                                                                <Input type="number" step="1" {...field} className="h-8 text-xs border-transparent hover:border-border/60 focus:border-primary/40 bg-transparent transition-all text-center font-bold" />
                                                             )}
                                                         />
                                                     </TableCell>
@@ -704,31 +714,24 @@ export function BOMFormModal({
                                                                 const quantity = Number(form.watch(`lines.${index}.quantity`)) || 1;
 
                                                                 return (
-                                                                    <FormItem>
-                                                                        <FormControl>
-                                                                            <UoMSelector
-                                                                                context="bom"
-                                                                                categoryId={Number(form.watch(`lines.${index}.component_uom_category`)) || undefined}
-                                                                                value={field.value || ""}
-                                                                                onChange={(val) => {
-                                                                                    field.onChange(val);
-                                                                                    const selectedUom = uoms.find((u: { id: string | number }) => u.id.toString() === val);
+                                                                    <UoMSelector
+                                                                        context="bom"
+                                                                        categoryId={Number(form.watch(`lines.${index}.component_uom_category`)) || undefined}
+                                                                        value={field.value || ""}
+                                                                        onChange={(val) => {
+                                                                            field.onChange(val);
+                                                                            const selectedUom = uoms.find((u: { id: string | number }) => u.id.toString() === val);
 
-                                                                                    if (selectedUom) {
-                                                                                        form.setValue(`lines.${index}.uom_name`, selectedUom.name);
-                                                                                        // Note: Cost calculation removed here as it requires base cost/ratio 
-                                                                                        // logic from the original product which we might not have in full.
-                                                                                        // The component_cost is pre-filled from onSelect and can be updated by quantity changes.
-                                                                                    }
-                                                                                }}
-                                                                                uoms={uoms}
-                                                                                showConversionHint={false}
-                                                                                quantity={quantity}
-                                                                                label=""
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormMessage />
-                                                                    </FormItem>
+                                                                            if (selectedUom) {
+                                                                                form.setValue(`lines.${index}.uom_name`, selectedUom.name);
+                                                                            }
+                                                                        }}
+                                                                        uoms={uoms}
+                                                                        showConversionHint={false}
+                                                                        quantity={quantity}
+                                                                        label=""
+                                                                        className="h-8 border-transparent hover:border-border/60 focus:border-primary/40 bg-transparent"
+                                                                    />
                                                                 );
                                                             }}
                                                         />
@@ -828,178 +831,152 @@ export function BOMFormModal({
                                         </TableHeader>
                                         <TableBody>
                                             {serviceFields.map((field, index) => (
-                                                <TableRow key={field.id}>
-                                                    <TableCell>
+                                                <TableRow key={field.id} className="hover:bg-muted/10 transition-colors">
+                                                    <TableCell className="py-2">
                                                         <FormField
                                                             control={form.control as any}
                                                             name={`service_lines.${index}.component`}
                                                             render={({ field: propField }) => (
-                                                                <FormItem>
-                                                                    <FormControl>
-                                                                             <ProductSelector
-                                                                                value={propField.value}
-                                                                                onSelect={(p) => {
-                                                                                    propField.onChange(p.id.toString())
-                                                                                    form.setValue(`service_lines.${index}.component_name`, p.name)
-                                                                                    if (p.uom) {
-                                                                                        const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
-                                                                                        form.setValue(`service_lines.${index}.uom`, uomId)
-                                                                                    }
-                                                                                    if (p.has_variants) {
-                                                                                        fetchLineVariants(p.id, index, true)
-                                                                                    }
-                                                                                }}
-                                                                                onChange={(val) => propField.onChange(val)}
-                                                                                placeholder="Buscar servicio..."
-                                                                                shouldResolveVariants={false}
-                                                                                customFilter={(p: ProductMinimal & { product_type?: string, can_be_purchased?: boolean }) => !!(p.product_type === 'SERVICE' && p.can_be_purchased)}
-                                                                            />
-                                                                            {(() => {
-                                                                                const compId = form.watch(`service_lines.${index}.component`)
-                                                                                const lineVars = lineVariantsCache[compId] || []
-                                                                                
-                                                                                if (lineVars.length > 0) {
-                                                                                    return (
-                                                                                        <div className="mt-1 animate-in fade-in slide-in-from-top-1">
-                                                                                            <Select
-                                                                                                value={form.watch(`service_lines.${index}.component`)}
-                                                                                                onValueChange={(val) => {
-                                                                                                    form.setValue(`service_lines.${index}.component`, val)
-                                                                                                    const v = lineVars.find((vr: ProductMinimal) => vr.id.toString() === val)
-                                                                                                    if (v && v.uom) {
-                                                                                                        form.setValue(`service_lines.${index}.uom`, v.uom.toString())
-                                                                                                    }
-                                                                                                }}
-                                                                                            >
-                                                                                                <SelectTrigger className="h-7 w-full text-[10px] bg-primary/5 border-primary/20">
-                                                                                                    <SelectValue placeholder="Variante requerida..." />
-                                                                                                </SelectTrigger>
-                                                                                                <SelectContent position="popper" className="z-[110]">
-                                                                                                    {lineVars.map(v => (
-                                                                                                        <SelectItem key={v.id} value={v.id.toString()} className="text-[10px]">
-                                                                                                            {v.variant_display_name || v.name}
-                                                                                                        </SelectItem>
-                                                                                                    ))}
-                                                                                                </SelectContent>
-                                                                                            </Select>
-                                                                                        </div>
-                                                                                    )
-                                                                                }
-                                                                                return null
-                                                                            })()}
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
+                                                                <div className="space-y-1">
+                                                                    <ProductSelector
+                                                                        value={propField.value}
+                                                                        onSelect={(p) => {
+                                                                            propField.onChange(p.id.toString())
+                                                                            form.setValue(`service_lines.${index}.component_name`, p.name)
+                                                                            if (p.uom) {
+                                                                                const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
+                                                                                form.setValue(`service_lines.${index}.uom`, uomId)
+                                                                            }
+                                                                            if (p.has_variants) {
+                                                                                fetchLineVariants(p.id, index, true)
+                                                                            }
+                                                                        }}
+                                                                        onChange={(val) => propField.onChange(val)}
+                                                                        placeholder="Buscar servicio..."
+                                                                        shouldResolveVariants={false}
+                                                                        customFilter={(p: ProductMinimal & { product_type?: string, can_be_purchased?: boolean }) => !!(p.product_type === 'SERVICE' && p.can_be_purchased)}
+                                                                        className="h-8 text-xs border-transparent hover:border-border/60 focus:border-primary/40 bg-transparent"
+                                                                    />
+                                                                    {(() => {
+                                                                        const compId = form.watch(`service_lines.${index}.component`)
+                                                                        const lineVars = lineVariantsCache[compId] || []
+                                                                        
+                                                                        if (lineVars.length > 0) {
+                                                                            return (
+                                                                                <div className="animate-in fade-in slide-in-from-top-1">
+                                                                                    <Select
+                                                                                        value={form.watch(`service_lines.${index}.component`)}
+                                                                                        onValueChange={(val) => {
+                                                                                            form.setValue(`service_lines.${index}.component`, val)
+                                                                                            const v = lineVars.find((vr: ProductMinimal) => vr.id.toString() === val)
+                                                                                            if (v && v.uom) {
+                                                                                                form.setValue(`service_lines.${index}.uom`, v.uom.toString())
+                                                                                            }
+                                                                                        }}
+                                                                                    >
+                                                                                        <SelectTrigger className="h-7 w-full text-[10px] bg-primary/5 border-primary/20">
+                                                                                            <SelectValue placeholder="Variante..." />
+                                                                                        </SelectTrigger>
+                                                                                        <SelectContent position="popper" className="z-[110]">
+                                                                                            {lineVars.map(v => (
+                                                                                                <SelectItem key={v.id} value={v.id.toString()} className="text-[10px]">
+                                                                                                    {v.variant_display_name || v.name}
+                                                                                                </SelectItem>
+                                                                                            ))}
+                                                                                        </SelectContent>
+                                                                                    </Select>
+                                                                                </div>
+                                                                            )
+                                                                        }
+                                                                        return null
+                                                                    })()}
+                                                                </div>
                                                             )}
                                                         />
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell className="py-2">
                                                         <FormField
                                                             control={form.control as any}
                                                             name={`service_lines.${index}.supplier`}
                                                             render={({ field: supplierField }) => (
-                                                                <FormItem>
-                                                                    <FormControl>
-                                                                        <AdvancedContactSelector
-                                                                            value={supplierField.value}
-                                                                            onChange={(val) => supplierField.onChange(val)}
-                                                                            onSelectContact={(c) => {
-                                                                                supplierField.onChange(c.id.toString())
-                                                                                form.setValue(`service_lines.${index}.supplier_name`, c.name)
-                                                                            }}
-                                                                            contactType="SUPPLIER"
-                                                                            placeholder="Proveedor..."
-                                                                        />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
+                                                                <AdvancedContactSelector
+                                                                    value={supplierField.value}
+                                                                    onChange={(val) => supplierField.onChange(val)}
+                                                                    onSelectContact={(c) => {
+                                                                        supplierField.onChange(c.id.toString())
+                                                                        form.setValue(`service_lines.${index}.supplier_name`, c.name)
+                                                                    }}
+                                                                    contactType="SUPPLIER"
+                                                                    placeholder="Proveedor..."
+                                                                    className="h-8 border-transparent hover:border-border/60 focus:border-primary/40 bg-transparent"
+                                                                />
                                                             )}
                                                         />
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell className="py-2 text-center">
                                                         <FormField
                                                             control={form.control as any}
                                                             name={`service_lines.${index}.quantity`}
                                                             render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormControl>
-                                                                        <Input type="number" step="1" min="1" {...field} className={cn(FORM_STYLES.input, "h-8")} />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
+                                                                <Input type="number" step="any" min="0" {...field} className="h-8 text-xs border-transparent hover:border-border/60 focus:border-primary/40 bg-transparent transition-all text-center font-bold" />
                                                             )}
                                                         />
                                                     </TableCell>
-                                                    <TableCell>
-                                                            <FormField
-                                                                control={form.control as any}
-                                                                name={`service_lines.${index}.uom`}
-                                                                render={({ field }) => {
-                                                                    return (
-                                                                        <FormItem>
-                                                                            <FormControl>
-                                                                                <UoMSelector
-                                                                                    context="bom"
-                                                                                    value={field.value || ""}
-                                                                                    onChange={field.onChange}
-                                                                                    uoms={uoms}
-                                                                                    showConversionHint={false}
-                                                                                    label=""
-                                                                                />
-                                                                            </FormControl>
-                                                                            <FormMessage />
-                                                                        </FormItem>
-                                                                    )
-                                                                }}
-                                                            />
+                                                    <TableCell className="py-2">
+                                                        <FormField
+                                                            control={form.control as any}
+                                                            name={`service_lines.${index}.uom`}
+                                                            render={({ field }) => (
+                                                                <UoMSelector
+                                                                    context="bom"
+                                                                    value={field.value || ""}
+                                                                    onChange={field.onChange}
+                                                                    uoms={uoms}
+                                                                    showConversionHint={false}
+                                                                    label=""
+                                                                    className="h-8 border-transparent hover:border-border/60 focus:border-primary/40 bg-transparent"
+                                                                />
+                                                            )}
+                                                        />
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell className="py-2">
                                                         <FormField
                                                             control={form.control as any}
                                                             name={`service_lines.${index}.gross_price`}
                                                             render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormControl>
-                                                                        <Input
-                                                                            type="number"
-                                                                            step="1"
-                                                                            min="0"
-                                                                            placeholder="$0"
-                                                                            {...field}
-                                                                            className={cn(FORM_STYLES.input, "h-8 text-right")}
-                                                                        />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
+                                                                <Input
+                                                                    type="number"
+                                                                    step="any"
+                                                                    min="0"
+                                                                    placeholder="$0"
+                                                                    {...field}
+                                                                    className="h-8 text-xs border-transparent hover:border-border/60 focus:border-primary/40 bg-transparent transition-all text-right font-mono"
+                                                                />
                                                             )}
                                                         />
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell className="py-2">
                                                         <FormField
                                                             control={form.control as any}
                                                             name={`service_lines.${index}.document_type`}
                                                             render={({ field }) => (
-                                                                <FormItem>
-                                                                    <FormControl>
-                                                                        <select
-                                                                            className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs ring-offset-background focus:ring-1 focus:ring-primary h-8"
-                                                                            value={field.value}
-                                                                            onChange={field.onChange}
-                                                                        >
-                                                                            <option value="FACTURA">Factura</option>
-                                                                            <option value="BOLETA">Boleta</option>
-                                                                        </select>
-                                                                    </FormControl>
-                                                                </FormItem>
+                                                                <select
+                                                                    className="w-full rounded-md border-transparent hover:border-border/60 bg-transparent px-2 py-1.5 text-xs ring-offset-background focus:ring-1 focus:ring-primary h-8 transition-all font-bold"
+                                                                    value={field.value}
+                                                                    onChange={field.onChange}
+                                                                >
+                                                                    <option value="FACTURA">Factura</option>
+                                                                    <option value="BOLETA">Boleta</option>
+                                                                </select>
                                                             )}
                                                         />
                                                     </TableCell>
-                                                    <TableCell>
+                                                    <TableCell className="py-2">
                                                         <Button
                                                             type="button"
                                                             variant="ghost"
                                                             size="icon"
-                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
                                                             onClick={() => removeService(index)}
                                                         >
                                                             <Trash2 className="h-4 w-4" />
