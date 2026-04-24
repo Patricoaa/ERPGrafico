@@ -1,6 +1,6 @@
 "use client"
 
-import { ProductCategory, UoM, Warehouse, Product, ProductBOM, ProductBOMLine, ProductCustomField } from "@/types/entities"
+import { ProductCategory, UoM, Warehouse, Product } from "@/types/entities"
 
 import { useState, useEffect } from "react"
 import { useWindowWidth } from "@/hooks/useWindowWidth"
@@ -12,11 +12,11 @@ import {
 } from "@/components/ui/sheet"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
-import { useForm, useFieldArray, useWatch, Control, FieldErrors, SubmitHandler, UseFormReturn } from "react-hook-form"
+import { useForm, FieldErrors, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import api, { resolveMediaUrl } from "@/lib/api"
-import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, Layers, Factory, AlertCircle, Loader2 } from "lucide-react"
+import { ShoppingCart, Package, Scale, Truck, Layers, Factory, Loader2 } from "lucide-react"
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 

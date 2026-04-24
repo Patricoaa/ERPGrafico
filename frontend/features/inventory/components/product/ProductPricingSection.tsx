@@ -1,12 +1,10 @@
 import { FormField } from "@/components/ui/form"
-import { LabeledInput } from "@/components/shared"
-import { FORM_STYLES } from "@/lib/styles"
+import { LabeledInput, LabeledContainer } from "@/components/shared"
 import { Info } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
@@ -145,12 +143,11 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                     />
 
                     <div className={cn("flex-1", isDynamicPricing && "opacity-50")}>
-                        <fieldset className="notched-field w-full transition-all bg-muted/30 border-dashed border-2">
-                            <legend className="notched-legend">Impuestos (IVA 19%)</legend>
-                            <div className="h-11 flex items-center px-3 font-mono text-sm font-black text-muted-foreground/60">
+                        <LabeledContainer label="Impuestos (IVA 19%)" className="w-full bg-muted/30 border-dashed">
+                            <div className="h-[34px] flex items-center px-3 font-mono text-sm font-black text-muted-foreground/60">
                                 + {formatCurrency(salePriceGross - salePrice)}
                             </div>
-                        </fieldset>
+                        </LabeledContainer>
                     </div>
 
                     <FormField<ProductFormValues>
@@ -185,15 +182,19 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                             const isDisabled = allowedIds.length === 0;
 
                             return (
-                                <fieldset className={cn("notched-field w-full transition-all h-[50px]", fieldState.error && "error", isDisabled && "opacity-50 cursor-not-allowed bg-muted/10")}>
-                                    <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Unidad de Venta</legend>
+                                <LabeledContainer
+                                    label="Unidad de Venta"
+                                    error={fieldState.error?.message}
+                                    disabled={isDisabled}
+                                    className={cn("w-full", isDisabled && "opacity-50 cursor-not-allowed bg-muted/10")}
+                                >
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button
                                                 variant="ghost"
                                                 role="combobox"
                                                 disabled={isDisabled}
-                                                className={cn("w-full justify-between font-black text-xs h-full px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
+                                                className={cn("w-full justify-between font-black text-xs h-[34px] px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
                                             >
                                                 {field.value
                                                     ? allowedUoms.find((u) => u.id.toString() === field.value.toString())?.name
@@ -247,7 +248,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                                             </div>
                                         </PopoverContent>
                                     </Popover>
-                                </fieldset>
+                                </LabeledContainer>
                             );
                         }}
                     />
@@ -267,24 +268,24 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms, forc
                                 <span className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Costo Base Calculado</span>
                                 <span className="text-xl font-mono font-black">{formatCurrency(costPrice)}</span>
                             </div>
-                            
+
                             <div className="flex flex-col items-end">
                                 <span className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">Margen Comercial Bruto</span>
                                 <div className="flex items-center gap-3">
                                     <div className="w-32 h-2 bg-muted/30 rounded-full overflow-hidden border border-muted-foreground/10">
-                                        <div 
+                                        <div
                                             className={cn(
                                                 "h-full transition-all duration-1000 ease-out",
                                                 marginPercentage > 30 ? "bg-success" : marginPercentage > 15 ? "bg-warning" : "bg-destructive"
-                                            )} 
-                                            style={{ width: `${Math.min(Math.max(marginPercentage, 0), 100)}%` }} 
+                                            )}
+                                            style={{ width: `${Math.min(Math.max(marginPercentage, 0), 100)}%` }}
                                         />
                                     </div>
                                     <span className="text-lg font-black">{marginPercentage}%</span>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="flex gap-2 p-3 bg-primary/5 rounded border border-primary/10 text-[10px] text-muted-foreground/80">
                             <Info className="h-4 w-4 text-primary shrink-0" />
                             <p>El margen se calcula comparando el <strong>Precio Neto</strong> con el <strong>Costo Base</strong> (PMP o Costo de BoM si aplica). Un margen saludable en manufactura suele superar el 30%.</p>

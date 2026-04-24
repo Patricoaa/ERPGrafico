@@ -7,30 +7,17 @@ import * as z from "zod"
 import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     Loader2,
-    CloudCheck,
-    CloudUpload,
-    Plus,
     Trash2,
     Settings2,
     AlertCircle
 } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { FormSkeleton, ToolbarCreateButton } from "@/components/shared"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from "@/components/ui/select"
+import { FormSkeleton, LabeledInput, LabeledSelect, ToolbarCreateButton } from "@/components/shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { PageTabs } from "@/components/shared/PageTabs"
 import {
     getGlobalHRSettings,
     updateGlobalHRSettings,
@@ -45,8 +32,7 @@ import {
 } from '@/features/hr/api/hrApi'
 import type {
     AFP,
-    PayrollConcept,
-    GlobalHRSettings
+    PayrollConcept
 } from "@/types/hr"
 import { Badge } from "@/components/ui/badge"
 import { FormulaBuilder } from "@/features/hr/components/FormulaBuilder"
@@ -60,7 +46,7 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
 import { globalSettingsSchema, conceptSchema, afpSchema, type GlobalHRFormValues, type ConceptFormValues, type AFPFormValues } from "./HRSettingsView.schema"
 
-export function HRSettingsView({ activeTab = "global", onSavingChange }: { 
+export function HRSettingsView({ activeTab = "global", onSavingChange }: {
     activeTab?: string,
     onSavingChange?: (saving: boolean) => void
 }) {
@@ -222,11 +208,11 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
                 <>
                     <ConceptDialog concept={concept} onSaved={fetchData} />
                     {!concept.is_system && (
-                        <DataCell.Action 
-                            icon={Trash2} 
-                            title="Eliminar" 
-                            className="text-destructive h-8 w-8 hover:bg-destructive/10 hover:text-destructive" 
-                            onClick={() => conceptDeleteConfirm.requestConfirm(concept.id)} 
+                        <DataCell.Action
+                            icon={Trash2}
+                            title="Eliminar"
+                            className="text-destructive h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => conceptDeleteConfirm.requestConfirm(concept.id)}
                         />
                     )}
                 </>
@@ -267,37 +253,42 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
                                     <FormField
                                         control={globalForm.control}
                                         name="uf_current_value"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-[10px] font-black uppercase text-muted-foreground">Valor UF Actual ($)</FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} type="number" step="0.01" className="h-10 font-mono rounded-sm" />
-                                                </FormControl>
-                                            </FormItem>
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Valor UF Actual ($)"
+                                                type="number"
+                                                step="0.01"
+                                                className="font-mono"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
                                         )}
                                     />
                                     <FormField
                                         control={globalForm.control}
                                         name="min_wage_value"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-[10px] font-black uppercase text-muted-foreground">Sueldo Mínimo ($)</FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} type="number" className="h-10 font-mono rounded-sm" />
-                                                </FormControl>
-                                            </FormItem>
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Sueldo Mínimo ($)"
+                                                type="number"
+                                                className="font-mono"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
                                         )}
                                     />
                                     <FormField
                                         control={globalForm.control}
                                         name="utm_current_value"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-[10px] font-black uppercase text-muted-foreground">Valor UTM Actual ($)</FormLabel>
-                                                <FormControl>
-                                                    <Input {...field} type="number" step="0.01" className="h-10 font-mono rounded-sm" />
-                                                </FormControl>
-                                            </FormItem>
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Valor UTM Actual ($)"
+                                                type="number"
+                                                step="0.01"
+                                                className="font-mono"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
                                         )}
                                     />
                                 </CardContent>
@@ -376,7 +367,7 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
                         <ConceptDialog onSaved={fetchData} />
                     </div>
 
-                    <DataTable 
+                    <DataTable
                         columns={conceptColumns}
                         data={concepts}
                         filterColumn="name"
@@ -525,35 +516,32 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                         <FormField
                             control={form.control}
                             name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70">Nombre Público</FormLabel>
-                                    <FormControl><Input {...field} className="h-9 rounded-sm" /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    label="Nombre Público"
+                                    error={fieldState.error?.message}
+                                    {...field}
+                                />
                             )}
                         />
                         <FormField
                             control={form.control}
                             name="category"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70">Categoría Nómina</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger className="h-9 rounded-sm">
-                                                <SelectValue placeholder="Seleccione categoría" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent className="border-2 font-mono text-[10px]">
-                                            <SelectItem value="HABER_IMPONIBLE">Haber Imponible</SelectItem>
-                                            <SelectItem value="HABER_NO_IMPONIBLE">Haber No Imponible</SelectItem>
-                                            <SelectItem value="DESCUENTO_LEGAL_TRABAJADOR">Desc. Legal (Cargo Trabajador)</SelectItem>
-                                            <SelectItem value="DESCUENTO_LEGAL_EMPLEADOR">Desc. Legal (Cargo Empleador)</SelectItem>
-                                            <SelectItem value="OTRO_DESCUENTO">Otro Descuento / Anticipo</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </FormItem>
+                            render={({ field, fieldState }) => (
+                                <LabeledSelect
+                                    label="Categoría Nómina"
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    error={fieldState.error?.message}
+                                    options={[
+                                        { value: "HABER_IMPONIBLE", label: "Haber Imponible" },
+                                        { value: "HABER_NO_IMPONIBLE", label: "Haber No Imponible" },
+                                        { value: "DESCUENTO_LEGAL_TRABAJADOR", label: "Desc. Legal (Cargo Trabajador)" },
+                                        { value: "DESCUENTO_LEGAL_EMPLEADOR", label: "Desc. Legal (Cargo Empleador)" },
+                                        { value: "OTRO_DESCUENTO", label: "Otro Descuento / Anticipo" },
+                                    ]}
+                                    placeholder="Seleccione categoría"
+                                />
                             )}
                         />
                         <FormField
@@ -586,24 +574,21 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                         <FormField
                             control={form.control}
                             name="formula_type"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70">Lógica de Cálculo</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger className="h-9 rounded-sm">
-                                                <SelectValue placeholder="Seleccione lógica" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent className="border-2 font-mono text-[10px]">
-                                            <SelectItem value="FIXED">Monto Fijo (Manual)</SelectItem>
-                                            <SelectItem value="PERCENTAGE">Porcentaje % (del Imponible)</SelectItem>
-                                            <SelectItem value="EMPLOYEE_SPECIFIC">Ficha Empleado (Individual)</SelectItem>
-                                            <SelectItem value="FORMULA">Fórmula Matemática</SelectItem>
-                                            <SelectItem value="CHILEAN_LAW">Legal Chile (Automático)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </FormItem>
+                            render={({ field, fieldState }) => (
+                                <LabeledSelect
+                                    label="Lógica de Cálculo"
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    error={fieldState.error?.message}
+                                    options={[
+                                        { value: "FIXED", label: "Monto Fijo (Manual)" },
+                                        { value: "PERCENTAGE", label: "Porcentaje % (del Imponible)" },
+                                        { value: "EMPLOYEE_SPECIFIC", label: "Ficha Empleado (Individual)" },
+                                        { value: "FORMULA", label: "Fórmula Matemática" },
+                                        { value: "CHILEAN_LAW", label: "Legal Chile (Automático)" },
+                                    ]}
+                                    placeholder="Seleccione lógica"
+                                />
                             )}
                         />
 
@@ -611,24 +596,24 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                             <FormField
                                 control={form.control}
                                 name="formula"
-                                render={({ field }) => (
-                                    <FormItem className="bg-primary/5 p-3 rounded-md border border-dashed border-primary/20">
-                                        <FormLabel className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-primary">
+                                render={({ field, fieldState }) => (
+                                    <div className="bg-primary/5 p-3 rounded-md border border-dashed border-primary/20 space-y-3">
+                                        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-primary">
                                             Constructor de Fórmula
                                             <Badge variant="outline" className="text-[8px] bg-background">ADVANCED</Badge>
-                                        </FormLabel>
-                                        <FormControl>
-                                            <div className="space-y-3">
-                                                <Input {...field} placeholder="BASE * 0.25" className="h-8 font-mono bg-background text-[11px] rounded-sm" />
-                                                <FormulaBuilder
-                                                    value={field.value || ""}
-                                                    onChange={field.onChange}
-                                                />
-                                            </div>
-                                        </FormControl>
-
-                                        <FormMessage />
-                                    </FormItem>
+                                        </span>
+                                        <LabeledInput
+                                            label="Expresión"
+                                            placeholder="BASE * 0.25"
+                                            className="font-mono text-[11px]"
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
+                                        <FormulaBuilder
+                                            value={field.value || ""}
+                                            onChange={field.onChange}
+                                        />
+                                    </div>
                                 )}
                             />
                         )}
@@ -637,14 +622,15 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                             <FormField
                                 control={form.control}
                                 name="default_amount"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70">
-                                            {form.watch("formula_type") === 'PERCENTAGE' ? "Factor Porcentual (%)" : "Monto Predeterminado ($)"}
-                                        </FormLabel>
-                                        <FormControl><Input {...field} type="number" step="0.0001" className="h-9 font-mono rounded-sm" /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
+                                render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label={form.watch("formula_type") === 'PERCENTAGE' ? "Factor Porcentual (%)" : "Monto Predeterminado ($)"}
+                                        type="number"
+                                        step="0.0001"
+                                        className="font-mono"
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                    />
                                 )}
                             />
                         )}
@@ -728,22 +714,28 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
                         <FormField
                             control={form.control}
                             name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70">Nombre Legal</FormLabel>
-                                    <FormControl><Input {...field} placeholder="Ej: Habitat..." className="h-9 rounded-sm" /></FormControl>
-                                </FormItem>
+                            render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    label="Nombre Legal"
+                                    placeholder="Ej: Habitat..."
+                                    error={fieldState.error?.message}
+                                    {...field}
+                                />
                             )}
                         />
                         <FormField
                             control={form.control}
                             name="percentage"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70">Comisión Total (%)</FormLabel>
-                                    <FormControl><Input {...field} type="number" step="0.0001" className="h-9 font-mono rounded-sm" /></FormControl>
-                                    <p className="text-[9px] text-muted-foreground/60 italic font-medium uppercase tracking-tight">Incluya el 10% obligatorio + la comisión.</p>
-                                </FormItem>
+                            render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    label="Comisión Total (%)"
+                                    type="number"
+                                    step="0.0001"
+                                    className="font-mono"
+                                    hint="Incluya el 10% obligatorio + la comisión."
+                                    error={fieldState.error?.message}
+                                    {...field}
+                                />
                             )}
                         />
                         <FormField

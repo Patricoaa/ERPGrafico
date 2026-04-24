@@ -11,10 +11,8 @@ import type { Employee } from "@/types/hr"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
-import { Input } from "@/components/ui/input"
 import { Form, FormField } from "@/components/ui/form"
 import { Plus, FileText } from "lucide-react"
-import { FORM_STYLES } from "@/lib/styles"
 import { LabeledInput, LabeledSelect } from "@/components/shared"
 
 const MONTHS = [

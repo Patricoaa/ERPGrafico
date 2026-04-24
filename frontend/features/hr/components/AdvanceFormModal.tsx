@@ -14,10 +14,7 @@ import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
 import { Form, FormField } from "@/components/ui/form"
 import { LabeledInput, LabeledSelect } from "@/components/shared"
-import {
-    WalletCards, History
-} from "lucide-react"
-import { FORM_STYLES } from "@/lib/styles"
+import { WalletCards, History } from "lucide-react"
 
 export const advanceSchema = z.object({
     employee: z.string().min(1, "Empleado requerido"),
@@ -146,31 +143,23 @@ export function AdvanceFormModal({ open, onOpenChange, advance, employees, payro
 
                             <div className="grid grid-cols-2 gap-4">
                                 <FormField control={form.control} name="amount" render={({ field, fieldState }) => (
-                                    <FormItem>
-                                        <FormControl>
-                                            <LabeledInput
-                                                label="Monto ($)"
-                                                required
-                                                type="number"
-                                                placeholder="0"
-                                                error={fieldState.error?.message}
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                    </FormItem>
+                                    <LabeledInput
+                                        label="Monto ($)"
+                                        required
+                                        type="number"
+                                        placeholder="0"
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                    />
                                 )} />
                                 <FormField control={form.control} name="date" render={({ field, fieldState }) => (
-                                    <FormItem>
-                                        <FormControl>
-                                            <LabeledInput
-                                                label="Fecha Propuesta"
-                                                required
-                                                type="date"
-                                                error={fieldState.error?.message}
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                    </FormItem>
+                                    <LabeledInput
+                                        label="Fecha Propuesta"
+                                        required
+                                        type="date"
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                    />
                                 )} />
                             </div>
 
@@ -189,17 +178,13 @@ export function AdvanceFormModal({ open, onOpenChange, advance, employees, payro
                             )} />
 
                             <FormField control={form.control} name="notes" render={({ field }) => (
-                                <FormItem>
-                                    <FormControl>
-                                        <LabeledInput
-                                            as="textarea"
-                                            label="Notas"
-                                            rows={2}
-                                            placeholder="Descripción opcional..."
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                </FormItem>
+                                <LabeledInput
+                                    as="textarea"
+                                    label="Notas"
+                                    rows={2}
+                                    placeholder="Descripción opcional..."
+                                    {...field}
+                                />
                             )} />
                         </form>
                     </Form>

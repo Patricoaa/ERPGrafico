@@ -5,7 +5,6 @@ import { getErrorMessage } from "@/lib/errors"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -14,6 +13,7 @@ import api from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { FORM_STYLES } from "@/lib/styles"
+import { LabeledSelect } from "@/components/shared"
 
 interface TreasuryAccount {
     id: number
@@ -289,13 +289,13 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                     </Button>
 
                     <div className="flex items-center gap-3">
-                        <Button 
-                            onClick={handleNext} 
+                        <Button
+                            onClick={handleNext}
                             disabled={loading || success || (step === 'UPLOAD' && !file)}
                             className={cn(
                                 "rounded-lg px-8 h-11 shadow-lg transition-all font-black uppercase tracking-widest text-[10px] group",
-                                step === 'UPLOAD' && isGenericFormat() 
-                                    ? "bg-primary hover:bg-primary/90 shadow-primary/20" 
+                                step === 'UPLOAD' && isGenericFormat()
+                                    ? "bg-primary hover:bg-primary/90 shadow-primary/20"
                                     : "bg-success hover:bg-success/90 shadow-success/20"
                             )}
                         >
@@ -323,39 +323,34 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                     <div className="space-y-10 py-4 max-w-xl mx-auto">
                         <div className="p-8 rounded-lg bg-muted/5 border border-border/50 space-y-8">
                             <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Cuenta Corriente de Tesorería *</Label>
-                                <Select value={treasuryAccountId} onValueChange={setTreasuryAccountId}>
-                                    <SelectTrigger className={FORM_STYLES.input}>
-                                        <SelectValue placeholder="Selecciona cuenta corriente..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {treasuryAccounts.map((account) => (
-                                            <SelectItem key={account.id} value={account.id.toString()}>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-bold">{account.code}</span>
-                                                    <span className="text-muted-foreground opacity-60">•</span>
-                                                    <span>{account.name}</span>
-                                                </div>
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <LabeledSelect
+                                    label="Cuenta Corriente de Tesorería *"
+                                    value={treasuryAccountId}
+                                    onChange={setTreasuryAccountId}
+                                    placeholder="Selecciona cuenta corriente..."
+                                    options={treasuryAccounts.map((account) => ({
+                                        value: account.id.toString(),
+                                        label: (
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-bold">{account.code}</span>
+                                                <span className="text-muted-foreground opacity-60">•</span>
+                                                <span>{account.name}</span>
+                                            </div>
+                                        )
+                                    }))}
+                                />
                             </div>
 
                             <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Formato de Importación *</Label>
-                                <Select value={bankFormat} onValueChange={setBankFormat}>
-                                    <SelectTrigger className={FORM_STYLES.input}>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {Object.entries(bankFormats).map(([key, label]) => (
-                                            <SelectItem key={key} value={key}>
-                                                {label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <LabeledSelect
+                                    label="Formato de Importación *"
+                                    value={bankFormat}
+                                    onChange={setBankFormat}
+                                    options={Object.entries(bankFormats).map(([key, label]) => ({
+                                        value: key,
+                                        label: label
+                                    }))}
+                                />
                                 {isGenericFormat() && (
                                     <div className="flex items-center gap-2 text-[10px] text-info font-bold uppercase tracking-wider mt-2 opacity-80">
                                         <RefreshCw className="w-3 h-3" />
@@ -376,14 +371,14 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                             </div>
 
                             <div className="relative group/file">
-                                <Input 
-                                    type="file" 
-                                    onChange={handleFileChange} 
-                                    accept=".csv,.xls,.xlsx" 
+                                <Input
+                                    type="file"
+                                    onChange={handleFileChange}
+                                    accept=".csv,.xls,.xlsx"
                                     className={cn(
-                                        FORM_STYLES.input, 
+                                        FORM_STYLES.input,
                                         "cursor-pointer h-24 border-dashed border-2 hover:border-primary/40 hover:bg-primary/5 transition-all text-center pt-8 file:hidden"
-                                    )} 
+                                    )}
                                 />
                                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-muted-foreground group-hover/file:text-primary transition-colors">
                                     <Upload className="h-6 w-6 mb-2 opacity-50" />
@@ -472,13 +467,13 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                                     balance: 'Saldo'
                                 }
                                 return (
-                                    <Badge 
-                                        key={f} 
+                                    <Badge
+                                        key={f}
                                         variant="outline"
                                         className={cn(
                                             "h-6 px-3 text-[9px] font-black uppercase tracking-wider transition-all",
-                                            mapping[f] !== null 
-                                                ? "bg-success/10 border-success/20 text-success shadow-sm shadow-success/5" 
+                                            mapping[f] !== null
+                                                ? "bg-success/10 border-success/20 text-success shadow-sm shadow-success/5"
                                                 : "bg-muted/50 border-border text-muted-foreground/40 line-through"
                                         )}
                                     >

@@ -431,6 +431,96 @@ class TreasuryService:
         # The reversed entry remains as audit trail.
         movement.delete()
 
+    @staticmethod
+    def create_movement_from_payload(data: dict, *, created_by) -> "TreasuryMovement":
+        """
+        Resolves all entity references from a raw request payload dict and delegates
+        to create_movement. Handles aliased field names from different frontend callers.
+
+        Accepts:
+          amount, movement_type | payment_type, payment_method | paymentMethod,
+          treasury_account_id | treasury_account, contact_id | partner,
+          invoice_id | invoice, purchase_order_id | purchase_order,
+          sale_order_id | sale_order, payment_method_id | payment_method_new,
+          pos_session_id | pos_session, reference, transaction_number,
+          is_pending_registration
+        """
+        amount_val = data.get("amount")
+        if not amount_val:
+            raise ValidationError("Amount required")
+        amount = Decimal(str(amount_val))
+
+        movement_type = data.get("movement_type") or data.get("payment_type")
+        payment_method = (
+            data.get("payment_method") or data.get("paymentMethod") or TreasuryMovement.Method.CASH
+        )
+
+        is_pending = data.get("is_pending_registration", False)
+        if isinstance(is_pending, str):
+            is_pending = is_pending.lower() == "true"
+
+        # Resolve treasury account → from/to based on direction
+        treasury_account_id = data.get("treasury_account_id") or data.get("treasury_account")
+        treasury_account = None
+        if treasury_account_id:
+            treasury_account = TreasuryAccount.objects.get(pk=treasury_account_id)
+
+        from_account = to_account = None
+        if movement_type == TreasuryMovement.Type.INBOUND:
+            to_account = treasury_account
+        elif movement_type == TreasuryMovement.Type.OUTBOUND:
+            from_account = treasury_account
+
+        # Resolve related entities
+        contact_id = data.get("contact_id") or data.get("partner")
+        partner = None
+        if contact_id:
+            from contacts.models import Contact
+            partner = Contact.objects.filter(pk=contact_id).first()
+
+        invoice = None
+        invoice_id = data.get("invoice_id") or data.get("invoice")
+        if invoice_id:
+            from billing.models import Invoice
+            invoice = Invoice.objects.filter(pk=invoice_id).first()
+
+        purchase_order = None
+        purchase_order_id = data.get("purchase_order_id") or data.get("purchase_order")
+        if purchase_order_id:
+            from purchasing.models import PurchaseOrder
+            purchase_order = PurchaseOrder.objects.filter(pk=purchase_order_id).first()
+
+        sale_order = None
+        sale_order_id = data.get("sale_order_id") or data.get("sale_order")
+        if sale_order_id:
+            from sales.models import SaleOrder
+            sale_order = SaleOrder.objects.filter(pk=sale_order_id).first()
+
+        payment_method_new = None
+        payment_method_id = data.get("payment_method_id") or data.get("payment_method_new")
+        if payment_method_id:
+            payment_method_new = PaymentMethod.objects.filter(pk=payment_method_id).first()
+
+        pos_session_id = data.get("pos_session_id") or data.get("pos_session")
+
+        return TreasuryService.create_movement(
+            amount=amount,
+            movement_type=movement_type,
+            payment_method=payment_method,
+            payment_method_new=payment_method_new,
+            from_account=from_account,
+            to_account=to_account,
+            reference=data.get("reference", ""),
+            partner=partner,
+            invoice=invoice,
+            purchase_order=purchase_order,
+            sale_order=sale_order,
+            transaction_number=data.get("transaction_number"),
+            is_pending_registration=is_pending,
+            pos_session_id=pos_session_id,
+            created_by=created_by,
+        )
+
 
 class TerminalBatchService:
     @staticmethod

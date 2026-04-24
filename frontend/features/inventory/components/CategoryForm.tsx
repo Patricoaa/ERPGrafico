@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { CancelButton, LabeledInput, LabeledSelect } from "@/components/shared"
+import { Button } from "@/components/ui/button"
 import {
     Form,
     FormField
@@ -25,7 +26,6 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { FORM_STYLES } from "@/lib/styles"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const ICON_OPTIONS = [

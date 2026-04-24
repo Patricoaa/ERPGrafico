@@ -2,18 +2,12 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { SubmitButton, CancelButton } from "@/components/shared"
-import { FileText, Calendar, Info, FileSpreadsheet } from "lucide-react"
+import { SubmitButton, CancelButton, LabeledInput, LabeledSelect, BaseModal } from "@/components/shared"
+import { FileSpreadsheet } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { useServerDate } from "@/hooks/useServerDate"
-import { FORM_STYLES } from "@/lib/styles"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
 interface MonthlyInvoiceModalProps {
@@ -131,46 +125,39 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
             <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 py-2">
                 <div className="grid grid-cols-12 gap-3">
                     <div className="col-span-12 lg:col-span-6">
-                        <Label className={cn(FORM_STYLES.label, "mb-1.5")}>Proveedor (Terminal)</Label>
-                        <Select value={supplierId} onValueChange={setSupplierId}>
-                            <SelectTrigger className={FORM_STYLES.input}>
-                                <SelectValue placeholder="Seleccione proveedor..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {suppliers.map(s => (
-                                    <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <LabeledSelect
+                            label="Proveedor (Terminal)"
+                            placeholder="Seleccione proveedor..."
+                            value={supplierId}
+                            onChange={setSupplierId}
+                            options={suppliers.map(s => ({
+                                value: s.id.toString(),
+                                label: s.name
+                            }))}
+                        />
                     </div>
 
                     <div className="col-span-6 lg:col-span-3">
-                        <Label className={cn(FORM_STYLES.label, "mb-1.5")}>Mes</Label>
-                        <Select value={month} onValueChange={setMonth}>
-                            <SelectTrigger className={FORM_STYLES.input}>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                                    <SelectItem key={m} value={m.toString()}>
-                                        {new Date(2000, m - 1, 1).toLocaleString('es-ES', { month: 'long' })}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <LabeledSelect
+                            label="Mes"
+                            value={month}
+                            onChange={setMonth}
+                            options={Array.from({ length: 12 }, (_, i) => i + 1).map(m => ({
+                                value: m.toString(),
+                                label: new Date(2000, m - 1, 1).toLocaleString('es-ES', { month: 'long' })
+                            }))}
+                        />
                     </div>
                     <div className="col-span-6 lg:col-span-3">
-                        <Label className={cn(FORM_STYLES.label, "mb-1.5")}>Año</Label>
-                        <Select value={year} onValueChange={setYear}>
-                            <SelectTrigger className={FORM_STYLES.input}>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {[2024, 2025, 2026].map(y => (
-                                    <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <LabeledSelect
+                            label="Año"
+                            value={year}
+                            onChange={setYear}
+                            options={[2024, 2025, 2026].map(y => ({
+                                value: y.toString(),
+                                label: y.toString()
+                            }))}
+                        />
                     </div>
                 </div>
 
@@ -183,25 +170,21 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
 
                 <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                            <Label className={FORM_STYLES.label}>N° de Factura <span className="text-destructive">*</span></Label>
-                            <Input
-                                placeholder="Ej: 84729"
-                                value={number}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNumber(e.target.value)}
-                                className={FORM_STYLES.input}
-                            />
-                        </div>
+                        <LabeledInput
+                            label="N° de Factura"
+                            required
+                            placeholder="Ej: 84729"
+                            value={number}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNumber(e.target.value)}
+                        />
 
-                        <div className="grid gap-2">
-                            <Label className={FORM_STYLES.label}>Fecha de Emisión <span className="text-destructive">*</span></Label>
-                            <Input
-                                type="date"
-                                value={date}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDate(e.target.value)}
-                                className={FORM_STYLES.input}
-                            />
-                        </div>
+                        <LabeledInput
+                            label="Fecha de Emisión"
+                            required
+                            type="date"
+                            value={date}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDate(e.target.value)}
+                        />
                     </div>
 
                     <div className="grid gap-2">

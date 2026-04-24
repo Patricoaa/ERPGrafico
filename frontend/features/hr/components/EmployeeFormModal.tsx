@@ -10,9 +10,8 @@ import { createEmployee, updateEmployee, getAFPs, getPayrollConcepts } from '@/f
 import type { Employee, AFP, PayrollConcept, EmployeeConceptAmount } from "@/types/hr"
 import { Button } from "@/components/ui/button"
 import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
-import { Input } from "@/components/ui/input"
 import {
-    Form, FormField
+    Form, FormField, FormItem, FormLabel, FormControl
 } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
 import {
@@ -20,7 +19,6 @@ import {
 } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import { FORM_STYLES } from "@/lib/styles"
 import {
     Plus, UserCog, ShieldCheck, CalendarCheck2
 } from "lucide-react"
@@ -259,13 +257,14 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                                                         <FormField
                                                             control={form.control} name="contact"
                                                             render={({ field, fieldState }) => (
-                                                                <AdvancedContactSelector
-                                                                    label="Contacto"
-                                                                    value={field.value || null}
-                                                                    onChange={(val) => field.onChange(val || "")}
-                                                                    error={fieldState.error?.message}
-                                                                    containerClassName="col-span-full"
-                                                                />
+                                                                <div className="col-span-full">
+                                                                    <AdvancedContactSelector
+                                                                        label="Contacto"
+                                                                        value={field.value || null}
+                                                                        onChange={(val) => field.onChange(val || "")}
+                                                                        error={fieldState.error?.message}
+                                                                    />
+                                                                </div>
                                                             )}
                                                         />
                                                         <FormField control={form.control} name="position" render={({ field, fieldState }) => (

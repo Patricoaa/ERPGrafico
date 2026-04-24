@@ -8,21 +8,10 @@ import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form,
-    FormControl,
     FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
 } from "@/components/ui/form"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
-import { FORM_STYLES } from "@/lib/styles"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { WalletCards } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";

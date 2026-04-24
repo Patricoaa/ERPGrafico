@@ -2,27 +2,17 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
+import { BaseModal, LabeledInput, LabeledSelect } from "@/components/shared"
 import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
+import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { CalendarIcon, ArrowLeftRight, Landmark, Banknote } from "lucide-react"
 import { cn, formatCurrency } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { useServerDate } from "@/hooks/useServerDate"
-import { BaseModal } from "@/components/shared/BaseModal"
 
 interface TreasuryAccount {
     id: number
@@ -144,25 +134,24 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
             className="max-w-lg rounded-lg"
             contentClassName="bg-card p-6"
         >
-            <div className="space-y-6">
+            <div className="space-y-6 pt-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground">Origen</Label>
-                        <Select value={fromAccount} onValueChange={setFromAccount}>
-                            <SelectTrigger className="h-12 border-2 hover:border-primary transition-all">
-                                <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {accounts.map(acc => (
-                                    <SelectItem key={acc.id} value={acc.id.toString()}>
-                                        <div className="flex items-center gap-2">
-                                            {acc.account_type === 'BANK' ? <Landmark className="h-3 w-3" /> : <Banknote className="h-3 w-3" />}
-                                            <span>{acc.name}</span>
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <LabeledSelect
+                            label="Origen"
+                            value={fromAccount}
+                            onChange={setFromAccount}
+                            placeholder="Seleccionar"
+                            options={accounts.map(acc => ({
+                                value: acc.id.toString(),
+                                label: (
+                                    <div className="flex items-center gap-2">
+                                        {acc.account_type === 'BANK' ? <Landmark className="h-3 w-3" /> : <Banknote className="h-3 w-3" />}
+                                        <span>{acc.name}</span>
+                                    </div>
+                                )
+                            }))}
+                        />
                         {sourceAccount && (
                             <p className="text-[10px] text-muted-foreground px-1">
                                 Disponible: <span className="font-bold">{formatCurrency(sourceAccount.current_balance)}</span>
@@ -171,65 +160,63 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                     </div>
 
                     <div className="space-y-2">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground">Destino</Label>
-                        <Select value={toAccount} onValueChange={setToAccount}>
-                            <SelectTrigger className="h-12 border-2 hover:border-primary transition-all">
-                                <SelectValue placeholder="Seleccionar" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {accounts.map(acc => (
-                                    <SelectItem key={acc.id} value={acc.id.toString()}>
-                                        <div className="flex items-center gap-2">
-                                            {acc.account_type === 'BANK' ? <Landmark className="h-3 w-3" /> : <Banknote className="h-3 w-3" />}
-                                            <span>{acc.name}</span>
-                                        </div>
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-
-                <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground">Monto del Traspaso</Label>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
-                        <Input
-                            type="number"
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
-                            className="pl-8 h-12 text-lg font-black tracking-tight border-2"
-                            placeholder="0"
+                        <LabeledSelect
+                            label="Destino"
+                            value={toAccount}
+                            onChange={setToAccount}
+                            placeholder="Seleccionar"
+                            options={accounts.map(acc => ({
+                                value: acc.id.toString(),
+                                label: (
+                                    <div className="flex items-center gap-2">
+                                        {acc.account_type === 'BANK' ? <Landmark className="h-3 w-3" /> : <Banknote className="h-3 w-3" />}
+                                        <span>{acc.name}</span>
+                                    </div>
+                                )
+                            }))}
                         />
                     </div>
                 </div>
 
+                <LabeledInput
+                    label="Monto del Traspaso"
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    icon={<span className="font-bold text-muted-foreground">$</span>}
+                    placeholder="0"
+                    className="text-lg font-black tracking-tight"
+                />
+
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground">Fecha</Label>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                        "w-full h-12 justify-start text-left font-normal border-2",
-                                        !date && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "PPP") : <span>Seleccionar</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    mode="single"
-                                    selected={date}
-                                    onSelect={(d) => d && setDate(d)}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
+                    <div className="relative w-full flex flex-col group">
+                        <fieldset className="notched-field w-full group transition-all">
+                            <legend className="notched-legend">Fecha</legend>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant={"ghost"}
+                                        className={cn(
+                                            "w-full pl-3 text-left font-normal border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent h-auto py-2",
+                                            !date && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                                        {date ? format(date, "PPP") : <span>Seleccionar</span>}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={date}
+                                        onSelect={(d) => d && setDate(d)}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        </fieldset>
                     </div>
+
                     <div className="flex items-end pb-1">
                         {sourceAccount && destAccount && amount && (
                             <div className="p-2 rounded-lg bg-muted/30 border w-full text-center">
@@ -242,15 +229,14 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                     </div>
                 </div>
 
-                <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground">Notas / Referencia</Label>
-                    <Textarea
-                        placeholder="Ej: Traspaso a cuenta corriente para pagos..."
-                        className="text-xs border-2"
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                    />
-                </div>
+                <LabeledInput
+                    label="Notas / Referencia"
+                    as="textarea"
+                    placeholder="Ej: Traspaso a cuenta corriente para pagos..."
+                    rows={2}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                />
             </div>
         </BaseModal>
     )

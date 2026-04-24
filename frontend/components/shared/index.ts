@@ -63,4 +63,5 @@ export * from './FacetedFilter';
 export * from './FolioValidationInput';
 export * from './LabeledInput';
 export * from './LabeledSelect';
+export * from './LabeledContainer';
 export * from './PeriodValidationDateInput';

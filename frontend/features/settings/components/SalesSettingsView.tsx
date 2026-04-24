@@ -5,24 +5,14 @@ import React, { useEffect, useCallback, useState } from "react"
 
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { toast } from "sonner"
 import { useSalesSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
-import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
 import {
-    Save,
     TrendingUp,
     CreditCard,
-    Loader2,
-    Check,
-    CloudUpload,
-    Scale,
     Percent,
     User as UserIcon,
     Users as UsersIcon,
@@ -32,10 +22,8 @@ import {
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { UserSelector } from "@/components/selectors/UserSelector"
 import { GroupSelector } from "@/components/selectors/GroupSelector"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { Button } from "@/components/ui/button"
-import { SalesSettings, SalesSettingsUpdatePayload } from "@/features/settings/types"
+import { LabeledInput } from "@/components/shared"
+import { SalesSettingsUpdatePayload } from "@/features/settings/types"
 import { cn } from "@/lib/utils"
 
 import { salesSchema, type SalesFormValues } from "./SalesSettingsView.schema"
@@ -129,7 +117,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
 }
 
 
-export function SalesSettingsView({ activeTab = "income", onSavingChange }: { 
+export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
     activeTab?: string,
     onSavingChange?: (saving: boolean) => void
 }) {
@@ -259,25 +247,19 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                                     <FormField
                                                         control={form.control}
                                                         name="pos_default_credit_percentage"
-                                                        render={({ field }) => (
+                                                        render={({ field, fieldState }) => (
                                                             <div className="space-y-2">
-                                                                <FormLabel className="text-xs font-bold">Crédito Preaprobado POS (%)</FormLabel>
-                                                                <p className="text-[10px] text-muted-foreground leading-tight">
-                                                                    % asignado por defecto si el cliente no tiene línea de crédito.
-                                                                </p>
-                                                                <FormControl>
-                                                                    <div className="relative max-w-[120px]">
-                                                                        <Input
-                                                                            type="number"
-                                                                            {...field}
-                                                                            className="pr-8 h-9 font-bold text-center"
-                                                                            min={0}
-                                                                            max={100}
-                                                                        />
-                                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-bold font-mono">%</span>
-                                                                    </div>
-                                                                </FormControl>
-                                                                <FormMessage className="text-[10px]" />
+                                                                <LabeledInput
+                                                                    label="Crédito Preaprobado POS (%)"
+                                                                    hint="% asignado por defecto si el cliente no tiene línea de crédito."
+                                                                    suffix={<span className="text-[10px] text-muted-foreground font-bold font-mono">%</span>}
+                                                                    type="number"
+                                                                    {...field}
+                                                                    className="font-bold text-center max-w-[150px]"
+                                                                    min={0}
+                                                                    max={100}
+                                                                    error={fieldState.error?.message}
+                                                                />
                                                             </div>
                                                         )}
                                                     />
@@ -289,26 +271,20 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                                     <FormField
                                                         control={form.control}
                                                         name="credit_auto_block_days"
-                                                        render={({ field }) => (
+                                                        render={({ field, fieldState }) => (
                                                             <div className="space-y-2">
-                                                                <FormLabel className="text-xs font-bold">Días de Mora para Auto-Bloqueo</FormLabel>
-                                                                <p className="text-[10px] text-muted-foreground leading-tight">
-                                                                    Días máximos permitidos antes de restringir el crédito automáticamente.
-                                                                </p>
-                                                                <FormControl>
-                                                                    <div className="relative max-w-[120px]">
-                                                                        <Input
-                                                                            type="number"
-                                                                            {...field}
-                                                                            value={field.value ?? ""}
-                                                                            onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
-                                                                            className="pr-8 h-9 font-bold text-center"
-                                                                            placeholder="Desact."
-                                                                        />
-                                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-bold font-mono">D</span>
-                                                                    </div>
-                                                                </FormControl>
-                                                                <FormMessage className="text-[10px]" />
+                                                                <LabeledInput
+                                                                    label="Días de Mora para Auto-Bloqueo"
+                                                                    hint="Días máximos permitidos antes de restringir el crédito automáticamente."
+                                                                    suffix={<span className="text-[10px] text-muted-foreground font-bold font-mono">D</span>}
+                                                                    type="number"
+                                                                    {...field}
+                                                                    value={field.value ?? ""}
+                                                                    onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                                                                    className="font-bold text-center max-w-[150px]"
+                                                                    placeholder="Desact."
+                                                                    error={fieldState.error?.message}
+                                                                />
                                                             </div>
                                                         )}
                                                     />

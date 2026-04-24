@@ -8,24 +8,12 @@ import { PurchaseOrderInitialData, PurchaseOrderLine } from "@/types/forms"
 import { ProductMinimal, UoM } from "@/types/entities"
 import * as z from "zod"
 import { Plus, Trash2 } from "lucide-react"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput } from "@/components/shared"
 import {
     Form,
-    FormControl,
     FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
 } from "@/components/ui/form"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import {
     Table,
@@ -35,7 +23,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -223,7 +210,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                 <form id="purchase-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className={FORM_STYLES.sectionHeader}>Líneas de Compra</h3>
+                            <h3 className="text-sm font-black uppercase text-primary tracking-widest">Líneas de Compra</h3>
                             <Button
                                 type="button"
                                 variant="outline"
@@ -281,10 +268,9 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                     control={form.control}
                                                     name={`lines.${index}.quantity`}
                                                     render={({ field }) => (
-                                                        <Input
+                                                        <LabeledInput
                                                             type="number"
                                                             step="0.01"
-                                                            className={FORM_STYLES.input}
                                                             {...field}
                                                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                                                         />
@@ -320,10 +306,9 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                     control={form.control}
                                                     name={`lines.${index}.unit_cost`}
                                                     render={({ field }) => (
-                                                        <Input
+                                                        <LabeledInput
                                                             type="number"
                                                             step="1"
-                                                            className={FORM_STYLES.input}
                                                             {...field}
                                                             onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
                                                         />
@@ -356,17 +341,13 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                             control={form.control}
                             name="notes"
                             render={({ field, fieldState }) => (
-                                <FormItem>
-                                    <FormControl>
-                                        <LabeledInput
-                                            label="Notas / Observaciones"
-                                            type="textarea"
-                                            placeholder="Notas adicionales..."
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                </FormItem>
+                                <LabeledInput
+                                    label="Notas / Observaciones"
+                                    as="textarea"
+                                    placeholder="Notas adicionales..."
+                                    error={fieldState.error?.message}
+                                    {...field}
+                                />
                             )}
                         />
                         <OrderTotals control={form.control} />

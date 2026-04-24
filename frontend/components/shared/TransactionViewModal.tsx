@@ -8,7 +8,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { PurchaseOrderForm } from "@/features/purchasing/components/PurchaseOrderForm"
 import { PaymentForm } from "@/features/finance/components/PaymentForm"
 import { toast } from "sonner"
-import api from "@/lib/api"
+import { deletePayment } from "./transaction-modal/hooks/useDeletePayment"
 
 import type { TransactionType } from "@/types/transactions"
 
@@ -43,8 +43,7 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
     const handleDeletePayment = async (payId: number) => {
         if (!confirm("¿Está seguro de eliminar este pago?")) return
         try {
-            await api.delete(`/treasury/payments/${payId}/`)
-            toast.success("Pago eliminado correctamente")
+            await deletePayment(payId)
             refetch()
         } catch (error) {
             console.error("Error deleting payment:", error)

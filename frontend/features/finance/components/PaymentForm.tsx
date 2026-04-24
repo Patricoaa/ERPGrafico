@@ -11,20 +11,8 @@ import { BaseModal } from "@/components/shared/BaseModal"
 // ... other imports same
 import {
     Form,
-    FormControl,
     FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
 } from "@/components/ui/form"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -252,32 +240,24 @@ export function PaymentForm({
                                     />
                                 )}
 
-                                <FormField
-                                    control={form.control as any}
-                                    name="amount"
-                                    render={({ field, fieldState }) => (
-                                        <div className={cn("relative w-full flex flex-col group", !initialData ? "" : "col-span-2")}>
-                                            <fieldset className={cn("notched-field w-full group", fieldState.error && "error")}>
-                                                <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Monto</legend>
-                                                <div className="relative">
-                                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-muted-foreground">$</span>
-                                                    <input
-                                                        type="number"
-                                                        step="0.01"
-                                                        className="w-full bg-transparent border-none focus:ring-0 pl-7 font-bold text-lg h-9"
-                                                        {...field}
-                                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                                    />
-                                                </div>
-                                            </fieldset>
-                                            {fieldState.error && (
-                                                <p className="mt-1 text-[10px] font-medium text-destructive pl-1">
-                                                    {fieldState.error.message}
-                                                </p>
-                                            )}
-                                        </div>
-                                    )}
-                                />
+                                    <FormField
+                                        control={form.control as any}
+                                        name="amount"
+                                        render={({ field, fieldState }) => (
+                                            <div className={cn("w-full transition-opacity", !initialData ? "" : "col-span-2")}>
+                                                <LabeledInput
+                                                    label="Monto"
+                                                    icon={<span className="font-bold text-muted-foreground">$</span>}
+                                                    type="number"
+                                                    step="0.01"
+                                                    className="font-bold text-lg"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                    onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                />
+                                            </div>
+                                        )}
+                                    />
                             </div>
 
                         <div className="space-y-4">
@@ -301,36 +281,31 @@ export function PaymentForm({
                                         control={form.control as any}
                                         name="payment_method_new"
                                         render={({ field, fieldState }) => (
-                                            <div className="relative w-full flex flex-col group animate-in slide-in-from-top-2 duration-300">
-                                                <fieldset className={cn("notched-field w-full group", fieldState.error && "error")}>
-                                                    <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Método Detallado</legend>
-                                                    <Select onValueChange={field.onChange} value={field.value || ""} disabled={isFetchingMethods}>
-                                                        <SelectTrigger className="border-none shadow-none focus:ring-0 bg-transparent h-9 px-3">
-                                                            {isFetchingMethods ? (
-                                                                <Skeleton className="h-4 w-24" />
-                                                            ) : (
-                                                                <SelectValue placeholder="Canal de pago..." />
-                                                            )}
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {availableMethods.map((m) => (
-                                                                <SelectItem key={m.id} value={m.id.toString()}>
-                                                                    <div className="flex items-center gap-2">
-                                                                        {m.method_type === 'CASH' ? <Wallet className="h-3 w-3" /> :
-                                                                            m.method_type === 'TRANSFER' || m.method_type === 'BANK' ? <Landmark className="h-3 w-3" /> :
-                                                                                m.method_type === 'CHECK' ? <ClipboardList className="h-3 w-3" /> :
-                                                                                    <CreditCard className="h-3 w-3" />}
-                                                                        {m.name}
-                                                                    </div>
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </fieldset>
-                                                {fieldState.error && (
-                                                    <p className="mt-1 text-[10px] font-medium text-destructive pl-1">
-                                                        {fieldState.error.message}
-                                                    </p>
+                                            <div className="w-full animate-in slide-in-from-top-2 duration-300">
+                                                {isFetchingMethods ? (
+                                                    <div className="h-[42px] flex items-center px-3 border border-border/50 rounded-md bg-muted/20">
+                                                        <Skeleton className="h-4 w-24" />
+                                                    </div>
+                                                ) : (
+                                                    <LabeledSelect
+                                                        label="Método Detallado"
+                                                        value={field.value || ""}
+                                                        onChange={field.onChange}
+                                                        error={fieldState.error?.message}
+                                                        placeholder="Canal de pago..."
+                                                        options={availableMethods.map((m) => ({
+                                                            value: m.id.toString(),
+                                                            label: (
+                                                                <div className="flex items-center gap-2">
+                                                                    {m.method_type === 'CASH' ? <Wallet className="h-3 w-3" /> :
+                                                                        m.method_type === 'TRANSFER' || m.method_type === 'BANK' ? <Landmark className="h-3 w-3" /> :
+                                                                            m.method_type === 'CHECK' ? <ClipboardList className="h-3 w-3" /> :
+                                                                                <CreditCard className="h-3 w-3" />}
+                                                                    {m.name}
+                                                                </div>
+                                                            )
+                                                        }))}
+                                                    />
                                                 )}
                                             </div>
                                         )}

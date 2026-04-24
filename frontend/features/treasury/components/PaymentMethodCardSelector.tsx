@@ -1,8 +1,6 @@
 "use client"
 
-import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Input } from "@/components/ui/input"
 import { Banknote, CreditCard, Building2, ClipboardList, AlertCircle, Wallet } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -11,7 +9,7 @@ import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Numpad } from "@/components/ui/numpad"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { MoneyDisplay } from "@/components/shared"
+import { LabeledInput, LabeledSelect, MoneyDisplay } from "@/components/shared"
 import { formatMoney } from "@/lib/money"
 
 export interface PaymentData {
@@ -233,14 +231,14 @@ export function PaymentMethodCardSelector({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className={cn("bg-primary/5 rounded-lg border border-primary/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
                     <div>
-                        <Label className="text-[10px] font-bold uppercase text-muted-foreground">{totalLabel}</Label>
+                        <span className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">{totalLabel}</span>
                         <MoneyDisplay amount={total} className={cn("text-primary", compactMode ? "text-lg" : "text-xl")} />
                     </div>
                 </div>
 
                 <div className={cn("bg-primary/5 rounded-lg border border-primary/10 flex justify-between items-center", compactMode ? "p-3 h-20" : "p-4 h-24")}>
                     <div>
-                        <Label className="text-[10px] font-bold uppercase text-muted-foreground">{amountLabel}</Label>
+                        <span className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">{amountLabel}</span>
                         <MoneyDisplay amount={paymentData.amount || 0} className={cn("text-primary", compactMode ? "text-lg" : "text-xl")} />
                     </div>
                 </div>
@@ -254,9 +252,9 @@ export function PaymentMethodCardSelector({
                             : "border-border hover:border-primary/30"
                     )}>
                         <div>
-                            <Label className="text-[10px] font-bold uppercase text-muted-foreground">
+                            <span className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">
                                 {difference >= 0 ? differencePositiveLabel : differenceNegativeLabel}
-                            </Label>
+                            </span>
                             <MoneyDisplay amount={Math.abs(difference)} className={cn(
                                 difference >= 0 ? "text-success" : "text-warning",
                                 compactMode ? "text-lg" : "text-xl"
@@ -270,7 +268,7 @@ export function PaymentMethodCardSelector({
 
             {/* Account Details Form */}
             <div className="space-y-4">
-                <Label className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Método de Pago</Label>
+                <h4 className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Método de Pago</h4>
                 <RadioGroup
                     value={paymentData.method || ''}
                     onValueChange={handleMethodChange}
@@ -281,7 +279,7 @@ export function PaymentMethodCardSelector({
                 >
                     {methods.map((m) => (
                         <div key={m.id} className="relative group h-full">
-                            <Label
+                            <label
                                 htmlFor={`method-${m.id}`}
                                 className={cn(
                                     "flex flex-col rounded-lg border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary transition-all h-full cursor-pointer",
@@ -329,44 +327,32 @@ export function PaymentMethodCardSelector({
                                 {paymentData.method === m.id && (
                                     <div className="mt-2 space-y-3 pt-3 border-t w-full animate-in fade-in slide-in-from-top-2" onClick={(e) => e.stopPropagation()}>
                                         {(m.id === 'TRANSFER' || m.id === 'CHECK') && (
-                                            <div className="space-y-1">
-                                                <Label className="text-[10px] font-bold uppercase text-muted-foreground">
-                                                    {m.id === 'CHECK' ? 'N° de Cheque' : 'N° Operación / Folio'}
-                                                </Label>
-                                                <Input
-                                                    className="bg-background h-9"
-                                                    placeholder={m.id === 'CHECK' ? "Ej: 000123" : "Ej: 123456"}
-                                                    value={paymentData.transactionNumber || ""}
-                                                    onChange={(e) => onPaymentDataChange({ ...paymentData, transactionNumber: e.target.value })}
-                                                    disabled={paymentData.isPending}
-                                                />
-                                            </div>
+                                            <LabeledInput
+                                                label={m.id === 'CHECK' ? 'N° de Cheque' : 'N° Operación / Folio'}
+                                                placeholder={m.id === 'CHECK' ? "Ej: 000123" : "Ej: 123456"}
+                                                value={paymentData.transactionNumber || ""}
+                                                onChange={(e) => onPaymentDataChange({ ...paymentData, transactionNumber: e.target.value })}
+                                                disabled={paymentData.isPending}
+                                            />
                                         )}
 
                                         {methodsForType.length > 1 && (
-                                            <div className="space-y-1">
-                                                <Label className="text-[10px] font-bold uppercase text-muted-foreground">
-                                                    {paymentData.method === 'TRANSFER' ? 'Seleccionar Banco / Cuenta' : 'Seleccionar Cuenta'}
-                                                </Label>
-                                                <select
-                                                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:ring-1 focus:ring-primary outline-none"
-                                                    value={paymentData.treasuryAccountId || ""}
-                                                    onChange={(e) => {
-                                                        const selectedMethod = methodsForType.find(m => m.treasury_account.toString() === e.target.value)
-                                                        onPaymentDataChange({
-                                                            ...paymentData,
-                                                            treasuryAccountId: e.target.value,
-                                                            paymentMethodId: selectedMethod?.id || null
-                                                        })
-                                                    }}
-                                                >
-                                                    {methodsForType.map((m) => (
-                                                        <option key={m.id} value={m.treasury_account}>
-                                                            {m.name} ({m.treasury_account_name})
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
+                                            <LabeledSelect
+                                                label={paymentData.method === 'TRANSFER' ? 'Banco / Cuenta' : 'Cuenta'}
+                                                value={paymentData.treasuryAccountId || ""}
+                                                onChange={(val) => {
+                                                    const selectedMethod = methodsForType.find(m => m.treasury_account.toString() === val)
+                                                    onPaymentDataChange({
+                                                        ...paymentData,
+                                                        treasuryAccountId: val,
+                                                        paymentMethodId: selectedMethod?.id || null
+                                                    })
+                                                }}
+                                                options={methodsForType.map((m) => ({
+                                                    value: m.treasury_account.toString(),
+                                                    label: `${m.name} (${m.treasury_account_name})`
+                                                }))}
+                                            />
                                         )}
 
                                         {m.id === 'TRANSFER' && (
@@ -382,14 +368,14 @@ export function PaymentMethodCardSelector({
                                                         })
                                                     }}
                                                 />
-                                                <Label htmlFor="card-pending" className="text-xs cursor-pointer font-medium leading-none">
+                                                <label htmlFor="card-pending" className="text-xs cursor-pointer font-medium leading-none">
                                                     Pendiente (Ingresar luego)
-                                                </Label>
+                                                </label>
                                             </div>
                                         )}
                                     </div>
                                 )}
-                            </Label>
+                            </label>
                         </div>
                     ))}
                 </RadioGroup>
@@ -406,7 +392,7 @@ export function PaymentMethodCardSelector({
             >
                 <div className="space-y-4 py-4 px-4">
                     <div className="space-y-4">
-                        <Label htmlFor="modal-amount">Monto</Label>
+                        <h4 className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Monto</h4>
                         <div className="flex flex-col items-center gap-4">
                             <div className="text-4xl font-black tracking-tight text-primary bg-primary/5 px-6 py-2 rounded-lg border-2 border-primary/10 shadow-sm w-full text-center">
                                 <MoneyDisplay amount={tempAmount || 0} inline />

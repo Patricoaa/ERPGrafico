@@ -18,6 +18,7 @@ from .serializers import (
     PaymentTerminalProviderSerializer, PaymentTerminalDeviceSerializer
 )
 from .services import TreasuryService, TerminalBatchService
+from .pos_service import POSService
 from .reconciliation_service import ReconciliationService
 from .matching_service import MatchingService
 from .rule_service import RuleService
@@ -307,92 +308,12 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=False, methods=['post'])
     def register_movement(self, request):
         try:
-            amount_val = request.data.get('amount')
-            if not amount_val:
-                return Response({'error': 'Amount required'}, status=400)
-            amount = Decimal(str(amount_val))
-            
-            movement_type = request.data.get('movement_type') or request.data.get('payment_type') # INBOUND/OUTBOUND
-            payment_method = request.data.get('payment_method', 'CASH')
-            treasury_account_id = request.data.get('treasury_account_id') or request.data.get('treasury_account')
-            reference = request.data.get('reference', '')
-            transaction_number = request.data.get('transaction_number')
-            is_pending_registration = request.data.get('is_pending_registration', False)
-            if isinstance(is_pending_registration, str):
-                is_pending_registration = is_pending_registration.lower() == 'true'
-            
-            # Resolve Treasury Account
-            treasury_account = None
-            if treasury_account_id:
-                try:
-                    treasury_account = TreasuryAccount.objects.get(pk=treasury_account_id)
-                except TreasuryAccount.DoesNotExist:
-                    return Response({'error': f'Cuenta de tesorería {treasury_account_id} no encontrada'}, status=400)
-                
-            from_account = None
-            to_account = None
-            
-            if movement_type == 'INBOUND':
-                to_account = treasury_account
-            elif movement_type == 'OUTBOUND':
-                from_account = treasury_account
-            elif movement_type == 'TRANSFER':
-                # Should have from/to logic
-                pass
-            
-            # Contact
-            contact_id = request.data.get('contact_id') or request.data.get('partner')
-            partner = Contact.objects.get(pk=contact_id) if contact_id else None
-            
-            # Documents (Invoices, Purchase Orders, Sale Orders)
-            invoice_id = request.data.get('invoice_id') or request.data.get('invoice')
-            purchase_order_id = request.data.get('purchase_order_id') or request.data.get('purchase_order')
-            sale_order_id = request.data.get('sale_order_id') or request.data.get('sale_order')
-            
-            invoice = None
-            purchase_order = None
-            sale_order = None
-
-            if invoice_id:
-                from billing.models import Invoice
-                invoice = Invoice.objects.filter(pk=invoice_id).first()
-
-            if purchase_order_id:
-                from purchasing.models import PurchaseOrder
-                purchase_order = PurchaseOrder.objects.filter(pk=purchase_order_id).first()
-
-            if sale_order_id:
-                from sales.models import SaleOrder
-                sale_order = SaleOrder.objects.filter(pk=sale_order_id).first()
-
-            # Resolve Granular Payment Method
-            payment_method_id = request.data.get('payment_method_id') or request.data.get('payment_method_new')
-            payment_method_new = None
-            if payment_method_id:
-                payment_method_new = PaymentMethod.objects.filter(pk=payment_method_id).first()
-
-            # POS Session
-            pos_session_id = request.data.get('pos_session_id') or request.data.get('pos_session')
-
-            movement = TreasuryService.create_movement(
-                amount=amount,
-                movement_type=movement_type, # Expects 'INBOUND'/'OUTBOUND' match
-                payment_method=request.data.get('payment_method') or request.data.get('paymentMethod') or 'CASH',
-                payment_method_new=payment_method_new,
-                from_account=from_account,
-                to_account=to_account,
-                reference=reference,
-                partner=partner,
-                invoice=invoice,
-                purchase_order=purchase_order,
-                sale_order=sale_order,
-                transaction_number=transaction_number,
-                is_pending_registration=is_pending_registration,
-                pos_session_id=pos_session_id,
-                created_by=request.user
+            movement = TreasuryService.create_movement_from_payload(
+                request.data, created_by=request.user
             )
-            
             return Response(TreasuryMovementSerializer(movement).data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -863,308 +784,48 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=False, methods=['post'])
-    @transaction.atomic
     def open_session(self, request):
         """Open a new POS session (Abrir Caja)"""
         try:
-            from decimal import Decimal
-            
-            terminal_id = request.data.get('terminal_id')
-            treasury_account_id = request.data.get('treasury_account_id')  # Legacy fallback
-            opening_balance = Decimal(str(request.data.get('opening_balance', '0')))
-            
-            # Check if user already has an open session
-            existing = POSSession.objects.filter(user=request.user, status='OPEN').first()
-            if existing:
-                return Response({
-                    'error': 'Ya tiene una sesión abierta',
-                    'session_id': existing.id
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # New flow: Use terminal
-            if terminal_id:
-                try:
-                    terminal = POSTerminal.objects.select_related('default_treasury_account').get(
-                        id=terminal_id,
-                        is_active=True
-                    )
-                except POSTerminal.DoesNotExist:
-                    return Response({
-                        'error': 'Terminal no encontrado o inactivo'
-                    }, status=status.HTTP_404_NOT_FOUND)
-                
-                # Create session with terminal
-                session = POSSession.objects.create(
-                    terminal=terminal,
-                    treasury_account=terminal.default_treasury_account,  # Maintain legacy field
-                    user=request.user,
-                    opening_balance=opening_balance,
-                    status='OPEN'
-                )
-            
-            # Legacy flow: Direct treasury account (deprecated)
-            elif treasury_account_id:
-                try:
-                    treasury_account = TreasuryAccount.objects.get(id=treasury_account_id)
-                except TreasuryAccount.DoesNotExist:
-                    return Response({
-                        'error': 'Caja no encontrada'
-                    }, status=status.HTTP_404_NOT_FOUND)
-                
-                session = POSSession.objects.create(
-                    treasury_account=treasury_account,
-                    terminal=None,  # No terminal in legacy mode
-                    user=request.user,
-                    opening_balance=opening_balance,
-                    status='OPEN'
-                )
-            
-            else:
-                return Response({
-                    'error': 'Debe especificar terminal_id o treasury_account_id'
-                }, status=status.HTTP_400_BAD_REQUEST)
-            
-            # Track Physical Cash Withdrawal for fund if source provided
-            fund_source_id = request.data.get('fund_source_id')
-            if fund_source_id:
-                try:
-                    from accounting.models import AccountingSettings
-                    settings = AccountingSettings.get_solo()
-                    fund_source = TreasuryAccount.objects.get(id=fund_source_id)
-                    
-                    # book_balance = fund_source.account.balance # This might be inaccurate if multiple sessions use it
-                    # For opening, we trust the opening_balance declared by user as the "new reality"
-                    # If they say they have X, but the fund source had Y, we must adjust the source or declare a move.
-                    # Actually, the requirement "Alinea los ajustes de movimiento de apertura caja" 
-                    # refers to the justifying of the difference between what WAS in the source vs what IS in the POS.
-                    
-                    book_balance = fund_source.account.balance
-                    diff = opening_balance - book_balance
-                    
-                    if diff != 0:
-                        justify_reason = request.data.get('justify_reason', 'UNKNOWN')
-                        justify_target_id = request.data.get('justify_target_id')
-                        
-                        pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal and session.terminal.default_treasury_account else None)
-                        
-                        from_account = None
-                        to_account = None
-                        movement_type = 'ADJUSTMENT'
-
-                        # Mapping logic aligned with register_manual_movement
-                        if justify_reason == 'TRANSFER':
-                            # If surplus (diff > 0), it's a transfer FROM fund_source TO pos
-                            # If deficit (diff < 0), it's a transfer FROM pos TO somewhere else (justify_target_id)
-                            if diff > 0:
-                                from_account = fund_source
-                                to_account = pos_treasury_obj
-                                movement_type = 'TRANSFER'
-                                label = f"Traspaso (Apertura) desde {fund_source.name}"
-                            else:
-                                from_account = pos_treasury_obj
-                                if justify_target_id:
-                                    try: to_account = TreasuryAccount.objects.get(id=justify_target_id)
-                                    except: pass
-                                movement_type = 'TRANSFER'
-                                label = f"Traspaso (Apertura) a {to_account.name if to_account else 'Cuenta desconocida'}"
-                        else:
-                            # Use accounting settings for other reasons
-                            # Pass None for the reason side, TreasuryService handles mapping by reason
-                            label_map = {
-                                'PARTNER_WITHDRAWAL': 'Retiro Socio',
-                                'THEFT': 'Robo / Pérdida',
-                                'TIP': 'Propina',
-                                'ROUNDING': 'Redondeo',
-                                'OTHER_IN': 'Otro Ingreso',
-                                'OTHER_OUT': 'Otro Egreso',
-                                'COUNTING_ERROR': 'Error de Conteo',
-                                'SYSTEM_ERROR': 'Error de Sistema',
-                                'CASHBACK': 'Vuelto Incorrecto'
-                            }
-                            label = label_map.get(justify_reason, justify_reason)
-                            
-                            if diff > 0: # Surplus: Move from Reason (External/None) to POS
-                                from_account = None 
-                                to_account = pos_treasury_obj
-                                movement_type = 'DEPOSIT'
-                            else: # Deficit: Move from POS to Reason (External/None)
-                                from_account = pos_treasury_obj
-                                to_account = None
-                                movement_type = 'WITHDRAWAL'
-
-                        notes = f"Ajuste de Apertura POS #{session.id}. Fondo: {opening_balance}, Libros: {book_balance}. Motivo: {label}"
-                        if request.data.get('notes'):
-                            notes += f" - {request.data.get('notes')}"
-
-                        TreasuryService.create_movement(
-                            movement_type=TreasuryMovement.Type.TRANSFER if justify_reason == 'TRANSFER' else (TreasuryMovement.Type.INBOUND if diff > 0 else TreasuryMovement.Type.OUTBOUND),
-                            amount=abs(diff),
-                            created_by=request.user,
-                            from_account=from_account,
-                            to_account=to_account,
-                            pos_session=session,
-                            notes=notes,
-                            justify_reason=justify_reason,
-                            reference=f"Ajuste de Apertura POS ({label}) - Sesión #{session.id}"
-                        )
-                                 
-                except ValidationError as e:
-                    # Explicitly catch validation errors (like insufficient funds) and return 400
-                    # FORCE ROLLBACK to prevent the session from being created if the movement fails
-                    transaction.set_rollback(True)
-                    return Response({'error': str(e.message) if hasattr(e, 'message') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
-                except TreasuryAccount.DoesNotExist:
-                    print(f"WARNING: Fund source {fund_source_id} not found")
-                except Exception as e:
-                    print(f"ERROR processing fund source: {e}")
-
+            session = POSService.open_session(
+                user=request.user,
+                terminal_id=request.data.get('terminal_id'),
+                treasury_account_id=request.data.get('treasury_account_id'),
+                opening_balance=Decimal(str(request.data.get('opening_balance', '0'))),
+                fund_source_id=request.data.get('fund_source_id'),
+                justify_reason=request.data.get('justify_reason'),
+                justify_target_id=request.data.get('justify_target_id'),
+                notes=request.data.get('notes', ''),
+            )
             return Response(POSSessionSerializer(session).data, status=status.HTTP_201_CREATED)
-        
+        except ValidationError as e:
+            return Response({'error': str(e.message) if hasattr(e, 'message') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            import traceback
-            traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=True, methods=['post'])
-    @transaction.atomic
     def close_session(self, request, pk=None):
         """Close a POS session with cash audit (Cierre de Caja / Arqueo)"""
         session = self.get_object()
-
-        # Check if already audited (partial close state)
-        if hasattr(session, 'audit'):
-             if session.status != 'CLOSED':
-                 # If session is still OPEN but has audit, it means a previous close attempt failed.
-                 # Delete the partial audit to allow retry.
-                 session.audit.delete()
-                 # Refresh session to clear the cached reverse property
-                 session.refresh_from_db()
-             else:
-                 return Response({'error': 'La sesión ya tiene un arqueo registrado. Verifique si ya fue cerrada.'}, status=400)
-
-        if session.status == 'CLOSED':
-            return Response({'error': 'Esta sesión ya está cerrada'}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
-            from decimal import Decimal
-            from django.utils import timezone
-            from django.core.exceptions import ValidationError
-            
-            actual_cash = Decimal(str(request.data.get('actual_cash', '0')))
-            notes = request.data.get('notes', '')
-            
-            # Calculate totals from payments in this session
-            # For now, use the stored totals (which would be updated by checkout service)
-            expected_cash = session.expected_cash
-            difference = actual_cash - expected_cash
-            
-            # Create audit record
-            audit = POSSessionAudit.objects.create(
+            session, audit = POSService.close_session(
                 session=session,
-                expected_amount=expected_cash,
-                actual_amount=actual_cash,
-                difference=difference,
-                notes=notes
+                actual_cash=Decimal(str(request.data.get('actual_cash', '0'))),
+                notes=request.data.get('notes', ''),
+                justify_reason=request.data.get('justify_reason', 'UNKNOWN'),
+                justify_target_id=request.data.get('justify_target_id'),
+                withdrawal_amount=Decimal(str(request.data.get('withdrawal_amount', '0'))),
+                cash_destination_id=request.data.get('cash_destination_id'),
+                user=request.user,
             )
-            
-            # Handle Cash Differences (Automatic Adjustment)
-            if difference != 0:
-                justify_reason = request.data.get('justify_reason', 'UNKNOWN')
-                justify_target_id = request.data.get('justify_target_id')
-                
-                # Automatic adjustment via TreasuryService
-                pos_treasury_acc = session.treasury_account or (session.terminal.default_treasury_account if session.terminal else None)
-                from_account = None
-                to_account = None
-                
-                # For TRANSFER, explicitly set both sides
-                if justify_reason == 'TRANSFER':
-                    if difference < 0:  # Deficit: POS -> Target
-                        from_account = pos_treasury_acc
-                        if justify_target_id:
-                            try: to_account = TreasuryAccount.objects.get(id=justify_target_id)
-                            except: pass
-                    else:  # Surplus: Target -> POS
-                        to_account = pos_treasury_acc
-                        if justify_target_id:
-                            try: from_account = TreasuryAccount.objects.get(id=justify_target_id)
-                            except: pass
-                else:
-                    # For other reasons, let TreasuryService resolve by justify_reason
-                    if difference < 0:  # Deficit: POS -> Reason (None)
-                        from_account = pos_treasury_acc
-                        to_account = None
-                    else:  # Surplus: Reason (None) -> POS
-                        from_account = None
-                        to_account = pos_treasury_acc
-
-                movement = TreasuryService.create_movement(
-                    movement_type=TreasuryMovement.Type.TRANSFER if justify_reason == 'TRANSFER' else (TreasuryMovement.Type.OUTBOUND if difference < 0 else TreasuryMovement.Type.INBOUND),
-                    amount=abs(difference),
-                    created_by=request.user,
-                    from_account=from_account,
-                    to_account=to_account,
-                    pos_session=session,
-                    notes=f"Ajuste al Cierre: {notes or 'Sin observaciones'}",
-                    justify_reason=justify_reason,
-                    reference=f"{'Sobrante' if difference > 0 else 'Faltante'} de Caja ({justify_reason}) - Sesión #{session.id}"
-                )
-                
-                if movement.journal_entry:
-                    audit.journal_entry = movement.journal_entry
-                    audit.save()
-
-            # New: Track Physical Cash Deposit (Withdrawal from POS to safe/bank)
-            withdrawal_amount = request.data.get('withdrawal_amount')
-            if withdrawal_amount is not None:
-                withdrawal_amount = Decimal(str(withdrawal_amount))
-            else:
-                withdrawal_amount = Decimal('0')
-
-            cash_destination_id = request.data.get('cash_destination_id')
-            if withdrawal_amount > 0 and cash_destination_id:
-                # Get destination account (will raise DoesNotExist if not found, which propagates to user)
-                to_account = TreasuryAccount.objects.get(id=cash_destination_id)
-                pos_treasury_obj = session.treasury_account or (session.terminal.default_treasury_account if session.terminal else None)
-                
-                # TreasuryService validates sufficient funds automatically
-                TreasuryService.create_movement(
-                    movement_type=TreasuryMovement.Type.TRANSFER,
-                    from_account=pos_treasury_obj,
-                    to_account=to_account,
-                    amount=withdrawal_amount,
-                    justify_reason='RETIREMENT',
-                    pos_session=session,
-                    created_by=request.user,
-                    notes=f"Retiro de cierre sesión #{session.id}",
-                    reference=f"Retiro de Cierre POS - Sesión #{session.id}"
-                )
-
-            # Clean up draft carts for this session
-            from sales.draft_cart_service import DraftCartService
-            DraftCartService.cleanup_on_session_close(session.id)
-
-            # Close session
-            session.status = 'CLOSED'
-            session.closed_at = timezone.now()
-            session.closed_by = request.user
-            session.save()
-            
             return Response({
                 'session': POSSessionSerializer(session).data,
                 'audit': POSSessionAuditSerializer(audit).data,
                 'message': 'Caja cerrada correctamente'
             })
-        
         except ValidationError as e:
-            # Explicitly catch validation errors (like insufficient funds) and return 400
-            # FORCE ROLLBACK to prevent the audit from being committed if the movement fails
-            transaction.set_rollback(True)
             return Response({'error': str(e.message) if hasattr(e, 'message') else str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
         except Exception as e:
-            import traceback
-            traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     @action(detail=True, methods=['get'])
     def summary(self, request, pk=None):

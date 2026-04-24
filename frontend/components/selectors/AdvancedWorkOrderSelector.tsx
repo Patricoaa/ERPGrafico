@@ -16,6 +16,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { useWorkOrderSearch } from "@/features/production/hooks/useWorkOrderSearch"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { WorkOrder } from "@/types/entities"
+import { LabeledContainer } from "@/components/shared"
 
 
 
@@ -89,21 +90,17 @@ export function AdvancedWorkOrderSelector({
     }
 
     return (
-        <div className="relative w-full flex flex-col group">
-            <fieldset 
-                className={cn(
-                    "notched-field w-full group transition-all border-dashed",
-                    open && "focused",
-                    error && "error",
-                    disabled && "opacity-50 cursor-not-allowed bg-muted/10",
-                    selectedOrder && "border-primary/20 bg-primary/10/30 border-solid"
-                )}
-            >
-                {label && (
-                    <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
-                        {label}
-                    </legend>
-                )}
+        <>
+            <LabeledContainer
+            label={label}
+            error={error}
+            disabled={disabled}
+            className={className}
+            containerClassName={cn(
+                "group focused-within:ring-primary border-dashed",
+                selectedOrder && "border-primary/20 bg-primary/10/30 border-solid"
+            )}
+        >
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <Button
@@ -213,12 +210,7 @@ export function AdvancedWorkOrderSelector({
                     </div>
                 </PopoverContent>
             </Popover>
-            </fieldset>
-            {error && (
-                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
-                    {error}
-                </p>
-            )}
+        </LabeledContainer>
 
             {previewId && (
                 <TransactionViewModal
@@ -228,6 +220,6 @@ export function AdvancedWorkOrderSelector({
                     id={previewId}
                 />
             )}
-        </div>
+        </>
     )
 }

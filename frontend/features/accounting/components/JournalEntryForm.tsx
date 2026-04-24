@@ -16,7 +16,6 @@ import {
     FormControl,
     FormField,
     FormItem,
-    FormLabel,
     FormMessage,
 } from "@/components/ui/form"
 import {
@@ -27,13 +26,13 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
-import api from "@/lib/api"
 import { toast } from "sonner"
+import { accountingApi } from "@/features/accounting/api/accountingApi"
+import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { FORM_STYLES } from "@/lib/styles"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -117,23 +116,18 @@ export function JournalEntryForm({
 
     const [loading, setLoading] = useState(false)
     const [periodCheck, setPeriodCheck] = useState<{ is_closed: boolean; loading: boolean }>({ is_closed: false, loading: false })
-    const [accounts, setAccounts] = useState<Record<string, unknown>[]>(accountsProp || [])
 
     // Guard for async operations
     const isMounted = useRef(true)
-
-    // Sync local accounts state if prop changes
-    useEffect(() => {
-        if (accountsProp && accountsProp.length > 0) {
-            setAccounts(accountsProp)
-        }
-    }, [accountsProp])
 
     // Cleanup mount guard
     useEffect(() => {
         isMounted.current = true
         return () => { isMounted.current = false }
     }, [])
+
+    const { accounts: fetchedAccounts } = useAccounts({ filters: { is_leaf: true } })
+    const accounts = (accountsProp?.length ? accountsProp : fetchedAccounts) as Record<string, unknown>[]
 
     const { serverDate } = useServerDate()
 
@@ -191,23 +185,8 @@ export function JournalEntryForm({
         name: "items",
     })
 
-    const fetchAccounts = async () => {
-        try {
-            const response = await api.get('/accounting/accounts/?is_leaf=true')
-            if (isMounted.current) {
-                setAccounts(response.data.results || response.data)
-            }
-        } catch (error) {
-            console.error("Error fetching accounts:", error)
-        }
-    }
-
-
     useEffect(() => {
         if (open) {
-            if (!accountsProp || accountsProp.length === 0) {
-                fetchAccounts()
-            }
             if (!initialData) {
                 form.reset({
                     date: serverDate || new Date(),
@@ -222,7 +201,7 @@ export function JournalEntryForm({
                 form.reset(defaultValues)
             }
         }
-    }, [open, initialData, accountsProp, serverDate])
+    }, [open, initialData, serverDate])
 
     async function onSubmit(data: JournalEntryFormValues) {
         setLoading(true)
@@ -241,10 +220,10 @@ export function JournalEntryForm({
             }
 
             if (initialData?.id) {
-                await api.put(`/accounting/entries/${initialData.id}/`, payload)
+                await accountingApi.updateEntry(initialData.id, payload)
                 toast.success("Asiento actualizado correctamente")
             } else {
-                await api.post('/accounting/entries/', payload)
+                await accountingApi.createEntry(payload)
                 toast.success("Asiento creado correctamente")
             }
 
@@ -333,42 +312,42 @@ export function JournalEntryForm({
                                             name="date"
                                             render={({ field, fieldState }) => (
                                                 <div className="relative w-full flex flex-col group">
-                                                    <fieldset 
+                                                    <fieldset
                                                         className={cn(
                                                             "notched-field w-full group transition-all",
                                                             fieldState.error && "error"
                                                         )}
                                                     >
                                                         <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Fecha</legend>
-                                                    <Popover>
-                                                        <PopoverTrigger asChild>
-                                                            <Button
-                                                                variant={"ghost"}
-                                                                className={cn(
-                                                                    "w-full pl-3 text-left font-normal border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent h-auto py-2",
-                                                                    !field.value && "text-muted-foreground"
-                                                                )}
-                                                            >
-                                                                {field.value ? (
-                                                                    format(field.value, "PPP")
-                                                                ) : (
-                                                                    <span>Seleccione fecha</span>
-                                                                )}
-                                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                            </Button>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-0" align="start">
-                                                            <Calendar
-                                                                mode="single"
-                                                                selected={field.value}
-                                                                onSelect={field.onChange}
-                                                                disabled={(date) =>
-                                                                    date > new Date() || date < new Date("1900-01-01")
-                                                                }
-                                                                initialFocus
-                                                            />
-                                                        </PopoverContent>
-                                                    </Popover>
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <Button
+                                                                    variant={"ghost"}
+                                                                    className={cn(
+                                                                        "w-full pl-3 text-left font-normal border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent h-auto py-2",
+                                                                        !field.value && "text-muted-foreground"
+                                                                    )}
+                                                                >
+                                                                    {field.value ? (
+                                                                        format(field.value, "PPP")
+                                                                    ) : (
+                                                                        <span>Seleccione fecha</span>
+                                                                    )}
+                                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                                </Button>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-auto p-0" align="start">
+                                                                <Calendar
+                                                                    mode="single"
+                                                                    selected={field.value}
+                                                                    onSelect={field.onChange}
+                                                                    disabled={(date) =>
+                                                                        date > new Date() || date < new Date("1900-01-01")
+                                                                    }
+                                                                    initialFocus
+                                                                />
+                                                            </PopoverContent>
+                                                        </Popover>
                                                     </fieldset>
                                                     {fieldState.error && (
                                                         <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
@@ -466,7 +445,10 @@ export function JournalEntryForm({
                                                             render={({ field }) => (
                                                                 <FormItem className="space-y-0">
                                                                     <FormControl>
-                                                                        <Input {...field} className={cn(FORM_STYLES.input, "h-8 text-center")} />
+                                                                        <LabeledInput
+                                                                            {...field}
+                                                                            className="h-8 text-center"
+                                                                        />
                                                                     </FormControl>
                                                                 </FormItem>
                                                             )}
@@ -479,7 +461,14 @@ export function JournalEntryForm({
                                                             render={({ field }) => (
                                                                 <FormItem className="space-y-0 text-center">
                                                                     <FormControl>
-                                                                        <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} className={cn(FORM_STYLES.input, "h-8 text-right font-mono font-bold")} />
+                                                                        <LabeledInput
+                                                                            type="number"
+                                                                            step="1"
+                                                                            {...field}
+                                                                            onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))}
+                                                                            onFocus={(e) => e.target.select()}
+                                                                            className="h-8 text-right font-mono font-bold"
+                                                                        />
                                                                     </FormControl>
                                                                 </FormItem>
                                                             )}
@@ -492,7 +481,14 @@ export function JournalEntryForm({
                                                             render={({ field }) => (
                                                                 <FormItem className="space-y-0 text-center">
                                                                     <FormControl>
-                                                                        <Input type="number" step="1" {...field} onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))} onFocus={(e) => e.target.select()} className={cn(FORM_STYLES.input, "h-8 text-right font-mono font-bold")} />
+                                                                        <LabeledInput
+                                                                            type="number"
+                                                                            step="1"
+                                                                            {...field}
+                                                                            onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))}
+                                                                            onFocus={(e) => e.target.select()}
+                                                                            className="h-8 text-right font-mono font-bold"
+                                                                        />
                                                                     </FormControl>
                                                                 </FormItem>
                                                             )}

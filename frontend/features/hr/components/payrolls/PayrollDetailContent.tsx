@@ -18,14 +18,12 @@ import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import type { Payroll, PayrollItem, PayrollConcept, PayrollPayment } from "@/types/hr"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Input } from "@/components/ui/input"
+
 import { BaseModal } from "@/components/shared/BaseModal"
 import {
-    Form, FormControl, FormField, FormItem, FormLabel, FormMessage
+    Form, FormField
 } from "@/components/ui/form"
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
+import { LabeledInput, LabeledSelect } from "@/components/shared"
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
@@ -502,50 +500,37 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
                     onSubmit={form.handleSubmit(onSubmit)} 
                     className="space-y-5 text-left py-2"
                 >
-                    <FormField control={form.control} name="concept" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className={FORM_STYLES.label}>Concepto de Remuneración</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                    <SelectTrigger className="rounded-lg h-11 transition-all focus:ring-primary/20">
-                                        <SelectValue placeholder="Seleccionar..." />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent className="rounded-lg">
-                                    {concepts.map(c => (
-                                        <SelectItem key={c.id} value={c.id.toString()} className="rounded-lg">
-                                            {c.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </FormItem>
+                    <FormField control={form.control} name="concept" render={({ field, fieldState }) => (
+                        <LabeledSelect
+                            label="Concepto de Remuneración"
+                            value={field.value}
+                            onChange={field.onChange}
+                            error={fieldState.error?.message}
+                            placeholder="Seleccionar..."
+                            options={concepts.map(c => ({
+                                value: c.id.toString(),
+                                label: c.name
+                            }))}
+                        />
                     )} />
 
-                    <FormField control={form.control} name="amount" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className={FORM_STYLES.label}>Monto ($)</FormLabel>
-                            <FormControl>
-                                <Input
-                                    {...field}
-                                    type="number"
-                                    className="rounded-lg h-11 font-bold text-lg transition-all focus:ring-primary/20"
-                                />
-                            </FormControl>
-                        </FormItem>
+                    <FormField control={form.control} name="amount" render={({ field, fieldState }) => (
+                        <LabeledInput
+                            {...field}
+                            type="number"
+                            label="Monto ($)"
+                            error={fieldState.error?.message}
+                            className="font-bold text-lg"
+                        />
                     )} />
 
-                    <FormField control={form.control} name="description" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className={FORM_STYLES.label}>Observaciones (Opcional)</FormLabel>
-                            <FormControl>
-                                <Input
-                                    {...field}
-                                    className="rounded-lg h-11 transition-all focus:ring-primary/20"
-                                    placeholder="Detalle adicional..."
-                                />
-                            </FormControl>
-                        </FormItem>
+                    <FormField control={form.control} name="description" render={({ field, fieldState }) => (
+                        <LabeledInput
+                            {...field}
+                            label="Observaciones (Opcional)"
+                            placeholder="Detalle adicional..."
+                            error={fieldState.error?.message}
+                        />
                     )} />
                 </form>
             </Form>

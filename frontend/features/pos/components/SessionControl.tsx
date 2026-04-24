@@ -3,24 +3,12 @@
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import {
-    Loader2, Lock, Unlock, Calculator, Banknote,
-    CreditCard, ArrowRightLeft, FileText, Users, LogOut,
-    Vault, AlertTriangle, Search, ChevronsUpDown, Check
+    Loader2, Unlock,
+    Users, AlertTriangle, Search, ChevronsUpDown, Check
 } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from "sonner"
@@ -32,9 +20,7 @@ import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountS
 import { forwardRef, useImperativeHandle } from "react"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { cn, translateStatus, formatCurrency } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
-import { MovementWizard, MovementData } from "@/features/treasury/components/MovementWizard"
+import { cn, formatCurrency } from "@/lib/utils"
 import type { POSSession, POSTerminal, AccountingSettings, TreasuryAccount, POSSessionAudit } from "@/types/pos"
 
 interface SessionControlProps {
@@ -219,17 +205,21 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
     }, [openDialogOpen, moveDialogOpen, selectedTerminalId, openingBalance, openingJustifyReason, terminals, wizardStep])
 
     // Sync state when session prop changes (controlled mode)
+    // Sync local state when prop changes - Use ID comparison to avoid loops
     useEffect(() => {
         if (session !== undefined) {
-            requestAnimationFrame(() => {
-                setCurrentSession(session)
-                // If we now have an active session, clear any stale report modal
-                if (session && session.status === 'OPEN') {
-                    setReportDialogOpen(false)
-                }
-            })
+            // Only update if IDs differ to prevent feedback loops with context
+            if (session?.id !== currentSession?.id || (session === null && currentSession !== null) || (session !== null && currentSession === null)) {
+                requestAnimationFrame(() => {
+                    setCurrentSession(session)
+                    // If we now have an active session, clear any stale report modal
+                    if (session && session.status === 'OPEN') {
+                        setReportDialogOpen(false)
+                    }
+                })
+            }
         }
-    }, [session])
+    }, [session, currentSession?.id])
 
     const fetchSharedSession = async (id: number) => {
         try {
@@ -534,9 +524,9 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                         <div className="text-xs opacity-70">{t.location}</div>
                                     </div>
                                     {t.default_treasury_account_balance > 0 && (
-                                    <span className="ml-auto text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/30 text-muted-foreground">
-                                        Base: {formatCurrency(t.default_treasury_account_balance)}
-                                    </span>
+                                        <span className="ml-auto text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/30 text-muted-foreground">
+                                            Base: {formatCurrency(t.default_treasury_account_balance)}
+                                        </span>
                                     )}
                                 </Button>
                             ))}

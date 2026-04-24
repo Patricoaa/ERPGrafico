@@ -1,6 +1,5 @@
 
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
     Select,
     SelectContent,
@@ -14,10 +13,9 @@ import { Separator } from "@/components/ui/separator"
 import { CheckCircle2, FileText, Package, AlertCircle, UploadCloud, ShieldAlert } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
 import { cn } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
+import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput, LabeledContainer, EmptyState } from "@/components/shared"
 import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { EmptyState } from "@/components/shared/EmptyState"
 import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
 
@@ -61,9 +59,8 @@ export function Step1_GeneralInfo({
 
             <div className="grid gap-6">
                 {/* Note Type Selection */}
-                <div className="space-y-3">
-                    <Label className="text-base font-bold">Tipo de Nota</Label>
-                    <div className="grid grid-cols-2 gap-4">
+                <LabeledContainer label="Tipo de Nota">
+                    <div className="grid grid-cols-2 gap-4 p-1">
                         <div
                             className={cn(
                                 "cursor-pointer rounded-lg border-2 p-4 transition-all hover:bg-muted/50",
@@ -85,7 +82,7 @@ export function Step1_GeneralInfo({
                                 Para anulaciones, descuentos o devoluciones. Rebaja la deuda.
                             </p>
                         </div>
-
+ 
                         <div
                             className={cn(
                                 "cursor-pointer rounded-lg border-2 p-4 transition-all hover:bg-muted/50",
@@ -108,7 +105,7 @@ export function Step1_GeneralInfo({
                             </p>
                         </div>
                     </div>
-                </div>
+                </LabeledContainer>
 
                 {/* Document Number & Date */}
                 <div className="grid grid-cols-2 gap-4">
