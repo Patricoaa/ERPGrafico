@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { Button } from '@/components/ui/button';
+import { SubmitButton, IconButton } from '@/components/shared';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -92,23 +92,23 @@ export function FiscalYearCard({
                 <div className="flex flex-wrap items-center gap-2">
                     {/* Primary Action */}
                     {!isClosed ? (
-                        <Button
-                            variant="default"
+                        <SubmitButton
                             onClick={() => onPreviewClosing(year)}
-                            disabled={isFiscalYearLoading || periods.length === 0 || periods.some(p => p.status !== 'CLOSED')}
-                            className="bg-primary text-primary-foreground hover:bg-primary/90"
+                            disabled={periods.length === 0 || periods.some(p => p.status !== 'CLOSED')}
+                            loading={isFiscalYearLoading}
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold uppercase tracking-widest text-[11px] h-10"
+                            icon={<ShieldAlert className="w-4 h-4 mr-2" />}
                         >
-                            <ShieldAlert className="w-4 h-4 mr-2" />
                             Ejecutar cierre del ejercicio
-                        </Button>
+                        </SubmitButton>
                     ) : null}
 
                     {/* Three dots menu */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-10 w-10">
+                            <IconButton circular className="h-10 w-10 border border-border/50 bg-background hover:bg-muted/50">
                                 <Settings2 className="w-4 h-4 text-muted-foreground" />
-                            </Button>
+                            </IconButton>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56">
                             {isClosed ? (

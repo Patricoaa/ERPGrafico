@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { Check, ChevronsUpDown, Search, Loader2, User, Building2, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -46,27 +46,38 @@ export function AdvancedContactSelector({
     className
 }: AdvancedContactSelectorProps) {
     const { contacts, singleContact, loading: searchLoading, fetchContacts, fetchSingleContact } = useContactSearch()
+    const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
     const [open, setOpen] = useState(false)
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
-    const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
+    const lastFetchedId = useRef<string | null>(null)
 
     // Fetch initial selected contact if value exists
     useEffect(() => {
-        if (value && !selectedContact && value.toString() !== singleContact?.id.toString()) {
-            fetchSingleContact(value.toString())
-        } else if (!value) {
-            requestAnimationFrame(() => setSelectedContact(null))
+        const valStr = value?.toString()
+        
+        // Guard: If no value or "0", clear selection and return
+        if (!valStr || valStr === "0" || valStr === "null" || valStr === "undefined") {
+            if (selectedContact) setSelectedContact(null)
+            return
         }
-    }, [value, selectedContact, singleContact, fetchSingleContact])
 
-    // Sync fetched single contact to local state
-    useEffect(() => {
-        if (singleContact && singleContact.id.toString() === value?.toString()) {
-            requestAnimationFrame(() => setSelectedContact(singleContact))
+        // If we already have the correct contact selected, nothing to do
+        if (selectedContact?.id.toString() === valStr) return
+
+        // If we just fetched the contact but haven't synced it yet
+        if (singleContact && singleContact.id.toString() === valStr) {
+            setSelectedContact(singleContact)
+            return
         }
-    }, [singleContact, value])
+
+        // Avoid re-fetching the same ID if it failed or is in progress
+        if (lastFetchedId.current === valStr) return
+
+        lastFetchedId.current = valStr
+        fetchSingleContact(valStr)
+    }, [value, selectedContact, singleContact, fetchSingleContact])
 
     // Fetch contacts on search
     useEffect(() => {

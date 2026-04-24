@@ -3,7 +3,7 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState } from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/shared"
 import { List, FileBadge, LayoutDashboard, ArrowRight, ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -201,9 +201,8 @@ export function PurchaseInvoicesClientView() {
                 const isSelected = hubConfig?.invoiceId === item.id
                 return (
                     <div className="flex justify-end pr-2">
-                        <Button
-                            variant="ghost"
-                            size="icon"
+                        <IconButton
+                            circular
                             className="h-8 w-8 hover:bg-transparent"
                             onClick={() => {
                                 if (isSelected && isHubOpen) {
@@ -223,7 +222,7 @@ export function PurchaseInvoicesClientView() {
                             ) : (
                                 <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                             )}
-                        </Button>
+                        </IconButton>
                     </div>
                 )
             },

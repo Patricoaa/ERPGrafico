@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/shared';
 import { AccountingPeriod } from '../../types';
 import { Calendar, Lock, LockOpen, CheckCircle2, Clock, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { formatPlainDate } from '@/lib/utils';
@@ -90,25 +90,23 @@ const StatusIcon = ({ status }: { status: string }) => {
 
                 <div className="flex justify-end">
                     {period.status !== 'CLOSED' ? (
-                        <Button
-                            variant="default"
-                            size="sm"
-                            className="h-8 text-xs px-3 bg-secondary text-secondary-foreground hover:bg-warning hover:text-warning-foreground transition-colors"
+                        <IconButton
+                            className="h-8 w-8 bg-secondary text-secondary-foreground hover:bg-warning hover:text-warning-foreground"
                             onClick={() => onClose(period.id)}
                             disabled={isActionLoading}
+                            title="Cerrar Periodo"
                         >
-                            <Lock className="w-3 h-3 justify-center" />
-                        </Button>
+                            <Lock className="w-3.5 h-3.5" />
+                        </IconButton>
                     ) : (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs px-3"
+                        <IconButton
+                            className="h-8 w-8 border border-border/50"
                             onClick={() => onReopen(period.id)}
                             disabled={isActionLoading || taxClosed}
+                            title={taxClosed ? "Bloqueado por F29 Cerrado" : "Reabrir Periodo"}
                         >
-                            <LockOpen className="w-3 h-3 justify-center" />
-                        </Button>
+                            <LockOpen className="w-3.5 h-3.5" />
+                        </IconButton>
                     )}
                 </div>
             </div>

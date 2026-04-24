@@ -16,6 +16,10 @@ interface LabeledInputBaseProps {
     error?: string
     /** Helper hint shown below when there is no error. */
     hint?: string
+    /** Additional classes for the label `<legend>` or header. */
+    labelClassName?: string
+    /** Additional classes for the hint text. */
+    hintClassName?: string
     /** Additional classes for the outer wrapper `<div>`. */
     containerClassName?: string
     /** Icon or symbol shown as a prefix (inside the fieldset). */
@@ -94,6 +98,8 @@ export const LabeledInput = forwardRef<
         hint,
         containerClassName,
         className,
+        labelClassName,
+        hintClassName,
         disabled,
         icon,
         suffix,
@@ -109,14 +115,23 @@ export const LabeledInput = forwardRef<
     )
 
     return (
-        <div className={cn("space-y-1", containerClassName)}>
+        <div className={cn("space-y-1 relative w-full group", containerClassName)}>
             <fieldset
-                className="notched-field"
+                className={cn(
+                    "notched-field transition-all duration-200",
+                    "group-focus-within:border-primary group-focus-within:ring-1 group-focus-within:ring-primary/20",
+                    hasError && "border-destructive group-focus-within:border-destructive group-focus-within:ring-destructive/20"
+                )}
                 data-error={hasError || undefined}
                 data-disabled={disabled || undefined}
             >
                 {label && (
-                    <legend>
+                    <legend className={cn(
+                        "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200",
+                        hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
+                        disabled && "text-muted-foreground/50",
+                        labelClassName
+                    )}>
                         {label}
                         {required && (
                             <span className="text-destructive ml-0.5" aria-hidden="true">
@@ -128,7 +143,7 @@ export const LabeledInput = forwardRef<
 
                 <div className="flex items-center w-full h-full px-1">
                     {icon && (
-                        <div className="flex items-center justify-center pl-2 pr-1 text-muted-foreground/60 shrink-0 select-none">
+                        <div className="flex items-center justify-center pl-2 pr-1 text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0 select-none">
                             {icon}
                         </div>
                     )}
@@ -151,7 +166,7 @@ export const LabeledInput = forwardRef<
                     )}
 
                     {suffix && (
-                        <div className="flex items-center justify-center pr-2 pl-1 text-muted-foreground/60 shrink-0 select-none">
+                        <div className="flex items-center justify-center pr-2 pl-1 text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0 select-none">
                             {suffix}
                         </div>
                     )}
@@ -168,7 +183,9 @@ export const LabeledInput = forwardRef<
             )}
 
             {hint && !hasError && (
-                <p className="text-[10px] text-muted-foreground pl-1">{hint}</p>
+                <p className={cn("text-[10px] text-muted-foreground pl-1", hintClassName)}>
+                    {hint}
+                </p>
             )}
         </div>
     )

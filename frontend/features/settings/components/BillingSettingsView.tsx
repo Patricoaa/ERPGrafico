@@ -8,15 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 
 import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
     Percent,
     Receipt,
     Coins,
     TrendingUp,
     Check,
-    FileText,
-    Users
+
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { LabeledInput } from "@/components/shared"
@@ -110,25 +108,10 @@ export const BillingSettingsView: React.FC<{
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
-            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/50 rounded-md border-2">
-                    <TabsTrigger value="accounts" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <Users className="h-3.5 w-3.5" />
-                        Cuentas
-                    </TabsTrigger>
-                    <TabsTrigger value="tax" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <Percent className="h-3.5 w-3.5" />
-                        Impuestos
-                    </TabsTrigger>
-                    <TabsTrigger value="dtes" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <FileText className="h-3.5 w-3.5" />
-                        Documentos
-                    </TabsTrigger>
-                </TabsList>
-
-                <Form {...form}>
-                    <form className="mt-6 space-y-6">
-                        <TabsContent value="accounts" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+            <Form {...form}>
+                <form className="mt-6 space-y-6">
+                    {activeTab === "accounts" && (
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <Card>
                                     <CardHeader>
@@ -152,9 +135,11 @@ export const BillingSettingsView: React.FC<{
                                     </CardContent>
                                 </Card>
                             </div>
-                        </TabsContent>
+                        </div>
+                    )}
 
-                        <TabsContent value="tax" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                    {activeTab === "tax" && (
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <Card className="md:col-span-1">
                                     <CardHeader>
@@ -252,9 +237,11 @@ export const BillingSettingsView: React.FC<{
                                     </Card>
                                 </div>
                             </div>
-                        </TabsContent>
+                        </div>
+                    )}
 
-                        <TabsContent value="dtes" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                    {activeTab === "dtes" && (
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <DTEConfigCard
                                     form={form}
@@ -269,10 +256,10 @@ export const BillingSettingsView: React.FC<{
                                     description="Seleccione qué tipos de documentos están habilitados para ser registrados."
                                 />
                             </div>
-                        </TabsContent>
-                    </form>
-                </Form>
-            </Tabs>
+                        </div>
+                    )}
+                </form>
+            </Form>
         </div>
     )
 }

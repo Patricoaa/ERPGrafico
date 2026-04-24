@@ -31,7 +31,17 @@ export default async function HRPage({ searchParams }: PageProps) {
         { value: "absences", label: "Inasistencias", iconName: "calendar-off", href: "/hr?view=absences" },
         { value: "advances", label: "Anticipos", iconName: "hand-coins", href: "/hr?view=advances" },
         { value: "payrolls", label: "Liquidaciones", iconName: "file-spreadsheet", href: "/hr?view=payrolls" },
-        { value: "config", label: "Config", iconName: "settings", href: "/hr?view=config" },
+        { 
+            value: "config", 
+            label: "Config", 
+            iconName: "settings", 
+            href: "/hr?view=config",
+            subTabs: [
+                { value: "global", label: "Globales", href: "/hr?view=config&tab=global", iconName: "settings-2" },
+                { value: "concepts", label: "Conceptos", href: "/hr?view=config&tab=concepts", iconName: "alert-circle" },
+                { value: "previsional", label: "Previsión", href: "/hr?view=config&tab=previsional", iconName: "loader-2" }
+            ]
+        },
     ]
 
     const getHeaderConfig = () => {
@@ -84,7 +94,7 @@ export default async function HRPage({ searchParams }: PageProps) {
                 {headerChildren}
             </PageHeader>
 
-            <PageTabs tabs={tabs} activeValue={viewMode} />
+            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={viewMode === 'config' ? configTab : undefined} />
 
             <div className="pt-2">
                 <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>

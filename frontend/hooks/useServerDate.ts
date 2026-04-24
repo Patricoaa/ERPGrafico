@@ -37,7 +37,10 @@ export function useServerDate() {
         refetchOnWindowFocus: false,
     })
 
-    const serverDate = data ? new Date(data.year, data.month - 1, data.day) : null
+    const serverDate = useMemo(
+        () => (data ? new Date(data.year, data.month - 1, data.day) : null),
+        [data?.year, data?.month, data?.day]
+    )
 
     return {
         serverDate,

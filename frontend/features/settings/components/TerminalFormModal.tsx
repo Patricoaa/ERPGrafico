@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -10,15 +10,15 @@ import {
     FormControl,
     FormField,
     FormItem,
-    FormLabel,
     FormMessage,
 } from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { MonitorSmartphone } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { CancelButton, LabeledInput, LabeledSelect } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledContainer } from "@/components/shared"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
@@ -86,10 +86,24 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
         },
     })
 
-    useEffect(() => {
-        if (open) {
-            fetchTreasuryAccounts()
+    const lastResetId = useRef<number | undefined>(undefined)
+    const wasOpen = useRef(false)
 
+    useEffect(() => {
+        if (!open) {
+            wasOpen.current = false
+            return
+        }
+
+        const currentId = terminal?.id
+        const isNewOpen = !wasOpen.current
+        const isNewData = currentId !== lastResetId.current
+
+        if (isNewOpen) {
+            fetchTreasuryAccounts()
+        }
+
+        if (isNewOpen || isNewData) {
             if (terminal) {
                 const allowedIds = terminal.allowed_treasury_accounts?.map(acc => acc.id) || []
                 form.reset({
@@ -112,6 +126,8 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                     default_treasury_account: "",
                 })
             }
+            lastResetId.current = currentId
+            wasOpen.current = true
         }
     }, [open, terminal, form])
 
@@ -234,25 +250,33 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                                     control={form.control}
                                     name="name"
                                     render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            label="Nombre"
-                                            placeholder="Ej: Caja Principal"
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                        />
+                                        <FormItem>
+                                            <FormControl>
+                                                <LabeledInput
+                                                    label="Nombre"
+                                                    placeholder="Ej: Caja Principal"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
                                     name="code"
                                     render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            label="Código"
-                                            placeholder="TERM-01"
-                                            className="uppercase"
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                        />
+                                        <FormItem>
+                                            <FormControl>
+                                                <LabeledInput
+                                                    label="Código"
+                                                    placeholder="TERM-01"
+                                                    className="uppercase"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
                                     )}
                                 />
                             </div>
@@ -262,24 +286,32 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                                     control={form.control}
                                     name="serial_number"
                                     render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            label="N° Serie"
-                                            placeholder="SN-XXXX"
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                        />
+                                        <FormItem>
+                                            <FormControl>
+                                                <LabeledInput
+                                                    label="N° Serie"
+                                                    placeholder="SN-XXXX"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
                                     name="ip_address"
                                     render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            label="IP / Red"
-                                            placeholder="192.168.1.XX"
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                        />
+                                        <FormItem>
+                                            <FormControl>
+                                                <LabeledInput
+                                                    label="IP / Red"
+                                                    placeholder="192.168.1.XX"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
                                     )}
                                 />
                             </div>
@@ -288,27 +320,31 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                                 control={form.control}
                                 name="location"
                                 render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Ubicación (Opcional)"
-                                        placeholder="Ej: Entrada Principal"
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
+                                    <FormItem>
+                                        <FormControl>
+                                            <LabeledInput
+                                                label="Ubicación (Opcional)"
+                                                placeholder="Ej: Entrada Principal"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
                                 )}
                             />
 
-                            <FormField
-                                control={form.control}
-                                name="allowed_treasury_account_ids"
-                                render={({ field }) => (
-                                    <FormItem className="space-y-2 border rounded-lg p-4 bg-muted/10 shadow-sm">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70 mb-0">Cuentas Permitidas</FormLabel>
-                                            <span className="text-[9px] font-mono font-black text-muted-foreground uppercase opacity-70">
+                                <FormField
+                                    control={form.control}
+                                    name="allowed_treasury_account_ids"
+                                    render={({ field }) => (
+                                        <div className="relative group/field border rounded-lg p-4 bg-muted/10 shadow-sm transition-all duration-200 border-dashed hover:border-primary/30">
+                                            <div className="absolute -top-2 left-2 px-1 bg-card text-[10px] font-black uppercase tracking-widest text-muted-foreground group-hover/field:text-primary transition-colors">
+                                                Cuentas Permitidas
+                                            </div>
+                                            <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-muted/50 text-[9px] font-mono font-black text-muted-foreground uppercase opacity-70">
                                                 {field.value.length} SELECCIONADAS
-                                            </span>
-                                        </div>
-                                        <div className="h-40 overflow-y-auto space-y-1.5 pr-2 custom-scrollbar">
+                                            </div>
+                                            <div className="h-40 overflow-y-auto space-y-1.5 pr-2 custom-scrollbar pt-2">
                                             {treasuryAccounts.length === 0 ? (
                                                 <EmptyState context="finance" variant="minimal" description="No hay cuentas configuradas" />
                                             ) : (
@@ -364,30 +400,41 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                                                     )
                                                 })
                                             )}
+                                            </div>
+                                            <FormMessage />
                                         </div>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                                    )}
+                                />
 
-                            {form.watch("allowed_treasury_account_ids").length > 0 && (
+                             {form.watch("allowed_treasury_account_ids").length > 0 && (
                                 <FormField
                                     control={form.control}
                                     name="default_treasury_account"
                                     render={({ field, fieldState }) => (
                                         <div className="pt-2">
-                                            <LabeledSelect
+                                            <LabeledContainer 
                                                 label="Cuenta Predeterminada (Inicio de Sesión)"
-                                                options={[
-                                                    { value: "__none__", label: "-- Ninguna (Pedir al iniciar) --" },
-                                                    ...treasuryAccounts
-                                                        .filter(acc => form.watch("allowed_treasury_account_ids").includes(acc.id))
-                                                        .map(acc => ({ value: acc.id.toString(), label: acc.name }))
-                                                ]}
                                                 error={fieldState.error?.message}
-                                                {...field}
-                                                value={field.value || ""}
-                                            />
+                                            >
+                                                <Select 
+                                                    onValueChange={field.onChange} 
+                                                    value={field.value || ""}
+                                                >
+                                                    <SelectTrigger className="border-0 focus:ring-0 h-8 px-2 shadow-none">
+                                                        <SelectValue placeholder="Seleccionar..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="__none__">-- Ninguna (Pedir al iniciar) --</SelectItem>
+                                                        {treasuryAccounts
+                                                            .filter(acc => form.watch("allowed_treasury_account_ids").includes(acc.id))
+                                                            .map(acc => ({ value: acc.id.toString(), label: acc.name }))
+                                                            .map(opt => (
+                                                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                                            ))
+                                                        }
+                                                    </SelectContent>
+                                                </Select>
+                                            </LabeledContainer>
                                         </div>
                                     )}
                                 />

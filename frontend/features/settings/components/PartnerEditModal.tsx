@@ -1,19 +1,18 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
-import api from "@/lib/api"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+
 import { CancelButton } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Loader2, UserCog } from "lucide-react"
+import { UserCog } from "lucide-react"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
@@ -44,12 +43,27 @@ export function PartnerEditModal({ open, onOpenChange, contact, onSuccess }: Pro
         }
     })
 
+    const lastResetId = useRef<number | undefined>(undefined)
+    const wasOpen = useRef(false)
+
     useEffect(() => {
-        if (open && contact) {
+        if (!open) {
+            wasOpen.current = false
+            return
+        }
+        if (!contact) return
+
+        const currentId = contact.id
+        const isNewOpen = !wasOpen.current
+        const isNewData = currentId !== lastResetId.current
+
+        if (isNewOpen || isNewData) {
             form.reset({
                 is_partner: contact.is_partner ?? true,
                 partner_equity_percentage: contact.partner_equity_percentage?.toString() || "",
             })
+            lastResetId.current = currentId
+            wasOpen.current = true
         }
     }, [open, contact, form])
 
@@ -95,58 +109,58 @@ export function PartnerEditModal({ open, onOpenChange, contact, onSuccess }: Pro
             }
         >
 
-                <Form {...form}>
-                    <form id="partner-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-                        
-                        <FormField
-                            control={form.control}
-                            name="is_partner"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/10">
-                                    <FormControl>
-                                        <Checkbox
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                    <div className="space-y-1 leading-none">
-                                        <FormLabel>
-                                            Es Socio de la Empresa
-                                        </FormLabel>
-                                        <FormDescription className="text-xs">
-                                            Habilita o deshabilita a este contacto del módulo societario. Al desmarcar, desaparecerá de la lista.
-                                        </FormDescription>
-                                    </div>
-                                </FormItem>
-                            )}
-                        />
+            <Form {...form}>
+                <form id="partner-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
 
-                        <FormField
-                            control={form.control}
-                            name="partner_equity_percentage"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Porcentaje de Participación (%)</FormLabel>
-                                    <FormControl>
-                                        <Input 
-                                            type="number" 
-                                            min="0" 
-                                            max="100" 
-                                            step="0.01" 
-                                            placeholder="Ej: 33.33" 
-                                            {...field} 
-                                            disabled={!form.watch('is_partner')}
-                                        />
-                                    </FormControl>
+                    <FormField
+                        control={form.control}
+                        name="is_partner"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/10">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                    <FormLabel>
+                                        Es Socio de la Empresa
+                                    </FormLabel>
                                     <FormDescription className="text-xs">
-                                        Deje en blanco si no aplica.
+                                        Habilita o deshabilita a este contacto del módulo societario. Al desmarcar, desaparecerá de la lista.
                                     </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </form>
-                </Form>
+                                </div>
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="partner_equity_percentage"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Porcentaje de Participación (%)</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        step="0.01"
+                                        placeholder="Ej: 33.33"
+                                        {...field}
+                                        disabled={!form.watch('is_partner')}
+                                    />
+                                </FormControl>
+                                <FormDescription className="text-xs">
+                                    Deje en blanco si no aplica.
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </form>
+            </Form>
         </BaseModal>
     )
 }

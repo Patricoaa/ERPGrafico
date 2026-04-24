@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Trash2 } from "lucide-react"
@@ -155,34 +155,46 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
         }
     }
 
+    const lastResetId = useRef<number | undefined>(undefined)
+    const wasOpen = useRef(false)
+
     useEffect(() => {
-        if (open) {
-            requestAnimationFrame(() => {
-                fetchData()
-                if (initialData) {
-                    form.reset({
-                        ...initialData,
-                        lines: initialData?.lines?.map((l: SaleOrderLine) => ({
-                            id: l.id,
-                            product: l.product?.toString() || "",
-                            description: l.description,
-                            quantity: l.quantity || 0,
-                            uom: l.uom?.toString() || "",
-                            unit_price: l.unit_price || 0,
-                            unit_price_gross: l.unit_price_gross || (l.unit_price ? PricingUtils.netToGross(l.unit_price) : 0),
-                            tax_rate: l.tax_rate || 19,
-                            custom_specs: l.custom_specs || {},
-                            manufacturing_data: l.manufacturing_data || null,
-                        })) || []
-                    })
-                } else {
-                    form.reset({
-                        payment_method: "CREDIT",
-                        notes: "",
-                        lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, unit_price_gross: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null }],
-                    })
-                }
-            })
+        if (!open) {
+            wasOpen.current = false
+            return
+        }
+
+        const currentId = initialData?.id
+        const isNewOpen = !wasOpen.current
+        const isNewData = currentId !== lastResetId.current
+
+        if (isNewOpen || isNewData) {
+            fetchData()
+            if (initialData) {
+                form.reset({
+                    ...initialData,
+                    lines: initialData?.lines?.map((l: SaleOrderLine) => ({
+                        id: l.id,
+                        product: l.product?.toString() || "",
+                        description: l.description,
+                        quantity: l.quantity || 0,
+                        uom: l.uom?.toString() || "",
+                        unit_price: l.unit_price || 0,
+                        unit_price_gross: l.unit_price_gross || (l.unit_price ? PricingUtils.netToGross(l.unit_price) : 0),
+                        tax_rate: l.tax_rate || 19,
+                        custom_specs: l.custom_specs || {},
+                        manufacturing_data: l.manufacturing_data || null,
+                    })) || []
+                })
+            } else {
+                form.reset({
+                    payment_method: "CREDIT",
+                    notes: "",
+                    lines: [{ product: "", description: "", quantity: 1, uom: "", unit_price: 0, unit_price_gross: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null }],
+                })
+            }
+            lastResetId.current = currentId
+            wasOpen.current = true
         }
     }, [open, initialData, form])
 

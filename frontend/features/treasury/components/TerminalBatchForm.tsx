@@ -4,7 +4,6 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
@@ -21,7 +20,7 @@ import api from "@/lib/api"
 import { FORM_STYLES } from "@/lib/styles"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
-import { CancelButton, SubmitButton } from "@/components/shared"
+import { CancelButton, SubmitButton, LabeledContainer, LabeledInput } from "@/components/shared"
 
 interface TerminalBatchFormProps {
     onSuccess: () => void
@@ -129,14 +128,13 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
         <form onSubmit={handleSubmit} className="space-y-6 py-4">
             <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-4">
-                    <div className="grid gap-2">
-                        <Label className={FORM_STYLES.label}>Proveedor de Pago</Label>
+                    <LabeledContainer label="Proveedor de Pago">
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant="outline"
                                     role="combobox"
-                                    className={cn(FORM_STYLES.input, "w-full justify-between font-normal")}
+                                    className="w-full justify-between font-normal h-8 border-0 focus:ring-0 bg-transparent shadow-none px-2"
                                 >
                                     {providerId
                                         ? providers.find(p => p.id.toString() === providerId)?.name
@@ -190,17 +188,15 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                 </div>
                             </PopoverContent>
                         </Popover>
-                    </div>
+                    </LabeledContainer>
 
-                    <div className="grid gap-2">
-                        <Label className={FORM_STYLES.label}>Fecha de Ventas</Label>
+                    <LabeledContainer label="Fecha de Ventas">
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant={"outline"}
                                     className={cn(
-                                        FORM_STYLES.input,
-                                        "w-full justify-start text-left font-normal",
+                                        "w-full justify-start text-left font-normal h-8 border-0 focus:ring-0 bg-transparent shadow-none px-2",
                                         !date && "text-muted-foreground"
                                     )}
                                 >
@@ -217,14 +213,16 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                 />
                             </PopoverContent>
                         </Popover>
-                    </div>
+                    </LabeledContainer>
 
 
 
-                    <div className="grid gap-2">
-                        <Label className={FORM_STYLES.label}>Método de Depósito (Hacia Banco)</Label>
+                    <LabeledContainer
+                        label="Método de Depósito (Hacia Banco)"
+                        hint="Método que el banco usa para registrar el abono neto."
+                    >
                         <Select value={depositMethodId} onValueChange={setDepositMethodId}>
-                            <SelectTrigger className={FORM_STYLES.input}>
+                            <SelectTrigger className="h-8 border-0 focus:ring-0 bg-transparent shadow-none px-2">
                                 <SelectValue placeholder="Seleccione método de abono..." />
                             </SelectTrigger>
                             <SelectContent>
@@ -233,18 +231,14 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                 ))}
                             </SelectContent>
                         </Select>
-                        <p className="text-[10px] text-muted-foreground">Método que el banco usa para registrar el abono neto.</p>
-                    </div>
+                    </LabeledContainer>
 
-                    <div className="grid gap-2">
-                        <Label className={FORM_STYLES.label}>N° Lote / Referencia (Opcional)</Label>
-                        <Input
-                            value={reference}
-                            onChange={e => setReference(e.target.value)}
-                            placeholder="Ej: LOTE-123456"
-                            className={FORM_STYLES.input}
-                        />
-                    </div>
+                    <LabeledInput
+                        label="N° Lote / Referencia (Opcional)"
+                        value={reference}
+                        onChange={e => setReference(e.target.value)}
+                        placeholder="Ej: LOTE-123456"
+                    />
                 </div>
 
                 <div className="space-y-4 bg-muted/30 p-4 rounded-lg border">
@@ -257,60 +251,52 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                         </Button>
                     </div>
 
-                    <div className="grid gap-2">
-                        <Label className={FORM_STYLES.label}>Monto Bruto (Ventas)</Label>
-                        <Input
-                            type="number"
-                            step="1"
-                            value={grossAmount}
-                            onChange={e => setGrossAmount(e.target.value)}
-                            disabled={selectedMovements.length > 0}
-                            className={cn(FORM_STYLES.input, "font-bold", selectedMovements.length > 0 && "bg-muted")}
-                        />
-                        {selectedMovements.length > 0 && (
-                            <p className="text-[10px] text-primary font-bold">
-                                {selectedMovements.length} ventas vinculadas
-                            </p>
-                        )}
-                    </div>
+                    <LabeledInput
+                        label="Monto Bruto (Ventas)"
+                        type="number"
+                        step="1"
+                        value={grossAmount}
+                        onChange={e => setGrossAmount(e.target.value)}
+                        disabled={selectedMovements.length > 0}
+                        className={cn("font-bold", selectedMovements.length > 0 && "bg-muted")}
+                        hint={selectedMovements.length > 0 ? `${selectedMovements.length} ventas vinculadas` : undefined}
+                        hintClassName="text-primary font-bold"
+                    />
 
                     <div className="grid grid-cols-2 gap-3">
-                        <div className="grid gap-2">
-                            <Label className={cn(FORM_STYLES.label, "text-xs")}>Comisión Neta</Label>
-                            <Input
-                                type="number"
-                                step="1"
-                                value={commissionNet}
-                                onChange={e => {
-                                    const val = e.target.value
-                                    setCommissionNet(val)
-                                    // Auto-calc tax (19% as a helper, user can override)
-                                    const net = parseFloat(val) || 0
-                                    setCommissionTax(Math.round(net * 0.19).toString())
-                                }}
-                                className={cn(FORM_STYLES.input, "text-right")}
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label className={cn(FORM_STYLES.label, "text-xs")}>IVA Comisión</Label>
-                            <Input
-                                type="number"
-                                step="1"
-                                value={commissionTax}
-                                readOnly
-                                className={cn(FORM_STYLES.input, "text-right bg-muted")}
-                            />
-                        </div>
+                        <LabeledInput
+                            label="Comisión Neta"
+                            type="number"
+                            step="1"
+                            value={commissionNet}
+                            onChange={e => {
+                                const val = e.target.value
+                                setCommissionNet(val)
+                                // Auto-calc tax (19% as a helper, user can override)
+                                const net = parseFloat(val) || 0
+                                setCommissionTax(Math.round(net * 0.19).toString())
+                            }}
+                            className="text-right"
+                        />
+                        <LabeledInput
+                            label="IVA Comisión"
+                            type="number"
+                            step="1"
+                            value={commissionTax}
+                            readOnly
+                            className="text-right bg-muted"
+                        />
                     </div>
 
-                    <div className="grid gap-2 pt-2 border-t border-dashed border-border">
-                        <Label className={cn(FORM_STYLES.label, "text-income font-bold")}>Monto Neto a Depositar</Label>
-                        <Input
+                    <div className="pt-2 border-t border-dashed border-border">
+                        <LabeledInput
+                            label="Monto Neto a Depositar"
+                            labelClassName="text-income font-bold"
                             type="number"
                             step="1"
                             value={netDeposit}
                             readOnly
-                            className={cn(FORM_STYLES.input, "font-bold text-lg text-right text-income border-income/20 bg-income/5 cursor-not-allowed")}
+                            className="font-bold text-lg text-right text-income border-income/20 bg-income/5 cursor-not-allowed"
                         />
                     </div>
                 </div>
@@ -462,9 +448,9 @@ function SaleSelectionModal({ open, onOpenChange, providerId, date, onConfirm, i
                         </div>
                     ) : movements.length === 0 ? (
                         <div className="p-8">
-                            <EmptyState 
-                                context="search" 
-                                variant="compact" 
+                            <EmptyState
+                                context="search"
+                                variant="compact"
                                 description="No se encontraron ventas pendientes para esta fecha."
                             />
                         </div>

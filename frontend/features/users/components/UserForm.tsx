@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { UserInitialData } from "@/types/forms"
@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, ShieldAlert } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, SubmitButton, LabeledSeparator, LabeledInput, LabeledSelect, LabeledContainer } from "@/components/shared"
+import { CancelButton, SubmitButton, LabeledSeparator, LabeledInput, LabeledContainer } from "@/components/shared"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -44,66 +45,68 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
     const [availableGroups, setAvailableGroups] = useState<AppGroup[]>([])
 
     // Helper to parse groups from initialData
-    const parseInitialGroups = () => {
+    const parsedInitialValues = useMemo(() => {
         const groups = initialData?.groups || []
         const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
 
         const primaryRole = groups.find((g: string) => systemRoles.includes(g)) || "OPERATOR"
         const functionalGroups = groups.filter((g: string) => !systemRoles.includes(g))
 
-        return { primaryRole, functionalGroups }
-    }
-
-    const { primaryRole: initRole, functionalGroups: initGroups } = parseInitialGroups()
-
-    const form = useForm<UserFormValues>({
-        resolver: zodResolver(userSchema),
-        defaultValues: {
+        return {
             username: initialData?.username || "",
-            primary_role: initRole,
-            functional_groups: initGroups,
+            primary_role: primaryRole,
+            functional_groups: functionalGroups,
             contact: Number(initialData?.contact || 0),
             password: "",
             is_active: initialData?.is_active ?? true,
         }
+    }, [initialData])
+
+    const form = useForm<UserFormValues>({
+        resolver: zodResolver(userSchema),
+        defaultValues: parsedInitialValues
     })
 
+    // Fetch static data once when opened
     useEffect(() => {
-        if (open) {
-            const fetchDisplayData = async () => {
-                try {
-                    const [rolesRes, groupsRes] = await Promise.all([
-                        api.get('/core/users/roles/'),
-                        api.get('/core/groups/')
-                    ])
+        if (!open) return
 
-                    setAvailableRoles(rolesRes.data)
+        const fetchDisplayData = async () => {
+            try {
+                const [rolesRes, groupsRes] = await Promise.all([
+                    api.get('/core/users/roles/'),
+                    api.get('/core/groups/')
+                ])
 
-                    // Filter out system roles from the groups list so they don't appear in the "Teams" checklist
-                    const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
-                    const functionalGroupsData = (groupsRes.data.results || groupsRes.data).filter(
-                        (g: AppGroup) => !systemRoles.includes(g.name)
-                    )
-                    setAvailableGroups(functionalGroupsData)
+                setAvailableRoles(rolesRes.data)
 
-                } catch (error) {
-                    console.error("Error fetching form data", error)
-                }
+                const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
+                const functionalGroupsData = (groupsRes.data.results || groupsRes.data).filter(
+                    (g: AppGroup) => !systemRoles.includes(g.name)
+                )
+                setAvailableGroups(functionalGroupsData)
+            } catch (error) {
+                console.error("Error fetching form data", error)
             }
-
-            fetchDisplayData()
-
-            const { primaryRole, functionalGroups } = parseInitialGroups()
-            form.reset({
-                username: initialData?.username || "",
-                primary_role: primaryRole,
-                functional_groups: functionalGroups,
-                contact: Number(initialData?.contact || 0),
-                password: "",
-                is_active: initialData?.is_active ?? true,
-            })
         }
-    }, [open, initialData, form]) // Removed specific init props to avoid loops, relying on open + initialData
+
+        fetchDisplayData()
+    }, [open])
+
+    // Sync form values with initialData when modal opens or initialData changes
+    const lastResetId = useRef<string | number | undefined>(undefined)
+    const wasOpen = useRef(false)
+
+    useEffect(() => {
+        const shouldReset = (open && !wasOpen.current) || (open && initialData?.id !== lastResetId.current)
+        
+        if (shouldReset) {
+            form.reset(parsedInitialValues)
+            lastResetId.current = initialData?.id
+        }
+        
+        wasOpen.current = open
+    }, [open, initialData?.id, form, parsedInitialValues])
 
     async function onSubmit(data: UserFormValues) {
         setLoading(true)
@@ -222,6 +225,7 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
                                                                     value={field.value?.toString() || ""}
                                                                     onChange={(val) => field.onChange(val ? parseInt(val) : 0)}
                                                                     disabled={!!initialData}
+                                                                    className="border-0 focus-visible:ring-0 h-8 shadow-none"
                                                                 />
                                                             </LabeledContainer>
                                                         </div>
@@ -300,16 +304,23 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
                                                     control={form.control}
                                                     name="primary_role"
                                                     render={({ field, fieldState }) => (
-                                                        <LabeledSelect
-                                                            label="Permisos de Sistema (Rol)"
-                                                            placeholder="Seleccione un rol..."
-                                                            required
-                                                            options={availableRoles.map(([val, label]) => ({ value: val, label }))}
-                                                            value={field.value}
-                                                            onChange={field.onChange}
+                                                        <LabeledContainer 
+                                                            label="Permisos de Sistema (Rol)" 
+                                                            required 
                                                             error={fieldState.error?.message}
                                                             hint="Define los permisos técnicos de seguridad."
-                                                        />
+                                                        >
+                                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                <SelectTrigger className="border-0 focus:ring-0 h-8 px-2 shadow-none">
+                                                                    <SelectValue placeholder="Seleccione un rol..." />
+                                                                </SelectTrigger>
+                                                                <SelectContent>
+                                                                    {availableRoles.map(([val, label]) => (
+                                                                        <SelectItem key={val} value={val}>{label}</SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </LabeledContainer>
                                                     )}
                                                 />
 

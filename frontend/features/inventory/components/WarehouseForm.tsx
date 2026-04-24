@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { WarehouseInitialData } from "@/types/forms"
@@ -49,9 +49,21 @@ export function WarehouseForm({ auditSidebar,  onSuccess, initialData, open: ope
         },
     })
 
+    const lastResetId = useRef<number | undefined>(undefined)
+    const wasOpen = useRef(false)
+
     // Reset form when initialData changes or modal opens
     useEffect(() => {
-        if (open) {
+        if (!open) {
+            wasOpen.current = false
+            return
+        }
+
+        const currentId = initialData?.id
+        const isNewOpen = !wasOpen.current
+        const isNewData = currentId !== lastResetId.current
+
+        if (isNewOpen || isNewData) {
             if (initialData) {
                 form.reset(initialData)
             } else {
@@ -61,6 +73,8 @@ export function WarehouseForm({ auditSidebar,  onSuccess, initialData, open: ope
                     address: "",
                 })
             }
+            lastResetId.current = currentId
+            wasOpen.current = true
         }
     }, [open, initialData, form])
 

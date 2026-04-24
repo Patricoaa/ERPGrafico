@@ -1,10 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
+import { LabeledInput, LabeledContainer } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Textarea } from "@/components/ui/textarea"
 import { Truck, Package, Calendar, Info, AlertTriangle, ShoppingBag } from "lucide-react"
 import api from "@/lib/api"
 import { cn } from "@/lib/utils"
@@ -164,7 +162,13 @@ export function Step2_Logistics({
                         </div>
                     </div>
                 )}
+            </div>
 
+            <LabeledContainer
+                label="Tipo de Movimiento"
+                icon={<Truck className="h-3.5 w-3.5 opacity-50" />}
+                className="mt-4"
+            >
                 <RadioGroup
                     value={formData.delivery_type}
                     onValueChange={(val) => {
@@ -187,15 +191,15 @@ export function Step2_Logistics({
                             setData({ ...formData, delivery_type: val });
                         }
                     }}
-                    className="grid gap-3 mt-4"
+                    className="grid gap-3"
                 >
-                    <Label
-                        htmlFor="del-immediate"
+                    <div
                         className={cn(
                             "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                             formData.delivery_type === 'IMMEDIATE' && "border-primary bg-primary/5",
                             hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
                         )}
+                        onClick={() => !hasRestrictedItems && setData({ ...formData, delivery_type: 'IMMEDIATE' })}
                     >
                         <RadioGroupItem value="IMMEDIATE" id="del-immediate" className="sr-only" disabled={hasRestrictedItems} />
                         <div className={`p-2 rounded-lg bg-background border ${formData.delivery_type === 'IMMEDIATE' ? 'text-primary' : 'text-muted-foreground'}`}>
@@ -205,14 +209,14 @@ export function Step2_Logistics({
                             <span className="text-sm font-bold block">Movimiento Inmediato</span>
                             <span className="text-[10px] text-muted-foreground">Rebajar/Aumentar stock ahora mismo.</span>
                         </div>
-                    </Label>
+                    </div>
 
-                    <Label
-                        htmlFor="del-scheduled"
+                    <div
                         className={cn(
                             "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                             formData.delivery_type === 'SCHEDULED' && "border-primary bg-primary/5"
                         )}
+                        onClick={() => setData({ ...formData, delivery_type: 'SCHEDULED' })}
                     >
                         <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
                         <div className={`p-2 rounded-lg bg-background border ${formData.delivery_type === 'SCHEDULED' ? 'text-primary' : 'text-muted-foreground'}`}>
@@ -222,14 +226,14 @@ export function Step2_Logistics({
                             <span className="text-sm font-bold block">Programar Movimiento</span>
                             <span className="text-[10px] text-muted-foreground">Registrar para una fecha futura.</span>
                         </div>
-                    </Label>
+                    </div>
 
-                    <Label
-                        htmlFor="del-partial"
+                    <div
                         className={cn(
                             "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
                             formData.delivery_type === 'PARTIAL' && "border-primary bg-primary/5"
                         )}
+                        onClick={() => setData({ ...formData, delivery_type: 'PARTIAL' })}
                     >
                         <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
                         <div className={`p-2 rounded-lg bg-background border ${formData.delivery_type === 'PARTIAL' ? 'text-primary' : 'text-muted-foreground'}`}>
@@ -239,19 +243,17 @@ export function Step2_Logistics({
                             <span className="text-sm font-bold block">Carga Parcial</span>
                             <span className="text-[10px] text-muted-foreground">Procesar solo algunos ítems ahora.</span>
                         </div>
-                    </Label>
+                    </div>
                 </RadioGroup>
-            </div>
+            </LabeledContainer>
 
             <div className="space-y-4 animate-in fade-in duration-300">
                 {formData.delivery_type === 'PARTIAL' && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                        <div className="flex flex-col gap-1">
-                            <Label className="text-sm font-semibold">Cantidades para Movimiento Inmediato</Label>
-                            <p className="text-xs text-muted-foreground">
+                        <LabeledContainer label="Cantidades para Movimiento Inmediato" icon={<Package className="h-3.5 w-3.5 opacity-50" />}>
+                            <p className="text-[10px] text-muted-foreground mb-3">
                                 Especifique las cantidades que procesará ahora.
                             </p>
-                        </div>
                         <div className="rounded-md border overflow-hidden">
                             <Table>
                                 <TableHeader>
@@ -292,7 +294,7 @@ export function Step2_Logistics({
                                                     {item.quantity.toLocaleString('es-CL')}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Input
+                                                    <LabeledInput
                                                         type="number"
                                                         step="0.01"
                                                         min="0"
@@ -335,39 +337,30 @@ export function Step2_Logistics({
                                 </TableBody>
                             </Table>
                         </div>
+                        </LabeledContainer>
                     </div>
                 )}
 
                 <div className="grid grid-cols-1 gap-4">
                     {(formData.delivery_type === 'PARTIAL' || formData.delivery_type === 'SCHEDULED') && (
-                        <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
-                            <Label htmlFor="del-date" className="text-xs font-bold uppercase flex items-center gap-2">
-                                <Calendar className="h-3.5 w-3.5" />
-                                {formData.delivery_type === 'PARTIAL' ? 'Fecha para el Resto' : 'Fecha de Operación'}
-                            </Label>
-                            <Input
-                                id="del-date"
-                                type="date"
-                                className="h-10 text-sm font-medium"
-                                value={formData.date || ""}
-                                onChange={(e) => setData({ ...formData, date: e.target.value })}
-                            />
-                        </div>
+                        <LabeledInput
+                            label={formData.delivery_type === 'PARTIAL' ? 'Fecha para el Resto' : 'Fecha de Operación'}
+                            icon={<Calendar className="h-3.5 w-3.5" />}
+                            type="date"
+                            className="h-10 text-sm font-medium"
+                            value={formData.date || ""}
+                            onChange={(e) => setData({ ...formData, date: e.target.value })}
+                        />
                     )}
-                </div>
 
-                <div className="space-y-2">
-                    <Label htmlFor="del-notes" className="text-xs font-bold uppercase">Notas / Observaciones</Label>
-                    <Textarea
-                        id="del-notes"
+                    <LabeledInput
+                        label="Notas / Observaciones"
+                        as="textarea"
                         placeholder="Indicaciones especiales para el movimiento de inventario..."
-                        rows={3}
                         value={formData.notes}
                         onChange={(e) => setData({ ...formData, notes: e.target.value })}
                     />
                 </div>
-
-
             </div>
         </div>
     )

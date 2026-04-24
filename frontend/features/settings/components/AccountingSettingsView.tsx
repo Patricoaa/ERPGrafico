@@ -24,31 +24,10 @@ export function AccountingSettingsView({ activeTab = "structure", onSavingChange
     activeTab?: string,
     onSavingChange?: (saving: boolean) => void
 }) {
-    const [currentTab, setCurrentTab] = useState(activeTab)
-
     return (
         <div className="space-y-6">
-            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 h-12 p-1 bg-muted/50 rounded-md border-2">
-                    <TabsTrigger value="structure" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <Settings2 className="h-3.5 w-3.5" />
-                        Estructura Contable
-                    </TabsTrigger>
-                    <TabsTrigger value="tax" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <Receipt className="h-3.5 w-3.5" />
-                        Impuestos (F29)
-                    </TabsTrigger>
-                </TabsList>
-
-                <div className="mt-6">
-                    <TabsContent value="structure">
-                        <StructureSettings onSavingChange={onSavingChange} />
-                    </TabsContent>
-                    <TabsContent value="tax">
-                        <TaxSettings onSavingChange={onSavingChange} />
-                    </TabsContent>
-                </div>
-            </Tabs>
+            {activeTab === "structure" && <StructureSettings onSavingChange={onSavingChange} />}
+            {activeTab === "tax" && <TaxSettings onSavingChange={onSavingChange} />}
         </div>
     )
 }

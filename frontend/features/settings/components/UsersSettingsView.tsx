@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import api from "@/lib/api"
@@ -32,7 +32,7 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
     const [users, setUsers] = useState<AppUser[]>([])
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
 
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         try {
             const res = await api.get('/core/users/')
             setUsers(res.data.results || res.data)
@@ -41,13 +41,13 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
         } finally {
             setLoading(false)
         }
-    }
+    }, [])
 
     useEffect(() => {
         fetchUsers()
-    }, [])
+    }, [fetchUsers])
 
-    const columns: ColumnDef<AppUser>[] = [
+    const columns: ColumnDef<AppUser>[] = useMemo(() => [
         {
             accessorKey: "username",
             header: ({ column }) => (
@@ -139,25 +139,42 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
                 )
             }
         })
-    ]
+    ], [fetchUsers])
 
-    useEffect(() => {
-        onActionsChange?.(null)
-    }, [activeTab, onActionsChange])
-
-    const usersCreateAction = (
+    const usersCreateAction = useMemo(() => (
         <UserForm
             onSuccess={fetchUsers}
             trigger={<ToolbarCreateButton label="Nuevo Usuario" />}
         />
-    )
+    ), [fetchUsers])
 
-    const groupsCreateAction = (
+    useEffect(() => {
+        if (activeTab === 'users') {
+            onActionsChange?.(usersCreateAction)
+        } else {
+            onActionsChange?.(null)
+        }
+    }, [activeTab, onActionsChange, usersCreateAction])
+
+    const groupsCreateAction = useMemo(() => (
         <ToolbarCreateButton
             label="Nuevo Grupo"
             onClick={() => setIsGroupModalOpen(true)}
         />
-    )
+    ), [])
+
+    const roleFilters = useMemo(() => [
+        {
+            column: "role",
+            title: "Rol",
+            options: [
+                { label: "Admin", value: "ADMIN" },
+                { label: "Gerente", value: "MANAGER" },
+                { label: "Operador", value: "OPERATOR" },
+                { label: "Lectura", value: "READ_ONLY" },
+            ],
+        },
+    ], [])
 
     return (
         <div className="pt-4">
@@ -171,18 +188,7 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
                         globalFilterFields={["username", "email", "first_name", "last_name"]}
                         searchPlaceholder="Buscar usuario por nombre, email o username..."
                         useAdvancedFilter={true}
-                        facetedFilters={[
-                            {
-                                column: "role",
-                                title: "Rol",
-                                options: [
-                                    { label: "Admin", value: "ADMIN" },
-                                    { label: "Gerente", value: "MANAGER" },
-                                    { label: "Operador", value: "OPERATOR" },
-                                    { label: "Lectura", value: "READ_ONLY" },
-                                ],
-                            },
-                        ]}
+                        facetedFilters={roleFilters}
                         createAction={usersCreateAction}
                     />
                 </TabsContent>

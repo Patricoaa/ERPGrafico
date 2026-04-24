@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm, useFieldArray, Resolver, FieldValues } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -186,9 +186,21 @@ export function BOMFormModal({
         name: "service_lines"
     })
 
+    const lastResetId = useRef<number | undefined>(undefined)
+    const wasOpen = useRef(false)
+
     // Reset form when dialog opens/closes or bomToEdit changes
     useEffect(() => {
-        if (open) {
+        if (!open) {
+            wasOpen.current = false
+            return
+        }
+
+        const currentId = bomToEdit?.id
+        const isNewOpen = !wasOpen.current
+        const isNewData = currentId !== lastResetId.current
+
+        if (isNewOpen || isNewData) {
             if (bomToEdit) {
                 const allLines: BOMLine[] = bomToEdit.lines || []
                 const stockLines = allLines.filter((l: BOMLine) => !l.is_outsourced)
@@ -233,6 +245,8 @@ export function BOMFormModal({
                     service_lines: []
                 })
             }
+            lastResetId.current = currentId
+            wasOpen.current = true
         }
     }, [open, bomToEdit, form])
 

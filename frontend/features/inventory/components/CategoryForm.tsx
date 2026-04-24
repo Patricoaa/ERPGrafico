@@ -202,13 +202,24 @@ export function CategoryForm({
         }
     }
 
-    useEffect(() => {
-        if (open) fetchData()
-    }, [open])
+    const lastResetId = React.useRef<number | undefined>(undefined)
+    const wasOpen = React.useRef(false)
 
-    // Reset form when initialData changes or modal opens
     useEffect(() => {
-        if (open) {
+        if (!open) {
+            wasOpen.current = false
+            return
+        }
+
+        const currentId = initialData?.id
+        const isNewOpen = !wasOpen.current
+        const isNewData = currentId !== lastResetId.current
+
+        if (isNewOpen) {
+            fetchData()
+        }
+
+        if (isNewOpen || isNewData) {
             if (initialData) {
                 form.reset({
                     ...initialData,
@@ -227,6 +238,8 @@ export function CategoryForm({
                     expense_account: undefined,
                 })
             }
+            lastResetId.current = currentId
+            wasOpen.current = true
         }
     }, [open, initialData, form])
 

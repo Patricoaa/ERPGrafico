@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm, SubmitHandler } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ServiceContractInitialData } from "@/types/forms"
@@ -52,8 +52,10 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
     })
 
     // Update defaults if initialData loads later (though usually passed fully formed)
+    const lastResetId = useRef<number | undefined>(undefined)
+
     useEffect(() => {
-        if (initialData) {
+        if (initialData && initialData.id !== lastResetId.current) {
             form.reset({
                 name: initialData.name || "",
                 description: initialData.notes || initialData.description || "",
@@ -69,6 +71,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                 expense_account: initialData.expense_account?.toString() || "inherited",
                 payable_account: initialData.payable_account?.toString() || "inherited",
             })
+            lastResetId.current = initialData.id
         }
     }, [initialData, form])
 
