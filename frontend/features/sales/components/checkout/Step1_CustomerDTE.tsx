@@ -23,6 +23,7 @@ import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationD
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { LabeledContainer } from "@/components/shared"
 
 import { CheckoutDTEData, PendingDebt } from "../../types"
 
@@ -157,17 +158,15 @@ export function Step1_CustomerDTE({
                         Cliente
                     </h3>
                 </div>
-                <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground">
-                        Buscar por Nombre, RUT o Email
-                    </Label>
+                <LabeledContainer label="Buscar por Nombre, RUT o Email">
                     <AdvancedContactSelector
                         value={selectedCustomerId}
                         onChange={setSelectedCustomerId}
                         onSelectContact={(contact) => setSelectedCustomerName(contact.name)}
                         placeholder="Buscar por Nombre, RUT o Email..."
+                        className="border-none shadow-none focus-visible:ring-0 h-9"
                     />
-                </div>
+                </LabeledContainer>
             </div>
 
             <Separator className="opacity-30" />

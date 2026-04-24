@@ -10,6 +10,7 @@ import {
     Loader2, Unlock,
     Users, AlertTriangle, Search, ChevronsUpDown, Check
 } from "lucide-react"
+import { MovementWizard, type MovementData } from "@/features/treasury/components/MovementWizard"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from "sonner"
 import api from "@/lib/api"

@@ -39,7 +39,7 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { LabeledInput } from "@/components/shared";
+import { LabeledInput, LabeledContainer } from "@/components/shared";
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -311,50 +311,40 @@ export function JournalEntryForm({
                                             control={form.control}
                                             name="date"
                                             render={({ field, fieldState }) => (
-                                                <div className="relative w-full flex flex-col group">
-                                                    <fieldset
-                                                        className={cn(
-                                                            "notched-field w-full group transition-all",
-                                                            fieldState.error && "error"
-                                                        )}
-                                                    >
-                                                        <legend className={cn("notched-legend", fieldState.error && "text-destructive")}>Fecha</legend>
-                                                        <Popover>
-                                                            <PopoverTrigger asChild>
-                                                                <Button
-                                                                    variant={"ghost"}
-                                                                    className={cn(
-                                                                        "w-full pl-3 text-left font-normal border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent h-auto py-2",
-                                                                        !field.value && "text-muted-foreground"
-                                                                    )}
-                                                                >
-                                                                    {field.value ? (
-                                                                        format(field.value, "PPP")
-                                                                    ) : (
-                                                                        <span>Seleccione fecha</span>
-                                                                    )}
-                                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                                </Button>
-                                                            </PopoverTrigger>
-                                                            <PopoverContent className="w-auto p-0" align="start">
-                                                                <Calendar
-                                                                    mode="single"
-                                                                    selected={field.value}
-                                                                    onSelect={field.onChange}
-                                                                    disabled={(date) =>
-                                                                        date > new Date() || date < new Date("1900-01-01")
-                                                                    }
-                                                                    initialFocus
-                                                                />
-                                                            </PopoverContent>
-                                                        </Popover>
-                                                    </fieldset>
-                                                    {fieldState.error && (
-                                                        <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
-                                                            {fieldState.error.message}
-                                                        </p>
-                                                    )}
-                                                </div>
+                                                <LabeledContainer 
+                                                    label="Fecha" 
+                                                    error={fieldState.error?.message}
+                                                    icon={<CalendarIcon className="h-4 w-4 opacity-50" />}
+                                                >
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <Button
+                                                                variant={"ghost"}
+                                                                className={cn(
+                                                                    "w-full pl-3 text-left font-normal border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent h-auto py-2",
+                                                                    !field.value && "text-muted-foreground"
+                                                                )}
+                                                            >
+                                                                {field.value ? (
+                                                                    format(field.value, "PPP")
+                                                                ) : (
+                                                                    <span>Seleccione fecha</span>
+                                                                )}
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-auto p-0" align="start">
+                                                            <Calendar
+                                                                mode="single"
+                                                                selected={field.value}
+                                                                onSelect={field.onChange}
+                                                                disabled={(date) =>
+                                                                    date > new Date() || date < new Date("1900-01-01")
+                                                                }
+                                                                initialFocus
+                                                            />
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                </LabeledContainer>
                                             )}
                                         />
                                         {periodCheck.is_closed && (

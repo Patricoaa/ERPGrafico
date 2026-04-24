@@ -20,6 +20,8 @@ interface LabeledContainerProps {
     icon?: ReactNode
     /** Text or element shown as a suffix (inside the fieldset). */
     suffix?: ReactNode
+    /** Additional classes for the label `<legend>`. */
+    labelClassName?: string
     /** Whether the container is disabled. */
     disabled?: boolean
     /** The actual interactive content (e.g. DatePicker, Dropzone, etc). */
@@ -41,6 +43,7 @@ export function LabeledContainer({
     className,
     icon,
     suffix,
+    labelClassName,
     disabled,
     children
 }: LabeledContainerProps) {
@@ -60,13 +63,12 @@ export function LabeledContainer({
                 )}
             >
                 {label && (
-                    <legend
-                        className={cn(
-                            "notched-legend",
-                            hasError && "text-destructive",
-                            disabled && "text-muted-foreground/50"
-                        )}
-                    >
+                    <legend className={cn(
+                        "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200",
+                        hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
+                        disabled && "text-muted-foreground/50",
+                        labelClassName
+                    )}>
                         {label}
                         {required && <span className="text-destructive ml-0.5">*</span>}
                     </legend>

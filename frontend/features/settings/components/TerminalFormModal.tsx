@@ -13,13 +13,15 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { Check, Search, ChevronsUpDown, MonitorSmartphone } from "lucide-react"
+import { MonitorSmartphone } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CancelButton, LabeledInput, LabeledSelect } from "@/components/shared"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 
 export interface Terminal {
     id: number
@@ -372,7 +374,7 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                                 <FormField
                                     control={form.control}
                                     name="default_treasury_account"
-                                    render={({ field }) => (
+                                    render={({ field, fieldState }) => (
                                         <div className="pt-2">
                                             <LabeledSelect
                                                 label="Cuenta Predeterminada (Inicio de Sesión)"
@@ -396,9 +398,9 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
 
                 {terminal?.id && (
                     <ActivitySidebar
-                            entityId={terminal.id}
-                            entityType="terminal"
-                        />
+                        entityId={terminal.id}
+                        entityType="terminal"
+                    />
                 )}
             </div>
         </BaseModal>

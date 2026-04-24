@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { BaseModal, LabeledInput, LabeledSelect } from "@/components/shared"
+import { BaseModal, LabeledInput, LabeledSelect, LabeledContainer } from "@/components/shared"
 import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -189,33 +189,29 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                 />
 
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="relative w-full flex flex-col group">
-                        <fieldset className="notched-field w-full group transition-all">
-                            <legend className="notched-legend">Fecha</legend>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant={"ghost"}
-                                        className={cn(
-                                            "w-full pl-3 text-left font-normal border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent h-auto py-2",
-                                            !date && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                        {date ? format(date, "PPP") : <span>Seleccionar</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={date}
-                                        onSelect={(d) => d && setDate(d)}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </fieldset>
-                    </div>
+                    <LabeledContainer label="Fecha" icon={<CalendarIcon className="h-4 w-4 opacity-50" />}>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"ghost"}
+                                    className={cn(
+                                        "w-full pl-3 text-left font-normal border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent h-auto py-2",
+                                        !date && "text-muted-foreground"
+                                    )}
+                                >
+                                    {date ? format(date, "PPP") : <span>Seleccionar</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={date}
+                                    onSelect={(d) => d && setDate(d)}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </LabeledContainer>
 
                     <div className="flex items-end pb-1">
                         {sourceAccount && destAccount && amount && (

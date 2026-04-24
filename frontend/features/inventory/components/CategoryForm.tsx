@@ -1,13 +1,13 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { ProductCategory, Product } from "@/types/entities"
+import { ProductCategory } from "@/types/entities"
 import { cn } from "@/lib/utils"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, LabeledInput, LabeledSelect } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, LabeledContainer } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import {
     Form,
@@ -17,14 +17,7 @@ import api from "@/lib/api"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import * as LucideIcons from "lucide-react"
 import { Check } from "lucide-react"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
@@ -84,69 +77,68 @@ function RichIconSelector({ value, onChange, label, error }: { value: string, on
     const selectedLabel = ICON_OPTIONS.find(i => i.name === value)?.label || value
 
     return (
-        <fieldset className={cn("notched-field w-full group transition-all", error && "error")}>
-            {label && <legend className={cn("notched-legend", error && "text-destructive")}>{label}</legend>}
+        <LabeledContainer label={label} error={error}>
             <Popover>
-            <PopoverTrigger asChild>
-                <Button 
-                    variant="ghost" 
-                    role="combobox" 
-                    className="w-full justify-between h-10 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent font-normal"
-                >
-                    <div className="flex items-center gap-2">
-                        <SelectedIcon className="h-4 w-4" />
-                        <span>{selectedLabel}</span>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        role="combobox"
+                        className="w-full justify-between h-10 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent font-normal"
+                    >
+                        <div className="flex items-center gap-2">
+                            <SelectedIcon className="h-4 w-4" />
+                            <span>{selectedLabel}</span>
+                        </div>
+                        <LucideIcons.ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                    <div className="p-2">
+                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                            <LucideIcons.Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                            <input
+                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                placeholder="Buscar icono..."
+                                onChange={(e) => {
+                                    const val = e.target.value.toLowerCase()
+                                    const inputs = document.querySelectorAll('.icon-item')
+                                    inputs.forEach((el) => {
+                                        if (el.textContent?.toLowerCase().includes(val)) {
+                                            (el as HTMLElement).style.display = 'flex'
+                                        } else {
+                                            (el as HTMLElement).style.display = 'none'
+                                        }
+                                    })
+                                }}
+                            />
+                        </div>
+                        <div className="h-[250px] overflow-y-auto p-1 grid grid-cols-2 gap-1">
+                            {ICON_OPTIONS.map((item) => {
+                                const Icon = (LucideIcons as any)[item.name] || LucideIcons.Package
+                                const isSelected = value === item.name
+                                return (
+                                    <div
+                                        key={item.name}
+                                        className={cn(
+                                            "icon-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                            isSelected && "bg-accent"
+                                        )}
+                                        onClick={() => {
+                                            onChange(item.name)
+                                            document.body.click()
+                                        }}
+                                    >
+                                        <Icon className="h-4 w-4 shrink-0 mr-2" />
+                                        <span className="flex-1 truncate text-xs">{item.label}</span>
+                                        {isSelected && <Check className="ml-auto h-4 w-4 opacity-100" />}
+                                    </div>
+                                )
+                            })}
+                        </div>
                     </div>
-                    <LucideIcons.ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                <div className="p-2">
-                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                        <LucideIcons.Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                        <input
-                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                            placeholder="Buscar icono..."
-                            onChange={(e) => {
-                                const val = e.target.value.toLowerCase()
-                                const inputs = document.querySelectorAll('.icon-item')
-                                inputs.forEach((el) => {
-                                    if (el.textContent?.toLowerCase().includes(val)) {
-                                        (el as HTMLElement).style.display = 'flex'
-                                    } else {
-                                        (el as HTMLElement).style.display = 'none'
-                                    }
-                                })
-                            }}
-                        />
-                    </div>
-                    <div className="h-[250px] overflow-y-auto p-1 grid grid-cols-2 gap-1">
-                        {ICON_OPTIONS.map((item) => {
-                            const Icon = (LucideIcons as any)[item.name] || LucideIcons.Package
-                            const isSelected = value === item.name
-                            return (
-                                <div
-                                    key={item.name}
-                                    className={cn(
-                                        "icon-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                        isSelected && "bg-accent"
-                                    )}
-                                    onClick={() => {
-                                        onChange(item.name)
-                                        document.body.click()
-                                    }}
-                                >
-                                    <Icon className="h-4 w-4 shrink-0 mr-2" />
-                                    <span className="flex-1 truncate text-xs">{item.label}</span>
-                                    {isSelected && <Check className="ml-auto h-4 w-4 opacity-100" />}
-                                </div>
-                            )
-                        })}
-                    </div>
-                </div>
-            </PopoverContent>
-        </Popover>
-        </fieldset>
+                </PopoverContent>
+            </Popover>
+        </LabeledContainer>
     )
 }
 
@@ -184,7 +176,7 @@ export function CategoryForm({
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    const [categories, setCategories] = useState<ProductCategory[]>([] )
+    const [categories, setCategories] = useState<ProductCategory[]>([])
 
     const form = useForm<CategoryFormValues>({
         resolver: zodResolver(categorySchema),
@@ -436,14 +428,14 @@ export function CategoryForm({
                                 </div>
                             </form>
                         </Form>
-                </div>
-
-                {initialData?.id && (
-                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                        {auditSidebar}
                     </div>
-                )}
-            </div>
+
+                    {initialData?.id && (
+                        <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
+                            {auditSidebar}
+                        </div>
+                    )}
+                </div>
             </BaseModal>
         </>
     )

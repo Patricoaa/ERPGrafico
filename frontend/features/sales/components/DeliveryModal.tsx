@@ -3,9 +3,10 @@
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { LabeledContainer, LabeledInput } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
     Table,
     TableBody,
@@ -21,7 +22,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
@@ -364,13 +364,12 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                 <div className="space-y-4">
                     {/* Warehouse and Date Selection */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="warehouse" className={FORM_STYLES.label}>Bodega de Despacho</Label>
+                        <LabeledContainer label="Bodega de Despacho">
                             <Select
                                 value={selectedWarehouse?.toString() || ''}
                                 onValueChange={(val) => setSelectedWarehouse(Number(val))}
                             >
-                                <SelectTrigger className={FORM_STYLES.input}>
+                                <SelectTrigger className="border-none shadow-none focus-visible:ring-0 bg-transparent h-9">
                                     <SelectValue placeholder="Seleccione bodega" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -381,17 +380,17 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                     ))}
                                 </SelectContent>
                             </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="delivery-date" className={FORM_STYLES.label}>Fecha de Despacho</Label>
+                        </LabeledContainer>
+                        
+                        <LabeledContainer label="Fecha de Despacho">
                             <Input
                                 id="delivery-date"
                                 type="date"
-                                className={FORM_STYLES.input}
+                                className="border-none shadow-none focus-visible:ring-0 bg-transparent h-9"
                                 value={deliveryDate}
                                 onChange={(e) => setDeliveryDate(e.target.value)}
                             />
-                        </div>
+                        </LabeledContainer>
                     </div>
 
                     {/* Delivery Status */}
@@ -487,14 +486,14 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <Input
+                                                <LabeledInput
                                                     type="number"
                                                     min="0"
                                                     max={line.quantity_pending}
                                                     step="0.01"
                                                     value={deliveryQuantities[line.id] || 0}
                                                     onChange={(e) => handleQuantityChange(line.id, e.target.value)}
-                                                    className={cn(FORM_STYLES.input, "w-24 text-center mx-auto h-8 font-bold")}
+                                                    className="w-24 text-center mx-auto h-8 font-bold"
                                                 />
                                             </TableCell>
                                             <TableCell>

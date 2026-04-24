@@ -6,15 +6,12 @@ import { PricingRuleInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { LabeledInput, LabeledSelect } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer } from "@/components/shared"
 
 // ... other imports same
 import {
     Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel
+    FormField
 } from "@/components/ui/form"
 
 import { Checkbox } from "@/components/ui/checkbox"
@@ -460,18 +457,18 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
                                     control={form.control}
                                     name="active"
                                     render={({ field }) => (
-                                        <FormItem className={cn("flex flex-row items-center space-x-3 space-y-0 p-4 border rounded-lg bg-muted/5")}>
-                                            <FormControl>
+                                        <LabeledContainer
+                                            label="Estado de la Regla"
+                                            hint="Si está desactivada, el sistema la omitirá incluso si se cumplen las condiciones."
+                                        >
+                                            <div className="flex items-center justify-between w-full pr-4 py-1">
+                                                <span className="text-xs font-bold text-foreground">La regla se encuentra activa</span>
                                                 <Checkbox
                                                     checked={field.value}
                                                     onCheckedChange={field.onChange}
                                                 />
-                                            </FormControl>
-                                            <div className="space-y-1 leading-none">
-                                                <FormLabel className="text-sm font-bold">La regla se encuentra activa</FormLabel>
-                                                <p className="text-xs text-muted-foreground">Si está desactivada, el sistema la omitirá incluso si se cumplen las condiciones.</p>
                                             </div>
-                                        </FormItem>
+                                        </LabeledContainer>
                                     )}
                                 />
                             </div>
