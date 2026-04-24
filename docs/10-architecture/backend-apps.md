@@ -16,7 +16,8 @@ apps/[app_name]/
 ├── apps.py
 ├── models.py          # ORM entities
 ├── serializers.py     # DRF serializers (1 per entity + variants)
-├── views.py           # ViewSets — thin, delegate to services
+├── views.py           # ViewSets — thin, delegate to services/selectors
+├── selectors.py       # Complex read queries — called by get_queryset() and read actions
 ├── services.py        # Business logic — NOT in views or serializers
 ├── tasks.py           # Celery tasks
 ├── signals.py         # Post-save hooks (use sparingly)
@@ -28,6 +29,7 @@ apps/[app_name]/
     ├── test_models.py
     ├── test_views.py
     ├── test_services.py
+    ├── test_selectors.py
     └── factories.py   # factory_boy
 ```
 
@@ -38,11 +40,39 @@ apps/[app_name]/
 | HTTP parse/serialize | `serializers.py`, `views.py` |
 | Auth / permissions | `permissions.py` |
 | Business rules, validation, orchestration | `services.py` |
-| Complex read queries | `services.py` or `ViewSet.get_queryset()` |
+| Complex read queries (annotations, joins, filters) | `selectors.py` |
 | Side effects (email, PDF, push) | `tasks.py` (async) |
 | Cross-domain workflows | `workflow/` app |
 
 **Golden rule**: `views.py` never contains business logic. Never >20 lines per action.
+
+## Selectors — read query layer
+
+`selectors.py` owns every non-trivial read. Views call selectors; selectors never call services.
+
+```python
+# ✅ selectors.py
+def list_products(*, user, params: dict) -> QuerySet:
+    """Annotated product list with favorites, BOM prefetch, and sort."""
+    ...
+    return queryset
+
+def get_account_ledger(*, account, start_date, end_date) -> dict:
+    """Running balance computation for libro mayor."""
+    ...
+    return {"opening_balance": ..., "movements": [...]}
+
+# ✅ views.py — thin
+class ProductViewSet(ModelViewSet):
+    def get_queryset(self):
+        return list_products(user=self.request.user, params=self.request.query_params)
+```
+
+Rules:
+- Selector functions use **keyword-only args** (`*`).
+- `get_queryset()` must call a selector — inline query logic forbidden.
+- Selectors that return computed data (not QuerySet) return a plain `dict`.
+- Never import a selector from a different app — use `workflow/` or pass data as args.
 
 ```python
 # ✅ correct

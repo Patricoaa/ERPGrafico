@@ -10,6 +10,7 @@ from .serializers import (
 )
 from .services import JournalEntryService, AccountingService, BudgetService
 from .fiscal_year_service import FiscalYearClosingService
+from .selectors import list_accounts, list_budgetable_accounts, get_account_ledger
 from django.core.exceptions import ValidationError
 from core.mixins import BulkImportMixin, AuditHistoryMixin as AuditHistory
 
@@ -46,11 +47,7 @@ class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     serializer_class = AccountSerializer
 
     def get_queryset(self):
-        queryset = Account.objects.all()
-        is_leaf = self.request.query_params.get('is_leaf')
-        if is_leaf and is_leaf.lower() == 'true':
-            queryset = queryset.filter(children__isnull=True)
-        return queryset
+        return list_accounts(params=self.request.query_params)
 
     def create(self, request, *args, **kwargs):
         print("DEBUG: ACCOUNT CREATE CALLED")
@@ -75,108 +72,20 @@ class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     
     @action(detail=True, methods=['get'])
     def ledger(self, request, pk=None):
-        """
-        Returns the ledger (libro mayor) for a specific account.
-        Shows all posted journal items with running balance and period summary.
-        """
         account = self.get_object()
-        start_date = request.query_params.get('start_date')
-        end_date = request.query_params.get('end_date')
-
-        # Base queryset for posted items
-        base_items = account.journal_items.filter(entry__status='POSTED').select_related('entry')
-
-        # Calculate opening balance (all history before start_date)
-        opening_balance = 0
-        if start_date:
-            opening_items = base_items.filter(entry__date__lt=start_date)
-            totals = opening_items.aggregate(
-                total_debit=Sum('debit'),
-                total_credit=Sum('credit')
-            )
-            
-            debit = totals.get('total_debit') or 0
-            credit = totals.get('total_credit') or 0
-            
-            # Simple balance logic: Assets/Expenses (+) Debit, Others (+) Credit
-            # BUT for ledger display, we usually want relative to account type
-            # Or we can just return absolute debit/credit totals and let frontend handle it
-            # Let's follow the model's balance logic but for the opening balance specifically
-            if account.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
-                opening_balance = debit - credit
-            else:
-                opening_balance = credit - debit
-
-        # Filter items for the requested period
-        items = base_items.order_by('entry__date', 'entry__id')
-        if start_date:
-            items = items.filter(entry__date__gte=start_date)
-        if end_date:
-            items = items.filter(entry__date__lte=end_date)
-        
-        balance = float(opening_balance)
-        ledger_data = []
-        
-        period_debit = 0
-        period_credit = 0
-
-        for item in items:
-            d = float(item.debit)
-            c = float(item.credit)
-            period_debit += d
-            period_credit += c
-            
-            if account.account_type in [AccountType.ASSET, AccountType.EXPENSE]:
-                balance += (d - c)
-            else:
-                balance += (c - d)
-
-            ledger_data.append({
-                'id': item.id,
-                'date': item.entry.date,
-                'entry_id': item.entry.id,
-                'reference': item.entry.reference,
-                'description': item.entry.description,
-                'debit': d,
-                'credit': c,
-                'balance': float(balance),
-                'partner': item.partner.name if item.partner else '',
-                'label': item.label or '',
-                'source_document': item.entry.get_source_document
-            })
-        
-        return Response({
-            'account': AccountSerializer(account).data,
-            'opening_balance': float(opening_balance),
-            'period_debit': float(period_debit),
-            'period_credit': float(period_credit),
-            'closing_balance': float(balance),
-            'movements': ledger_data
-        })
+        data = get_account_ledger(
+            account=account,
+            start_date=request.query_params.get('start_date'),
+            end_date=request.query_params.get('end_date'),
+        )
+        return Response({'account': AccountSerializer(account).data, **data})
 
     @action(detail=False, methods=['get'])
     def budgetable(self, request):
-        """
-        Returns only accounts that are suitable for budgeting.
-        Optional filter: account_type (comma separated)
-        """
-        from .models import CFCategory
-        
-        account_types = request.query_params.get('account_types')
-        if account_types:
-            types = account_types.split(',')
-            accounts = Account.objects.filter(account_type__in=types)
-        else:
-            # Default logic
-            accounts = Account.objects.filter(
-                Q(account_type__in=[AccountType.INCOME, AccountType.EXPENSE]) |
-                Q(cf_category=CFCategory.INVESTING)
-            )
-            
-        accounts = accounts.filter(children__isnull=True).order_by('code')
-        
-        serializer = self.get_serializer(accounts, many=True)
-        return Response(serializer.data)
+        accounts = list_budgetable_accounts(
+            account_types=request.query_params.get('account_types')
+        )
+        return Response(self.get_serializer(accounts, many=True).data)
 
     @action(detail=False, methods=['post'])
     def populate_ifrs(self, request):

@@ -298,7 +298,10 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             </SheetHeader>
 
             {/* Standardized Close Button */}
-            <SheetCloseButton onClick={() => onOpenChange(false)} />
+            <SheetCloseButton 
+                onClick={() => onOpenChange(false)} 
+                className="absolute top-4 right-4 z-[60]"
+            />
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="h-full w-full flex flex-col overflow-hidden">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">

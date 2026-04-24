@@ -1,9 +1,10 @@
 "use client"
 
 import React from "react"
-import { ArrowLeft, Printer, X, Receipt, ShoppingBag, FileText, Hash, Package, Banknote, ClipboardList, History } from "lucide-react"
+import { ArrowLeft, Printer, Receipt, ShoppingBag, FileText, Hash, Package, Banknote, ClipboardList, History } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+import { SheetCloseButton } from "../SheetCloseButton"
 import type { TransactionType, TransactionData } from "@/types/transactions"
 
 export interface TransactionHeaderProps {
@@ -136,14 +137,10 @@ export function TransactionHeader({
                     <Separator orientation="vertical" className="w-[1px] h-6 bg-border/60" />
                 </div>
 
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-10 w-10 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all" 
+                <SheetCloseButton 
                     onClick={onClose}
-                >
-                    <X className="h-5 w-5" />
-                </Button>
+                    className="hover:bg-destructive/10 hover:text-destructive"
+                />
             </div>
         </div>
     )

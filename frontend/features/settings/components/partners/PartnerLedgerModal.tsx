@@ -185,7 +185,7 @@ export function PartnerLedgerModal({
 
                 <SheetCloseButton
                     onClick={() => onOpenChange(false)}
-                    className="absolute top-4 right-8 z-[60]"
+                    className="absolute top-4 right-4 z-[60]"
                 />
 
                 <SheetHeader className="px-8 pb-2 space-y-0">
