@@ -40,6 +40,7 @@
 | "architecture", "folder structure", "where does X go" | [frontend-fsd.md](10-architecture/frontend-fsd.md) / [backend-apps.md](10-architecture/backend-apps.md) | 10 |
 | "which component", "component decision", "what to use" | [component-decision-tree.md](20-contracts/component-decision-tree.md) | 20 |
 | "component API", "prop signature", "StatusBadge usage" | [component-contracts.md](20-contracts/component-contracts.md) | 20 |
+| "selector component", "entity search", "combobox", "AccountSelector" | [component-selectors.md](20-contracts/component-selectors.md) | 20 |
 | "hook signature", "return shape" | [hook-contracts.md](20-contracts/hook-contracts.md) | 20 |
 | "entity state", "status values" | [state-map.md](20-contracts/state-map.md) | 20 |
 | "testing strategy", "coverage", "fixtures" | [testing.md](40-quality/testing.md) | 40 |
@@ -49,6 +50,7 @@
 | "deploy", "pipeline", "CI failure" | [ci-cd.md](40-quality/ci-cd.md) | 40 |
 | "any type", "TypeScript unknown", "type escape hatch" | [zero-any-policy.md](90-governance/zero-any-policy.md) | 90 |
 | "ADR", "decision record", "major change" | [adr/README.md](10-architecture/adr/README.md) | 10 |
+| "signals", "signal receiver", "post_save hook", "cross-app event" | [workflow-signals-registry.md](10-architecture/workflow-signals-registry.md) | 10 |
 
 ## Global invariants (violate = PR rejected)
 

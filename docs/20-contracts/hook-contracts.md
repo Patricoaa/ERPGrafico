@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: hook-contracts
 status: active
 owner: frontend-team
-last_review: 2026-04-21
+last_review: 2026-04-23
 stability: contract-changes-require-ADR
 ---
 
@@ -15,7 +15,8 @@ Public API of reusable hooks. Feature-local hooks live in `features/[x]/hooks/` 
 
 - Name: `use[Entity][Action]` — `useSaleOrders`, `useCreateInvoice`, `useStockValidation`.
 - Return: **domain-named** properties. Never `data`, `mutate`, `error` raw.
-- Errors: handled internally via `showApiError` toast. No `error` in return shape.
+- Errors: handled internally via `showApiError` toast. The `error` object is never exposed in return shape.
+- `isError` (boolean) MAY be exposed when the component needs to branch UI on error state (e.g. render `EmptyState` instead of `Skeleton`). The raw `Error` object is never exposed.
 - Loading flags: `isLoading` for initial fetch, `isFetching` for refetch, `isCreating` / `isUpdating` / `isDeleting` for mutations.
 
 ```ts

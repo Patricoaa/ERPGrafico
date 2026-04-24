@@ -3,7 +3,7 @@ layer: 10-architecture
 doc: data-flow
 status: active
 owner: core-team
-last_review: 2026-04-21
+last_review: 2026-04-23
 ---
 
 # Data Flow
@@ -100,7 +100,7 @@ Forbidden for:
 | DRF 403 | toast "No permission" — no retry |
 | DRF 5xx | toast + Sentry capture + TanStack retry (3x exponential) |
 
-Hooks do NOT expose `error` — UI gets toast; component branches on `isLoading` / `isError` via TanStack if needed for skeleton fallback.
+Hooks do NOT expose `error` (the Error object) — UI gets toast via `showApiError`. `isError: boolean` MAY appear in a hook's return shape when the component needs to branch on error state (e.g. render `EmptyState` instead of `Skeleton`); the raw error object is never exposed.
 
 ## Real-time (future)
 
