@@ -3,7 +3,7 @@ layer: 10-architecture
 doc: frontend-fsd
 status: active
 owner: frontend-team
-last_review: 2026-04-21
+last_review: 2026-04-23
 ---
 
 # Frontend — Feature-Sliced Design
@@ -28,7 +28,8 @@ frontend/
 │       └── index.ts           # PUBLIC API — only import target
 ├── components/
 │   ├── ui/                    # Shadcn base — DO NOT MODIFY
-│   └── shared/                # Promoted components ≥3 feature consumers
+│   ├── shared/                # Promoted components ≥3 feature consumers
+│   └── selectors/             # Async entity-search comboboxes — see component-selectors.md
 ├── hooks/                     # Global hooks promoted from features
 ├── lib/
 │   ├── api.ts                 # Axios instance — features/ and hooks/ only
@@ -67,6 +68,44 @@ Promotion requires: (a) stable API signature, (b) tests, (c) entry in component-
 ## Special case: `features/orders`
 
 Visualization hub. Aggregates SaleOrder + PurchaseOrder + WorkOrder. No backend entity. Reads canonical states from each source; never defines its own.
+
+**No root barrel (`index.ts`).** Consumers import from `features/orders/components`:
+
+```ts
+import { OrderHubPanel, OrderHubIntegrated, OrderCard } from '@/features/orders/components'
+```
+
+### What it exports
+
+| Component | Purpose |
+|-----------|---------|
+| `OrderHubPanel` | Full side-panel hub with tabs (used by sales, purchasing pages) |
+| `OrderHubIntegrated` | Inner hub: 5-phase lifecycle (Origin → Production → Logistics → Billing → Treasury) |
+| `OrderCard` | Summary card for a single order |
+| `OrderHeaderDashboard` | Header with status and totals |
+| `GlobalHubPanel` | App-level singleton panel (mount in root layout) |
+| `OrderActionPanel` | Action buttons panel for a given order |
+| `DocumentListModal` | Modal listing related documents |
+| `PaymentHistoryModal` | Modal for payment history |
+| `phases/*` | `OriginPhase`, `ProductionPhase`, `LogisticsPhase`, `BillingPhase`, `TreasuryPhase` |
+
+### Hook
+
+| Hook | Returns | Notes |
+|------|---------|-------|
+| `useSaleOrderSearch()` | `{ orders, singleOrder, loading, fetchOrders, fetchSingleOrder }` | Module-local, not promoted to `/hooks/` |
+
+### Source features consumed
+
+- `features/sales` — SaleOrder data and actions
+- `features/purchasing` — PurchaseOrder data and actions
+- `features/production` — WorkOrder status
+
+### What it does NOT own
+
+- No `/api/orders/` endpoint — never writes directly.
+- No state transitions — those stay in source features.
+- No canonical status definitions — reads statuses from each source feature.
 
 ## Data flow — mandatory pattern
 

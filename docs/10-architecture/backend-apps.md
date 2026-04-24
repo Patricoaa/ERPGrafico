@@ -3,7 +3,7 @@ layer: 10-architecture
 doc: backend-apps
 status: active
 owner: backend-team
-last_review: 2026-04-21
+last_review: 2026-04-23
 ---
 
 # Backend — Django Apps
@@ -17,10 +17,7 @@ apps/[app_name]/
 ├── models.py          # ORM entities
 ├── serializers.py     # DRF serializers (1 per entity + variants)
 ├── views.py           # ViewSets — thin, delegate to services
-├── services/          # Business logic — NOT in views or serializers
-│   ├── __init__.py
-│   └── [entity]_service.py
-├── selectors.py       # Read queries — complex filters/joins
+├── services.py        # Business logic — NOT in views or serializers
 ├── tasks.py           # Celery tasks
 ├── signals.py         # Post-save hooks (use sparingly)
 ├── permissions.py     # DRF permission classes
@@ -40,8 +37,8 @@ apps/[app_name]/
 |---------|----------|
 | HTTP parse/serialize | `serializers.py`, `views.py` |
 | Auth / permissions | `permissions.py` |
-| Business rules, validation, orchestration | `services/*` |
-| Complex read queries | `selectors.py` |
+| Business rules, validation, orchestration | `services.py` |
+| Complex read queries | `services.py` or `ViewSet.get_queryset()` |
 | Side effects (email, PDF, push) | `tasks.py` (async) |
 | Cross-domain workflows | `workflow/` app |
 
@@ -72,7 +69,7 @@ class SaleOrderViewSet(ModelViewSet):
 
 - Prefer `ForeignKey` only when domains truly couple (Invoice → Customer).
 - Avoid importing service from another app inside a view; use `workflow/` to orchestrate.
-- Signals for loose coupling; document receiver in `workflow/signals_registry.md`.
+- Signals for loose coupling; document receiver in [workflow-signals-registry.md](workflow-signals-registry.md).
 
 ## Transactions
 

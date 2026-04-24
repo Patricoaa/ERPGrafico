@@ -20,6 +20,12 @@ Public API of every shared component in `components/shared/`. Consumers import o
 
 ---
 
+## Selector components
+
+> See **[component-selectors.md](./component-selectors.md)** for AccountSelector, ProductSelector, AdvancedWorkOrderSelector, and 7 more.
+
+---
+
 ## BaseModal / ActionConfirmModal / GenericWizard
 
 > 📄 Documentación completa en **[component-modal.md](./component-modal.md)**.
@@ -633,7 +639,30 @@ Large detail modal for any transaction type. Two-column layout: content (75%) + 
 | `id` | `number \| string` | ✅ | — | Entity ID |
 | `view` | `'details' \| 'history' \| 'all'` | ❌ | `'all'` | Which panels to render |
 
-`TransactionType` union: covers sale orders, purchase orders, invoices, payments, work orders — see source for full union. Uses `useTransactionData(type, id)` internally.
+```typescript
+// frontend/types/transactions.ts
+type TransactionType =
+  | 'product'
+  | 'contact'
+  | 'sale_order'
+  | 'purchase_order'
+  | 'invoice'
+  | 'payment'
+  | 'sale_delivery'
+  | 'purchase_receipt'
+  | 'user'
+  | 'company_settings'
+  | 'work_order'
+  | 'journal_entry'
+  | 'stock_move'
+  | 'cash_movement'
+  | 'sale_return'
+  | 'purchase_return'
+  | 'inventory'
+  | 'profit_distribution'
+```
+
+Uses `useTransactionData(type, id)` internally.
 
 Features: print (react-to-print), navigation history between related transactions (`useNavigationHistory`), inline payment editing, delete payment confirmation.
 

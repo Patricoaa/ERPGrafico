@@ -3,7 +3,7 @@ layer: 40-quality
 doc: testing
 status: active
 owner: qa-team
-last_review: 2026-04-21
+last_review: 2026-04-23
 ---
 
 # Testing
@@ -82,7 +82,7 @@ it('shows empty state when no orders', () => {
 |------|-------|
 | `test_models.py` | Model invariants, constraints, signals |
 | `test_services.py` | Business rules, transactions, atomicity |
-| `test_selectors.py` | Query correctness, filter combinations |
+| `test_services.py` | Business rules, query correctness via service functions |
 | `test_views.py` | HTTP contract: status codes, auth, permission, validation |
 | `test_tasks.py` | Idempotency, retry behavior |
 | `test_permissions.py` | Role matrix |
@@ -112,7 +112,7 @@ def test_cannot_transition_from_closed(order):
 
 - Global: 80% lines.
 - Services: 95% lines.
-- Selectors: 90% lines.
+- Services (query functions): 90% lines.
 
 ## Integration
 
