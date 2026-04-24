@@ -33,7 +33,7 @@ import {
 import {
     Loader2, Trash2, BookOpen,
     DollarSign, ShieldCheck, Sparkles,
-    CheckCircle2, FileText, ArrowLeft, X
+    CheckCircle2, FileText, ArrowLeft
 } from "lucide-react"
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { PayrollCard } from "@/features/hr/components/PayrollCard"

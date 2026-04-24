@@ -26,7 +26,8 @@
       "Bash(find . -type f -name \"*.tsx\" ! -path \"*/.next/*\" ! -path \"*/node_modules/*\" -exec grep -l \"Skeleton\" {} \\\\;)",
       "Bash(grep -r \"--radius\" c:/Users/patox/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/app/globals.css)",
       "Bash(node -e \"const b = require\\('./node_modules/eslint-plugin-boundaries'\\); const rule = b.rules['dependencies']; console.log\\(JSON.stringify\\(rule.meta.schema, null, 2\\)\\)\")",
-      "Bash(node -e \"const b = require\\('./node_modules/eslint-plugin-boundaries'\\); const rule = b.rules['dependencies']; const schema = JSON.stringify\\(rule.meta.schema, null, 2\\); const lines = schema.split\\('\\\\n'\\); const allowIdx = lines.findIndex\\(l => l.includes\\('allow'\\) && l.includes\\('disallow'\\)\\); console.log\\(lines.slice\\(Math.max\\(0,allowIdx-5\\), allowIdx+30\\).join\\('\\\\n'\\)\\)\")"
+      "Bash(node -e \"const b = require\\('./node_modules/eslint-plugin-boundaries'\\); const rule = b.rules['dependencies']; const schema = JSON.stringify\\(rule.meta.schema, null, 2\\); const lines = schema.split\\('\\\\n'\\); const allowIdx = lines.findIndex\\(l => l.includes\\('allow'\\) && l.includes\\('disallow'\\)\\); console.log\\(lines.slice\\(Math.max\\(0,allowIdx-5\\), allowIdx+30\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(python -c ' *)"
     ]
   }
 }

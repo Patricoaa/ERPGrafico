@@ -13,7 +13,6 @@ import { Numpad } from "@/components/ui/numpad"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { MoneyDisplay } from "@/components/shared"
 import { formatMoney } from "@/lib/money"
-import { usePOS } from "@/features/pos/contexts/POSContext"
 
 export interface PaymentData {
     method: 'CASH' | 'CARD' | 'CARD_TERMINAL' | 'TRANSFER' | 'CHECK' | 'CREDIT_BALANCE' | null
@@ -176,10 +175,6 @@ export function PaymentMethodCardSelector({
         }
     }, [methodsForType, paymentData.method])
 
-    const { currentSession } = usePOS()
-    const terminalHasCardTerminal = !!currentSession?.terminal_details?.payment_terminal_device
-
-
     const methods = useMemo(() => {
         const availableMethods = [
             {
@@ -227,7 +222,7 @@ export function PaymentMethodCardSelector({
         ]
 
         return availableMethods.filter(m => m.isAllowed)
-    }, [allowedMethods, terminalHasCardTerminal, isMethodAllowed, operation])
+    }, [allowedMethods, isMethodAllowed, operation])
 
     const difference = paymentData.amount - total
     const showChangeCard = !(operation === 'purchases' && difference >= 0);

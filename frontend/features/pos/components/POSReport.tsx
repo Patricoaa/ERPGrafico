@@ -1,12 +1,11 @@
 "use client"
 
-import { useState, useMemo } from "react"
 
-import { Separator } from "@/components/ui/separator"
 import { formatCurrency, cn } from "@/lib/utils"
-import { Printer, Calculator, TrendingUp, X, Activity, CreditCard, ChevronDown, ChevronUp } from "lucide-react"
+import { Printer, Calculator, TrendingUp, Activity, CreditCard, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useBranding } from "@/contexts/BrandingProvider"
+import { SheetCloseButton } from "@/components/shared"
 
 export interface POSReportData {
     session_id: number
@@ -58,14 +57,14 @@ export function POSReport({ data, title, type = "X", onClose }: POSReportProps) 
         const iframe = document.createElement('iframe');
         iframe.style.display = 'none';
         document.body.appendChild(iframe);
-        
+
         const iframeDoc = iframe.contentWindow?.document;
         if (iframeDoc) {
             // Copy parent styles
             const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
                 .map(s => s.outerHTML)
                 .join('\n');
-            
+
             iframeDoc.open();
             iframeDoc.write(`
                 <html>
@@ -104,15 +103,12 @@ export function POSReport({ data, title, type = "X", onClose }: POSReportProps) 
         )}>
             {/* Close Button */}
             {onClose && (
-                <Button
-                    variant="ghost"
-                    size="icon"
+                <SheetCloseButton
                     onClick={onClose}
-                    className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-white shadow-lg border border-black/10 hover:bg-black/5 print:hidden group z-10"
-                >
-                    <X className="h-4 w-4 text-black group-hover:scale-110 transition-transform" />
-                </Button>
+                    className="absolute -top-2 -right-2 bg-white shadow-lg border border-black/10 hover:bg-black/5 text-black print:hidden z-10"
+                />
             )}
+
 
             {/* Header */}
             <div className="text-center space-y-1 mb-6 border-b-2 border-black pb-4 flex flex-col items-center">
@@ -205,8 +201,8 @@ export function POSReport({ data, title, type = "X", onClose }: POSReportProps) 
 
             {/* Print button inside preview */}
             <div className="mt-6 flex justify-center print:hidden">
-                <Button 
-                    onClick={handlePrint} 
+                <Button
+                    onClick={handlePrint}
                     className="bg-black text-white hover:bg-black/90 font-black uppercase tracking-widest text-[10px] h-10 px-8 rounded-lg shadow-lg border-2 border-black"
                 >
                     <Printer className="mr-2 h-4 w-4" />

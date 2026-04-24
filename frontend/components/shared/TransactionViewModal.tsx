@@ -60,8 +60,9 @@ export function TransactionViewModal({ open, onOpenChange, type: initialType, id
                 title="Detalle de Transacción"
                 headerClassName="sr-only"
                 size="xl"
+                showCloseButton={false}
                 hideScrollArea={true}
-                className="overflow-hidden p-0 gap-0 print:border-none print:shadow-none print:bg-white print:text-black [&>button[data-slot=dialog-close]]:hidden"
+                className="overflow-hidden p-0 gap-0 print:border-none print:shadow-none print:bg-white print:text-black"
             >
                 {/* Standard hidden receipt for actual browser print command */}
                 {data && (

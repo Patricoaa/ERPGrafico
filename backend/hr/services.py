@@ -395,5 +395,164 @@ def post_payroll(payroll):
         payroll.journal_entry = entry
         payroll.status = Payroll.Status.POSTED
         payroll.save()
-        
+
     return payroll
+
+
+class PayrollPaymentService:
+    """Handles Previred and salary payment registration for a posted payroll."""
+
+    @staticmethod
+    @transaction.atomic
+    def pay_previred(
+        payroll,
+        *,
+        treasury_account_id: int,
+        payment_date,
+        payment_method: str = "TRANSFER",
+        payment_method_id: int | None = None,
+        notes: str = "",
+        transaction_number: str | None = None,
+        is_pending_registration: bool = False,
+        created_by=None,
+    ):
+        from .models import Payroll, PayrollConcept, PayrollPayment
+        from treasury.services import TreasuryService
+        from treasury.models import TreasuryAccount, PaymentMethod, TreasuryMovement
+        from django.db.models import Sum
+
+        if payroll.status != Payroll.Status.POSTED:
+            raise ValidationError("Solo se puede pagar Previred de liquidaciones contabilizadas.")
+
+        previred_total = (
+            payroll.items.filter(
+                concept__category__in=[
+                    PayrollConcept.Category.DESCUENTO_LEGAL_TRABAJADOR,
+                    PayrollConcept.Category.DESCUENTO_LEGAL_EMPLEADOR,
+                ]
+            ).aggregate(total=Sum("amount"))["total"]
+            or Decimal("0")
+        )
+
+        paid = (
+            PayrollPayment.objects.filter(
+                payroll=payroll,
+                payment_type=PayrollPayment.PaymentType.PREVIRED,
+            ).aggregate(total=Sum("amount"))["total"]
+            or Decimal("0")
+        )
+
+        remaining = previred_total - paid
+        if remaining <= 0:
+            raise ValidationError("Las obligaciones de Previred ya están pagadas en su totalidad.")
+
+        treasury_account = TreasuryAccount.objects.get(pk=treasury_account_id)
+        payment_method_obj = (
+            PaymentMethod.objects.filter(pk=payment_method_id).first()
+            if payment_method_id
+            else None
+        )
+
+        movement = TreasuryService.create_movement(
+            amount=remaining,
+            movement_type=TreasuryMovement.Type.OUTBOUND,
+            payment_method=payment_method,
+            payment_method_new=payment_method_obj,
+            from_account=treasury_account,
+            date=payment_date,
+            partner=payroll.employee.contact,
+            payroll=payroll,
+            payroll_payment_type=TreasuryMovement.PayrollPaymentType.PREVIRED,
+            reference=f"Pago Previred {payroll.display_id} - {payroll.period_label}",
+            notes=notes,
+            transaction_number=transaction_number,
+            is_pending_registration=is_pending_registration,
+            created_by=created_by,
+        )
+
+        return PayrollPayment.objects.create(
+            payroll=payroll,
+            payment_type=PayrollPayment.PaymentType.PREVIRED,
+            amount=remaining,
+            date=payment_date,
+            notes=notes,
+            journal_entry=movement.journal_entry,
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def pay_salary(
+        payroll,
+        *,
+        treasury_account_id: int,
+        payment_date,
+        payment_method: str = "TRANSFER",
+        payment_method_id: int | None = None,
+        notes: str = "",
+        transaction_number: str | None = None,
+        is_pending_registration: bool = False,
+        created_by=None,
+    ):
+        from .models import GlobalHRSettings, Payroll, PayrollPayment
+        from treasury.services import TreasuryService
+        from treasury.models import TreasuryAccount, PaymentMethod, TreasuryMovement
+        from django.db.models import Sum
+
+        if payroll.status != Payroll.Status.POSTED:
+            raise ValidationError("Solo se puede registrar pago de liquidaciones contabilizadas.")
+
+        settings, _ = GlobalHRSettings.objects.get_or_create(pk=1)
+        if not settings.account_remuneraciones_por_pagar:
+            raise ValidationError(
+                "Falta configurar la cuenta Remuneraciones por Pagar en ajustes globales."
+            )
+
+        total_advances = (
+            payroll.advances.aggregate(total=Sum("amount"))["total"] or Decimal("0")
+        )
+        paid_salary = (
+            PayrollPayment.objects.filter(
+                payroll=payroll,
+                payment_type=PayrollPayment.PaymentType.SALARIO,
+            ).aggregate(total=Sum("amount"))["total"]
+            or Decimal("0")
+        )
+
+        remaining = payroll.net_salary - total_advances - paid_salary
+        if remaining <= 0:
+            raise ValidationError(
+                "El sueldo líquido ya ha sido pagado en su totalidad (incluyendo anticipos)."
+            )
+
+        treasury_account = TreasuryAccount.objects.get(pk=treasury_account_id)
+        payment_method_obj = (
+            PaymentMethod.objects.filter(pk=payment_method_id).first()
+            if payment_method_id
+            else None
+        )
+
+        movement = TreasuryService.create_movement(
+            amount=remaining,
+            movement_type=TreasuryMovement.Type.OUTBOUND,
+            payment_method=payment_method,
+            payment_method_new=payment_method_obj,
+            from_account=treasury_account,
+            date=payment_date,
+            partner=payroll.employee.contact,
+            payroll=payroll,
+            payroll_payment_type=TreasuryMovement.PayrollPaymentType.SALARY,
+            reference=f"Pago Sueldo {payroll.display_id} - {payroll.period_label}",
+            notes=notes,
+            transaction_number=transaction_number,
+            is_pending_registration=is_pending_registration,
+            created_by=created_by,
+        )
+
+        return PayrollPayment.objects.create(
+            payroll=payroll,
+            payment_type=PayrollPayment.PaymentType.SALARIO,
+            amount=remaining,
+            date=payment_date,
+            notes=notes,
+            journal_entry=movement.journal_entry,
+        )

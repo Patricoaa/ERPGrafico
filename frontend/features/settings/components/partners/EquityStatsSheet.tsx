@@ -96,7 +96,7 @@ export function EquityStatsSheet({ open, onOpenChange, partners, summary }: Equi
             >
                 <SheetCloseButton 
                     onClick={() => onOpenChange(false)} 
-                    className="absolute top-6 right-6 z-50"
+                    className="absolute top-4 right-4 z-[60]"
                 />
 
                 <SheetHeader className="px-8 pt-8 pb-4 space-y-0">

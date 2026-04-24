@@ -717,14 +717,22 @@ Botón con animación de deslizamiento para revelar acciones adicionales.
 
 ---
 
-## SheetCloseButton 🟡
+## SheetCloseButton 🟢
 
-Botón de cierre estandarizado para componentes tipo Sheet/Drawer.
+Universal close primitive for Modals, Sheets, and Panels. Standardizes the 32px circular ghost button pattern.
+
+```tsx
+<SheetCloseButton onClick={close} showTooltip tooltipText="Cerrar Panel" />
+```
 
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
 | `onClick` | `() => void` | ✅ | — | |
-| `className` | `string` | ❌ | — | |
+| `className` | `string` | ❌ | — | Merged via `cn()` |
+| `label` | `string` | ❌ | `'Cerrar'` | Accessibility label |
+| `showTooltip` | `boolean` | ❌ | `false` | |
+| `tooltipText` | `string` | ❌ | — | Defaults to `label` |
+
 
 ---
 

@@ -8,6 +8,7 @@ from decimal import Decimal
 from core.mixins import AuditHistoryMixin
 from .models import Contact
 from .serializers import ContactSerializer, ContactListSerializer
+from .selectors import list_contacts, list_credit_portfolio
 
 
 class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
@@ -40,81 +41,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         return ContactSerializer
     
     def get_queryset(self):
-        """
-        Filter contacts by type if requested.
-        ?type=customer - only contacts with sale orders
-        ?type=supplier - only contacts with purchase orders
-        ?type=both - contacts with both sale and purchase orders
-        ?type=none - contacts without any orders
-        
-        Also implements custom RUT search normalization.
-        """
-        queryset = super().get_queryset()
-        
-        # Custom RUT normalization for search
-        search_param = self.request.query_params.get('search', None)
-        if search_param:
-            # Normalize the search term by removing dots, hyphens, and spaces
-            normalized_search = search_param.replace('.', '').replace('-', '').replace(' ', '')
-            
-            # Build a complex query that searches in multiple fields
-            # For tax_id, we use a database function to normalize it for comparison
-            from django.db.models.functions import Replace
-            
-            queryset = queryset.annotate(
-                normalized_tax_id=Replace(
-                    Replace(
-                        Replace('tax_id', models.Value('.'), models.Value('')),
-                        models.Value('-'), models.Value('')
-                    ),
-                    models.Value(' '), models.Value('')
-                )
-            ).filter(
-                models.Q(name__icontains=search_param) |
-                models.Q(email__icontains=search_param) |
-                models.Q(contact_name__icontains=search_param) |
-                models.Q(code__icontains=search_param) |
-                models.Q(normalized_tax_id__icontains=normalized_search)
-            )
-        
-        # Partner filtering
-        is_partner_param = self.request.query_params.get('is_partner', None)
-        if is_partner_param:
-            is_partner_val = is_partner_param.lower() == 'true'
-            queryset = queryset.filter(is_partner=is_partner_val)
-        
-        # Type filtering
-        contact_type = self.request.query_params.get('type', None)
-        
-        if contact_type:
-            contact_type = contact_type.upper()
-            if contact_type == 'CUSTOMER':
-                # Include contacts that are customers or have no role yet (potential)
-                # Exclude only those who are strictly suppliers
-                queryset = queryset.filter(
-                    models.Q(sale_orders__isnull=False) | 
-                    models.Q(sale_orders__isnull=True, purchase_orders__isnull=True)
-                ).distinct()
-            elif contact_type == 'SUPPLIER':
-                # Include contacts that are suppliers or have no role yet
-                # Exclude only those who are strictly customers
-                queryset = queryset.filter(
-                    models.Q(purchase_orders__isnull=False) | 
-                    models.Q(sale_orders__isnull=True, purchase_orders__isnull=True)
-                ).distinct()
-            elif contact_type == 'BOTH':
-                # Has both sale and purchase orders
-                queryset = queryset.filter(sale_orders__isnull=False, purchase_orders__isnull=False).distinct()
-            elif contact_type == 'NONE':
-                queryset = queryset.filter(sale_orders__isnull=True, purchase_orders__isnull=True)
-
-        has_terminal_payment_method = self.request.query_params.get('has_terminal_payment_method', None)
-        if has_terminal_payment_method == 'true':
-            queryset = queryset.filter(
-                terminal_providers__is_active=True,
-            ).distinct()
-        
-        return queryset
+        return list_contacts(params=self.request.query_params)
     
     @action(detail=False, methods=['get'])
     def customers(self, request):
@@ -256,14 +183,7 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         def _generate():
             from decimal import Decimal
 
-            if is_blacklist:
-                contacts = Contact.objects.filter(credit_blocked=True).distinct()
-            else:
-                contacts = Contact.objects.filter(
-                    models.Q(credit_enabled=True) | 
-                    models.Q(credit_limit__isnull=False) |
-                    models.Q(sale_orders__isnull=False)
-                ).filter(credit_blocked=False).distinct()
+            contacts = list_credit_portfolio(is_blacklist=is_blacklist)
 
             from .serializers import ContactSerializer
             contact_list = []
