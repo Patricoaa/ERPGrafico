@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useMemo, useRef } from "react"
 import { useForm } from "react-hook-form"
@@ -9,14 +10,13 @@ import * as z from "zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, ShieldAlert } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, SubmitButton, LabeledSeparator, LabeledInput, LabeledContainer } from "@/components/shared"
+import { CancelButton, SubmitButton, LabeledSeparator, LabeledInput, LabeledContainer, FormTabs, FormTabsContent, type FormTabItem } from "@/components/shared"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AppGroup } from "@/types/entities"
 
@@ -43,6 +43,7 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
     const [loading, setLoading] = useState(false)
     const [availableRoles, setAvailableRoles] = useState<[string, string][]>([])
     const [availableGroups, setAvailableGroups] = useState<AppGroup[]>([])
+    const [activeTab, setActiveTab] = useState("general")
 
     // Helper to parse groups from initialData
     const parsedInitialValues = useMemo(() => {
@@ -111,10 +112,8 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
     async function onSubmit(data: UserFormValues) {
         setLoading(true)
         try {
-            // Merge primary role and functional groups into the backend expected format
             const groups = [data.primary_role, ...data.functional_groups]
 
-            // Build typed payload — password is optional so we omit it if empty
             interface UserApiPayload {
                 username: string
                 groups: string[]
@@ -148,10 +147,50 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
         }
     }
 
+    const tabItems: FormTabItem[] = [
+        {
+            value: "general",
+            label: "General",
+            icon: User,
+        },
+        {
+            value: "permissions",
+            label: "Permisos",
+            icon: ShieldCheck,
+        },
+    ]
+
+    const headerSlot = (
+        <div className="px-6 py-4 border-b bg-muted/5">
+            <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                    <User className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                    <h3 className="font-bold tracking-tight text-foreground text-sm uppercase">Ficha de Usuario</h3>
+                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                        {initialData ? initialData.username : "Nuevo acceso al sistema"}
+                    </p>
+                </div>
+            </div>
+        </div>
+    )
+
     return (
         <>
             {trigger ? (
-                <div onClick={() => setOpen(true)}>{trigger}</div>
+                React.isValidElement(trigger) ? (
+                    React.cloneElement(trigger as React.ReactElement, {
+                        // @ts-ignore
+                        onClick: (e: React.MouseEvent) => {
+                            // @ts-ignore
+                            if (trigger.props.onClick) trigger.props.onClick(e);
+                            setOpen(true);
+                        }
+                    })
+                ) : (
+                    <div onClick={() => setOpen(true)}>{trigger}</div>
+                )
             ) : (
                 <Button size="sm" onClick={() => setOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
@@ -162,23 +201,11 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
             <BaseModal
                 open={open}
                 onOpenChange={setOpen}
-                title={
-                    <div className="flex items-center gap-3">
-                        <User className="h-5 w-5 text-muted-foreground" />
-                        <span className="font-bold tracking-tight">Ficha de Usuario</span>
-                    </div>
-                }
-                description={
-                    initialData ? (
-                        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                            <span>{initialData.username}</span>
-                        </div>
-                    ) : (
-                        "Complete la información para crear el acceso al sistema"
-                    )
-                }
+                headerClassName="sr-only"
+                title="Ficha de Usuario"
                 size={initialData ? "xl" : "lg"}
                 hideScrollArea={true}
+                allowOverflow={true}
                 contentClassName="p-0"
                 footer={
                     <div className="flex justify-end gap-3 w-full">
@@ -189,27 +216,21 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
                     </div>
                 }
             >
-                <div className="flex flex-col lg:flex-row h-full overflow-hidden min-h-[550px]">
+                <div className="flex flex-col lg:flex-row h-full overflow-visible min-h-[550px]">
                     {/* Main Content Area */}
-                    <div className="flex-1 overflow-y-auto">
+                    <div className="flex-1 overflow-visible">
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
-                                <Tabs defaultValue="general" className="flex-1 flex flex-col">
-                                    <div className="px-6 border-b bg-muted/5">
-                                        <TabsList className="h-12 w-full justify-start gap-4 bg-transparent p-0">
-                                            <TabsTrigger value="general" className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2">
-                                                <User className="h-4 w-4" />
-                                                Información General
-                                            </TabsTrigger>
-                                            <TabsTrigger value="permissions" className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2">
-                                                <ShieldCheck className="h-4 w-4" />
-                                                Permisos y Equipos
-                                            </TabsTrigger>
-                                        </TabsList>
-                                    </div>
-
-                                    <div className="flex-1 p-6 lg:p-8">
-                                        <TabsContent value="general" className="mt-0 space-y-6 outline-none">
+                                <FormTabs
+                                    items={tabItems}
+                                    value={activeTab}
+                                    onValueChange={setActiveTab}
+                                    orientation="vertical"
+                                    header={headerSlot}
+                                    className="flex-1"
+                                >
+                                    <div className="flex-1 p-6 lg:p-8 overflow-y-auto scrollbar-thin max-h-[70vh]">
+                                        <FormTabsContent value="general" className="mt-0 space-y-6 outline-none">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 <FormField
                                                     control={form.control}
@@ -293,11 +314,10 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
                                                     )}
                                                 />
                                             </div>
-                                        </TabsContent>
+                                        </FormTabsContent>
 
-                                        <TabsContent value="permissions" className="mt-0 space-y-6 outline-none">
+                                        <FormTabsContent value="permissions" className="mt-0 space-y-6 outline-none">
                                             <div className="space-y-6">
-                                                {/* Permisos de Sistema */}
                                                 <LabeledSeparator label="Permisos de Sistema (Rol)" />
 
                                                 <FormField
@@ -324,7 +344,6 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
                                                     )}
                                                 />
 
-                                                {/* Equipos Funcionales */}
                                                 <div className="pt-4">
                                                     <LabeledSeparator label="Equipos Funcionales" className="mb-3" />
                                                     <p className="text-[10px] text-muted-foreground mb-4 italic text-center">
@@ -367,9 +386,9 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
                                                     />
                                                 </div>
                                             </div>
-                                        </TabsContent>
+                                        </FormTabsContent>
                                     </div>
-                                </Tabs>
+                                </FormTabs>
                             </form>
                         </Form>
                     </div>
@@ -385,4 +404,3 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
         </>
     )
 }
-

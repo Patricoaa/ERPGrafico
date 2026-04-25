@@ -8,8 +8,8 @@ import { Card } from "@/components/ui/card"
 import { Info, Plus, Pencil, Trash2 } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { TabsContent } from "@/components/ui/tabs"
 import { formatCurrency } from "@/lib/currency"
+import { FormTabsContent } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { Product, PricingRule } from "@/types/entities"
@@ -34,7 +34,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
     })
 
     return (
-        <TabsContent value="pricing" className="mt-0">
+        <FormTabsContent value="pricing" className="mt-0">
             <div className="space-y-4">
                 <Card variant="dashed" className="flex items-center justify-between p-4 rounded-md border bg-primary/5 border-primary/10 shadow-sm">
                     <div className="flex gap-4 items-center">
@@ -172,6 +172,6 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                 description="¿Estás seguro de eliminar esta regla?"
                 variant="destructive"
             />
-        </TabsContent>
+        </FormTabsContent>
     )
 }

@@ -11,7 +11,8 @@ import { Package, Plus, Trash2, Layers, Check, ChevronUp, ChevronDown, X, Clock,
 import { UseFormReturn, useFieldArray } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { ProductInitialData } from "@/types/forms"
-import { TabsContent, Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FormTabsContent } from "@/components/shared"
 import { cn } from "@/lib/utils"
 
 import { useState } from "react"
@@ -37,7 +38,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
     const isEditing = !!initialData
 
     return (
-        <TabsContent value="manufacturing" className="mt-0 space-y-6">
+        <FormTabsContent value="manufacturing" className="mt-0 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
                 {!variantMode && (
                     <div className="md:col-span-4 space-y-6">
@@ -260,7 +261,7 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                     )}
                 </div>
             </div>
-        </TabsContent>
+        </FormTabsContent>
     )
 }
 

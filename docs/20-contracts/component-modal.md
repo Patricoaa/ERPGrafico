@@ -58,10 +58,11 @@ Primitiva base de todos los modales del proyecto. Wrappea `Dialog` de Shadcn con
 | `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl' \| 'full' \| 'default'` | ❌ | `'default'` | Ver tabla de anchos abajo |
 | `variant` | `'default' \| 'transaction' \| 'wizard' \| 'raw'` | ❌ | `'default'` | Controla estilos de header/footer |
 | `showCloseButton` | `boolean` | ❌ | `true` | Botón X en esquina superior derecha |
-| `hideScrollArea` | `boolean` | ❌ | `false` | Desactiva `ScrollArea`; útil cuando el hijo gestiona su propio scroll |
+| `hideScrollArea` | `boolean` | ❌ | `false` | Desactiva `ScrollArea`; obligatorio cuando se usa `FormTabs` vertical |
+| `allowOverflow` | `boolean` | ❌ | `false` | Permite que el contenido sobresalga (ej. para rieles de pestañas negativos) |
 | `className` | `string` | ❌ | — | Clases para `DialogContent` |
 | `contentClassName` | `string` | ❌ | — | Clases para el área de contenido (scroll o div) |
-| `headerClassName` | `string` | ❌ | — | Clases para el `DialogHeader` |
+| `headerClassName` | `string` | ❌ | — | Clases para el `DialogHeader`. Usar `sr-only` para ocultar cabecera original en vertical tabs. |
 | `footerClassName` | `string` | ❌ | — | Clases para el `DialogFooter` |
 
 ### Tamaños (`size`)

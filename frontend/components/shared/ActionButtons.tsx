@@ -4,45 +4,57 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
+import { ActionSlideButton } from "./ActionSlideButton"
+
 type ButtonBaseProps = React.ComponentProps<"button"> & VariantProps<typeof buttonVariants> & { asChild?: boolean }
 
-export interface SubmitButtonProps extends ButtonBaseProps {
-  loading?: boolean
-  icon?: React.ReactNode
-}
+export interface SubmitButtonProps extends React.ComponentProps<typeof ActionSlideButton> {}
 
 export const SubmitButton = React.forwardRef<HTMLButtonElement, SubmitButtonProps>(
-  ({ loading = false, children = "Guardar", icon = <Save className="mr-2 h-4 w-4" />, disabled, type = "submit", ...props }, ref) => {
+  ({ loading = false, children = "Guardar", icon = <Save className="h-3.5 w-3.5" />, ...props }, ref) => {
     return (
-      <Button ref={ref} variant="default" type={type} disabled={loading || disabled} {...props}>
-        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : icon}
+      <ActionSlideButton
+        ref={ref}
+        variant="primary"
+        loading={loading}
+        icon={icon}
+        {...props}
+      >
         {children}
-      </Button>
+      </ActionSlideButton>
     )
   }
 )
 SubmitButton.displayName = "SubmitButton"
 
-export interface DangerButtonProps extends ButtonBaseProps {
-  loading?: boolean
-}
+export interface DangerButtonProps extends React.ComponentProps<typeof ActionSlideButton> {}
 
 export const DangerButton = React.forwardRef<HTMLButtonElement, DangerButtonProps>(
-  ({ loading = false, children = "Eliminar", disabled, type = "button", ...props }, ref) => {
+  ({ loading = false, children = "Eliminar", ...props }, ref) => {
     return (
-      <Button ref={ref} variant="destructive" type={type} disabled={loading || disabled} {...props}>
-        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      <ActionSlideButton
+        ref={ref}
+        variant="destructive"
+        loading={loading}
+        {...props}
+      >
         {children}
-      </Button>
+      </ActionSlideButton>
     )
   }
 )
 DangerButton.displayName = "DangerButton"
 
 export const CancelButton = React.forwardRef<HTMLButtonElement, ButtonBaseProps>(
-  ({ children = "Cancelar", type = "button", ...props }, ref) => {
+  ({ children = "Cancelar", type = "button", className, ...props }, ref) => {
     return (
-      <Button ref={ref} variant="outline" type={type} {...props}>
+      <Button 
+        ref={ref} 
+        variant="outline" 
+        type={type} 
+        className={cn("h-9 px-5 text-[10px] font-black tracking-widest uppercase shadow-sm", className)}
+        {...props}
+      >
         {children}
       </Button>
     )
@@ -63,7 +75,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
         size="icon" 
         type={type} 
         className={cn(
-          "hover:scale-110 transition-transform", 
+          "h-9 w-9 hover:scale-110 transition-transform", 
           circular ? "rounded-full" : "rounded-md",
           className
         )} 

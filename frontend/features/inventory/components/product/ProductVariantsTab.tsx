@@ -4,7 +4,6 @@ import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState, useMemo } from "react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
-import { TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Trash2, RefreshCw, Layers, Pencil, Wand2 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -22,6 +21,7 @@ import { getErrorMessage } from "@/lib/errors"
 import { Product, ProductAttributeValue } from "@/types/entities"
 import { Badge } from "@/components/ui/badge"
 import { ProductInitialData } from "@/types/forms"
+import { FormTabsContent } from "@/components/shared"
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditForm } from "./BulkVariantEditForm"
@@ -212,7 +212,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
     // If it's a variant itself, we don't show the generator
     if (form.watch("parent_template")) {
         return (
-            <TabsContent value="variants" className="mt-0 p-6 text-center space-y-4">
+            <FormTabsContent value="variants" className="mt-0 p-6 text-center space-y-4">
                 <div className="flex flex-col items-center justify-center py-12 bg-muted/20 rounded-md border-2 border-dashed">
                     <Layers className="h-12 w-12 text-muted-foreground mb-4" />
                     <h3 className="text-lg font-bold">Este producto es una variante</h3>
@@ -223,12 +223,12 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         <Button variant="link" className="mt-2">Ver Plantilla Origen</Button>
                     )}
                 </div>
-            </TabsContent>
+            </FormTabsContent>
         )
     }
 
     return (
-        <TabsContent value="variants" className="mt-0 space-y-6 flex flex-col h-[600px]">
+        <FormTabsContent value="variants" className="mt-0 space-y-6 flex flex-col h-[600px]">
             
             {/* Header / Actions */}
             <div className="flex items-center justify-between">
@@ -540,6 +540,6 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                 description={`¿Está seguro de eliminar la variante ${variantToDelete?.variant_display_name || variantToDelete?.name || ''}?`}
                 variant="destructive"
             />
-        </TabsContent>
+        </FormTabsContent>
     )
 }

@@ -1,6 +1,5 @@
-"use client"
-
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import * as React from "react"
+import { FormTabs, FormTabsContent, type FormTabItem } from "@/components/shared"
 import { Package, Briefcase } from "lucide-react"
 
 interface MaterialAssignmentTabsProps {
@@ -27,36 +26,39 @@ export function MaterialAssignmentTabs({
         )
     }
 
+    const tabItems: FormTabItem[] = [
+        {
+            value: "stock",
+            label: "Materiales de Stock",
+            icon: Package,
+            badge: stockCount > 0 ? stockCount : undefined
+        },
+        {
+            value: "outsourced",
+            label: "Servicios Tercerizados",
+            icon: Briefcase,
+            badge: outsourcedCount > 0 ? outsourcedCount : undefined
+        }
+    ]
+
+    const [activeTab, setActiveTab] = React.useState("stock")
+
     return (
-        <Tabs defaultValue="stock" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="stock" className="gap-2">
-                    <Package className="h-4 w-4" />
-                    Materiales de Stock
-                    {stockCount > 0 && (
-                        <span className="ml-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                            {stockCount}
-                        </span>
-                    )}
-                </TabsTrigger>
-                <TabsTrigger value="outsourced" className="gap-2">
-                    <Briefcase className="h-4 w-4" />
-                    Servicios Tercerizados
-                    {outsourcedCount > 0 && (
-                        <span className="ml-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                            {outsourcedCount}
-                        </span>
-                    )}
-                </TabsTrigger>
-            </TabsList>
+        <div className="w-full">
+            <FormTabs 
+                items={tabItems} 
+                value={activeTab}
+                onValueChange={setActiveTab}
+                orientation="horizontal"
+            >
+                <FormTabsContent value="stock" className="space-y-4 pt-4 animate-in fade-in-50 duration-300">
+                    {stockContent}
+                </FormTabsContent>
 
-            <TabsContent value="stock" className="space-y-4 pt-4 animate-in fade-in-50 duration-300">
-                {stockContent}
-            </TabsContent>
-
-            <TabsContent value="outsourced" className="space-y-4 pt-4 animate-in fade-in-50 duration-300">
-                {outsourcedContent}
-            </TabsContent>
-        </Tabs>
+                <FormTabsContent value="outsourced" className="space-y-4 pt-4 animate-in fade-in-50 duration-300">
+                    {outsourcedContent}
+                </FormTabsContent>
+            </FormTabs>
+        </div>
     )
 }

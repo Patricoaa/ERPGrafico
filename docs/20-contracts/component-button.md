@@ -13,7 +13,8 @@ El sistema de botones de ERPGrafico es una **jerarquía de 3 capas**. Elegir la 
 
 ```
 Capa 1 — Primitiva base:   components/ui/button.tsx          (shadcn/ui)
-Capa 2 — Acciones de ERP:  components/shared/ActionButtons.tsx
+Capa 2 — Acciones de ERP:  components/shared/ActionButtons.tsx (Submit/Cancel/Danger)
+                           components/shared/ActionSlideButton.tsx (Premium Kinetic)
 Capa 3 — Acciones de toolbar: components/shared/ToolbarCreateButton.tsx
 ```
 
@@ -53,7 +54,7 @@ Tamaños disponibles:
 
 **Importación única:** `import { SubmitButton, CancelButton, DangerButton, IconButton } from "@/components/shared"`
 
-Estos wrappers son la **forma correcta** de manejar acciones semánticas de ERP. Incluyen spinner automático, íconos por defecto y `type` correcto.
+Estos wrappers son la **forma correcta** de manejar acciones semánticas de ERP. Adoptan automáticamente la estética **Industrial Premium**: altura `h-9`, tipografía `text-[10px]`, peso `font-black`, `uppercase` y `tracking-widest`. Incluyen spinner automático, íconos de precisión y `type` correcto.
 
 ### `SubmitButton` — Guardar / Procesar / Confirmar
 
@@ -140,7 +141,7 @@ Para el botón **"+ Nueva entidad"** en toolbars de listas.
 | Acción ERP                | Componente correcto              | Variante/Config               |
 |---------------------------|----------------------------------|-------------------------------|
 | Crear entidad (toolbar)   | `ToolbarCreateButton`            | default                       |
-| Crear entidad (modal)     | `SubmitButton`                   | `icon=<PlusCircle/>`          |
+| Crear entidad (modal)     | `ActionSlideButton`              | `variant="primary"`           |
 | Guardar formulario        | `SubmitButton`                   | `icon=<Save/>` (default)      |
 | Procesar / Confirmar      | `SubmitButton`                   | `icon=<Zap/>` o `<Check/>`   |
 | Eliminar entidad          | `DangerButton`                   | default                       |

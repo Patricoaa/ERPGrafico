@@ -85,11 +85,7 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
                     <GroupForm
                         initialData={group}
                         onSuccess={fetchGroups}
-                        trigger={
-                            <div>
-                                <DataCell.Action icon={Edit} title="Editar" />
-                            </div>
-                        }
+                        trigger={<DataCell.Action icon={Edit} title="Editar" />}
                     />
                     <DataCell.Action 
                         icon={Trash2} 

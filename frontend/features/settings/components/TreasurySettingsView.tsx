@@ -3,16 +3,13 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Banknote, ArrowLeftRight, Settings2 } from "lucide-react"
 import { FormSkeleton } from "@/components/shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { Separator } from "@/components/ui/separator"
 type SavingStatus = "idle" | "saving" | "synced" | "error"
 
 import { treasurySchema, type TreasuryFormValues } from "./TreasurySettingsView.schema"
@@ -170,7 +167,7 @@ export function TreasurySettingsView({ activeTab = "conciliation", onSavingChang
                                             <AccountField form={form} name="pos_system_error_account" label="Ajuste Operativo (Corrección)" accountType="EXPENSE" />
                                         </div>
                                     </div>
-                                    
+
                                     <div>
                                         <p className="text-[10px] font-black uppercase text-muted-foreground/60 mb-6 border-b-2 border-primary/10 pb-1 w-fit tracking-tighter">Retiros y Salidas de Efectivo</p>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">

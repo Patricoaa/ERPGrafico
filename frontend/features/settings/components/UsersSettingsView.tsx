@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
-import { useRouter } from "next/navigation"
+
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -15,19 +15,15 @@ import { UserForm } from "@/features/users/components/UserForm"
 import { GroupForm } from "@/features/users/components/GroupForm"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/features/settings/components/GroupManagement"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import { LAYOUT_TOKENS } from "@/lib/styles"
 import { type AppUser } from "@/types/entities"
 import { cn } from "@/lib/utils"
 
 interface UsersSettingsViewProps {
     activeTab: string
-    onActionsChange?: (actions: React.ReactNode) => void
 }
 
-export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsViewProps) {
+export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
     const [loading, setLoading] = useState(true)
     const [users, setUsers] = useState<AppUser[]>([])
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
@@ -130,11 +126,7 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
                     <UserForm
                         initialData={transformedUser}
                         onSuccess={fetchUsers}
-                        trigger={
-                            <div>
-                                <DataCell.Action icon={Edit} title="Editar" />
-                            </div>
-                        }
+                        trigger={<DataCell.Action icon={Edit} title="Editar" />}
                     />
                 )
             }
@@ -148,13 +140,7 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
         />
     ), [fetchUsers])
 
-    useEffect(() => {
-        if (activeTab === 'users') {
-            onActionsChange?.(usersCreateAction)
-        } else {
-            onActionsChange?.(null)
-        }
-    }, [activeTab, onActionsChange, usersCreateAction])
+
 
     const groupsCreateAction = useMemo(() => (
         <ToolbarCreateButton
