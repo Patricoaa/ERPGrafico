@@ -1,3 +1,4 @@
+import * as React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -101,9 +102,21 @@ export function GroupForm({
         }
     }
 
-    const Trigger = () => {
+    const RenderTrigger = () => {
         if (isControlled) return null;
         if (!trigger) return null;
+
+        if (React.isValidElement(trigger)) {
+            return React.cloneElement(trigger as React.ReactElement, {
+                // @ts-ignore
+                onClick: (e: React.MouseEvent) => {
+                    // @ts-ignore
+                    if (trigger.props.onClick) trigger.props.onClick(e);
+                    setOpen(true);
+                }
+            });
+        }
+
         return (
             <div onClick={() => setOpen?.(true)}>
                 {trigger}
@@ -113,7 +126,7 @@ export function GroupForm({
 
     return (
         <>
-            <Trigger />
+            <RenderTrigger />
             <BaseModal
                 open={isOpen}
                 onOpenChange={setOpen}

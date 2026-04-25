@@ -10,13 +10,11 @@ import {
     ShieldAlert,
     ArrowDownCircle,
     ArrowUpCircle,
-    Package,
     Info
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import { CancelButton } from "@/components/shared/ActionButtons"
-import { Input } from "@/components/ui/input"
+
 import {
     Form,
     FormField
@@ -24,16 +22,14 @@ import {
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import api from "@/lib/api"
 import { FORM_STYLES } from "@/lib/styles"
 import { Product, UoM, Warehouse } from "@/types/entities"
 import { cn } from "@/lib/utils"
 import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { LabeledInput, LabeledSelect } from "@/components/shared"
+import { LabeledInput, LabeledSelect, FormTabs, type FormTabItem } from "@/components/shared"
 
 
 const adjustmentSchema = z.object({
@@ -241,6 +237,19 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
 
     const conversion = getConversionPreview()
 
+    const tabItems: FormTabItem[] = [
+        {
+            value: "IN",
+            label: "Entrada",
+            icon: ArrowDownCircle,
+        },
+        {
+            value: "OUT",
+            label: "Salida",
+            icon: ArrowUpCircle,
+        },
+    ]
+
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -255,258 +264,242 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                     </Alert>
                 )}
 
-                {/* 1. Transaction Type - Compact Rounded Selector */}
-                <div className="flex justify-center pb-2">
-                    <Tabs
-                        value={moveType}
-                        onValueChange={(val) => form.setValue("type", val as "IN" | "OUT")}
-                        className="w-full max-w-md"
-                    >
-                        <TabsList className="grid w-full grid-cols-2 bg-muted/30 rounded-full h-10 p-1 border shadow-inner">
-                            <TabsTrigger
-                                value="IN"
-                                className="rounded-full transition-all text-[10px] uppercase tracking-wider font-bold text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-success data-[state=active]:shadow-sm h-full"
-                            >
-                                <ArrowDownCircle className="mr-2 h-3.5 w-3.5" />
-                                Entrada
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="OUT"
-                                className="rounded-full transition-all text-[10px] uppercase tracking-wider font-bold text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-destructive data-[state=active]:shadow-sm h-full"
-                            >
-                                <ArrowUpCircle className="mr-2 h-3.5 w-3.5" />
-                                Salida
-                            </TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-                </div>
+                <FormTabs
+                    items={tabItems}
+                    value={moveType}
+                    onValueChange={(val) => form.setValue("type", val as "IN" | "OUT")}
+                    orientation="horizontal"
+                    variant="underline"
+                >
+                    <div className="space-y-4 pt-4">
+                        {/* Section: Clasification - Notched Container */}
+                        <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 shadow-sm border-primary/10">
+                            <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Clasificación y Origen</span>
+                            </div>
 
-                {/* Section: Clasification - Notched Container */}
-                <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 shadow-sm border-primary/10">
-                    <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Clasificación y Origen</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                        <div className={cn("md:col-span-4")}>
-                            <FormField
-                                control={form.control}
-                                name="adjustment_reason"
-                                render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Motivo de Ajuste"
-                                        value={field.value}
-                                        onChange={(val) => {
-                                            field.onChange(val)
-                                            if (val !== 'PARTNER_CONTRIBUTION' && val !== 'PARTNER_WITHDRAWAL') {
-                                                form.setValue('partner_contact_id', '')
-                                            }
-                                            if (val === 'PARTNER_CONTRIBUTION') form.setValue('type', 'IN')
-                                            if (val === 'PARTNER_WITHDRAWAL') form.setValue('type', 'OUT')
-                                        }}
-                                        error={fieldState.error?.message}
-                                        options={[
-                                            { value: "CORRECTION", label: "Corrección de Inventario" },
-                                            ...(moveType === 'OUT' ? [{ value: "LOSS", label: "Merma / Pérdida" }] : []),
-                                            ...(moveType === 'IN' ? [{ value: "GAIN", label: "Sobrante / Ganancia" }] : []),
-                                            { value: "REVALUATION", label: "Revalorización" },
-                                            ...(moveType === 'IN' ? [{ value: "PARTNER_CONTRIBUTION", label: "Aporte de Socio" }] : []),
-                                            ...(moveType === 'OUT' ? [{ value: "PARTNER_WITHDRAWAL", label: "Retiro de Socio" }] : []),
-                                        ]}
+                            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                                <div className={cn("md:col-span-4")}>
+                                    <FormField
+                                        control={form.control}
+                                        name="adjustment_reason"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Motivo de Ajuste"
+                                                value={field.value}
+                                                onChange={(val) => {
+                                                    field.onChange(val)
+                                                    if (val !== 'PARTNER_CONTRIBUTION' && val !== 'PARTNER_WITHDRAWAL') {
+                                                        form.setValue('partner_contact_id', '')
+                                                    }
+                                                    if (val === 'PARTNER_CONTRIBUTION') form.setValue('type', 'IN')
+                                                    if (val === 'PARTNER_WITHDRAWAL') form.setValue('type', 'OUT')
+                                                }}
+                                                error={fieldState.error?.message}
+                                                options={[
+                                                    { value: "CORRECTION", label: "Corrección de Inventario" },
+                                                    ...(moveType === 'OUT' ? [{ value: "LOSS", label: "Merma / Pérdida" }] : []),
+                                                    ...(moveType === 'IN' ? [{ value: "GAIN", label: "Sobrante / Ganancia" }] : []),
+                                                    { value: "REVALUATION", label: "Revalorización" },
+                                                    ...(moveType === 'IN' ? [{ value: "PARTNER_CONTRIBUTION", label: "Aporte de Socio" }] : []),
+                                                    ...(moveType === 'OUT' ? [{ value: "PARTNER_WITHDRAWAL", label: "Retiro de Socio" }] : []),
+                                                ]}
+                                            />
+                                        )}
                                     />
+                                </div>
+
+                                <div className={cn(isPartnerReason ? "md:col-span-4" : "md:col-span-8")}>
+                                    {isPartnerReason ? (
+                                        <FormField
+                                            control={form.control}
+                                            name="partner_contact_id"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Socio del Movimiento"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    placeholder="Seleccione un socio..."
+                                                    className="border-warning/20 bg-warning/5"
+                                                    error={fieldState.error?.message}
+                                                    options={partners.map(p => ({
+                                                        value: p.id.toString(),
+                                                        label: p.name
+                                                    }))}
+                                                />
+                                            )}
+                                        />
+                                    ) : (
+                                        <FormField
+                                            control={form.control}
+                                            name="description"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Notas / Referencia Interna"
+                                                    placeholder="Ej: Ajuste mensual detectado en conteo..."
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )}
+                                        />
+                                    )}
+                                </div>
+
+                                {isPartnerReason && (
+                                    <div className="md:col-span-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="description"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Referencia"
+                                                    placeholder="Notas del socio..."
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )}
+                                        />
+                                    </div>
                                 )}
-                            />
+                            </div>
                         </div>
 
-                        <div className={cn(isPartnerReason ? "md:col-span-4" : "md:col-span-8")}>
-                             {isPartnerReason ? (
-                                <FormField
-                                    control={form.control}
-                                    name="partner_contact_id"
-                                    render={({ field, fieldState }) => (
-                                        <LabeledSelect
-                                            label="Socio del Movimiento"
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            placeholder="Seleccione un socio..."
-                                            className="border-warning/20 bg-warning/5"
-                                            error={fieldState.error?.message}
-                                            options={partners.map(p => ({
-                                                value: p.id.toString(),
-                                                label: p.name
-                                            }))}
-                                        />
-                                    )}
-                                />
-                            ) : (
-                                <FormField
-                                    control={form.control}
-                                    name="description"
-                                    render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            label="Notas / Referencia Interna"
-                                            placeholder="Ej: Ajuste mensual detectado en conteo..."
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                        />
-                                    )}
-                                />
+                        {/* Section: Detalles - Notched Container */}
+                        <div className="relative p-5 pt-8 rounded-lg border-2 bg-card shadow-sm border-primary/10">
+                            <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Detalles del Movimiento</span>
+                            </div>
+
+                            <div className="space-y-6">
+                                {/* Row 1: Almacén | Producto */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <FormField
+                                        control={form.control}
+                                        name="warehouse_id"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Almacén de Ubicación"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                placeholder="Seleccionar ubicación..."
+                                                error={fieldState.error?.message}
+                                                options={warehouses.map(w => ({
+                                                    value: w.id.toString(),
+                                                    label: w.name
+                                                }))}
+                                            />
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="product_id"
+                                        render={({ field, fieldState }) => (
+                                            <ProductSelector
+                                                label="Producto a Ajustar"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                placeholder="Buscar producto por SKU o Nombre..."
+                                                disabled={!!preSelectedProduct}
+                                                allowedTypes={["STORABLE", "MANUFACTURABLE"]}
+                                                simpleOnly={true}
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                {/* Row 2: Cantidad | Unidad | Costo */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    <FormField
+                                        control={form.control}
+                                        name="quantity"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Cantidad"
+                                                type="number"
+                                                step="0.01"
+                                                placeholder="0.00"
+                                                className="font-bold text-lg h-11"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="uom_id"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Unidad de Medida"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                placeholder="UoM"
+                                                disabled={productUoMs.length === 0}
+                                                error={fieldState.error?.message}
+                                                options={productUoMs.map(u => ({
+                                                    value: u.id.toString(),
+                                                    label: u.name
+                                                }))}
+                                            />
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="unit_cost"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                {...field}
+                                                label="Costo Unitario"
+                                                type={moveType === 'IN' ? "number" : "text"}
+                                                step={moveType === 'IN' ? "0.01" : undefined}
+                                                readOnly={moveType === 'OUT'}
+                                                placeholder="0.00"
+                                                icon="$"
+                                                hint={`Valor Total: $${totalValue.toLocaleString('es-CL', { minimumFractionDigits: 2 })}`}
+                                                error={fieldState.error?.message}
+                                                value={moveType === 'OUT' ? Number(field.value).toFixed(2) : field.value}
+                                                onChange={(e) => moveType === 'IN' && field.onChange(e)}
+                                                className={cn("font-mono", moveType === 'OUT' && "opacity-80 bg-muted/50 cursor-default")}
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                {/* Conversion Alert / Info */}
+                                {conversion && baseUoM && (
+                                    <div className="flex gap-2 p-3 bg-primary/5 rounded border border-primary/20 text-[10px] animate-in slide-in-from-top-2 duration-300">
+                                        <Info className="h-4 w-4 text-primary shrink-0" />
+                                        <p className="leading-tight">
+                                            <span className="font-bold uppercase text-primary">Conversión Automática: </span>
+                                            Se registrará como <span className="font-black">{conversion.qty.toFixed(4).replace(/\.?0+$/, '')} {baseUoM.name}</span> a un costo base de <span className="font-black">${conversion.cost.toFixed(2)}</span>.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+
+                        <div className="flex justify-end gap-3 pt-6 pb-2">
+                            {onCancel && (
+                                <CancelButton onClick={onCancel} />
                             )}
+                            <ActionSlideButton
+                                type="submit"
+                                disabled={isLoading || periodStatus?.is_closed}
+                                className={cn("rounded-md text-xs font-black uppercase tracking-widest px-8", moveType === 'IN' ? 'bg-success hover:bg-success/90' : 'bg-destructive hover:bg-destructive/90')}
+                            >
+                                {isLoading ? "Procesando..." : (
+                                    <>
+                                        {moveType === 'IN' ? "Registrar Entrada" : "Registrar Salida"}
+                                    </>
+                                )}
+                            </ActionSlideButton>
                         </div>
-
-                        {isPartnerReason && (
-                            <div className="md:col-span-4">
-                                <FormField
-                                    control={form.control}
-                                    name="description"
-                                    render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            label="Referencia"
-                                            placeholder="Notas del socio..."
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                        />
-                                    )}
-                                />
-                            </div>
-                        )}
                     </div>
-                </div>
-
-                {/* Section: Detalles - Notched Container */}
-                <div className="relative p-5 pt-8 rounded-lg border-2 bg-card shadow-sm border-primary/10">
-                    <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Detalles del Movimiento</span>
-                    </div>
-
-                    <div className="space-y-6">
-                        {/* Row 1: Almacén | Producto */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormField
-                                control={form.control}
-                                name="warehouse_id"
-                                render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Almacén de Ubicación"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        placeholder="Seleccionar ubicación..."
-                                        error={fieldState.error?.message}
-                                        options={warehouses.map(w => ({
-                                            value: w.id.toString(),
-                                            label: w.name
-                                        }))}
-                                    />
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="product_id"
-                                render={({ field, fieldState }) => (
-                                    <ProductSelector
-                                        label="Producto a Ajustar"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        placeholder="Buscar producto por SKU o Nombre..."
-                                        disabled={!!preSelectedProduct}
-                                        allowedTypes={["STORABLE", "MANUFACTURABLE"]}
-                                        simpleOnly={true}
-                                        error={fieldState.error?.message}
-                                    />
-                                )}
-                            />
-                        </div>
-
-                        {/* Row 2: Cantidad | Unidad | Costo */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <FormField
-                                control={form.control}
-                                name="quantity"
-                                render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Cantidad"
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        className="font-bold text-lg h-11"
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="uom_id"
-                                render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Unidad de Medida"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        placeholder="UoM"
-                                        disabled={productUoMs.length === 0}
-                                        error={fieldState.error?.message}
-                                        options={productUoMs.map(u => ({
-                                            value: u.id.toString(),
-                                            label: u.name
-                                        }))}
-                                    />
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="unit_cost"
-                                render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        {...field}
-                                        label="Costo Unitario"
-                                        type={moveType === 'IN' ? "number" : "text"}
-                                        step={moveType === 'IN' ? "0.01" : undefined}
-                                        readOnly={moveType === 'OUT'}
-                                        placeholder="0.00"
-                                        icon="$"
-                                        hint={`Valor Total: $${totalValue.toLocaleString('es-CL', { minimumFractionDigits: 2 })}`}
-                                        error={fieldState.error?.message}
-                                        value={moveType === 'OUT' ? Number(field.value).toFixed(2) : field.value}
-                                        onChange={(e) => moveType === 'IN' && field.onChange(e)}
-                                        className={cn("font-mono", moveType === 'OUT' && "opacity-80 bg-muted/50 cursor-default")}
-                                    />
-                                )}
-                            />
-                        </div>
-
-                        {/* Conversion Alert / Info */}
-                        {conversion && baseUoM && (
-                            <div className="flex gap-2 p-3 bg-primary/5 rounded border border-primary/20 text-[10px] animate-in slide-in-from-top-2 duration-300">
-                                <Info className="h-4 w-4 text-primary shrink-0" />
-                                <p className="leading-tight">
-                                    <span className="font-bold uppercase text-primary">Conversión Automática: </span>
-                                    Se registrará como <span className="font-black">{conversion.qty.toFixed(4).replace(/\.?0+$/, '')} {baseUoM.name}</span> a un costo base de <span className="font-black">${conversion.cost.toFixed(2)}</span>.
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-
-                <div className="flex justify-end gap-3 pt-6 pb-2">
-                    {onCancel && (
-                        <CancelButton onClick={onCancel} />
-                    )}
-                    <ActionSlideButton
-                        type="submit"
-                        disabled={isLoading || periodStatus?.is_closed}
-                        className={cn("rounded-md text-xs font-black uppercase tracking-widest px-8", moveType === 'IN' ? 'bg-success hover:bg-success/90' : 'bg-destructive hover:bg-destructive/90')}
-                    >
-                        {isLoading ? "Procesando..." : (
-                            <>
-                                {moveType === 'IN' ? "Registrar Entrada" : "Registrar Salida"}
-                            </>
-                        )}
-                    </ActionSlideButton>
-                </div>
+                </FormTabs>
             </form>
         </Form>
     )

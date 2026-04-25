@@ -5,8 +5,6 @@ import { useWindowWidth } from "@/hooks/useWindowWidth"
 import { useFormWithToast } from "@/hooks/use-form-with-toast"
 import * as z from "zod"
 import {
-    Sheet,
-    SheetContent,
     SheetHeader,
     SheetTitle,
     SheetDescription
@@ -18,25 +16,21 @@ import {
     FormField,
     FormItem,
     FormLabel,
-    FormMessage,
+
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
 import api from "@/lib/api"
 import { Contact, InsightsData } from "../types"
-import { Order, OrderLine, WorkOrder } from "../../orders/types"
+import { Order } from "../../orders/types"
 import { toast } from "sonner"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight } from "lucide-react"
 import { OrderCard } from "@/features/orders/components/OrderCard"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
+
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { Separator } from "@/components/ui/separator"
 import { DataTable } from "@/components/ui/data-table"
@@ -48,8 +42,7 @@ import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { Card, CardContent } from "@/components/ui/card"
 import { getHubStatuses } from '@/features/orders/utils/status'
-import { FORM_STYLES } from "@/lib/styles"
-import { Skeleton, CardSkeleton, TableSkeleton, LabeledInput } from "@/components/shared"
+import { TableSkeleton, LabeledInput, FormTabs, FormTabsContent, type FormTabItem } from "@/components/shared"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),
@@ -202,9 +195,9 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             })
             return
         }
-                requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
             fetchDefaults()
- 
+
             if (c && c.name) {
                 form.reset({
                     name: c.name as string,
@@ -266,6 +259,38 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
         await saveContact(values)
     }
 
+    const tabItems: FormTabItem[] = [
+        {
+            value: "profile",
+            label: "Perfil",
+            icon: User,
+        },
+        {
+            value: "sales",
+            label: "Cliente",
+            icon: ShoppingCart,
+            badge: insightsData?.sales?.count || 0,
+        },
+        {
+            value: "purchases",
+            label: "Proveedor",
+            icon: Package,
+            badge: insightsData?.purchases?.count || 0,
+        },
+        {
+            value: "work_orders",
+            label: "Relacionado",
+            icon: Wand2,
+            badge: insightsData?.work_orders?.count || 0,
+        },
+        {
+            value: "credit",
+            label: "Crédito",
+            icon: Banknote,
+            hidden: !c?.id,
+        },
+    ]
+
     return (
         <CollapsibleSheet
             sheetId="CONTACT_DETAIL"
@@ -274,91 +299,47 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             tabLabel="FICHA CONTACTO"
             tabIcon={User}
             size="xl"
+            allowOverflow={true}
             className="max-w-[95vw] w-[95vw]"
         >
-            <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
-                <div className="flex items-center justify-between w-full pr-12 text-left">
-                    <div className="flex items-center gap-4">
-                        <User className="h-6 w-6" />
-                        <div className="flex flex-col">
-                            <div className="flex items-center gap-3">
-                                <SheetTitle className="text-xl font-bold tracking-tight text-foreground">
-                                    Ficha de Contacto
-                                </SheetTitle>
-                                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 bg-primary/5 text-primary tracking-widest leading-none">
-                                    {contact?.display_id ? (contact.display_id as any) : "Nuevo"}
-                                </span>
-                            </div>
-                            <SheetDescription className="text-xs font-medium text-muted-foreground mt-0.5">
-                                {form.watch("name") || "Nuevo Contacto"} {form.watch("tax_id") ? `• ${formatRUT(form.watch("tax_id"))}` : ""}
-                            </SheetDescription>
-                        </div>
-                    </div>
-                </div>
-            </SheetHeader>
-
-            {/* Standardized Close Button */}
-            <SheetCloseButton 
-                onClick={() => onOpenChange(false)} 
+            <SheetCloseButton
+                onClick={() => onOpenChange(false)}
                 className="absolute top-4 right-4 z-[60]"
             />
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="h-full w-full flex flex-col overflow-hidden">
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-                        <div className="px-6 border-b bg-muted/5">
-                            <TabsList className="h-12 w-full justify-start gap-4 bg-transparent p-0">
-                                <TabsTrigger
-                                    value="profile"
-                                    className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2"
-                                >
-                                    <User className="h-4 w-4" />
-                                    Perfil
-                                </TabsTrigger>
 
-                                <TabsTrigger
-                                    value="sales"
-                                    className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <ShoppingCart className="h-4 w-4" />
-                                        Cliente
-                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground h-4 flex items-center leading-none ml-1">
-                                            {insightsData?.sales?.count || 0}
-                                        </span>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="h-full w-full flex flex-col overflow-visible">
+                    <FormTabs
+                        items={tabItems}
+                        value={activeTab}
+                        onValueChange={setActiveTab}
+                        orientation="vertical"
+                        header={
+                            <div className="p-6 pb-4 flex items-center justify-between w-full">
+                                <div className="flex items-center gap-4">
+                                    <User className="h-6 w-6" />
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-3">
+                                            <h2 className="text-xl font-bold tracking-tight text-foreground">
+                                                Ficha de Contacto
+                                            </h2>
+                                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 bg-primary/5 text-primary tracking-widest leading-none">
+                                                {contact?.display_id ? (contact.display_id as any) : "Nuevo"}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs font-medium text-muted-foreground mt-0.5">
+                                            {form.watch("name") || "Nuevo Contacto"} {form.watch("tax_id") ? `• ${formatRUT(form.watch("tax_id"))}` : ""}
+                                        </p>
                                     </div>
-                                </TabsTrigger>
+                                </div>
+                            </div>
+                        }
+                        className="flex-1 overflow-visible"
+                    >
+                        <div className="flex-1 flex overflow-visible min-h-0">
 
-                                <TabsTrigger
-                                    value="purchases"
-                                    className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Package className="h-4 w-4" />
-                                        Proveedor
-                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground h-4 flex items-center leading-none ml-1">
-                                            {insightsData?.purchases?.count || 0}
-                                        </span>
-                                    </div>
-                                </TabsTrigger>
-
-                                <TabsTrigger
-                                    value="work_orders"
-                                    className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Wand2 className="h-4 w-4" />
-                                        Relacionado
-                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground h-4 flex items-center leading-none ml-1">
-                                            {insightsData?.work_orders?.count || 0}
-                                        </span>
-                                    </div>
-                                </TabsTrigger>
-                            </TabsList>
-                        </div>
-
-                        <div className="flex-1 flex overflow-hidden min-h-0">
                             <div className="flex-1 flex flex-col min-w-0 border-r overflow-y-auto scrollbar-thin">
-                                <TabsContent value="profile" className="h-full m-0 p-0 border-0 outline-none">
+                                <FormTabsContent value="profile" className="h-full m-0 p-0 border-0 outline-none">
                                     <div className="p-8 pb-32">
                                         <div className="space-y-6">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -514,9 +495,9 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                             </div>
                                         </div>
                                     </div>
-                                </TabsContent>
+                                </FormTabsContent>
 
-                                <TabsContent value="sales" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                <FormTabsContent value="sales" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <InsightsTable
                                         data={insightsData?.sales?.orders || []}
                                         type="sale"
@@ -524,9 +505,9 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                         icon={ShoppingCart}
                                         onActionSuccess={handleActionSuccess}
                                     />
-                                </TabsContent>
+                                </FormTabsContent>
 
-                                <TabsContent value="purchases" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                <FormTabsContent value="purchases" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <InsightsTable
                                         data={insightsData?.purchases?.orders || []}
                                         type="purchase"
@@ -534,9 +515,9 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                         icon={Package}
                                         onActionSuccess={handleActionSuccess}
                                     />
-                                </TabsContent>
+                                </FormTabsContent>
 
-                                <TabsContent value="work_orders" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                <FormTabsContent value="work_orders" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <InsightsTable
                                         data={insightsData?.work_orders?.orders || []}
                                         type="work_order"
@@ -544,10 +525,10 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                         icon={Wand2}
                                         onActionSuccess={handleActionSuccess}
                                     />
-                                </TabsContent>
-                                <TabsContent value="credit" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                </FormTabsContent>
+                                <FormTabsContent value="credit" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <CreditLedgerTable data={ledgerData} loading={loadingLedger} onActionSuccess={handleActionSuccess} />
-                                </TabsContent>
+                                </FormTabsContent>
                             </div>
 
 
@@ -555,7 +536,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                 <ActivitySidebar entityId={contact.id.toString()} entityType="contact" />
                             )}
                         </div>
-                    </Tabs>
+                    </FormTabs>
                 </form>
             </Form>
 

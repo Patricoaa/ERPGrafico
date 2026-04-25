@@ -14,16 +14,13 @@ import {
     Form, FormField, FormItem, FormLabel, FormControl
 } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
-import {
-    Tabs, TabsContent, TabsList, TabsTrigger
-} from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import {
     Plus, UserCog, ShieldCheck, CalendarCheck2
 } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { BaseModal, EmptyState, LabeledInput, LabeledSelect } from "@/components/shared"
+import { BaseModal, EmptyState, LabeledInput, LabeledSelect, FormTabs, FormTabsContent, type FormTabItem } from "@/components/shared"
 
 export const employeeSchema = z.object({
     contact: z.string().min(1, "Contacto requerido"),
@@ -60,6 +57,7 @@ export interface EmployeeFormModalProps {
 export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigger }: EmployeeFormModalProps) {
     const [saving, setSaving] = useState(false)
     const [afps, setAfps] = useState<AFP[]>([])
+    const [activeTab, setActiveTab] = useState("contratacion")
 
     const form = useForm<EmployeeFormValues>({
         resolver: zodResolver(employeeSchema),
@@ -181,6 +179,24 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
         }
     }
 
+    const tabItems: FormTabItem[] = [
+        {
+            value: "contratacion",
+            label: "Contratación",
+            icon: UserCog,
+        },
+        {
+            value: "jornada",
+            label: "Jornada y Previsión",
+            icon: CalendarCheck2,
+        },
+        {
+            value: "haberes",
+            label: "Haberes Específicos",
+            icon: Plus,
+        },
+    ]
+
     const watchSalud = form.watch("salud_type")
 
     const footer = (
@@ -200,49 +216,47 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            title={
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-md">
-                        <UserCog className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                        <span className="text-lg font-bold tracking-tight">
-                            {employee ? "Editar Ficha de Empleado" : "Nueva Ficha de Empleado"}
-                        </span>
-                        {employee && (
-                            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">
-                                {employee.display_id} • {employee.contact_detail?.name}
-                            </p>
-                        )}
-                    </div>
-                </div>
-            }
+            headerClassName="sr-only"
+            title={employee ? "Editar Ficha de Empleado" : "Nueva Ficha de Empleado"}
             size={employee ? "full" : "xl"}
-            hideScrollArea
+            hideScrollArea={true}
+            allowOverflow={true}
             footer={footer}
         >
-            <div className="flex h-[80vh] overflow-hidden">
-                <div className="flex-1 flex flex-col overflow-hidden bg-background">
-                        <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="flex h-[80vh] overflow-visible">
+                <div className="flex-1 flex flex-col overflow-visible bg-background">
+                        <div className="flex-1 overflow-visible flex flex-col">
                             <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
-                                    <Tabs defaultValue="contratacion" className="flex-1 flex flex-col overflow-hidden">
-                                        <div className="px-8 border-b bg-muted/5">
-                                            <TabsList className="h-12 bg-transparent gap-8 p-0">
-                                                <TabsTrigger value="contratacion" className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 text-xs font-bold uppercase tracking-wider transition-all">
-                                                    Contratación
-                                                </TabsTrigger>
-                                                <TabsTrigger value="jornada" className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 text-xs font-bold uppercase tracking-wider transition-all">
-                                                    Jornada y Previsión
-                                                </TabsTrigger>
-                                                <TabsTrigger value="haberes" className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-1 text-xs font-bold uppercase tracking-wider transition-all">
-                                                    Haberes Específicos
-                                                </TabsTrigger>
-                                            </TabsList>
-                                        </div>
-
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-visible">
+                                    <FormTabs
+                                        items={tabItems}
+                                        value={activeTab}
+                                        onValueChange={setActiveTab}
+                                        orientation="vertical"
+                                        header={
+                                            <div className="p-6 flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-primary/10 rounded-md">
+                                                        <UserCog className="h-5 w-5 text-primary" />
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-lg font-bold tracking-tight">
+                                                            {employee ? "Editar Ficha de Empleado" : "Nueva Ficha de Empleado"}
+                                                        </span>
+                                                        {employee && (
+                                                            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">
+                                                                {employee.display_id} • {employee.contact_detail?.name}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                        className="flex-1 overflow-visible"
+                                    >
                                         <div className="flex-1 min-h-0">
-                                            <TabsContent value="contratacion" className="h-full m-0 p-8 lg:p-10 overflow-y-auto scrollbar-thin animate-in fade-in-50 duration-300">
+
+                                            <FormTabsContent value="contratacion" className="h-full m-0 p-8 lg:p-10 overflow-y-auto scrollbar-thin animate-in fade-in-50 duration-300">
                                                 <div className="max-w-4xl mx-auto space-y-10">
                                                     <div className="flex items-center gap-3">
                                                         <div className="flex-1 h-px bg-border/60" />
@@ -327,9 +341,9 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                                                         )} />
                                                     </div>
                                                 </div>
-                                            </TabsContent>
+                                            </FormTabsContent>
 
-                                            <TabsContent value="jornada" className="h-full m-0 p-8 lg:p-10 overflow-y-auto scrollbar-thin animate-in fade-in-50 duration-300">
+                                            <FormTabsContent value="jornada" className="h-full m-0 p-8 lg:p-10 overflow-y-auto scrollbar-thin animate-in fade-in-50 duration-300">
                                                 <div className="max-w-6xl mx-auto space-y-16">
                                                     {/* Sección 1: Detalles Jornada */}
                                                     <div className="space-y-10">
@@ -498,9 +512,9 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </TabsContent>
+                                            </FormTabsContent>
 
-                                            <TabsContent value="haberes" className="h-full m-0 p-8 lg:p-10 overflow-y-auto scrollbar-thin animate-in fade-in-50 duration-300">
+                                            <FormTabsContent value="haberes" className="h-full m-0 p-8 lg:p-10 overflow-y-auto scrollbar-thin animate-in fade-in-50 duration-300">
                                                 <div className="max-w-6xl mx-auto space-y-10">
                                                     <div className="flex items-center gap-3">
                                                         <div className="flex-1 h-px bg-border/60" />
@@ -536,9 +550,9 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                                                         />
                                                     )}
                                                 </div>
-                                            </TabsContent>
+                                            </FormTabsContent>
                                         </div>
-                                    </Tabs>
+                                    </FormTabs>
                                 </form>
                             </Form>
                         </div>

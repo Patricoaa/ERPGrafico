@@ -5,11 +5,10 @@ import { Switch } from "@/components/ui/switch"
 import { Package, Warehouse, ChevronsUpDown, Search, Check, Truck, AlertCircle } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
-import { TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 
-import { LabeledContainer } from "@/components/shared"
+import { LabeledContainer, FormTabsContent } from "@/components/shared"
 
 
 import { cn } from "@/lib/utils"
@@ -32,7 +31,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
     const isSwitchDisabled = productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'SERVICE'
 
     return (
-        <TabsContent value="logistics" className="mt-0 space-y-6">
+        <FormTabsContent value="logistics" className="mt-0 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                 <div className="relative p-5 pt-8 rounded-lg border-2 bg-card shadow-sm border-primary/10">
                     <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
@@ -419,6 +418,6 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                     />
                 </div>
             </div>
-        </TabsContent>
+        </FormTabsContent>
     )
 }

@@ -617,6 +617,53 @@ Tabs scroll horizontally on small screens (no scrollbar).
 
 ---
 
+## FormTabs 🟢
+
+Componente de pestañas estandarizado con estética "industrial gráfica" (carpetas troqueladas) para formularios complejos y modales con múltiples secciones. Reemplaza el uso directo de `Tabs` de shadcn/ui.
+
+```tsx
+<FormTabs
+  items={[
+    { value: 'general', label: 'General', icon: InfoIcon, hasErrors: !!errors.name },
+    { value: 'pricing', label: 'Precios', icon: DollarSignIcon, disabled: !productId },
+  ]}
+  value={activeTab}
+  onValueChange={setActiveTab}
+  orientation="vertical"
+  header={<headerSlot />}
+>
+  <FormTabsContent value="general">...</FormTabsContent>
+</FormTabs>
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `items` | `FormTabItem[]` | ✅ | — | `{ value, label, icon?, badge?, hasErrors?, hidden?, disabled? }` |
+| `value` | `string` | ✅ | — | Controlled state |
+| `onValueChange` | `(value: string) => void` | ✅ | — | |
+| `orientation` | `'vertical' \| 'horizontal'` | ❌ | `'vertical'` | |
+| `variant` | `'folder' \| 'underline'` | ❌ | `'folder'` | `folder`: corte industrial. `underline`: minimalista. |
+| `header` | `ReactNode` | ❌ | — | Renderiza sobre el contenido (obligatorio para sticky titles en modales verticales) |
+| `footer` | `ReactNode` | ❌ | — | Renderiza debajo del contenido |
+| `listClassName` | `string` | ❌ | — | Clases adicionales para el contenedor de pestañas |
+
+### Patrones de Uso
+
+#### 1. Vertical Rail ("Sawtooth")
+Estética de riel lateral con efecto de sierra que sobresale del contenedor.
+- **Cuándo usar:** Fichas maestras (Producto, Usuario, Contacto), alta densidad de datos (4+ pestañas), modales de gran tamaño (`xl` o superior).
+- **Requisito Técnico:** El modal padre DEBE tener `allowOverflow={true}` y `hideScrollArea={true}` para permitir que el riel sobresalga del marco.
+- **Navegación:** El título del modal debe moverse al `header` prop de `FormTabs` para alinear el riel con el contenido.
+
+#### 2. Horizontal Group ("Pills")
+Estética de mando unificado con doble redondeo superior y base recta.
+- **Cuándo usar:** Selectores de vista (Ventas vs Notas C/D), formularios simples o rápidos (2-3 pestañas), componentes inline.
+- **Comportamiento:** Se centran automáticamente en su contenedor y actúan como un grupo de botones ("button group") integrado.
+
+---
+
+---
+
 ## TransactionViewModal 🟢
 
 Large detail modal for any transaction type. Two-column layout: content (75%) + metadata sidebar (25%).
@@ -698,16 +745,16 @@ Botón expansible para acciones secundarias.
 
 ---
 
-## ActionSlideButton 🟡
+## ActionSlideButton 🟢
 
-Botón con animación de deslizamiento para revelar acciones adicionales.
+Botón con animación de deslizamiento para revelar acciones adicionales. Ideal para procesos primarios con alta carga kinética.
 
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
-| `label` | `string` | ✅ | — | |
-| `icon` | `LucideIcon` | ✅ | — | |
-| `onClick` | `() => void` | ✅ | — | |
-| `variant` | `'default' \| 'destructive' \| 'outline' \| 'secondary' \| 'ghost'` | ❌ | `'default'` | |
+| `children` | `ReactNode` | ✅ | — | Texto del botón |
+| `icon` | `LucideIcon` | ❌ | — | Icono opcional a la izquierda |
+| `variant` | `'primary' \| 'destructive' \| 'success'` | ❌ | `'primary'` | |
+| `loading` | `boolean` | ❌ | `false` | Muestra spinner y deshabilita |
 
 ---
 

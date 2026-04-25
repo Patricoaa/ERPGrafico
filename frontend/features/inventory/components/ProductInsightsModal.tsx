@@ -13,33 +13,26 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import {
-    Loader2,
     History,
     TrendingUp,
-    TrendingDown,
-    Minus,
     BarChart3,
     ArrowRightLeft,
     Factory,
-    DollarSign,
     ArrowUpRight,
     ArrowDownRight,
-    Search,
-    Eye
+    Eye,
+    LayoutDashboard
 } from "lucide-react"
 import api from "@/lib/api"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FormTabs, FormTabsContent } from "@/components/shared"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
 import {
     ResponsiveContainer,
-    LineChart,
-    Line,
     XAxis,
     YAxis,
     CartesianGrid,
@@ -49,6 +42,7 @@ import {
     Area
 } from 'recharts'
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 
 interface ProductInsightsModalProps {
     productId: number | null
@@ -107,6 +101,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
     const [loading, setLoading] = useState(false)
     const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: import("@/types/transactions").TransactionType } | null>(null)
     const [activeWorkOrderId, setActiveWorkOrderId] = useState<number | null>(null)
+    const [activeTab, setActiveTab] = useState("overview")
 
     useEffect(() => {
         if (open && productId) {
@@ -138,25 +133,13 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
             open={open}
             onOpenChange={onOpenChange}
             size="full"
+            hideScrollArea={true}
+            allowOverflow={true}
             className="max-w-5xl"
             headerClassName="sr-only" // We are using a custom header inside for complex layout
             title={`Insights del Producto: ${productName}`}
         >
-            <div className="flex flex-col h-full overflow-hidden">
-                <div className="p-6 pb-2 flex items-center justify-between border-b">
-                    <div className="flex items-center gap-3">
-                        <BarChart3 className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                            <h2 className="text-xl font-bold">Insights del Producto</h2>
-                            {productName && (
-                                <p className="text-sm text-muted-foreground font-medium">
-                                    {productName}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
+            <div className="flex flex-col h-full overflow-visible">
                 {loading ? (
                     <div className="p-6">
                         <FormSkeleton hasTabs tabs={4} cards={1} fields={6} />
@@ -166,28 +149,37 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                         <p className="text-muted-foreground">Error al cargar datos.</p>
                     </div>
                 ) : (
-                    <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
-                        <div className="px-6 border-b">
-                            <TabsList className="bg-transparent h-12 w-full justify-start gap-6 rounded-none p-0">
-                                <TabsTrigger value="overview" className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none px-2">Resumen</TabsTrigger>
-                                <TabsTrigger value="history" className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none px-2 text-primary/80">
-                                    <History className="h-4 w-4 mr-2" />
-                                    Historial Precios
-                                </TabsTrigger>
-                                <TabsTrigger value="kardex" className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none px-2 text-primary/80">
-                                    <ArrowRightLeft className="h-4 w-4 mr-2" />
-                                    Kardex
-                                </TabsTrigger>
-                                <TabsTrigger value="production" className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none px-2 text-primary/80">
-                                    <Factory className="h-4 w-4 mr-2" />
-                                    Producción
-                                </TabsTrigger>
-                            </TabsList>
-                        </div>
+                    <FormTabs
+                        value={activeTab}
+                        onValueChange={setActiveTab}
+                        orientation="vertical"
+                        header={
+                            <div className="p-6 pb-2 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <BarChart3 className="h-5 w-5 text-muted-foreground" />
+                                    <div>
+                                        <h2 className="text-xl font-bold">Insights del Producto</h2>
+                                        {productName && (
+                                            <p className="text-sm text-muted-foreground font-medium">
+                                                {productName}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        items={[
+                            { value: "overview", label: "Resumen", icon: LayoutDashboard },
+                            { value: "history", label: "Precios", icon: History },
+                            { value: "kardex", label: "Kardex", icon: ArrowRightLeft },
+                            { value: "production", label: "Producción", icon: Factory }
+                        ]}
+                        className="flex-1 overflow-visible"
+                    >
+                        <div className="flex-1 overflow-auto p-6 scrollbar-thin">
 
-                        <div className="flex-1 overflow-auto p-6">
                             {/* OVERVIEW TAB */}
-                            <TabsContent value="overview" className="mt-0 space-y-6">
+                            <FormTabsContent value="overview" className="mt-0 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                     <Card className="bg-success/10 border-success/10">
                                         <CardContent className="pt-4">
@@ -272,10 +264,10 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                         </div>
                                     </div>
                                 </div>
-                            </TabsContent>
+                            </FormTabsContent>
 
                             {/* HISTORY TAB */}
-                            <TabsContent value="history" className="mt-0 space-y-6">
+                            <FormTabsContent value="history" className="mt-0 space-y-6">
                                 <div className="h-[250px] w-full bg-card rounded-md border p-4">
                                     <ResponsiveContainer width="100%" height="100%">
                                         <AreaChart data={[...data.price_history].reverse()}>
@@ -340,10 +332,10 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                         </TableBody>
                                     </Table>
                                 </div>
-                            </TabsContent>
+                            </FormTabsContent>
 
                             {/* KARDEX TAB */}
-                            <TabsContent value="kardex" className="mt-0">
+                            <FormTabsContent value="kardex" className="mt-0">
                                 <div className="rounded-md border">
                                     <Table>
                                         <TableHeader>
@@ -368,8 +360,8 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                                         {move.display_id}
                                                     </TableCell>
                                                     <TableCell>
-                                                        <StatusBadge 
-                                                            status={move.type === 'IN' ? 'SUCCESS' : move.type === 'OUT' ? 'DESTRUCTIVE' : 'WARNING'} 
+                                                        <StatusBadge
+                                                            status={move.type === 'IN' ? 'SUCCESS' : move.type === 'OUT' ? 'DESTRUCTIVE' : 'WARNING'}
                                                             label={move.type === 'IN' ? 'Entrada' : move.type === 'OUT' ? 'Salida' : 'Ajuste'}
                                                         />
                                                     </TableCell>
@@ -411,10 +403,10 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                         </TableBody>
                                     </Table>
                                 </div>
-                            </TabsContent>
+                            </FormTabsContent>
 
                             {/* PRODUCTION TAB */}
-                            <TabsContent value="production" className="mt-0">
+                            <FormTabsContent value="production" className="mt-0">
                                 <div className="rounded-md border">
                                     <Table>
                                         <TableHeader>
@@ -461,9 +453,9 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                         </TableBody>
                                     </Table>
                                 </div>
-                            </TabsContent>
+                            </FormTabsContent>
                         </div>
-                    </Tabs>
+                    </FormTabs>
                 )}
             </div>
 
