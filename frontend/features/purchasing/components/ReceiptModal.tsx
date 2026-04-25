@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { showApiError } from "@/lib/errors"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
-import { LabeledInput, LabeledSelect } from "@/components/shared"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
 import { Badge } from "@/components/ui/badge"
 import {
     Table,
@@ -250,12 +250,18 @@ export function ReceiptModal({
                             }))}
                             placeholder="Seleccione bodega"
                         />
-                        <LabeledInput
+                        <PeriodValidationDateInput
                             label={`Fecha de ${isRefund ? 'Devolución' : 'Recepción'}`}
                             required
-                            type="date"
-                            value={receiptDate}
-                            onChange={(e) => setReceiptDate(e.target.value)}
+                            date={receiptDate ? new Date(receiptDate + 'T12:00:00') : undefined}
+                            onDateChange={(d) => {
+                                if (!d) {
+                                    setReceiptDate("")
+                                    return
+                                }
+                                setReceiptDate(d.toISOString().split('T')[0])
+                            }}
+                            validationType="tax"
                         />
                     </div>
 

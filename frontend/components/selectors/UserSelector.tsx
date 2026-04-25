@@ -9,7 +9,6 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { Input } from "@/components/ui/input"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUserSearch } from "@/features/users/hooks/useUserSearch"
@@ -87,14 +86,10 @@ export function UserSelector({ value, onChange, placeholder = "Seleccionar usuar
                     disabled={disabled}
                 >
                     {selectedUser ? (
-                        <div className="flex items-center gap-2 truncate text-left w-[calc(100%-20px)]">
-                            <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
-                                <User className="h-4 w-4" />
-                            </div>
-                            <div className="flex flex-col items-start truncate leading-tight overflow-hidden w-full">
-                                <span className="font-medium text-sm truncate w-full">{selectedUser.username}</span>
-                                <span className="text-[10px] text-muted-foreground truncate w-full">{selectedUser.email}</span>
-                            </div>
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <User className="h-3.5 w-3.5 shrink-0 text-primary" />
+                            <span className="font-medium text-sm truncate">{selectedUser.username}</span>
+                            <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">{selectedUser.email}</span>
                         </div>
                     ) : (
                         <span className="text-muted-foreground truncate">{placeholder}</span>

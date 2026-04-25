@@ -40,6 +40,7 @@ def list_products(*, user, params: dict) -> QuerySet:
         "allowed_sale_uoms",
         "product_custom_fields",
         "attachments",
+        Prefetch("variants", queryset=Product.objects.filter(active=True).select_related("uom").prefetch_related("attribute_values", "attribute_values__attribute"))
     ).annotate(
         annotated_current_stock=Sum("stock_moves__quantity"),
         variants_count=Count("variants"),
@@ -137,6 +138,7 @@ def get_product_base_queryset(*, user) -> QuerySet:
         "allowed_sale_uoms",
         "product_custom_fields",
         "attachments",
+        Prefetch("variants", queryset=Product.objects.filter(active=True).select_related("uom").prefetch_related("attribute_values", "attribute_values__attribute"))
     ).annotate(
         annotated_current_stock=Sum("stock_moves__quantity"),
         variants_count=Count("variants"),

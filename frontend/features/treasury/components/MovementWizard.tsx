@@ -2,15 +2,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Banknote, LogOut, ArrowRightLeft, Loader2, AlertTriangle, Info, ShieldAlert, CheckCircle2 } from "lucide-react"
 import { cn, formatCurrency } from "@/lib/utils"
 import { Numpad } from "@/components/ui/numpad"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import api from "@/lib/api"
-import { FORM_STYLES } from '@/lib/styles'
+import { LabeledInput } from "@/components/shared"
 import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { toast } from 'sonner'
 import { GenericWizard, WizardStep } from '@/components/shared/GenericWizard'
@@ -299,9 +297,6 @@ export function MovementWizard({
                                         </Button>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className={FORM_STYLES.label}>
-                                            {transferDirection === 'OUT' ? 'Hacia dónde va' : 'De dónde viene'}
-                                        </Label>
                                         <TreasuryAccountSelector
                                             value={transferTargetId}
                                             onChange={(val) => setTransferTargetId(val || "")}
@@ -310,6 +305,7 @@ export function MovementWizard({
                                                 if (transferDirection === 'IN') setFromAccountName(acc.name)
                                                 else setToAccountName(acc.name)
                                             }}
+                                            label={transferDirection === 'OUT' ? 'Hacia dónde va' : 'De dónde viene'}
                                         />
                                     </div>
                                 </>
@@ -334,11 +330,11 @@ export function MovementWizard({
                             impact === 'TRANSFER' ? (
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <Label className={FORM_STYLES.label}>Origen (Retira)</Label>
                                         <TreasuryAccountSelector
                                             value={fromAccountId}
                                             onChange={(val) => setFromAccountId(val || "")}
                                             onSelect={(acc) => setFromAccountName(acc.name)}
+                                            label="Origen (Retira)"
                                         />
                                     </div>
                                     <div className="flex justify-center -my-2 relative z-10">
@@ -347,23 +343,21 @@ export function MovementWizard({
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className={FORM_STYLES.label}>Destino (Deposita)</Label>
                                         <TreasuryAccountSelector
                                             value={toAccountId}
                                             onChange={(val) => setToAccountId(val || "")}
                                             onSelect={(acc) => setToAccountName(acc.name)}
+                                            label="Destino (Deposita)"
                                         />
                                     </div>
                                 </div>
                             ) : (
                                 <div className="space-y-2 p-4 bg-muted/20 border rounded-lg">
-                                    <Label className={FORM_STYLES.label}>
-                                        {impact === 'IN' ? 'Cuenta de Destino' : 'Cuenta de Origen'}
-                                    </Label>
                                     <TreasuryAccountSelector
                                         value={impact === 'IN' ? toAccountId : fromAccountId}
                                         onChange={(val) => impact === 'IN' ? setToAccountId(val || "") : setFromAccountId(val || "")}
                                         onSelect={(acc) => impact === 'IN' ? setToAccountName(acc.name) : setFromAccountName(acc.name)}
+                                        label={impact === 'IN' ? 'Cuenta de Destino' : 'Cuenta de Origen'}
                                     />
                                 </div>
                             )
@@ -439,7 +433,6 @@ export function MovementWizard({
 
                         {(moveType === 'PARTNER_WITHDRAWAL' || moveType === 'CAPITAL_CONTRIBUTION') && (
                             <div className="space-y-2 bg-primary/5 p-4 rounded-lg border border-primary/20">
-                                <Label className={FORM_STYLES.label}>Socio Responsable</Label>
                                 <AdvancedContactSelector
                                     value={contactId ? contactId.toString() : null}
                                     onChange={(val) => setContactId(val ? parseInt(val) : undefined)}
@@ -450,6 +443,7 @@ export function MovementWizard({
                                     placeholder={contactName || "Seleccionar Socio..."}
                                     isPartnerOnly={true}
                                     disabled={!!initialContactId}
+                                    label="Socio Responsable"
                                 />
                                 {moveType === 'CAPITAL_CONTRIBUTION' && contactId && partnerCapitalInfo && (() => {
                                     const amountNum = parseFloat(amount) || 0
@@ -481,15 +475,15 @@ export function MovementWizard({
                                 })()}
                             </div>
                         )}
-                        <div className="space-y-2">
-                             <Label className={FORM_STYLES.label}>Observaciones (Opcional)</Label>
-                             <Textarea 
-                                placeholder="Notas adicionales del movimiento..."
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                className="min-h-[60px] resize-none"
-                             />
-                        </div>
+                        <LabeledInput
+                             label="Observaciones (Opcional)"
+                             as="textarea"
+                             rows={3}
+                             placeholder="Notas adicionales del movimiento..."
+                             value={notes}
+                             onChange={(e) => setNotes(e.target.value)}
+                             containerClassName="mt-2"
+                        />
                     </div>
                 ),
                 isValid: parseFloat(amount) > 0 && ((moveType !== 'PARTNER_WITHDRAWAL' && moveType !== 'CAPITAL_CONTRIBUTION') || !!contactId)

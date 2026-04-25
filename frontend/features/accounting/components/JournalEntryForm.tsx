@@ -6,7 +6,7 @@ import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { JournalEntryInitialData } from "@/types/forms"
 import * as z from "zod"
-import { CalendarIcon, Plus, Trash2, Pencil, BookOpen, ShieldAlert } from "lucide-react"
+import { CalendarIcon, Plus, Trash2, Pencil, BookOpen } from "lucide-react"
 import { format } from "date-fns"
 import { BaseModal } from "@/components/shared/BaseModal"
 
@@ -27,19 +27,13 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { accountingApi } from "@/features/accounting/api/accountingApi"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { FORM_STYLES } from "@/lib/styles"
 import { useServerDate } from "@/hooks/useServerDate"
-import { validateAccountingPeriod } from '@/features/accounting/actions'
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { LabeledInput, LabeledContainer, CancelButton, SubmitButton, IconButton } from "@/components/shared";
+import { LabeledInput, LabeledContainer, CancelButton, SubmitButton, IconButton, PeriodValidationDateInput, ActionSlideButton } from "@/components/shared";
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -115,7 +109,7 @@ export function JournalEntryForm({
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    const [periodCheck, setPeriodCheck] = useState<{ is_closed: boolean; loading: boolean }>({ is_closed: false, loading: false })
+    const [isPeriodValid, setIsPeriodValid] = useState(true)
 
     // Guard for async operations
     const isMounted = useRef(true)
@@ -166,20 +160,6 @@ export function JournalEntryForm({
 
     const selectedDate = form.watch("date")
 
-    // Effect to check period closure on date change
-    useEffect(() => {
-        if (selectedDate) {
-            const checkPeriod = async () => {
-                setPeriodCheck(prev => ({ ...prev, loading: true }))
-                const result = await validateAccountingPeriod(format(selectedDate, "yyyy-MM-dd"))
-                if (isMounted.current) {
-                    setPeriodCheck({ is_closed: result.is_closed, loading: false })
-                }
-            }
-            checkPeriod()
-        }
-    }, [selectedDate])
-
     const { fields, append, remove } = useFieldArray({
         control: form.control,
         name: "items",
@@ -213,9 +193,7 @@ export function JournalEntryForm({
     async function onSubmit(data: JournalEntryFormValues) {
         setLoading(true)
         try {
-            // Pre-submission period check
-            const check = await validateAccountingPeriod(format(data.date, "yyyy-MM-dd"))
-            if (check.is_closed) {
+            if (!isPeriodValid) {
                 toast.error("No se puede registrar el asiento: El periodo contable está cerrado.")
                 setLoading(false)
                 return
@@ -311,51 +289,17 @@ export function JournalEntryForm({
                                         <FormField
                                             control={form.control}
                                             name="date"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledContainer 
-                                                    label="Fecha" 
-                                                    error={fieldState.error?.message}
-                                                    icon={<CalendarIcon className="h-4 w-4 opacity-50" />}
-                                                >
-                                                    <Popover>
-                                                        <PopoverTrigger asChild>
-                                                            <Button
-                                                                variant={"ghost"}
-                                                                className={cn(
-                                                                    "w-full pl-3 text-left font-normal border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent h-auto py-2",
-                                                                    !field.value && "text-muted-foreground"
-                                                                )}
-                                                            >
-                                                                {field.value ? (
-                                                                    format(field.value, "PPP")
-                                                                ) : (
-                                                                    <span>Seleccione fecha</span>
-                                                                )}
-                                                            </Button>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-0" align="start">
-                                                            <Calendar
-                                                                mode="single"
-                                                                selected={field.value}
-                                                                onSelect={field.onChange}
-                                                                disabled={(date) =>
-                                                                    date > new Date() || date < new Date("1900-01-01")
-                                                                }
-                                                                initialFocus
-                                                            />
-                                                        </PopoverContent>
-                                                    </Popover>
-                                                </LabeledContainer>
+                                            render={({ field }) => (
+                                                <PeriodValidationDateInput
+                                                    date={field.value}
+                                                    onDateChange={field.onChange}
+                                                    validationType="accounting"
+                                                    onValidityChange={setIsPeriodValid}
+                                                    label="Fecha"
+                                                    required
+                                                />
                                             )}
                                         />
-                                        {periodCheck.is_closed && (
-                                            <Alert variant="destructive" className="mt-2 py-2 px-3 border-destructive/20 bg-destructive/5">
-                                                <ShieldAlert className="h-4 w-4 text-destructive" />
-                                                <AlertDescription className="text-[10px] leading-tight ml-2">
-                                                    Periodo Contable Cerrado
-                                                </AlertDescription>
-                                            </Alert>
-                                        )}
                                     </div>
                                     <div className="col-span-6">
                                         <FormField

@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { ServiceContractInitialData } from "@/types/forms"
 import * as z from "zod"
 import { Form, FormControl, FormDescription, FormField, FormItem } from "@/components/ui/form"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { Switch } from "@/components/ui/switch"
 import { Card, CardContent } from "@/components/ui/card"
@@ -15,8 +14,14 @@ import api from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { LabeledInput } from "@/components/shared/LabeledInput"
-import { LabeledContainer } from "@/components/shared/LabeledContainer"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 import { serviceContractSchema, type ServiceContractFormValues } from "./ServiceContractForm.schema"
 import { Account } from "@/types/entities"
@@ -190,22 +195,15 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                     control={form.control}
                                     name="category"
                                     render={({ field, fieldState }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <LabeledContainer label="Categoría" error={fieldState.error?.message} required>
-                                                    <Select onValueChange={onCategoryChange} defaultValue={field.value}>
-                                                        <SelectTrigger className="border-0 focus:ring-0 h-8 px-2">
-                                                            <SelectValue placeholder="Seleccionar..." />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {categories.map((c) => (
-                                                                <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </LabeledContainer>
-                                            </FormControl>
-                                        </FormItem>
+                                        <LabeledSelect
+                                            label="Categoría"
+                                            required
+                                            error={fieldState.error?.message}
+                                            onChange={onCategoryChange}
+                                            value={field.value}
+                                            placeholder="Seleccionar..."
+                                            options={categories.map((c) => ({ value: c.id.toString(), label: c.name }))}
+                                        />
                                     )}
                                 />
                             </div>
@@ -220,23 +218,19 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                     control={form.control}
                                     name="recurrence_type"
                                     render={({ field, fieldState }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <LabeledContainer label="Frecuencia" error={fieldState.error?.message} required>
-                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                        <SelectTrigger className="border-0 focus:ring-0 h-8 px-2">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="MONTHLY">Mensual</SelectItem>
-                                                            <SelectItem value="QUARTERLY">Trimestral</SelectItem>
-                                                            <SelectItem value="ANNUAL">Anual</SelectItem>
-                                                            <SelectItem value="ONE_TIME">Único</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </LabeledContainer>
-                                            </FormControl>
-                                        </FormItem>
+                                        <LabeledSelect
+                                            label="Frecuencia"
+                                            required
+                                            error={fieldState.error?.message}
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            options={[
+                                                { value: "MONTHLY", label: "Mensual" },
+                                                { value: "QUARTERLY", label: "Trimestral" },
+                                                { value: "ANNUAL", label: "Anual" },
+                                                { value: "ONE_TIME", label: "Único" },
+                                            ]}
+                                        />
                                     )}
                                 />
                                 <FormField
@@ -316,12 +310,18 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                         render={({ field, fieldState }) => (
                                             <FormItem>
                                                 <FormControl>
-                                                    <LabeledInput 
-                                                        type="date" 
-                                                        label="Fecha Inicio" 
-                                                        required 
-                                                        error={fieldState.error?.message}
-                                                        {...field} 
+                                                    <PeriodValidationDateInput
+                                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                                        onDateChange={(date) => {
+                                                            if (!date) {
+                                                                field.onChange(null)
+                                                                return
+                                                            }
+                                                            field.onChange(date.toISOString().split('T')[0])
+                                                        }}
+                                                        label="Fecha Inicio"
+                                                        validationType="tax"
+                                                        required
                                                     />
                                                 </FormControl>
                                             </FormItem>
@@ -333,12 +333,17 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                         render={({ field, fieldState }) => (
                                             <FormItem>
                                                 <FormControl>
-                                                    <LabeledInput 
-                                                        type="date" 
-                                                        label="Fecha Término" 
-                                                        error={fieldState.error?.message}
-                                                        {...field} 
-                                                        value={field.value ?? ""}
+                                                    <PeriodValidationDateInput
+                                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                                        onDateChange={(date) => {
+                                                            if (!date) {
+                                                                field.onChange(null)
+                                                                return
+                                                            }
+                                                            field.onChange(date.toISOString().split('T')[0])
+                                                        }}
+                                                        label="Fecha Término"
+                                                        validationType="tax"
                                                     />
                                                 </FormControl>
                                             </FormItem>

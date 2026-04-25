@@ -257,19 +257,15 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
                                                     control={form.control}
                                                     name="username"
                                                     render={({ field, fieldState }) => (
-                                                        <FormItem>
-                                                            <FormControl>
-                                                                <LabeledInput
-                                                                    label="Nombre de Usuario"
-                                                                    required
-                                                                    disabled={!!initialData}
-                                                                    placeholder="ej: pmartinez"
-                                                                    error={fieldState.error?.message}
-                                                                    hint={initialData ? "El nombre de usuario no puede modificarse" : undefined}
-                                                                    {...field}
-                                                                />
-                                                            </FormControl>
-                                                        </FormItem>
+                                                        <LabeledInput
+                                                            label="Nombre de Usuario"
+                                                            required
+                                                            disabled={!!initialData}
+                                                            placeholder="ej: pmartinez"
+                                                            error={fieldState.error?.message}
+                                                            hint={initialData ? "El nombre de usuario no puede modificarse" : undefined}
+                                                            {...field}
+                                                        />
                                                     )}
                                                 />
 
@@ -298,19 +294,16 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
                                                     control={form.control}
                                                     name="password"
                                                     render={({ field, fieldState }) => (
-                                                        <FormItem className="md:col-span-2">
-                                                            <FormControl>
-                                                                <LabeledInput
-                                                                    label={`Contraseña${initialData ? " (opcional)" : ""}`}
-                                                                    required={!initialData}
-                                                                    type="password"
-                                                                    placeholder="••••••••"
-                                                                    hint={!initialData ? "Mínimo 6 caracteres" : undefined}
-                                                                    error={fieldState.error?.message}
-                                                                    {...field}
-                                                                />
-                                                            </FormControl>
-                                                        </FormItem>
+                                                        <LabeledInput
+                                                            label={`Contraseña${initialData ? " (opcional)" : ""}`}
+                                                            required={!initialData}
+                                                            type="password"
+                                                            placeholder="••••••••"
+                                                            hint={!initialData ? "Mínimo 6 caracteres" : undefined}
+                                                            error={fieldState.error?.message}
+                                                            containerClassName="md:col-span-2"
+                                                            {...field}
+                                                        />
                                                     )}
                                                 />
                                             </div>

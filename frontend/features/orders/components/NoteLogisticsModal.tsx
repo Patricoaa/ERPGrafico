@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
 import {
     Table,
     TableBody,
@@ -179,22 +179,24 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
             ) : (
                 <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Bodega</Label>
-                            <select
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                value={selectedWarehouse || ''}
-                                onChange={(e) => setSelectedWarehouse(Number(e.target.value))}
-                            >
-                                {warehouses.map((w: any) => (
-                                    <option key={w.id} value={w.id}>{w.name} ({w.code})</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Fecha</Label>
-                            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-                        </div>
+                        <LabeledSelect
+                            label="Bodega"
+                            value={selectedWarehouse?.toString() || ""}
+                            onChange={(val) => setSelectedWarehouse(Number(val))}
+                            options={warehouses.map((w: any) => ({ value: w.id.toString(), label: `${w.name} (${w.code})` }))}
+                        />
+                        <PeriodValidationDateInput
+                            label="Fecha"
+                            date={date ? new Date(date + 'T12:00:00') : undefined}
+                            onDateChange={(d) => {
+                                if (!d) {
+                                    setDate("")
+                                    return
+                                }
+                                setDate(d.toISOString().split('T')[0])
+                            }}
+                            validationType="accounting"
+                        />
                     </div>
 
                     <div className="rounded-md border overflow-hidden">
@@ -239,10 +241,12 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
                         </Table>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label>Notas</Label>
-                        <Input placeholder="Ej: Devolución parcial por daño..." value={notes} onChange={(e) => setNotes(e.target.value)} />
-                    </div>
+                    <LabeledInput
+                        label="Notas"
+                        placeholder="Ej: Devolución parcial por daño..."
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                    />
                 </div>
             )}
         </BaseModal>

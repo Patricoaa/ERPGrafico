@@ -6,12 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 
 import { useInventorySettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
+import { LabeledSelect } from "@/components/shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-
-
 import { inventorySchema, type InventoryFormValues } from "./InventorySettingsView.schema"
 import { UseFormReturn, Path } from "react-hook-form"
 
@@ -145,21 +142,16 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
                                     <FormField
                                         control={form.control}
                                         name="inventory_valuation_method"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Método de Valoración</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value || "AVERAGE"}>
-                                                    <FormControl>
-                                                        <SelectTrigger className="h-10">
-                                                            <SelectValue placeholder="Seleccione método" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="AVERAGE">Promedio Ponderado</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Método de Valoración"
+                                                value={field.value || "AVERAGE"}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                                options={[
+                                                    { value: "AVERAGE", label: "Promedio Ponderado" },
+                                                ]}
+                                            />
                                         )}
                                     />
                                 </CardContent>
@@ -204,7 +196,7 @@ function AccountField({ form, name, label, accountType }: AccountFieldProps) {
             name={name}
             render={({ field }) => (
                 <FormItem>
-                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">{label}</FormLabel>
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground">{label}</p>
                     <FormControl>
                         <AccountSelector
                             value={field.value as string}

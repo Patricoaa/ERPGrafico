@@ -367,18 +367,14 @@ function AccountField({ form, name, label, accountType }: { form: UseFormReturn<
         <FormField
             control={form.control}
             name={name}
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">{label}</FormLabel>
-                    <FormControl>
-                        <AccountSelector
-                            value={field.value as string}
-                            onChange={(val) => field.onChange(val)}
-                            accountType={accountType}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
+            render={({ field, fieldState }) => (
+                <AccountSelector
+                    label={label}
+                    value={field.value as string}
+                    onChange={(val) => field.onChange(val)}
+                    accountType={accountType}
+                    error={fieldState.error?.message}
+                />
             )}
         />
     )

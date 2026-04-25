@@ -6,21 +6,20 @@ import { PricingRuleInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { LabeledInput, LabeledSelect, LabeledContainer } from "@/components/shared"
-
-// ... other imports same
 import {
     Form,
     FormField
 } from "@/components/ui/form"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, FormSection, LabeledSwitch } from "@/components/shared"
 
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { Tags } from "lucide-react"
+import { Tags, Layers, Zap, DollarSign, Calendar } from "lucide-react"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 // schemas and types remain the same
@@ -60,6 +59,7 @@ interface PricingRuleFormProps {
 
 export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, onOpenChange, productId, productName }: PricingRuleFormProps) {
     const [uoms, setUoms] = useState<UoM[]>([])
+    const [selectedProductObj, setSelectedProductObj] = useState<any>(null)
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -218,11 +218,7 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
                         <form id="pricing-rule-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pr-6 pl-1 pb-4">
                             {/* Section 1: Scope & Basic Info */}
                             <div className="space-y-4">
-                                <div className="flex items-center gap-2 pt-2">
-                                    <div className="flex-1 h-px bg-border" />
-                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Alcance y Referencia</span>
-                                    <div className="flex-1 h-px bg-border" />
-                                </div>
+                                <FormSection title="Alcance y Referencia" icon={Layers} />
                                 <div className="grid grid-cols-4 gap-4">
                                     <div className="col-span-3">
                                         <FormField
@@ -253,49 +249,50 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="product"
-                                        render={({ field }) => (
-                                            <ProductSelector
-                                                label="Producto Específico (Opcional)"
-                                                value={field.value?.toString() || null}
-                                                onChange={(val) => field.onChange(val ? parseInt(val) : null)}
-                                                disabled={!!productId}
-                                                placeholder="Si no se selecciona, aplica a todos"
-                                            />
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="uom"
-                                        render={({ field }) => (
-                                            <LabeledSelect
-                                                label="Unidad de Medida (Filtro)"
-                                                placeholder="Base del producto"
-                                                onChange={(val: string) => field.onChange(val === "none" ? null : parseInt(val))}
-                                                value={field.value?.toString() || "none"}
-                                                options={[
-                                                    { value: "none", label: "Base del producto" },
-                                                    ...uoms.map((u) => ({
-                                                        value: u.id.toString(),
-                                                        label: u.name
-                                                    }))
-                                                ]}
-                                            />
-                                        )}
-                                    />
+                                <div className="grid grid-cols-4 gap-4">
+                                    <div className="col-span-3">
+                                        <FormField
+                                            control={form.control}
+                                            name="product"
+                                            render={({ field }) => (
+                                                <ProductSelector
+                                                    label="Producto Específico (Opcional)"
+                                                    value={field.value?.toString() || null}
+                                                    onChange={(val) => {
+                                                        field.onChange(val ? parseInt(val) : null)
+                                                        if (!val) setSelectedProductObj(null)
+                                                    }}
+                                                    onSelect={(p) => setSelectedProductObj(p)}
+                                                    disabled={!!productId}
+                                                    placeholder="Si no se selecciona, aplica a todos"
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="col-span-1">
+                                        <FormField
+                                            control={form.control}
+                                            name="uom"
+                                            render={({ field }) => (
+                                                <UoMSelector
+                                                    label="Unidad (Filtro)"
+                                                    variant="standalone"
+                                                    product={selectedProductObj}
+                                                    context="sale"
+                                                    uoms={uoms}
+                                                    value={field.value?.toString() || ""}
+                                                    onChange={(val) => field.onChange(val ? parseInt(val) : null)}
+                                                    placeholder="Base"
+                                                />
+                                            )}
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Section 2: Trigger Condition */}
                             <div className="space-y-4">
-                                <div className="flex items-center gap-2 pt-2">
-                                    <div className="flex-1 h-px bg-border" />
-                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Condición de Activación</span>
-                                    <div className="flex-1 h-px bg-border" />
-                                </div>
+                                <FormSection title="Condición de Activación" icon={Zap} />
                                 <div className={cn("grid gap-4", operator === "BT" ? "grid-cols-3" : "grid-cols-2")}>
                                     <FormField
                                         control={form.control}
@@ -346,11 +343,7 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
 
                             {/* Section 3: Result Action */}
                             <div className="space-y-4">
-                                <div className="flex items-center gap-2 pt-2">
-                                    <div className="flex-1 h-px bg-border" />
-                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Efecto / Precio Final</span>
-                                    <div className="flex-1 h-px bg-border" />
-                                </div>
+                                <FormSection title="Efecto / Precio Final" icon={DollarSign} />
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField
                                         control={form.control}
@@ -435,21 +428,24 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
 
                             {/* Section 4: Period & Status */}
                             <div className="space-y-4">
-                                <div className="flex items-center gap-2 pt-2">
-                                    <div className="flex-1 h-px bg-border" />
-                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Vigencia y Estado</span>
-                                    <div className="flex-1 h-px bg-border" />
-                                </div>
+                                <FormSection title="Vigencia y Estado" icon={Calendar} />
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField
                                         control={form.control}
                                         name="start_date"
                                         render={({ field }) => (
-                                            <LabeledInput
+                                            <PeriodValidationDateInput
+                                                date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                                onDateChange={(date) => {
+                                                    if (!date) {
+                                                        field.onChange(null)
+                                                        return
+                                                    }
+                                                    field.onChange(date.toISOString().split('T')[0])
+                                                }}
                                                 label="Válida Desde"
-                                                type="date"
-                                                {...field}
-                                                value={field.value || ""}
+                                                validationType="tax"
+                                                required
                                             />
                                         )}
                                     />
@@ -457,11 +453,17 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
                                         control={form.control}
                                         name="end_date"
                                         render={({ field }) => (
-                                            <LabeledInput
+                                            <PeriodValidationDateInput
+                                                date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                                onDateChange={(date) => {
+                                                    if (!date) {
+                                                        field.onChange(null)
+                                                        return
+                                                    }
+                                                    field.onChange(date.toISOString().split('T')[0])
+                                                }}
                                                 label="Válida Hasta (Opcional)"
-                                                type="date"
-                                                {...field}
-                                                value={field.value || ""}
+                                                validationType="tax"
                                             />
                                         )}
                                     />
@@ -471,18 +473,13 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
                                     control={form.control}
                                     name="active"
                                     render={({ field }) => (
-                                        <LabeledContainer
+                                        <LabeledSwitch
                                             label="Estado de la Regla"
+                                            description="La regla se encuentra activa"
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
                                             hint="Si está desactivada, el sistema la omitirá incluso si se cumplen las condiciones."
-                                        >
-                                            <div className="flex items-center justify-between w-full pr-4 py-1">
-                                                <span className="text-xs font-bold text-foreground">La regla se encuentra activa</span>
-                                                <Checkbox
-                                                    checked={field.value}
-                                                    onCheckedChange={field.onChange}
-                                                />
-                                            </div>
-                                        </LabeledContainer>
+                                        />
                                     )}
                                 />
                             </div>

@@ -37,6 +37,23 @@ Nunca usar `Dialog` de shadcn directamente en features.
 
 ---
 
+## Dropdown & Popover Layout Invariants
+
+Global rules for positioning and width of floating UI elements to ensure consistency across the Industrial Premium design system.
+
+### 1. Width Invariant (Match Trigger)
+Every dropdown or popover used within a form field (Select, Selector, Combobox) MUST match the width of its trigger by default.
+- **CSS Rule**: Use `w-[var(--radix-select-trigger-width)]` or `w-[var(--radix-popover-trigger-width)]`.
+- **Reasoning**: Maintains the "solid block" aesthetic of the form layout.
+- **Exception**: Filters in toolbars or specialized components like `DateRangeFilter` (see [component-datepicker.md](./component-datepicker.md)).
+
+### 2. Positioning vs. Notched Fields
+The positioning relative to a `notched-field` (fieldset + legend) depends on the component type:
+- **Covering (Default Selects)**: Standard `LabeledSelect` uses `item-aligned` positioning. The dropdown aligns with the top legend/border, covering the trigger.
+- **Floating (Entity Selectors)**: Feature-rich selectors (`AccountSelector`, `ProductSelector`) use `popper` positioning. The dropdown aligns with the bottom border of the fieldset to avoid obscuring search inputs or rich triggers.
+
+---
+
 ## StatusBadge 🟢
 
 Only authorized component for rendering entity states. No ad-hoc badges allowed.
@@ -149,7 +166,7 @@ Single date selector. Spanish locale (es-CL).
 |------|------|----------|---------|-------|
 | `date` | `Date \| undefined` | ❌ | — | Controlled |
 | `onDateChange` | `(date?: Date) => void` | ✅ | — | Returns `undefined` on clear |
-| `placeholder` | `string` | ❌ | `'Selecciona fecha'` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar fecha'` | |
 | `className` | `string` | ❌ | — | |
 | `disabled` | `boolean` | ❌ | `false` | |
 
@@ -168,7 +185,7 @@ Two-month range picker for table filters.
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
 | `onRangeChange` | `(range: DateRange \| undefined) => void` | ✅ | — | `DateRange` from `react-day-picker` |
-| `label` | `string` | ❌ | `'Rango de fechas'` | Shown when no range selected |
+| `label` | `string` | ❌ | `'Filtrar por fecha'` | Shown when no range selected |
 | `defaultRange` | `DateRange` | ❌ | — | Initial range |
 | `className` | `string` | ❌ | — | |
 
@@ -342,12 +359,12 @@ DatePicker wrapper that validates tax/accounting period closure before accepting
 | `date` | `Date \| undefined` | ✅ | — | Controlled |
 | `onDateChange` | `(date: Date \| undefined) => void` | ✅ | — | |
 | `onValidityChange` | `(isValid: boolean) => void` | ❌ | — | Fires after each validation |
-| `validationType` | `'tax' \| 'accounting' \| 'both'` | ❌ | `'both'` | Which periods to check |
-| `label` | `string` | ❌ | `'Fecha'` | |
+| `validationType` | `'tax' \| 'accounting' \| 'both'` | ❌ | `'tax'` | Which periods to check |
+| `label` | `string` | ❌ | `'Fecha Emisión'` | |
 | `placeholder` | `string` | ❌ | — | |
 | `className` | `string` | ❌ | — | |
 | `disabled` | `boolean` | ❌ | `false` | |
-| `required` | `boolean` | ❌ | `false` | |
+| `required` | `boolean` | ❌ | `true` | |
 
 States handled: validating (spinner), period closed (warning alert, isValid=false).
 

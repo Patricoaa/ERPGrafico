@@ -8,7 +8,6 @@ import {
     Plus, Edit, Trash2, Loader2, CreditCard, Landmark, List, History, Tag, Pencil, Lock
 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { CancelButton } from "@/components/shared"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -17,11 +16,9 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { LabeledInput, LabeledSelect, CancelButton } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
@@ -256,27 +253,28 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
                 <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
                     <form id="bank-form" onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid gap-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="bank-name" className={FORM_STYLES.label}>Nombre</Label>
-                                <Input id="bank-name" value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Banco de Chile" className={FORM_STYLES.input} required />
-                            </div>
+                            <LabeledInput
+                                label="Nombre"
+                                required
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                placeholder="Ej: Banco de Chile"
+                            />
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="bank-code" className={FORM_STYLES.label}>Código (Alias)</Label>
-                                    <Input id="bank-code" value={code} onChange={e => setCode(e.target.value)} placeholder="Ej: BCHILE" className={FORM_STYLES.input} />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="bank-swift" className={FORM_STYLES.label}>Código SWIFT/BIC</Label>
-                                    <Input
-                                        id="bank-swift"
-                                        value={swiftCode}
-                                        onChange={e => setSwiftCode(e.target.value)}
-                                        placeholder="Ej: BCHICLRM"
-                                        maxLength={11}
-                                        className={FORM_STYLES.input}
-                                    />
-                                    <p className="text-[10px] text-muted-foreground italic">Código internacional para transferencias</p>
-                                </div>
+                                <LabeledInput
+                                    label="Código (Alias)"
+                                    value={code}
+                                    onChange={e => setCode(e.target.value)}
+                                    placeholder="Ej: BCHILE"
+                                />
+                                <LabeledInput
+                                    label="Código SWIFT/BIC"
+                                    value={swiftCode}
+                                    onChange={e => setSwiftCode(e.target.value)}
+                                    placeholder="Ej: BCHICLRM"
+                                    maxLength={11}
+                                    hint="Código internacional para transferencias"
+                                />
                             </div>
                         </div>
                     </form>
@@ -607,39 +605,33 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                 <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
                     <form id="method-form" onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid gap-4">
-                            <div className="grid gap-2">
-                                <Label className={FORM_STYLES.label}>Nombre</Label>
-                                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Visa Santander Debito" className={FORM_STYLES.input} required />
-                            </div>
+                            <LabeledInput
+                                label="Nombre"
+                                required
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                placeholder="Ej: Visa Santander Debito"
+                            />
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                    <Label className={FORM_STYLES.label}>Tipo</Label>
-                                    <Select value={type} onValueChange={handleTypeChange}>
-                                        <SelectTrigger className={FORM_STYLES.input}>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="CASH">Efectivo</SelectItem>
-                                            <SelectItem value="DEBIT_CARD">Tarjeta de Débito</SelectItem>
-                                            <SelectItem value="CREDIT_CARD">Tarjeta de Crédito</SelectItem>
-                                            <SelectItem value="TRANSFER">Transferencia</SelectItem>
-                                            <SelectItem value="CHECK">Cheque</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label className={FORM_STYLES.label}>Cuenta</Label>
-                                    <Select value={accountId || ""} onValueChange={setAccountId}>
-                                        <SelectTrigger className={FORM_STYLES.input}>
-                                            <SelectValue placeholder="Seleccionar..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {accounts.map(acc => (
-                                                <SelectItem key={acc.id} value={acc.id.toString()}>{acc.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                                <LabeledSelect
+                                    label="Tipo"
+                                    value={type}
+                                    onChange={handleTypeChange}
+                                    options={[
+                                        { value: "CASH", label: "Efectivo" },
+                                        { value: "DEBIT_CARD", label: "Tarjeta de Débito" },
+                                        { value: "CREDIT_CARD", label: "Tarjeta de Crédito" },
+                                        { value: "TRANSFER", label: "Transferencia" },
+                                        { value: "CHECK", label: "Cheque" },
+                                    ]}
+                                />
+                                <LabeledSelect
+                                    label="Cuenta"
+                                    value={accountId || ""}
+                                    onChange={setAccountId}
+                                    placeholder="Seleccionar..."
+                                    options={accounts.map(acc => ({ value: acc.id.toString(), label: acc.name }))}
+                                />
                             </div>
                             <div className="grid grid-cols-2 gap-3 p-3 rounded-lg border bg-muted/20">
                                 <div className="flex items-center space-x-2">

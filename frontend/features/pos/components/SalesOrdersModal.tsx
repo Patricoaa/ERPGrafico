@@ -104,7 +104,9 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                                 { value: 'notes', label: 'Notas C/D', icon: FileText }
                             ]}
                             className="w-auto"
-                        />
+                        >
+                            <div className="hidden" />
+                        </FormTabs>
                     </div>
                 </SheetHeader>
 

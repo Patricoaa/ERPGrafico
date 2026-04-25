@@ -12,8 +12,6 @@ import { Loader2, Plus, Factory, Save, X, Layers, Settings2 } from "lucide-react
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { FORM_STYLES } from "@/lib/styles"
-
 const quickEditSchema = z.object({
   sale_price: z.coerce.number().min(0, "El precio no puede ser negativo"),
   code: z.string().optional(),

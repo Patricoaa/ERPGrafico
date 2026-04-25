@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { CancelButton, IconButton, LabeledInput, LabeledSelect } from "@/components/shared"
+import { CancelButton, IconButton, LabeledInput, LabeledSelect, CardSkeleton } from "@/components/shared"
 import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, History, MonitorSmartphone, Smartphone } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -24,7 +24,6 @@ interface TerminalManagementProps {
     createAction?: React.ReactNode
 }
 
-import { CardSkeleton } from "@/components/shared"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 export function TerminalManagement({ externalOpen, onExternalOpenChange, createAction }: TerminalManagementProps) {

@@ -18,12 +18,9 @@ import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import {
     Form,
-    FormControl,
     FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
 } from "@/components/ui/form"
+import { LabeledContainer } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { useContactMutations } from "@/features/contacts/hooks/useContacts"
@@ -244,24 +241,20 @@ export default function CreditAssignmentModal({
                                     control={form.control as any}
                                     name="credit_limit"
                                     render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="flex items-center gap-2">
-                                                <Banknote className="h-4 w-4 text-muted-foreground" />
-                                                Límite de Crédito Autorizado ($)
-                                            </FormLabel>
-                                            <FormControl>
-                                                <div className="relative">
-                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-muted-foreground/30">$</span>
-                                                    <Input
-                                                        type="number"
-                                                        placeholder="Eje: 1,000,000"
-                                                        className="h-14 pl-10 text-2xl font-mono font-black border-2 focus-visible:ring-primary/20 bg-background transition-all"
-                                                        {...field}
-                                                        value={field.value || ""}
-                                                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                                                    />
-                                                </div>
-                                            </FormControl>
+                                        <LabeledContainer 
+                                            label={<div className="flex items-center gap-2"><Banknote className="h-4 w-4 opacity-50" /> Límite de Crédito Autorizado ($)</div>}
+                                        >
+                                            <div className="relative">
+                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-muted-foreground/30">$</span>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="Eje: 1,000,000"
+                                                    className="h-14 pl-10 text-2xl font-mono font-black border-2 focus-visible:ring-primary/20 bg-background transition-all"
+                                                    {...field}
+                                                    value={field.value || ""}
+                                                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                                                />
+                                            </div>
                                             <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/10 mt-2">
                                                 <AlertCircle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
                                                 <p className="text-[11px] text-warning leading-tight">
@@ -269,8 +262,7 @@ export default function CreditAssignmentModal({
                                                     Los días de plazo se aplican automáticamente según la política global.
                                                 </p>
                                             </div>
-                                            <FormMessage />
-                                        </FormItem>
+                                        </LabeledContainer>
                                     )}
                                 />
 

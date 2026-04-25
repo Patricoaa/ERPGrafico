@@ -207,7 +207,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                         </div>
 
                                         <div className="flex justify-end">
-                                            <DateRangeFilter onRangeChange={setDateRange} label="Periodo para el gráfico" />
+                                            <DateRangeFilter onDateChange={setDateRange} label="Periodo para el gráfico" />
                                         </div>
                                     </div>
 

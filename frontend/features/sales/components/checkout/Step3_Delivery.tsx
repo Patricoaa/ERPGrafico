@@ -33,7 +33,7 @@ function UoMSelector({ line, currentUom, onUomChange }: { line: SaleOrderLine, c
     )
 }
 
-import { LabeledContainer, LabeledInput } from "@/components/shared"
+import { LabeledContainer, LabeledInput, PeriodValidationDateInput } from "@/components/shared"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Input } from "@/components/ui/input"
@@ -340,12 +340,18 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                         label={deliveryData.type === 'PARTIAL' ? 'Fecha para el Resto' : 'Fecha Estimada'}
                         icon={<Calendar className="h-4 w-4" />}
                     >
-                        <Input
+                        <PeriodValidationDateInput
                             id="del-date"
-                            type="date"
+                            date={deliveryData.date ? new Date(deliveryData.date + 'T12:00:00') : undefined}
+                            onDateChange={(d) => {
+                                if (!d) {
+                                    setDeliveryData({ ...deliveryData, date: "" })
+                                    return
+                                }
+                                setDeliveryData({ ...deliveryData, date: d.toISOString().split('T')[0] })
+                            }}
+                            validationType="accounting"
                             className="border-none shadow-none focus-visible:ring-0 bg-transparent h-9"
-                            value={deliveryData.date || ""}
-                            onChange={(e) => setDeliveryData({ ...deliveryData, date: e.target.value })}
                         />
                     </LabeledContainer>
                 )}

@@ -152,7 +152,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                                             value={(field.value as string) || ""}
                                             onChange={field.onChange}
                                             options={[
-                                                { label: "--- Mantener actual ---", value: "" },
+                                                { label: "--- Mantener actual ---", value: "none" },
                                                 ...uoms.map(u => ({ label: u.name, value: u.id.toString() }))
                                             ]}
                                             error={fieldState.error?.message}
@@ -217,7 +217,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                                             value={(field.value as string) || ""}
                                             onChange={field.onChange}
                                             options={[
-                                                { label: "--- No copiar / Sin cambios ---", value: "" },
+                                                { label: "--- No copiar / Sin cambios ---", value: "none" },
                                                 ...availableVariants
                                                     .filter(v => v.has_active_bom)
                                                     .map(v => ({

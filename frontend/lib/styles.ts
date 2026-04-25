@@ -1,15 +1,4 @@
 export const FORM_STYLES = {
-    /**
-     * @deprecated Use `<LabeledInput label="...">` from `@/components/shared` instead.
-     * The LabeledInput component renders label + input as a single notched fieldset primitive.
-     */
-    label: "text-[10px] font-black uppercase tracking-widest text-muted-foreground",
-
-    /**
-     * @deprecated Use `<LabeledInput label="...">` from `@/components/shared` instead.
-     * The LabeledInput component renders label + input as a single notched fieldset primitive.
-     */
-    input: "h-10 rounded-md border bg-background focus-visible:ring-primary transition-all duration-200",
     textarea: "min-h-[100px] rounded-md border bg-background focus-visible:ring-primary transition-all duration-200 resize-none p-4",
 
     // Table Elements

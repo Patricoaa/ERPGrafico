@@ -16,13 +16,6 @@ import { Switch } from "@/components/ui/switch"
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { Plus, Trash2, Save, Workflow, Box, CheckCircle2, Truck, Package } from "lucide-react"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
@@ -32,7 +25,14 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { LabeledInput, LabeledSelect } from "@/components/shared";
+import { LabeledInput, LabeledSelect } from "@/components/shared"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 // Schema for material lines (stock components)
 const materialLineSchema = z.object({
@@ -612,9 +612,9 @@ export function BOMFormModal({
                                                                 if (lineVars.length > 0) {
                                                                     return (
                                                                         <div className="animate-in fade-in slide-in-from-top-1">
-                                                                            <Select
+                                                                            <LabeledSelect
                                                                                 value={form.watch(`lines.${index}.component`)}
-                                                                                onValueChange={(val) => {
+                                                                                onChange={(val) => {
                                                                                     form.setValue(`lines.${index}.component`, val)
                                                                                     const v = lineVars.find((vr: { id: string | number }) => vr.id.toString() === val)
                                                                                     if (v) {
@@ -628,18 +628,10 @@ export function BOMFormModal({
                                                                                         }
                                                                                     }
                                                                                 }}
-                                                                            >
-                                                                                <SelectTrigger className="h-7 w-full text-[10px] bg-primary/5 border-primary/20">
-                                                                                    <SelectValue placeholder="Seleccione variante..." />
-                                                                                </SelectTrigger>
-                                                                                <SelectContent position="popper" className="z-[110]">
-                                                                                    {lineVars.map(v => (
-                                                                                        <SelectItem key={v.id} value={v.id.toString()} className="text-[10px]">
-                                                                                            {v.variant_display_name || v.name}
-                                                                                        </SelectItem>
-                                                                                    ))}
-                                                                                </SelectContent>
-                                                                            </Select>
+                                                                                placeholder="Seleccione variante..."
+                                                                                className="h-7 w-full text-[10px] bg-primary/5"
+                                                                                options={lineVars.map(v => ({ value: v.id.toString(), label: v.variant_display_name || v.name }))}
+                                                                            />
                                                                         </div>
                                                                     )
                                                                 }

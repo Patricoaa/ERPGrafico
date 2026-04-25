@@ -36,7 +36,6 @@ import {
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { PayrollCard } from "@/features/hr/components/PayrollCard"
 import { cn } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { useConfirmAction } from "@/hooks/useConfirmAction"

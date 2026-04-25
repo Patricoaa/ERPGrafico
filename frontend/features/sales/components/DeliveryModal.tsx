@@ -4,9 +4,8 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { LabeledContainer, LabeledInput } from "@/components/shared"
+import { LabeledContainer, LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
     Table,
     TableBody,
@@ -15,19 +14,12 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn, formatPlainDate } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
+
 import { useServerDate } from "@/hooks/useServerDate"
 
 interface SaleOrderLine {
@@ -364,33 +356,31 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                 <div className="space-y-4">
                     {/* Warehouse and Date Selection */}
                     <div className="grid grid-cols-2 gap-4">
-                        <LabeledContainer label="Bodega de Despacho">
-                            <Select
-                                value={selectedWarehouse?.toString() || ''}
-                                onValueChange={(val) => setSelectedWarehouse(Number(val))}
-                            >
-                                <SelectTrigger className="border-none shadow-none focus-visible:ring-0 bg-transparent h-9">
-                                    <SelectValue placeholder="Seleccione bodega" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {warehouses.map(warehouse => (
-                                        <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
-                                            {warehouse.name} ({warehouse.code})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </LabeledContainer>
-                        
-                        <LabeledContainer label="Fecha de Despacho">
-                            <Input
-                                id="delivery-date"
-                                type="date"
-                                className="border-none shadow-none focus-visible:ring-0 bg-transparent h-9"
-                                value={deliveryDate}
-                                onChange={(e) => setDeliveryDate(e.target.value)}
-                            />
-                        </LabeledContainer>
+                        <LabeledSelect
+                            label="Bodega de Despacho"
+                            value={selectedWarehouse?.toString() || ''}
+                            onChange={(val) => setSelectedWarehouse(Number(val))}
+                            placeholder="Seleccione bodega"
+                            options={warehouses.map(warehouse => ({
+                                value: warehouse.id.toString(),
+                                label: `${warehouse.name} (${warehouse.code})`,
+                            }))}
+                        />
+
+                        <PeriodValidationDateInput
+                            label="Fecha de Despacho"
+                            id="delivery-date"
+                            date={deliveryDate ? new Date(deliveryDate + 'T12:00:00') : undefined}
+                            onDateChange={(d) => {
+                                if (!d) {
+                                    setDeliveryDate("")
+                                    return
+                                }
+                                setDeliveryDate(d.toISOString().split('T')[0])
+                            }}
+                            validationType="accounting"
+                            required
+                        />
                     </div>
 
                     {/* Delivery Status */}
@@ -428,7 +418,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                             <TableCell>
                                                 <div>
                                                     <div className="font-medium">{line.product_name}</div>
-                                                    <div className={cn(FORM_STYLES.input, "cursor-pointer h-10")}>{line.description}</div>
+                                                    <div className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{line.description}</div>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center">

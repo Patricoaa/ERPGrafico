@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 
 import {
@@ -292,48 +292,36 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
                                         control={globalForm.control}
                                         name="account_remuneraciones_por_pagar"
                                         render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-tighter">Remuneraciones por Pagar (Líquido)</FormLabel>
-                                                <FormControl>
-                                                    <AccountSelector
-                                                        value={field.value}
-                                                        onChange={field.onChange}
-                                                        accountType="LIABILITY"
-                                                    />
-                                                </FormControl>
-                                            </FormItem>
+                                            <AccountSelector
+                                                label="Remuneraciones por Pagar (Líquido)"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                accountType="LIABILITY"
+                                            />
                                         )}
                                     />
                                     <FormField
                                         control={globalForm.control}
                                         name="account_previred_por_pagar"
                                         render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-tighter">Obligaciones Previred (Pasivo)</FormLabel>
-                                                <FormControl>
-                                                    <AccountSelector
-                                                        value={field.value}
-                                                        onChange={field.onChange}
-                                                        accountType="LIABILITY"
-                                                    />
-                                                </FormControl>
-                                            </FormItem>
+                                            <AccountSelector
+                                                label="Obligaciones Previred (Pasivo)"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                accountType="LIABILITY"
+                                            />
                                         )}
                                     />
                                     <FormField
                                         control={globalForm.control}
                                         name="account_anticipos"
                                         render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-[10px] font-black uppercase text-muted-foreground/60 tracking-tighter">Anticipos de Remuneraciones (Activo)</FormLabel>
-                                                <FormControl>
-                                                    <AccountSelector
-                                                        value={field.value}
-                                                        onChange={field.onChange}
-                                                        accountType="ASSET"
-                                                    />
-                                                </FormControl>
-                                            </FormItem>
+                                            <AccountSelector
+                                                label="Anticipos de Remuneraciones (Activo)"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                accountType="ASSET"
+                                            />
                                         )}
                                     />
                                 </CardContent>
@@ -546,17 +534,12 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                                     accountType = 'LIABILITY'
                                 }
                                 return (
-                                    <FormItem>
-                                        <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70">Asignación Contable</FormLabel>
-                                        <FormControl>
-                                            <AccountSelector
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                accountType={accountType}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
+                                    <AccountSelector
+                                        label="Asignación Contable"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        accountType={accountType}
+                                    />
                                 )
                             }}
                         />
@@ -731,16 +714,12 @@ function AFPDialog({ afp, onSaved }: { afp?: AFP, onSaved: () => void }) {
                             control={form.control}
                             name="account"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-tighter opacity-70">Cuenta Pasivo Individual</FormLabel>
-                                    <FormControl>
-                                        <AccountSelector
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="LIABILITY"
-                                        />
-                                    </FormControl>
-                                </FormItem>
+                                <AccountSelector
+                                    label="Cuenta Pasivo Individual"
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    accountType="LIABILITY"
+                                />
                             )}
                         />
                     </form>

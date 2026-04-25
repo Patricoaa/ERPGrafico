@@ -14,7 +14,7 @@ import { toast } from "sonner"
 import { ReportTable } from "@/components/shared/ReportTable"
 import { CashFlowTable } from "@/features/finance/components/CashFlowTable"
 import { MappingConfigSheet } from "@/features/finance/components/MappingConfigSheet"
-import { DateRangeSelector } from "@/features/finance/components/DateRangeSelector"
+import { DateRangeFilter } from "@/components/shared"
 import { DateRange } from "react-day-picker"
 import { format, startOfYear, subYears } from "date-fns"
 import { es } from 'date-fns/locale'
@@ -199,12 +199,12 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
             <div className="flex items-center space-x-2">
                 <div className="flex flex-col items-end">
                     <span className="text-[9px] uppercase font-bold text-muted-foreground mb-1 tracking-tighter">Período Actual</span>
-                    <DateRangeSelector date={date} onDateChange={setDate} />
+                    <DateRangeFilter date={date} onDateChange={setDate} label="Período Actual" />
                 </div>
                 {showComparison && (
                     <div className="flex flex-col items-end border-l pl-4 border-muted-foreground/20">
                         <span className="text-[9px] uppercase font-bold text-muted-foreground mb-1 tracking-tighter">Período Comparativo</span>
-                        <DateRangeSelector date={compDate} onDateChange={setCompDate} />
+                        <DateRangeFilter date={compDate} onDateChange={setCompDate} label="Período Comparativo" />
                     </div>
                 )}
             </div>

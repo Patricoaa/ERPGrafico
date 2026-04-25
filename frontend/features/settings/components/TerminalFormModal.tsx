@@ -12,13 +12,12 @@ import {
     FormItem,
     FormMessage,
 } from "@/components/ui/form"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { MonitorSmartphone } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { CancelButton, LabeledInput, LabeledContainer } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect } from "@/components/shared"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
@@ -412,29 +411,19 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                                     name="default_treasury_account"
                                     render={({ field, fieldState }) => (
                                         <div className="pt-2">
-                                            <LabeledContainer 
+                                            <LabeledSelect
                                                 label="Cuenta Predeterminada (Inicio de Sesión)"
                                                 error={fieldState.error?.message}
-                                            >
-                                                <Select 
-                                                    onValueChange={field.onChange} 
-                                                    value={field.value || ""}
-                                                >
-                                                    <SelectTrigger className="border-0 focus:ring-0 h-8 px-2 shadow-none">
-                                                        <SelectValue placeholder="Seleccionar..." />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="__none__">-- Ninguna (Pedir al iniciar) --</SelectItem>
-                                                        {treasuryAccounts
-                                                            .filter(acc => form.watch("allowed_treasury_account_ids").includes(acc.id))
-                                                            .map(acc => ({ value: acc.id.toString(), label: acc.name }))
-                                                            .map(opt => (
-                                                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                                                            ))
-                                                        }
-                                                    </SelectContent>
-                                                </Select>
-                                            </LabeledContainer>
+                                                onChange={field.onChange}
+                                                value={field.value || ""}
+                                                placeholder="Seleccionar..."
+                                                options={[
+                                                    { value: "__none__", label: "-- Ninguna (Pedir al iniciar) --" },
+                                                    ...treasuryAccounts
+                                                        .filter(acc => form.watch("allowed_treasury_account_ids").includes(acc.id))
+                                                        .map(acc => ({ value: acc.id.toString(), label: acc.name })),
+                                                ]}
+                                            />
                                         </div>
                                     )}
                                 />

@@ -4,21 +4,18 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import api from "@/lib/api"
-import { Button } from "@/components/ui/button"
-import { CancelButton } from "@/components/shared"
+
 import { BaseModal } from "@/components/shared/BaseModal"
 
 // ... other imports same
 import {
     Form,
-    FormControl,
     FormField,
-    FormItem,
 } from "@/components/ui/form"
 import { toast } from "sonner"
 import { Users } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
-import { LabeledInput } from "@/components/shared"
+import { LabeledInput, CancelButton } from "@/components/shared"
 import { AppGroup } from "@/types/entities"
 
 const formSchema = z.object({
@@ -157,17 +154,13 @@ export function GroupForm({
                             control={form.control}
                             name="name"
                             render={({ field, fieldState }) => (
-                                <FormItem>
-                                    <FormControl>
-                                        <LabeledInput
-                                            label="Nombre"
-                                            required
-                                            placeholder="Ej: Bodega, Ventas..."
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                </FormItem>
+                                <LabeledInput
+                                    label="Nombre"
+                                    required
+                                    placeholder="Ej: Bodega, Ventas..."
+                                    error={fieldState.error?.message}
+                                    {...field}
+                                />
                             )}
                         />
                     </form>

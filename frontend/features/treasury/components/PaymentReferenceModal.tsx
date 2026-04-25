@@ -4,12 +4,12 @@ import { useState } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Hash, Landmark, CreditCard, Save, Loader2 } from "lucide-react"
+import { LabeledInput } from "@/components/shared"
+import { Hash, Landmark, CreditCard } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { FORM_STYLES } from "@/lib/styles"
-import { cn, formatPlainDate } from "@/lib/utils"
+
+import { formatPlainDate } from "@/lib/utils"
 import { EmptyState, MoneyDisplay, CancelButton, SubmitButton } from "@/components/shared"
 import { Card } from "@/components/ui/card"
 
@@ -143,18 +143,16 @@ export function PaymentReferenceModal({
                             </div>
                         </Card>
 
-                        <div className="grid gap-2">
-                            <Label className="text-[11px] font-bold uppercase text-muted-foreground flex items-center gap-1">
-                                <Hash className="h-3 w-3" /> Número de Folio / Operación / Voucher
-                            </Label>
-                            <Input
+                        <div>
+                            <LabeledInput
+                                label={<span className="flex items-center gap-1"><Hash className="h-3 w-3" /> Número de Folio / Operación / Voucher</span>}
                                 placeholder="Ej: 99884455"
                                 value={transactionNumber}
                                 onChange={(e) => setTransactionNumber(e.target.value)}
-                                className={cn(FORM_STYLES.input, "text-lg font-bold h-12")}
+                                className="text-lg font-bold h-12"
                                 autoFocus
                             />
-                            <p className="text-[10px] text-muted-foreground italic">
+                            <p className="text-[10px] text-muted-foreground italic mt-1">
                                 * Esto completará el registro del pago y lo marcará como validado.
                             </p>
                         </div>

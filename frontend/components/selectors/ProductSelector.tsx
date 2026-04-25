@@ -215,24 +215,17 @@ export function ProductSelector({
                     aria-expanded={open}
                     disabled={disabled}
                     className={cn(
-                        "w-full justify-between overflow-hidden h-auto py-2 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent min-w-0",
-                        variant === 'inline' && "py-1 px-2 h-8 text-xs"
+                        "w-full justify-between overflow-hidden !h-[1.5rem] !p-0 px-2 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent min-w-0",
+                        variant === 'inline' && "h-8 text-xs"
                     )}
                 >
                     {selectedProduct ? (
-                        <div className="flex items-center gap-2 truncate text-left w-[calc(100%-20px)]">
-                            <div className={cn(
-                                "p-1.5 rounded-md bg-primary/10 text-primary shrink-0",
-                                variant === 'inline' && "p-1"
-                            )}>
-                                <Package className={cn("h-4 w-4", variant === 'inline' && "h-3 w-3")} />
-                            </div>
-                            <div className="flex flex-col items-start truncate leading-tight">
-                                <span className={cn("font-medium text-sm truncate w-full", variant === 'inline' && "text-xs")}>{selectedProduct.name}</span>
-                                <span className={cn("text-[10px] text-muted-foreground truncate w-full", variant === 'inline' && "text-[9px]")}>
-                                    {selectedProduct.internal_code || selectedProduct.code} • {translateProductType(selectedProduct.product_type)}
-                                </span>
-                            </div>
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <Package className={cn("h-3.5 w-3.5 shrink-0 text-primary", variant === 'inline' && "h-3 w-3")} />
+                            <span className={cn("font-medium text-sm truncate", variant === 'inline' && "text-xs")}>{selectedProduct.name}</span>
+                            <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
+                                {selectedProduct.internal_code || selectedProduct.code}
+                            </span>
                         </div>
                     ) : (
                         <span className={cn("text-muted-foreground truncate", variant === 'inline' && "text-xs")}>{placeholder}</span>

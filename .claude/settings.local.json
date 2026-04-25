@@ -31,7 +31,12 @@
       "Bash(grep -rn \"import.*\\\\\\\\.\\\\\\\\./.*[a-zA-Z]\" /c/Users/patox/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features --include=\"*.tsx\")",
       "Bash(awk '/^class|^def/ {print NR\": \"$0}' /c/Users/patox/Nextcloud/Pato/Aplicaciones/ERPGrafico/backend/accounting/views.py)",
       "Bash(xargs ls *)",
-      "Bash(grep -rn \": any$\\\\|: any,\" /c/Users/patox/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features --include=\"*.tsx\")"
+      "Bash(grep -rn \": any$\\\\|: any,\" /c/Users/patox/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features --include=\"*.tsx\")",
+      "Bash(python3 -c ' *)",
+      "Bash(tee /tmp/lint2.txt)",
+      "Bash(grep -E \"tsx$|'Input' is defined\")",
+      "Bash(cat)",
+      "Read(//tmp/**)"
     ]
   }
 }

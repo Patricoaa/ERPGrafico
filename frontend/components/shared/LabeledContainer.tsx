@@ -74,7 +74,7 @@ export function LabeledContainer({
                     </legend>
                 )}
 
-                <div className="flex items-center w-full min-h-[38px]">
+                <div className="flex items-center w-full min-h-[1.5rem]">
                     {icon && (
                         <div className="pl-3 flex items-center justify-center text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0">
                             {icon}

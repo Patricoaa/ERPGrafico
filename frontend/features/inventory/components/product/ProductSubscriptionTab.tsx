@@ -1,12 +1,11 @@
 import { FormField } from "@/components/ui/form"
-import { LabeledInput, LabeledSelect } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
 import { Switch } from "@/components/ui/switch"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { CalendarClock, DollarSign, Users, Calendar } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 
 interface ProductSubscriptionTabProps {
@@ -30,8 +29,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                             control={form.control}
                             name="subscription_supplier"
                             render={({ field, fieldState }) => (
-                                <div className="space-y-1.5">
-                                    <label className={FORM_STYLES.label}>Proveedor <span className="text-destructive">*</span></label>
+                                <LabeledContainer label="Proveedor" required error={fieldState.error?.message}>
                                     <AdvancedContactSelector
                                         value={field.value || ""}
                                         onChange={field.onChange}
@@ -39,8 +37,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                         placeholder="Seleccionar proveedor..."
                                         disabled={isEditing}
                                     />
-                                    {fieldState.error && <p className="text-[10px] text-destructive">{fieldState.error.message}</p>}
-                                </div>
+                                </LabeledContainer>
                             )}
                         />
 
@@ -48,14 +45,20 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                             control={form.control}
                             name="subscription_start_date"
                             render={({ field, fieldState }) => (
-                                <LabeledInput
+                                <PeriodValidationDateInput
+                                    date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                    onDateChange={(date) => {
+                                        if (!date) {
+                                            field.onChange(null)
+                                            return
+                                        }
+                                        field.onChange(date.toISOString().split('T')[0])
+                                    }}
                                     label="Fecha de Inicio"
-                                    type="date"
                                     disabled={isEditing}
-                                    error={fieldState.error?.message}
                                     hint={isEditing ? "Bloqueado tras activación." : "Inicio del servicio."}
-                                    {...field}
-                                    value={field.value || ""}
+                                    validationType="tax"
+                                    required
                                 />
                             )}
                         />
@@ -224,16 +227,14 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                             control={form.control}
                             name="income_account"
                             render={({ field, fieldState }) => (
-                                <div className="space-y-1.5">
-                                    <label className={FORM_STYLES.label}>Ingreso (Haber) <span className="text-destructive">*</span></label>
+                                <LabeledContainer label="Ingreso (Haber)" required error={fieldState.error?.message}>
                                     <AccountSelector
                                         value={field.value}
                                         onChange={field.onChange}
                                         accountType="INCOME"
                                         placeholder="Cuenta de ingreso..."
                                     />
-                                    {fieldState.error && <p className="text-[10px] text-destructive">{fieldState.error.message}</p>}
-                                </div>
+                                </LabeledContainer>
                             )}
                         />
 
@@ -241,16 +242,14 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                             control={form.control}
                             name="expense_account"
                             render={({ field, fieldState }) => (
-                                <div className="space-y-1.5">
-                                    <label className={FORM_STYLES.label}>Gasto/Costo (Debe) <span className="text-destructive">*</span></label>
+                                <LabeledContainer label="Gasto/Costo (Debe)" required error={fieldState.error?.message}>
                                     <AccountSelector
                                         value={field.value}
                                         onChange={field.onChange}
                                         accountType="EXPENSE"
                                         placeholder="Cuenta de gasto..."
                                     />
-                                    {fieldState.error && <p className="text-[10px] text-destructive">{fieldState.error.message}</p>}
-                                </div>
+                                </LabeledContainer>
                             )}
                         />
                     </div>
@@ -287,12 +286,17 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                 control={form.control}
                                 name="contract_end_date"
                                 render={({ field, fieldState }) => (
-                                    <LabeledInput
+                                    <PeriodValidationDateInput
+                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                        onDateChange={(date) => {
+                                            if (!date) {
+                                                field.onChange(null)
+                                                return
+                                            }
+                                            field.onChange(date.toISOString().split('T')[0])
+                                        }}
                                         label="Fecha de Finalización"
-                                        type="date"
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                        value={field.value || ""}
+                                        validationType="tax"
                                     />
                                 )}
                             />

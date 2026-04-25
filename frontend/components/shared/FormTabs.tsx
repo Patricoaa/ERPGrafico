@@ -15,7 +15,7 @@ export interface FormTabItem {
     disabled?: boolean
 }
 
-interface FormTabsProps {
+export interface FormTabsProps {
     items: FormTabItem[]
     value: string
     onValueChange: (value: string) => void

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { LabeledInput, LabeledSelect } from "@/components/shared"
 import { Plus, Trash2, Edit, Wand2, CheckCircle2 } from "lucide-react"
@@ -17,7 +16,6 @@ import { useReconciliation } from "../hooks/useReconciliation"
 import { Card } from "@/components/ui/card"
 import type { ReconciliationRule, TreasuryAccount as Account } from "../types"
 import { SimulationResults } from "./SimulationResults"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 
 type RuleRow = ReconciliationRule & { account_name: string }
@@ -241,7 +239,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
 
                     <Card variant="dashed" className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                            <Label className={FORM_STYLES.label}>Auto-Confirmar</Label>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Auto-Confirmar</p>
                             <p className="text-xs text-muted-foreground">Reconciliar automáticamente si el score es alto</p>
                         </div>
                         <Switch
@@ -251,7 +249,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
                     </Card>
 
                     <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Criterios de Coincidencia</Label>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Criterios de Coincidencia</p>
                         <div className="grid grid-cols-2 gap-2">
                             {['amount_exact', 'transaction_id', 'date_range', 'reference'].map(criteria => (
                                 <div key={criteria} className="flex items-center space-x-2 border p-2 rounded">
@@ -280,7 +278,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
                     </div>
 
                     <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Score Mínimo ({editingRule.match_config?.min_score || 50}%)</Label>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Score Mínimo ({editingRule.match_config?.min_score || 50}%)</p>
                         <div className="flex items-center gap-4">
                             <input
                                 type="range" min="0" max="100" step="5"

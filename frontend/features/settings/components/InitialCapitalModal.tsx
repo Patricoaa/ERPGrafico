@@ -6,7 +6,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton, IconButton } from "@/components/shared"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { LabeledContainer } from "@/components/shared/LabeledContainer"
 import { toast } from "sonner"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
@@ -123,17 +123,15 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                     </Alert>
 
                     <div className="space-y-4">
-                        <div className="flex items-end gap-3">
-                            <div className="flex-1 space-y-2">
-                                <Label>Agregar Socio</Label>
-                                <AdvancedContactSelector
-                                    value={null}
-                                    onChange={(val) => {}}
-                                    onSelectContact={(contact) => handleAddPartner(contact.id.toString(), contact)}
-                                    placeholder="Buscar contacto por nombre o RUT..."
-                                />
-                            </div>
-                        </div>
+                        <LabeledContainer label="Agregar Socio">
+                            <AdvancedContactSelector
+                                value={null}
+                                onChange={(val) => {}}
+                                onSelectContact={(contact) => handleAddPartner(contact.id.toString(), contact)}
+                                placeholder="Buscar contacto por nombre o RUT..."
+                                className="border-0 focus-visible:ring-0 h-9"
+                            />
+                        </LabeledContainer>
 
                         <div className="border rounded-lg overflow-hidden">
                             <table className="w-full text-sm">

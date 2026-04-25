@@ -12,7 +12,6 @@ import { Upload, FileText, AlertCircle, CheckCircle2, Loader2, RefreshCw, ArrowR
 import api from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { FORM_STYLES } from "@/lib/styles"
 import { LabeledSelect } from "@/components/shared"
 
 interface TreasuryAccount {
@@ -376,7 +375,6 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                                     onChange={handleFileChange}
                                     accept=".csv,.xls,.xlsx"
                                     className={cn(
-                                        FORM_STYLES.input,
                                         "cursor-pointer h-24 border-dashed border-2 hover:border-primary/40 hover:bg-primary/5 transition-all text-center pt-8 file:hidden"
                                     )}
                                 />
@@ -422,7 +420,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                                                                 setMapping(newMapping)
                                                             }}
                                                         >
-                                                            <SelectTrigger className={cn(FORM_STYLES.input, "h-9 text-[10px] font-bold uppercase tracking-wider bg-background")}>
+                                                        <SelectTrigger className={cn("h-9 text-[10px] font-bold uppercase tracking-wider bg-background border border-border rounded-md", "h-9 text-[10px] font-bold uppercase tracking-wider bg-background")}>
                                                                 <SelectValue placeholder="Ignorar Columna" />
                                                             </SelectTrigger>
                                                             <SelectContent>

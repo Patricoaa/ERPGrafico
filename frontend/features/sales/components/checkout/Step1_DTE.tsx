@@ -3,7 +3,6 @@
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
 import { FileText, Receipt, AlertCircle, Loader2, CheckCircle, ShieldAlert } from "lucide-react"
 import { useFolioValidation } from "@/hooks/useFolioValidation"
 import { useEffect, useMemo } from "react"

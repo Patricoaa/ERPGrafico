@@ -8,9 +8,7 @@ import * as z from "zod"
 import { toast } from "sonner"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-
-import { CancelButton } from "@/components/shared"
+import { CancelButton, LabeledInput } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { UserCog } from "lucide-react"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
@@ -138,25 +136,19 @@ export function PartnerEditModal({ open, onOpenChange, contact, onSuccess }: Pro
                     <FormField
                         control={form.control}
                         name="partner_equity_percentage"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Porcentaje de Participación (%)</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        step="0.01"
-                                        placeholder="Ej: 33.33"
-                                        {...field}
-                                        disabled={!form.watch('is_partner')}
-                                    />
-                                </FormControl>
-                                <FormDescription className="text-xs">
-                                    Deje en blanco si no aplica.
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                label="Porcentaje de Participación (%)"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                placeholder="Ej: 33.33"
+                                hint="Deje en blanco si no aplica."
+                                error={fieldState.error?.message}
+                                {...field}
+                                disabled={!form.watch('is_partner')}
+                            />
                         )}
                     />
                 </form>

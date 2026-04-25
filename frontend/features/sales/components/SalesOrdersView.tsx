@@ -323,7 +323,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     onReset={() => setDateRange(undefined)}
                     customFilters={
                         <DateRangeFilter
-                            onRangeChange={setDateRange}
+                            onDateChange={setDateRange}
                             label={viewMode === 'orders' ? "Fecha de Venta" : "Fecha de Emisión"}
                             className="bg-transparent border-none w-full"
                         />

@@ -3,21 +3,16 @@
 import React, { useState, useEffect } from "react"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BaseModal, EmptyState, StatusBadge, SubmitButton, CancelButton, IconButton } from "@/components/shared"
-import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { BaseModal, EmptyState, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import {
-    Plus,
     Settings,
     Trash2,
     Loader2,
-    Cpu,
     Building2,
-    ShieldCheck,
-    Activity,
+
     Smartphone,
     CreditCard,
     Link as LinkIcon,
@@ -25,11 +20,9 @@ import {
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { LabeledInput } from "@/components/shared"
 
 interface PaymentHardwareManagementProps {
     externalDeviceOpen?: boolean
@@ -401,13 +394,13 @@ function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
             <form className="space-y-4 py-2">
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Contacto / Entidad (Proveedor)</Label>
                         <AdvancedContactSelector
                             value={supplierId?.toString() || null}
                             onChange={(val) => setSupplierId(val ? parseInt(val) : null)}
                             onSelectContact={(contact) => {
                                 if (!name) setName(contact.name)
                             }}
+                            label="Contacto / Entidad (Proveedor)"
                         />
                     </div>
 
@@ -428,28 +421,28 @@ function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
 
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Cuenta Puente Recaudación (Activo)</Label>
                         <AccountSelector
                             value={receivableAccount?.toString() || null}
                             onChange={(v) => setReceivableAccount(v ? parseInt(v) : null)}
                             accountType="ASSET"
+                            label="Cuenta Puente Recaudación (Activo)"
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Cuenta Gasto Comisiones</Label>
                             <AccountSelector
                                 value={expenseAccount?.toString() || null}
                                 onChange={(v) => setExpenseAccount(v ? parseInt(v) : null)}
                                 accountType="EXPENSE"
+                                label="Cuenta Gasto Comisiones"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Cuenta IVA Comisiones (Activo)</Label>
                             <AccountSelector
                                 value={ivaAccount?.toString() || null}
                                 onChange={(v) => setIvaAccount(v ? parseInt(v) : null)}
                                 accountType="ASSET"
+                                label="Cuenta IVA Comisiones (Activo)"
                             />
                         </div>
                     </div>
@@ -560,20 +553,14 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
                 />
 
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Proveedor</Label>
-                        <select
-                            className={cn(FORM_STYLES.input, "appearance-none")}
-                            value={providerId}
-                            onChange={e => setProviderId(e.target.value)}
-                            required
-                        >
-                            <option value="">Seleccione...</option>
-                            {providers.map(p => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                        </select>
-                    </div>
+                    <LabeledSelect
+                        label="Proveedor"
+                        required
+                        value={providerId}
+                        onChange={setProviderId}
+                        placeholder="Seleccione..."
+                        options={providers.map(p => ({ value: p.id.toString(), label: p.name }))}
+                    />
                     <div>
                         <LabeledInput
                             label="Número de Serie / TID"
@@ -593,10 +580,10 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
                 />
 
                 <div className="space-y-3 pt-2">
-                    <Label className={cn(FORM_STYLES.label, "flex items-center gap-2")}>
+                    <p className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-primary" />
                         Capacidades del Hardware
-                    </Label>
+                    </p>
                     <div className="grid grid-cols-2 gap-4">
                         <div
                             className={cn(

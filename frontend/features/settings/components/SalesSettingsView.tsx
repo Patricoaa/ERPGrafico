@@ -28,18 +28,14 @@ const AccountField = ({ form, name, label, accountType }: { form: UseFormReturn<
     <FormField
         control={form.control}
         name={name}
-        render={({ field }) => (
-            <FormItem>
-                <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">{label}</FormLabel>
-                <FormControl>
-                    <AccountSelector
-                        value={field.value as string}
-                        onChange={field.onChange}
-                        accountType={accountType}
-                    />
-                </FormControl>
-                <FormMessage />
-            </FormItem>
+        render={({ field, fieldState }) => (
+            <AccountSelector
+                label={label}
+                value={field.value as string}
+                onChange={field.onChange}
+                accountType={accountType}
+                error={fieldState.error?.message}
+            />
         )}
     />
 )

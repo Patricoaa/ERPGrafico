@@ -53,6 +53,7 @@ export * from './EmptyState';
 export * from './CropFrame';
 export * from './IndustryMark';
 export * from './Separators';
+export * from './FormSection';
 
 // Loading States
 export * from './LoadingFallback';
@@ -65,4 +66,6 @@ export * from './FolioValidationInput';
 export * from './LabeledInput';
 export * from './LabeledSelect';
 export * from './LabeledContainer';
+export * from './LabeledSwitch';
+export * from './LabeledCheckbox';
 export * from './PeriodValidationDateInput';

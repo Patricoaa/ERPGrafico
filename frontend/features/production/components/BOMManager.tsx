@@ -10,15 +10,8 @@ import { BOMFormModal } from "./BOMFormModal"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { LabeledContainer } from "@/components/shared"
+import { LabeledSelect } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
@@ -282,33 +275,27 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                     {product?.has_variants && (
                         <div className="mt-4 bg-primary/5 p-5 rounded-md border-2 border-primary/20 shadow-sm transition-all hover:shadow-md animate-in fade-in slide-in-from-top-2 duration-500">
                             <div className="flex-1 flex flex-col md:flex-row items-center gap-4">
-                                <LabeledContainer
+                                <LabeledSelect
                                     label="Contexto de Manufactura"
                                     icon={<Layers className="h-4 w-4 opacity-50" />}
-                                    className="flex-1"
-                                >
-                                    <Select
-                                        value={selectedVariantId}
-                                        onValueChange={setSelectedVariantId}
-                                    >
-                                        <SelectTrigger className="border-0 focus:ring-0 h-8 px-2 shadow-none bg-transparent font-mono">
-                                            <SelectValue placeholder="Seleccione variante..." />
-                                        </SelectTrigger>
-                                        <SelectContent align="start" className="rounded-sm border-2">
-                                            <SelectItem value="all" className="font-black text-[10px] uppercase tracking-widest text-primary hover:bg-primary/5">
-                                                -- Ver Todas las Recetas --
-                                            </SelectItem>
-                                            {variants.map(v => (
-                                                <SelectItem key={v.id} value={v.id.toString()} className="text-[10px]">
-                                                    <div className="flex items-center gap-3 font-bold uppercase">
-                                                        <span className="font-mono bg-muted text-[9px] px-1.5 py-0.5 rounded-sm border">{v.internal_code || v.code}</span>
-                                                        <span className="opacity-80">{v.variant_display_name || v.name}</span>
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </LabeledContainer>
+                                    containerClassName="flex-1"
+                                    value={selectedVariantId}
+                                    onChange={setSelectedVariantId}
+                                    placeholder="Seleccione variante..."
+                                    className="font-mono"
+                                    options={[
+                                        { value: "all", label: "-- Ver Todas las Recetas --" },
+                                        ...variants.map(v => ({
+                                            value: v.id.toString(),
+                                            label: (
+                                                <div className="flex items-center gap-3 font-bold uppercase">
+                                                    <span className="font-mono bg-muted text-[9px] px-1.5 py-0.5 rounded-sm border">{v.internal_code || v.code}</span>
+                                                    <span className="opacity-80">{v.variant_display_name || v.name}</span>
+                                                </div>
+                                            )
+                                        }))
+                                    ]}
+                                />
                                 <Button
                                     type="button"
                                     onClick={(e) => {

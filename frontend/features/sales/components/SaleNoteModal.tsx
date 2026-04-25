@@ -4,26 +4,16 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
-import { CancelButton, SubmitButton } from "@/components/shared"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+
 import { FileBadge, Loader2, CheckCircle2, AlertCircle, ShieldAlert } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Card } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
+
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { EmptyState, PeriodValidationDateInput, TableSkeleton, LabeledContainer, LabeledInput } from "@/components/shared"
+import { EmptyState, PeriodValidationDateInput, TableSkeleton, LabeledContainer, LabeledInput, LabeledSelect, CancelButton, SubmitButton } from "@/components/shared"
 
 import { SaleOrderLine, SaleNoteLine } from "../types"
 
@@ -212,26 +202,22 @@ export function SaleNoteModal({
         >
             <div className="space-y-6 py-2">
                 <div className="grid grid-cols-2 gap-4">
-                    <LabeledContainer label="Tipo de Nota">
-                        <Select value={noteType} onValueChange={(val: "NOTA_CREDITO" | "NOTA_DEBITO") => setNoteType(val)}>
-                            <SelectTrigger className="border-none shadow-none focus-visible:ring-0 bg-transparent h-9">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="NOTA_CREDITO">Nota de Crédito (Devolución/Resciliación)</SelectItem>
-                                <SelectItem value="NOTA_DEBITO">Nota de Débito (Cargo Adicional)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </LabeledContainer>
+                    <LabeledSelect
+                        label="Tipo de Nota"
+                        value={noteType}
+                        onChange={(val) => setNoteType(val as "NOTA_CREDITO" | "NOTA_DEBITO")}
+                        options={[
+                            { value: "NOTA_CREDITO", label: "Nota de Crédito (Devolución/Resciliación)" },
+                            { value: "NOTA_DEBITO", label: "Nota de Débito (Cargo Adicional)" },
+                        ]}
+                    />
 
-                    <LabeledContainer label="Número Documento">
-                        <Input
-                            placeholder="Ej: NC-12345"
-                            className="border-none shadow-none focus-visible:ring-0 bg-transparent h-9"
-                            value={documentNumber}
-                            onChange={(e) => setDocumentNumber(e.target.value)}
-                        />
-                    </LabeledContainer>
+                    <LabeledInput
+                        label="Número Documento"
+                        placeholder="Ej: NC-12345"
+                        value={documentNumber}
+                        onChange={(e) => setDocumentNumber(e.target.value)}
+                    />
 
                     <LabeledContainer label="Fecha Emisión">
                         <PeriodValidationDateInput

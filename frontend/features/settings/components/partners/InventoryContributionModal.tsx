@@ -11,19 +11,12 @@ import {
     Info,
     Warehouse as WarehouseIcon
 } from "lucide-react"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
+import { LabeledInput, LabeledSelect, LabeledContainer } from "@/components/shared"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
@@ -31,7 +24,6 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import api from "@/lib/api"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { Partner } from "@/features/contacts/types/partner"
 import { Product } from "@/features/inventory/types"
@@ -272,25 +264,22 @@ export function InventoryContributionModal({
                 </div>
 
                 {/* Partner Selector */}
-                <div className="space-y-1.5">
-                    <Label className={FORM_STYLES.label}>
-                        <Users className="inline h-3.5 w-3.5 mr-1 opacity-50" />
-                        Socio
-                    </Label>
-                    <Select value={partnerId} onValueChange={setPartnerId} disabled={!!preSelectedPartnerId}>
-                        <SelectTrigger className={cn(FORM_STYLES.input, "border-warning/20 bg-warning/5")}>
-                            <SelectValue placeholder="Seleccione un socio" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {partners.map(p => (
-                                <SelectItem key={p.id} value={p.id.toString()}>
-                                    {p.name}
-                                    {p.tax_id && <span className="text-muted-foreground ml-2 font-mono text-[10px]">{p.tax_id}</span>}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+                <LabeledSelect
+                    label={<div className="flex items-center"><Users className="h-3.5 w-3.5 mr-1 opacity-50" /> Socio</div>}
+                    value={partnerId}
+                    onChange={setPartnerId}
+                    disabled={!!preSelectedPartnerId}
+                    placeholder="Seleccione un socio"
+                    options={partners.map(p => ({
+                        value: p.id.toString(),
+                        label: (
+                            <span>
+                                {p.name}
+                                {p.tax_id && <span className="text-muted-foreground ml-2 font-mono text-[10px]">{p.tax_id}</span>}
+                            </span>
+                        ),
+                    }))}
+                />
 
                 {/* Section: Producto y Ubicación */}
                 <div className="flex items-center gap-2 pt-2 pb-2">
@@ -301,34 +290,23 @@ export function InventoryContributionModal({
 
                 {/* Product & Warehouse (Side by Side) */}
                 <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-4">
-                    <div className="space-y-1.5">
-                        <Label className={FORM_STYLES.label}>
-                            <WarehouseIcon className="inline h-3.5 w-3.5 mr-1 opacity-50" />
-                            Almacén
-                        </Label>
-                        <Select value={warehouseId} onValueChange={setWarehouseId}>
-                            <SelectTrigger className={FORM_STYLES.input}>
-                                <SelectValue placeholder="Seleccione almacén" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {warehouses.map(w => (
-                                    <SelectItem key={w.id} value={w.id.toString()}>{w.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                        <Label className={FORM_STYLES.label}>
-                            <Package className="inline h-3.5 w-3.5 mr-1 opacity-50" />
-                            Producto
-                        </Label>
+                    <LabeledSelect
+                        label={<div className="flex items-center"><WarehouseIcon className="h-3.5 w-3.5 mr-1 opacity-50" /> Almacén</div>}
+                        value={warehouseId}
+                        onChange={setWarehouseId}
+                        options={warehouses.map(w => ({ label: w.name, value: w.id.toString() }))}
+                        placeholder="Seleccione almacén"
+                    />
+                    <LabeledContainer 
+                        label={<div className="flex items-center"><Package className="h-3.5 w-3.5 mr-1 opacity-50" /> Producto</div>}
+                    >
                         <ProductSelector
                             value={productId}
                             onChange={(val) => setProductId(val || "")}
                             allowedTypes={["STORABLE", "MANUFACTURABLE"]}
                             simpleOnly={true}
                         />
-                    </div>
+                    </LabeledContainer>
                 </div>
 
                 {/* Section: Detalles del Movimiento */}
@@ -340,44 +318,41 @@ export function InventoryContributionModal({
 
                 {/* Quantity, UoM & Cost */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="space-y-1.5">
-                        <Label className={FORM_STYLES.label}>Cantidad</Label>
-                        <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={quantity}
-                            onChange={(e) => setQuantity(e.target.value)}
-                            className={cn(FORM_STYLES.input, "text-right font-mono")}
-                            placeholder="0"
-                        />
-                    </div>
-                    <div className="space-y-1.5">
-                        <Label className={FORM_STYLES.label}>Unidad de Medida</Label>
-                        <Select value={uomId} onValueChange={setUomId} disabled={productUoMs.length === 0}>
-                            <SelectTrigger className={FORM_STYLES.input}>
-                                <SelectValue placeholder="UoM" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {productUoMs.map(u => (
-                                    <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <LabeledInput
+                        label="Cantidad"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={quantity}
+                        onChange={(e) => setQuantity(e.target.value)}
+                        className="text-right font-mono"
+                        placeholder="0"
+                    />
+                    
+                    <LabeledSelect
+                        label="Unidad de Medida"
+                        value={uomId}
+                        onChange={setUomId}
+                        disabled={productUoMs.length === 0}
+                        options={productUoMs.map(u => ({ label: u.name, value: u.id.toString() }))}
+                        placeholder="UoM"
+                    />
+                    
                     <div className="space-y-1.5 bg-muted/20 pb-2 pt-1 border border-transparent rounded-lg px-2 -mx-2 sm:mx-0">
-                        <Label className={cn(FORM_STYLES.label, "flex justify-between")}>
-                            <span>Costo {selectedUoM ? `(${selectedUoM.name})` : ''}</span>
-                            {isCostEditable && <Badge variant="outline" className="text-[8px] h-4 py-0 leading-tight border-warning/30 text-warning bg-warning/10">Editable</Badge>}
-                        </Label>
-                        <Input
+                        <LabeledInput
+                            label={
+                                <div className="flex justify-between w-full">
+                                    <span>Costo {selectedUoM ? `(${selectedUoM.name})` : ''}</span>
+                                    {isCostEditable && <Badge variant="outline" className="text-[8px] h-4 py-0 leading-tight border-warning/30 text-warning bg-warning/10">Editable</Badge>}
+                                </div>
+                            }
                             type={isCostEditable ? "number" : "text"}
                             step={isCostEditable ? "0.01" : undefined}
                             min="0"
                             readOnly={!isCostEditable}
                             value={isCostEditable ? unitCost : formatCurrency(Number(unitCost))}
                             onChange={(e) => isCostEditable && setUnitCost(e.target.value)}
-                            className={cn(FORM_STYLES.input, "text-right font-mono text-sm", !isCostEditable && "opacity-80 bg-muted/50 focus-visible:ring-0 cursor-default")}
+                            className={cn("text-right font-mono text-sm", !isCostEditable && "opacity-80 bg-muted/50 focus-visible:ring-0 cursor-default")}
                         />
                         <div className="flex justify-between text-[11px] items-center px-1 font-bold">
                             <span className="text-muted-foreground mr-1">V. Total:</span>
@@ -406,15 +381,12 @@ export function InventoryContributionModal({
                 )}
 
                 {/* Description */}
-                <div className="space-y-1.5">
-                    <Label className={FORM_STYLES.label}>Notas / Referencia</Label>
-                    <Input
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder={moveType === 'IN' ? "Ej: Aporte inicial de maquinaria" : "Ej: Retiro de materiales por socio"}
-                        className={FORM_STYLES.input}
-                    />
-                </div>
+                <LabeledInput
+                    label="Notas / Referencia"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder={moveType === 'IN' ? "Ej: Aporte inicial de maquinaria" : "Ej: Retiro de materiales por socio"}
+                />
             </div>
         </BaseModal>
     )

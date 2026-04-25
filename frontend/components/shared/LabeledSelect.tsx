@@ -112,14 +112,14 @@ export const LabeledSelect = forwardRef<
                     <SelectTrigger
                         ref={ref}
                         className={cn(
-                            "w-full border-0 shadow-none focus:ring-0 focus:ring-offset-0 bg-transparent px-3 h-9",
+                            "w-full border-0 shadow-none focus:ring-0 focus:ring-offset-0 bg-transparent px-2 !h-[1.5rem] !py-0",
                             !value && "text-muted-foreground font-normal",
                             className
                         )}
                     >
                         <SelectValue placeholder={placeholder} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position="popper" align="start" className="w-[var(--radix-select-trigger-width)]">
                         {options.map((opt) => (
                             <SelectItem key={opt.value} value={opt.value}>
                                 {opt.label}
