@@ -12,7 +12,6 @@ import { Label } from "@/components/ui/label"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
@@ -289,7 +288,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                 <div className="flex-1 overflow-y-auto pr-3 space-y-6 scrollbar-thin">
                                     {availableAttributes.map(attr => (
                                         <div key={attr.id} className="space-y-4 p-5 border rounded-md bg-card shadow-sm">
-                                            <Label className={cn(FORM_STYLES.label, "font-bold text-sm text-foreground/80 tracking-wide uppercase")}>{attr.name}</Label>
+                                            <Label className="font-bold text-sm text-foreground/80 tracking-wide uppercase">{attr.name}</Label>
                                             <div className="grid grid-cols-2 gap-3">
                                                 {attr.values.map(val => (
                                                     <div key={val.id} className="flex items-center space-x-3 p-3 rounded-md border bg-background hover:bg-muted/30 hover:border-primary/50 transition-all">

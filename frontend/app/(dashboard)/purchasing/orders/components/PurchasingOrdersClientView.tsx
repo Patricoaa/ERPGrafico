@@ -558,7 +558,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         customFilterCount={dateRange ? 1 : 0}
                         customFilters={
                             <DateRangeFilter
-                                onRangeChange={setDateRange}
+                                onDateChange={setDateRange}
                                 label={viewMode === 'orders' ? "Fecha de Orden" : "Fecha de Emisión"}
                                 className="bg-transparent border-none w-full"
                             />

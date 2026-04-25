@@ -13,7 +13,6 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -21,7 +20,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { ColumnDef } from "@tanstack/react-table"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { Form, FormField } from "@/components/ui/form"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import {
@@ -183,7 +181,7 @@ function AccountTab({ user }: { user: MyProfile['user'] }) {
                             <InfoField icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={user.email || "Sin email"} />
                             <InfoField icon={<BadgeCheck className="h-3.5 w-3.5" />} label="Nombre Completo" value={`${user.first_name || ''} ${user.last_name || ''}`.trim() || "Sin nombre"} />
                             <div className="space-y-1.5">
-                                <span className={FORM_STYLES.label}>Estado</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Estado</span>
                                 <div>
                                     <Badge variant="outline" className={cn(
                                         "text-[9px] uppercase font-bold",
@@ -208,13 +206,13 @@ function AccountTab({ user }: { user: MyProfile['user'] }) {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-1.5">
-                                <span className={FORM_STYLES.label}>Rol del Sistema</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Rol del Sistema</span>
                                 <div>
                                     <Badge className="text-[9px] uppercase font-bold">{primaryRole}</Badge>
                                 </div>
                             </div>
                             <div className="space-y-1.5">
-                                <span className={FORM_STYLES.label}>Equipos Funcionales</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Equipos Funcionales</span>
                                 <div className="flex flex-wrap gap-1.5">
                                     {functionalGroups.length > 0 ? functionalGroups.map(g => (
                                         <Badge key={g} variant="outline" className="text-[9px]">{g}</Badge>
@@ -252,7 +250,7 @@ function AccountTab({ user }: { user: MyProfile['user'] }) {
 function InfoField({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
     return (
         <div className="space-y-1.5">
-            <span className={FORM_STYLES.label}>{label}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
             <div className="flex items-center gap-2 h-10 px-3 rounded-lg border bg-muted/20 text-sm font-medium text-foreground">
                 <span className="text-muted-foreground">{icon}</span>
                 {value}
@@ -632,7 +630,7 @@ function PersonalTab({
                                         <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="AFP" value={employee.afp_detail?.name || "—"} />
                                         <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Sistema Salud" value={employee.salud_type_display || "—"} />
                                         <div className="space-y-1.5">
-                                            <span className={FORM_STYLES.label}>Sueldo Base</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Sueldo Base</span>
                                             <div className="flex items-center gap-2 h-10 px-3 rounded-lg border bg-muted/20 text-sm font-bold text-foreground">
                                                 <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
                                                 <MoneyDisplay amount={parseFloat(employee.base_salary || "0")} />

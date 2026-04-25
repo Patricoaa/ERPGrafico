@@ -2,7 +2,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .serializers import (
-    ProductSerializer, ProductCategorySerializer, WarehouseSerializer,
+    ProductSerializer, ProductSimpleSerializer, ProductCategorySerializer, WarehouseSerializer,
     StockMoveSerializer, UoMSerializer, UoMCategorySerializer, PricingRuleSerializer,
     CustomFieldTemplateSerializer, ProductCustomFieldSerializer, SubscriptionSerializer,
     ProductAttributeSerializer, ProductAttributeValueSerializer
@@ -362,6 +362,13 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
             "created": created_count,
             "skipped": skipped_count
         })
+
+    @action(detail=True, methods=['get'])
+    def variants(self, request, pk=None):
+        template = self.get_object()
+        variants = template.variants.filter(active=True)
+        serializer = ProductSimpleSerializer(variants, many=True, context={'request': request})
+        return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
     def effective_price(self, request, pk=None):

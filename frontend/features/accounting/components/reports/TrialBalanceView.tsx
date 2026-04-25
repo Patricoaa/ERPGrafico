@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calculator, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import { LabeledInput } from '@/components/shared';
+import { LabeledInput, PeriodValidationDateInput } from '@/components/shared';
 
 export function TrialBalanceView() {
     const { data, isLoading, fetchTrialBalance } = useTrialBalance();
@@ -38,21 +38,33 @@ export function TrialBalanceView() {
         <div className="space-y-6 pt-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
             {/* Filters Header */}
             <div className="flex flex-col md:flex-row gap-4 items-center bg-muted/30 p-4 rounded-lg border border-border/50">
-                <LabeledInput
+                <PeriodValidationDateInput
                     label="Desde"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    date={startDate ? new Date(startDate + 'T12:00:00') : undefined}
+                    onDateChange={(d) => {
+                        if (!d) {
+                            setStartDate("")
+                            return
+                        }
+                        setStartDate(d.toISOString().split('T')[0])
+                    }}
                     containerClassName="w-full md:w-auto"
                     icon={<Calendar className="w-3.5 h-3.5" />}
+                    validationType="accounting"
                 />
-                <LabeledInput
+                <PeriodValidationDateInput
                     label="Hasta"
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                    date={endDate ? new Date(endDate + 'T12:00:00') : undefined}
+                    onDateChange={(d) => {
+                        if (!d) {
+                            setEndDate("")
+                            return
+                        }
+                        setEndDate(d.toISOString().split('T')[0])
+                    }}
                     containerClassName="w-full md:w-auto"
                     icon={<Calendar className="w-3.5 h-3.5" />}
+                    validationType="accounting"
                 />
                 <div className="flex-1" />
 

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { toast } from "sonner"
+
 import { Plus, BookOpen, Tag } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
 
@@ -14,14 +14,12 @@ import {
     FormControl,
     FormField,
     FormItem,
-    FormLabel,
     FormMessage,
 } from "@/components/ui/form"
 
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
-import { cn } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
+
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { AccountPayload } from "@/features/accounting/types"
@@ -104,7 +102,7 @@ export function AccountForm({
     const watchParentId = form.watch("parent")
     useEffect(() => {
         if (!watchParentId || watchParentId === "__none__" || watchParentId === "none") return;
-        
+
         const parent = accounts.find((a: any) => a.id.toString() === watchParentId.toString());
         if (parent) {
             // Force account_type to match parent
@@ -195,39 +193,39 @@ export function AccountForm({
                             <form id="account-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField
-                                control={form.control}
-                                name="code"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormControl>
-                                            <LabeledInput
-                                                label="Código"
-                                                placeholder="Automático"
-                                                disabled
-                                                hint="Se genera automáticamente según la jerarquía."
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
+                                        control={form.control}
+                                        name="code"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormControl>
+                                                    <LabeledInput
+                                                        label="Código"
+                                                        placeholder="Automático"
+                                                        disabled
+                                                        hint="Se genera automáticamente según la jerarquía."
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
                                     <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field, fieldState }) => (
-                                <FormItem>
-                                    <FormControl>
-                                        <LabeledInput
-                                            label="Nombre"
-                                            required
-                                            placeholder="Caja"
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field, fieldState }) => (
+                                            <FormItem>
+                                                <FormControl>
+                                                    <LabeledInput
+                                                        label="Nombre"
+                                                        required
+                                                        placeholder="Caja"
+                                                        error={fieldState.error?.message}
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField
@@ -267,8 +265,8 @@ export function AccountForm({
                                     />
                                 </div>
 
-                             </form>
-                         </Form>
+                            </form>
+                        </Form>
                     </div>
 
                     {!!initialData?.id && (

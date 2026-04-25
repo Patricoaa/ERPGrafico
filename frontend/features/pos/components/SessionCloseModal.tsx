@@ -3,7 +3,6 @@
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -21,7 +20,6 @@ import { Numpad } from "@/components/ui/numpad"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { cn, formatCurrency } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
 import { POSReport, type POSReportData } from "./POSReport"
 
 import type { POSSession, POSSessionAudit, AccountingSettings, TreasuryAccount } from "@/types/pos"

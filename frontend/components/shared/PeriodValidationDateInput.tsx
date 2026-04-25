@@ -68,7 +68,7 @@ export function PeriodValidationDateInput({
                 onDateChange={onDateChange}
                 disabled={disabled}
                 className={cn(
-                    "w-full border-0 bg-transparent shadow-none hover:bg-transparent focus-visible:ring-0 h-[34px]",
+                    "w-full border-0 bg-transparent shadow-none hover:bg-transparent focus-visible:ring-0 h-[1.5rem] p-0",
                     isClosed && "text-destructive"
                 )}
             />

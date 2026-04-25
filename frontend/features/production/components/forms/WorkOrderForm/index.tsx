@@ -8,12 +8,11 @@ import { Plus, FileText } from "lucide-react"
 import { format } from "date-fns"
 
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { PageHeaderButton } from "@/components/shared/PageHeader"
 
 import { cn, translateStatus } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
 import api from "@/lib/api"
 import { toast } from "sonner"
 
@@ -485,7 +484,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                     render={({ field, fieldState }) => (
                                         <LabeledInput
                                             label="Notas Internas (No visible para cliente)"
-                                            type="textarea"
+                                            as="textarea"
                                             placeholder="Observaciones para el equipo de producción..."
                                             className="h-24 bg-transparent border-border/40 focus:border-primary/40"
                                             error={fieldState.error?.message}

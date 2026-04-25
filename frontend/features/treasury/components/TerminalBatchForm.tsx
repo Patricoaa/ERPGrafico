@@ -5,19 +5,17 @@ import { useState, useEffect } from "react"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
+import { LabeledSelect } from "@/components/shared"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
-import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { CalendarIcon, Loader2, Calculator, Info, Search, ChevronsUpDown, Check } from "lucide-react"
+import { Loader2, Calculator, Info, Search, ChevronsUpDown, Check } from "lucide-react"
+import { PeriodValidationDateInput } from "@/components/shared"
 import { toast } from "sonner"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import api from "@/lib/api"
-import { FORM_STYLES } from "@/lib/styles"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
 import { CancelButton, SubmitButton, LabeledContainer, LabeledInput } from "@/components/shared"
@@ -37,6 +35,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     const [depositMethodId, setDepositMethodId] = useState<string>("")
     const { serverDate } = useServerDate()
     const [date, setDate] = useState<Date | undefined>(undefined)
+    const [isDateValid, setIsDateValid] = useState(true)
 
     // Sync state with server date when available and not yet set
     useEffect(() => {
@@ -190,48 +189,27 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                         </Popover>
                     </LabeledContainer>
 
-                    <LabeledContainer label="Fecha de Ventas">
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                        "w-full justify-start text-left font-normal h-8 border-0 focus:ring-0 bg-transparent shadow-none px-2",
-                                        !date && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar
-                                    mode="single"
-                                    selected={date}
-                                    onSelect={setDate}
-                                    initialFocus
-                                />
-                            </PopoverContent>
-                        </Popover>
-                    </LabeledContainer>
+                    <PeriodValidationDateInput
+                        date={date}
+                        onDateChange={setDate}
+                        label="Fecha de Ventas"
+                        validationType="tax"
+                        onValidityChange={setIsDateValid}
+                        required
+                    />
 
 
 
-                    <LabeledContainer
+                    <LabeledSelect
                         label="Método de Depósito (Hacia Banco)"
                         hint="Método que el banco usa para registrar el abono neto."
-                    >
-                        <Select value={depositMethodId} onValueChange={setDepositMethodId}>
-                            <SelectTrigger className="h-8 border-0 focus:ring-0 bg-transparent shadow-none px-2">
-                                <SelectValue placeholder="Seleccione método de abono..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {paymentMethods.filter(m => m.allow_for_sales).map(meth => (
-                                    <SelectItem key={meth.id} value={meth.id.toString()}>{meth.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </LabeledContainer>
+                        value={depositMethodId}
+                        onChange={setDepositMethodId}
+                        placeholder="Seleccione método de abono..."
+                        options={paymentMethods
+                            .filter(m => m.allow_for_sales)
+                            .map(meth => ({ value: meth.id.toString(), label: meth.name }))}
+                    />
 
                     <LabeledInput
                         label="N° Lote / Referencia (Opcional)"
@@ -304,7 +282,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
             <div className="flex justify-end gap-3 pt-4 border-t">
                 <CancelButton onClick={onCancel} />
-                <ActionSlideButton type="submit" loading={loading} disabled={loading || !isValid || !providerId || !depositMethodId}>
+                <ActionSlideButton type="submit" loading={loading} disabled={loading || !isValid || !providerId || !depositMethodId || !isDateValid}>
                     Registrar Liquidación
                 </ActionSlideButton>
             </div>

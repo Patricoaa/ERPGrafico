@@ -320,11 +320,18 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                                                             />
                                                         )} />
                                                         <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
-                                                            <LabeledInput
+                                                            <PeriodValidationDateInput
                                                                 label="Fecha Ingreso"
-                                                                type="date"
+                                                                date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                                                onDateChange={(d) => {
+                                                                    if (!d) {
+                                                                        field.onChange("")
+                                                                        return
+                                                                    }
+                                                                    field.onChange(d.toISOString().split('T')[0])
+                                                                }}
                                                                 error={fieldState.error?.message}
-                                                                {...field}
+                                                                validationType="accounting"
                                                             />
                                                         )} />
                                                         <FormField control={form.control} name="status" render={({ field, fieldState }) => (

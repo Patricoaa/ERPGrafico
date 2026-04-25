@@ -1,10 +1,9 @@
 import React, { useMemo } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
 import { Info } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from "@/lib/utils"
-import { LabeledContainer, EmptyState } from "@/components/shared"
+import { LabeledContainer } from "@/components/shared"
 
 interface UoM {
     id: number
@@ -102,25 +101,42 @@ export function UoMSelector({
 
 
     if (filteredUoMs.length === 0) {
+        const placeholderText = product ? "Sin unidades disponibles" : "Seleccione producto primero"
+        
+        const selectPlaceholder = (
+            <Select disabled value="none">
+                <SelectTrigger className={cn("!h-[1.5rem] !py-0 w-full", variant === 'standalone' && "border-none shadow-none focus-visible:ring-0 bg-transparent opacity-60")}>
+                    <SelectValue placeholder={placeholderText} />
+                </SelectTrigger>
+            </Select>
+        )
+
+        if (variant === 'standalone') {
+            return (
+                <LabeledContainer
+                    label={label}
+                    error={error}
+                    disabled={true}
+                    className={className}
+                >
+                    {selectPlaceholder}
+                </LabeledContainer>
+            )
+        }
+
         return (
-            <div className="space-y-2">
-                <Label className="text-destructive">{label}</Label>
-                <EmptyState
-                    context="generic"
-                    variant="compact"
-                    title="Sin unidades disponibles"
-                    description="Configure la UoM base del producto."
-                />
+            <div className={cn("flex items-center gap-1.5 min-w-0", className)}>
+                {selectPlaceholder}
             </div>
         )
     }
 
     const selectComponent = (
         <Select onValueChange={onChange} value={value} disabled={disabled || (!product && !categoryId)}>
-            <SelectTrigger className={cn("h-9 w-full", variant === 'standalone' && "border-none shadow-none focus-visible:ring-0 bg-transparent")}>
+            <SelectTrigger className={cn("!h-[1.5rem] !py-0 w-full", variant === 'standalone' && "border-none shadow-none focus-visible:ring-0 bg-transparent")}>
                 <SelectValue placeholder="Und" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper" align="start" className="w-[var(--radix-select-trigger-width)]">
                 {filteredUoMs.map((uom) => (
                     <SelectItem key={uom.id} value={uom.id.toString()}>
                         {uom.name}

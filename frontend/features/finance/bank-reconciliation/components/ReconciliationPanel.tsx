@@ -8,9 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
+import { LabeledSelect, LabeledInput } from "@/components/shared"
 import {
     Ban, CheckCircle2, ChevronRight, Filter,
     Loader2, Search, Sparkles, X, AlertCircle, Wand2
@@ -674,29 +672,27 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 }
             >
                 <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Motivo del Ajuste</Label>
-                        <Select value={diffType} onValueChange={setDiffType}>
-                            <SelectTrigger className="font-bold uppercase text-[11px] tracking-tight border-2">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="COMMISSION">Comisión Bancaria</SelectItem>
-                                <SelectItem value="TAX">Retención / Impuesto</SelectItem>
-                                <SelectItem value="ROUNDING">Diferencia de Redondeo</SelectItem>
-                                <SelectItem value="OTHER">Otro (Especificar)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Notas Adicionales</Label>
-                        <Textarea 
-                            value={diffNotes} 
-                            onChange={e => setDiffNotes(e.target.value)} 
-                            placeholder="Ej. Comisión por transferencia internacional..."
-                            className="text-xs font-medium min-h-[100px] border-2"
-                        />
-                    </div>
+                    <LabeledSelect
+                        label="Motivo del Ajuste"
+                        value={diffType}
+                        onChange={setDiffType}
+                        className="font-bold uppercase text-[11px] tracking-tight"
+                        options={[
+                            { value: "COMMISSION", label: "Comisión Bancaria" },
+                            { value: "TAX", label: "Retención / Impuesto" },
+                            { value: "ROUNDING", label: "Diferencia de Redondeo" },
+                            { value: "OTHER", label: "Otro (Especificar)" },
+                        ]}
+                    />
+                    <LabeledInput
+                        label="Notas Adicionales"
+                        as="textarea"
+                        rows={4}
+                        value={diffNotes}
+                        onChange={e => setDiffNotes(e.target.value)}
+                        placeholder="Ej. Comisión por transferencia internacional..."
+                        className="text-xs font-medium"
+                    />
                 </div>
             </BaseModal>
         </div>

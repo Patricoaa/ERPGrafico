@@ -4,14 +4,7 @@ import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
 import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { 
-    Select, 
-    SelectContent, 
-    SelectItem, 
-    SelectTrigger, 
-    SelectValue 
-} from "@/components/ui/select"
+import { LabeledSelect } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
@@ -172,18 +165,14 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
                             <span className="text-3xl font-mono font-bold text-success">{formatCurrency(totalToPay)}</span>
                         </div>
 
-                        <div className="grid gap-2">
-                            <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest pl-1">Cuenta de Tesorería (Salida de Dinero)</Label>
-                            <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Seleccione banco o caja" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {treasuryAccounts.map(a => (
-                                        <SelectItem key={a.id} value={a.id.toString()}>{a.name} ({a.identifier})</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                        <div>
+                            <LabeledSelect
+                                label="Cuenta de Tesorería (Salida de Dinero)"
+                                value={selectedAccountId}
+                                onChange={setSelectedAccountId}
+                                placeholder="Seleccione banco o caja"
+                                options={treasuryAccounts.map(a => ({ value: a.id.toString(), label: `${a.name} (${a.identifier})` }))}
+                            />
                             <p className="text-[10px] text-muted-foreground mt-1 pl-1 font-medium">
                                 Esta será la cuenta bancaria de donde se extraerán los fondos para liquidar los dividendos seleccionados.
                             </p>

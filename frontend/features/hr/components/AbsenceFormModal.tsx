@@ -12,8 +12,7 @@ import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
 import { Form, FormField } from "@/components/ui/form"
 import { CalendarX2 } from "lucide-react"
-import { FORM_STYLES } from "@/lib/styles"
-import { BaseModal, EmptyState, LabeledInput, LabeledSelect } from "@/components/shared"
+import { BaseModal, EmptyState, LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
 
 export const absenceSchema = z.object({
     employee: z.string().min(1, "Empleado requerido"),
@@ -167,19 +166,33 @@ export function AbsenceFormModal({ open, onOpenChange, absence, employees, onSav
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
-                                    <LabeledInput
+                                    <PeriodValidationDateInput
                                         label="Fecha Inicio"
-                                        type="date"
+                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                        onDateChange={(d) => {
+                                            if (!d) {
+                                                field.onChange("")
+                                                return
+                                            }
+                                            field.onChange(d.toISOString().split('T')[0])
+                                        }}
                                         error={fieldState.error?.message}
-                                        {...field}
+                                        validationType="accounting"
                                     />
                                 )} />
                                 <FormField control={form.control} name="end_date" render={({ field, fieldState }) => (
-                                    <LabeledInput
+                                    <PeriodValidationDateInput
                                         label="Fecha Fin"
-                                        type="date"
+                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                        onDateChange={(d) => {
+                                            if (!d) {
+                                                field.onChange("")
+                                                return
+                                            }
+                                            field.onChange(d.toISOString().split('T')[0])
+                                        }}
                                         error={fieldState.error?.message}
-                                        {...field}
+                                        validationType="accounting"
                                     />
                                 )} />
                             </div>

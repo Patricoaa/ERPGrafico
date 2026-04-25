@@ -1,21 +1,16 @@
 import { useFormContext } from "react-hook-form"
 import { format } from "date-fns"
-import { es } from "date-fns/locale"
 import Link from "next/link"
-import { FileText, User, ExternalLink, CalendarIcon, X } from "lucide-react"
+import { FileText, User, ExternalLink, X } from "lucide-react"
 
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
+import { FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
 import { Label } from "@/components/ui/label"
-
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { AdvancedSaleOrderSelector } from "@/components/selectors/AdvancedSaleOrderSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { Skeleton, LabeledInput, LabeledContainer } from "@/components/shared"
+import { Skeleton, LabeledInput, LabeledContainer, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
 
 import { cn } from "@/lib/utils"
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms"
@@ -64,16 +59,12 @@ export function WorkOrderBasicInfo({
                         control={form.control}
                         name="description"
                         render={({ field, fieldState }) => (
-                            <FormItem>
-                                <FormControl>
-                                    <LabeledInput
-                                        label="Descripción / Título"
-                                        placeholder="Ej: Impresión Folletos 1000u"
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                </FormControl>
-                            </FormItem>
+                            <LabeledInput
+                                label="Descripción / Título"
+                                placeholder="Ej: Impresión Folletos 1000u"
+                                error={fieldState.error?.message}
+                                {...field}
+                            />
                         )}
                     />
                 )}
@@ -180,33 +171,19 @@ export function WorkOrderBasicInfo({
                                         control={form.control}
                                         name="sale_line"
                                         render={({ field }) => (
-                                            <LabeledContainer label="Ítem de Venta a Fabricar">
-                                                <Select
-                                                    onValueChange={field.onChange}
-                                                    value={field.value}
-                                                    disabled={!!initialData}
-                                                >
-                                                    <SelectTrigger className="h-8 border-0 focus:ring-0 bg-transparent shadow-none transition-all px-2">
-                                                        <SelectValue placeholder="Seleccionar ítem..." />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {loadingLines ? (
-                                                            <div className="p-2 space-y-2">
-                                                                <Skeleton className="h-6 w-full" />
-                                                                <Skeleton className="h-6 w-full" />
-                                                            </div>
-                                                        ) : saleLines.length === 0 ? (
-                                                            <SelectItem value="none" disabled>No hay ítems fabricables avanzados pendientes</SelectItem>
-                                                        ) : (
-                                                            saleLines.map((line: SaleOrderLine) => (
-                                                                <SelectItem key={line.id} value={line.id?.toString() || ""}>
-                                                                    {line.product_name || line.description} ({line.quantity} {line.uom_name})
-                                                                </SelectItem>
-                                                            ))
-                                                        )}
-                                                    </SelectContent>
-                                                </Select>
-                                            </LabeledContainer>
+                                            <LabeledSelect
+                                                label="Ítem de Venta a Fabricar"
+                                                onChange={field.onChange}
+                                                value={field.value}
+                                                disabled={!!initialData}
+                                                placeholder={loadingLines ? "Cargando..." : "Seleccionar ítem..."}
+                                                options={saleLines.length === 0
+                                                    ? [{ value: "none", label: "No hay ítems fabricables avanzados pendientes" }]
+                                                    : saleLines.map((line: SaleOrderLine) => ({
+                                                        value: line.id?.toString() || "",
+                                                        label: `${line.product_name || line.description} (${line.quantity} ${line.uom_name})`,
+                                                    }))}
+                                            />
                                         )}
                                     />
 
@@ -269,18 +246,14 @@ export function WorkOrderBasicInfo({
                             control={form.control}
                             name="quantity"
                             render={({ field, fieldState }) => (
-                                <FormItem>
-                                    <FormControl>
-                                        <LabeledInput
-                                            label="Cantidad"
-                                            type="number"
-                                            step="1"
-                                            placeholder="0"
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                </FormItem>
+                                <LabeledInput
+                                    label="Cantidad"
+                                    type="number"
+                                    step="1"
+                                    placeholder="0"
+                                    error={fieldState.error?.message}
+                                    {...field}
+                                />
                             )}
                         />
                     </div>
@@ -309,60 +282,26 @@ export function WorkOrderBasicInfo({
                     control={form.control}
                     name="start_date"
                     render={({ field }) => (
-                        <LabeledContainer label="Fecha Inicio">
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full h-8 pl-2 text-left font-bold border-0 focus:ring-0 bg-transparent hover:bg-primary/5 transition-all shadow-none",
-                                            !field.value && "text-muted-foreground font-normal"
-                                        )}
-                                    >
-                                        {field.value ? format(field.value, "PPP", { locale: es }) : <span>Elegir fecha</span>}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={field.value || undefined}
-                                        onSelect={field.onChange}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </LabeledContainer>
+                        <PeriodValidationDateInput
+                            date={field.value}
+                            onDateChange={field.onChange}
+                            label="Fecha Inicio"
+                            validationType="tax"
+                            required
+                        />
                     )}
                 />
                 <FormField
                     control={form.control}
                     name="due_date"
                     render={({ field }) => (
-                        <LabeledContainer label="Fecha Entrega">
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full h-8 pl-2 text-left font-bold border-0 focus:ring-0 bg-transparent hover:bg-primary/5 transition-all shadow-none",
-                                            !field.value && "text-muted-foreground font-normal"
-                                        )}
-                                    >
-                                        {field.value ? format(field.value, "PPP", { locale: es }) : <span>Elegir fecha</span>}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={field.value || undefined}
-                                        onSelect={field.onChange}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </LabeledContainer>
+                        <PeriodValidationDateInput
+                            date={field.value}
+                            onDateChange={field.onChange}
+                            label="Fecha Entrega"
+                            validationType="tax"
+                            required
+                        />
                     )}
                 />
             </div>
@@ -373,16 +312,12 @@ export function WorkOrderBasicInfo({
                         control={form.control}
                         name="product_description"
                         render={({ field, fieldState }) => (
-                            <FormItem>
-                                <FormControl>
-                                    <LabeledInput
-                                        label="Descripción del Producto"
-                                        placeholder="Ej: Trípticos 10x21cm, Papel Couche 170gr..."
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                </FormControl>
-                            </FormItem>
+                            <LabeledInput
+                                label="Descripción del Producto"
+                                placeholder="Ej: Trípticos 10x21cm, Papel Couche 170gr..."
+                                error={fieldState.error?.message}
+                                {...field}
+                            />
                         )}
                     />
                     <LabeledContainer label="Contacto Relacionado">

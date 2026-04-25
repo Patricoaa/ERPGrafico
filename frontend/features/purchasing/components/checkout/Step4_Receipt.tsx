@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { LabeledInput, LabeledSelect, LabeledContainer } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
 import api from "@/lib/api"
 import { useServerDate } from "@/hooks/useServerDate"
 import {
@@ -311,10 +311,16 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                                         <TableRow key={productId || idx}>
                                             <TableCell className="font-medium">{line.product_name || line.name || line.description}</TableCell>
                                             <TableCell>
-                                                <LabeledInput
-                                                    type="date"
-                                                    value={currentDate}
-                                                    onChange={(e) => updateSubscriptionDate(productId, e.target.value)}
+                                                <PeriodValidationDateInput
+                                                    date={currentDate ? new Date(currentDate + 'T12:00:00') : undefined}
+                                                    onDateChange={(d) => {
+                                                        if (!d) {
+                                                            updateSubscriptionDate(productId, "")
+                                                            return
+                                                        }
+                                                        updateSubscriptionDate(productId, d.toISOString().split('T')[0])
+                                                    }}
+                                                    validationType="tax"
                                                 />
                                             </TableCell>
                                         </TableRow>

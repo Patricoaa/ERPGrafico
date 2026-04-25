@@ -136,16 +136,15 @@ export function AdvancedContactSelector({
                             disabled={disabled}
                         >
                             {selectedContact ? (
-                                <div className="flex items-center gap-2 truncate text-left w-[calc(100%-20px)]">
-                                    <div className={cn("p-1.5 rounded-md shrink-0", disabled ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary")}>
-                                        {selectedContact.contact_type === 'COMPANY' ? <Building2 className="h-4 w-4" /> : <User className="h-4 w-4" />}
-                                    </div>
-                                    <div className="flex flex-col items-start truncate leading-tight">
-                                        <span className="font-medium text-sm truncate w-full">{selectedContact.name}</span>
-                                        <span className="text-[10px] text-muted-foreground truncate w-full">
-                                            {selectedContact.tax_id ? formatRUT(selectedContact.tax_id) : 'S/Rut'}
-                                        </span>
-                                    </div>
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    {selectedContact.contact_type === 'COMPANY'
+                                        ? <Building2 className={cn("h-3.5 w-3.5 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />
+                                        : <User className={cn("h-3.5 w-3.5 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />
+                                    }
+                                    <span className="font-medium text-sm truncate">{selectedContact.name}</span>
+                                    <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
+                                        {selectedContact.tax_id ? formatRUT(selectedContact.tax_id) : 'S/Rut'}
+                                    </span>
                                 </div>
                             ) : (
                                 <span className="text-muted-foreground">{placeholder}</span>

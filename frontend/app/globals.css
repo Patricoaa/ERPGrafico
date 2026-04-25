@@ -491,6 +491,14 @@
     resize: none;
   }
 
+  /* Normalize trigger buttons (date pickers) to match input height — exclude combobox, handled above */
+  fieldset.notched-field button:not([role="combobox"]) {
+    height: auto !important;
+    padding-top: 0.125rem !important;
+    padding-bottom: 0.125rem !important;
+    min-height: 1.5rem !important;
+  }
+
   fieldset.notched-field textarea {
     resize: vertical;
     padding-top: 0.25rem;

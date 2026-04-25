@@ -125,16 +125,10 @@ export function AdvancedSaleOrderSelector({
                         )}
                     >
                         {selectedOrder ? (
-                             <div className="flex items-center gap-2 truncate text-left w-[calc(100%-20px)]">
-                                <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
-                                    <FileText className="h-4 w-4" />
-                                </div>
-                                <div className="flex flex-col items-start truncate leading-tight w-full overflow-hidden">
-                                    <span className="font-medium text-sm truncate w-full">NV-{selectedOrder.number}</span>
-                                    <span className="text-[10px] text-muted-foreground truncate w-full leading-tight">
-                                        {selectedOrder.customer_name}
-                                    </span>
-                                </div>
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                <span className="font-semibold text-sm shrink-0">NV-{selectedOrder.number}</span>
+                                <span className="text-sm text-muted-foreground truncate">{selectedOrder.customer_name}</span>
                             </div>
                         ) : (
                             <span className="text-muted-foreground truncate">{placeholder}</span>

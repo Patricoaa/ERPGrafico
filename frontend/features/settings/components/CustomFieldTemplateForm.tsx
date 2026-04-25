@@ -18,20 +18,12 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
 import { BaseModal } from "@/components/shared/BaseModal"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { LabeledInput, LabeledSelect } from "@/components/shared"
 
 const templateSchema = z.object({
     name: z.string().min(1, "Nombre requerido"),
@@ -118,55 +110,46 @@ export function CustomFieldTemplateForm({ open, onOpenChange, onSuccess }: Custo
                     <FormField
                         control={form.control}
                         name="name"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Nombre del Campo</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Ej: Color de Tintas, Tamaño, etc." {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                label="Nombre del Campo"
+                                placeholder="Ej: Color de Tintas, Tamaño, etc."
+                                error={fieldState.error?.message}
+                                {...field}
+                            />
                         )}
                     />
 
                     <FormField
                         control={form.control}
                         name="field_type"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Tipo de Campo</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Seleccione tipo" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="TEXT">Texto (Línea simple)</SelectItem>
-                                        <SelectItem value="SELECT_SINGLE">Selección Única</SelectItem>
-                                        <SelectItem value="SELECT_MULTIPLE">Selección Múltiple</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
+                        render={({ field, fieldState }) => (
+                            <LabeledSelect
+                                label="Tipo de Campo"
+                                value={field.value}
+                                onChange={field.onChange}
+                                error={fieldState.error?.message}
+                                options={[
+                                    { value: "TEXT", label: "Texto (Línea simple)" },
+                                    { value: "SELECT_SINGLE", label: "Selección Única" },
+                                    { value: "SELECT_MULTIPLE", label: "Selección Múltiple" },
+                                ]}
+                            />
                         )}
                     />
 
                     <FormField
                         control={form.control}
                         name="description"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Descripción / Ayuda</FormLabel>
-                                <FormControl>
-                                    <Textarea
-                                        placeholder="Instrucciones para el usuario..."
-                                        className="resize-none"
-                                        {...field}
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                as="textarea"
+                                label="Descripción / Ayuda"
+                                placeholder="Instrucciones para el usuario..."
+                                rows={3}
+                                error={fieldState.error?.message}
+                                {...field}
+                            />
                         )}
                     />
 
@@ -193,9 +176,10 @@ export function CustomFieldTemplateForm({ open, onOpenChange, onSuccess }: Custo
 
                     {(fieldType === "SELECT_SINGLE" || fieldType === "SELECT_MULTIPLE") && (
                         <div className="space-y-3 pt-2">
-                            <FormLabel>Opciones de Selección</FormLabel>
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Opciones de Selección</p>
                             <div className="flex gap-2">
-                                <Input
+                                <LabeledInput
+                                    label="Nueva opción"
                                     value={newOption}
                                     onChange={(e) => setNewOption(e.target.value)}
                                     placeholder="Nueva opción"
@@ -206,7 +190,7 @@ export function CustomFieldTemplateForm({ open, onOpenChange, onSuccess }: Custo
                                         }
                                     }}
                                 />
-                                <IconButton type="button" variant="outline" onClick={addOption}>
+                                <IconButton type="button" variant="outline" onClick={addOption} className="self-end mb-1">
                                     <Plus className="h-4 w-4" />
                                 </IconButton>
                             </div>

@@ -2,8 +2,6 @@ import { FormField } from "@/components/ui/form"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
-import { FORM_STYLES } from "@/lib/styles"
-
 interface ProductTypeSelectorProps {
     form: UseFormReturn<ProductFormValues>
     disabled?: boolean

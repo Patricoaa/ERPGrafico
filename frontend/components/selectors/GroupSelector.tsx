@@ -90,24 +90,14 @@ export function GroupSelector({ value, onChange, placeholder = "Seleccionar grup
                     disabled={disabled}
                 >
                     {selectedGroup ? (
-                        <div className="flex items-center gap-2 truncate text-left w-[calc(100%-20px)]">
-                            <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
-                                <Users className="h-4 w-4" />
-                            </div>
-                            <div className="flex flex-col items-start truncate leading-tight w-full overflow-hidden">
-                                <span className="font-medium text-sm truncate w-full">{selectedGroup.name}</span>
-                                <span className="text-[10px] text-muted-foreground truncate w-full">Grupo de Trabajo</span>
-                            </div>
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <Users className="h-3.5 w-3.5 shrink-0 text-primary" />
+                            <span className="font-medium text-sm truncate">{selectedGroup.name}</span>
                         </div>
                     ) : value ? (
-                        <div className="flex items-center gap-2 truncate text-left w-[calc(100%-20px)]">
-                            <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
-                                <Users className="h-4 w-4" />
-                            </div>
-                            <div className="flex flex-col items-start truncate leading-tight w-full overflow-hidden">
-                                <span className="font-medium text-sm truncate w-full">{value}</span>
-                                <span className="text-[10px] text-muted-foreground truncate w-full">Grupo de Trabajo</span>
-                            </div>
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <Users className="h-3.5 w-3.5 shrink-0 text-primary" />
+                            <span className="font-medium text-sm truncate">{value}</span>
                         </div>
                     ) : (
                         <span className="text-muted-foreground truncate">{placeholder}</span>

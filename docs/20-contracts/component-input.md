@@ -7,13 +7,13 @@ last_review: 2026-04-23
 stability: beta
 ---
 
-# LabeledInput — Contract
+# LabeledInput y LabeledSelect — Contracts
 
 > 📄 Este documento cubre el primitivo `LabeledInput`. Para inputs especializados de negocio (folio DTE, fecha con validación de periodo), ver las entradas correspondientes en [component-contracts.md](./component-contracts.md).
 
 ## ¿Cuándo usar `LabeledInput`?
 
-Usa `LabeledInput` siempre que necesites un **par label + campo** (input o textarea) simple. Es el reemplazo directo del patrón deprecated:
+Usa `LabeledInput` o `LabeledSelect` siempre que necesites un **par label + campo** simple. Es el reemplazo directo del patrón deprecated:
 
 ```tsx
 // ❌ DEPRECATED — no usar en código nuevo
@@ -22,6 +22,15 @@ Usa `LabeledInput` siempre que necesites un **par label + campo** (input o texta
 
 // ✅ CORRECTO
 <LabeledInput label="Nombre" required {...field} error={fieldState.error?.message} />
+
+// ✅ CORRECTO para Selects
+<LabeledSelect
+  label="Tipo de Documento"
+  options={[{ value: 'RUT', label: 'RUT' }, { value: 'PASSPORT', label: 'Pasaporte' }]}
+  value={field.value}
+  onChange={field.onChange}
+  error={fieldState.error?.message}
+/>
 ```
 
 ## Implementación técnica
@@ -48,6 +57,21 @@ El componente usa `<fieldset class="notched-field"> + <legend>` nativo. No hay J
 | `...rest` | `InputHTMLAttributes \| TextareaHTMLAttributes` | ❌ | — | Todos los atributos HTML nativos se pasan al elemento interno. |
 
 `LabeledInput` soporta `forwardRef` — compatible con `react-hook-form` via `{...field}`.
+
+### LabeledSelect Props 🟡
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `label` | `string` | ✅ | — | Texto del `<legend>`. |
+| `options` | `{ value: string, label: string \| ReactNode }[]` | ✅ | — | Arreglo de opciones a renderizar. |
+| `value` | `string` | ❌ | — | Valor actual seleccionado. |
+| `onChange` | `(value: string) => void` | ❌ | — | Callback al cambiar selección. |
+| `placeholder` | `string` | ❌ | `"Seleccione..."` | Texto cuando no hay nada seleccionado. |
+| `required` | `boolean` | ❌ | `false` | Muestra `*` rojo junto al label. |
+| `error` | `string` | ❌ | — | Mensaje de error visual. |
+| `disabled` | `boolean` | ❌ | `false` | Deshabilita el control. |
+| `containerClassName` | `string` | ❌ | — | Clases en el wrapper externo. |
+| `className` | `string` | ❌ | — | Clases en el SelectTrigger interno. |
 
 ## Integración con `react-hook-form`
 
@@ -122,6 +146,57 @@ El componente usa `<fieldset class="notched-field"> + <legend>` nativo. No hay J
 <LabeledInput label="Código interno" disabled value="PRD-0042" />
 ```
 
+---
+
+## LabeledContainer
+
+Wrapper `fieldset + legend` para controles que **no son** `<input>` nativos (date pickers, dropzones, selectores custom).
+
+```tsx
+<LabeledContainer label="Fecha" icon={<CalendarIcon className="h-4 w-4 opacity-50" />} error={error}>
+  <Popover>
+    <PopoverTrigger asChild>
+      <Button variant="ghost" className="w-full text-left border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent h-[1.5rem] p-0 text-sm">
+        {value ? format(value, "PPP") : <span>Seleccione fecha</span>}
+      </Button>
+    </PopoverTrigger>
+    ...
+  </Popover>
+</LabeledContainer>
+```
+
+### Invariante de altura
+
+`LabeledContainer` garantiza `min-h-[1.5rem]` en el área de contenido — igual que `LabeledInput`. Para mantener alineación visual con los demás campos del formulario:
+
+> **El trigger interno debe usar `h-[1.5rem] p-0`**, no `h-auto py-2`.  
+> CSS en `globals.css` normaliza `fieldset.notched-field button:not([role="combobox"])` automáticamente,  
+> pero declarar la altura explícitamente es más claro y evita override accidental.
+
+### Do / Don't
+
+```tsx
+// ✅ DO — botón de trigger compacto
+<Button className="... h-[1.5rem] p-0 text-sm">...</Button>
+
+// ❌ DON'T — py-2 rompe la alineación con LabeledInput
+<Button className="... h-auto py-2">...</Button>
+```
+
+| prop | type | required | notes |
+|------|------|----------|-------|
+| `label` | `ReactNode` | ❌ | Texto del `<legend>`. |
+| `required` | `boolean` | ❌ | Muestra `*` rojo. |
+| `error` | `string` | ❌ | Borde destructivo + mensaje. |
+| `hint` | `string` | ❌ | Ayuda (visible solo si no hay `error`). |
+| `icon` | `ReactNode` | ❌ | Ícono prefijo dentro del fieldset. |
+| `suffix` | `ReactNode` | ❌ | Elemento sufijo. |
+| `disabled` | `boolean` | ❌ | Opacidad + `pointer-events: none`. |
+| `containerClassName` | `string` | ❌ | Clases en el `<div>` wrapper. |
+| `className` | `string` | ❌ | Clases en el `<fieldset>`. |
+
+---
+
 ## Relación con especializaciones
 
 `LabeledInput` es el **primitivo genérico**. Las especializaciones del sistema usan internamente un patrón propio (label + control + validación asíncrona). Una futura fase puede migrar sus internos a `LabeledInput`, pero por ahora son independientes:
@@ -141,6 +216,9 @@ El componente usa `<fieldset class="notched-field"> + <legend>` nativo. No hay J
 // ❌ DON'T — mezclar LabeledInput con FormLabel manual
 <FormLabel className={FORM_STYLES.label}>Ciudad</FormLabel>
 <LabeledInput label="Ciudad" {...field} />
+
+// ✅ DO — usar LabeledSelect para selects simples nativos
+<LabeledSelect label="Región" options={[{value: "RM", label: "RM"}]} value={val} onChange={setVal} />
 
 // ✅ DO — usar containerClassName para ajustar el grid
 <LabeledInput label="Código" containerClassName="col-span-2" {...field} />

@@ -18,6 +18,42 @@ Async entity-search comboboxes in `components/selectors/`. These components perf
 - Internal state: they fetch their own initial value when `value` is pre-populated.
 - They are NOT in `components/shared/` because they have direct feature-hook dependencies (each calls a feature-specific search hook).
 - Import: `import { AccountSelector } from '@/components/selectors'`
+21: 
+22: ## Dropdown behavior
+23: 
+24: Entity selectors must adhere to the layout invariants defined in [component-contracts.md](./component-contracts.md#dropdown--popover-layout-invariants):
+25: 
+26: - **Width**: MUST match trigger width using `w-[var(--radix-popover-trigger-width)]`.
+27: - **Position**: MUST use `popper` style, aligning the dropdown with the **bottom border** of the notched fieldset (avoiding the `item-aligned` covering behavior of standard selects).
+28: 
+29: ---
+
+## Trigger display — patrón compacto
+
+Todos los selectores usan un **trigger de una sola línea** cuando hay un ítem seleccionado. El display rico (icono con fondo + 2 líneas de texto) **no se usa** en el trigger — solo en las filas del dropdown.
+
+```
+// ✅ Trigger seleccionado — una línea
+[icon 3.5] [texto principal truncate] [secundario shrink-0 hidden sm:inline]
+
+// ❌ Trigger seleccionado — NO usar 2 líneas en el trigger
+[icon-box]  [texto principal  ]
+            [texto secundario ]
+```
+
+Esto garantiza que todos los campos del formulario tengan la misma altura (`min-h-[1.5rem]`), alineada con `LabeledInput`.
+
+**Patrón JSX estándar para el trigger seleccionado:**
+
+```tsx
+<div className="flex items-center gap-1.5 min-w-0 flex-1">
+  <SomeIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
+  <span className="font-medium text-sm truncate">{entity.name}</span>
+  <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">{entity.secondary}</span>
+</div>
+```
+
+---
 
 ## When to use selectors vs plain `<select>`
 

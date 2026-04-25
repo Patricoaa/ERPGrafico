@@ -11,14 +11,8 @@ import { Loader2, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     Form,
-    FormControl,
     FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/AuthContext"
 import { LabeledInput } from "@/components/shared"

@@ -13,7 +13,7 @@ import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
 import { Form, FormField } from "@/components/ui/form"
-import { LabeledInput, LabeledSelect } from "@/components/shared"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
 import { WalletCards, History } from "lucide-react"
 
 export const advanceSchema = z.object({
@@ -153,12 +153,19 @@ export function AdvanceFormModal({ open, onOpenChange, advance, employees, payro
                                     />
                                 )} />
                                 <FormField control={form.control} name="date" render={({ field, fieldState }) => (
-                                    <LabeledInput
+                                    <PeriodValidationDateInput
                                         label="Fecha Propuesta"
                                         required
-                                        type="date"
+                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                        onDateChange={(d) => {
+                                            if (!d) {
+                                                field.onChange("")
+                                                return
+                                            }
+                                            field.onChange(d.toISOString().split('T')[0])
+                                        }}
                                         error={fieldState.error?.message}
-                                        {...field}
+                                        validationType="accounting"
                                     />
                                 )} />
                             </div>

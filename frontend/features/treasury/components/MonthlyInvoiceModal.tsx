@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { SubmitButton, CancelButton, LabeledInput, LabeledSelect, BaseModal } from "@/components/shared"
+import { SubmitButton, CancelButton, LabeledInput, LabeledSelect, BaseModal, PeriodValidationDateInput } from "@/components/shared"
 import { FileSpreadsheet } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -178,12 +178,18 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNumber(e.target.value)}
                         />
 
-                        <LabeledInput
+                        <PeriodValidationDateInput
                             label="Fecha de Emisión"
                             required
-                            type="date"
-                            value={date}
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDate(e.target.value)}
+                            date={date ? new Date(date + 'T12:00:00') : undefined}
+                            onDateChange={(d) => {
+                                if (!d) {
+                                    setDate("")
+                                    return
+                                }
+                                setDate(d.toISOString().split('T')[0])
+                            }}
+                            validationType="tax"
                         />
                     </div>
 

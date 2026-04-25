@@ -24,7 +24,6 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
 import api from "@/lib/api"
-import { FORM_STYLES } from "@/lib/styles"
 import { Product, UoM, Warehouse } from "@/types/entities"
 import { cn } from "@/lib/utils"
 import { validateAccountingPeriod } from '@/features/accounting/actions'

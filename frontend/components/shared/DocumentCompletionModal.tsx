@@ -13,6 +13,7 @@ import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { FolioValidationInput } from "./FolioValidationInput"
 import { ShieldAlert } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { PeriodValidationDateInput } from "./PeriodValidationDateInput"
 
 interface DocumentCompletionModalProps {
     open: boolean
@@ -139,17 +140,19 @@ export function DocumentCompletionModal({
                     />
                 </div>
 
-                <div className="space-y-2">
-                    <Label htmlFor="comp-date">
-                        Fecha de Emisión <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                        id="comp-date"
-                        type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
+                    <PeriodValidationDateInput
+                        label="Fecha de Emisión"
+                        required
+                        date={date ? new Date(date + 'T12:00:00') : undefined}
+                        onDateChange={(d) => {
+                            if (!d) {
+                                setDate("")
+                                return
+                            }
+                            setDate(d.toISOString().split('T')[0])
+                        }}
+                        validationType="tax"
                     />
-                </div>
 
                 <div className="space-y-2">
                     <Label>

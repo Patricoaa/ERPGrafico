@@ -4,15 +4,8 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+import { LabeledSelect } from "@/components/shared"
 import { FileText, Loader2, Upload, ShieldAlert } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -138,18 +131,15 @@ export function DocumentRegistrationModal({
             }
         >
             <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                    <Label>Tipo de Documento</Label>
-                    <Select value={dteType} onValueChange={setDteType}>
-                        <SelectTrigger>
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="FACTURA">Factura Electrónica</SelectItem>
-                            <SelectItem value="BOLETA">Boleta Electrónica</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+                <LabeledSelect
+                    label="Tipo de Documento"
+                    value={dteType}
+                    onChange={setDteType}
+                    options={[
+                        { value: "FACTURA", label: "Factura Electrónica" },
+                        { value: "BOLETA", label: "Boleta Electrónica" },
+                    ]}
+                />
 
                 <div className="flex items-center space-x-2 py-2">
                     <input
@@ -211,4 +201,3 @@ export function DocumentRegistrationModal({
     )
 }
 
-import { CheckCircle2 } from "lucide-react"

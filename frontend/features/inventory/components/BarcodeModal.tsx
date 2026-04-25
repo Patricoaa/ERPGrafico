@@ -5,7 +5,7 @@ import JsBarcode from "jsbarcode"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { LabeledContainer } from "@/components/shared/LabeledContainer"
 import { Barcode, Download, Printer, RefreshCw, Check } from "lucide-react"
 import { toast } from "sonner"
 
@@ -178,27 +178,26 @@ export function BarcodeModal({ open, onOpenChange, initialValue = "", onApply }:
             }
         >
             <div className="space-y-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="barcode-input">Valor del Código</Label>
-                        <div className="flex gap-2">
-                            <Input 
-                                id="barcode-input"
+                    <LabeledContainer label="Valor del Código">
+                        <div className="flex gap-2 py-0.5">
+                            <Input
                                 value={barcodeValue}
                                 onChange={(e) => setBarcodeValue(e.target.value)}
                                 placeholder="Ingrese el código..."
-                                className="font-mono font-bold"
+                                className="font-mono font-bold border-0 focus-visible:ring-0 h-8 flex-1"
                             />
-                            <Button 
-                                type="button" 
-                                variant="outline" 
+                            <Button
+                                type="button"
+                                variant="outline"
                                 size="icon"
                                 onClick={generateRandomBarcode}
                                 title="Generar nuevo código"
+                                className="h-8 w-8 shrink-0"
                             >
                                 <RefreshCw className="h-4 w-4" />
                             </Button>
                         </div>
-                    </div>
+                    </LabeledContainer>
 
                     <div className="flex flex-col items-center justify-center p-6 bg-high-contrast-bg rounded-md border-2 border-dashed border-border min-h-[160px]">
                         {barcodeValue ? (

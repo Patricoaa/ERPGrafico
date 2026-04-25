@@ -20,7 +20,6 @@ import { toast } from "sonner"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import { Input } from "@/components/ui/input"
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
 import { translateProductionStage } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -320,7 +319,7 @@ export default function WorkOrdersPage({ createAction }: WorkOrdersPageProps = {
                     customFilterCount={dateRange ? 1 : 0}
                     customFilters={
                         <DateRangeFilter 
-                            onRangeChange={setDateRange} 
+                            onDateChange={setDateRange} 
                             label="Fecha de Entrega" 
                             className="bg-transparent border-none w-full"
                         />

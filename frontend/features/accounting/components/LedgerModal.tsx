@@ -197,7 +197,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                 }
                 headerActions={
                     <DateRangeFilter
-                        onRangeChange={(range) => {
+                        onDateChange={(range) => {
                             if (range?.from && range?.to) {
                                 setDateRange({ from: range.from, to: range.to })
                             }

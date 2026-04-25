@@ -51,14 +51,7 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import dynamic from "next/dynamic"
-import { FormSkeleton, Skeleton } from "@/components/shared"
-import { EmptyState } from "@/components/shared/EmptyState"
-
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { useAuth } from "@/contexts/AuthContext"
-import { TaskActionCard } from "@/features/workflow/components/TaskActionCard"
-import { MaterialAssignmentTabs } from "./MaterialAssignmentTabs"
+import { FormSkeleton, Skeleton, LabeledSelect } from "@/components/shared"
 import {
     Select,
     SelectContent,
@@ -66,6 +59,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { EmptyState } from "@/components/shared/EmptyState"
+
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { useAuth } from "@/contexts/AuthContext"
+import { TaskActionCard } from "@/features/workflow/components/TaskActionCard"
+import { MaterialAssignmentTabs } from "./MaterialAssignmentTabs"
 import { WizardProcessSidebar } from "./WizardProcessSidebar"
 import { completeTask } from '@/features/workflow/api/workflowApi'
 import { motion, AnimatePresence } from "framer-motion"
@@ -698,32 +698,29 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         <div className="flex-1 overflow-y-auto min-h-0 relative">
                             {/* Mobile Navigation Dropdown */}
                             <div className="md:hidden sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-3 mb-4">
-                                <Select
+                                <LabeledSelect
                                     value={STAGES[viewingStepIndex]?.id}
-                                    onValueChange={(val) => {
+                                    onChange={(val) => {
                                         const idx = STAGES.findIndex(s => s.id === val)
                                         if (idx !== -1) setViewingStepIndex(idx)
                                     }}
-                                >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Seleccionar etapa" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {STAGES.map((s, i) => {
-                                            const isPast = actualStepIndex > i
-                                            const isCurrent = actualStepIndex === i
-                                            return (
-                                                <SelectItem key={s.id} value={s.id} disabled={!isPast && !isCurrent}>
-                                                    <div className="flex items-center gap-2">
-                                                        <s.icon className="h-4 w-4" />
-                                                        <span>{s.label}</span>
-                                                        {isPast && <CheckCircle2 className="h-3 w-3 ml-2 text-success" />}
-                                                    </div>
-                                                </SelectItem>
+                                    placeholder="Seleccionar etapa"
+                                    options={STAGES.map((s, i) => {
+                                        const isPast = actualStepIndex > i
+                                        const isCurrent = actualStepIndex === i
+                                        return {
+                                            value: s.id,
+                                            disabled: !isPast && !isCurrent,
+                                            label: (
+                                                <div className="flex items-center gap-2">
+                                                    <s.icon className="h-4 w-4" />
+                                                    <span>{s.label}</span>
+                                                    {isPast && <CheckCircle2 className="h-3 w-3 ml-2 text-success" />}
+                                                </div>
                                             )
-                                        })}
-                                    </SelectContent>
-                                </Select>
+                                        }
+                                    }) as any}
+                                />
                             </div>
 
                             <AnimatePresence mode="wait">

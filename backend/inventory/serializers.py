@@ -218,10 +218,12 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
 
     def get_variants(self, obj):
-        # We need to ensure variants also have the is_favorite annotation if accessed this way
-        # However, usually variants of a favorite parent aren't automatically favorite unless marked.
-        # For now, we just filter them.
-        variants = obj.variants.filter(active=True)
+        # Use prefetched variants if available to avoid N+1 queries
+        if hasattr(obj, '_prefetched_objects_cache') and 'variants' in obj._prefetched_objects_cache:
+            variants = [v for v in obj.variants.all() if v.active]
+        else:
+            variants = obj.variants.filter(active=True)
+        
         return ProductSimpleSerializer(variants, many=True).data
 
     def get_uom_category(self, obj):

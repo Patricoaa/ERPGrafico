@@ -10,7 +10,7 @@ import { TableRow, TableCell } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { UoMSelector } from '@/components/selectors'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/currency'
 import { PricingUtils } from '@/features/inventory/utils/pricing'
@@ -49,15 +49,13 @@ function CartItemComponent({
     const { isTouchPOS } = useDeviceContext()
     const itemUom = uoms.find(u => u.id === item.uom)
 
-    // Determine allowed UoMs
-    let allowedUoMs: UoM[] = []
-    if (originalProduct && originalProduct.allowed_sale_uoms?.length) {
-        const allowedIds = originalProduct.allowed_sale_uoms || []
-        const saleUoMId = originalProduct.sale_uom
-        allowedUoMs = uoms.filter(u => allowedIds.includes(u.id) || u.id === saleUoMId)
-    } else if (itemUom) {
-        allowedUoMs = uoms.filter(u => u.category === itemUom.category)
-    }
+    const productForSelector = originalProduct
+        ? originalProduct
+        : (itemUom ? { id: 0, name: item.name, uom: itemUom.id, category: itemUom.category } : null)
+    const categoryIdFallback = !originalProduct && itemUom ? itemUom.category : undefined
+    const hasMultipleUoms = productForSelector
+        ? (originalProduct?.allowed_sale_uoms?.length ?? 0) > 0 || uoms.filter(u => u.category === itemUom?.category).length > 1
+        : false
 
     const handleUomChange = async (newUomId: string) => {
         const newUom = uoms.find(u => u.id.toString() === newUomId)
@@ -135,22 +133,17 @@ function CartItemComponent({
             {/* UoM */}
             <TableCell className="py-2 align-top">
                 <div className="flex justify-center">
-                    {allowedUoMs.length > 1 ? (
-                        <Select
-                            value={item.uom?.toString()}
-                            onValueChange={handleUomChange}
-                        >
-                            <SelectTrigger className="h-6 text-[10px] w-auto border-none bg-muted/50 py-0 px-2 min-h-0 focus:ring-0">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {allowedUoMs.map(u => (
-                                    <SelectItem key={u.id} value={u.id.toString()} className="text-[10px]">
-                                        {u.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                    {hasMultipleUoms && productForSelector ? (
+                        <UoMSelector
+                            product={(originalProduct ?? null) as any}
+                            categoryId={categoryIdFallback}
+                            context="sale"
+                            value={item.uom?.toString() ?? ''}
+                            onChange={handleUomChange}
+                            uoms={uoms as any}
+                            variant="inline"
+                            className="h-6 text-[10px]"
+                        />
                     ) : (
                         <span className="text-[10px] font-medium text-muted-foreground/80 bg-muted/30 px-1.5 py-0.5 rounded leading-none">
                             {item.uom_name}

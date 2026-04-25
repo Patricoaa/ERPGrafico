@@ -151,7 +151,7 @@ export function TerminalBatchesManagement({
                     }
                 ]}
                 customFilters={
-                    <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Ventas" className="bg-transparent border-none w-full" />
+                    <DateRangeFilter onDateChange={setDateRange} label="Fecha de Ventas" className="bg-transparent border-none w-full" />
                 }
                 isCustomFiltered={!!dateRange}
                 customFilterCount={dateRange ? 1 : 0}

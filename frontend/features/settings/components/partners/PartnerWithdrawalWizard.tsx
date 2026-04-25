@@ -17,22 +17,13 @@ import { Partner } from "@/features/contacts/types/partner"
 import { TreasuryAccount } from "@/features/treasury/types"
 import { Product } from "@/features/inventory/types"
 import api from "@/lib/api"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { 
-    Select, 
-    SelectContent, 
-    SelectItem, 
-    SelectTrigger, 
-    SelectValue 
-} from "@/components/ui/select"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { formatCurrency, cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
-import { FORM_STYLES } from "@/lib/styles"
 
 interface PartnerWithdrawalWizardProps {
     open: boolean
@@ -200,25 +191,22 @@ export function PartnerWithdrawalWizard({
             isValid: !!partnerId,
             component: (
                 <div className="space-y-4 py-4">
-                    <div className="space-y-1.5">
-                        <Label className={FORM_STYLES.label}>
-                            <Users className="inline h-3.5 w-3.5 mr-1 opacity-50" />
-                            Socio Solicitante
-                        </Label>
-                        <Select value={partnerId} onValueChange={setPartnerId} disabled={!!initialPartnerId}>
-                            <SelectTrigger className={cn(FORM_STYLES.input, "border-destructive/20 bg-destructive/5")}>
-                                <SelectValue placeholder="Seleccione un socio" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {partners.map(p => (
-                                    <SelectItem key={p.id} value={p.id.toString()}>
-                                        {p.name}
-                                        {p.tax_id && <span className="text-muted-foreground ml-2 font-mono text-[10px]">{p.tax_id}</span>}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <LabeledSelect
+                        label={<div className="flex items-center"><Users className="h-3.5 w-3.5 mr-1 opacity-50" /> Socio Solicitante</div>}
+                        value={partnerId}
+                        onChange={setPartnerId}
+                        disabled={!!initialPartnerId}
+                        placeholder="Seleccione un socio"
+                        options={partners.map(p => ({
+                            value: p.id.toString(),
+                            label: (
+                                <span>
+                                    {p.name}
+                                    {p.tax_id && <span className="text-muted-foreground ml-2 font-mono text-[10px]">{p.tax_id}</span>}
+                                </span>
+                            ),
+                        }))}
+                    />
                     {selectedPartner && (
                         <div className="p-3 bg-destructive/5 border-2 border-dashed border-destructive/20 rounded-lg space-y-2 animate-in fade-in zoom-in-95 duration-300">
                             <div className="flex justify-between items-center text-[10px] text-muted-foreground uppercase font-black">
@@ -301,113 +289,86 @@ export function PartnerWithdrawalWizard({
             component: method === "CASH" ? (
                 <div className="space-y-4 py-4 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Importe a Retirar</Label>
-                            <div className="relative">
-                                <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input 
-                                    type="number"
-                                    value={cashData.amount}
-                                    onChange={(e) => setCashData(prev => ({ ...prev, amount: e.target.value }))}
-                                    className={cn(FORM_STYLES.input, "pl-10 font-mono text-lg font-black text-destructive")}
-                                    placeholder="0"
-                                />
-                            </div>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Cuenta de Origen</Label>
-                            <Select 
-                                value={cashData.treasuryAccountId} 
-                                onValueChange={(v) => setCashData(prev => ({ ...prev, treasuryAccountId: v }))}
-                            >
-                                <SelectTrigger className={FORM_STYLES.input}>
-                                    <SelectValue placeholder="Seleccione cuenta" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {treasuryAccounts.map(a => (
-                                        <SelectItem key={a.id} value={a.id.toString()}>{a.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        <LabeledInput
+                            label="Importe a Retirar"
+                            type="number"
+                            value={cashData.amount}
+                            onChange={(e) => setCashData(prev => ({ ...prev, amount: e.target.value }))}
+                            className="font-mono text-lg font-black text-destructive"
+                            placeholder="0"
+                            icon={<Banknote className="h-4 w-4 opacity-50" />}
+                        />
+                        <LabeledSelect
+                            label="Cuenta de Origen"
+                            value={cashData.treasuryAccountId}
+                            onChange={(v) => setCashData(prev => ({ ...prev, treasuryAccountId: v }))}
+                            options={treasuryAccounts.map(a => ({ label: a.name, value: a.id.toString() }))}
+                            placeholder="Seleccione cuenta"
+                        />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Fecha</Label>
-                            <Input 
-                                type="date"
-                                value={cashData.date}
-                                onChange={(e) => setCashData(prev => ({ ...prev, date: e.target.value }))}
-                                className={FORM_STYLES.input}
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Referencia (Opcional)</Label>
-                            <Input 
-                                value={cashData.description}
-                                onChange={(e) => setCashData(prev => ({ ...prev, description: e.target.value }))}
-                                className={FORM_STYLES.input}
-                                placeholder="Ej: Adelanto utilidades Octubre"
-                            />
-                        </div>
+                        <PeriodValidationDateInput
+                            label="Fecha"
+                            date={cashData.date ? new Date(cashData.date + 'T12:00:00') : undefined}
+                            onDateChange={(d) => {
+                                if (!d) {
+                                    setCashData(prev => ({ ...prev, date: "" }))
+                                    return
+                                }
+                                setCashData(prev => ({ ...prev, date: d.toISOString().split('T')[0] }))
+                            }}
+                            validationType="accounting"
+                        />
+                        <LabeledInput
+                            label="Referencia (Opcional)"
+                            value={cashData.description}
+                            onChange={(e) => setCashData(prev => ({ ...prev, description: e.target.value }))}
+                            placeholder="Ej: Adelanto utilidades Octubre"
+                        />
                     </div>
                 </div>
             ) : (
                 <div className="space-y-4 py-4 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div className="grid grid-cols-[1.5fr_2fr] gap-4">
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Almacén de Salida</Label>
-                            <Select 
-                                value={assetData.warehouseId} 
-                                onValueChange={(v) => setAssetData(prev => ({ ...prev, warehouseId: v }))}
-                            >
-                                <SelectTrigger className={FORM_STYLES.input}>
-                                    <SelectValue placeholder="Almacén" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {warehouses.map(w => (
-                                        <SelectItem key={w.id} value={w.id.toString()}>{w.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Producto / Recurso</Label>
+                        <LabeledSelect
+                            label="Almacén de Salida"
+                            value={assetData.warehouseId}
+                            onChange={(v) => setAssetData(prev => ({ ...prev, warehouseId: v }))}
+                            options={warehouses.map(w => ({ label: w.name, value: w.id.toString() }))}
+                            placeholder="Almacén"
+                        />
+                        <LabeledContainer label="Producto / Recurso">
                             <ProductSelector 
                                 value={assetData.productId}
                                 onChange={(val) => setAssetData(prev => ({ ...prev, productId: val || "" }))}
                                 allowedTypes={["STORABLE", "MANUFACTURABLE"]}
                                 simpleOnly={true}
                             />
-                        </div>
+                        </LabeledContainer>
                     </div>
                     
                     <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Cantidad</Label>
-                            <Input 
-                                type="number"
-                                value={assetData.quantity}
-                                onChange={(e) => setAssetData(prev => ({ ...prev, quantity: e.target.value }))}
-                                className={cn(FORM_STYLES.input, "font-mono font-bold text-right text-destructive")}
-                                placeholder="0.00"
-                            />
-                        </div>
+                        <LabeledInput
+                            label="Cantidad"
+                            type="number"
+                            value={assetData.quantity}
+                            onChange={(e) => setAssetData(prev => ({ ...prev, quantity: e.target.value }))}
+                            className="font-mono font-bold text-right text-destructive"
+                            placeholder="0.00"
+                        />
                         <div className="space-y-1.5 font-mono">
-                            <Label className={FORM_STYLES.label}>Stock Actual</Label>
-                            <div className="h-9 px-3 flex items-center bg-muted/50 rounded border text-[11px] font-bold">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Stock Actual</span>
+                            <div className="h-10 px-3 flex items-center bg-muted/50 rounded-lg border border-border/50 text-sm font-medium">
                                 {productDetails?.qty_on_hand ?? '0'} {productDetails?.uom_name ?? ''}
                             </div>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Costo Unitario (Info)</Label>
-                            <Input 
-                                type="text"
-                                readOnly
-                                value={formatCurrency(productDetails?.cost_price || 0)}
-                                className={cn(FORM_STYLES.input, "font-mono font-bold text-right opacity-60 bg-muted/50")}
-                            />
-                        </div>
+                        <LabeledInput
+                            label="Costo Unitario (Info)"
+                            type="text"
+                            readOnly
+                            value={formatCurrency(productDetails?.cost_price || 0)}
+                            className="font-mono font-bold text-right opacity-60 bg-muted/50"
+                        />
                     </div>
 
                     <Alert className="bg-destructive/5 border-destructive/20 py-2">

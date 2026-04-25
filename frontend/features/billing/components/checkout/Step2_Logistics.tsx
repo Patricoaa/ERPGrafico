@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { LabeledInput, LabeledContainer } from "@/components/shared"
+import { LabeledInput, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Truck, Package, Calendar, Info, AlertTriangle, ShoppingBag } from "lucide-react"
 import api from "@/lib/api"
@@ -343,13 +343,18 @@ export function Step2_Logistics({
 
                 <div className="grid grid-cols-1 gap-4">
                     {(formData.delivery_type === 'PARTIAL' || formData.delivery_type === 'SCHEDULED') && (
-                        <LabeledInput
+                        <PeriodValidationDateInput
                             label={formData.delivery_type === 'PARTIAL' ? 'Fecha para el Resto' : 'Fecha de Operación'}
                             icon={<Calendar className="h-3.5 w-3.5" />}
-                            type="date"
-                            className="h-10 text-sm font-medium"
-                            value={formData.date || ""}
-                            onChange={(e) => setData({ ...formData, date: e.target.value })}
+                            date={formData.date ? new Date(formData.date + 'T12:00:00') : undefined}
+                            onDateChange={(d) => {
+                                if (!d) {
+                                    setData({ ...formData, date: "" })
+                                    return
+                                }
+                                setData({ ...formData, date: d.toISOString().split('T')[0] })
+                            }}
+                            validationType="accounting"
                         />
                     )}
 

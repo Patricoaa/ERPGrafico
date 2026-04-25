@@ -5,7 +5,7 @@ import dynamic from "next/dynamic"
 import { TabsContent } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { DateRangeSelector } from "@/features/finance/components/DateRangeSelector"
+import { DateRangeFilter } from "@/components/shared"
 import { DateRange } from "react-day-picker"
 import { startOfYear, subYears } from "date-fns"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -80,11 +80,11 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                    <DateRangeSelector date={date} onDateChange={setDate} />
+                    <DateRangeFilter date={date} onDateChange={setDate} label="Periodo Principal" />
                     {showComparison && (
                         <div className="flex items-center space-x-2 border-l pl-4">
                             <span className="text-xs text-muted-foreground">vs</span>
-                            <DateRangeSelector date={compDate} onDateChange={setCompDate} />
+                            <DateRangeFilter date={compDate} onDateChange={setCompDate} label="Comparar con" />
                         </div>
                     )}
                 </div>
