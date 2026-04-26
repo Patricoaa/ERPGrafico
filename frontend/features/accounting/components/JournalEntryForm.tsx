@@ -33,7 +33,7 @@ import { accountingApi } from "@/features/accounting/api/accountingApi"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useServerDate } from "@/hooks/useServerDate"
-import { LabeledInput, LabeledContainer, CancelButton, SubmitButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter } from "@/components/shared";
+import { LabeledInput, LabeledContainer, CancelButton, SubmitButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection } from "@/components/shared";
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -254,6 +254,8 @@ export function JournalEntryForm({
                 open={open}
                 onOpenChange={setOpen}
                 size={initialData ? "xl" : "lg"}
+                hideScrollArea={true}
+                contentClassName="p-0"
                 title={
                     <div className="flex items-center gap-3">
                         <BookOpen className="h-5 w-5 text-muted-foreground" />
@@ -284,10 +286,12 @@ export function JournalEntryForm({
                     />
                 }
             >
-                <div className="flex-1 flex overflow-hidden min-h-[400px]">
-                    <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
-                        <Form {...form}>
-                            <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
+                <FormSplitLayout
+                    sidebar={auditSidebar}
+                    showSidebar={!!initialData?.id}
+                >
+                    <Form {...form}>
+                        <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 pb-4 pt-2">
                                 <div className="grid grid-cols-12 gap-4">
                                     <div className="col-span-3">
                                         <FormField
@@ -335,16 +339,7 @@ export function JournalEntryForm({
                                     </div>
                                 </div>
 
-                                <div className="relative py-4">
-                                    <div className="absolute inset-0 flex items-center">
-                                        <span className="w-full border-t border-border" />
-                                    </div>
-                                    <div className="relative flex justify-center text-xs uppercase">
-                                        <span className="bg-background px-2 text-muted-foreground font-semibold tracking-widest text-[10px]">
-                                            LÍNEAS DEL ASIENTO
-                                        </span>
-                                    </div>
-                                </div>
+                                <FormSection title="Líneas del Asiento" />
 
                                 <div className="border rounded-md p-2">
                                     <Table>
@@ -468,14 +463,7 @@ export function JournalEntryForm({
                                 )}
                             </form>
                         </Form>
-                    </div>
-
-                    {initialData?.id && (
-                        <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                            {auditSidebar}
-                        </div>
-                    )}
-                </div>
+                </FormSplitLayout>
             </BaseModal>
         </>
     )

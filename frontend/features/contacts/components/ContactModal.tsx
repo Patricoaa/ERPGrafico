@@ -26,7 +26,7 @@ import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight } from "lucide-react"
+import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, Mail, MapPin } from "lucide-react"
 import { OrderCard } from "@/features/orders/components/OrderCard"
 
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
@@ -36,7 +36,7 @@ import { OrderHubStatus } from "@/features/orders/components/OrderHubStatus"
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
 import { getHubStatuses } from '@/features/orders/utils/status'
-import { TableSkeleton, LabeledInput, FormTabs, FormTabsContent, type FormTabItem, FormFooter, FormSection } from "@/components/shared"
+import { TableSkeleton, LabeledInput, FormTabs, FormTabsContent, type FormTabItem, FormFooter, FormSection, FormSplitLayout } from "@/components/shared"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),
@@ -275,6 +275,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
+            title={c ? "Editar Contacto" : "Nuevo Contacto"}
             size="xl"
             className="h-[90vh]"
             headerClassName="sr-only"
@@ -284,12 +285,12 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             footer={
                 <FormFooter 
                     actions={
-                        <SubmitButton form="contact-form" loading={form.formState.isSubmitting}>
-                            {c ? "Guardar Cambios" : "Crear Contacto"}
-                        </SubmitButton>
-                    }
-                    leftActions={
-                        <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
+                            <SubmitButton form="contact-form" loading={form.formState.isSubmitting}>
+                                {c ? "Guardar Cambios" : "Crear Contacto"}
+                            </SubmitButton>
+                        </>
                     }
                 />
             }
@@ -315,13 +316,14 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                         }
                         className="flex-1"
                     >
-                        <div className="flex-1 flex overflow-visible min-h-0">
-
-                            <div className="flex-1 flex flex-col min-w-0 border-r overflow-y-auto scrollbar-thin">
-                                <FormTabsContent value="profile" className="h-full m-0 p-0 border-0 outline-none">
-                                        <div className="space-y-8">
+                                <FormTabsContent value="profile" className="h-full w-full flex-1 flex flex-col m-0 p-0 border-0 outline-none">
+                                    <FormSplitLayout
+                                        sidebar={contact?.id ? <ActivitySidebar entityId={contact.id.toString()} entityType="contact" /> : undefined}
+                                        showSidebar={!!contact?.id}
+                                    >
+                                        <div className="space-y-6 px-4 pb-4 pt-2">
                                             <div className="space-y-4">
-                                                <FormSection title="Estado y Roles" icon={User} />
+                                                <FormSection title="Estado y Roles" icon={Scale} />
                                                 <div className="flex items-center gap-8 p-6 bg-muted/5 rounded-xl border border-primary/5">
                                                     <FormField
                                                         control={form.control}
@@ -367,12 +369,12 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
 
                                             <div className="space-y-4">
                                                 <FormSection title="Identidad del Contacto" icon={User} />
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="grid grid-cols-4 gap-4">
                                                     <FormField
                                                         control={form.control}
                                                         name="name"
                                                         render={({ field, fieldState }) => (
-                                                            <FormItem>
+                                                            <FormItem className="col-span-2">
                                                                 <FormControl>
                                                                     <LabeledInput
                                                                         label="Nombre / Razón Social"
@@ -390,7 +392,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                         control={form.control}
                                                         name="tax_id"
                                                         render={({ field, fieldState }) => (
-                                                            <FormItem>
+                                                            <FormItem className="col-span-2">
                                                                 <FormControl>
                                                                     <LabeledInput
                                                                         label="RUT / Tax ID"
@@ -408,13 +410,13 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                             </div>
 
                                             <div className="space-y-4">
-                                                <FormSection title="Información de Contacto" icon={User} />
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <FormSection title="Información de Contacto" icon={Mail} />
+                                                <div className="grid grid-cols-4 gap-4">
                                                     <FormField
                                                         control={form.control}
                                                         name="email"
                                                         render={({ field, fieldState }) => (
-                                                            <FormItem>
+                                                            <FormItem className="col-span-2">
                                                                 <FormControl>
                                                                     <LabeledInput
                                                                         label="Email"
@@ -432,7 +434,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                         control={form.control}
                                                         name="phone"
                                                         render={({ field, fieldState }) => (
-                                                            <FormItem>
+                                                            <FormItem className="col-span-2">
                                                                 <FormControl>
                                                                     <LabeledInput
                                                                         label="Teléfono"
@@ -448,32 +450,30 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                             </div>
 
                                             <div className="space-y-4">
-                                                <FormSection title="Ubicación" icon={User} />
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                    <div className="md:col-span-2">
-                                                        <FormField
-                                                            control={form.control}
-                                                            name="address"
-                                                            render={({ field, fieldState }) => (
-                                                                <FormItem>
-                                                                    <FormControl>
-                                                                        <LabeledInput
-                                                                            label="Dirección"
-                                                                            placeholder="Calle, Número, Depto"
-                                                                            error={fieldState.error?.message}
-                                                                            {...field}
-                                                                        />
-                                                                    </FormControl>
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </div>
+                                                <FormSection title="Ubicación" icon={MapPin} />
+                                                <div className="grid grid-cols-4 gap-4">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="address"
+                                                        render={({ field, fieldState }) => (
+                                                            <FormItem className="col-span-3">
+                                                                <FormControl>
+                                                                    <LabeledInput
+                                                                        label="Dirección"
+                                                                        placeholder="Calle, Número, Depto"
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
 
                                                     <FormField
                                                         control={form.control}
                                                         name="city"
                                                         render={({ field, fieldState }) => (
-                                                            <FormItem>
+                                                            <FormItem className="col-span-1">
                                                                 <FormControl>
                                                                     <LabeledInput
                                                                         label="Ciudad / Comuna"
@@ -488,9 +488,10 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                 </div>
                                             </div>
                                         </div>
+                                    </FormSplitLayout>
                                 </FormTabsContent>
 
-                                <FormTabsContent value="sales" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                <FormTabsContent value="sales" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <InsightsTable
                                         data={insightsData?.sales?.orders || []}
                                         type="sale"
@@ -500,7 +501,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                     />
                                 </FormTabsContent>
 
-                                <FormTabsContent value="purchases" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                <FormTabsContent value="purchases" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <InsightsTable
                                         data={insightsData?.purchases?.orders || []}
                                         type="purchase"
@@ -510,7 +511,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                     />
                                 </FormTabsContent>
 
-                                <FormTabsContent value="work_orders" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                <FormTabsContent value="work_orders" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <InsightsTable
                                         data={insightsData?.work_orders?.orders || []}
                                         type="work_order"
@@ -519,16 +520,9 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                         onActionSuccess={handleActionSuccess}
                                     />
                                 </FormTabsContent>
-                                <FormTabsContent value="credit" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                <FormTabsContent value="credit" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                                     <CreditLedgerTable data={ledgerData} loading={loadingLedger} onActionSuccess={handleActionSuccess} />
                                 </FormTabsContent>
-                            </div>
-
-
-                            {contact?.id && (
-                                <ActivitySidebar entityId={contact.id.toString()} entityType="contact" />
-                            )}
-                        </div>
                     </FormTabs>
                 </form>
             </Form>

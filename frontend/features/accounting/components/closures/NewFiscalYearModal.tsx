@@ -55,17 +55,15 @@ export function NewFiscalYearModal({
         <BaseModal
             open={isOpen}
             onOpenChange={(open) => !open && onClose()}
+            hideScrollArea={true}
+            contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5" />
-                    <div>
-                        <h2 className="text-xl font-black tracking-tight uppercase">Inicializar Año Fiscal</h2>
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-70">
-                            Apertura de nuevos periodos contables
-                        </p>
-                    </div>
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                    <span>Inicializar Año Fiscal</span>
                 </div>
             }
+            description="Apertura de nuevos periodos contables"
             footer={
                 <FormFooter
                     actions={
@@ -73,23 +71,21 @@ export function NewFiscalYearModal({
                             <CancelButton 
                                 onClick={onClose}
                                 disabled={isLoading}
-                                className="font-bold uppercase tracking-widest text-[10px]"
                             />
                             <SubmitButton 
                                 onClick={handleConfirm}
                                 loading={isLoading}
                                 disabled={existingYears.includes(selectedYear) || hasOpenPeriods}
-                                className="bg-primary hover:bg-primary/90 font-black uppercase tracking-widest text-[10px] px-8"
-                                icon={<CheckCircle2 className="mr-2 h-3.5 w-3.5" />}
+                                icon={<CheckCircle2 className="h-3.5 w-3.5" />}
                             >
-                                {isLoading ? "Inicializando..." : "Crear Periodo Enero"}
+                                Crear Periodo Enero
                             </SubmitButton>
                         </>
                     }
                 />
             }
         >
-            <div className="p-4 space-y-6">
+            <div className="px-4 pb-4 pt-2 space-y-6">
                 {hasOpenPeriods && (
                     <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex gap-4 items-start animate-in fade-in slide-in-from-top-4">
                         <ShieldAlert className="h-5 w-5 text-destructive shrink-0 mt-0.5" />

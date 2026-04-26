@@ -19,6 +19,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ChevronRight, ChevronDown } from "lucide-react"
 import { buildAccountTree } from "../utils/accountTree"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { ActivitySidebar } from "@/features/audit/components"
 
 interface AccountsClientViewProps {
     externalOpen?: boolean
@@ -271,6 +272,11 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 accounts={flatAccounts as any}
                 initialData={editingAccount as any}
                 parentId={formParentId || undefined}
+                auditSidebar={
+                    editingAccount ? (
+                        <ActivitySidebar entityId={editingAccount.id} entityType="account" />
+                    ) : undefined
+                }
                 onSuccess={() => {
                     refetch()
                     handleCloseModal()

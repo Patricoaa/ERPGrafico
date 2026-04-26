@@ -9,7 +9,7 @@ import { LabeledSelect } from "@/components/shared"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { Loader2, Calculator, Info, Search, ChevronDown, Check } from "lucide-react"
+import { Loader2, Calculator, Info, Search, ChevronDown, Check, MousePointerClick, RefreshCcw, Landmark } from "lucide-react"
 import { PeriodValidationDateInput } from "@/components/shared"
 import { toast } from "sonner"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -18,7 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import api from "@/lib/api"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
-import { CancelButton, SubmitButton, LabeledContainer, LabeledInput, FormFooter } from "@/components/shared"
+import { CancelButton, SubmitButton, LabeledContainer, LabeledInput, FormFooter, FormSection } from "@/components/shared"
 
 interface TerminalBatchFormProps {
     onSuccess: () => void
@@ -125,157 +125,193 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6 py-4">
-            <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
-                    <LabeledContainer label="Proveedor de Pago">
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    className="w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
-                                >
-                                    {providerId
-                                        ? providers.find(p => p.id.toString() === providerId)?.name
-                                        : "Seleccione proveedor..."}
-                                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                <div className="p-2">
-                                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                        <input
-                                            className={cn("flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground")}
-                                            placeholder="Buscar terminal..."
-                                            onChange={(e) => {
-                                                const val = e.target.value.toLowerCase()
-                                                const items = document.querySelectorAll('.terminal-item')
-                                                items.forEach((el) => {
-                                                    if (el.textContent?.toLowerCase().includes(val)) {
-                                                        (el as HTMLElement).style.display = 'flex'
-                                                    } else {
-                                                        (el as HTMLElement).style.display = 'none'
-                                                    }
-                                                })
-                                            }}
-                                        />
-                                    </div>
-                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                        {providers.map((p) => (
-                                            <div
-                                                key={p.id}
-                                                className={cn(
-                                                    "terminal-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                    providerId === p.id.toString() && "bg-accent"
-                                                )}
-                                                onClick={() => {
-                                                    setProviderId(p.id.toString())
-                                                    document.body.click()
+            <div className="grid grid-cols-2 gap-8">
+                <div className="space-y-6">
+                    <FormSection title="Configuración de Lote" icon={Landmark} className="pt-0" />
+
+                    <div className="space-y-4">
+                        <LabeledContainer label="Proveedor de Pago">
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        className="w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                                    >
+                                        {providerId
+                                            ? providers.find(p => p.id.toString() === providerId)?.name
+                                            : "Seleccione proveedor..."}
+                                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                    <div className="p-2">
+                                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                            <input
+                                                className={cn("flex h-9 w-full rounded-md bg-transparent py-1 text-sm outline-none placeholder:text-muted-foreground")}
+                                                placeholder="Buscar terminal..."
+                                                onChange={(e) => {
+                                                    const val = e.target.value.toLowerCase()
+                                                    const items = document.querySelectorAll('.terminal-item')
+                                                    items.forEach((el) => {
+                                                        if (el.textContent?.toLowerCase().includes(val)) {
+                                                            (el as HTMLElement).style.display = 'flex'
+                                                        } else {
+                                                            (el as HTMLElement).style.display = 'none'
+                                                        }
+                                                    })
                                                 }}
-                                            >
-                                                <span>{p.name}</span>
-                                                {providerId === p.id.toString() && (
-                                                    <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                )}
-                                            </div>
-                                        ))}
-                                        {providers.length === 0 && (
-                                            <EmptyState context="generic" variant="minimal" description="No hay proveedores disponibles" />
-                                        )}
+                                            />
+                                        </div>
+                                        <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                            {providers.map((p) => (
+                                                <div
+                                                    key={p.id}
+                                                    className={cn(
+                                                        "terminal-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                        providerId === p.id.toString() && "bg-accent"
+                                                    )}
+                                                    onClick={() => {
+                                                        setProviderId(p.id.toString())
+                                                        document.body.click()
+                                                    }}
+                                                >
+                                                    <span>{p.name}</span>
+                                                    {providerId === p.id.toString() && (
+                                                        <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                    )}
+                                                </div>
+                                            ))}
+                                            {providers.length === 0 && (
+                                                <EmptyState context="generic" variant="minimal" description="No hay proveedores disponibles" />
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                    </LabeledContainer>
+                                </PopoverContent>
+                            </Popover>
+                        </LabeledContainer>
 
-                    <PeriodValidationDateInput
-                        date={date}
-                        onDateChange={setDate}
-                        label="Fecha de Ventas"
-                        validationType="tax"
-                        onValidityChange={setIsDateValid}
-                        required
-                    />
+                        <PeriodValidationDateInput
+                            date={date}
+                            onDateChange={setDate}
+                            label="Fecha de Ventas"
+                            validationType="tax"
+                            onValidityChange={setIsDateValid}
+                            required
+                        />
 
+                        <LabeledSelect
+                            label="Método de Depósito (Hacia Banco)"
+                            hint="Método que el banco usa para registrar el abono neto."
+                            value={depositMethodId}
+                            onChange={setDepositMethodId}
+                            placeholder="Seleccione método de abono..."
+                            options={paymentMethods
+                                .filter(m => m.allow_for_sales)
+                                .map(meth => ({ value: meth.id.toString(), label: meth.name }))}
+                        />
 
-
-                    <LabeledSelect
-                        label="Método de Depósito (Hacia Banco)"
-                        hint="Método que el banco usa para registrar el abono neto."
-                        value={depositMethodId}
-                        onChange={setDepositMethodId}
-                        placeholder="Seleccione método de abono..."
-                        options={paymentMethods
-                            .filter(m => m.allow_for_sales)
-                            .map(meth => ({ value: meth.id.toString(), label: meth.name }))}
-                    />
-
-                    <LabeledInput
-                        label="N° Lote / Referencia (Opcional)"
-                        value={reference}
-                        onChange={e => setReference(e.target.value)}
-                        placeholder="Ej: LOTE-123456"
-                    />
+                        <LabeledInput
+                            label="N° Lote / Referencia (Opcional)"
+                            value={reference}
+                            onChange={e => setReference(e.target.value)}
+                            placeholder="Ej: LOTE-123456"
+                        />
+                    </div>
                 </div>
 
-                <div className="space-y-4 bg-muted/30 p-4 rounded-lg border">
-                    <div className="flex justify-between items-center mb-2">
-                        <h3 className="text-sm font-semibold flex items-center gap-2">
-                            <Calculator className="h-4 w-4" /> Cálculo de Liquidación
-                        </h3>
-                        <Button type="button" variant="ghost" size="sm" onClick={handleAutoCalculate} className="h-7 text-xs">
-                            Cargar Ventas
-                        </Button>
+                <div className="space-y-6">
+                    <div className="flex justify-between items-center h-8">
+                        <FormSection title="Liquidación y Cálculos" icon={Calculator} className="flex-1 pt-0" />
                     </div>
 
-                    <LabeledInput
-                        label="Monto Bruto (Ventas)"
-                        type="number"
-                        step="1"
-                        value={grossAmount}
-                        onChange={e => setGrossAmount(e.target.value)}
-                        disabled={selectedMovements.length > 0}
-                        className={cn("font-bold", selectedMovements.length > 0 && "bg-muted")}
-                        hint={selectedMovements.length > 0 ? `${selectedMovements.length} ventas vinculadas` : undefined}
-                        hintClassName="text-primary font-bold"
-                    />
+                    <div className="space-y-4">
+                        {selectedMovements.length === 0 ? (
+                            <div className="border border-none rounded-xl p-2 bg-transparent flex flex-col items-center justify-center h-[280px]">
+                                <EmptyState
+                                    context="treasury"
+                                    variant="compact"
+                                    title="Pendiente de Selección"
+                                    description={(!providerId || !date)
+                                        ? "Seleccione proveedor y fecha para cargar ventas."
+                                        : "Vincule las ventas del terminal para calcular el lote automáticamente."
+                                    }
+                                    action={
+                                        <ActionSlideButton
+                                            type="button"
+                                            onClick={handleAutoCalculate}
+                                            disabled={!providerId || !date}
+                                            icon={MousePointerClick}
+                                            className="min-w-[200px]"
+                                        >
+                                            Vincular Ventas
+                                        </ActionSlideButton>
+                                    }
+                                />
+                            </div>
+                        ) : (
+                            <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
+                                <LabeledInput
+                                    label="Monto Bruto (Ventas)"
+                                    type="number"
+                                    step="1"
+                                    value={grossAmount}
+                                    onChange={e => setGrossAmount(e.target.value)}
+                                    disabled={true}
+                                    className="font-bold bg-muted"
+                                    hint={
+                                        <div className="flex items-center gap-1.5 text-foreground font-medium">
+                                            <span>{selectedMovements.length} ventas vinculadas</span>
+                                            <span className="text-muted-foreground/30">•</span>
+                                            <button
+                                                type="button"
+                                                onClick={handleAutoCalculate}
+                                                className="text-primary hover:underline font-bold transition-all"
+                                            >
+                                                Modificar Ventas
+                                            </button>
+                                        </div>
+                                    }
+                                />
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <LabeledInput
-                            label="Comisión Neta"
-                            type="number"
-                            step="1"
-                            value={commissionNet}
-                            onChange={e => {
-                                const val = e.target.value
-                                setCommissionNet(val)
-                                // Auto-calc tax (19% as a helper, user can override)
-                                const net = parseFloat(val) || 0
-                                setCommissionTax(Math.round(net * 0.19).toString())
-                            }}
-                            className="text-right"
-                        />
-                        <LabeledInput
-                            label="IVA Comisión"
-                            type="number"
-                            step="1"
-                            value={commissionTax}
-                            readOnly
-                            className="text-right bg-muted"
-                        />
-                    </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <LabeledInput
+                                        label="Comisión Neta"
+                                        type="number"
+                                        step="1"
+                                        value={commissionNet}
+                                        onChange={e => {
+                                            const val = e.target.value
+                                            setCommissionNet(val)
+                                            // Auto-calc tax (19% as a helper, user can override)
+                                            const net = parseFloat(val) || 0
+                                            setCommissionTax(Math.round(net * 0.19).toString())
+                                        }}
+                                        className="text-right"
+                                    />
+                                    <LabeledInput
+                                        label="IVA Comisión"
+                                        type="number"
+                                        step="1"
+                                        value={commissionTax}
+                                        readOnly
+                                        className="text-right bg-muted"
+                                    />
+                                </div>
 
-                    <div className="pt-2 border-t border-dashed border-border">
-                        <LabeledInput
-                            label="Monto Neto a Depositar"
-                            labelClassName="text-income font-bold"
-                            type="number"
-                            step="1"
-                            value={netDeposit}
-                            readOnly
-                            className="font-bold text-lg text-right text-income border-income/20 bg-income/5 cursor-not-allowed"
-                        />
+
+                                <LabeledInput
+                                    label="Monto Neto a Depositar"
+                                    labelClassName="text-income font-bold"
+                                    type="number"
+                                    step="1"
+                                    value={netDeposit}
+                                    readOnly
+                                    className="font-bold text-lg text-right text-income border-income/20 bg-income/5 cursor-not-allowed"
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
