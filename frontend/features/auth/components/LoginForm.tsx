@@ -139,7 +139,9 @@ export function LoginForm() {
                     {/* Submit */}
                     <SubmitButton
                         loading={form.formState.isSubmitting}
-                        className="w-full h-11"
+
+                        className="w-full"
+                        icon={false}
                     >
                         Ingresar
                         <ArrowRight className="ml-2 h-4 w-4" />

@@ -14,16 +14,9 @@ import { toast } from "sonner"
 import { formatCurrency } from "@/lib/currency"
 import { cn } from "@/lib/utils"
 import { resolveMediaUrl } from "@/lib/api"
-import { 
-    Sheet, 
-    SheetHeader, 
-    SheetTitle,
-    SheetDescription
-} from "@/components/ui/sheet"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
-import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
+import { BaseDrawer } from "@/components/shared/BaseDrawer"
 import { 
     POSSearchSkeleton, 
     POSGridSkeleton, 
@@ -213,43 +206,23 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
     }
 
     return (
-            <CollapsibleSheet
-                sheetId="COST_CALCULATOR"
+            <BaseDrawer
                 open={open}
                 onOpenChange={handleOpenChangeProxy}
-                tabLabel="CALCULADORA"
-                tabIcon={Calculator}
-                size="xl"
-                className="max-w-[90vw] w-[90vw]"
-            >
-                <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50">
-                    <div className="flex items-center justify-between w-full pr-12 text-left">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-primary/10 rounded-sm text-primary shadow-sm border border-primary/10 hidden sm:block">
-                                <Calculator className="h-6 w-6" />
-                            </div>
-                            <div className="flex flex-col">
-                                <div className="flex items-center gap-3">
-                                    <SheetTitle className="text-xl font-bold tracking-tight text-foreground">
-                                        Calculadora de Costos
-                                    </SheetTitle>
-                                    <span className="bg-primary/10 text-primary border border-primary/20 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold animate-pulse shrink-0 uppercase tracking-widest h-5 rounded-sm flex items-center">
-                                        <Info className="h-3 w-3 mr-1" />
-                                        Modo Simulación
-                                    </span>
-                                </div>
-                                <SheetDescription className="text-xs font-medium text-muted-foreground mt-0.5">
-                                    Simulación rápida de materiales para determinar costos de producción
-                                </SheetDescription>
-                            </div>
-                        </div>
+                icon={Calculator}
+                title={
+                    <div className="flex items-center gap-3">
+                        <span>Calculadora de Costos</span>
+                        <span className="bg-primary/10 text-primary border border-primary/20 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold animate-pulse shrink-0 uppercase tracking-widest h-5 rounded-sm flex items-center mt-1">
+                            <Info className="h-3 w-3 mr-1" />
+                            Modo Simulación
+                        </span>
                     </div>
-                </SheetHeader>
-
-                <SheetCloseButton 
-                    onClick={handleClose}
-                    className="absolute top-4 right-4 z-[60]"
-                />
+                }
+                subtitle="Simulación rápida de materiales para determinar costos de producción"
+                height="full"
+                contentClassName="p-0 flex flex-col overflow-hidden"
+            >
 
                 <div className="flex-1 overflow-hidden flex divide-x">
                     {/* Panel Izquierdo: Catálogo */}
@@ -471,6 +444,6 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                         </Card>
                     </div>
                 </div>
-            </CollapsibleSheet>
+            </BaseDrawer>
     )
 }

@@ -181,16 +181,6 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                 subtitle={`${accountCode} | ${accountName}`}
                 icon={Book}
                 height="full"
-                headerActions={
-                    <DateRangeFilter
-                        onDateChange={(range) => {
-                            if (range?.from && range?.to) {
-                                setDateRange({ from: range.from, to: range.to })
-                            }
-                        }}
-                        defaultRange={dateRange || undefined}
-                    />
-                }
             >
                 <div className="flex flex-col gap-6 pt-4">
 
@@ -258,16 +248,34 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                         data={data?.movements || []}
                         cardMode
                         isLoading={loading}
-                        useAdvancedFilter={false}
+                        useAdvancedFilter={true}
                         globalFilterFields={["description", "partner", "reference"]}
                         searchPlaceholder="Filtrar movimientos..."
                         defaultPageSize={100}
+                        customFilters={
+                            <div className="px-1 py-1">
+                                <DateRangeFilter
+                                    onDateChange={(range) => {
+                                        if (range?.from && range?.to) {
+                                            setDateRange({ from: range.from, to: range.to })
+                                        }
+                                    }}
+                                    defaultRange={dateRange || undefined}
+                                />
+                            </div>
+                        }
+                        isCustomFiltered={!!dateRange}
+                        onReset={() => {
+                            if (serverDate) {
+                                setDateRange({
+                                    from: new Date(serverDate.getFullYear(), serverDate.getMonth(), 1),
+                                    to: serverDate
+                                })
+                            } else {
+                                setDateRange(undefined)
+                            }
+                        }}
                     />
-
-                    <div className="flex justify-between items-center text-[10px] text-muted-foreground uppercase tracking-widest font-semibold px-2 py-4 border-t border-dashed mt-4">
-                        <span>Libro Mayor • {accountName}</span>
-                        <span>{data?.movements?.length || 0} Registros</span>
-                    </div>
                 </div>
             </BaseDrawer>
 

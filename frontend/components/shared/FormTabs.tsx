@@ -54,17 +54,19 @@ export function FormTabs({
     // Common Trigger Style (Industrial Premium Sawtooth)
     const triggerStyles = cn(
         "group relative w-auto h-auto transition-all duration-200",
-        isVertical ? "rounded-tl-2xl rounded-tr-none" : "rounded-t-2xl",
-        "rounded-b-none",
+        isVertical ? "rounded-l-2xl rounded-r-none" : "rounded-t-2xl rounded-b-none",
         isVertical ? "border-y border-l border-r-0" : "border-x border-t border-b-0",
-        "hover:bg-primary hover:text-primary-foreground hover:shadow-md",
-        "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground",
-        "data-[state=active]:border-primary",
-        "data-[state=active]:shadow-[-6px_4px_12px_-4px_rgba(0,0,0,0.15)] z-20",
-        "data-[state=inactive]:bg-card data-[state=inactive]:border-border data-[state=inactive]:text-muted-foreground",
+        // Browser-style colors
+        "hover:bg-muted hover:text-foreground",
+        "data-[state=active]:bg-card data-[state=active]:text-primary",
+        "data-[state=active]:border-transparent",
+        "data-[state=active]:shadow-[-4px_4px_12px_-4px_rgba(0,0,0,0.10)] z-20",
+        "data-[state=inactive]:bg-primary-foreground/70 data-[state=inactive]:border-border/40 data-[state=inactive]:text-muted-foreground",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-        "disabled:opacity-50 disabled:pointer-events-none",
-        isVertical ? "min-h-24 px-2 py-4" : "min-w-24 px-6 py-2"
+        "disabled:opacity-20 disabled:pointer-events-none",
+        isVertical
+            ? "px-2 overflow-hidden data-[state=active]:min-h-24 data-[state=active]:py-4 data-[state=inactive]:min-h-0 data-[state=inactive]:py-2.5 hover:!min-h-24 hover:!py-4"
+            : "min-w-24 px-6 py-2"
     )
 
     const renderTabsList = () => {
@@ -72,8 +74,8 @@ export function FormTabs({
             <TabsList
                 className={cn(
                     "bg-transparent rounded-none p-0 z-20",
-                    isVertical ? "h-auto w-auto flex-col items-start justify-start gap-3 col-start-1 overflow-visible max-h-full" 
-                               : "h-auto w-auto flex-row items-end justify-center gap-1 px-1 pb-0",
+                    isVertical ? "h-auto w-auto flex-col items-start justify-start gap-3 col-start-1 overflow-visible max-h-full"
+                        : "h-auto w-auto flex-row items-end justify-center gap-1 px-1 pb-0",
                     effectiveListClassName
                 )}
                 style={isVertical ? {
@@ -104,7 +106,8 @@ export function FormTabs({
                                     className={cn(
                                         "font-bold text-[11px] uppercase tracking-widest leading-tight",
                                         "whitespace-normal break-words text-center",
-                                        "max-h-[16ch]"
+                                        "max-h-[16ch]",
+                                        isVertical && "group-data-[state=inactive]:hidden group-hover:!block"
                                     )}
                                 >
                                     {item.label}
@@ -113,7 +116,8 @@ export function FormTabs({
                                     <span className={cn(
                                         "shrink-0 flex h-4 min-w-[1rem] px-1 items-center justify-center rounded border border-border bg-muted/50 text-muted-foreground text-[9px] font-bold leading-none",
                                         isVertical && "rotate-90",
-                                        "group-data-[state=active]:bg-primary-foreground/20 group-data-[state=active]:text-primary-foreground group-data-[state=active]:border-primary-foreground/30"
+                                        "group-data-[state=active]:bg-primary-foreground/20 group-data-[state=active]:text-primary-foreground group-data-[state=active]:border-primary-foreground/30",
+                                        isVertical && "group-data-[state=inactive]:hidden group-hover:!flex"
                                     )}>
                                         {item.badge}
                                     </span>
@@ -166,7 +170,7 @@ export function FormTabs({
                 <div
                     className={cn(
                         "col-start-2 flex flex-col overflow-hidden min-h-0 min-w-0",
-                        "bg-card rounded-xl"
+                        "bg-card rounded-t-2xl"
                     )}
                 >
                     {header && (

@@ -12,7 +12,7 @@ export default function LoginPage() {
                 <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 bg-sidebar overflow-hidden">
                     {/* Decorative Grid Background */}
                     <div className="absolute inset-0 bleed-guides opacity-20 pointer-events-none" />
-                    
+
                     {/* Registration Marks (CSS Class based) */}
                     <div className="absolute inset-8 registration-marks pointer-events-none opacity-40" />
 
@@ -23,9 +23,6 @@ export default function LoginPage() {
                         className="relative z-10"
                     >
                         <div className="flex items-center gap-3 mb-12">
-                            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-black shadow-lg shadow-primary/20">
-                                <span>ES</span>
-                            </div>
                             <span className="font-heading font-black text-xl uppercase tracking-tighter text-sidebar-foreground">
                                 ERPGrafico
                             </span>
@@ -70,7 +67,7 @@ export default function LoginPage() {
                     {/* Subtle background marks for light side */}
                     <div className="absolute top-12 right-12 w-24 h-24 border-r border-t border-border/40 opacity-50" />
                     <div className="absolute bottom-12 left-12 w-24 h-24 border-l border-b border-border/40 opacity-50" />
-                    
+
                     <LoginForm />
                 </div>
             </div>

@@ -15,7 +15,7 @@ interface LabeledInputBaseProps {
     /** Error message — turns border red and shows text below the field. */
     error?: string
     /** Helper hint shown below when there is no error. */
-    hint?: string
+    hint?: React.ReactNode
     /** Additional classes for the label `<legend>` or header. */
     labelClassName?: string
     /** Additional classes for the hint text. */

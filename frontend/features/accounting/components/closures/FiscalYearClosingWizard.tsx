@@ -230,6 +230,8 @@ export function FiscalYearClosingWizard({
                 onOpenChange={onClose}
                 size="xl"
                 showCloseButton={false}
+                hideScrollArea={true}
+                contentClassName="p-0"
                 title=""
             >
                 <div className="flex flex-col items-center justify-center p-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
@@ -291,10 +293,11 @@ export function FiscalYearClosingWizard({
             open={showTrialBalance}
             onOpenChange={setShowTrialBalance}
             title={`Balance de Comprobación - Ejercicio ${year}`}
-            className="max-w-6xl h-[85vh]"
             size="xl"
+            hideScrollArea={true}
+            contentClassName="p-0"
         >
-            <div className="h-full flex flex-col">
+            <div className="h-full flex flex-col p-4">
                 <Suspense fallback={<TableSkeleton rows={10} columns={5} />}>
                     <TrialBalanceView />
                 </Suspense>
