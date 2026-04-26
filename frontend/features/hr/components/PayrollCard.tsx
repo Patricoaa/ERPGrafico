@@ -9,7 +9,7 @@ import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
 import {
-    Loader2, Trash2, Pencil, Sparkles, AlertCircle, DollarSign, Clock, CheckCircle2, Plus
+    Loader2, Trash2, Pencil, Sparkles, AlertCircle, DollarSign, Clock, CheckCircle2, Plus, History
 } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
@@ -19,6 +19,7 @@ import { DataCell } from "@/components/ui/data-table-cells"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { FormSection } from "@/components/shared"
 
 const LABEL_STYLE = "text-[10px] font-black uppercase text-muted-foreground tracking-widest"
 
@@ -247,13 +248,7 @@ export function PayrollCard({
 
             <CardContent className="px-10 py-8">
                 {/* 2. CONSOLIDATED DETAIL TABLE */}
-                <div className="flex items-center gap-2 pt-2 pb-6">
-                    <div className="flex-1 h-px bg-border/60" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 px-3">
-                        Detalle de Conceptos
-                    </span>
-                    <div className="flex-1 h-px bg-border/60" />
-                </div>
+                <FormSection title="Detalle de Conceptos" icon={Clock} className="pb-6" />
 
                 <div className="border border/60 rounded-lg overflow-hidden shadow-sm bg-card transition-all">
                     <Table>
@@ -320,9 +315,7 @@ export function PayrollCard({
                         {/* APORTES PATRONALES (ONLY IF ALLOWED) */}
                         {showEmployerContributions && employerContributions.length > 0 && (
                             <div className="space-y-4 p-5 bg-muted/50 rounded-lg border border/60">
-                                <h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2 mb-2">
-                                    <AlertCircle className="h-3 w-3" /> Costo Empresa / Aportes Patronales
-                                </h3>
+                                <FormSection title="Costo Empresa / Aportes Patronales" icon={AlertCircle} className="mb-2" />
                                 <div className="space-y-2.5">
                                     {employerContributions.map(c => (
                                         <div key={c.id} className="flex justify-between items-center text-[11px] group/item">
@@ -358,10 +351,7 @@ export function PayrollCard({
                         {/* HISTORIAL DE PAGOS (Moved to right column) */}
                         {(unifiedPayments.length > 0) && (
                             <div className="bg-muted/50 rounded-lg border border/60 p-5 space-y-4">
-                                <div className="flex justify-between items-center pb-2 border-b border/60">
-                                    <h4 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Historial de Pagos</h4>
-                                    <span className={cn(LABEL_STYLE, "text-muted-foreground opacity-20 uppercase tracking-widest")}>Recibos</span>
-                                </div>
+                                <FormSection title="Historial de Pagos" icon={History} />
                                 <div className="space-y-3">
                                     {unifiedPayments.map(p => (
                                         <div key={p.id} className="flex justify-between items-center group/pay">

@@ -15,9 +15,10 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { MonitorSmartphone } from "lucide-react"
+import { MonitorSmartphone, Wifi, Library } from "lucide-react"
+import * as LucideIcons from "lucide-react"
 import { cn } from "@/lib/utils"
-import { CancelButton, LabeledInput, LabeledSelect } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
@@ -214,6 +215,8 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
             open={open}
             onOpenChange={onOpenChange}
             size={terminal ? "lg" : "md"}
+            hideScrollArea={true}
+            contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">
                     <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
@@ -232,118 +235,134 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                 </div>
             }
             footer={
-                <div className="flex justify-end gap-2 w-full">
-                    <CancelButton onClick={() => onOpenChange(false)} />
-                    <ActionSlideButton type="submit" form="terminal-form" loading={loading}>
-                        {terminal ? "Guardar Cambios" : "Crear Terminal"}
-                    </ActionSlideButton>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <ActionSlideButton type="submit" form="terminal-form" loading={loading}>
+                                {terminal ? "Guardar Cambios" : "Crear Terminal"}
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
             }
         >
-            <div className="flex-1 flex overflow-hidden min-h-[400px]">
-                <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
-                    <Form {...form}>
-                        <form id="terminal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="name"
-                                    render={({ field, fieldState }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <LabeledInput
-                                                    label="Nombre"
-                                                    placeholder="Ej: Caja Principal"
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="code"
-                                    render={({ field, fieldState }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <LabeledInput
-                                                    label="Código"
-                                                    placeholder="TERM-01"
-                                                    className="uppercase"
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="serial_number"
-                                    render={({ field, fieldState }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <LabeledInput
-                                                    label="N° Serie"
-                                                    placeholder="SN-XXXX"
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="ip_address"
-                                    render={({ field, fieldState }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <LabeledInput
-                                                    label="IP / Red"
-                                                    placeholder="192.168.1.XX"
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-
-                            <FormField
-                                control={form.control}
-                                name="location"
-                                render={({ field, fieldState }) => (
-                                    <FormItem>
-                                        <FormControl>
+            <FormSplitLayout
+                showSidebar={!!terminal?.id}
+                sidebar={
+                    terminal?.id && (
+                        <ActivitySidebar
+                            entityId={terminal.id}
+                            entityType="terminal"
+                        />
+                    )
+                }
+            >
+                <Form {...form}>
+                    <form id="terminal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                        {/* Section 1: Device Identity */}
+                        <div className="space-y-4">
+                            <FormSection title="Identificación del Dispositivo" icon={MonitorSmartphone} />
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="col-span-3">
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field, fieldState }) => (
                                             <LabeledInput
-                                                label="Ubicación (Opcional)"
-                                                placeholder="Ej: Entrada Principal"
+                                                label="Nombre de Terminal"
+                                                placeholder="Ej: Caja Principal"
+                                                error={fieldState.error?.message}
+                                                required
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                                <div className="col-span-1">
+                                    <FormField
+                                        control={form.control}
+                                        name="code"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Código"
+                                                placeholder="TERM-01"
+                                                className="uppercase"
+                                                error={fieldState.error?.message}
+                                                required
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Section 2: Connectivity & Location */}
+                        <div className="space-y-4">
+                            <FormSection title="Conectividad y Ubicación" icon={LucideIcons.Wifi || MonitorSmartphone} />
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="serial_number"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="N° Serie / Hardware"
+                                                placeholder="SN-XXXX"
                                                 error={fieldState.error?.message}
                                                 {...field}
                                             />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
+                                        )}
+                                    />
+                                </div>
+                                <div className="col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="ip_address"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="IP / Dirección de Red"
+                                                placeholder="192.168.1.XX"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                                <div className="col-span-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="location"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Ubicación Física"
+                                                placeholder="Ej: Entrada Principal, Piso 1"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
-                                <FormField
-                                    control={form.control}
-                                    name="allowed_treasury_account_ids"
-                                    render={({ field }) => (
-                                        <div className="relative group/field border rounded-lg p-4 bg-muted/10 shadow-sm transition-all duration-200 border-dashed hover:border-primary/30">
-                                            <div className="absolute -top-2 left-2 px-1 bg-card text-[10px] font-black uppercase tracking-widest text-muted-foreground group-hover/field:text-primary transition-colors">
-                                                Cuentas Permitidas
-                                            </div>
-                                            <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-muted/50 text-[9px] font-mono font-black text-muted-foreground uppercase opacity-70">
-                                                {field.value.length} SELECCIONADAS
-                                            </div>
-                                            <div className="h-40 overflow-y-auto space-y-1.5 pr-2 custom-scrollbar pt-2">
+                        {/* Section 3: Treasury Accounts */}
+                        <div className="space-y-4">
+                            <FormSection title="Tesorería y Cuentas" icon={LucideIcons.Library || MonitorSmartphone} />
+                            
+                            <FormField
+                                control={form.control}
+                                name="allowed_treasury_account_ids"
+                                render={({ field }) => (
+                                    <div className="relative group/field border rounded-lg p-4 bg-muted/10 shadow-sm transition-all duration-200 border-dashed hover:border-primary/30">
+                                        <div className="absolute -top-2 left-2 px-1 bg-card text-[10px] font-black uppercase tracking-widest text-muted-foreground group-hover/field:text-primary transition-colors">
+                                            Cuentas Permitidas
+                                        </div>
+                                        <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-muted/50 text-[9px] font-mono font-black text-muted-foreground uppercase opacity-70">
+                                            {field.value.length} SELECCIONADAS
+                                        </div>
+                                        <div className="h-40 overflow-y-auto space-y-1.5 pr-2 scrollbar-thin pt-2">
                                             {treasuryAccounts.length === 0 ? (
                                                 <EmptyState context="finance" variant="minimal" description="No hay cuentas configuradas" />
                                             ) : (
@@ -379,7 +398,7 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                                                                 <span className="font-semibold text-sm text-foreground/90">{account.name}</span>
                                                                 <div className="flex gap-1.5">
                                                                     {account.allows_cash && (
-                                                                        <span className="text-[10px] font-bold text-success uppercase tracking-tighter">
+                                                                        <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-tighter">
                                                                             Efectivo
                                                                         </span>
                                                                     )}
@@ -389,7 +408,7 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                                                                         </span>
                                                                     )}
                                                                     {account.allows_transfer && (
-                                                                        <span className="text-[10px] font-bold text-primary uppercase tracking-tighter opacity-60">
+                                                                        <span className="text-[10px] font-bold text-primary/60 uppercase tracking-tighter">
                                                                             Transf
                                                                         </span>
                                                                     )}
@@ -399,46 +418,37 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                                                     )
                                                 })
                                             )}
-                                            </div>
-                                            <FormMessage />
                                         </div>
-                                    )}
-                                />
+                                        <FormMessage />
+                                    </div>
+                                )}
+                            />
 
-                             {form.watch("allowed_treasury_account_ids").length > 0 && (
+                            {form.watch("allowed_treasury_account_ids").length > 0 && (
                                 <FormField
                                     control={form.control}
                                     name="default_treasury_account"
                                     render={({ field, fieldState }) => (
-                                        <div className="pt-2">
-                                            <LabeledSelect
-                                                label="Cuenta Predeterminada (Inicio de Sesión)"
-                                                error={fieldState.error?.message}
-                                                onChange={field.onChange}
-                                                value={field.value || ""}
-                                                placeholder="Seleccionar..."
-                                                options={[
-                                                    { value: "__none__", label: "-- Ninguna (Pedir al iniciar) --" },
-                                                    ...treasuryAccounts
-                                                        .filter(acc => form.watch("allowed_treasury_account_ids").includes(acc.id))
-                                                        .map(acc => ({ value: acc.id.toString(), label: acc.name })),
-                                                ]}
-                                            />
-                                        </div>
+                                        <LabeledSelect
+                                            label="Cuenta Predeterminada (Apertura de Sesión)"
+                                            error={fieldState.error?.message}
+                                            onChange={field.onChange}
+                                            value={field.value || ""}
+                                            placeholder="Seleccionar..."
+                                            options={[
+                                                { value: "__none__", label: "-- Ninguna (Solicitar al iniciar) --" },
+                                                ...treasuryAccounts
+                                                    .filter(acc => form.watch("allowed_treasury_account_ids").includes(acc.id))
+                                                    .map(acc => ({ value: acc.id.toString(), label: acc.name })),
+                                            ]}
+                                        />
                                     )}
                                 />
                             )}
-                        </form>
-                    </Form>
-                </div>
-
-                {terminal?.id && (
-                    <ActivitySidebar
-                        entityId={terminal.id}
-                        entityType="terminal"
-                    />
-                )}
-            </div>
+                        </div>
+                    </form>
+                </Form>
+            </FormSplitLayout>
         </BaseModal>
     )
 }

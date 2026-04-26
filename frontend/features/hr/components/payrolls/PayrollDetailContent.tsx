@@ -327,12 +327,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
             </div>
 
             {/* Custom Close Button for Sheet (Top Right Corner) */}
-            {isSheet && (
-                <SheetCloseButton 
-                    onClick={onClose!} 
-                    className="absolute top-4 right-4 z-[60] bg-muted/50 backdrop-blur-sm border shadow-sm"
-                />
-            )}
+            {/* Removed: BaseDrawer already provides a close button */}
 
             {/* Scroll Area for Content */}
             <div className={cn("flex-1", isSheet ? "overflow-y-auto custom-scrollbar p-6 bg-muted/30" : "")}>

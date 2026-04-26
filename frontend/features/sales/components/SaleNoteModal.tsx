@@ -13,7 +13,7 @@ import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Card } from "@/components/ui/card"
 
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { EmptyState, PeriodValidationDateInput, TableSkeleton, LabeledContainer, LabeledInput, LabeledSelect, CancelButton, SubmitButton } from "@/components/shared"
+import { EmptyState, PeriodValidationDateInput, TableSkeleton, LabeledContainer, LabeledInput, LabeledSelect, CancelButton, SubmitButton, FormFooter, FormSection } from "@/components/shared"
 
 import { SaleOrderLine, SaleNoteLine } from "../types"
 
@@ -187,20 +187,25 @@ export function SaleNoteModal({
                 </span>
             }
             footer={
-                <div className="w-full flex justify-end gap-2 border-t pt-4">
-                    <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
-                    <SubmitButton
-                        onClick={handleSubmit}
-                        disabled={!documentNumber || amountNet <= 0 || !isPeriodValid}
-                        loading={submitting}
-                        className="h-11 px-8"
-                    >
-                        Confirmar Registro de Nota
-                    </SubmitButton>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
+                            <SubmitButton
+                                onClick={handleSubmit}
+                                disabled={!documentNumber || amountNet <= 0 || !isPeriodValid}
+                                loading={submitting}
+                                className="h-11 px-8"
+                            >
+                                Confirmar Registro de Nota
+                            </SubmitButton>
+                        </>
+                    }
+                />
             }
         >
             <div className="space-y-6 py-2">
+                <FormSection title="Datos del Documento" icon={FileBadge} />
                 <div className="grid grid-cols-2 gap-4">
                     <LabeledSelect
                         label="Tipo de Nota"
@@ -229,6 +234,7 @@ export function SaleNoteModal({
                     </LabeledContainer>
                 </div>
 
+                <FormSection title="Detalle de Productos" icon={FileBadge} />
                 <div className="rounded-md border overflow-hidden">
                     <table className="w-full text-sm">
                         <thead className="bg-muted/50 border-b">
@@ -301,6 +307,7 @@ export function SaleNoteModal({
                     </table>
                 </div>
 
+                <FormSection title="Resumen y Respaldo" icon={FileBadge} />
                 <div className="flex justify-between items-start gap-8">
                     <div className="flex-1">
                         <DocumentAttachmentDropzone

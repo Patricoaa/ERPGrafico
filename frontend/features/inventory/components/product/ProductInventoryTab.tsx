@@ -2,15 +2,13 @@
 
 import { FormField } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
-import { Package, Warehouse, ChevronsUpDown, Search, Check, Truck, AlertCircle } from "lucide-react"
+import { Package, Warehouse, ChevronDown, Search, Check, Truck, AlertCircle } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { Button } from "@/components/ui/button"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 
-import { LabeledContainer, FormTabsContent } from "@/components/shared"
-
-
+import { LabeledContainer, FormTabsContent, FormSection } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Product, UoM } from "@/types/entities"
@@ -31,22 +29,19 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
     const isSwitchDisabled = productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'SERVICE'
 
     return (
-        <FormTabsContent value="logistics" className="mt-0 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                <div className="relative p-5 pt-8 rounded-lg border-2 bg-card shadow-sm border-primary/10">
-                    <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Unidades y Conversión</span>
-                    </div>
-
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 gap-6">
+        <FormTabsContent value="logistics" className="mt-0 space-y-10 animate-in fade-in duration-500">
+            <div className="grid grid-cols-4 gap-8 items-start">
+                {/* Units Section */}
+                <div className="col-span-2 space-y-4">
+                    <FormSection title="Unidades y Conversión" icon={Package} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
                             <FormField<ProductFormValues>
                                 control={form.control}
                                 name="uom"
                                 render={({ field, fieldState }) => (
                                     <LabeledContainer
                                         label="Unidad de Stock (Base)"
-                                        icon={<Package className="h-4 w-4 text-primary" />}
                                         error={fieldState.error?.message}
                                     >
                                         <Popover>
@@ -54,14 +49,14 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                 <Button
                                                     variant="ghost"
                                                     role="combobox"
-                                                    className={cn("w-full justify-between font-black text-xs h-full px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
+                                                    className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
                                                 >
                                                     <span>
                                                         {field.value
                                                             ? uoms.find((u) => u.id.toString() === field.value?.toString())?.name
                                                             : "Seleccionar unidad base..."}
                                                     </span>
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                 </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
@@ -84,12 +79,12 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                             }}
                                                         />
                                                     </div>
-                                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                    <div className="max-h-[200px] overflow-y-auto space-y-1 scrollbar-thin">
                                                         {uoms.map((u) => (
                                                             <div
                                                                 key={u.id}
                                                                 className={cn(
-                                                                    "uom-base-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                    "uom-base-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-xs outline-none hover:bg-accent hover:text-accent-foreground",
                                                                     field.value === u.id.toString() && "bg-accent"
                                                                 )}
                                                                 onClick={() => {
@@ -110,14 +105,15 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                     </LabeledContainer>
                                 )}
                             />
+                        </div>
 
+                        <div className="col-span-2">
                             <FormField<ProductFormValues>
                                 control={form.control}
                                 name="purchase_uom"
                                 render={({ field, fieldState }) => (
                                     <LabeledContainer
                                         label="Unidad de Compra"
-                                        icon={<Truck className="h-4 w-4 text-warning" />}
                                         error={fieldState.error?.message}
                                     >
                                         <Popover>
@@ -125,14 +121,14 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                 <Button
                                                     variant="ghost"
                                                     role="combobox"
-                                                    className={cn("w-full justify-between font-black text-xs h-full px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
+                                                    className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
                                                 >
                                                     <span>
                                                         {field.value
                                                             ? uoms.find((u) => String(u.id) === String(field.value))?.name
                                                             : "Igual a Stock"}
                                                     </span>
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                 </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
@@ -155,10 +151,10 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                             }}
                                                         />
                                                     </div>
-                                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                    <div className="max-h-[200px] overflow-y-auto space-y-1 scrollbar-thin">
                                                         <div
                                                             className={cn(
-                                                                "uom-purchase-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                "uom-purchase-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-xs outline-none hover:bg-accent hover:text-accent-foreground",
                                                                 !field.value && "bg-accent"
                                                             )}
                                                             onClick={() => {
@@ -175,7 +171,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                             <div
                                                                 key={u.id}
                                                                 className={cn(
-                                                                    "uom-purchase-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                    "uom-purchase-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-xs outline-none hover:bg-accent hover:text-accent-foreground",
                                                                     field.value === u.id.toString() && "bg-accent"
                                                                 )}
                                                                 onClick={() => {
@@ -196,7 +192,9 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                     </LabeledContainer>
                                 )}
                             />
+                        </div>
 
+                        <div className="col-span-2">
                             {form.watch("can_be_sold") && (
                                 <FormField<ProductFormValues>
                                     control={form.control}
@@ -213,8 +211,8 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                 label="Unidades de Venta Permitidas"
                                                 error={fieldState.error?.message}
                                             >
-                                                <div className="flex flex-col gap-4 p-4">
-                                                    <div className="flex flex-wrap gap-2 p-3 rounded-md border-2 border-dashed bg-muted/5 min-h-[60px] items-center">
+                                                <div className="flex flex-col gap-3 p-4">
+                                                    <div className="flex flex-wrap gap-2 p-3 rounded-xl border-2 border-dashed bg-muted/10 min-h-[60px] items-center">
                                                         {!stockCategoryId ? (
                                                             <div className="w-full flex items-center justify-center gap-2 text-[10px] text-muted-foreground italic">
                                                                 <AlertCircle className="h-3 w-3" />
@@ -233,7 +231,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                                                 key={u.id}
                                                                                 type="button"
                                                                                 className={cn(
-                                                                                    "px-3 py-1.5 rounded-md text-[10px] transition-all border-2",
+                                                                                    "px-3 py-1.5 rounded-lg text-[10px] transition-all border-2",
                                                                                     isSelected
                                                                                         ? "bg-primary/10 border-primary/40 text-primary font-black shadow-sm"
                                                                                         : "bg-background border-primary/5 hover:border-primary/20 text-muted-foreground/60 font-black uppercase tracking-tight",
@@ -259,8 +257,8 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                             </>
                                                         )}
                                                     </div>
-                                                    <p className="text-[9px] text-muted-foreground/80 leading-relaxed italic">
-                                                        * Solo se muestran unidades de la misma categoría que la unidad base para asegurar conversiones válidas.
+                                                    <p className="text-[9px] text-muted-foreground/60 leading-relaxed italic">
+                                                        * Solo unidades de la misma categoría para conversiones precisas.
                                                     </p>
                                                 </div>
                                             </LabeledContainer>
@@ -272,25 +270,22 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                     </div>
                 </div>
 
-                <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 shadow-sm border-primary/10">
-                    <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Control y Abastecimiento</span>
-                    </div>
-
+                {/* Logistics Section */}
+                <div className="col-span-2 space-y-4">
+                    <FormSection title="Control y Abastecimiento" icon={Warehouse} />
                     <FormField<ProductFormValues>
                         control={form.control}
                         name="track_inventory"
                         render={({ field }) => (
                             <div className="space-y-6">
                                 <LabeledContainer
-                                    label="Controlar Stock"
-                                    hint="Habilitar el seguimiento de cantidades físicas en bodegas."
+                                    label="Control de Existencias"
                                 >
                                     <div className="flex items-center justify-between w-full pr-4 py-1">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs font-black uppercase tracking-widest">Estado de Inventario</span>
+                                            <span className="text-xs font-black uppercase tracking-widest">Seguimiento Activo</span>
                                             {productType === 'MANUFACTURABLE' && (
-                                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">Auto</span>
+                                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">Automático</span>
                                             )}
                                         </div>
                                         <Switch
@@ -302,14 +297,13 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                 </LabeledContainer>
 
                                 {field.value && (
-                                    <div className="space-y-6 pt-4 animate-in fade-in zoom-in-95 duration-300">
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-400">
                                         <FormField<ProductFormValues>
                                             control={form.control}
                                             name="receiving_warehouse"
                                             render={({ field: whField, fieldState }) => (
                                                 <LabeledContainer
                                                     label="Bodega de Recepción"
-                                                    icon={<Warehouse className="h-4 w-4 text-primary" />}
                                                     error={fieldState.error?.message}
                                                 >
                                                     <Popover>
@@ -317,14 +311,14 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                             <Button
                                                                 variant="ghost"
                                                                 role="combobox"
-                                                                className={cn("w-full justify-between font-black text-xs h-full px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !whField.value && "text-muted-foreground")}
+                                                                className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !whField.value && "text-muted-foreground")}
                                                             >
                                                                 <span>
                                                                     {whField.value
                                                                         ? warehouses.find((wh) => wh.id.toString() === whField.value?.toString())?.name
-                                                                        : "Seleccionar bodega por defecto..."}
+                                                                        : "Seleccionar bodega predeterminada..."}
                                                                 </span>
-                                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                             </Button>
                                                         </PopoverTrigger>
                                                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
@@ -333,7 +327,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                                     <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
                                                                     <input
                                                                         className="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                                                                        placeholder="Buscar bodega..."
+                                                                        placeholder="Buscar..."
                                                                         onChange={(e) => {
                                                                             const val = e.target.value.toLowerCase()
                                                                             const inputs = document.querySelectorAll('.wh-item')
@@ -347,12 +341,12 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                                         }}
                                                                     />
                                                                 </div>
-                                                                <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                                <div className="max-h-[200px] overflow-y-auto space-y-1 scrollbar-thin">
                                                                     {warehouses.map((wh) => (
                                                                         <div
                                                                             key={wh.id}
                                                                             className={cn(
-                                                                                "wh-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                                "wh-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-xs outline-none hover:bg-accent hover:text-accent-foreground",
                                                                                 whField.value === wh.id.toString() && "bg-accent"
                                                                             )}
                                                                             onClick={() => {
@@ -382,7 +376,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                     label="Proveedor Preferencial"
                                                     error={fieldState.error?.message}
                                                 >
-                                                    <div className="h-full">
+                                                    <div className="h-[34px]">
                                                         <AdvancedContactSelector
                                                             value={supplierField.value || ""}
                                                             onChange={supplierField.onChange}
@@ -396,18 +390,18 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                         />
 
                                         {initialData && (
-                                            <div className="grid grid-cols-3 gap-4 p-4 rounded-lg bg-background border-2 shadow-inner">
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">A Mano</span>
-                                                    <span className="text-xl font-mono font-black">{initialData.current_stock || 0}</span>
+                                            <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-muted/20 border shadow-inner overflow-hidden">
+                                                <div className="flex flex-col items-center bg-background/60 py-3 rounded-xl border border-dashed">
+                                                    <span className="text-[9px] font-black uppercase tracking-tight text-muted-foreground mb-1">A Mano</span>
+                                                    <span className="text-lg font-mono font-black">{initialData.current_stock || 0}</span>
                                                 </div>
-                                                <div className="flex flex-col items-center border-x-2 border-dashed">
-                                                    <span className="text-[10px] font-black uppercase tracking-widest text-warning mb-1">Reservado</span>
-                                                    <span className="text-xl font-mono font-black text-warning">{initialData.qty_reserved || 0}</span>
+                                                <div className="flex flex-col items-center bg-background/60 py-3 rounded-xl border border-dashed">
+                                                    <span className="text-[9px] font-black uppercase tracking-tight text-amber-600/80 mb-1">Reservado</span>
+                                                    <span className="text-lg font-mono font-black text-amber-600">{initialData.qty_reserved || 0}</span>
                                                 </div>
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-[10px] font-black uppercase tracking-widest text-success mb-1">Disponible</span>
-                                                    <span className="text-xl font-mono font-black text-success">{initialData.qty_available || 0}</span>
+                                                <div className="flex flex-col items-center bg-emerald-500/5 py-3 rounded-xl border border-emerald-500/20">
+                                                    <span className="text-[9px] font-black uppercase tracking-tight text-emerald-600 mb-1">Disponible</span>
+                                                    <span className="text-lg font-mono font-black text-emerald-600">{initialData.qty_available || 0}</span>
                                                 </div>
                                             </div>
                                         )}

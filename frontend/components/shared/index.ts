@@ -9,6 +9,7 @@
 // Modals & Sheets
 export * from './ActionConfirmModal';
 export * from './BaseModal';
+export * from './BaseDrawer';
 export * from './CollapsibleSheet';
 export * from './DocumentCompletionModal';
 export * from './GenericWizard';
@@ -47,6 +48,8 @@ export * from './DocumentAttachmentDropzone';
 export * from './PageHeader';
 export * from './PageTabs';
 export * from './FormTabs';
+export * from './FormFooter';
+export * from './FormSplitLayout';
 export * from './EmptyState';
 
 // Industrial Identity

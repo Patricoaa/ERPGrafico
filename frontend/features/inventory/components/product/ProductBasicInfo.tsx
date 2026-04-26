@@ -1,10 +1,10 @@
 "use client"
 
 import { FormField } from "@/components/ui/form"
-import { EmptyState, LabeledInput, LabeledContainer } from "@/components/shared"
+import { EmptyState, LabeledInput, LabeledContainer, FormSection } from "@/components/shared"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
-import { Plus, ShoppingCart, Truck, Search, ChevronsUpDown, Check, Barcode } from "lucide-react"
+import { Plus, ShoppingCart, Truck, Search, ChevronDown, Check, Barcode, Fingerprint, Globe } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { Switch } from "@/components/ui/switch"
@@ -25,23 +25,21 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
     const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false)
 
     return (
-        <div className="space-y-6">
-            <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 shadow-sm border-primary/10">
-                <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Identificación del Producto</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-                    <div className="md:col-span-2">
+        <div className="space-y-8">
+            {/* Identification Section */}
+            <div className="space-y-4">
+                <FormSection title="Identificación del Producto" icon={Fingerprint} />
+                <div className="grid grid-cols-4 gap-4 items-start">
+                    <div className="col-span-1">
                         <LabeledContainer
                             label="ID Sistema"
                             disabled
                             className="w-full opacity-80 bg-muted/30 border-dashed"
                         >
                             <div className="flex items-center gap-2 h-[34px] px-3">
-                                <span className="text-muted-foreground text-xs font-mono">#</span>
+                                <span className="text-muted-foreground text-[10px] font-mono">#</span>
                                 {isEditing ? (
-                                    <span className="font-mono font-black text-primary text-sm">
+                                    <span className="font-mono font-black text-primary text-xs">
                                         {form.getValues("internal_code")}
                                     </span>
                                 ) : (
@@ -51,7 +49,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                         </LabeledContainer>
                     </div>
 
-                    <div className="md:col-span-7">
+                    <div className="col-span-2">
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="name"
@@ -61,14 +59,14 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                     required
                                     placeholder="Ej: Camiseta de Algodón Premium"
                                     error={fieldState.error?.message}
-                                    className="text-lg font-black h-11"
+                                    className="text-base font-black h-[1.5rem]"
                                     {...field}
                                 />
                             )}
                         />
                     </div>
 
-                    <div className="md:col-span-3">
+                    <div className="col-span-1">
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="code"
@@ -78,7 +76,7 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                         label="SKU / EAN"
                                         placeholder="Código"
                                         error={fieldState.error?.message}
-                                        className="font-mono font-bold h-11"
+                                        className="font-mono font-bold h-[1.5rem]"
                                         containerClassName="flex-1"
                                         {...field}
                                         value={field.value || ""}
@@ -87,11 +85,11 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                         type="button"
                                         variant="outline"
                                         size="icon"
-                                        className="shrink-0 h-11 w-11 rounded-md border-primary/10 hover:bg-primary/5 shadow-sm transition-all"
+                                        className="shrink-0 h-[1.5rem] w-8 rounded-md border-primary/10 hover:bg-primary/5 shadow-sm transition-all self-end mb-1"
                                         onClick={() => setIsBarcodeModalOpen(true)}
                                         title="Generador de Barras"
                                     >
-                                        <Barcode className="h-5 w-5 text-primary" />
+                                        <Barcode className="h-3.5 w-3.5 text-primary" />
                                     </Button>
                                     <BarcodeModal
                                         open={isBarcodeModalOpen}
@@ -106,13 +104,11 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                 </div>
             </div>
 
-            <div className="relative p-5 pt-8 rounded-lg border-2 bg-card shadow-sm border-primary/10">
-                <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Clasificación y Disponibilidad</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-                    <div className="md:col-span-6">
+            {/* Classification Section */}
+            <div className="space-y-4">
+                <FormSection title="Clasificación y Disponibilidad" icon={Globe} />
+                <div className="grid grid-cols-4 gap-6 items-end">
+                    <div className="col-span-2">
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="category"
@@ -130,12 +126,12 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                                     variant="ghost"
                                                     role="combobox"
                                                     disabled={isEditing}
-                                                    className={cn("w-full justify-between font-black text-xs h-[34px] px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
+                                                    className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
                                                 >
                                                     {field.value
                                                         ? categories.find((cat) => cat.id.toString() === field.value.toString())?.name
                                                         : "Seleccionar categoría"}
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                 </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
@@ -158,12 +154,12 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                                             }}
                                                         />
                                                     </div>
-                                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                    <div className="max-h-[200px] overflow-y-auto space-y-1 scrollbar-thin">
                                                         {categories.map((cat) => (
                                                             <div
                                                                 key={cat.id}
                                                                 className={cn(
-                                                                    "category-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                    "category-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-xs outline-none hover:bg-accent hover:text-accent-foreground",
                                                                     field.value === cat.id.toString() && "bg-accent"
                                                                 )}
                                                                 onClick={() => {
@@ -190,11 +186,11 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                                             type="button"
                                             variant="outline"
                                             size="icon"
-                                            className="shrink-0 h-11 w-11 rounded-md border-primary/10 hover:bg-primary/5 shadow-sm transition-all"
+                                            className="shrink-0 h-[1.5rem] w-8 rounded-md border-primary/10 hover:bg-primary/5 shadow-sm transition-all self-end mb-1"
                                             onClick={onAddCategory}
                                             title="Nueva Categoría"
                                         >
-                                            <Plus className="h-5 w-5 text-primary" />
+                                            <Plus className="h-4 w-4 text-primary" />
                                         </Button>
                                     )}
                                 </div>
@@ -202,47 +198,41 @@ export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }:
                         />
                     </div>
 
-                    <div className="md:col-span-6 flex items-center justify-around pb-1">
+                    <div className="col-span-2 flex items-center gap-4 bg-muted/20 border border-dashed rounded-lg px-4 py-2">
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="can_be_sold"
                             render={({ field }) => (
-                                <div className="flex flex-col items-center gap-2">
-                                    <div className="flex items-center gap-3">
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                            disabled={['CONSUMABLE', 'SUBSCRIPTION'].includes(form.watch("product_type"))}
-                                        />
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 cursor-pointer">
-                                            <ShoppingCart className="h-3.5 w-3.5 text-success" />
-                                            Venta
-                                        </label>
-                                    </div>
-                                    <p className="text-[9px] text-muted-foreground/60 font-medium">Habilitar en catálogo</p>
+                                <div className="flex-1 flex items-center justify-between">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 cursor-pointer">
+                                        <ShoppingCart className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-emerald-500" : "text-muted-foreground/30")} />
+                                        Venta
+                                    </label>
+                                    <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        disabled={['CONSUMABLE', 'SUBSCRIPTION'].includes(form.watch("product_type"))}
+                                    />
                                 </div>
                             )}
                         />
 
-                        <div className="w-px h-10 bg-border/40" />
+                        <div className="w-px h-6 bg-border" />
 
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="can_be_purchased"
                             render={({ field }) => (
-                                <div className="flex flex-col items-center gap-2">
-                                    <div className="flex items-center gap-3">
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                            disabled={form.watch("product_type") === 'MANUFACTURABLE'}
-                                        />
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 cursor-pointer">
-                                            <Truck className="h-3.5 w-3.5 text-warning" />
-                                            Compra
-                                        </label>
-                                    </div>
-                                    <p className="text-[9px] text-muted-foreground/60 font-medium">Abastecimiento externo</p>
+                                <div className="flex-1 flex items-center justify-between">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 cursor-pointer">
+                                        <Truck className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-amber-500" : "text-muted-foreground/30")} />
+                                        Compra
+                                    </label>
+                                    <Switch
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        disabled={form.watch("product_type") === 'MANUFACTURABLE'}
+                                    />
                                 </div>
                             )}
                         />

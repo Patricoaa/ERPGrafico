@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronsUpDown, Search, Loader2, ShoppingBag, Eye, Calendar, FileText } from "lucide-react"
+import { Check, ChevronDown, Search, Loader2, ShoppingBag, Eye, Calendar, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -120,7 +120,7 @@ export function AdvancedSaleOrderSelector({
                         aria-expanded={open}
                         disabled={disabled}
                         className={cn(
-                            "w-full justify-between overflow-hidden h-auto py-2 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
+                            "w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
                             disabled && "opacity-50 cursor-not-allowed"
                         )}
                     >
@@ -133,7 +133,7 @@ export function AdvancedSaleOrderSelector({
                         ) : (
                             <span className="text-muted-foreground truncate">{placeholder}</span>
                         )}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">

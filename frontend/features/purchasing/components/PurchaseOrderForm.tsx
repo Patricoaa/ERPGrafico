@@ -7,9 +7,9 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { PurchaseOrderInitialData, PurchaseOrderLine } from "@/types/forms"
 import { ProductMinimal, UoM } from "@/types/entities"
 import * as z from "zod"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, DollarSign } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput } from "@/components/shared"
+import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput, FormSection, FormFooter, CancelButton } from "@/components/shared"
 import {
     Form,
     FormField,
@@ -23,7 +23,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
@@ -206,34 +205,36 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
             title="Editar Orden de Compra"
             description="Modifique los datos de la orden de compra."
             footer={
-                <>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setOpen(false)}
-                    >
-                        Cancelar
-                    </Button>
-                    <ActionSlideButton type="submit" form="purchase-order-form" disabled={loading}>
-                        {loading ? "Guardando..." : "Guardar Cambios"}
-                    </ActionSlideButton>
-                </>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => setOpen(false)} />
+                            <ActionSlideButton type="submit" form="purchase-order-form" loading={loading}>
+                                Guardar Cambios
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
             }
         >
             <Form {...form}>
                 <form id="purchase-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-black uppercase text-primary tracking-widest">Líneas de Compra</h3>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => append({ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 })}
-                            >
-                                <Plus className="mr-2 h-4 w-4" />
-                                Agregar Producto
-                            </Button>
+                        <div className="space-y-4">
+                            <FormSection title="Líneas de Compra" icon={Plus} />
+                            
+                            <div className="flex justify-end">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => append({ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 })}
+                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-primary/30 hover:bg-primary/5 shadow-sm"
+                                >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Agregar Producto
+                                </Button>
+                            </div>
                         </div>
 
                         <div className="rounded-lg border border-dashed">
@@ -364,7 +365,10 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                 />
                             )}
                         />
-                        <OrderTotals control={form.control} />
+                        <div className="space-y-4">
+                            <FormSection title="Resumen de Valores" icon={DollarSign} />
+                            <OrderTotals control={form.control} />
+                        </div>
                     </div>
                 </form>
             </Form>

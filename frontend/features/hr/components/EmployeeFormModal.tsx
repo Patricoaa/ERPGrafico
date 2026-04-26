@@ -10,17 +10,17 @@ import { createEmployee, updateEmployee, getAFPs, getPayrollConcepts } from '@/f
 import type { Employee, AFP, PayrollConcept, EmployeeConceptAmount } from "@/types/hr"
 import { Button } from "@/components/ui/button"
 import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
+import { UserCog, CalendarCheck2, Plus, ShieldCheck, ChevronUp, ChevronDown, Trash2, Check, Clock, Settings2, Package, Layers, Wand2, X } from "lucide-react"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
+
 import {
     Form, FormField, FormItem, FormLabel, FormControl
 } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import {
-    Plus, UserCog, ShieldCheck, CalendarCheck2
-} from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { BaseModal, EmptyState, LabeledInput, LabeledSelect, FormTabs, FormTabsContent, type FormTabItem } from "@/components/shared"
+import { BaseModal, EmptyState, LabeledInput, LabeledSelect, FormTabs, FormTabsContent, FormSection, FormSplitLayout, type FormTabItem, FormFooter } from "@/components/shared"
+import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 
 export const employeeSchema = z.object({
     contact: z.string().min(1, "Contacto requerido"),
@@ -179,37 +179,69 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
         }
     }
 
+    // Helper to map field errors to tabs
+    const getTabsWithErrors = () => {
+        const errors = form.formState.errors
+        const tabErrors: { [key: string]: boolean } = {}
+
+        // Contratación tab fields
+        const contratacionFields: (keyof EmployeeFormValues)[] = ['contact', 'position', 'department', 'start_date', 'base_salary', 'status', 'contract_type']
+        contratacionFields.forEach(field => {
+            if (errors[field]) tabErrors['contratacion'] = true
+        })
+
+        // Jornada tab fields
+        const jornadaFields: (keyof EmployeeFormValues)[] = ['afp', 'salud_type', 'isapre_amount_uf', 'jornada_type', 'jornada_hours', 'trabajo_pesado', 'trabajo_agricola', 'gratificacion', 'dias_pactados', 'asignacion_familiar', 'cargas_familiares']
+        jornadaFields.forEach(field => {
+            if (errors[field]) tabErrors['jornada'] = true
+        })
+
+        // Haberes tab fields
+        if (errors['concept_amounts']) tabErrors['haberes'] = true
+
+        return tabErrors
+    }
+
+    const tabErrors = getTabsWithErrors()
+
     const tabItems: FormTabItem[] = [
         {
             value: "contratacion",
             label: "Contratación",
             icon: UserCog,
+            hasErrors: tabErrors['contratacion'],
         },
         {
             value: "jornada",
             label: "Jornada y Previsión",
             icon: CalendarCheck2,
+            hasErrors: tabErrors['jornada'],
         },
         {
             value: "haberes",
             label: "Haberes Específicos",
             icon: Plus,
+            hasErrors: tabErrors['haberes'],
         },
     ]
 
     const watchSalud = form.watch("salud_type")
 
     const footer = (
-        <div className="flex justify-end gap-4 w-full">
-            <CancelButton onClick={() => onOpenChange(false)} />
-            <SubmitButton
-                loading={saving}
-                onClick={form.handleSubmit(onSubmit)}
-                className="min-w-[180px]"
-            >
-                {employee ? "Guardar Cambios" : "Contratar / Registrar"}
-            </SubmitButton>
-        </div>
+        <FormFooter
+            actions={
+                <>
+                    <CancelButton onClick={() => onOpenChange(false)} className="h-10 text-[11px] font-black uppercase tracking-widest" />
+                    <SubmitButton
+                        loading={saving}
+                        onClick={form.handleSubmit(onSubmit)}
+                        className="h-10 px-8 text-[11px] font-black uppercase tracking-widest shadow-lg shadow-primary/20"
+                    >
+                        {employee ? "Actualizar Registro" : "Confirmar Contratación"}
+                    </SubmitButton>
+                </>
+            }
+        />
     )
 
     return (
@@ -220,52 +252,46 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
             title={employee ? "Editar Ficha de Empleado" : "Nueva Ficha de Empleado"}
             size={employee ? "full" : "xl"}
             hideScrollArea={true}
+            contentClassName="p-0"
             allowOverflow={true}
             footer={footer}
         >
-            <div className="flex h-[80vh] overflow-visible">
-                <div className="flex-1 flex flex-col overflow-visible bg-background">
-                        <div className="flex-1 overflow-visible flex flex-col">
-                            <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-visible">
-                                    <FormTabs
-                                        items={tabItems}
-                                        value={activeTab}
-                                        onValueChange={setActiveTab}
-                                        orientation="vertical"
-                                        header={
-                                            <div className="p-6 flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 bg-primary/10 rounded-md">
-                                                        <UserCog className="h-5 w-5 text-primary" />
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-lg font-bold tracking-tight">
-                                                            {employee ? "Editar Ficha de Empleado" : "Nueva Ficha de Empleado"}
-                                                        </span>
-                                                        {employee && (
-                                                            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">
-                                                                {employee.display_id} • {employee.contact_detail?.name}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        }
-                                        className="flex-1 overflow-visible"
-                                    >
-                                        <div className="flex-1 min-h-0">
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="h-[80vh] flex flex-col overflow-visible">
+                    <FormTabs
+                        items={tabItems}
+                        value={activeTab}
+                        onValueChange={setActiveTab}
+                        orientation="vertical"
+                        header={
+                            <div className="p-8 pb-4 flex items-center justify-between border-b border-dashed border-primary/10">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3 bg-primary/10 rounded-2xl border border-primary/20">
+                                        <UserCog className="h-6 w-6 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black uppercase tracking-tighter text-primary">
+                                            Ficha de Empleado
+                                        </h3>
+                                        {employee && (
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mt-1">
+                                                {employee.display_id} • {employee.contact_detail?.name}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        className="flex-1 overflow-visible"
+                    >
+                        <FormSplitLayout 
+                            sidebar={employee?.id ? <ActivitySidebar entityId={employee.id} entityType="employee" /> : undefined}
+                            className="p-0"
+                        >
 
                                             <FormTabsContent value="contratacion" className="h-full m-0 p-8 lg:p-10 overflow-y-auto scrollbar-thin animate-in fade-in-50 duration-300">
                                                 <div className="max-w-4xl mx-auto space-y-10">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex-1 h-px bg-border/60" />
-                                                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80 flex items-center gap-2 px-3">
-                                                            <UserCog className="h-3.5 w-3.5" />
-                                                            Datos de Contrato
-                                                        </span>
-                                                        <div className="flex-1 h-px bg-border/60" />
-                                                    </div>
+                                                    <FormSection title="Datos de Contrato" icon={UserCog} />
 
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                                                         <FormField
@@ -349,228 +375,192 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                                                     </div>
                                                 </div>
                                             </FormTabsContent>
-
-                                            <FormTabsContent value="jornada" className="h-full m-0 p-8 lg:p-10 overflow-y-auto scrollbar-thin animate-in fade-in-50 duration-300">
-                                                <div className="max-w-6xl mx-auto space-y-16">
-                                                    {/* Sección 1: Detalles Jornada */}
-                                                    <div className="space-y-10">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="flex-1 h-px bg-border/60" />
-                                                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80 flex items-center gap-2 px-3">
-                                                                <CalendarCheck2 className="h-3.5 w-3.5" />
-                                                                Detalles Jornada
-                                                            </span>
-                                                            <div className="flex-1 h-px bg-border/60" />
-                                                        </div>
-
-                                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 gap-y-10">
-                                                            <FormField control={form.control} name="jornada_type" render={({ field, fieldState }) => (
-                                                                <LabeledSelect
-                                                                    label="Tipo de Jornada"
-                                                                    value={field.value}
-                                                                    onChange={field.onChange}
-                                                                    error={fieldState.error?.message}
-                                                                    containerClassName="md:col-span-2"
-                                                                    options={[
-                                                                        { value: "ORDINARIA_22", label: "Ordinaria Art. 22" },
-                                                                        { value: "PARCIAL_40BIS", label: "Parcial Art 40 BIS" },
-                                                                        { value: "EXENTA_22", label: "Exenta Art. 22" },
-                                                                        { value: "EXTRAORDINARIA_30", label: "Extraordinaria Art. 30" }
-                                                                    ]}
-                                                                />
-                                                            )} />
-
-                                                            <FormField control={form.control} name="dias_pactados" render={({ field, fieldState }) => (
-                                                                <LabeledInput
-                                                                    label="Días Pactados"
-                                                                    type="number"
-                                                                    min="1"
-                                                                    max="31"
-                                                                    error={fieldState.error?.message}
-                                                                    {...field}
-                                                                    onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                                                                />
-                                                            )} />
-
-                                                            <FormField control={form.control} name="jornada_hours" render={({ field, fieldState }) => (
-                                                                <LabeledInput
-                                                                    label="Horas / Sem"
-                                                                    type="number"
-                                                                    step="0.5"
-                                                                    error={fieldState.error?.message}
-                                                                    {...field}
-                                                                />
-                                                            )} />
-
-                                                            {/* Switches en fila horizontal */}
-                                                            <div className="col-span-full grid grid-cols-1 sm:grid-cols-3 gap-6 pt-2">
-                                                                <FormField control={form.control} name="gratificacion" render={({ field }) => (
-                                                                    <FormItem className="flex flex-row items-center justify-between rounded-md bg-muted/5 p-4 border border-transparent hover:border-primary/10 transition-all">
-                                                                        <div className="space-y-0.5">
-                                                                            <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Gratificación Legal</FormLabel>
-                                                                        </div>
-                                                                        <FormControl>
-                                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                        </FormControl>
-                                                                    </FormItem>
-                                                                )} />
-                                                                <FormField control={form.control} name="trabajo_pesado" render={({ field }) => (
-                                                                    <FormItem className="flex flex-row items-center justify-between rounded-md bg-muted/5 p-4 border border-transparent hover:border-primary/10 transition-all">
-                                                                        <div className="space-y-0.5">
-                                                                            <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Trabajo Pesado</FormLabel>
-                                                                        </div>
-                                                                        <FormControl>
-                                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                        </FormControl>
-                                                                    </FormItem>
-                                                                )} />
-                                                                <FormField control={form.control} name="trabajo_agricola" render={({ field }) => (
-                                                                    <FormItem className="flex flex-row items-center justify-between rounded-md bg-muted/5 p-4 border border-transparent hover:border-primary/10 transition-all">
-                                                                        <div className="space-y-0.5">
-                                                                            <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Trabajo Agrícola</FormLabel>
-                                                                        </div>
-                                                                        <FormControl>
-                                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                        </FormControl>
-                                                                    </FormItem>
-                                                                )} />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Sección 2: Previsión y Salud */}
-                                                    <div className="space-y-10">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="flex-1 h-px bg-border/60" />
-                                                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80 flex items-center gap-2 px-3">
-                                                                <ShieldCheck className="h-3.5 w-3.5" />
-                                                                Previsión y Salud
-                                                            </span>
-                                                            <div className="flex-1 h-px bg-border/60" />
-                                                        </div>
-
-                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-10">
-                                                            <FormField control={form.control} name="afp" render={({ field, fieldState }) => (
-                                                                <LabeledSelect
-                                                                    label="AFP"
-                                                                    value={field.value || ""}
-                                                                    onChange={field.onChange}
-                                                                    error={fieldState.error?.message}
-                                                                    placeholder="Seleccione AFP"
-                                                                    options={afps.map(afp => ({
-                                                                        value: afp.id.toString(),
-                                                                        label: `${afp.name} (${afp.percentage}%)`
-                                                                    }))}
-                                                                />
-                                                            )} />
-
-                                                            <FormField control={form.control} name="salud_type" render={({ field, fieldState }) => (
-                                                                <LabeledSelect
-                                                                    label="Sistema de Salud"
-                                                                    value={field.value}
-                                                                    onChange={field.onChange}
-                                                                    error={fieldState.error?.message}
-                                                                    options={[
-                                                                        { value: "FONASA", label: "Fonasa (7%)" },
-                                                                        { value: "ISAPRE", label: "Isapre (Pactado)" }
-                                                                    ]}
-                                                                />
-                                                            )} />
-
-                                                            {watchSalud === "ISAPRE" ? (
-                                                                <FormField control={form.control} name="isapre_amount_uf" render={({ field, fieldState }) => (
-                                                                    <LabeledInput
-                                                                        label="Monto Pactado UF"
-                                                                        type="number"
-                                                                        step="0.0001"
-                                                                        hint="Se descontará el mayor entre el 7% y este monto."
-                                                                        error={fieldState.error?.message}
-                                                                        {...field}
-                                                                        containerClassName="animate-in slide-in-from-top-2 duration-300"
-                                                                    />
-                                                                )} />
-                                                            ) : <div className="hidden md:block" />}
-
-                                                            <FormField control={form.control} name="asignacion_familiar" render={({ field, fieldState }) => (
-                                                                <LabeledSelect
-                                                                    label="Asignación Familiar"
-                                                                    value={field.value}
-                                                                    onChange={field.onChange}
-                                                                    error={fieldState.error?.message}
-                                                                    options={[
-                                                                        { value: "A", label: "Tramo A" },
-                                                                        { value: "B", label: "Tramo B" },
-                                                                        { value: "C", label: "Tramo C" },
-                                                                        { value: "D", label: "Tramo D" }
-                                                                    ]}
-                                                                />
-                                                            )} />
-
-                                                            <FormField control={form.control} name="cargas_familiares" render={({ field, fieldState }) => (
-                                                                <LabeledInput
-                                                                    label="Nº de Cargas"
-                                                                    type="number"
-                                                                    min="0"
-                                                                    error={fieldState.error?.message}
-                                                                    {...field}
-                                                                    onChange={e => field.onChange(parseInt(e.target.value) || 0)}
-                                                                />
-                                                            )} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </FormTabsContent>
-
-                                            <FormTabsContent value="haberes" className="h-full m-0 p-8 lg:p-10 overflow-y-auto scrollbar-thin animate-in fade-in-50 duration-300">
-                                                <div className="max-w-6xl mx-auto space-y-10">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="flex-1 h-px bg-border/60" />
-                                                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/80 flex items-center gap-2 px-3">
-                                                            <Plus className="h-3.5 w-3.5" />
-                                                            Conceptos Específicos Pactados
-                                                        </span>
-                                                        <div className="flex-1 h-px bg-border/60" />
-                                                    </div>
-
-                                                    {availableConcepts.length > 0 ? (
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                                                            {availableConcepts.map(concept => (
-                                                                <LabeledInput
-                                                                    key={concept.id}
-                                                                    label={concept.name}
-                                                                    type="number"
-                                                                    step="1"
-                                                                    placeholder="0"
-                                                                    value={(form.watch("concept_amounts")?.[concept.id]) || ""}
-                                                                    onChange={(e) => {
-                                                                        const current = form.getValues("concept_amounts") || {}
-                                                                        form.setValue("concept_amounts", { ...current, [concept.id]: e.target.value }, { shouldDirty: true })
-                                                                    }}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <EmptyState
-                                                            variant="compact"
-                                                            context="generic"
-                                                            description="No hay conceptos de haberes específicos configurados."
-                                                        />
-                                                    )}
-                                                </div>
-                                            </FormTabsContent>
+                            <FormTabsContent value="jornada" className="mt-0 space-y-12 animate-in fade-in duration-500 p-8">
+                                <div className="space-y-8">
+                                    <FormSection title="Detalles de Jornada" icon={CalendarCheck2} />
+                                    <div className="grid grid-cols-4 gap-6 items-start">
+                                        <div className="col-span-2">
+                                            <FormField control={form.control} name="jornada_type" render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Régimen de Trabajo"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    error={fieldState.error?.message}
+                                                    options={[
+                                                        { value: "ORDINARIA_22", label: "Ordinaria Art. 22" },
+                                                        { value: "PARCIAL_40BIS", label: "Parcial Art 40 BIS" },
+                                                        { value: "EXENTA_22", label: "Exenta Art. 22" },
+                                                        { value: "EXTRAORDINARIA_30", label: "Extraordinaria Art. 30" }
+                                                    ]}
+                                                />
+                                            )} />
                                         </div>
-                                    </FormTabs>
-                                </form>
-                            </Form>
-                        </div>
-                    </div>
+                                        <div className="col-span-1">
+                                            <FormField control={form.control} name="dias_pactados" render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Días Mensuales"
+                                                    type="number"
+                                                    min="1"
+                                                    max="31"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                    onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                                                    className="font-black h-[1.5rem]"
+                                                />
+                                            )} />
+                                        </div>
+                                        <div className="col-span-1">
+                                            <FormField control={form.control} name="jornada_hours" render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Horas / Sem"
+                                                    type="number"
+                                                    step="0.5"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                    className="font-black h-[1.5rem]"
+                                                />
+                                            )} />
+                                        </div>
 
-                    {employee?.id && (
-                        <div className="w-72 flex flex-col bg-muted/5 border-l overflow-hidden hidden xl:flex">
-                            <ActivitySidebar entityId={employee.id} entityType="employee" />
-                        </div>
-                    )}
-                </div>
+                                        {/* Boolean Switches Panel */}
+                                        <div className="col-span-4 grid grid-cols-3 gap-4">
+                                            {[
+                                                { name: "gratificacion", label: "Gratificación Legal" },
+                                                { name: "trabajo_pesado", label: "Trabajo Pesado" },
+                                                { name: "trabajo_agricola", label: "Trabajo Agrícola" }
+                                            ].map((sw) => (
+                                                <FormField key={sw.name} control={form.control} name={sw.name as any} render={({ field }) => (
+                                                    <div className={cn(
+                                                        "flex items-center justify-between p-3.5 rounded-xl border transition-all",
+                                                        field.value ? "bg-primary/5 border-primary/20" : "bg-background border-dashed"
+                                                    )}>
+                                                        <label className="text-[10px] font-black uppercase tracking-widest">{sw.label}</label>
+                                                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                    </div>
+                                                )} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-8 pt-6 border-t border-dashed">
+                                    <FormSection title="Previsión y Salud" icon={ShieldCheck} />
+                                    <div className="grid grid-cols-4 gap-6 items-start">
+                                        <div className="col-span-2">
+                                            <FormField control={form.control} name="afp" render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Institución Previsional (AFP)"
+                                                    value={field.value || ""}
+                                                    onChange={field.onChange}
+                                                    error={fieldState.error?.message}
+                                                    placeholder="Seleccionar..."
+                                                    options={afps.map(afp => ({
+                                                        value: afp.id.toString(),
+                                                        label: `${afp.name} (${afp.percentage}%)`
+                                                    }))}
+                                                />
+                                            )} />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <FormField control={form.control} name="salud_type" render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Sistema de Salud"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    error={fieldState.error?.message}
+                                                    options={[
+                                                        { value: "FONASA", label: "Fonasa (7%)" },
+                                                        { value: "ISAPRE", label: "Isapre (Pactado)" }
+                                                    ]}
+                                                />
+                                            )} />
+                                        </div>
+
+                                        {watchSalud === "ISAPRE" && (
+                                            <div className="col-span-4 animate-in slide-in-from-top-2 duration-300">
+                                                <FormField control={form.control} name="isapre_amount_uf" render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="Monto Pactado (UF)"
+                                                        type="number"
+                                                        step="0.0001"
+                                                        hint="Se descontará el mayor entre el 7% y este monto."
+                                                        error={fieldState.error?.message}
+                                                        {...field}
+                                                        className="font-mono font-black h-[1.5rem]"
+                                                    />
+                                                )} />
+                                            </div>
+                                        )}
+
+                                        <div className="col-span-2">
+                                            <FormField control={form.control} name="asignacion_familiar" render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Tramo Asignación Familiar"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    error={fieldState.error?.message}
+                                                    options={[
+                                                        { value: "A", label: "Tramo A" },
+                                                        { value: "B", label: "Tramo B" },
+                                                        { value: "C", label: "Tramo C" },
+                                                        { value: "D", label: "Tramo D" }
+                                                    ]}
+                                                />
+                                            )} />
+                                        </div>
+                                        <div className="col-span-2">
+                                            <FormField control={form.control} name="cargas_familiares" render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Número de Cargas"
+                                                    type="number"
+                                                    min="0"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                    onChange={e => field.onChange(parseInt(e.target.value) || 0)}
+                                                    className="font-black h-[1.5rem]"
+                                                />
+                                            )} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </FormTabsContent>
+                            <FormTabsContent value="haberes" className="mt-0 animate-in fade-in duration-500 p-8">
+                                <div className="space-y-8">
+                                    <FormSection title="Haberes y Conceptos Específicos" icon={Plus} />
+                                    {availableConcepts.length > 0 ? (
+                                        <div className="grid grid-cols-4 gap-6 items-start">
+                                            {availableConcepts.map(concept => (
+                                                <div key={concept.id} className="col-span-1">
+                                                    <LabeledInput
+                                                        label={concept.name}
+                                                        type="number"
+                                                        step="1"
+                                                        placeholder="0"
+                                                        value={(form.watch("concept_amounts")?.[concept.id]) || ""}
+                                                        onChange={(e) => {
+                                                            const current = form.getValues("concept_amounts") || {}
+                                                            form.setValue("concept_amounts", { ...current, [concept.id]: e.target.value }, { shouldDirty: true })
+                                                        }}
+                                                        className="font-mono font-black h-[1.5rem]"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="py-20 border-4 border-dashed rounded-3xl flex flex-col items-center justify-center text-center px-10 bg-muted/5">
+                                            <Plus className="h-10 w-10 text-muted-foreground/20 mb-4" />
+                                            <h4 className="font-black uppercase tracking-widest text-muted-foreground/80 text-xs">Sin Conceptos Definidos</h4>
+                                            <p className="text-[10px] text-muted-foreground/50 max-w-xs mt-2 font-medium leading-relaxed italic">
+                                                No existen haberes específicos pactados para este perfil de empleado.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </FormTabsContent>
+                        </FormSplitLayout>
+                    </FormTabs>
+                </form>
+            </Form>
         </BaseModal>
     )
 }

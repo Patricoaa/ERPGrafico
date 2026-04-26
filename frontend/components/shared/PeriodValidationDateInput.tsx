@@ -18,6 +18,7 @@ interface PeriodValidationDateInputProps {
     disabled?: boolean
     required?: boolean
     validationType?: 'tax' | 'accounting' | 'both'
+    error?: string
 }
 
 export function PeriodValidationDateInput({
@@ -28,7 +29,8 @@ export function PeriodValidationDateInput({
     className,
     disabled = false,
     required = true,
-    validationType = 'tax'
+    validationType = 'tax',
+    error
 }: PeriodValidationDateInputProps) {
     const { validatePeriod, isValidating, isClosed, message, clearPeriodValidation } = usePeriodValidation()
 
@@ -56,7 +58,7 @@ export function PeriodValidationDateInput({
             required={required}
             disabled={disabled}
             className={className}
-            error={isClosed ? (message || "El periodo contable/tributario está cerrado.") : undefined}
+            error={error || (isClosed ? (message || "El periodo contable/tributario está cerrado.") : undefined)}
             suffix={
                 isValidating && (
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />

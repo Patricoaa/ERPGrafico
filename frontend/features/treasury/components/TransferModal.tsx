@@ -1,16 +1,32 @@
 "use client"
 
-import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
-import { BaseModal, LabeledInput, LabeledContainer } from "@/components/shared"
-import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
+import React, { useState, useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { ArrowLeftRight, DollarSign, Calendar as CalendarIcon, Info } from "lucide-react"
 import { TreasuryAccountSelector } from "@/components/selectors"
-import { ArrowLeftRight, DollarSign } from "lucide-react"
 import { PeriodValidationDateInput } from "@/components/shared"
-import { cn, formatCurrency } from "@/lib/utils"
+import { formatCurrency, cn } from "@/lib/utils"
 import api from "@/lib/api"
+import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { useServerDate } from "@/hooks/useServerDate"
+import { Form, FormField } from "@/components/ui/form"
+import { CancelButton, LabeledInput, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, BaseModal } from "@/components/shared"
+
+const transferSchema = z.object({
+    from_account_id: z.string().min(1, "Seleccione una cuenta de origen"),
+    to_account_id: z.string().min(1, "Seleccione una cuenta de destino"),
+    amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "El monto debe ser mayor a 0"),
+    date: z.date({ required_error: "La fecha es requerida" }),
+    notes: z.string().optional(),
+}).refine((data) => data.from_account_id !== data.to_account_id, {
+    message: "La cuenta de origen y destino no pueden ser la misma",
+    path: ["to_account_id"]
+})
+
+type TransferFormValues = z.infer<typeof transferSchema>
 
 interface TreasuryAccount {
     id: number
@@ -29,21 +45,28 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
     const [accounts, setAccounts] = useState<TreasuryAccount[]>([])
     const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
-
-    // Form state
-    const [fromAccount, setFromAccount] = useState<string>("")
-    const [toAccount, setToAccount] = useState<string>("")
     const { serverDate } = useServerDate()
-    const [amount, setAmount] = useState<string>("")
-    const [date, setDate] = useState<Date | undefined>(undefined)
     const [isDateValid, setIsDateValid] = useState(true)
-    const [notes, setNotes] = useState("")
+
+    const form = useForm<TransferFormValues>({
+        resolver: zodResolver(transferSchema),
+        defaultValues: {
+            from_account_id: "",
+            to_account_id: "",
+            amount: "",
+            notes: "",
+        }
+    })
+
+    const fromAccountId = form.watch("from_account_id")
+    const toAccountId = form.watch("to_account_id")
+    const amount = form.watch("amount")
 
     useEffect(() => {
-        if (serverDate && !date) {
-            requestAnimationFrame(() => setDate(serverDate))
+        if (serverDate && !form.getValues("date")) {
+            form.setValue("date", serverDate)
         }
-    }, [serverDate])
+    }, [serverDate, form])
 
     useEffect(() => {
         if (open) {
@@ -63,36 +86,23 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
         }
     }
 
-    const handleSubmit = async () => {
-        if (!fromAccount || !toAccount || !amount || parseFloat(amount) <= 0) {
-            toast.error("Por favor completa todos los campos requeridos.")
-            return
-        }
-
-        if (fromAccount === toAccount) {
-            toast.error("La cuenta de origen y destino no pueden ser la misma.")
-            return
-        }
-
+    const onSubmit = async (values: TransferFormValues) => {
         try {
             setSubmitting(true)
-            await api.post('/treasury/dashboard/register_transfer/', {
-                from_account_id: fromAccount,
-                to_account_id: toAccount,
-                amount: parseFloat(amount),
-                notes,
-                date: date ? date.toISOString().split('T')[0] + 'T' + new Date().toTimeString().split(' ')[0] : undefined
-            })
+            const payload = {
+                from_account_id: values.from_account_id,
+                to_account_id: values.to_account_id,
+                amount: parseFloat(values.amount),
+                notes: values.notes,
+                date: values.date.toISOString().split('T')[0] + 'T' + new Date().toTimeString().split(' ')[0]
+            }
+
+            await api.post('/treasury/dashboard/register_transfer/', payload)
 
             toast.success("Traspaso registrado correctamente.")
             onOpenChange(false)
             if (onSuccess) onSuccess()
-
-            // Reset form
-            setFromAccount("")
-            setToAccount("")
-            setAmount("")
-            setNotes("")
+            form.reset()
         } catch (error: unknown) {
             console.error(error)
             showApiError(error, "Error al registrar el traspaso.")
@@ -101,103 +111,163 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
         }
     }
 
-    const sourceAccount = accounts.find(a => a.id.toString() === fromAccount)
-    const destAccount = accounts.find(a => a.id.toString() === toAccount)
-
-    const footerContent = (
-        <div className="flex w-full gap-2 justify-end">
-            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
-            <SubmitButton
-                loading={submitting}
-                onClick={handleSubmit}
-                disabled={submitting || !amount || !fromAccount || !toAccount || !isDateValid}
-                className="bg-warning hover:bg-warning/90 text-warning-foreground font-bold px-8 shadow-lg shadow-warning/20"
-            >
-                Confirmar Traspaso
-            </SubmitButton>
-        </div>
-    )
+    const sourceAccount = accounts.find(a => a.id.toString() === fromAccountId)
+    const destAccount = accounts.find(a => a.id.toString() === toAccountId)
 
     return (
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            variant="transaction"
+            size="lg"
+            hideScrollArea={true}
+            contentClassName="p-0"
             title={
-                <span className="flex items-center gap-2">
-                    <ArrowLeftRight className="h-5 w-5 opacity-80" />
-                    Traspaso entre Cuentas
-                </span>
+                <div className="flex items-center gap-3">
+                    <ArrowLeftRight className="h-5 w-5 text-muted-foreground" />
+                    <span>Traspaso entre Cuentas</span>
+                </div>
             }
-            footer={footerContent}
-            className="max-w-lg rounded-lg"
-            contentClassName="bg-card p-6"
+            description="Mueva fondos entre sus cuentas de tesorería de forma inmediata."
+            footer={
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
+                            <ActionSlideButton
+                                loading={submitting}
+                                onClick={form.handleSubmit(onSubmit)}
+                                disabled={submitting || !isDateValid}
+                                className="bg-amber-500 hover:bg-amber-600 shadow-amber-500/10"
+                            >
+                                Confirmar Traspaso
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
+            }
         >
-            <div className="space-y-6 pt-4">
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="relative">
-                        <TreasuryAccountSelector
-                            label="Origen"
-                            value={fromAccount}
-                            onChange={(v) => setFromAccount(v ?? "")}
-                            excludeId={toAccount ? Number(toAccount) : undefined}
-                        />
-                        {sourceAccount && (
-                            <p className="absolute -bottom-5 right-1 text-[9px] text-muted-foreground font-mono">
-                                DISP: <span className="font-bold text-success">{formatCurrency(sourceAccount.current_balance)}</span>
-                            </p>
-                        )}
-                    </div>
+            <FormSplitLayout>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                        {/* Section 1: Accounts */}
+                        <div className="space-y-4">
+                            <FormSection title="Flujo de Fondos" icon={ArrowLeftRight} />
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="col-span-2 relative">
+                                    <FormField
+                                        control={form.control}
+                                        name="from_account_id"
+                                        render={({ field, fieldState }) => (
+                                            <div className="relative">
+                                                <TreasuryAccountSelector
+                                                    label="Cuenta Origen"
+                                                    value={field.value}
+                                                    onChange={(v) => field.onChange(v ?? "")}
+                                                    excludeId={toAccountId ? Number(toAccountId) : undefined}
+                                                    error={fieldState.error?.message}
+                                                />
+                                                {sourceAccount && (
+                                                    <div className="absolute -bottom-5 right-1 px-1.5 py-0.5 rounded bg-muted/30 border border-muted/50">
+                                                        <p className="text-[9px] font-mono leading-none">
+                                                            DISP: <span className="font-bold text-emerald-600">{formatCurrency(sourceAccount.current_balance)}</span>
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    />
+                                </div>
 
-                    <TreasuryAccountSelector
-                        label="Destino"
-                        value={toAccount}
-                        onChange={(v) => setToAccount(v ?? "")}
-                        excludeId={fromAccount ? Number(fromAccount) : undefined}
-                    />
-                </div>
-
-                <LabeledInput
-                    label="Monto del Traspaso"
-                    type="number"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    icon={<DollarSign className="h-4 w-4 opacity-40" />}
-                    placeholder="0"
-                    className="text-lg font-black tracking-tight"
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                    <PeriodValidationDateInput
-                        date={date}
-                        onDateChange={setDate}
-                        label="Fecha"
-                        validationType="accounting"
-                        onValidityChange={setIsDateValid}
-                        required
-                    />
-
-                    <div className="flex items-end pb-1">
-                        {sourceAccount && destAccount && amount && (
-                            <div className="p-2 rounded-lg bg-muted/30 border w-full text-center">
-                                <p className="text-[10px] text-muted-foreground uppercase leading-none">Nueva Estimación</p>
-                                <p className="text-xs font-bold text-warning">
-                                    {formatCurrency(sourceAccount.current_balance - parseFloat(amount))}
-                                </p>
+                                <div className="col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="to_account_id"
+                                        render={({ field, fieldState }) => (
+                                            <TreasuryAccountSelector
+                                                label="Cuenta Destino"
+                                                value={field.value}
+                                                onChange={(v) => field.onChange(v ?? "")}
+                                                excludeId={fromAccountId ? Number(fromAccountId) : undefined}
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
+                                    />
+                                </div>
                             </div>
-                        )}
-                    </div>
-                </div>
+                        </div>
 
-                <LabeledInput
-                    label="Notas / Referencia"
-                    as="textarea"
-                    placeholder="Ej: Traspaso a cuenta corriente para pagos..."
-                    rows={2}
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                />
-            </div>
+                        {/* Section 2: Transaction Details */}
+                        <div className="space-y-4">
+                            <FormSection title="Detalles de la Transacción" icon={DollarSign} />
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="col-span-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="amount"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Monto a Traspasar"
+                                                type="number"
+                                                icon={<DollarSign className="h-4 w-4 opacity-40" />}
+                                                placeholder="0"
+                                                className="text-lg font-black tracking-tight"
+                                                required
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="date"
+                                        render={({ field }) => (
+                                            <PeriodValidationDateInput
+                                                date={field.value}
+                                                onDateChange={field.onChange}
+                                                label="Fecha Efectiva"
+                                                validationType="accounting"
+                                                onValidityChange={setIsDateValid}
+                                                required
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="col-span-2 flex items-end">
+                                    {sourceAccount && toAccountId && amount && !isNaN(parseFloat(amount)) && (
+                                        <div className="w-full p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/20 flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
+                                            <p className="text-[9px] text-amber-600 font-black uppercase tracking-widest mb-1">Impacto en Origen</p>
+                                            <p className="text-xs font-black text-amber-700">
+                                                {formatCurrency(sourceAccount.current_balance - parseFloat(amount))}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="col-span-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="notes"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Notas o Glosa"
+                                                as="textarea"
+                                                placeholder="Describa el motivo del traspaso..."
+                                                rows={2}
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </Form>
+            </FormSplitLayout>
         </BaseModal>
     )
 }

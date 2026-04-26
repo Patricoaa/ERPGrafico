@@ -36,7 +36,8 @@
       "Bash(tee /tmp/lint2.txt)",
       "Bash(grep -E \"tsx$|'Input' is defined\")",
       "Bash(cat)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(dir \"c:\\\\Users\\\\patox\\\\Nextcloud\\\\Pato\\\\Aplicaciones\\\\ERPGrafico\\\\docs\\\\20-contracts\\\\\")"
     ]
   }
 }

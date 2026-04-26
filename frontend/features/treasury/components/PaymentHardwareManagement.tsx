@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BaseModal, EmptyState, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect } from "@/components/shared"
+import { BaseModal, EmptyState, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import {
@@ -392,6 +392,7 @@ function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
             }
         >
             <form className="space-y-4 py-2">
+                <FormSection title="Información General" icon={Building2} />
                 <div className="space-y-4">
                     <div className="space-y-2">
                         <AdvancedContactSelector
@@ -416,8 +417,7 @@ function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
                     </div>
                 </div>
 
-                <Separator className="my-4" />
-                <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">Configuración Contable</h4>
+                <FormSection title="Configuración Contable" icon={Settings} className="my-4" />
 
                 <div className="space-y-4">
                     <div className="space-y-2">
@@ -544,6 +544,7 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
             }
         >
             <form className="space-y-4 py-2">
+                <FormSection title="Información General" icon={Smartphone} />
                 <LabeledInput
                     label="Nombre descriptivo"
                     required
@@ -580,10 +581,7 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
                 />
 
                 <div className="space-y-3 pt-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground flex items-center gap-2">
-                        <CreditCard className="h-4 w-4 text-primary" />
-                        Capacidades del Hardware
-                    </p>
+                    <FormSection title="Capacidades del Hardware" icon={CreditCard} />
                     <div className="grid grid-cols-2 gap-4">
                         <div
                             className={cn(
@@ -621,8 +619,6 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
     )
 }
 
-function Separator({ className }: { className?: string }) {
-    return <div className={cn("h-px bg-border", className)} />
-}
+
 
 export default PaymentHardwareManagement

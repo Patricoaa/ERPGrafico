@@ -16,9 +16,9 @@ import { ProcessSummarySidebar } from "./ProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
 
-import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, AlertTriangle, ShieldAlert, CheckCircle2, FileWarning, Printer } from "lucide-react"
+import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, AlertTriangle, ShieldAlert, CheckCircle2, FileWarning, Printer, Truck } from "lucide-react"
 import { User, Info } from "lucide-react"
-import { LabeledContainer } from "@/components/shared/LabeledContainer"
+import { LabeledContainer, FormSection } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { SubmitButton } from "@/components/shared/ActionButtons"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
@@ -318,30 +318,46 @@ export function SalesCheckoutWizardContent({
         switch (currentStepDef.id) {
             case 'customer_dte':
                 return (
-                    <Step1_CustomerDTE
-                        selectedCustomerId={selectedCustomerId}
-                        setSelectedCustomerId={(id) => setSelectedCustomerId(id || "")}
-                        setSelectedCustomerName={setSelectedCustomerName}
-                        dteData={dteData}
-                        setDteData={setDteData}
-                        isDefaultCustomer={!!selectedCustomer?.is_default_customer}
-                        onValidityChange={(isValid) => setIsFolioValid(isValid)}
-                        onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
-                        pendingDebts={pendingDebts}
-                        onDebtClick={(debt) => openHub({ orderId: debt.id, type: 'sale', onActionSuccess: refreshDebts })}
-                    />
+                    <div className="space-y-6">
+                        <FormSection title="Identificación y Documentación" icon={User} />
+                        <Step1_CustomerDTE
+                            selectedCustomerId={selectedCustomerId}
+                            setSelectedCustomerId={(id) => setSelectedCustomerId(id || "")}
+                            setSelectedCustomerName={setSelectedCustomerName}
+                            dteData={dteData}
+                            setDteData={setDteData}
+                            isDefaultCustomer={!!selectedCustomer?.is_default_customer}
+                            onValidityChange={(isValid) => setIsFolioValid(isValid)}
+                            onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
+                            pendingDebts={pendingDebts}
+                            onDebtClick={(debt) => openHub({ orderId: debt.id, type: 'sale', onActionSuccess: refreshDebts })}
+                        />
+                    </div>
                 )
             case 'manufacturing':
                 return (
-                    <Step2_ManufacturingDetails
-                        orderLines={currentOrderLines}
-                        setOrderLines={setCurrentOrderLines}
-                    />
+                    <div className="space-y-6">
+                        <FormSection title="Detalles de Fabricación" icon={ShoppingCart} />
+                        <Step2_ManufacturingDetails
+                            orderLines={currentOrderLines}
+                            setOrderLines={setCurrentOrderLines}
+                        />
+                    </div>
                 )
             case 'delivery':
-                return <Step3_Delivery deliveryData={deliveryData} setDeliveryData={setDeliveryData} orderLines={currentOrderLines} />
+                return (
+                    <div className="space-y-6">
+                        <FormSection title="Logística y Entrega" icon={Truck} />
+                        <Step3_Delivery deliveryData={deliveryData} setDeliveryData={setDeliveryData} orderLines={currentOrderLines} />
+                    </div>
+                )
             case 'payment':
-                return <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} customerCreditBalance={Number((selectedCustomer as any)?.credit_balance || 0)} />
+                return (
+                    <div className="space-y-6">
+                        <FormSection title="Cierre y Pago" icon={ShoppingCart} />
+                        <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} customerCreditBalance={Number((selectedCustomer as any)?.credit_balance || 0)} />
+                    </div>
+                )
             default:
                 return null;
         }

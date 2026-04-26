@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { FileIcon, Paintbrush, Printer, FileText, Upload, Plus, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { FormSection, LabeledContainer, LabeledInput } from "@/components/shared"
 
 interface WorkOrderMaterialsProps {
     // Phases Enablers
@@ -71,21 +72,18 @@ export function WorkOrderMaterials({
     }
 
     return (
-        <div className="space-y-4">
-            <Label className="uppercase text-xs font-bold text-muted-foreground">Detalles de Producción</Label>
+        <div className="space-y-6">
+            <FormSection title="Especificaciones Técnicas" icon={Paintbrush} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 
                 {/* Pre-Impresión */}
                 <div className={cn(
-                    "relative group p-4 rounded-xl border transition-all duration-300",
+                    "relative group p-6 rounded-xl border transition-all duration-300",
                     enablePrepress 
                         ? "bg-white shadow-sm border-primary/30 ring-1 ring-primary/5" 
                         : "bg-muted/30 border-border/40 opacity-60 grayscale-[0.5]"
                 )}>
-                    <div className="absolute -top-3 left-3 px-2 bg-background flex items-center gap-2 z-10">
-                        <Paintbrush className={cn("h-3.5 w-3.5", enablePrepress ? "text-primary" : "text-muted-foreground")} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Pre-Impresión</span>
-                    </div>
+                    <FormSection title="Pre-Impresión" icon={Paintbrush} className="pt-0 pb-4" />
                     
                     <div className="flex items-center justify-between mb-4 mt-1">
                         <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight">Habilitar Fase</span>
@@ -180,15 +178,12 @@ export function WorkOrderMaterials({
 
                 {/* Impresión */}
                 <div className={cn(
-                    "relative group p-4 rounded-xl border transition-all duration-300",
+                    "relative group p-6 rounded-xl border transition-all duration-300",
                     enablePress 
                         ? "bg-white shadow-sm border-primary/30 ring-1 ring-primary/5" 
                         : "bg-muted/30 border-border/40 opacity-60 grayscale-[0.5]"
                 )}>
-                    <div className="absolute -top-3 left-3 px-2 bg-background flex items-center gap-2 z-10">
-                        <Printer className={cn("h-3.5 w-3.5", enablePress ? "text-primary" : "text-muted-foreground")} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Impresión</span>
-                    </div>
+                    <FormSection title="Impresión" icon={Printer} className="pt-0 pb-4" />
 
                     <div className="flex items-center justify-between mb-4 mt-1">
                         <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight">Habilitar Fase</span>
@@ -235,15 +230,12 @@ export function WorkOrderMaterials({
 
                 {/* Post-Impresión */}
                 <div className={cn(
-                    "relative group p-4 rounded-xl border transition-all duration-300",
+                    "relative group p-6 rounded-xl border transition-all duration-300",
                     enablePostpress 
                         ? "bg-white shadow-sm border-primary/30 ring-1 ring-primary/5" 
                         : "bg-muted/30 border-border/40 opacity-60 grayscale-[0.5]"
                 )}>
-                    <div className="absolute -top-3 left-3 px-2 bg-background flex items-center gap-2 z-10">
-                        <FileText className={cn("h-3.5 w-3.5", enablePostpress ? "text-primary" : "text-muted-foreground")} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Post-Impresión</span>
-                    </div>
+                    <FormSection title="Post-Impresión" icon={FileText} className="pt-0 pb-4" />
 
                     <div className="flex items-center justify-between mb-4 mt-1">
                         <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight">Habilitar Fase</span>

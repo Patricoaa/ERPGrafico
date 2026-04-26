@@ -4,7 +4,7 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { LabeledContainer, LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
+import { LabeledContainer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormSection, FormFooter, SubmitButton, CancelButton } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import {
     Table,
@@ -324,28 +324,29 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
             title={`Despachar Orden NV-${order?.number}`}
             description={`Cliente: ${order?.customer_name}`}
             footer={
-                <>
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={handleDispatch}
-                        disabled={
-                            loading ||
-                            submitting ||
-                            !selectedWarehouse ||
-                            order?.lines.some(line => {
-                                const qty = deliveryQuantities[line.id] || 0
-                                if (qty <= 0) return false
-                                const status = getStockStatus(line)
-                                return status?.type === 'error'
-                            })
-                        }
-                    >
-                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Confirmar Despacho
-                    </Button>
-                </>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
+                            <SubmitButton
+                                onClick={handleDispatch}
+                                loading={submitting}
+                                disabled={
+                                    loading ||
+                                    !selectedWarehouse ||
+                                    order?.lines.some(line => {
+                                        const qty = deliveryQuantities[line.id] || 0
+                                        if (qty <= 0) return false
+                                        const status = getStockStatus(line)
+                                        return status?.type === 'error'
+                                    })
+                                }
+                            >
+                                Confirmar Despacho
+                            </SubmitButton>
+                        </>
+                    }
+                />
             }
         >
             {loading ? (
@@ -354,6 +355,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                 </div>
             ) : (
                 <div className="space-y-4">
+                    <FormSection title="Configuración de Entrega" icon={Package} />
                     {/* Warehouse and Date Selection */}
                     <div className="grid grid-cols-2 gap-4">
                         <LabeledSelect
@@ -369,7 +371,6 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
 
                         <PeriodValidationDateInput
                             label="Fecha de Despacho"
-                            id="delivery-date"
                             date={deliveryDate ? new Date(deliveryDate + 'T12:00:00') : undefined}
                             onDateChange={(d) => {
                                 if (!d) {
@@ -395,6 +396,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                         />
                     </div>
 
+                    <FormSection title="Detalle de Productos" icon={Package} />
                     {/* Products Table */}
                     <div className="rounded-md border overflow-hidden">
                         <Table>

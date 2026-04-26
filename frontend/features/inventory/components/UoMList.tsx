@@ -10,7 +10,7 @@ import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton, LabeledInput, LabeledContainer } from "@/components/shared"
-import { Pencil, Trash2, Search, ChevronsUpDown, Check, Ruler } from "lucide-react"
+import { Pencil, Trash2, Search, Check, Ruler, ChevronDown } from "lucide-react"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -180,7 +180,6 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
             <DataTable
                 columns={columns}
                 data={uoms}
-
                 cardMode
                 filterColumn="name"
                 searchPlaceholder="Buscar unidad..."
@@ -240,144 +239,137 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
             >
                 <div className="flex flex-1 overflow-hidden min-h-[400px]">
                     <div className="flex-1 overflow-y-auto p-6">
-                        <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 shadow-sm border-primary/10">
-                            <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Configuración de Unidad</span>
-                            </div>
+                        <div className="space-y-6">
+                            <LabeledInput
+                                label="Nombre de Unidad"
+                                required
+                                placeholder="Ej: Kilogramo, Metro, Litro"
+                                value={currentUoM.name || ''}
+                                onChange={e => setCurrentUoM({ ...currentUoM, name: e.target.value })}
+                            />
 
-                            <div className="space-y-6">
-                                <LabeledInput
-                                    label="Nombre de Unidad"
-                                    required
-                                    placeholder="Ej: Kilogramo, Metro, Litro"
-                                    value={currentUoM.name || ''}
-                                    onChange={e => setCurrentUoM({ ...currentUoM, name: e.target.value })}
-                                    className="text-lg font-black h-11"
-                                />
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <LabeledContainer label="Categoría" icon={<ChevronsUpDown className="h-4 w-4 opacity-50" />}>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    role="combobox"
-                                                    className={cn("w-full justify-between font-black text-xs h-full px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !currentUoM.category && "text-muted-foreground")}
-                                                >
-                                                    {currentUoM.category
-                                                        ? categories.find(cat => cat.id === currentUoM.category)?.name
-                                                        : "Seleccionar categoría..."}
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                                <div className="p-2">
-                                                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                        <input
-                                                            className="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                                                            placeholder="Buscar categoría..."
-                                                            onChange={(e) => {
-                                                                const val = e.target.value.toLowerCase()
-                                                                const items = document.querySelectorAll('.category-item')
-                                                                items.forEach((el) => {
-                                                                    if (el.textContent?.toLowerCase().includes(val)) {
-                                                                        (el as HTMLElement).style.display = 'flex'
-                                                                    } else {
-                                                                        (el as HTMLElement).style.display = 'none'
-                                                                    }
-                                                                })
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <LabeledContainer label="Categoría" suffix={<ChevronDown className="h-4 w-4 opacity-50" />}>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                role="combobox"
+                                                className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !currentUoM.category && "text-muted-foreground")}
+                                            >
+                                                {currentUoM.category
+                                                    ? categories.find(cat => cat.id === currentUoM.category)?.name
+                                                    : "Seleccionar categoría..."}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                            <div className="p-2">
+                                                <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                                                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    <input
+                                                        className="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                        placeholder="Buscar categoría..."
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.toLowerCase()
+                                                            const items = document.querySelectorAll('.category-item')
+                                                            items.forEach((el) => {
+                                                                if (el.textContent?.toLowerCase().includes(val)) {
+                                                                    (el as HTMLElement).style.display = 'flex'
+                                                                } else {
+                                                                    (el as HTMLElement).style.display = 'none'
+                                                                }
+                                                            })
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                    {categories.map((cat) => (
+                                                        <div
+                                                            key={cat.id}
+                                                            className={cn(
+                                                                "category-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                currentUoM.category === cat.id && "bg-accent"
+                                                            )}
+                                                            onClick={() => {
+                                                                setCurrentUoM({ ...currentUoM, category: cat.id })
+                                                                document.body.click()
                                                             }}
-                                                        />
-                                                    </div>
-                                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                        {categories.map((cat) => (
-                                                            <div
-                                                                key={cat.id}
-                                                                className={cn(
-                                                                    "category-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                    currentUoM.category === cat.id && "bg-accent"
-                                                                )}
-                                                                onClick={() => {
-                                                                    setCurrentUoM({ ...currentUoM, category: cat.id })
-                                                                    document.body.click()
-                                                                }}
-                                                            >
-                                                                <span>{cat.name}</span>
-                                                                {currentUoM.category === cat.id && (
-                                                                    <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
+                                                        >
+                                                            <span>{cat.name}</span>
+                                                            {currentUoM.category === cat.id && (
+                                                                <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                            )}
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            </PopoverContent>
-                                        </Popover>
-                                    </LabeledContainer>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                </LabeledContainer>
 
-                                    <LabeledContainer label="Tipo de Unidad" icon={<ChevronsUpDown className="h-4 w-4 opacity-50" />}>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    role="combobox"
-                                                    className={cn("w-full justify-between font-black text-xs h-full px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !currentUoM.uom_type && "text-muted-foreground")}
-                                                >
-                                                    {currentUoM.uom_type === 'REFERENCE' ? 'Referencia (Base)' :
-                                                        currentUoM.uom_type === 'BIGGER' ? 'Más Grande que base' :
-                                                            currentUoM.uom_type === 'SMALLER' ? 'Más Pequeña que base' :
-                                                                "Seleccionar tipo..."}
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                                <div className="p-2">
-                                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                        {[
-                                                            { value: 'REFERENCE', label: 'Referencia (Base de la categoría)' },
-                                                            { value: 'BIGGER', label: 'Más Grande que la base' },
-                                                            { value: 'SMALLER', label: 'Más Pequeña que la base' }
-                                                        ].map((opt) => (
-                                                            <div
-                                                                key={opt.value}
-                                                                className={cn(
-                                                                    "type-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                    currentUoM.uom_type === opt.value && "bg-accent"
-                                                                )}
-                                                                onClick={() => {
-                                                                    setCurrentUoM({ ...currentUoM, uom_type: opt.value as UoM['uom_type'] })
-                                                                    document.body.click()
-                                                                }}
-                                                            >
-                                                                <span>{opt.label}</span>
-                                                                {currentUoM.uom_type === opt.value && (
-                                                                    <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
+                                <LabeledContainer label="Tipo de Unidad" suffix={<ChevronDown className="h-4 w-4 opacity-50" />}>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                role="combobox"
+                                                className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !currentUoM.uom_type && "text-muted-foreground")}
+                                            >
+                                                {currentUoM.uom_type === 'REFERENCE' ? 'Referencia (Base)' :
+                                                    currentUoM.uom_type === 'BIGGER' ? 'Más Grande que base' :
+                                                        currentUoM.uom_type === 'SMALLER' ? 'Más Pequeña que base' :
+                                                            "Seleccionar tipo..."}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                            <div className="p-2">
+                                                <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                    {[
+                                                        { value: 'REFERENCE', label: 'Referencia (Base de la categoría)' },
+                                                        { value: 'BIGGER', label: 'Más Grande que la base' },
+                                                        { value: 'SMALLER', label: 'Más Pequeña que la base' }
+                                                    ].map((opt) => (
+                                                        <div
+                                                            key={opt.value}
+                                                            className={cn(
+                                                                "type-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                currentUoM.uom_type === opt.value && "bg-accent"
+                                                            )}
+                                                            onClick={() => {
+                                                                setCurrentUoM({ ...currentUoM, uom_type: opt.value as UoM['uom_type'] })
+                                                                document.body.click()
+                                                            }}
+                                                        >
+                                                            <span>{opt.label}</span>
+                                                            {currentUoM.uom_type === opt.value && (
+                                                                <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                            )}
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            </PopoverContent>
-                                        </Popover>
-                                    </LabeledContainer>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                </LabeledContainer>
+                            </div>
+
+                            {currentUoM.uom_type && currentUoM.uom_type !== 'REFERENCE' && (
+                                <div className="animate-in fade-in zoom-in-95 duration-300">
+                                    <LabeledInput
+                                        label="Ratio de Conversión"
+                                        required
+                                        type="number"
+                                        step="0.00001"
+                                        value={currentUoM.ratio || ''}
+                                        onChange={e => setCurrentUoM({ ...currentUoM, ratio: e.target.value })}
+                                        className="font-mono text-sm"
+                                        hint={currentUoM.uom_type === 'BIGGER'
+                                            ? 'Cuántas unidades base equivalen a esta unidad'
+                                            : 'Cuántas unidades de estas equivalen a la unidad base'}
+                                    />
                                 </div>
-                            </div>
+                            )}
                         </div>
-
-                        {currentUoM.uom_type && currentUoM.uom_type !== 'REFERENCE' && (
-                            <div className="animate-in fade-in zoom-in-95 duration-300">
-                                <LabeledInput
-                                    label="Ratio de Conversión"
-                                    required
-                                    type="number"
-                                    step="0.00001"
-                                    value={currentUoM.ratio || ''}
-                                    onChange={e => setCurrentUoM({ ...currentUoM, ratio: e.target.value })}
-                                    className="font-mono font-black text-lg h-11"
-                                    hint={currentUoM.uom_type === 'BIGGER'
-                                        ? 'Cuántas unidades base equivalen a esta unidad'
-                                        : 'Cuántas unidades de estas equivalen a la unidad base'}
-                                />
-                            </div>
-                        )}
                     </div>
                     {currentUoM.id && (
                         <ActivitySidebar

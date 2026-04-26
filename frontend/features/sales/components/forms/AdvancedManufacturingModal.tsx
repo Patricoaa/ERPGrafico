@@ -12,7 +12,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { LabeledContainer, LabeledInput } from "@/components/shared"
+import { LabeledContainer, LabeledInput, FormSection } from "@/components/shared"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -260,14 +260,16 @@ export function AdvancedManufacturingModal({
                                 </motion.div>
                             )}
 
+                            <FormSection title="Etapas de Fabricación" icon={Paintbrush} />
+
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 {/* Pre-Press Column */}
                                 <div className={cn("flex flex-col p-5 border-2 transition-all duration-500 rounded-lg", enablePrepress ? "border-primary bg-primary/[0.02]" : "border-border/40 opacity-50")}>
                                     <div className="flex items-center justify-between mb-6">
-                                        <h4 className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
+                                        <div className="flex items-center gap-2">
                                             <div className={cn("w-2 h-2 rounded-full", enablePrepress ? "bg-primary animate-pulse" : "bg-muted")} />
-                                            Pre-Impresión
-                                        </h4>
+                                            <span className="text-[11px] font-black uppercase tracking-widest">Pre-Impresión</span>
+                                        </div>
                                         <Switch
                                             checked={enablePrepress}
                                             onCheckedChange={setEnablePrepress}
@@ -327,10 +329,10 @@ export function AdvancedManufacturingModal({
                                 {/* Press Column */}
                                 <div className={cn("flex flex-col p-5 border-2 transition-all duration-500 rounded-none", enablePress ? "border-primary bg-primary/[0.02]" : "border-border/40 opacity-50")}>
                                     <div className="flex items-center justify-between mb-6">
-                                        <h4 className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
+                                        <div className="flex items-center gap-2">
                                             <div className={cn("w-2 h-2 rounded-full", enablePress ? "bg-primary animate-pulse" : "bg-muted")} />
-                                            Impresión
-                                        </h4>
+                                            <span className="text-[11px] font-black uppercase tracking-widest">Impresión</span>
+                                        </div>
                                         <Switch
                                             checked={enablePress}
                                             onCheckedChange={setEnablePress}
@@ -371,10 +373,10 @@ export function AdvancedManufacturingModal({
                                 {/* Post-Press Column */}
                                 <div className={cn("flex flex-col p-5 border-2 transition-all duration-500 rounded-none", enablePostpress ? "border-primary bg-primary/[0.02]" : "border-border/40 opacity-50")}>
                                     <div className="flex items-center justify-between mb-6">
-                                        <h4 className="text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
+                                        <div className="flex items-center gap-2">
                                             <div className={cn("w-2 h-2 rounded-full", enablePostpress ? "bg-primary animate-pulse" : "bg-muted")} />
-                                            Post-Impresión
-                                        </h4>
+                                            <span className="text-[11px] font-black uppercase tracking-widest">Post-Impresión</span>
+                                        </div>
                                         <Switch
                                             checked={enablePostpress}
                                             onCheckedChange={setEnablePostpress}
@@ -394,14 +396,16 @@ export function AdvancedManufacturingModal({
                         </>
                     )}
 
-                    <LabeledContainer label="Observaciones del Taller" labelClassName="text-accent" icon={<FileText className="h-4 w-4" />}>
+                    <FormSection title="Instrucciones de Taller" icon={FileText} />
+
+                    <div className="p-0">
                         <Textarea
                             placeholder="INSTRUCCIONES CRÍTICAS PARA EL EQUIPO DE PRODUCCIÓN..."
                             className="min-h-[100px] text-sm font-medium border-none shadow-none focus-visible:ring-0 bg-transparent"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                         />
-                    </LabeledContainer>
+                    </div>
                 </div>
             </div>
         </BaseModal >

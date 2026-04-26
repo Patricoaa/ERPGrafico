@@ -11,10 +11,9 @@ import {
     FormField,
     FormItem,
 } from "@/components/ui/form"
-import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { LabeledInput } from "@/components/shared"
+import { LabeledInput, FormFooter, CancelButton } from "@/components/shared"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const schema = z.object({
@@ -78,18 +77,16 @@ export function TransactionNumberForm({
             title="Registrar N° de Transacción"
             description="Ingrese el número de comprobante o transacción bancaria."
             footer={
-                <>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                    >
-                        Cancelar
-                    </Button>
-                    <ActionSlideButton type="submit" form="transaction-number-form" disabled={loading}>
-                        {loading ? "Guardando..." : "Guardar"}
-                    </ActionSlideButton>
-                </>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <ActionSlideButton type="submit" form="transaction-number-form" loading={loading}>
+                                Guardar
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
             }
         >
             <Form {...form}>

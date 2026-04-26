@@ -8,7 +8,7 @@ import * as z from "zod"
 import { toast } from "sonner"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
-import { CancelButton, LabeledInput } from "@/components/shared"
+import { CancelButton, LabeledInput, FormFooter, LabeledCheckbox } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { UserCog } from "lucide-react"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
@@ -98,12 +98,16 @@ export function PartnerEditModal({ open, onOpenChange, contact, onSuccess }: Pro
             }
             description={`Ajuste la participación de ${contact.name}.`}
             footer={
-                <div className="flex w-full gap-3 justify-end">
-                    <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
-                    <ActionSlideButton type="submit" form="partner-edit-form" loading={submitting} className="font-bold">
-                        Guardar Cambios
-                    </ActionSlideButton>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
+                            <ActionSlideButton type="submit" form="partner-edit-form" loading={submitting} className="font-bold">
+                                Guardar Cambios
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
             }
         >
 
@@ -114,22 +118,13 @@ export function PartnerEditModal({ open, onOpenChange, contact, onSuccess }: Pro
                         control={form.control}
                         name="is_partner"
                         render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/10">
-                                <FormControl>
-                                    <Checkbox
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                    />
-                                </FormControl>
-                                <div className="space-y-1 leading-none">
-                                    <FormLabel>
-                                        Es Socio de la Empresa
-                                    </FormLabel>
-                                    <FormDescription className="text-xs">
-                                        Habilita o deshabilita a este contacto del módulo societario. Al desmarcar, desaparecerá de la lista.
-                                    </FormDescription>
-                                </div>
-                            </FormItem>
+                            <LabeledCheckbox
+                                label="Configuración de Socio"
+                                description="Es Socio de la Empresa"
+                                hint="Habilita o deshabilita a este contacto del módulo societario. Al desmarcar, desaparecerá de la lista."
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                            />
                         )}
                     />
 
