@@ -6,10 +6,10 @@ import { Product, UoM } from "@/types/entities"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField } from "@/components/ui/form"
-import { LabeledInput, LabeledSelect } from "@/components/shared"
+import { LabeledInput, LabeledSelect, FormSection } from "@/components/shared"
 import { CancelButton, SubmitButton, IconButton } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Save, X, Sparkles } from "lucide-react"
+import { Save, X, Sparkles, DollarSign } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
@@ -118,12 +118,8 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                             Los campos en blanco <strong>no sufrirán cambios</strong>. Solo se aplicarán las propiedades con valores explícitos.
                         </div>
 
-                        <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 border-primary/10">
-                            <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Precios y Logística</span>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormSection title="Precios y Logística" icon={DollarSign} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField<BulkEditValues>
                                     control={form.control}
                                     name="sale_price"
@@ -161,14 +157,8 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                                     )}
                                 />
                             </div>
-                        </div>
-
-                        <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 border-primary/10">
-                            <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Configuración Industrial</span>
-                            </div>
-
-                            <div className="space-y-6">
+                        <FormSection title="Configuración Industrial" icon={Save} />
+                        <div className="space-y-6">
                                 <FormField<BulkEditValues>
                                     control={form.control}
                                     name="apply_has_bom"
@@ -232,7 +222,6 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                                     )}
                                 />
                             </div>
-                        </div>
                     </div>
                 </Form>
             </div>

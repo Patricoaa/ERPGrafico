@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Check, ChevronsUpDown, Search, Loader2, BookKey } from "lucide-react"
+import { Check, ChevronDown, Search, Loader2, BookKey } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -26,9 +26,10 @@ interface AccountSelectorProps {
     disabled?: boolean
     label?: string
     error?: string
+    className?: string
 }
 
-export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable, disabled = false, label, error }: AccountSelectorProps) {
+export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable, disabled = false, label, error, className }: AccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const { accounts: allAccounts, loading: accountsLoading, fetchAccounts } = useAccountSearch()
@@ -89,7 +90,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
     }
 
     return (
-        <div className="relative w-full flex flex-col group">
+        <div className={cn("relative w-full flex flex-col group", className)}>
             <fieldset 
                 className={cn(
                     "notched-field w-full group transition-all",
@@ -110,7 +111,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                             role="combobox"
                             aria-expanded={open}
                             disabled={disabled}
-                            className="w-full justify-between overflow-hidden h-auto py-2 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                            className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                         >
                             {selectedAccount ? (
                                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -121,7 +122,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                             ) : (
                                 <span className="text-muted-foreground truncate">{placeholder}</span>
                             )}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                     </PopoverTrigger>
                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">

@@ -6,6 +6,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { LabeledContainer } from "@/components/shared/LabeledContainer"
+import { FormFooter } from "@/components/shared"
 import { Barcode, Download, Printer, RefreshCw, Check } from "lucide-react"
 import { toast } from "sonner"
 
@@ -156,25 +157,29 @@ export function BarcodeModal({ open, onOpenChange, initialValue = "", onApply }:
             }
             description="Visualice, genere o descargue el código de barras para este producto."
             footer={
-                <div className="flex w-full justify-end gap-2">
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                        Cancelar
-                    </Button>
-                    <Button 
-                        type="button" 
-                        variant="default" 
-                        className="gap-2"
-                        onClick={() => {
-                            onApply(barcodeValue)
-                            onOpenChange(false)
-                            toast.success("Código de barras aplicado")
-                        }}
-                        disabled={!barcodeValue}
-                    >
-                        <Check className="h-4 w-4" />
-                        Aplicar al Producto
-                    </Button>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+                                Cancelar
+                            </Button>
+                            <Button 
+                                type="button" 
+                                variant="default" 
+                                className="gap-2"
+                                onClick={() => {
+                                    onApply(barcodeValue)
+                                    onOpenChange(false)
+                                    toast.success("Código de barras aplicado")
+                                }}
+                                disabled={!barcodeValue}
+                            >
+                                <Check className="h-4 w-4" />
+                                Aplicar al Producto
+                            </Button>
+                        </>
+                    }
+                />
             }
         >
             <div className="space-y-6">

@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { CancelButton, IconButton, LabeledInput, LabeledSelect, CardSkeleton } from "@/components/shared"
+import { CancelButton, IconButton, LabeledInput, LabeledSelect, CardSkeleton, FormSection } from "@/components/shared"
 import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, History, MonitorSmartphone, Smartphone } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -448,11 +448,13 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
                         </div>
 
                         <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
-                            <div className="flex justify-between items-center">
-                                <h4 className="text-[11px] font-bold uppercase text-muted-foreground tracking-wider mb-2">Métodos de Pago Permitidos</h4>
-                                <span className="text-[9px] font-mono font-black text-muted-foreground uppercase opacity-70">
-                                    {selectedMethodIds.length} seleccionados
-                                </span>
+                            <div className="flex flex-col gap-2">
+                                <FormSection title="Métodos de Pago Permitidos" icon={CreditCard} />
+                                <div className="flex justify-end pr-2">
+                                    <span className="text-[9px] font-mono font-black text-muted-foreground uppercase opacity-70">
+                                        {selectedMethodIds.length} seleccionados
+                                    </span>
+                                </div>
                             </div>
 
                             <div className="space-y-5">

@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { SubmitButton, CancelButton, LabeledInput, LabeledSelect, BaseModal, PeriodValidationDateInput } from "@/components/shared"
+import { SubmitButton, CancelButton, LabeledInput, LabeledSelect, BaseModal, PeriodValidationDateInput, FormFooter } from "@/components/shared"
 import { FileSpreadsheet } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -110,16 +110,20 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
                 </div>
             }
             footer={
-                <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40">
-                    <CancelButton onClick={() => onOpenChange(false)} className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5" />
-                    <SubmitButton
-                        loading={loading}
-                        onClick={handleSubmit}
-                        className="rounded-lg text-xs font-bold"
-                    >
-                        {loading ? "Procesando..." : "Generar y Finalizar"}
-                    </SubmitButton>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5" />
+                            <SubmitButton
+                                loading={loading}
+                                onClick={handleSubmit}
+                                className="rounded-lg text-xs font-bold"
+                            >
+                                {loading ? "Procesando..." : "Generar y Finalizar"}
+                            </SubmitButton>
+                        </>
+                    }
+                />
             }
         >
             <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 py-2">

@@ -15,7 +15,7 @@ import {
 import { toast } from "sonner"
 import { Users } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
-import { LabeledInput, CancelButton } from "@/components/shared"
+import { LabeledInput, CancelButton, FormFooter, FormSplitLayout } from "@/components/shared"
 import { AppGroup } from "@/types/entities"
 
 const formSchema = z.object({
@@ -140,29 +140,38 @@ export function GroupForm({
                     </div>
                 }
                 footer={
-                    <div className="flex justify-end space-x-2 w-full">
-                        <CancelButton onClick={() => setOpen(false)} disabled={isLoading} />
-                        <ActionSlideButton type="submit" form="group-form" loading={isLoading}>
-                            Guardar
-                        </ActionSlideButton>
-                    </div>
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setOpen(false)} disabled={isLoading} />
+                                <ActionSlideButton type="submit" form="group-form" loading={isLoading}>
+                                    Guardar
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
                 }
             >
                 <Form {...form}>
-                    <form id="group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field, fieldState }) => (
-                                <LabeledInput
-                                    label="Nombre"
-                                    required
-                                    placeholder="Ej: Bodega, Ventas..."
-                                    error={fieldState.error?.message}
-                                    {...field}
+                    <form id="group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pr-6 pl-1 pb-4 pt-4">
+                        
+                        <div className="grid grid-cols-4 gap-4">
+                            <div className="col-span-4">
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Nombre del Grupo"
+                                            required
+                                            placeholder="Ej: Bodega, Ventas..."
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
+                            </div>
+                        </div>
                     </form>
                 </Form>
             </BaseModal>

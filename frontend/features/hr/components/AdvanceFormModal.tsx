@@ -13,8 +13,8 @@ import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
 import { Form, FormField } from "@/components/ui/form"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
-import { WalletCards, History } from "lucide-react"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter } from "@/components/shared"
+import { WalletCards } from "lucide-react"
 
 export const advanceSchema = z.object({
     employee: z.string().min(1, "Empleado requerido"),
@@ -112,14 +112,19 @@ export function AdvanceFormModal({ open, onOpenChange, advance, employees, payro
             }
             description={advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación."}
             hideScrollArea={true}
+            contentClassName="p-0"
             className="h-[80vh]"
             footer={
-                <div className="flex justify-end gap-2 w-full">
-                    <CancelButton onClick={() => onOpenChange(false)} />
-                    <SubmitButton form="advance-form" loading={saving}>
-                        {advance ? "Actualizar" : "Registrar"}
-                    </SubmitButton>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <SubmitButton form="advance-form" loading={saving}>
+                                {advance ? "Actualizar" : "Registrar"}
+                            </SubmitButton>
+                        </>
+                    }
+                />
             }
         >
             <div className="flex-1 flex overflow-hidden h-full">
@@ -164,7 +169,6 @@ export function AdvanceFormModal({ open, onOpenChange, advance, employees, payro
                                             }
                                             field.onChange(d.toISOString().split('T')[0])
                                         }}
-                                        error={fieldState.error?.message}
                                         validationType="accounting"
                                     />
                                 )} />
@@ -206,14 +210,6 @@ export function AdvanceFormModal({ open, onOpenChange, advance, employees, payro
                             title="Historial"
                             className="h-full border-none"
                         />
-                    </div>
-                )}
-                {!advance?.id && (
-                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                        <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground gap-2">
-                            <History className="h-8 w-8 opacity-20" />
-                            <p className="text-xs">El historial estará disponible una vez registrado el anticipo.</p>
-                        </div>
                     </div>
                 )}
             </div>

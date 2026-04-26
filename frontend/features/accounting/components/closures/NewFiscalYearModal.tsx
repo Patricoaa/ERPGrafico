@@ -5,7 +5,7 @@ import { BaseModal } from '@/components/shared/BaseModal';
 import { Button } from '@/components/ui/button';
 import { Calendar, CheckCircle2, AlertCircle, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LabeledContainer, CancelButton, SubmitButton } from '@/components/shared';
+import { LabeledContainer, CancelButton, SubmitButton, FormFooter } from '@/components/shared';
 
 interface NewFiscalYearModalProps {
     isOpen: boolean;
@@ -67,22 +67,26 @@ export function NewFiscalYearModal({
                 </div>
             }
             footer={
-                <div className="flex justify-end gap-3 w-full">
-                    <CancelButton 
-                        onClick={onClose}
-                        disabled={isLoading}
-                        className="font-bold uppercase tracking-widest text-[10px]"
-                    />
-                    <SubmitButton 
-                        onClick={handleConfirm}
-                        loading={isLoading}
-                        disabled={existingYears.includes(selectedYear) || hasOpenPeriods}
-                        className="bg-primary hover:bg-primary/90 font-black uppercase tracking-widest text-[10px] px-8"
-                        icon={<CheckCircle2 className="mr-2 h-3.5 w-3.5" />}
-                    >
-                        {isLoading ? "Inicializando..." : "Crear Periodo Enero"}
-                    </SubmitButton>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton 
+                                onClick={onClose}
+                                disabled={isLoading}
+                                className="font-bold uppercase tracking-widest text-[10px]"
+                            />
+                            <SubmitButton 
+                                onClick={handleConfirm}
+                                loading={isLoading}
+                                disabled={existingYears.includes(selectedYear) || hasOpenPeriods}
+                                className="bg-primary hover:bg-primary/90 font-black uppercase tracking-widest text-[10px] px-8"
+                                icon={<CheckCircle2 className="mr-2 h-3.5 w-3.5" />}
+                            >
+                                {isLoading ? "Inicializando..." : "Crear Periodo Enero"}
+                            </SubmitButton>
+                        </>
+                    }
+                />
             }
         >
             <div className="p-4 space-y-6">

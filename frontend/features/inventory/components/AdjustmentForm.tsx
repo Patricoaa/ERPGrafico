@@ -28,7 +28,8 @@ import { Product, UoM, Warehouse } from "@/types/entities"
 import { cn } from "@/lib/utils"
 import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { LabeledInput, LabeledSelect, FormTabs, type FormTabItem } from "@/components/shared"
+import { LabeledInput, LabeledSelect, FormTabs, type FormTabItem, FormFooter, SubmitButton } from "@/components/shared"
+import { FormSection } from "@/components/shared/FormSection"
 
 
 const adjustmentSchema = z.object({
@@ -271,13 +272,9 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                     variant="underline"
                 >
                     <div className="space-y-4 pt-4">
-                        {/* Section: Clasification - Notched Container */}
-                        <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 shadow-sm border-primary/10">
-                            <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Clasificación y Origen</span>
-                            </div>
+                        <FormSection title="Clasificación y Origen" icon={Info} />
 
-                            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
                                 <div className={cn("md:col-span-4")}>
                                     <FormField
                                         control={form.control}
@@ -361,15 +358,10 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                                     </div>
                                 )}
                             </div>
-                        </div>
 
-                        {/* Section: Detalles - Notched Container */}
-                        <div className="relative p-5 pt-8 rounded-lg border-2 bg-card shadow-sm border-primary/10">
-                            <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Detalles del Movimiento</span>
-                            </div>
+                        <FormSection title="Detalles del Movimiento" icon={WarehouseIcon} />
 
-                            <div className="space-y-6">
+                        <div className="space-y-6">
                                 {/* Row 1: Almacén | Producto */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <FormField
@@ -478,25 +470,24 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                                     </div>
                                 )}
                             </div>
-                        </div>
 
-
-                        <div className="flex justify-end gap-3 pt-6 pb-2">
-                            {onCancel && (
-                                <CancelButton onClick={onCancel} />
-                            )}
-                            <ActionSlideButton
-                                type="submit"
-                                disabled={isLoading || periodStatus?.is_closed}
-                                className={cn("rounded-md text-xs font-black uppercase tracking-widest px-8", moveType === 'IN' ? 'bg-success hover:bg-success/90' : 'bg-destructive hover:bg-destructive/90')}
-                            >
-                                {isLoading ? "Procesando..." : (
-                                    <>
-                                        {moveType === 'IN' ? "Registrar Entrada" : "Registrar Salida"}
-                                    </>
+                <FormFooter
+                    actions={
+                        <>
+                            {onCancel && <CancelButton onClick={onCancel} />}
+                            <SubmitButton
+                                loading={isLoading}
+                                disabled={periodStatus?.is_closed}
+                                className={cn(
+                                    "px-8",
+                                    moveType === 'IN' ? 'bg-success hover:bg-success/90' : 'bg-destructive hover:bg-destructive/90'
                                 )}
-                            </ActionSlideButton>
-                        </div>
+                            >
+                                {moveType === 'IN' ? "Registrar Entrada" : "Registrar Salida"}
+                            </SubmitButton>
+                        </>
+                    }
+                />
                     </div>
                 </FormTabs>
             </form>

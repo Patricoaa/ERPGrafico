@@ -9,7 +9,7 @@ import { LabeledSelect } from "@/components/shared"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { Loader2, Calculator, Info, Search, ChevronsUpDown, Check } from "lucide-react"
+import { Loader2, Calculator, Info, Search, ChevronDown, Check } from "lucide-react"
 import { PeriodValidationDateInput } from "@/components/shared"
 import { toast } from "sonner"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -18,7 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import api from "@/lib/api"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
-import { CancelButton, SubmitButton, LabeledContainer, LabeledInput } from "@/components/shared"
+import { CancelButton, SubmitButton, LabeledContainer, LabeledInput, FormFooter } from "@/components/shared"
 
 interface TerminalBatchFormProps {
     onSuccess: () => void
@@ -133,12 +133,12 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                 <Button
                                     variant="outline"
                                     role="combobox"
-                                    className="w-full justify-between font-normal h-8 border-0 focus:ring-0 bg-transparent shadow-none px-2"
+                                    className="w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                                 >
                                     {providerId
                                         ? providers.find(p => p.id.toString() === providerId)?.name
                                         : "Seleccione proveedor..."}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
@@ -280,12 +280,16 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                 </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t">
-                <CancelButton onClick={onCancel} />
-                <ActionSlideButton type="submit" loading={loading} disabled={loading || !isValid || !providerId || !depositMethodId || !isDateValid}>
-                    Registrar Liquidación
-                </ActionSlideButton>
-            </div>
+            <FormFooter
+                actions={
+                    <>
+                        <CancelButton onClick={onCancel} />
+                        <ActionSlideButton type="submit" loading={loading} disabled={loading || !isValid || !providerId || !depositMethodId || !isDateValid}>
+                            Registrar Liquidación
+                        </ActionSlideButton>
+                    </>
+                }
+            />
 
             <SaleSelectionModal
                 open={openSelection}
@@ -390,16 +394,20 @@ function SaleSelectionModal({ open, onOpenChange, providerId, date, onConfirm, i
             description="Seleccione las transacciones que el proveedor incluyó en esta liquidación."
             className="sm:max-w-[600px]"
             footer={(
-                <div className="flex justify-end gap-2 w-full">
-                    <CancelButton onClick={() => onOpenChange(false)} />
-                    <SubmitButton
-                        onClick={() => onConfirm(movements.filter(m => selectedIds.has(m.id)), selectedIds)}
-                        disabled={selectedIds.size === 0}
-                        icon={null}
-                    >
-                        Confirmar Selección
-                    </SubmitButton>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <SubmitButton
+                                onClick={() => onConfirm(movements.filter(m => selectedIds.has(m.id)), selectedIds)}
+                                disabled={selectedIds.size === 0}
+                                icon={null}
+                            >
+                                Confirmar Selección
+                            </SubmitButton>
+                        </>
+                    }
+                />
             )}
         >
             <div className="py-2">

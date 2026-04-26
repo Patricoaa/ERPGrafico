@@ -25,7 +25,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { LabeledInput, LabeledSelect } from "@/components/shared"
+import { LabeledInput, LabeledSelect, FormSection, FormFooter } from "@/components/shared"
 import {
     Select,
     SelectContent,
@@ -342,19 +342,22 @@ export function BOMFormModal({
                 </div>
             }
             footer={
-                <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40">
-                    <CancelButton onClick={() => onOpenChange(false)} />
-                    <ActionSlideButton
-                        form="bom-form"
-                        type="submit"
-                        loading={form.formState.isSubmitting}
-                        icon={Save}
-                        disabled={form.formState.isSubmitting}
-                        className="rounded-md text-xs font-bold"
-                    >
-                        {bomToEdit ? "Guardar Cambios" : "Crear Receta"}
-                    </ActionSlideButton>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <ActionSlideButton
+                                form="bom-form"
+                                type="submit"
+                                loading={form.formState.isSubmitting}
+                                icon={Save}
+                                disabled={form.formState.isSubmitting}
+                            >
+                                {bomToEdit ? "Guardar Cambios" : "Crear Receta"}
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
             }
         >
             {!initialProduct ? (
@@ -519,11 +522,7 @@ export function BOMFormModal({
                         {/* ═══════════════════════════════════════════════════════════════ */}
                         {/* SECTION 1: MATERIAS PRIMAS Y COMPONENTES (Stock Materials) */}
                         {/* ═══════════════════════════════════════════════════════════════ */}
-                        <div className="flex items-center gap-2 pt-2 pb-2">
-                            <div className="flex-1 h-px bg-border" />
-                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Lista de Componentes</span>
-                            <div className="flex-1 h-px bg-border" />
-                        </div>
+                        <FormSection title="Lista de Componentes" icon={Package} />
 
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
                             <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg border border-border/50">
@@ -723,11 +722,7 @@ export function BOMFormModal({
                         {/* ═══════════════════════════════════════════════════════════════ */}
                         {/* SECTION 2: SERVICIOS TERCERIZADOS (Outsourced Services) */}
                         {/* ═══════════════════════════════════════════════════════════════ */}
-                        <div className="flex items-center gap-2 pt-4 pb-2">
-                            <div className="flex-1 h-px bg-border" />
-                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Servicios Tercerizados</span>
-                            <div className="flex-1 h-px bg-border" />
-                        </div>
+                        <FormSection title="Servicios Tercerizados" icon={Truck} />
 
                         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-700">
                             <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg border border-border/50">

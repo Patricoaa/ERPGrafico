@@ -7,8 +7,9 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, LabeledInput, LabeledSelect, LabeledContainer } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, LabeledContainer, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
     Form,
     FormField
@@ -83,21 +84,21 @@ function RichIconSelector({ value, onChange, label, error }: { value: string, on
                     <Button
                         variant="ghost"
                         role="combobox"
-                        className="w-full justify-between h-10 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent font-normal"
+                        className="w-full justify-between !h-[1.5rem] !py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent font-normal"
                     >
                         <div className="flex items-center gap-2">
                             <SelectedIcon className="h-4 w-4" />
                             <span>{selectedLabel}</span>
                         </div>
-                        <LucideIcons.ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        <LucideIcons.ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                     <div className="p-2">
                         <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
                             <LucideIcons.Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                            <input
-                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                            <Input
+                                className="border-0 shadow-none focus-visible:ring-0 bg-transparent px-0"
                                 placeholder="Buscar icono..."
                                 onChange={(e) => {
                                     const val = e.target.value.toLowerCase()
@@ -155,7 +156,7 @@ const categorySchema = z.object({
 type CategoryFormValues = z.infer<typeof categorySchema>
 
 interface CategoryFormProps {
-    auditSidebar?: React.ReactNode
+    sidebar?: React.ReactNode
     onSuccess?: (category: ProductCategory) => void
     initialData?: ProductCategory
     open?: boolean
@@ -164,7 +165,7 @@ interface CategoryFormProps {
 }
 
 export function CategoryForm({
-    auditSidebar,
+    sidebar,
     onSuccess,
     initialData,
     open: openProp,
@@ -288,6 +289,8 @@ export function CategoryForm({
                 open={open}
                 onOpenChange={setOpen}
                 size={initialData ? "lg" : "md"}
+                hideScrollArea={true}
+                contentClassName="p-0"
                 title={
                     <div className="flex items-center gap-3">
                         <LucideIcons.Tag className="h-5 w-5 text-muted-foreground" />
@@ -306,149 +309,153 @@ export function CategoryForm({
                     </div>
                 }
                 footer={
-                    <div className="flex justify-end space-x-2 w-full">
-                        <CancelButton onClick={() => setOpen(false)} />
-                        <ActionSlideButton type="submit" form="category-form" loading={loading}>
-                            {initialData ? "Guardar Cambios" : "Crear Categoría"}
-                        </ActionSlideButton>
-                    </div>
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setOpen(false)} />
+                                <ActionSlideButton type="submit" form="category-form" loading={loading}>
+                                    {initialData ? "Guardar Cambios" : "Crear Categoría"}
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
                 }
             >
-                <div className="flex-1 flex overflow-hidden min-h-[400px]">
-                    <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
-                        <Form {...form}>
-                            <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
-                                <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 shadow-sm border-primary/10">
-                                    <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Información General</span>
-                                    </div>
+                <FormSplitLayout
+                    showSidebar={!!initialData?.id}
+                    sidebar={sidebar}
+                >
+                    <Form {...form}>
+                        <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                            <FormSection title="Información General" icon={LucideIcons.Tag} />
 
-                                    <div className="space-y-6">
-                                        <FormField
-                                            control={form.control}
-                                            name="name"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Nombre de Categoría"
-                                                    required
-                                                    placeholder="Ej: Insumos de Impresión"
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            )}
-                                        />
-
-                                        <div className="grid grid-cols-2 gap-6">
-                                            <FormField
-                                                control={form.control}
-                                                name="prefix"
-                                                render={({ field, fieldState }) => (
-                                                    <LabeledInput
-                                                        label="Siglas (Prefijo)"
-                                                        placeholder="Ej: IMP"
-                                                        error={fieldState.error?.message}
-                                                        {...field}
-                                                        value={field.value || ""}
-                                                    />
-                                                )}
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="col-span-3">
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Nombre de Categoría"
+                                                required
+                                                placeholder="Ej: Insumos de Impresión"
+                                                error={fieldState.error?.message}
+                                                {...field}
                                             />
-                                            <FormField
-                                                control={form.control}
-                                                name="icon"
-                                                render={({ field, fieldState }) => (
-                                                    <RichIconSelector
-                                                        label="Icono Visual"
-                                                        value={field.value || "Package"}
-                                                        onChange={field.onChange}
-                                                        error={fieldState.error?.message}
-                                                    />
-                                                )}
-                                            />
-                                        </div>
-
-                                        <FormField
-                                            control={form.control}
-                                            name="parent"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledSelect
-                                                    label="Categoría Superior (Jerarquía)"
-                                                    value={field.value || "none"}
-                                                    onChange={field.onChange}
-                                                    error={fieldState.error?.message}
-                                                    placeholder="Sin padre"
-                                                    options={[
-                                                        { value: "none", label: "Raíz (Sin padre)" },
-                                                        ...categories.filter(cat => cat.id && cat.id !== initialData?.id).map((cat) => ({
-                                                            value: cat.id.toString(),
-                                                            label: cat.name
-                                                        }))
-                                                    ]}
-                                                />
-                                            )}
-                                        />
-                                    </div>
+                                        )}
+                                    />
                                 </div>
 
-                                <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 shadow-sm border-primary/10">
-                                    <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-primary">Cuentas Contables por Defecto</span>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <FormField
-                                            control={form.control}
-                                            name="asset_account"
-                                            render={({ field, fieldState }) => (
-                                                <AccountSelector
-                                                    label="Activo (Inventario)"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    accountType="ASSET"
-                                                    placeholder="Cuenta de activo..."
-                                                    error={fieldState.error?.message}
-                                                />
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="income_account"
-                                            render={({ field, fieldState }) => (
-                                                <AccountSelector
-                                                    label="Ingresos (Ventas)"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    accountType="INCOME"
-                                                    placeholder="Cuenta de ingreso..."
-                                                    error={fieldState.error?.message}
-                                                />
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="expense_account"
-                                            render={({ field, fieldState }) => (
-                                                <AccountSelector
-                                                    label="Gastos (Costo)"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    accountType="EXPENSE"
-                                                    placeholder="Cuenta de gasto..."
-                                                    error={fieldState.error?.message}
-                                                />
-                                            )}
-                                        />
-                                    </div>
+                                <div className="col-span-1">
+                                    <FormField
+                                        control={form.control}
+                                        name="prefix"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Siglas"
+                                                placeholder="Ej: IMP"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                                value={field.value || ""}
+                                            />
+                                        )}
+                                    />
                                 </div>
-                            </form>
-                        </Form>
-                    </div>
 
-                    {initialData?.id && (
-                        <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                            {auditSidebar}
-                        </div>
-                    )}
-                </div>
+                                <div className="col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="icon"
+                                        render={({ field, fieldState }) => (
+                                            <RichIconSelector
+                                                label="Icono Visual"
+                                                value={field.value || "Package"}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="parent"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Categoría Superior"
+                                                value={field.value || "none"}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                                placeholder="Sin padre"
+                                                options={[
+                                                    { value: "none", label: "Raíz (Sin padre)" },
+                                                    ...categories.filter(cat => cat.id && cat.id !== initialData?.id).map((cat) => ({
+                                                        value: cat.id.toString(),
+                                                        label: cat.name
+                                                    }))
+                                                ]}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </div>
+
+                            <FormSection title="Cuentas Contables por Defecto" icon={LucideIcons.Library} />
+
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="asset_account"
+                                        render={({ field, fieldState }) => (
+                                            <AccountSelector
+                                                label="Activo (Inventario)"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                accountType="ASSET"
+                                                placeholder="Cuenta de activo..."
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                                <div className="col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="income_account"
+                                        render={({ field, fieldState }) => (
+                                            <AccountSelector
+                                                label="Ingresos (Ventas)"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                accountType="INCOME"
+                                                placeholder="Cuenta de ingreso..."
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                                <div className="col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="expense_account"
+                                        render={({ field, fieldState }) => (
+                                            <AccountSelector
+                                                label="Gastos (Costo)"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                accountType="EXPENSE"
+                                                placeholder="Cuenta de gasto..."
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                        </form>
+                    </Form>
+                </FormSplitLayout>
             </BaseModal>
         </>
     )

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
-import { Check, ChevronsUpDown, Search, Loader2, User, Building2, Plus } from "lucide-react"
+import { Check, ChevronDown, Search, Loader2, User, Building2, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,7 +15,7 @@ import { formatRUT } from "@/lib/utils/format"
 import { useContactSearch } from "@/features/contacts/hooks/useContactSearch"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Contact } from "@/types/entities"
-import { CardSkeleton, LabeledContainer } from "@/components/shared"
+import { CardSkeleton } from "@/components/shared"
 import React, { Suspense } from "react"
 
 const ContactModal = React.lazy(() => import("@/features/contacts/components/ContactModal"))
@@ -30,6 +30,7 @@ interface AdvancedContactSelectorProps {
     isPartnerOnly?: boolean
     label?: string
     error?: string
+    required?: boolean
     className?: string
 }
 
@@ -43,6 +44,7 @@ export function AdvancedContactSelector({
     isPartnerOnly,
     label,
     error,
+    required,
     className
 }: AdvancedContactSelectorProps) {
     const { contacts, singleContact, loading: searchLoading, fetchContacts, fetchSingleContact } = useContactSearch()
@@ -118,21 +120,28 @@ export function AdvancedContactSelector({
             : null;
 
     return (
-        <>
-            <LabeledContainer
-                label={label}
-                error={error}
-                disabled={disabled}
-                className={className}
-                containerClassName={cn("group focused-within:ring-primary", className)}
+        <div className={cn("relative w-full group", className)}>
+            <fieldset 
+                className={cn(
+                    "notched-field w-full group transition-all",
+                    open && "focused",
+                    error && "error",
+                    disabled && "opacity-50 cursor-not-allowed bg-muted/10"
+                )}
             >
+                {label && (
+                    <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
+                        {label}
+                        {required && <span className="ml-1 text-destructive">*</span>}
+                    </legend>
+                )}
                 <Popover open={open} onOpenChange={setOpen}>
                     <PopoverTrigger asChild>
                         <Button
                             variant="ghost"
                             role="combobox"
                             aria-expanded={open}
-                            className="w-full justify-between overflow-hidden h-auto py-2 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                            className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                             disabled={disabled}
                         >
                             {selectedContact ? (
@@ -149,7 +158,7 @@ export function AdvancedContactSelector({
                             ) : (
                                 <span className="text-muted-foreground">{placeholder}</span>
                             )}
-                            {!disabled && <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
+                            {!disabled && <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
@@ -234,7 +243,12 @@ export function AdvancedContactSelector({
                         </div>
                     </PopoverContent>
                 </Popover>
-            </LabeledContainer>
+            </fieldset>
+            {error && (
+                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
+                    {error}
+                </p>
+            )}
 
             {isCreateModalOpen && (
                 <Suspense fallback={<div />}>
@@ -246,6 +260,6 @@ export function AdvancedContactSelector({
                     />
                 </Suspense>
             )}
-        </>
+        </div>
     )
 }

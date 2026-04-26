@@ -14,7 +14,8 @@ import api from "@/lib/api"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, FormSection } from "@/components/shared"
+import { Settings2 } from "lucide-react"
 import {
     Select,
     SelectContent,
@@ -371,10 +372,7 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                         {/* Accounting details */}
                         <Card className="border-info/10 bg-primary/10/10">
                             <CardContent className="pt-6 space-y-4">
-                                <h3 className="text-sm font-semibold text-info border-b pb-2 flex justify-between items-center">
-                                    Configuración Contable
-                                    <span className="text-[10px] font-normal text-muted-foreground uppercase">Avanzado</span>
-                                </h3>
+                                <FormSection title="Configuración Contable" icon={Settings2} />
                                 <div className="space-y-4">
                                     <FormField
                                         control={form.control}

@@ -194,7 +194,6 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
                     </div>
                     <PeriodValidationDateInput
                         label="Fecha"
-                        id="date"
                         date={formData.date ? new Date(formData.date + 'T12:00:00') : undefined}
                         onDateChange={(d) => {
                             if (!d) {
@@ -394,7 +393,6 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
                     </div>
                     <PeriodValidationDateInput
                         label="Fecha de la Transacción"
-                        id="date"
                         date={formData.date ? new Date(formData.date + 'T12:00:00') : undefined}
                         onDateChange={(d) => {
                             if (!d) {

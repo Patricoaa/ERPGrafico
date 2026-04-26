@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
 import { Form, FormField } from "@/components/ui/form"
 import { CalendarX2 } from "lucide-react"
-import { BaseModal, EmptyState, LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
+import { BaseModal, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter } from "@/components/shared"
 
 export const absenceSchema = z.object({
     employee: z.string().min(1, "Empleado requerido"),
@@ -94,12 +94,16 @@ export function AbsenceFormModal({ open, onOpenChange, absence, employees, onSav
     }
 
     const footer = (
-        <div className="flex justify-end gap-2 w-full">
-            <CancelButton onClick={() => onOpenChange(false)} />
-            <SubmitButton disabled={saving} onClick={form.handleSubmit(onSubmit)} loading={saving}>
-                {absence ? "Actualizar" : "Registrar"}
-            </SubmitButton>
-        </div>
+        <FormFooter
+            actions={
+                <>
+                    <CancelButton onClick={() => onOpenChange(false)} />
+                    <SubmitButton disabled={saving} onClick={form.handleSubmit(onSubmit)} loading={saving}>
+                        {absence ? "Actualizar" : "Registrar"}
+                    </SubmitButton>
+                </>
+            }
+        />
     )
 
     return (
@@ -116,6 +120,7 @@ export function AbsenceFormModal({ open, onOpenChange, absence, employees, onSav
             }
             size="xl"
             hideScrollArea
+            contentClassName="p-0"
             footer={footer}
         >
             <div className="flex-1 flex overflow-hidden h-[75vh]">
@@ -208,21 +213,14 @@ export function AbsenceFormModal({ open, onOpenChange, absence, employees, onSav
                     </Form>
                 </div>
 
-                {/* Right: Activity Sidebar */}
-                <div className="w-72 border-l bg-muted/5 flex flex-col pt-4">
-                    {absence?.id ? (
+                {absence?.id && (
+                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4">
                         <div className="h-full flex flex-col px-4 text-xs text-muted-foreground italic">
                             <p className="mb-2">ID Auditoría: {absence.id}</p>
                             <p>Registro histórico disponible en el panel de auditoría general.</p>
                         </div>
-                    ) : (
-                        <EmptyState
-                            variant="compact"
-                            context="generic"
-                            description="El historial estará disponible una vez registrada la inasistencia."
-                        />
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         </BaseModal>
     )

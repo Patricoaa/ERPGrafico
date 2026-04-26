@@ -4,11 +4,7 @@ import { useEffect, useState, useMemo } from "react"
 import { useWindowWidth } from "@/hooks/useWindowWidth"
 import { useFormWithToast } from "@/hooks/use-form-with-toast"
 import * as z from "zod"
-import {
-    SheetHeader,
-    SheetTitle,
-    SheetDescription
-} from "@/components/ui/sheet"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
     Form,
@@ -19,6 +15,8 @@ import {
 
 } from "@/components/ui/form"
 import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import api from "@/lib/api"
 import { Contact, InsightsData } from "../types"
 import { Order } from "../../orders/types"
@@ -36,13 +34,9 @@ import { Separator } from "@/components/ui/separator"
 import { DataTable } from "@/components/ui/data-table"
 import { OrderHubStatus } from "@/features/orders/components/OrderHubStatus"
 import { ColumnDef } from "@tanstack/react-table"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
-import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { Card, CardContent } from "@/components/ui/card"
 import { getHubStatuses } from '@/features/orders/utils/status'
-import { TableSkeleton, LabeledInput, FormTabs, FormTabsContent, type FormTabItem } from "@/components/shared"
+import { TableSkeleton, LabeledInput, FormTabs, FormTabsContent, type FormTabItem, FormFooter, FormSection } from "@/components/shared"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),
@@ -78,20 +72,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     const { createContact, updateContact } = useContactMutations()
     const { data: insightsData, isLoading: loadingInsights, refetch: refetchInsights } = useContactInsights(c?.id)
     const ins = insightsData as InsightsData | undefined
-    const { isSheetCollapsed } = useGlobalModals()
-    const { closeHub } = useHubPanel()
-
-    const windowWidth = useWindowWidth(150, open)
-
-    const handleOpenChangeProxy = (newOpen: boolean) => {
-        if (newOpen && isSheetCollapsed("CONTACT_DETAIL")) {
-            // Jump behavior: Close Hub if we are opening from a collapsed tab
-            closeHub()
-        }
-        onOpenChange(newOpen)
-    }
-
-    const fullWidth = Math.min(windowWidth * 0.90, 1600) // Match the 90vw logic
 
     const form = useFormWithToast<z.infer<typeof contactSchema>>({
         schema: contactSchema,
@@ -292,63 +272,62 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     ]
 
     return (
-        <CollapsibleSheet
-            sheetId="CONTACT_DETAIL"
+        <BaseModal
             open={open}
-            onOpenChange={handleOpenChangeProxy}
-            tabLabel="FICHA CONTACTO"
-            tabIcon={User}
+            onOpenChange={onOpenChange}
             size="xl"
+            className="h-[90vh]"
+            headerClassName="sr-only"
+            hideScrollArea={true}
             allowOverflow={true}
-            className="max-w-[95vw] w-[95vw]"
+            contentClassName="p-0"
+            footer={
+                <FormFooter 
+                    actions={
+                        <SubmitButton form="contact-form" loading={form.formState.isSubmitting}>
+                            {c ? "Guardar Cambios" : "Crear Contacto"}
+                        </SubmitButton>
+                    }
+                    leftActions={
+                        <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
+                    }
+                />
+            }
         >
-            <SheetCloseButton
-                onClick={() => onOpenChange(false)}
-                className="absolute top-4 right-4 z-[60]"
-            />
             <Form {...form}>
 
-                <form onSubmit={form.handleSubmit(onSubmit)} className="h-full w-full flex flex-col overflow-visible">
+                <form id="contact-form" onSubmit={form.handleSubmit(onSubmit)} className="h-full w-full flex flex-col overflow-visible">
                     <FormTabs
                         items={tabItems}
                         value={activeTab}
                         onValueChange={setActiveTab}
                         orientation="vertical"
                         header={
-                            <div className="p-6 pb-4 flex items-center justify-between w-full">
-                                <div className="flex items-center gap-4">
-                                    <User className="h-6 w-6" />
-                                    <div className="flex flex-col">
-                                        <div className="flex items-center gap-3">
-                                            <h2 className="text-xl font-bold tracking-tight text-foreground">
-                                                Ficha de Contacto
-                                            </h2>
-                                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 bg-primary/5 text-primary tracking-widest leading-none">
-                                                {contact?.display_id ? (contact.display_id as any) : "Nuevo"}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs font-medium text-muted-foreground mt-0.5">
-                                            {form.watch("name") || "Nuevo Contacto"} {form.watch("tax_id") ? `• ${formatRUT(form.watch("tax_id"))}` : ""}
-                                        </p>
-                                    </div>
+                            <div className="flex flex-col p-6 pb-2">
+                                <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-3">
+                                    <User className="h-6 w-6 text-primary" />
+                                    {c ? "Editar Contacto" : "Nuevo Contacto"}
+                                </h1>
+                                <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest mt-1">
+                                    Ficha Maestra <span className="opacity-30">|</span> CRM & Finanzas
                                 </div>
                             </div>
                         }
-                        className="flex-1 overflow-visible"
+                        className="flex-1"
                     >
                         <div className="flex-1 flex overflow-visible min-h-0">
 
                             <div className="flex-1 flex flex-col min-w-0 border-r overflow-y-auto scrollbar-thin">
                                 <FormTabsContent value="profile" className="h-full m-0 p-0 border-0 outline-none">
-                                    <div className="p-8 pb-32">
-                                        <div className="space-y-6">
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="md:col-span-2 flex items-center gap-8 p-4 bg-muted/5 rounded-lg border-none">
+                                        <div className="space-y-8">
+                                            <div className="space-y-4">
+                                                <FormSection title="Estado y Roles" icon={User} />
+                                                <div className="flex items-center gap-8 p-6 bg-muted/5 rounded-xl border border-primary/5">
                                                     <FormField
                                                         control={form.control}
                                                         name="is_default_customer"
                                                         render={({ field }) => (
-                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
                                                                 <FormControl>
                                                                     <Checkbox
                                                                         checked={field.value}
@@ -356,7 +335,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                                     />
                                                                 </FormControl>
                                                                 <div className="space-y-0.5">
-                                                                    <FormLabel className="text-sm font-semibold text-primary/80 cursor-pointer">
+                                                                    <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
                                                                         Cliente por defecto
                                                                     </FormLabel>
                                                                 </div>
@@ -368,7 +347,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                         control={form.control}
                                                         name="is_default_vendor"
                                                         render={({ field }) => (
-                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
                                                                 <FormControl>
                                                                     <Checkbox
                                                                         checked={field.value}
@@ -376,7 +355,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                                     />
                                                                 </FormControl>
                                                                 <div className="space-y-0.5">
-                                                                    <FormLabel className="text-sm font-semibold text-primary/80 cursor-pointer">
+                                                                    <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
                                                                         Proveedor por defecto
                                                                     </FormLabel>
                                                                 </div>
@@ -384,89 +363,80 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                         )}
                                                     />
                                                 </div>
+                                            </div>
 
-                                                <FormField
-                                                    control={form.control}
-                                                    name="name"
-                                                    render={({ field, fieldState }) => (
-                                                        <FormItem>
-                                                            <FormControl>
-                                                                <LabeledInput
-                                                                    label="Nombre / Razón Social"
-                                                                    required
-                                                                    placeholder="Ej: Juan Pérez o Empresa SpA"
-                                                                    error={fieldState.error?.message}
-                                                                    {...field}
-                                                                />
-                                                            </FormControl>
-                                                        </FormItem>
-                                                    )}
-                                                />
-
-                                                <FormField
-                                                    control={form.control}
-                                                    name="tax_id"
-                                                    render={({ field, fieldState }) => (
-                                                        <FormItem>
-                                                            <FormControl>
-                                                                <LabeledInput
-                                                                    label="RUT / Tax ID"
-                                                                    required
-                                                                    placeholder="12.345.678-9"
-                                                                    error={fieldState.error?.message}
-                                                                    {...field}
-                                                                    onChange={(e) => field.onChange(formatRUT(e.target.value))}
-                                                                />
-                                                            </FormControl>
-                                                        </FormItem>
-                                                    )}
-                                                />
-
-                                                <FormField
-                                                    control={form.control}
-                                                    name="email"
-                                                    render={({ field, fieldState }) => (
-                                                        <FormItem>
-                                                            <FormControl>
-                                                                <LabeledInput
-                                                                    label="Email"
-                                                                    type="email"
-                                                                    placeholder="ejemplo@correo.com"
-                                                                    error={fieldState.error?.message}
-                                                                    {...field}
-                                                                />
-                                                            </FormControl>
-                                                        </FormItem>
-                                                    )}
-                                                />
-
-                                                <FormField
-                                                    control={form.control}
-                                                    name="phone"
-                                                    render={({ field, fieldState }) => (
-                                                        <FormItem>
-                                                            <FormControl>
-                                                                <LabeledInput
-                                                                    label="Teléfono"
-                                                                    placeholder="+56 9 ..."
-                                                                    error={fieldState.error?.message}
-                                                                    {...field}
-                                                                />
-                                                            </FormControl>
-                                                        </FormItem>
-                                                    )}
-                                                />
-
-                                                <div className="md:col-span-2">
+                                            <div className="space-y-4">
+                                                <FormSection title="Identidad del Contacto" icon={User} />
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <FormField
                                                         control={form.control}
-                                                        name="address"
+                                                        name="name"
                                                         render={({ field, fieldState }) => (
                                                             <FormItem>
                                                                 <FormControl>
                                                                     <LabeledInput
-                                                                        label="Dirección"
-                                                                        placeholder="Calle, Número, Depto"
+                                                                        label="Nombre / Razón Social"
+                                                                        required
+                                                                        placeholder="Ej: Juan Pérez o Empresa SpA"
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="tax_id"
+                                                        render={({ field, fieldState }) => (
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <LabeledInput
+                                                                        label="RUT / Tax ID"
+                                                                        required
+                                                                        placeholder="12.345.678-9"
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                        onChange={(e) => field.onChange(formatRUT(e.target.value))}
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <FormSection title="Información de Contacto" icon={User} />
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="email"
+                                                        render={({ field, fieldState }) => (
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <LabeledInput
+                                                                        label="Email"
+                                                                        type="email"
+                                                                        placeholder="ejemplo@correo.com"
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="phone"
+                                                        render={({ field, fieldState }) => (
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <LabeledInput
+                                                                        label="Teléfono"
+                                                                        placeholder="+56 9 ..."
                                                                         error={fieldState.error?.message}
                                                                         {...field}
                                                                     />
@@ -475,26 +445,49 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                                         )}
                                                     />
                                                 </div>
+                                            </div>
 
-                                                <FormField
-                                                    control={form.control}
-                                                    name="city"
-                                                    render={({ field, fieldState }) => (
-                                                        <FormItem>
-                                                            <FormControl>
-                                                                <LabeledInput
-                                                                    label="Ciudad / Comuna"
-                                                                    placeholder="Santiago"
-                                                                    error={fieldState.error?.message}
-                                                                    {...field}
-                                                                />
-                                                            </FormControl>
-                                                        </FormItem>
-                                                    )}
-                                                />
+                                            <div className="space-y-4">
+                                                <FormSection title="Ubicación" icon={User} />
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <div className="md:col-span-2">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name="address"
+                                                            render={({ field, fieldState }) => (
+                                                                <FormItem>
+                                                                    <FormControl>
+                                                                        <LabeledInput
+                                                                            label="Dirección"
+                                                                            placeholder="Calle, Número, Depto"
+                                                                            error={fieldState.error?.message}
+                                                                            {...field}
+                                                                        />
+                                                                    </FormControl>
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </div>
+
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="city"
+                                                        render={({ field, fieldState }) => (
+                                                            <FormItem>
+                                                                <FormControl>
+                                                                    <LabeledInput
+                                                                        label="Ciudad / Comuna"
+                                                                        placeholder="Santiago"
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
                                 </FormTabsContent>
 
                                 <FormTabsContent value="sales" className="h-full m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
@@ -540,16 +533,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 </form>
             </Form>
 
-            <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40 bg-background/80 backdrop-blur-md sticky bottom-0 z-50 mt-auto">
-                <CancelButton onClick={() => onOpenChange(false)} />
-                <SubmitButton
-                    loading={form.formState.isSubmitting}
-                    onClick={form.handleSubmit(onSubmit)}
-                >
-                    {contact ? "Guardar Cambios" : "Crear Contacto"}
-                </SubmitButton>
-            </div>
-
             <ActionConfirmModal
                 open={isConfirmModalOpen}
                 onOpenChange={setIsConfirmModalOpen}
@@ -571,7 +554,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                     </div>
                 }
             />
-        </CollapsibleSheet>
+        </BaseModal>
     )
 }
 
@@ -807,19 +790,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                 )}
             </div>
 
-            <div className="pb-4 flex items-center gap-2 pt-2 mb-4">
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                    <Icon className="h-3 w-3" />
-                    {title}
-                    {activeFilter !== 'all' && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border border-warning/30 bg-warning/10 text-warning leading-none scale-90">
-                            FILTRADO
-                        </span>
-                    )}
-                </span>
-                <div className="flex-1 h-px bg-border" />
-            </div>
+            <FormSection title={title} icon={Icon} className="pb-6" />
             <div className="flex-1 overflow-hidden p-0">
                 <DataTable
                     columns={columns}

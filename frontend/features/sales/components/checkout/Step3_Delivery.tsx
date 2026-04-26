@@ -1,5 +1,32 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { LabeledContainer, LabeledInput, PeriodValidationDateInput } from "@/components/shared"
+import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Truck, Package, Calendar, Info, AlertTriangle, ShoppingBag } from "lucide-react"
+import { cn } from "@/lib/utils"
+import api from "@/lib/api"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+
+import { CheckoutDeliveryData, SaleOrderLine } from "../../types"
+
 function UoMSelector({ line, currentUom, onUomChange }: { line: SaleOrderLine, currentUom: string | number | null, onUomChange: (uomId: number) => void }) {
     const [allowedUoms, setAllowedUoms] = useState<{id: number, name: string}[]>([])
 
@@ -32,33 +59,6 @@ function UoMSelector({ line, currentUom, onUomChange }: { line: SaleOrderLine, c
         </Select>
     )
 }
-
-import { LabeledContainer, LabeledInput, PeriodValidationDateInput } from "@/components/shared"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Truck, Package, Calendar, Info, AlertTriangle, ShoppingBag } from "lucide-react"
-import { cn } from "@/lib/utils"
-import api from "@/lib/api"
-import { useState, useEffect } from "react"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-
-import { CheckoutDeliveryData, SaleOrderLine } from "../../types"
 
 interface Step3_DeliveryProps {
     deliveryData: CheckoutDeliveryData
@@ -135,15 +135,6 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-1">
-                <h3 className=" font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
-                    <ShoppingBag className="h-5 w-5 text-primary" />
-                    Opciones de Entrega
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                    Ingrese la información relacionada al despacho.
-                </p>
-                <Label className="text-sm font-semibold"></Label>
 
                 {hasRestrictedItems && (
                     <div className="flex items-start gap-3 p-4 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive-foreground">
@@ -225,8 +216,6 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                         </Label>
                     </div>
                 </RadioGroup>
-            </div>
-
             <div className="space-y-4 animate-in fade-in duration-300">
                 {deliveryData.type === 'PARTIAL' && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
@@ -336,12 +325,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                 )}
 
                 {(deliveryData.type === 'SCHEDULED' || deliveryData.type === 'PARTIAL') && (
-                    <LabeledContainer 
-                        label={deliveryData.type === 'PARTIAL' ? 'Fecha para el Resto' : 'Fecha Estimada'}
-                        icon={<Calendar className="h-4 w-4" />}
-                    >
                         <PeriodValidationDateInput
-                            id="del-date"
                             date={deliveryData.date ? new Date(deliveryData.date + 'T12:00:00') : undefined}
                             onDateChange={(d) => {
                                 if (!d) {
@@ -350,10 +334,9 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                 }
                                 setDeliveryData({ ...deliveryData, date: d.toISOString().split('T')[0] })
                             }}
+                            label={deliveryData.type === 'PARTIAL' ? 'Fecha para el Resto' : 'Fecha Estimada'}
                             validationType="accounting"
-                            className="border-none shadow-none focus-visible:ring-0 bg-transparent h-9"
                         />
-                    </LabeledContainer>
                 )}
 
                 <LabeledContainer label="Notas de Despacho / Observaciones">

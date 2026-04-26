@@ -18,7 +18,7 @@ import {
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { UserSelector } from "@/components/selectors/UserSelector"
 import { GroupSelector } from "@/components/selectors/GroupSelector"
-import { LabeledInput } from "@/components/shared"
+import { LabeledInput, LabeledSwitch, LabeledContainer } from "@/components/shared"
 import { SalesSettingsUpdatePayload } from "@/features/settings/types"
 import { cn } from "@/lib/utils"
 
@@ -84,6 +84,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
                         name={userField}
                         render={({ field }) => (
                             <UserSelector
+                                label="Usuario Autorizado"
                                 value={field.value as number | null}
                                 onChange={field.onChange}
                                 placeholder="Sel. usuario con permiso..."
@@ -96,6 +97,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
                         name={groupField}
                         render={({ field }) => (
                             <GroupSelector
+                                label="Grupo Autorizado"
                                 value={field.value as string}
                                 onChange={field.onChange}
                                 placeholder="Sel. grupo con permiso..."
@@ -306,16 +308,12 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                                         control={form.control}
                                                         name="pos_enable_line_discounts"
                                                         render={({ field }) => (
-                                                            <div className="flex items-center justify-between">
-                                                                <div className="space-y-0.5">
-                                                                    <FormLabel className="text-xs font-bold">Descuentos por Línea</FormLabel>
-                                                                    <p className="text-[10px] text-muted-foreground">Habilitar en el carrito</p>
-                                                                </div>
-                                                                <FormControl>
-                                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </div>
+                                                            <LabeledSwitch
+                                                                label="Descuentos por Línea"
+                                                                description="Habilitar en el carrito"
+                                                                checked={field.value}
+                                                                onCheckedChange={field.onChange}
+                                                            />
                                                         )}
                                                     />
 
@@ -338,16 +336,12 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                                         control={form.control}
                                                         name="pos_enable_total_discounts"
                                                         render={({ field }) => (
-                                                            <div className="flex items-center justify-between">
-                                                                <div className="space-y-0.5">
-                                                                    <FormLabel className="text-xs font-bold">Descuentos Globales</FormLabel>
-                                                                    <p className="text-[10px] text-muted-foreground">Habilitar al total</p>
-                                                                </div>
-                                                                <FormControl>
-                                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </div>
+                                                            <LabeledSwitch
+                                                                label="Descuentos Globales"
+                                                                description="Habilitar al total"
+                                                                checked={field.value}
+                                                                onCheckedChange={field.onChange}
+                                                            />
                                                         )}
                                                     />
 

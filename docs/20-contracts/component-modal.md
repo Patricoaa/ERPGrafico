@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-modal
 status: active
 owner: frontend-team
-last_review: 2026-04-23
+last_review: 2026-04-25
 stability: contract-changes-require-ADR
 ---
 
@@ -16,6 +16,8 @@ BaseModal  (primitiva)
 ├── ActionConfirmModal   — confirmación de acción (destructiva o no)
 ├── GenericWizard        — flujo paso a paso
 └── DocumentCompletionModal — completar factura con folio + adjunto
+
+BaseDrawer (primitiva)   — panel inferior (bottom drawer) para contexto amplio
 ```
 
 > **Regla de selección:** usa siempre la especialización más específica.
@@ -25,6 +27,7 @@ BaseModal  (primitiva)
 > | Confirmar una acción (destructiva o no) | `ActionConfirmModal` |
 > | Flujo paso a paso | `GenericWizard` |
 > | Completar factura con folio + adjunto | `DocumentCompletionModal` (ver `component-contracts.md`) |
+> | Subvista tabular con contexto visual | `BaseDrawer` |
 > | Modal completamente custom | `BaseModal` (directo) |
 
 ---
@@ -91,20 +94,27 @@ States handled: — (sin estado propio; estado lo gestiona el componente padre).
 
 ### Footer estándar
 
-El footer de todos los modales que usan `BaseModal` debe seguir este patrón:
+Todo modal que contenga un formulario **debe** pasar un `FormFooter` en la prop `footer`. Nunca usar `<div>` raw.
 
 ```tsx
 footer={
-  <div className="flex justify-end gap-2">
-    <CancelButton onClick={() => onOpenChange(false)} />
-    <SubmitButton loading={isPending} form="my-form-id">
-      Guardar
-    </SubmitButton>
-  </div>
+  <FormFooter
+    actions={
+      <>
+        <CancelButton onClick={() => onOpenChange(false)} />
+        <SubmitButton loading={isPending} form="my-form-id">
+          Guardar
+        </SubmitButton>
+      </>
+    }
+  />
 }
 ```
 
+Para modales de solo lectura (sin formulario) se acepta un `<Button>Cerrar</Button>` directo.
+
 > Ver [component-button.md](./component-button.md) para la API completa de `CancelButton` y `SubmitButton`.
+> Ver [form-layout-architecture.md §5](./form-layout-architecture.md) para la API completa de `FormFooter`.
 
 ---
 
@@ -186,3 +196,46 @@ interface WizardStep {
 Inherits `BaseModal` props except `children`, `title`, `description`, `footer`.
 
 States handled: loading (isLoading), step blocked (isValid=false or onNext returns false), completing (isCompleting), success (successContent).
+
+---
+
+## BaseDrawer 🟢
+
+Primitiva para subvistas modales que se despliegan desde abajo ("Bottom Drawer"). Se utiliza **exclusivamente** para subvistas ricas en datos (tablas, históricos, libros mayores) que necesitan preservar el contexto visual del componente que los invocó.
+
+```tsx
+<BaseDrawer
+  open={open}
+  onOpenChange={setOpen}
+  title="Libro Auxiliar"
+  subtitle="Socio: Juan Pérez"
+  icon={History}
+  height="default"
+>
+  <DataTable columns={columns} data={data} />
+</BaseDrawer>
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `open` | `boolean` | ✅ | — | |
+| `onOpenChange` | `(open: boolean) => void` | ✅ | — | |
+| `title` | `ReactNode \| string` | ✅ | — | Título principal en la cabecera |
+| `subtitle` | `ReactNode \| string` | ❌ | — | Subtítulo en mayúsculas pequeñas bajo el título |
+| `icon` | `React.ElementType` | ❌ | — | Icono junto al título |
+| `headerActions` | `ReactNode` | ❌ | — | Slot derecho del header (ej. botones de filtro o acciones contextuales) |
+| `children` | `ReactNode` | ✅ | — | Contenido deslizable (generalmente una tabla) |
+| `height` | `'default' \| 'full' \| string` | ❌ | `'default'` | `'default'` = `75vh`, `'full'` = `90vh`, o clase Tailwind custom (ej. `'h-[60vh]'`) |
+| `className` | `string` | ❌ | — | Clases adicionales para el `SheetContent` |
+| `contentClassName` | `string` | ❌ | — | Clases adicionales para el área de contenido scrollable |
+
+### Alturas (`height`)
+
+| Valor | Altura | Cuándo usar |
+|-------|--------|-------------|
+| `'default'` | `75vh` | Tablas y listas normales — valor recomendado por defecto |
+| `'full'` | `90vh` | Contenido muy denso que necesita máximo espacio |
+| string custom | cualquier clase Tailwind | Casos edge; no es el estándar |
+
+> **Altura máxima**: El drawer nunca debe superar `90vh`. No usar valores mayores; `BaseModal` es la alternativa correcta para contenido que necesita pantalla completa.
+

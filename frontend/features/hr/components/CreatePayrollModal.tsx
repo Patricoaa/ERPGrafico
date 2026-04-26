@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
 import { Form, FormField } from "@/components/ui/form"
 import { Plus, FileText } from "lucide-react"
-import { LabeledInput, LabeledSelect } from "@/components/shared"
+import { LabeledInput, LabeledSelect, FormFooter } from "@/components/shared"
 
 const MONTHS = [
     { value: 1, label: "Enero" }, { value: 2, label: "Febrero" },
@@ -99,17 +99,21 @@ export function CreatePayrollModal({ open, onOpenChange, onSaved, trigger }: Cre
                 </div>
             }
             footer={
-                <div className="flex justify-end gap-3 w-full">
-                    <CancelButton onClick={() => onOpenChange(false)} />
-                    <SubmitButton
-                        form="create-payroll-form"
-                        loading={saving}
-                        icon={<FileText className="mr-2 h-3.5 w-3.5" />}
-                        className="rounded-sm text-xs font-bold transition-all shadow-lg shadow-primary/20"
-                    >
-                        Crear Liquidación
-                    </SubmitButton>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <SubmitButton
+                                form="create-payroll-form"
+                                loading={saving}
+                                icon={<FileText className="mr-2 h-3.5 w-3.5" />}
+                                className="rounded-sm text-xs font-bold transition-all shadow-lg shadow-primary/20"
+                            >
+                                Crear Liquidación
+                            </SubmitButton>
+                        </>
+                    }
+                />
             }
         >
             <Form {...form}>

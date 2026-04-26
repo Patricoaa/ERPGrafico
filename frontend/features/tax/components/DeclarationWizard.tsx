@@ -5,7 +5,7 @@ import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { LabeledInput } from "@/components/shared"
+import { LabeledInput, FormSection } from "@/components/shared"
 import {
     Calculator,
     FileText,
@@ -258,12 +258,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                 <div className="space-y-10 max-w-4xl mx-auto pb-6">
                     <div className="grid grid-cols-2 gap-12">
                         <section className="space-y-8">
-                            <div className="flex items-center gap-3">
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80 flex items-center gap-2 px-3">
-                                    <ArrowUpRight className="h-3.5 w-3.5" /> Débito Fiscal
-                                </span>
-                                <div className="flex-1 h-px bg-border/60" />
-                            </div>
+                            <FormSection title="Débito Fiscal" icon={ArrowUpRight} />
                             <div className="space-y-4 bg-muted/5 p-6 rounded-lg border border-border/50">
                                 <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
                                     <span>Ventas Afectas</span>
@@ -282,12 +277,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                             </div>
                         </section>
                         <section className="space-y-8">
-                            <div className="flex items-center gap-3">
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2 px-3">
-                                    <ArrowDownLeft className="h-3.5 w-3.5" /> Crédito Fiscal
-                                </span>
-                                <div className="flex-1 h-px bg-border/60" />
-                            </div>
+                            <FormSection title="Crédito Fiscal" icon={ArrowDownLeft} />
                             <div className="space-y-4 bg-primary/5 p-6 rounded-lg border border-primary/10">
                                 <div className="flex justify-between items-center text-xs uppercase font-bold text-primary/50">
                                     <span>Compras Afectas</span>
@@ -333,11 +323,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             component: (
                 <div className="space-y-10 max-w-4xl mx-auto pb-6">
                     <div className="grid grid-cols-2 gap-x-12 gap-y-8">
-                        <div className="col-span-full flex items-center gap-3">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-warning flex items-center gap-2 px-3">
-                                <HandCoins className="h-3.5 w-3.5" /> Retenciones
-                            </span>
-                            <div className="flex-1 h-px bg-border/40" />
+                        <div className="col-span-full">
+                            <FormSection title="Retenciones" icon={HandCoins} />
                         </div>
                         <div className="space-y-2">
                             <LabeledInput
@@ -371,11 +358,8 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                 onChange={e => setManualFields({ ...manualFields, loan_retention: Number(e.target.value) })}
                             />
                         </div>
-                        <div className="col-span-full flex items-center gap-3 pt-4">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2 px-3">
-                                <History className="h-3.5 w-3.5" /> Ajustes de IVA
-                            </span>
-                            <div className="flex-1 h-px bg-border/40" />
+                        <div className="col-span-full">
+                            <FormSection title="Ajustes de IVA" icon={History} />
                         </div>
                         <div className="space-y-2">
                             <LabeledInput

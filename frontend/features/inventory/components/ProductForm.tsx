@@ -4,14 +4,7 @@ import { ProductCategory, UoM, Warehouse, Product } from "@/types/entities"
 
 import { useState, useEffect } from "react"
 import { useWindowWidth } from "@/hooks/useWindowWidth"
-import {
-
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
-} from "@/components/ui/sheet"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { useForm, FieldErrors, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -20,7 +13,7 @@ import { ShoppingCart, Package, Scale, Truck, Layers, Factory, Loader2 } from "l
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 
-import { FormSkeleton, LabeledSeparator, FormTabs, FormTabsContent, type FormTabItem } from "@/components/shared"
+import { FormSkeleton, FormSection, FormFooter, FormSplitLayout, FormTabs, FormTabsContent, type FormTabItem } from "@/components/shared"
 
 // Import modular components
 import { productSchema, type ProductFormValues } from "./product/schema"
@@ -40,10 +33,11 @@ import { PricingRuleForm } from "@/features/sales/components/PricingRuleForm"
 import { CategoryForm } from "./CategoryForm"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
-import { CancelButton } from "@/components/shared"
+import { CancelButton, SubmitButton } from "@/components/shared"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface ProductFormProps {
-    auditSidebar?: React.ReactNode
+    sidebar?: React.ReactNode
     open: boolean
     onOpenChange: (open: boolean) => void
     initialData?: any // Bridging discrepancies between local/global Product and ProductInitialData
@@ -52,7 +46,7 @@ interface ProductFormProps {
     variantMode?: boolean
 }
 
-export function ProductForm({ auditSidebar, open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false }: ProductFormProps) {
+export function ProductForm({ sidebar, open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false }: ProductFormProps) {
     const [loading, setLoading] = useState(false)
     const [categories, setCategories] = useState<ProductCategory[]>([])
     const [uoms, setUoms] = useState<UoM[]>([])
@@ -70,29 +64,6 @@ export function ProductForm({ auditSidebar, open, onOpenChange, initialData, onS
     const [isFetchingInitialData, setIsFetchingInitialData] = useState(false)
 
     const [activeTab, setActiveTab] = useState("general")
-
-    const { isSheetCollapsed } = useGlobalModals()
-
-
-    const windowWidth = useWindowWidth(150, open)
-
-    const handleOpenChangeProxy = (newOpen: boolean) => {
-        if (!newOpen && Object.keys(form.formState.dirtyFields).length > 0) {
-            setConfirmCloseOpen(true)
-            return
-        }
-        if (newOpen && isSheetCollapsed("PRODUCT_DETAIL")) {
-            // Jump behavior: Hub was closed here previously
-        }
-        onOpenChange(newOpen)
-    }
-
-    const handleConfirmClose = () => {
-        setConfirmCloseOpen(false)
-        onOpenChange(false)
-    }
-
-    const fullWidth = Math.min(windowWidth * 0.95, 1800) // Match the 95vw logic
 
     const form: UseFormReturn<ProductFormValues> = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema) as any,
@@ -680,47 +651,28 @@ export function ProductForm({ auditSidebar, open, onOpenChange, initialData, onS
     ]
 
     const headerSlot = (
-        <div className="relative p-6 pb-4">
-            <div className="flex items-center justify-between w-full pr-12 text-left">
-                <div className="flex items-center gap-4">
-                    <Package className="h-6 w-6" />
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-3">
-                            <SheetTitle className="text-xl font-bold tracking-tight text-foreground">
-                                Ficha de Producto
-                            </SheetTitle>
-                            <span className="bg-muted/10 text-muted-foreground border border-muted-foreground/20 px-2 py-0.5 text-[9px] font-bold rounded-sm uppercase tracking-wider h-5 flex items-center">
-                                {initialData?.internal_code || "Nuevo"}
-                            </span>
-                        </div>
-                        <SheetDescription className="text-xs font-medium text-muted-foreground mt-0.5">
-                            {initialData?.name || form.watch("name") || 'Nuevo Producto'} • {variantMode ? "Edición de Variante" : "Configuración Maestra"}
-                        </SheetDescription>
-                    </div>
-                </div>
+        <div className="flex flex-col p-6 pb-2">
+            <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-3">
+                <Package className="h-6 w-6 text-primary" />
+                {initialData ? 'Editar Producto' : 'Nuevo Producto'}
+            </h1>
+            <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest mt-1">
+                Ficha Maestra <span className="opacity-30">|</span> Gestión de Inventario
             </div>
-            <SheetCloseButton
-                onClick={() => onOpenChange(false)}
-                className="absolute top-4 right-4"
-            />
         </div>
     )
 
     const footerSlot = (
-        <div className="flex justify-end gap-3 w-full px-6 py-4">
-            <CancelButton
-                onClick={() => onOpenChange(false)}
-                className="rounded-md text-xs font-bold border-primary/20 hover:bg-primary/5"
-            />
-            <ActionSlideButton
-                form="product-form"
-                type="submit"
-                loading={loading}
-                className="rounded-md text-xs font-bold"
-            >
-                {initialData ? 'Guardar Cambios' : 'Crear Producto'}
-            </ActionSlideButton>
-        </div>
+        <FormFooter 
+            actions={
+                <SubmitButton form="product-form" loading={form.formState.isSubmitting}>
+                    {initialData ? "Guardar Cambios" : "Crear Producto"}
+                </SubmitButton>
+            }
+            leftActions={
+                <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
+            }
+        />
     )
 
     const formContent = (
@@ -730,112 +682,106 @@ export function ProductForm({ auditSidebar, open, onOpenChange, initialData, onS
             onValueChange={setActiveTab}
             orientation="vertical"
             header={headerSlot}
-            footer={footerSlot}
         >
-            <div className="flex-1 flex overflow-visible min-w-0">
-                <div className="flex-1 overflow-y-auto scrollbar-thin">
-                    {isFetchingInitialData ? (
-                        <div className="p-6">
-                            <FormSkeleton hasTabs tabs={6} cards={2} fields={5} />
-                        </div>
-                    ) : (
-                        <Form {...form}>
-                            <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-4 pt-6 px-4 mx-auto pb-32">
-                                <fieldset disabled={loading} className="group min-w-0 transition-opacity group-disabled:opacity-75">
-                                    <FormTabsContent value="general" className="mt-0 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                                            <div className="md:col-span-3 space-y-8">
-                                                <div className="space-y-4">
-                                                    <LabeledSeparator label="Imagen" />
-                                                    <ProductImageUpload
-                                                        form={form}
-                                                        imagePreview={imagePreview}
-                                                        setImagePreview={setImagePreview}
-                                                    />
-                                                </div>
-
-                                                <div className="space-y-4">
-                                                    <LabeledSeparator label="Tipo de producto" />
-                                                    <ProductTypeSelector form={form} disabled={!!initialData} lockedType={lockedType} />
-                                                </div>
+            {isFetchingInitialData ? (
+                <div className="p-6 flex-1">
+                    <FormSkeleton hasTabs tabs={6} cards={2} fields={5} />
+                </div>
+            ) : (
+                <Form {...form}>
+                    <FormSplitLayout
+                        sidebar={sidebar}
+                        showSidebar={!!initialData?.id}
+                        className="px-0 pt-0 pb-0" // FormTabs already handles some padding
+                    >
+                        <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-8 pt-6 px-6 mx-auto pb-12">
+                            <fieldset disabled={loading} className="group min-w-0 transition-opacity group-disabled:opacity-75">
+                                <FormTabsContent value="general" className="mt-0 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+                                        <div className="md:col-span-3 space-y-8">
+                                            <div className="space-y-6">
+                                                <FormSection title="Imagen" icon={Package} />
+                                                <ProductImageUpload
+                                                    form={form}
+                                                    imagePreview={imagePreview}
+                                                    setImagePreview={setImagePreview}
+                                                />
                                             </div>
 
-                                            <div className="md:col-span-9 space-y-4">
-                                                <ProductBasicInfo
-                                                    form={form}
-                                                    categories={categories}
-                                                    isEditing={!!initialData}
-                                                    onAddCategory={() => setIsCategoryFormOpen(true)}
-                                                />
-
-                                                <ProductPricingSection
-                                                    form={form}
-                                                    initialData={initialData}
-                                                    canBeSold={form.watch("can_be_sold")}
-                                                    uoms={uoms}
-                                                />
+                                            <div className="space-y-6">
+                                                <FormSection title="Tipo de producto" icon={Layers} />
+                                                <ProductTypeSelector form={form} disabled={!!initialData} lockedType={lockedType} />
                                             </div>
                                         </div>
+
+                                        <div className="md:col-span-9 space-y-4">
+                                            <ProductBasicInfo
+                                                form={form}
+                                                categories={categories}
+                                                isEditing={!!initialData}
+                                                onAddCategory={() => setIsCategoryFormOpen(true)}
+                                            />
+
+                                            <ProductPricingSection
+                                                form={form}
+                                                initialData={initialData}
+                                                canBeSold={form.watch("can_be_sold")}
+                                                uoms={uoms}
+                                            />
+                                        </div>
+                                    </div>
+                                </FormTabsContent>
+
+                                {(form.watch("product_type") === 'MANUFACTURABLE' || form.watch("has_bom")) && (
+                                    <ProductManufacturingTab
+                                        form={form}
+                                        initialData={initialData}
+                                        products={products}
+                                        uoms={uoms}
+                                        variantMode={variantMode}
+                                    />
+                                )}
+
+                                {form.watch("has_variants") && !variantMode && (
+                                    <ProductVariantsTab
+                                        key={variantsRefreshKey}
+                                        form={form}
+                                        initialData={initialData}
+                                        onTabChange={(tab: string) => setActiveTab(tab)}
+                                    />
+                                )}
+
+                                {['STORABLE', 'MANUFACTURABLE'].includes(form.watch("product_type")) && (
+                                    <ProductInventoryTab
+                                        form={form}
+                                        initialData={initialData}
+                                        warehouses={warehouses}
+                                        uoms={uoms}
+                                    />
+                                )}
+
+                                {form.watch("product_type") === 'SUBSCRIPTION' && (
+                                    <FormTabsContent value="commercial" className="mt-0 animate-in fade-in duration-300">
+                                        <ProductSubscriptionTab form={form} isEditing={!!initialData} />
                                     </FormTabsContent>
+                                )}
 
-                                    {(form.watch("product_type") === 'MANUFACTURABLE' || form.watch("has_bom")) && (
-                                        <ProductManufacturingTab
-                                            form={form}
-                                            initialData={initialData}
-                                            products={products}
-                                            uoms={uoms}
-                                            variantMode={variantMode}
-                                        />
-                                    )}
-
-                                    {form.watch("has_variants") && !variantMode && (
-                                        <ProductVariantsTab
-                                            key={variantsRefreshKey}
-                                            form={form}
-                                            initialData={initialData}
-                                            onTabChange={(tab: string) => setActiveTab(tab)}
-                                        />
-                                    )}
-
-                                    {['STORABLE', 'MANUFACTURABLE'].includes(form.watch("product_type")) && (
-                                        <ProductInventoryTab
-                                            form={form}
-                                            initialData={initialData}
-                                            warehouses={warehouses}
-                                            uoms={uoms}
-                                        />
-                                    )}
-
-                                    {form.watch("product_type") === 'SUBSCRIPTION' && (
-                                        <FormTabsContent value="commercial" className="mt-0 animate-in fade-in duration-300">
-                                            <ProductSubscriptionTab form={form} isEditing={!!initialData} />
-                                        </FormTabsContent>
-                                    )}
-
-                                    {form.watch("can_be_sold") && form.watch("product_type") !== 'SUBSCRIPTION' && (
-                                        <ProductPricingTab
-                                            initialData={initialData}
-                                            pricingRules={pricingRules}
-                                            fetchPricingRules={fetchPricingRules}
-                                            onOpenRuleDialog={(rule) => {
-                                                setSelectedPricingRule(rule || null)
-                                                setPricingRuleDialogOpen(true)
-                                            }}
-                                        />
-                                    )}
-                                </fieldset>
-                            </form>
-                        </Form>
-                    )}
-                </div>
-
-                {/* Activity Sidebar */}
-                {initialData?.id && (
-                    <div className="w-72 border-l bg-muted/5 h-full flex flex-col overflow-hidden hidden lg:flex">
-                        {auditSidebar}
-                    </div>
-                )}
-            </div>
+                                {form.watch("can_be_sold") && form.watch("product_type") !== 'SUBSCRIPTION' && (
+                                    <ProductPricingTab
+                                        initialData={initialData}
+                                        pricingRules={pricingRules}
+                                        fetchPricingRules={fetchPricingRules}
+                                        onOpenRuleDialog={(rule) => {
+                                            setSelectedPricingRule(rule || null)
+                                            setPricingRuleDialogOpen(true)
+                                        }}
+                                    />
+                                )}
+                            </fieldset>
+                        </form>
+                    </FormSplitLayout>
+                </Form>
+            )}
 
             {/* Nested Modals */}
             <PricingRuleForm
@@ -862,26 +808,39 @@ export function ProductForm({ auditSidebar, open, onOpenChange, initialData, onS
     )
 
     return (
-        <CollapsibleSheet
-            sheetId="PRODUCT_DETAIL"
+        <BaseModal
+            title={initialData ? "Editar Producto" : "Nuevo Producto"}
             open={open}
-            onOpenChange={handleOpenChangeProxy}
-            tabLabel="FICHA PRODUCTO"
-            tabIcon={Package}
-            size="xl"
+            onOpenChange={(newOpen) => {
+                if (!newOpen && Object.keys(form.formState.dirtyFields).length > 0) {
+                    setConfirmCloseOpen(true)
+                    return
+                }
+                onOpenChange(newOpen)
+            }}
+            size="2xl"
+            className="h-[90vh]"
+            headerClassName="sr-only"
+            hideScrollArea={true}
             allowOverflow={true}
-            className="max-w-[95vw] w-[95vw]"
+            contentClassName="p-0"
+            footer={footerSlot}
         >
-            <SheetHeader className="sr-only">
-                <SheetTitle>Ficha de Producto</SheetTitle>
-                <SheetDescription>
-                    {initialData?.name || form.watch("name") || 'Nuevo Producto'}
-                </SheetDescription>
-            </SheetHeader>
-
-            <div className="flex-1 overflow-visible flex flex-col">
-                {formContent}
-            </div>
-        </CollapsibleSheet>
+            {formContent}
+            
+            {/* ActionConfirmModal for closing with unsaved changes */}
+            <ActionConfirmModal
+                open={confirmCloseOpen}
+                onOpenChange={setConfirmCloseOpen}
+                title="Descartar cambios"
+                description="Hay cambios sin guardar. ¿Está seguro que desea cerrar y perder los cambios?"
+                variant="destructive"
+                confirmText="Descartar y Cerrar"
+                onConfirm={() => {
+                    setConfirmCloseOpen(false)
+                    onOpenChange(false)
+                }}
+            />
+        </BaseModal>
     )
 }

@@ -283,7 +283,7 @@ export function WorkOrderBasicInfo({
                     name="start_date"
                     render={({ field }) => (
                         <PeriodValidationDateInput
-                            date={field.value}
+                            date={field.value || undefined}
                             onDateChange={field.onChange}
                             label="Fecha Inicio"
                             validationType="tax"
@@ -296,7 +296,7 @@ export function WorkOrderBasicInfo({
                     name="due_date"
                     render={({ field }) => (
                         <PeriodValidationDateInput
-                            date={field.value}
+                            date={field.value || undefined}
                             onDateChange={field.onChange}
                             label="Fecha Entrega"
                             validationType="tax"

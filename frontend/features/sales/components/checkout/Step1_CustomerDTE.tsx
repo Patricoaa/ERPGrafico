@@ -22,7 +22,7 @@ import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationD
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { LabeledContainer } from "@/components/shared"
+import { LabeledContainer, FormSection } from "@/components/shared"
 
 import { CheckoutDTEData, PendingDebt } from "../../types"
 
@@ -169,15 +169,7 @@ export function Step1_CustomerDTE({
 
             {/* ── DTE Document Section ────────────────────────── */}
             <div className="space-y-4">
-                <div className="flex flex-col gap-1">
-                    <h3 className="font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-primary" />
-                        Documento Tributario
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                        Seleccione el tipo de documento y adjunte el respaldo si corresponde.
-                    </p>
-                </div>
+                <FormSection title="Documento Tributario" icon={FileText} />
 
                 {isDefaultCustomer && (
                     <Alert className="bg-warning/5 border-warning/20 text-warning-foreground py-3">

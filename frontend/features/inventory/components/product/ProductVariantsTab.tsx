@@ -15,12 +15,12 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { cn } from "@/lib/utils"
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
-import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
+import { BaseModal } from "@/components/shared/BaseModal"
 import { getErrorMessage } from "@/lib/errors"
 import { Product, ProductAttributeValue } from "@/types/entities"
 import { Badge } from "@/components/ui/badge"
 import { ProductInitialData } from "@/types/forms"
-import { FormTabsContent } from "@/components/shared"
+import { FormTabsContent, FormSection } from "@/components/shared"
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditForm } from "./BulkVariantEditForm"
@@ -227,105 +227,118 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
     }
 
     return (
-        <FormTabsContent value="variants" className="mt-0 space-y-6 flex flex-col h-[600px]">
+        <FormTabsContent value="variants" className="mt-0 space-y-8 flex flex-col h-[650px] animate-in fade-in duration-500">
             
             {/* Header / Actions */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-bold flex items-center gap-2 text-primary">
-                        <Layers className="h-5 w-5" />
-                        Variantes Configuradas ({variants.length})
-                    </h3>
-                    {selectedVariantIds.length > 0 && (
-                        <span className="text-xs font-bold bg-primary/10 text-primary px-2 py-1 rounded-full">
-                            {selectedVariantIds.length} seleccionadas
-                        </span>
-                    )}
+            <div className="flex items-center justify-between bg-muted/10 p-4 rounded-2xl border border-dashed border-primary/20">
+                <div className="flex items-center gap-4">
+                    <div className="p-2.5 bg-primary/10 rounded-xl border border-primary/20">
+                        <Layers className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-black uppercase tracking-widest text-primary">
+                            Matriz de Variantes ({variants.length})
+                        </h3>
+                        {selectedVariantIds.length > 0 ? (
+                            <span className="text-[10px] font-black bg-primary text-primary-foreground px-2 py-0.5 rounded-full animate-pulse">
+                                {selectedVariantIds.length} SELECCIONADAS
+                            </span>
+                        ) : (
+                            <p className="text-[10px] text-muted-foreground font-bold italic">Gestione combinaciones de atributos y stock individual.</p>
+                        )}
+                    </div>
                 </div>
-
+ 
                 <div className="flex items-center gap-2">
                     <Button 
-                        variant="outline" 
+                        variant="ghost" 
                         size="sm" 
                         onClick={fetchVariants}
-                        className="text-xs rounded-md border-primary/20 hover:bg-primary/5 font-bold"
+                        className="h-9 px-4 text-[10px] font-black uppercase tracking-tighter hover:bg-primary/5 text-muted-foreground"
                     >
-                        <RefreshCw className="h-3.5 w-3.5 mr-2" /> Actualizar
+                        <RefreshCw className="h-3.5 w-3.5 mr-2 opacity-60" /> Sincronizar
                     </Button>
                     
                     <Button 
                         size="sm" 
-                        className="text-xs font-bold rounded-md"
+                        className="h-9 px-5 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]"
                         disabled={availableAttributes.length === 0}
                         onClick={() => setIsSheetOpen(true)}
                     >
-                        <Wand2 className="h-4 w-4 mr-2" />
-                        {isPendingGeneration ? "Modificar Gen." : "Generador"}
+                        <Wand2 className="h-3.5 w-3.5 mr-2" />
+                        {isPendingGeneration ? "Editar Gen." : "Generador"}
                     </Button>
-
-                    <CollapsibleSheet 
-                        sheetId="PRODUCT_VARIANT_GENERATOR"
+ 
+                    <BaseModal 
                         open={isSheetOpen} 
                         onOpenChange={setIsSheetOpen}
                         size="md"
-                        tabLabel="GENERADOR"
-                        tabIcon={Wand2}
+                        title={
+                            <div className="flex items-center gap-4 text-2xl font-black uppercase tracking-tighter">
+                                <div className="p-3 bg-primary/10 rounded-2xl border-2 border-primary/20">
+                                    <Wand2 className="h-8 w-8 text-primary" />
+                                </div>
+                                Generar Combinaciones
+                            </div>
+                        }
                     >
-                        <div className="flex flex-col h-full p-6 sm:p-8">
-                            <SheetHeader className="mb-6 shrink-0">
-                                <SheetTitle className="flex items-center gap-3 text-xl font-bold">
-                                    <Wand2 className="h-6 w-6 text-muted-foreground" />
-                                    GENERAR COMBINACIONES
-                                </SheetTitle>
-                            </SheetHeader>
-                            
-                            <SheetCloseButton 
-                                onClick={() => setIsSheetOpen(false)}
-                                className="absolute top-4 right-4 z-[60]"
-                            />
-                            
+                        <div className="flex flex-col h-full p-2">
                             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                                <div className="flex-1 overflow-y-auto pr-3 space-y-6 scrollbar-thin">
+                                <div className="flex-1 overflow-y-auto pr-4 space-y-10 scrollbar-thin">
                                     {availableAttributes.map(attr => (
-                                        <div key={attr.id} className="space-y-4 p-5 border rounded-md bg-card shadow-sm">
-                                            <Label className="font-bold text-sm text-foreground/80 tracking-wide uppercase">{attr.name}</Label>
+                                        <div key={attr.id} className="space-y-6">
+                                            <FormSection title={attr.name} icon={Layers} />
                                             <div className="grid grid-cols-2 gap-3">
-                                                {attr.values.map(val => (
-                                                    <div key={val.id} className="flex items-center space-x-3 p-3 rounded-md border bg-background hover:bg-muted/30 hover:border-primary/50 transition-all">
-                                                        <Checkbox
-                                                            id={`val-${val.id}`}
-                                                            checked={selectedValues[attr.id]?.includes(val.id) || false}
-                                                            onCheckedChange={() => toggleValue(attr.id, val.id)}
-                                                            className="h-5 w-5 rounded data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-muted-foreground/30"
-                                                        />
-                                                        <label htmlFor={`val-${val.id}`} className="text-sm cursor-pointer select-none truncate flex-1 font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                                            {val.value}
-                                                        </label>
-                                                    </div>
-                                                ))}
+                                                {attr.values.map(val => {
+                                                    const isSelected = selectedValues[attr.id]?.includes(val.id) || false;
+                                                    return (
+                                                        <div 
+                                                            key={val.id} 
+                                                            className={cn(
+                                                                "flex items-center space-x-3 p-3.5 rounded-xl border transition-all cursor-pointer group",
+                                                                isSelected 
+                                                                    ? "bg-primary/5 border-primary/40 shadow-sm" 
+                                                                    : "bg-background hover:border-primary/30 grayscale hover:grayscale-0 opacity-60 hover:opacity-100"
+                                                            )}
+                                                            onClick={() => toggleValue(attr.id, val.id)}
+                                                        >
+                                                            <Checkbox
+                                                                id={`val-${val.id}`}
+                                                                checked={isSelected}
+                                                                onCheckedChange={() => toggleValue(attr.id, val.id)}
+                                                                className="h-5 w-5 rounded-lg border-primary/20"
+                                                            />
+                                                            <label htmlFor={`val-${val.id}`} className="text-[11px] font-black uppercase tracking-tight cursor-pointer truncate">
+                                                                {val.value}
+                                                            </label>
+                                                        </div>
+                                                    )
+                                                })}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-
-                                <div className="shrink-0 mt-8 pt-6 border-t">
+ 
+                                <div className="shrink-0 mt-10 pt-8 border-t border-dashed">
                                     <Button
-                                        className="w-full h-14 rounded-md font-bold text-md shadow-md bg-primary hover:bg-primary/90 text-primary-foreground transition-colors"
+                                        className="w-full h-16 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground transition-all hover:scale-[1.01] active:scale-[0.98]"
                                         onClick={handleGenerateVariants}
                                         disabled={isGenerating || availableAttributes.length === 0}
                                     >
-                                        {isGenerating ? "Generando Combinaciones..." : !initialData?.id ? "Confirmar Configuración" : "Crear Variantes"}
+                                        {isGenerating ? "Procesando..." : !initialData?.id ? "Fijar Configuración" : "Generar Matriz"}
                                     </Button>
-
+ 
                                     {!initialData?.id && (
-                                        <p className="text-[11px] text-primary text-center font-medium italic mt-3">
-                                            Las variantes se crearán automáticamente al guardar el producto base.
-                                        </p>
+                                        <div className="mt-4 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+                                            <p className="text-[9px] text-amber-600 text-center font-black uppercase tracking-tighter italic">
+                                                * Las variantes se crearán automáticamente al confirmar la ficha principal.
+                                            </p>
+                                        </div>
                                     )}
                                 </div>
                             </div>
                         </div>
-                    </CollapsibleSheet>
+                    </BaseModal>
                 </div>
             </div>
 
@@ -422,12 +435,12 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                             </TableCell>
                                             <TableCell className="text-center">
                                                  {v.has_active_bom ? (
-                                                      <span className="text-[10px] text-success font-bold bg-success/10 px-1.5 py-0.5 rounded border border-success/20">✓ BOM</span>
+                                                      <span className="text-[9px] text-emerald-600 font-black bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20 uppercase tracking-tighter">BOM ACTIVA</span>
                                                  ) : (
                                                       v.mfg_auto_finalize ? (
-                                                          <span className="text-[10px] text-destructive font-bold bg-destructive/10 px-1.5 py-0.5 rounded border border-destructive/20">FALTA</span>
+                                                          <span className="text-[9px] text-destructive font-black bg-destructive/10 px-2 py-1 rounded-full border border-destructive/20 uppercase tracking-tighter animate-pulse">SIN RECETA</span>
                                                       ) : (
-                                                          <span className="text-[10px] text-muted-foreground">-</span>
+                                                          <span className="text-[9px] text-muted-foreground/40 font-bold">-</span>
                                                       )
                                                  )}
                                             </TableCell>

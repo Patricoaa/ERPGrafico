@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronsUpDown, Loader2, Search, Banknote, CreditCard, Wallet, Landmark } from "lucide-react"
+import { Check, ChevronDown, Loader2, Search, Banknote, CreditCard, Wallet, Landmark } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -110,25 +110,21 @@ export function TreasuryAccountSelector({
                     variant="ghost"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full justify-between overflow-hidden h-auto py-2 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                    className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                     disabled={disabled}
                 >
                     {selectedAccount ? (
-                        <div className="flex items-center gap-2 truncate w-[calc(100%-20px)]">
-                            <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
-                                {getIcon(selectedAccount.account_type)}
-                            </div>
-                            <div className="flex flex-col items-start truncate overflow-hidden w-full">
-                                <span className="font-medium text-sm leading-tight truncate w-full">{selectedAccount.name}</span>
-                                <span className="text-[10px] text-muted-foreground leading-tight truncate w-full">
-                                    {selectedAccount.account_type} • {formatCurrency(selectedAccount.current_balance || 0)}
-                                </span>
-                            </div>
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <span className="text-primary shrink-0">{getIcon(selectedAccount.account_type)}</span>
+                            <span className="font-medium text-sm truncate">{selectedAccount.name}</span>
+                            <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
+                                • {formatCurrency(selectedAccount.current_balance || 0)}
+                            </span>
                         </div>
                     ) : (
                         <span className="text-muted-foreground truncate">{placeholder}</span>
                     )}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">

@@ -33,7 +33,7 @@ import { accountingApi } from "@/features/accounting/api/accountingApi"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useServerDate } from "@/hooks/useServerDate"
-import { LabeledInput, LabeledContainer, CancelButton, SubmitButton, IconButton, PeriodValidationDateInput, ActionSlideButton } from "@/components/shared";
+import { LabeledInput, LabeledContainer, CancelButton, SubmitButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter } from "@/components/shared";
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -272,12 +272,16 @@ export function JournalEntryForm({
                     </div>
                 }
                 footer={
-                    <div className="flex justify-end space-x-2 w-full">
-                        <CancelButton onClick={() => setOpen(false)} />
-                        <ActionSlideButton type="submit" form="journal-entry-form" disabled={loading}>
-                            {loading ? "Guardando..." : (initialData ? "Actualizar Asiento" : "Crear Asiento")}
-                        </ActionSlideButton>
-                    </div>
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setOpen(false)} />
+                                <ActionSlideButton type="submit" form="journal-entry-form" loading={loading}>
+                                    {initialData ? "Actualizar Asiento" : "Crear Asiento"}
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
                 }
             >
                 <div className="flex-1 flex overflow-hidden min-h-[400px]">

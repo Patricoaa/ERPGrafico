@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useServerDate } from "@/hooks/useServerDate"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { BaseDrawer } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Book, Calendar, ArrowUpRight, ArrowDownRight, Scale, Calculator, Eye, Trash2 } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
@@ -174,27 +174,13 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                     <Book className="h-4 w-4 text-primary" />
                 </Button>
             )}
-            <BaseModal
+            <BaseDrawer
                 open={open}
                 onOpenChange={setOpen}
-                size="2xl"
-                title={
-                    <>
-                        <Book className="h-6 w-6 text-primary" />
-                        Libro Mayor
-                    </>
-                }
-                description={
-                    <span className="text-sm text-muted-foreground font-mono">
-                        {accountCode} | <span className="text-foreground font-sans font-semibold">{accountName}</span>
-                    </span>
-                }
-                footer={
-                    <div className="w-full flex justify-between items-center text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
-                        <span>Libro Mayor • {accountName}</span>
-                        <span>{data?.movements?.length || 0} Registros</span>
-                    </div>
-                }
+                title="Libro Mayor"
+                subtitle={`${accountCode} | ${accountName}`}
+                icon={Book}
+                height="full"
                 headerActions={
                     <DateRangeFilter
                         onDateChange={(range) => {
@@ -206,7 +192,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                     />
                 }
             >
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-6 pt-4">
 
                     {loading ? (
                         <CardSkeleton count={4} variant="grid" />
@@ -277,8 +263,13 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                         searchPlaceholder="Filtrar movimientos..."
                         defaultPageSize={100}
                     />
+
+                    <div className="flex justify-between items-center text-[10px] text-muted-foreground uppercase tracking-widest font-semibold px-2 py-4 border-t border-dashed mt-4">
+                        <span>Libro Mayor • {accountName}</span>
+                        <span>{data?.movements?.length || 0} Registros</span>
+                    </div>
                 </div>
-            </BaseModal>
+            </BaseDrawer>
 
             {viewingEntry && (
                 <TransactionViewModal

@@ -10,12 +10,11 @@ import {
     Form,
     FormField,
 } from "@/components/ui/form"
-import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { WalletCards } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { LabeledInput, LabeledSelect } from "@/components/shared"
+import { LabeledInput, LabeledSelect, FormFooter, CancelButton } from "@/components/shared"
 
 const journalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -115,18 +114,16 @@ export function BankJournalForm({ auditSidebar,  onSuccess, initialData, open: o
                 </div>
             }
             footer={
-                <div className="flex justify-end space-x-2 w-full">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setOpen(false)}
-                    >
-                        Cancelar
-                    </Button>
-                    <ActionSlideButton type="submit" form="bank-journal-form" disabled={loading}>
-                        {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Caja/Banco"}
-                    </ActionSlideButton>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => setOpen(false)} />
+                            <ActionSlideButton type="submit" form="bank-journal-form" loading={loading}>
+                                {initialData ? "Guardar Cambios" : "Crear Caja/Banco"}
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
             }
         >
             <div className="flex-1 flex overflow-hidden min-h-[400px]">

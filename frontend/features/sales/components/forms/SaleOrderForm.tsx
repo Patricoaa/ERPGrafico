@@ -8,8 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
-import { FORM_STYLES } from "@/lib/styles"
-import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput } from "@/components/shared"
+import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput, FormSection, LabeledContainer, FormFooter, SubmitButton, CancelButton } from "@/components/shared"
 import {
     Form,
     FormField
@@ -65,18 +64,24 @@ const OrderTotals = ({ control }: { control: Control<SaleOrderFormValues> }) => 
     )
 
     return (
-        <div className="space-y-1 text-right pt-4 border-t flex flex-col items-end">
-            <div className="text-sm text-muted-foreground flex gap-1">
-                <span>Subtotal:</span>
-                <MoneyDisplay amount={totals.net} inline />
-            </div>
-            <div className="text-sm text-muted-foreground flex gap-1">
-                <span>IVA (19%):</span>
-                <MoneyDisplay amount={totals.tax} inline />
-            </div>
-            <div className="text-lg font-bold flex gap-1">
-                <span>Total:</span>
-                <MoneyDisplay amount={totals.gross} inline />
+        <div className="space-y-4 pt-6 border-t border-dashed flex flex-col items-end">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-2 w-full max-w-[300px]">
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground self-center">Neto Subtotal</span>
+                <div className="text-right font-mono font-bold text-sm">
+                    <MoneyDisplay amount={totals.net} />
+                </div>
+                
+                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground self-center">IVA Trasladado (19%)</span>
+                <div className="text-right font-mono font-bold text-sm">
+                    <MoneyDisplay amount={totals.tax} />
+                </div>
+
+                <div className="col-span-2 my-2 h-px bg-primary/10" />
+
+                <span className="text-[11px] font-black uppercase tracking-widest text-primary self-center">Total Documento</span>
+                <div className="text-right font-mono font-black text-2xl text-primary">
+                    <MoneyDisplay amount={totals.gross} />
+                </div>
             </div>
         </div>
     )
@@ -317,46 +322,47 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                 title={initialData ? "Editar Nota de Venta" : "Cerrar Venta"}
                 description={initialData ? "Modifique los datos de la nota de venta." : "Ingrese los productos la venta e ir al checkout."}
                 footer={
-                    <>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setOpen(false)}
-                        >
-                            Cancelar
-                        </Button>
-                        <ActionSlideButton type="submit" form="sale-order-form" disabled={loading}>
-                            {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Confirmar Venta"}
-                        </ActionSlideButton>
-                    </>
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setOpen(false)} />
+                                <SubmitButton type="submit" form="sale-order-form" loading={loading}>
+                                    {initialData ? "Guardar Cambios" : "Confirmar Venta"}
+                                </SubmitButton>
+                            </>
+                        }
+                    />
                 }
             >
                 <Form {...form}>
-                    <form id="sale-order-form" onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6 pt-4">
+                    <form id="sale-order-form" onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-10 py-6">
+                        <div className="space-y-6">
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <h3 className={FORM_STYLES.sectionHeader}>Líneas de Venta</h3>
+                            <FormSection title="Líneas de Venta" icon={Plus} />
+                            
+                            <div className="flex justify-end">
                                 <Button
                                     type="button"
                                     variant="outline"
                                     size="sm"
                                     onClick={() => append({ product: "", description: "", quantity: 1, uom: "", unit_price: 0, unit_price_gross: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null })}
+                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-primary/30 hover:bg-primary/5 shadow-sm"
                                 >
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Agregar Línea
+                                    <Plus className="mr-2 h-3.5 w-3.5" />
+                                    Nueva Línea
                                 </Button>
                             </div>
 
                             <div className="rounded-lg border border-dashed">
                                 <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead className="w-[25%]">Producto</TableHead>
-                                            <TableHead className="w-[10%]">Cantidad</TableHead>
-                                            <TableHead className="w-[10%]">Unidad</TableHead>
-                                            <TableHead className="w-[15%]">P. Unit.</TableHead>
-                                            <TableHead className="w-[15%]">Total</TableHead>
-                                            <TableHead className="w-[5%]"></TableHead>
+                                    <TableHeader className="bg-muted/30 border-b-2">
+                                        <TableRow className="hover:bg-transparent">
+                                            <TableHead className="w-[30%] text-[10px] font-black uppercase tracking-widest">Producto / Servicio</TableHead>
+                                            <TableHead className="w-[12%] text-[10px] font-black uppercase tracking-widest text-center">Cant.</TableHead>
+                                            <TableHead className="w-[12%] text-[10px] font-black uppercase tracking-widest">Unidad</TableHead>
+                                            <TableHead className="w-[20%] text-[10px] font-black uppercase tracking-widest text-right">P. Unitario Bruto</TableHead>
+                                            <TableHead className="w-[20%] text-[10px] font-black uppercase tracking-widest text-right">Total Línea</TableHead>
+                                            <TableHead className="w-[6%]"></TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -412,36 +418,33 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                     if (!prod) return null
 
                                                                     return (
-                                                                        <div className="space-y-2 mt-1">
-                                                                            <div className="flex gap-1 flex-wrap">
-                                                                                {prod.product_type === 'STORABLE' && (
-                                                                                    <>
-                                                                                        <span className={cn("text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border leading-none",
-                                                                                            (prod.current_stock || 0) > 0 ? "border-success/30 text-success bg-success/5" : "border-destructive/10 text-destructive/40 bg-muted/30"
-                                                                                        )}>
-                                                                                            Stock: {prod.current_stock || 0}
-                                                                                        </span>
-                                                                                        <span className={cn("text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border leading-none",
-                                                                                            (prod.qty_available || 0) > 0 ? "border-success/30 text-success bg-success/5" : "border-warning/30 text-warning bg-warning/5"
-                                                                                        )}>
-                                                                                            Disp: {prod.qty_available || 0}
-                                                                                        </span>
-                                                                                    </>
-                                                                                )}
-
-                                                                                {prod.product_type === 'MANUFACTURABLE' && prod.has_bom && (
-                                                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-info/30 text-info bg-info/5 leading-none">
-                                                                                        Fab: {prod.manufacturable_quantity ?? 'N/A'}
+                                                                        <div className="flex gap-1.5 flex-wrap mt-2">
+                                                                            {prod.product_type === 'STORABLE' && (
+                                                                                <>
+                                                                                    <span className={cn("text-[8px] font-black uppercase px-2 py-0.5 rounded-full border leading-none tracking-tighter",
+                                                                                        (prod.current_stock || 0) > 0 ? "border-success/30 text-success bg-success/5" : "border-destructive/10 text-destructive/40 bg-muted/30"
+                                                                                    )}>
+                                                                                        Stock: {prod.current_stock || 0}
                                                                                     </span>
-                                                                                )}
-
-                                                                                {(prod.product_type === 'MANUFACTURABLE' || prod.product_type === 'MANUFACTURABLE_CUSTOM') && prod.active && (
-                                                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-success/30 text-success bg-success/5 leading-none">
-                                                                                        Disponible
+                                                                                    <span className={cn("text-[8px] font-black uppercase px-2 py-0.5 rounded-full border leading-none tracking-tighter",
+                                                                                        (prod.qty_available || 0) > 0 ? "border-success/30 text-success bg-success/5" : "border-warning/30 text-warning bg-warning/5"
+                                                                                    )}>
+                                                                                        Disp: {prod.qty_available || 0}
                                                                                     </span>
-                                                                                )}
-                                                                            </div>
+                                                                                </>
+                                                                            )}
 
+                                                                            {prod.product_type === 'MANUFACTURABLE' && prod.has_bom && (
+                                                                                <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-info/30 text-info bg-info/5 leading-none tracking-tighter">
+                                                                                    Fab: {prod.manufacturable_quantity ?? 'N/A'}
+                                                                                </span>
+                                                                            )}
+
+                                                                            {(prod.product_type === 'MANUFACTURABLE' || prod.product_type === 'MANUFACTURABLE_CUSTOM') && prod.active && (
+                                                                                <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-success/30 text-success bg-success/5 leading-none tracking-tighter">
+                                                                                    Activo
+                                                                                </span>
+                                                                            )}
                                                                         </div>
                                                                     )
                                                                 })()}
@@ -460,24 +463,21 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                     step="0.01"
                                                                     {...(field as any)}
                                                                     className={cn(
-                                                                        "h-8",
+                                                                        "h-10 text-center font-mono font-black border-2",
                                                                         (() => {
                                                                             const productId = form.getValues(`lines.${index}.product`)
                                                                             const product = products.find(p => p.id.toString() === productId)
-                                                                            if (!product) return ""
+                                                                            if (!product) return "bg-muted/10 opacity-50"
                                                                             let maxQty = Infinity
                                                                             if (product.product_type === 'STORABLE') maxQty = product.qty_available || 0
                                                                             if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity || 0
 
-                                                                            // Highlight if at max
                                                                             const currentVal = parseFloat((field as any).value?.toString()) || 0
-                                                                            return currentVal >= maxQty && maxQty > 0 ? "border-warning text-warning bg-warning/10" : ""
+                                                                            return currentVal >= maxQty && maxQty > 0 ? "border-warning/50 text-warning bg-warning/5" : "border-primary/5 focus:border-primary/30"
                                                                         })()
                                                                     )}
                                                                     onChange={async (e) => {
                                                                         let val = parseFloat(e.target.value) || 0
-
-                                                                        // Strict MAX enforcement
                                                                         const productId = form.getValues(`lines.${index}.product`)
                                                                         const product = products.find(p => p.id.toString() === productId)
 
@@ -491,10 +491,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                                 toast.info(`Stock máximo alcanzado: ${maxQty}`)
                                                                             }
                                                                         }
-
                                                                         field.onChange(val)
-
-                                                                        // Re-evaluate price
                                                                         if (product) {
                                                                             const uomId = parseInt(form.getValues(`lines.${index}.uom`))
                                                                             const { net, gross } = await fetchEffectivePrice(product, val, isNaN(uomId) ? undefined : uomId)
@@ -514,9 +511,9 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
 
                                                                     if (maxQty !== null && maxQty !== Infinity) {
                                                                         return (
-                                                                            <div className="flex justify-end">
-                                                                                <span className="text-[9px] font-mono font-bold text-muted-foreground uppercase opacity-60">
-                                                                                    MAX: {maxQty}
+                                                                            <div className="flex justify-center mt-1">
+                                                                                <span className="text-[8px] font-black text-muted-foreground/40 uppercase tracking-tighter">
+                                                                                    Límite: {maxQty}
                                                                                 </span>
                                                                             </div>
                                                                         )
@@ -572,11 +569,11 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                             const netPrice = form.watch(`lines.${index}.unit_price`) || 0
 
                                                             return (
-                                                                <div className="flex flex-col items-end gap-1 pt-2 pr-3">
+                                                                <div className="flex flex-col items-end gap-1.5 pt-1 pr-1">
                                                                     {isDynamic ? (
                                                                         <LabeledInput
                                                                             type="number"
-                                                                            className="h-8 w-24 text-right pr-2"
+                                                                            className="h-10 w-full text-right font-mono font-black border-primary/10 bg-primary/5"
                                                                             value={grossPrice || ""}
                                                                             placeholder="0"
                                                                             onChange={(e) => {
@@ -586,10 +583,12 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                                                                             }}
                                                                         />
                                                                     ) : (
-                                                                        <MoneyDisplay amount={grossPrice} className="font-bold" />
+                                                                        <div className="font-mono font-bold text-sm text-foreground/80">
+                                                                            <MoneyDisplay amount={grossPrice} />
+                                                                        </div>
                                                                     )}
-                                                                    <div className="text-[9px] text-muted-foreground leading-none flex items-center gap-1">
-                                                                        Neto: <MoneyDisplay amount={netPrice} inline />
+                                                                    <div className="text-[9px] font-black text-muted-foreground/30 leading-none flex items-center gap-1 uppercase tracking-tighter">
+                                                                        Net: <MoneyDisplay amount={netPrice} inline />
                                                                     </div>
                                                                 </div>
                                                             )
@@ -606,8 +605,10 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
 
                                                         return (
                                                             <div className="flex flex-col items-end gap-1">
-                                                                <MoneyDisplay amount={lineTotal} />
-                                                                <div className="text-[9px] text-muted-foreground font-normal leading-none opacity-80 flex gap-1">
+                                                                <div className="font-mono font-black text-sm text-primary">
+                                                                    <MoneyDisplay amount={lineTotal} />
+                                                                </div>
+                                                                <div className="text-[9px] font-black text-muted-foreground/40 leading-none flex gap-1 uppercase tracking-tighter">
                                                                     Neto: <MoneyDisplay amount={lineNetTotal} inline />
                                                                 </div>
                                                             </div>
@@ -635,10 +636,14 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                             </div>
                         </div>
 
-                        <div className="flex justify-end pt-4">
-                            <div className="w-full md:w-1/2">
-                                <OrderTotals control={form.control as any} />
+                        <div className="space-y-4 pt-4 border-t border-dashed">
+                            <FormSection title="Resumen de Valores" icon={Plus} />
+                            <div className="flex justify-end">
+                                <div className="w-full md:w-1/2">
+                                    <OrderTotals control={form.control as any} />
+                                </div>
                             </div>
+                        </div>
                         </div>
                     </form>
                 </Form>

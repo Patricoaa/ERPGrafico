@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Loader2, Unlock,
-    Users, AlertTriangle, Search, ChevronsUpDown, Check
+    Users, AlertTriangle, Search, ChevronDown, Check
 } from "lucide-react"
 import { MovementWizard, type MovementData } from "@/features/treasury/components/MovementWizard"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -644,7 +644,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                                         ].find(opt => opt.value === openingJustifyReason)?.label
                                                     ) || "Seleccione motivo..."
                                                     : "Seleccione motivo..."}
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">

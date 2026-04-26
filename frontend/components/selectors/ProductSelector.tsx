@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronsUpDown, Search, Loader2, AlertCircle, Package } from "lucide-react"
+import { Check, ChevronDown, Search, Loader2, AlertCircle, Package } from "lucide-react"
 import { cn, translateProductType } from "@/lib/utils"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge"
 import { useProductSearch } from "@/features/inventory/hooks/useProductSearch"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Product } from "@/types/entities"
-import { CardSkeleton, LabeledContainer } from "@/components/shared"
+import { CardSkeleton } from "@/components/shared"
 
 interface ProductSelectorProps {
     value?: string | number | null
@@ -215,8 +215,8 @@ export function ProductSelector({
                     aria-expanded={open}
                     disabled={disabled}
                     className={cn(
-                        "w-full justify-between overflow-hidden !h-[1.5rem] !p-0 px-2 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent min-w-0",
-                        variant === 'inline' && "h-8 text-xs"
+                        "w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent min-w-0",
+                        variant === 'inline' && "h-8 text-xs px-2"
                     )}
                 >
                     {selectedProduct ? (
@@ -230,7 +230,7 @@ export function ProductSelector({
                     ) : (
                         <span className={cn("text-muted-foreground truncate", variant === 'inline' && "text-xs")}>{placeholder}</span>
                     )}
-                    <ChevronsUpDown className={cn("ml-2 h-4 w-4 shrink-0 opacity-50", variant === 'inline' && "h-3 w-3")} />
+                    <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 opacity-50", variant === 'inline' && "h-3 w-3")} />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
@@ -362,15 +362,28 @@ export function ProductSelector({
     return (
         <>
             {variant === 'standalone' ? (
-                <LabeledContainer
-                    label={label}
-                    error={error}
-                    disabled={disabled}
-                    className={className}
-                    containerClassName={cn("group focused-within:ring-primary", className)}
-                >
-                    {selectButton}
-                </LabeledContainer>
+                <div className={cn("relative w-full group", className)}>
+                    <fieldset 
+                        className={cn(
+                            "notched-field w-full group transition-all",
+                            open && "focused",
+                            error && "error",
+                            disabled && "opacity-50 cursor-not-allowed bg-muted/10"
+                        )}
+                    >
+                        {label && (
+                            <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
+                                {label}
+                            </legend>
+                        )}
+                        {selectButton}
+                    </fieldset>
+                    {error && (
+                        <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
+                            {error}
+                        </p>
+                    )}
+                </div>
             ) : (
                 <div className={cn("w-full", className)}>
                     {selectButton}

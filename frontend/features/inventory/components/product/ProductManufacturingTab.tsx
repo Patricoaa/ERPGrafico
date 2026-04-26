@@ -1,7 +1,7 @@
 "use client"
 
 import { UoM, Product } from "@/types/entities"
-import { LabeledInput, LabeledContainer } from "@/components/shared"
+import { LabeledInput, LabeledContainer, FormSection, FormTabsContent } from "@/components/shared"
 import { FormField } from "@/components/ui/form"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Switch } from "@/components/ui/switch"
@@ -12,7 +12,6 @@ import { UseFormReturn, useFieldArray } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { ProductInitialData } from "@/types/forms"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { FormTabsContent } from "@/components/shared"
 import { cn } from "@/lib/utils"
 
 import { useState } from "react"
@@ -42,10 +41,8 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
                 {!variantMode && (
                     <div className="md:col-span-4 space-y-6">
-                        <div className="relative p-5 pt-8 rounded-lg border-2 bg-card shadow-sm border-primary/10">
-                            <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Ajustes de Producción</span>
-                            </div>
+                        <div className="space-y-6">
+                            <FormSection title="Ajustes de Producción" icon={Settings2} />
 
                             <div className="space-y-6">
                                 <FormField<ProductFormValues>
@@ -196,38 +193,38 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                         </div>
                                     </div>
                                 )}
-                            </div>
                         </div>
                     </div>
+                </div>
                 )}
 
-                <div className={cn(variantMode ? "md:col-span-12" : "md:col-span-8", "space-y-6")}>
+                <div className={cn(variantMode ? "col-span-4" : "col-span-3", "space-y-6")}>
                     {(hasBom || variantMode) && (
-                        <div className="relative p-5 pt-8 rounded-lg border-2 bg-muted/5 shadow-sm border-primary/10 animate-in fade-in slide-in-from-right-4 duration-500">
-                            <div className="absolute -top-3 left-4 px-3 bg-background border-2 border-primary/10 rounded-full">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Gestión de Recetas (BOM)</span>
-                            </div>
+                        <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-600">
+                            <FormSection title="Gestión de Recetas (BOM)" icon={Layers} />
 
                             {isEditing ? (
-                                <div className={cn("rounded-md overflow-hidden bg-card border-2 shadow-sm", variantMode && "p-0 border-none bg-transparent shadow-none")}>
-                                    <BOMManager
-                                        product={initialData as any}
-                                        variantMode={variantMode}
-                                        onBomsChange={(loadedBoms) => {
-                                            if (!loadedBoms) return;
-                                            const mapped = loadedBoms.map(b => ({
-                                                id: b.id,
-                                                name: b.name || "Lista de Materiales",
-                                                active: b.active || false,
-                                                lines: b.lines?.length > 0 ? b.lines.map((l: any) => ({
-                                                    id: l.id,
-                                                    component: l.product_id?.toString() || l.component?.toString() || "1",
-                                                    quantity: parseFloat(l.quantity) || 1
-                                                })) : [{ component: "dummy", quantity: 1 }]
-                                            }));
-                                            form.setValue("boms", mapped, { shouldValidate: true });
-                                        }}
-                                    />
+                                <div className={cn("rounded-2xl overflow-hidden bg-muted/20 border shadow-inner p-1", variantMode && "p-0 border-none bg-transparent shadow-none")}>
+                                    <div className="bg-card rounded-xl border overflow-hidden">
+                                        <BOMManager
+                                            product={initialData as any}
+                                            variantMode={variantMode}
+                                            onBomsChange={(loadedBoms) => {
+                                                if (!loadedBoms) return;
+                                                const mapped = loadedBoms.map(b => ({
+                                                    id: b.id,
+                                                    name: b.name || "Lista de Materiales",
+                                                    active: b.active || false,
+                                                    lines: b.lines?.length > 0 ? b.lines.map((l: any) => ({
+                                                        id: l.id,
+                                                        component: l.product_id?.toString() || l.component?.toString() || "1",
+                                                        quantity: parseFloat(l.quantity) || 1
+                                                    })) : [{ component: "dummy", quantity: 1 }]
+                                                }));
+                                                form.setValue("boms", mapped, { shouldValidate: true });
+                                            }}
+                                        />
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
@@ -245,14 +242,23 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                         />
                                     ))}
                                     {bomFields.length === 0 && (
-                                        <div className="py-16 border-4 border-dashed rounded-xl flex flex-col items-center justify-center text-center px-10 bg-background group hover:border-primary/20 transition-all">
-                                            <div className="p-4 rounded-full bg-primary/5 mb-4 group-hover:scale-110 transition-transform">
-                                                <Layers className="h-10 w-10 text-primary/40" />
+                                        <div className="py-20 border-4 border-dashed rounded-3xl flex flex-col items-center justify-center text-center px-10 bg-muted/5 group hover:border-primary/20 transition-all duration-500">
+                                            <div className="p-6 rounded-2xl bg-background border shadow-sm mb-4 group-hover:scale-105 transition-transform duration-500">
+                                                <Layers className="h-10 w-10 text-primary opacity-40" />
                                             </div>
-                                            <h4 className="font-black uppercase tracking-widest text-muted-foreground/80">Sin recetas definidas</h4>
-                                            <p className="text-[10px] text-muted-foreground/60 max-w-xs mt-2 font-medium leading-relaxed italic">
-                                                Defina los materiales y componentes necesarios para iniciar la producción de este artículo.
+                                            <h4 className="font-black uppercase tracking-widest text-muted-foreground/80">Receta no Definida</h4>
+                                            <p className="text-[10px] text-muted-foreground/50 max-w-xs mt-2 font-medium leading-relaxed italic">
+                                                Establezca los materiales y proporciones para automatizar el cálculo de costos y descontar stock.
                                             </p>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                className="mt-6 font-black uppercase text-[10px] h-8 rounded-lg"
+                                                onClick={() => appendBom({ name: "Nueva Receta", active: true, lines: [] })}
+                                            >
+                                                <Plus className="h-3.5 w-3.5 mr-2" /> Crear Primera BOM
+                                            </Button>
                                         </div>
                                     )}
                                 </div>
