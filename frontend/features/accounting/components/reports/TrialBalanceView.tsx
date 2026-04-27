@@ -48,7 +48,7 @@ export function TrialBalanceView() {
                         }
                         setStartDate(d.toISOString().split('T')[0])
                     }}
-                    containerClassName="w-full md:w-auto"
+                    className="w-full md:w-auto"
                     icon={<Calendar className="w-3.5 h-3.5" />}
                     validationType="accounting"
                 />
@@ -62,7 +62,7 @@ export function TrialBalanceView() {
                         }
                         setEndDate(d.toISOString().split('T')[0])
                     }}
-                    containerClassName="w-full md:w-auto"
+                    className="w-full md:w-auto"
                     icon={<Calendar className="w-3.5 h-3.5" />}
                     validationType="accounting"
                 />

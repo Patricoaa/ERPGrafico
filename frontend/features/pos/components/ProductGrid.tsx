@@ -112,7 +112,7 @@ function ProductGridComponent({
                                     className="h-10 w-10 text-muted-foreground/30 group-hover:scale-110 transition-transform"
                                 />
                             )}
-                            
+
                             {/* Favorite Toggle */}
                             <button
                                 className={cn(
@@ -125,11 +125,11 @@ function ProductGridComponent({
                                 }}
                                 title={product.is_favorite ? "Quitar de favoritos" : "Marcar como favorito"}
                             >
-                                <Heart 
+                                <Heart
                                     className={cn(
-                                        "h-4 w-4 transition-colors", 
+                                        "h-4 w-4 transition-colors",
                                         product.is_favorite ? "fill-current" : ""
-                                    )} 
+                                    )}
                                 />
                             </button>
 

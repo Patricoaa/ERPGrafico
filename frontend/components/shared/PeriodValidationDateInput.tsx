@@ -19,6 +19,7 @@ interface PeriodValidationDateInputProps {
     required?: boolean
     validationType?: 'tax' | 'accounting' | 'both'
     error?: string
+    icon?: React.ReactNode
 }
 
 export function PeriodValidationDateInput({
@@ -30,7 +31,8 @@ export function PeriodValidationDateInput({
     disabled = false,
     required = true,
     validationType = 'tax',
-    error
+    error,
+    icon
 }: PeriodValidationDateInputProps) {
     const { validatePeriod, isValidating, isClosed, message, clearPeriodValidation } = usePeriodValidation()
 
@@ -58,6 +60,7 @@ export function PeriodValidationDateInput({
             required={required}
             disabled={disabled}
             className={className}
+            icon={icon}
             error={error || (isClosed ? (message || "El periodo contable/tributario está cerrado.") : undefined)}
             suffix={
                 isValidating && (

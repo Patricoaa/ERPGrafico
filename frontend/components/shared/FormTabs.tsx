@@ -31,6 +31,7 @@ export interface FormTabsProps {
     /** Optional footer slot — renders inside card at bottom, below content */
     footer?: React.ReactNode
     children: React.ReactNode
+    contentClassName?: string
 }
 
 export function FormTabs({
@@ -45,6 +46,7 @@ export function FormTabs({
     header,
     footer,
     children,
+    contentClassName
 }: FormTabsProps) {
     const visible = items.filter((i) => !i.hidden)
     const effectiveListClassName = listClassName || tabsListClassName
@@ -160,8 +162,8 @@ export function FormTabs({
                 onValueChange={onValueChange}
                 orientation="vertical"
                 className={cn(
-                    "flex-1 grid overflow-visible min-h-0",
-                    "grid-cols-[0px_minmax(0,1fr)]",
+                    "flex-1 grid overflow-visible min-h-0 h-full",
+                    "grid-cols-[2.5rem_minmax(0,1fr)]",
                     className
                 )}
             >
@@ -169,8 +171,8 @@ export function FormTabs({
 
                 <div
                     className={cn(
-                        "col-start-2 flex flex-col overflow-hidden min-h-0 min-w-0",
-                        "bg-card rounded-t-2xl"
+                        "col-start-2 flex flex-col overflow-hidden min-h-0 min-w-0 h-full",
+                        contentClassName || "bg-card rounded-t-2xl"
                     )}
                 >
                     {header && (
@@ -202,7 +204,7 @@ export function FormTabs({
                 {renderTabsList()}
             </div>
 
-            <div className={cn("flex-1 overflow-hidden bg-card")}>
+            <div className={cn("flex-1 overflow-hidden", contentClassName || "bg-card")}>
                 {children}
             </div>
         </Tabs>

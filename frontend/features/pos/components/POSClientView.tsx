@@ -15,6 +15,7 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuCheckboxItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
@@ -63,6 +64,7 @@ import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { SalesOrdersModal } from '@/features/pos/components/SalesOrdersModal'
 import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
 import { Label } from '@/components/ui/label'
+import { useTouchMode } from '@/hooks/useTouchMode'
 
 // Lazy-loaded components
 const POSVariantSelectorModal = dynamic(
@@ -103,6 +105,8 @@ export function POSClientView() {
         posMode,
         setPosMode,
     } = usePOS()
+
+    const { isTouchMode, toggleTouchMode } = useTouchMode()
 
 
     const { user } = useAuth()
@@ -473,6 +477,10 @@ export function POSClientView() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuCheckboxItem checked={isTouchMode} onCheckedChange={toggleTouchMode}>
+                                Modo Táctil (Numpad)
+                            </DropdownMenuCheckboxItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => setDraftsListOpen(true)}><Save className="mr-2 h-4 w-4" />Ver Borradores</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => sessionControlRef.current?.showXReport()}><BarChart3 className="mr-2 h-4 w-4" />Reporte Parcial</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setOrdersModalOpen(true)}><FileText className="mr-2 h-4 w-4" />Notas de Venta</DropdownMenuItem>

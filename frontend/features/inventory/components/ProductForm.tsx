@@ -1,15 +1,14 @@
 "use client"
 
-import { ProductCategory, UoM, Warehouse, Product } from "@/types/entities"
+import { UoM, Warehouse, Product } from "@/types/entities"
 
-import { useState, useEffect } from "react"
-import { useWindowWidth } from "@/hooks/useWindowWidth"
+import { useState, useEffect, useMemo } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { useForm, FieldErrors, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import api, { resolveMediaUrl } from "@/lib/api"
-import { ShoppingCart, Package, Scale, Truck, Layers, Factory, Loader2 } from "lucide-react"
+import { ShoppingCart, Package, Scale, Truck, Layers, Factory, Loader2, History, DollarSign, Fingerprint } from "lucide-react"
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 
@@ -17,7 +16,6 @@ import { FormSkeleton, FormSection, FormFooter, FormSplitLayout, FormTabs, FormT
 
 // Import modular components
 import { productSchema, type ProductFormValues } from "./product/schema"
-import { ProductTypeSelector } from "./product/ProductTypeSelector"
 import { ProductImageUpload } from "./product/ProductImageUpload"
 import { ProductBasicInfo } from "./product/ProductBasicInfo"
 import { ProductPricingSection } from "./product/ProductPricingSection"
@@ -26,13 +24,11 @@ import { ProductManufacturingTab } from "./product/ProductManufacturingTab"
 import { ProductPricingTab } from "./product/ProductPricingTab"
 import { ProductSubscriptionTab } from "./product/ProductSubscriptionTab"
 import { ProductVariantsTab } from "./product/ProductVariantsTab"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 // Removed Badge import for governance compliance
 
 // Import dialogs
 import { PricingRuleForm } from "@/features/sales/components/PricingRuleForm"
-import { CategoryForm } from "./CategoryForm"
-import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
 import { CancelButton, SubmitButton } from "@/components/shared"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
@@ -48,11 +44,9 @@ interface ProductFormProps {
 
 export function ProductForm({ sidebar, open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false }: ProductFormProps) {
     const [loading, setLoading] = useState(false)
-    const [categories, setCategories] = useState<ProductCategory[]>([])
     const [uoms, setUoms] = useState<UoM[]>([])
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [imagePreview, setImagePreview] = useState<string | null>(null)
-    const [isCategoryFormOpen, setIsCategoryFormOpen] = useState(false)
     const [products, setProducts] = useState<Product[]>([])
     const [pricingRules, setPricingRules] = useState<any[]>([])
     const [selectedPricingRule, setSelectedPricingRule] = useState<any | null>(null)
@@ -97,7 +91,6 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             mfg_press_digital: false,
             mfg_postpress_finishing: false,
             mfg_postpress_binding: false,
-            mfg_default_delivery_days: 3,
             mfg_auto_finalize: false,
             boms: [],
             product_custom_fields: [],
@@ -152,48 +145,46 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
         return tabErrors
     }
 
-    const tabErrors = getTabsWithErrors()
+    // Memoize tab errors to prevent redundant re-renders of the entire form
+    const tabErrors = useMemo(() => getTabsWithErrors(), [form.formState.errors])
 
     const productType = form.watch("product_type")
-
-    // Logic for inventory tracking defaults and locking
-    useEffect(() => {
-        if (productType === "STORABLE") {
-            if (!form.getValues("track_inventory")) form.setValue("track_inventory", true)
-        } else if (productType === "CONSUMABLE") {
-            if (form.getValues("track_inventory")) form.setValue("track_inventory", false)
-            if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false)
-        } else if (productType === "SERVICE") {
-            if (form.getValues("track_inventory")) form.setValue("track_inventory", false)
-        } else if (productType === "SUBSCRIPTION") {
-            if (form.getValues("track_inventory")) form.setValue("track_inventory", false)
-            if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false)
-        }
-
-        // Reset dynamic pricing if not manufacturable
-        const isManufacturable = productType === 'MANUFACTURABLE' || form.getValues("requires_advanced_manufacturing");
-        if (!isManufacturable && form.getValues("is_dynamic_pricing")) {
-            form.setValue("is_dynamic_pricing", false);
-        }
-
-        // Manufacturable products cannot be purchased (business rule)
-        if (productType === "MANUFACTURABLE") {
-            if (form.getValues("can_be_purchased")) {
-                form.setValue("can_be_purchased", false);
-            }
-        }
-    }, [productType, form])
-
-    // Validate activeTab when relevant product settings change
+    const watchedAdvancedMfg = form.watch("requires_advanced_manufacturing")
     const hasBom = form.watch("has_bom")
     const canBeSold = form.watch("can_be_sold")
     const hasVariants = form.watch("has_variants")
 
+    // Consolidated Business Rules and Tab Validity
     useEffect(() => {
+        const opts = { shouldDirty: false, shouldValidate: false, shouldTouch: false }
+        const isManufacturable = productType === 'MANUFACTURABLE' || watchedAdvancedMfg;
+
+        // 1. Business Rules
+        if (productType === "STORABLE" && !isManufacturable) {
+            if (!form.getValues("track_inventory")) form.setValue("track_inventory", true, opts)
+        } else if (productType === "CONSUMABLE") {
+            if (form.getValues("track_inventory")) form.setValue("track_inventory", false, opts)
+            if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false, opts)
+        } else if (productType === "SERVICE") {
+            if (form.getValues("track_inventory")) form.setValue("track_inventory", false, opts)
+        } else if (productType === "SUBSCRIPTION") {
+            if (form.getValues("track_inventory")) form.setValue("track_inventory", false, opts)
+            if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false, opts)
+        }
+
+        if (!isManufacturable && form.getValues("is_dynamic_pricing")) {
+            form.setValue("is_dynamic_pricing", false, opts);
+        }
+
+        if (isManufacturable && form.getValues("can_be_purchased")) {
+            form.setValue("can_be_purchased", false, opts);
+        }
+
+        // 2. Tab Validity Check
         const isTabValid = (tab: string): boolean => {
             switch (tab) {
                 case "general": return true
-                case "manufacturing": return productType === 'MANUFACTURABLE' || hasBom
+                case "manufacturing": return productType === 'MANUFACTURABLE' || hasBom || watchedAdvancedMfg
                 case "logistics": return ['STORABLE', 'MANUFACTURABLE'].includes(productType)
                 case "commercial": return productType === 'SUBSCRIPTION'
                 case "pricing": return canBeSold && productType !== 'SUBSCRIPTION'
@@ -202,10 +193,10 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             }
         }
 
-        if (!isTabValid(activeTab)) {
+        if (!isTabValid(activeTab) && activeTab !== "general") {
             setActiveTab("general")
         }
-    }, [productType, hasBom, canBeSold, hasVariants, activeTab, variantMode])
+    }, [productType, watchedAdvancedMfg, hasBom, canBeSold, hasVariants, activeTab, variantMode])
 
     // Synchronize allowed_sale_uoms with base UoM and filter incompatible units
     const stockUomId = form.watch("uom")
@@ -238,23 +229,16 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
         if (!currentSaleUom || !filteredAllowed.includes(currentSaleUom.toString())) {
             form.setValue("sale_uom", stockUomId.toString())
         }
-    }, [stockUomId, uoms, form])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [stockUomId, uoms])
 
-    const fetchCategories = async () => {
-        try {
-            const res = await api.get('/inventory/categories/')
-            setCategories(res.data.results || res.data)
-        } catch (error) {
-            console.error("Error fetching categories", error)
-        }
-    }
 
     const fetchUoMs = async () => {
         try {
-            const res = await api.get('/inventory/uoms/')
+            const res = await api.get("/inventory/uoms/")
             setUoms(res.data.results || res.data)
         } catch (error) {
-            console.error("Error fetching UoMs", error)
+            console.error("Error fetching UoMs:", error)
         }
     }
 
@@ -293,7 +277,6 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             setIsFetchingInitialData(true)
 
             const initOperations = [
-                fetchCategories(),
                 fetchUoMs(),
                 fetchProducts(),
                 fetchWarehouses()
@@ -345,7 +328,6 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                     mfg_press_digital: initialData.mfg_press_digital ?? false,
                     mfg_postpress_finishing: initialData.mfg_postpress_finishing ?? false,
                     mfg_postpress_binding: initialData.mfg_postpress_binding ?? false,
-                    mfg_default_delivery_days: initialData.mfg_default_delivery_days ?? 3,
                     mfg_auto_finalize: initialData.mfg_auto_finalize ?? false,
                     has_variants: initialData.has_variants ?? false,
                     parent_template: initialData.parent_template?.toString() || null,
@@ -414,7 +396,6 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                     mfg_press_digital: false,
                     mfg_postpress_finishing: false,
                     mfg_postpress_binding: false,
-                    mfg_default_delivery_days: 3,
                     mfg_auto_finalize: false,
                     boms: [],
                     product_custom_fields: [],
@@ -518,7 +499,6 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             formData.append('mfg_press_digital', data.mfg_press_digital ? 'true' : 'false')
             formData.append('mfg_postpress_finishing', data.mfg_postpress_finishing ? 'true' : 'false')
             formData.append('mfg_postpress_binding', data.mfg_postpress_binding ? 'true' : 'false')
-            formData.append('mfg_default_delivery_days', data.mfg_default_delivery_days.toString())
             formData.append('mfg_auto_finalize', data.mfg_auto_finalize ? 'true' : 'false')
             formData.append('has_variants', data.has_variants ? 'true' : 'false')
             if (data.parent_template) formData.append('parent_template', data.parent_template)
@@ -650,27 +630,28 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
         },
     ]
 
-    const headerSlot = (
-        <div className="flex flex-col p-6 pb-2">
-            <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-3">
-                <Package className="h-6 w-6 text-primary" />
-                {initialData ? 'Editar Producto' : 'Nuevo Producto'}
-            </h1>
-            <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest mt-1">
-                Ficha Maestra <span className="opacity-30">|</span> Gestión de Inventario
-            </div>
+    const modalTitle = (
+        <div className="flex items-center gap-3">
+            <Package className="h-6 w-6 text-primary" />
+            <span>{initialData ? 'Editar Producto' : 'Nuevo Producto'}</span>
         </div>
     )
 
+    const modalDescription = (
+        <span className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-widest mt-1">
+            Ficha Maestra <span className="opacity-30">|</span> Gestión de Inventario
+        </span>
+    )
+
     const footerSlot = (
-        <FormFooter 
+        <FormFooter
             actions={
-                <SubmitButton form="product-form" loading={form.formState.isSubmitting}>
-                    {initialData ? "Guardar Cambios" : "Crear Producto"}
-                </SubmitButton>
-            }
-            leftActions={
-                <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
+                <>
+                    <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
+                    <SubmitButton form="product-form" loading={form.formState.isSubmitting}>
+                        {initialData ? "Guardar Cambios" : "Crear Producto"}
+                    </SubmitButton>
+                </>
             }
         />
     )
@@ -681,7 +662,7 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             value={activeTab}
             onValueChange={setActiveTab}
             orientation="vertical"
-            header={headerSlot}
+            contentClassName="bg-transparent"
         >
             {isFetchingInitialData ? (
                 <div className="p-6 flex-1">
@@ -689,97 +670,101 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                 </div>
             ) : (
                 <Form {...form}>
-                    <FormSplitLayout
-                        sidebar={sidebar}
-                        showSidebar={!!initialData?.id}
-                        className="px-0 pt-0 pb-0" // FormTabs already handles some padding
-                    >
-                        <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-8 pt-6 px-6 mx-auto pb-12">
-                            <fieldset disabled={loading} className="group min-w-0 transition-opacity group-disabled:opacity-75">
-                                <FormTabsContent value="general" className="mt-0 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                    <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                                        <div className="md:col-span-3 space-y-8">
-                                            <div className="space-y-6">
-                                                <FormSection title="Imagen" icon={Package} />
-                                                <ProductImageUpload
-                                                    form={form}
-                                                    imagePreview={imagePreview}
-                                                    setImagePreview={setImagePreview}
-                                                />
-                                            </div>
-
-                                            <div className="space-y-6">
-                                                <FormSection title="Tipo de producto" icon={Layers} />
-                                                <ProductTypeSelector form={form} disabled={!!initialData} lockedType={lockedType} />
-                                            </div>
-                                        </div>
-
-                                        <div className="md:col-span-9 space-y-4">
+                        <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col min-w-0">
+                            <fieldset disabled={loading} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full">
+                                <FormTabsContent value="general" className="mt-0 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden">
+                                    <div className="grid grid-cols-6 gap-6 h-full overflow-hidden">
+                                        <div className="col-span-4 overflow-y-auto pr-2 space-y-8 pb-8 scrollbar-thin">
                                             <ProductBasicInfo
                                                 form={form}
-                                                categories={categories}
                                                 isEditing={!!initialData}
-                                                onAddCategory={() => setIsCategoryFormOpen(true)}
+                                                imagePreview={imagePreview}
+                                                setImagePreview={setImagePreview}
+                                                lockedType={lockedType}
                                             />
 
                                             <ProductPricingSection
                                                 form={form}
                                                 initialData={initialData}
-                                                canBeSold={form.watch("can_be_sold")}
+                                                canBeSold={canBeSold}
                                                 uoms={uoms}
                                             />
+                                        </div>
+
+                                        <div className="col-span-2 border-l pl-6 overflow-y-auto scrollbar-thin">
+                                            {initialData?.id ? (
+                                                <ActivitySidebar entityId={initialData.id.toString()} entityType="product" />
+                                            ) : (
+                                                <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-xl bg-muted/5">
+                                                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                                                        <History className="h-6 w-6 text-primary" />
+                                                    </div>
+                                                    <h3 className="text-sm font-bold text-foreground">Historial de Actividad</h3>
+                                                    <p className="text-xs text-muted-foreground mt-2 max-w-[200px]">
+                                                        El registro de cambios estará disponible una vez que el producto sea creado.
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </FormTabsContent>
 
-                                {(form.watch("product_type") === 'MANUFACTURABLE' || form.watch("has_bom")) && (
-                                    <ProductManufacturingTab
-                                        form={form}
-                                        initialData={initialData}
-                                        products={products}
-                                        uoms={uoms}
-                                        variantMode={variantMode}
-                                    />
+                                {(productType === 'MANUFACTURABLE' || hasBom) && (
+                                    <FormTabsContent value="manufacturing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                        <ProductManufacturingTab
+                                            form={form}
+                                            initialData={initialData}
+                                            products={products}
+                                            uoms={uoms}
+                                            variantMode={variantMode}
+                                        />
+                                    </FormTabsContent>
                                 )}
 
-                                {form.watch("has_variants") && !variantMode && (
-                                    <ProductVariantsTab
-                                        key={variantsRefreshKey}
-                                        form={form}
-                                        initialData={initialData}
-                                        onTabChange={(tab: string) => setActiveTab(tab)}
-                                    />
+                                {hasVariants && !variantMode && (
+                                    <FormTabsContent value="variants" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                        <ProductVariantsTab
+                                            key={variantsRefreshKey}
+                                            form={form}
+                                            initialData={initialData}
+                                            onTabChange={(tab: string) => setActiveTab(tab)}
+                                        />
+                                    </FormTabsContent>
                                 )}
 
-                                {['STORABLE', 'MANUFACTURABLE'].includes(form.watch("product_type")) && (
-                                    <ProductInventoryTab
-                                        form={form}
-                                        initialData={initialData}
-                                        warehouses={warehouses}
-                                        uoms={uoms}
-                                    />
+                                {['STORABLE', 'MANUFACTURABLE'].includes(productType) && (
+                                    <FormTabsContent value="logistics" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                        <ProductInventoryTab
+                                            form={form}
+                                            initialData={initialData}
+                                            warehouses={warehouses}
+                                            uoms={uoms}
+                                            isEditing={!!initialData}
+                                        />
+                                    </FormTabsContent>
                                 )}
 
-                                {form.watch("product_type") === 'SUBSCRIPTION' && (
-                                    <FormTabsContent value="commercial" className="mt-0 animate-in fade-in duration-300">
+                                {productType === 'SUBSCRIPTION' && (
+                                    <FormTabsContent value="commercial" className="mt-0 animate-in fade-in duration-300 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                         <ProductSubscriptionTab form={form} isEditing={!!initialData} />
                                     </FormTabsContent>
                                 )}
 
-                                {form.watch("can_be_sold") && form.watch("product_type") !== 'SUBSCRIPTION' && (
-                                    <ProductPricingTab
-                                        initialData={initialData}
-                                        pricingRules={pricingRules}
-                                        fetchPricingRules={fetchPricingRules}
-                                        onOpenRuleDialog={(rule) => {
-                                            setSelectedPricingRule(rule || null)
-                                            setPricingRuleDialogOpen(true)
-                                        }}
-                                    />
+                                {canBeSold && productType !== 'SUBSCRIPTION' && (
+                                    <FormTabsContent value="pricing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                        <ProductPricingTab
+                                            initialData={initialData}
+                                            pricingRules={pricingRules}
+                                            fetchPricingRules={fetchPricingRules}
+                                            onOpenRuleDialog={(rule) => {
+                                                setSelectedPricingRule(rule || null)
+                                                setPricingRuleDialogOpen(true)
+                                            }}
+                                        />
+                                    </FormTabsContent>
                                 )}
                             </fieldset>
                         </form>
-                    </FormSplitLayout>
                 </Form>
             )}
 
@@ -795,21 +780,13 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                 productId={initialData?.id}
                 productName={initialData?.name}
             />
-
-            <CategoryForm
-                open={isCategoryFormOpen}
-                onOpenChange={setIsCategoryFormOpen}
-                onSuccess={(newCategory) => {
-                    setCategories(prev => [...prev, newCategory])
-                    form.setValue("category", newCategory.id.toString())
-                }}
-            />
         </FormTabs>
     )
 
     return (
         <BaseModal
-            title={initialData ? "Editar Producto" : "Nuevo Producto"}
+            title={modalTitle}
+            description={modalDescription}
             open={open}
             onOpenChange={(newOpen) => {
                 if (!newOpen && Object.keys(form.formState.dirtyFields).length > 0) {
@@ -820,14 +797,13 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             }}
             size="2xl"
             className="h-[90vh]"
-            headerClassName="sr-only"
             hideScrollArea={true}
             allowOverflow={true}
             contentClassName="p-0"
             footer={footerSlot}
         >
             {formContent}
-            
+
             {/* ActionConfirmModal for closing with unsaved changes */}
             <ActionConfirmModal
                 open={confirmCloseOpen}

@@ -5,6 +5,9 @@ import { AlertCircle, Loader2, CheckCircle } from "lucide-react"
 import { LabeledInput } from "./LabeledInput"
 import { useFolioValidation, FolioValidationResult } from "@/hooks/useFolioValidation"
 import { cn } from "@/lib/utils"
+import { useTouchMode } from "@/hooks/useTouchMode"
+import { NumpadModal } from "@/features/pos/components/NumpadModal"
+import { useState } from "react"
 
 interface FolioValidationInputProps {
     value: string
@@ -36,6 +39,9 @@ export function FolioValidationInput({
     disabled = false
 }: FolioValidationInputProps) {
     const { validateFolio, isValidating, validationResult, clearValidation } = useFolioValidation()
+    const { isTouchMode } = useTouchMode()
+    const [numpadOpen, setNumpadOpen] = useState(false)
+    const [tempValue, setTempValue] = useState("")
 
     // Notify parent about validity changes
     useEffect(() => {
@@ -66,6 +72,14 @@ export function FolioValidationInput({
                 placeholder={placeholder}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
+                onClick={(e) => {
+                    if (isTouchMode && !disabled) {
+                        e.preventDefault()
+                        setTempValue(value)
+                        setNumpadOpen(true)
+                    }
+                }}
+                readOnly={isTouchMode}
                 disabled={disabled}
                 autoFocus={autoFocus}
                 error={validationResult && !validationResult.is_unique ? validationResult.message : undefined}
@@ -88,6 +102,20 @@ export function FolioValidationInput({
                     </div>
                 }
             />
+            {isTouchMode && (
+                <NumpadModal
+                    open={numpadOpen}
+                    onOpenChange={setNumpadOpen}
+                    title={label}
+                    value={tempValue}
+                    onChange={setTempValue}
+                    onConfirm={() => {
+                        onChange(tempValue)
+                        setNumpadOpen(false)
+                    }}
+                    allowDecimal={false}
+                />
+            )}
         </div>
     )
 }

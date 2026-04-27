@@ -31,14 +31,15 @@ export default async function AccountingPage({ searchParams }: PageProps) {
         { value: "entries", label: "Asientos", iconName: "file-text", href: "/accounting?view=entries" },
         { value: "closures", label: "Cierre Contable", iconName: "calendar", href: "/accounting?view=closures" },
         { value: "tax", label: "Impuestos mensuales (F29)", iconName: "landmark", href: "/accounting?view=tax" },
-        { 
-            value: "config", 
-            label: "Config", 
-            iconName: "settings", 
+        {
+            value: "config",
+            label: "Config",
+            iconName: "settings",
             href: "/accounting?view=config",
             subTabs: [
                 { value: "structure", label: "Estructura Contable", href: "/accounting?view=config&tab=structure", iconName: "settings-2" },
-                { value: "tax", label: "Impuestos (F29)", href: "/accounting?view=config&tab=tax", iconName: "receipt" }
+                { value: "defaults", label: "Cuentas por Defecto", href: "/accounting?view=config&tab=defaults", iconName: "book-open" },
+                { value: "tax", label: "Impuestos", href: "/accounting?view=config&tab=tax", iconName: "receipt" }
             ]
         },
     ]

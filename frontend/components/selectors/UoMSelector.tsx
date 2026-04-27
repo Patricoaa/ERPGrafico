@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Info } from 'lucide-react'
+import { Info, Check, ChevronDown, Search } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { LabeledContainer } from "@/components/shared"
 
 interface UoM {
@@ -34,6 +35,7 @@ interface UoMSelectorProps {
     quantity?: number
     variant?: 'inline' | 'standalone'
     className?: string
+    required?: boolean
 }
 
 export function UoMSelector({
@@ -42,14 +44,15 @@ export function UoMSelector({
     context = 'stock', // Default context
     value,
     onChange,
-    uoms,
+    uoms = [],
     showConversionHint = false,
     disabled = false,
     label = 'Unidad',
     error,
     quantity = 1,
     variant = 'inline',
-    className
+    className,
+    required
 }: UoMSelectorProps) {
     // Get filtered UoMs based on context
     const filteredUoMs = useMemo(() => {
@@ -58,21 +61,21 @@ export function UoMSelector({
             return uoms.filter(u => u.category === categoryId)
         }
 
-        if (!product) return []
+        if (!product) return uoms
 
         const productUomId = product.uom && typeof product.uom === 'object' ? product.uom.id : product.uom
-        if (!productUomId) return []
+        if (!productUomId) return uoms
 
-        const baseUom = uoms.find(u => u.id === productUomId)
-        if (!baseUom) return []
+        const baseUom = uoms.find(u => String(u.id) === String(productUomId))
+        if (!baseUom) return uoms
 
         if (context === 'stock') {
             // Only base UoM
-            return uoms.filter(u => u.id === productUomId)
+            return uoms.filter(u => String(u.id) === String(productUomId))
         } else if (context === 'sale') {
             // Base + allowed_sale_uoms (restrictive)
-            const allowedIds = [productUomId, ...(product.allowed_sale_uoms || [])]
-            return uoms.filter(u => allowedIds.includes(u.id))
+            const allowedIds = [String(productUomId), ...(product.allowed_sale_uoms || []).map(id => String(id))]
+            return uoms.filter(u => allowedIds.includes(String(u.id)))
         } else if (context === 'purchase' || context === 'bom') {
             // Full category (flexible)
             return uoms.filter(u => u.category === baseUom.category)
@@ -100,55 +103,84 @@ export function UoMSelector({
 
 
 
-    if (filteredUoMs.length === 0) {
-        const placeholderText = product ? "Sin unidades disponibles" : "Seleccione producto primero"
-        
-        const selectPlaceholder = (
-            <Select disabled value="none">
-                <SelectTrigger className={cn("!h-[1.5rem] !py-0 w-full", variant === 'standalone' && "border-none shadow-none focus-visible:ring-0 bg-transparent opacity-60")}>
-                    <SelectValue placeholder={placeholderText} />
-                </SelectTrigger>
-            </Select>
-        )
+    const [open, setOpen] = React.useState(false)
+    const [searchTerm, setSearchTerm] = React.useState("")
 
-        if (variant === 'standalone') {
-            return (
-                <LabeledContainer
-                    label={label}
-                    error={error}
-                    disabled={true}
-                    className={className}
-                >
-                    {selectPlaceholder}
-                </LabeledContainer>
-            )
-        }
+    const filteredAndSearchedUoMs = useMemo(() => {
+        if (!searchTerm) return filteredUoMs
+        const term = searchTerm.toLowerCase()
+        return filteredUoMs.filter(u => u.name.toLowerCase().includes(term))
+    }, [filteredUoMs, searchTerm])
 
-        return (
-            <div className={cn("flex items-center gap-1.5 min-w-0", className)}>
-                {selectPlaceholder}
-            </div>
-        )
-    }
+    const selectedUoM = useMemo(() => {
+        return uoms.find(u => String(u.id) === String(value))
+    }, [uoms, value])
 
     const selectComponent = (
-        <Select onValueChange={onChange} value={value} disabled={disabled || (!product && !categoryId)}>
-            <SelectTrigger className={cn("!h-[1.5rem] !py-0 w-full", variant === 'standalone' && "border-none shadow-none focus-visible:ring-0 bg-transparent")}>
-                <SelectValue placeholder="Und" />
-            </SelectTrigger>
-            <SelectContent position="popper" align="start" className="w-[var(--radix-select-trigger-width)]">
-                {filteredUoMs.map((uom) => (
-                    <SelectItem key={uom.id} value={uom.id.toString()}>
-                        {uom.name}
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    disabled={disabled || (context !== 'stock' && !product && !categoryId)}
+                    className={cn(
+                        "w-full justify-between h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent font-normal",
+                        !value && "text-muted-foreground"
+                    )}
+                >
+                    <span className="truncate">
+                        {selectedUoM ? selectedUoM.name : "Und"}
+                    </span>
+                    <ChevronDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                <div className="p-2">
+                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                        <Search className="mr-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                        <input
+                            className="flex h-8 w-full rounded-md bg-transparent py-2 text-xs outline-none placeholder:text-muted-foreground"
+                            placeholder="Buscar UdM..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            autoFocus
+                        />
+                    </div>
+                    <div className="max-h-[200px] overflow-y-auto space-y-0.5">
+                        {filteredAndSearchedUoMs.map((uom) => (
+                            <div
+                                key={uom.id}
+                                className={cn(
+                                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-accent hover:text-accent-foreground transition-colors",
+                                    String(value) === String(uom.id) && "bg-accent"
+                                )}
+                                onClick={() => {
+                                    onChange(String(uom.id))
+                                    setOpen(false)
+                                    setSearchTerm("")
+                                }}
+                            >
+                                <span className="flex-1 truncate">{uom.name}</span>
+                                {String(value) === String(uom.id) && (
+                                    <Check className="ml-2 h-3 w-3 opacity-100" />
+                                )}
+                            </div>
+                        ))}
+                        {filteredAndSearchedUoMs.length === 0 && (
+                            <div className="p-3 text-[10px] text-center text-muted-foreground italic">
+                                {product || categoryId ? "No se encontraron unidades" : "Seleccione producto primero"}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </PopoverContent>
+        </Popover>
     )
 
     const wrappedComponent = variant === 'standalone' ? (
         <LabeledContainer
             label={label}
+            required={required}
             error={error}
             disabled={disabled}
             className={className}

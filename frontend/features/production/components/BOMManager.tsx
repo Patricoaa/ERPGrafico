@@ -63,7 +63,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
     // Fetch variants
     useEffect(() => {
         const loadVariants = async () => {
-            if (product?.has_variants) {
+            if (product?.has_variants && product?.id) {
                 try {
                     const res = await api.get(`/inventory/products/?parent_template=${product.id}&show_technical_variants=true`)
                     setVariants(res.data.results || res.data)
@@ -75,11 +75,13 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             }
         }
         loadVariants()
-    }, [product])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [product?.id, product?.has_variants])
 
     useEffect(() => {
         fetchBoms()
-    }, [product, selectedVariantId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [product?.id, selectedVariantId])
 
     const handleCreate = () => {
         setEditingBom(undefined)

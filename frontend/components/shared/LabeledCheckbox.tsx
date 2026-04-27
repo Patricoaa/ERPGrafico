@@ -40,7 +40,10 @@ export function LabeledCheckbox({
             disabled={disabled}
             className={className}
         >
-            <div className="flex items-center justify-between w-full pr-4 py-1.5 min-h-[1.5rem]">
+            <div
+                className="flex items-center justify-between w-full px-3 py-1.5 min-h-[1.5rem] cursor-pointer"
+                onClick={() => !disabled && onCheckedChange(!checked)}
+            >
                 <span className={cn(
                     "text-xs font-bold transition-colors",
                     checked ? "text-foreground" : "text-muted-foreground/70"
@@ -51,6 +54,7 @@ export function LabeledCheckbox({
                     checked={checked}
                     onCheckedChange={onCheckedChange}
                     disabled={disabled}
+                    onClick={(e) => e.stopPropagation()}
                 />
             </div>
         </LabeledContainer>

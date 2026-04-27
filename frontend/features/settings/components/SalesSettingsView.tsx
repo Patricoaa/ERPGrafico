@@ -310,9 +310,11 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                                         render={({ field }) => (
                                                             <LabeledSwitch
                                                                 label="Descuentos por Línea"
-                                                                description="Habilitar en el carrito"
+                                                                description={field.value ? "Habilitado en carrito" : "Deshabilitado"}
                                                                 checked={field.value}
                                                                 onCheckedChange={field.onChange}
+                                                                icon={<Percent className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
+                                                                className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
                                                             />
                                                         )}
                                                     />
@@ -338,9 +340,11 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                                         render={({ field }) => (
                                                             <LabeledSwitch
                                                                 label="Descuentos Globales"
-                                                                description="Habilitar al total"
+                                                                description={field.value ? "Habilitado al total" : "Deshabilitado"}
                                                                 checked={field.value}
                                                                 onCheckedChange={field.onChange}
+                                                                icon={<Percent className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
+                                                                className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
                                                             />
                                                         )}
                                                     />

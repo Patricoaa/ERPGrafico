@@ -211,7 +211,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
     // If it's a variant itself, we don't show the generator
     if (form.watch("parent_template")) {
         return (
-            <FormTabsContent value="variants" className="mt-0 p-6 text-center space-y-4">
+            <div className="mt-0 p-6 text-center space-y-4">
                 <div className="flex flex-col items-center justify-center py-12 bg-muted/20 rounded-md border-2 border-dashed">
                     <Layers className="h-12 w-12 text-muted-foreground mb-4" />
                     <h3 className="text-lg font-bold">Este producto es una variante</h3>
@@ -222,13 +222,12 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         <Button variant="link" className="mt-2">Ver Plantilla Origen</Button>
                     )}
                 </div>
-            </FormTabsContent>
+            </div>
         )
     }
 
     return (
-        <FormTabsContent value="variants" className="mt-0 space-y-8 flex flex-col h-[650px] animate-in fade-in duration-500">
-            
+        <div className="mt-0 space-y-8 flex flex-col h-[650px] animate-in fade-in duration-500">
             {/* Header / Actions */}
             <div className="flex items-center justify-between bg-muted/10 p-4 rounded-2xl border border-dashed border-primary/20">
                 <div className="flex items-center gap-4">
@@ -552,6 +551,6 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                 description={`¿Está seguro de eliminar la variante ${variantToDelete?.variant_display_name || variantToDelete?.name || ''}?`}
                 variant="destructive"
             />
-        </FormTabsContent>
+        </div>
     )
 }

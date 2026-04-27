@@ -131,7 +131,7 @@ export function BaseModal({
                 {/* Content Area */}
                 {hideScrollArea || isRaw ? (
                     <div className={cn(
-                        "flex-1",
+                        "flex-1 flex flex-col",
                         allowOverflow ? "overflow-visible" : "overflow-hidden",
                         contentClassName
                     )}>

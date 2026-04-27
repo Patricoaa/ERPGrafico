@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, LabeledInput, LabeledSelect, LabeledContainer, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledContainer, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -15,7 +15,7 @@ import {
     FormField
 } from "@/components/ui/form"
 import api from "@/lib/api"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { AccountSelector, CategorySelector } from "@/components/selectors"
 import * as LucideIcons from "lucide-react"
 import { Check } from "lucide-react"
 
@@ -148,6 +148,7 @@ const categorySchema = z.object({
     prefix: z.string().max(10, "El prefijo no puede exceder 10 caracteres").optional().nullable(),
     icon: z.string().optional(),
     parent: z.string().optional(),
+    has_custom_accounting: z.boolean().optional(),
     asset_account: z.string().optional().nullable(),
     income_account: z.string().optional().nullable(),
     expense_account: z.string().optional().nullable(),
@@ -177,30 +178,24 @@ export function CategoryForm({
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    const [categories, setCategories] = useState<ProductCategory[]>([])
 
     const form = useForm<CategoryFormValues>({
         resolver: zodResolver(categorySchema),
         defaultValues: initialData ? {
             ...initialData,
             parent: (initialData.parent as any)?.id?.toString() || initialData.parent?.toString() || "none",
+            has_custom_accounting: !!(initialData.asset_account || initialData.income_account || initialData.expense_account),
             asset_account: (initialData.asset_account as any)?.id?.toString() || initialData.asset_account?.toString() || "none",
             income_account: (initialData.income_account as any)?.id?.toString() || initialData.income_account?.toString() || "none",
             expense_account: (initialData.expense_account as any)?.id?.toString() || initialData.expense_account?.toString() || "none",
         } : {
             name: "",
+            has_custom_accounting: false,
         },
     })
 
     const fetchData = async () => {
-        try {
-            const [catsRes] = await Promise.all([
-                api.get('/inventory/categories/')
-            ])
-            setCategories(catsRes.data.results || catsRes.data)
-        } catch (error) {
-            console.error("Error fetching dependencies:", error)
-        }
+        // Dependencies fetched by selectors
     }
 
     const lastResetId = React.useRef<number | undefined>(undefined)
@@ -225,6 +220,7 @@ export function CategoryForm({
                 form.reset({
                     ...initialData,
                     parent: (initialData.parent as { id?: number } | undefined)?.id?.toString() || initialData.parent?.toString() || "none",
+                    has_custom_accounting: !!(initialData.asset_account || initialData.income_account || initialData.expense_account),
                     asset_account: (initialData.asset_account as { id?: number } | undefined)?.id?.toString() || initialData.asset_account?.toString() || "none",
                     income_account: (initialData.income_account as { id?: number } | undefined)?.id?.toString() || initialData.income_account?.toString() || "none",
                     expense_account: (initialData.expense_account as { id?: number } | undefined)?.id?.toString() || initialData.expense_account?.toString() || "none",
@@ -234,6 +230,7 @@ export function CategoryForm({
                     name: "",
                     prefix: "",
                     parent: "none",
+                    has_custom_accounting: false,
                     asset_account: undefined,
                     income_account: undefined,
                     expense_account: undefined,
@@ -250,9 +247,9 @@ export function CategoryForm({
             const payload = {
                 ...data,
                 parent: (data.parent && data.parent !== "__none__" && data.parent !== "none") ? data.parent : null,
-                asset_account: (data.asset_account && data.asset_account !== "__none__" && data.asset_account !== "none") ? data.asset_account : null,
-                income_account: (data.income_account && data.income_account !== "__none__" && data.income_account !== "none") ? data.income_account : null,
-                expense_account: (data.expense_account && data.expense_account !== "__none__" && data.expense_account !== "none") ? data.expense_account : null,
+                asset_account: (data.has_custom_accounting && data.asset_account && data.asset_account !== "__none__" && data.asset_account !== "none") ? data.asset_account : null,
+                income_account: (data.has_custom_accounting && data.income_account && data.income_account !== "__none__" && data.income_account !== "none") ? data.income_account : null,
+                expense_account: (data.has_custom_accounting && data.expense_account && data.expense_account !== "__none__" && data.expense_account !== "none") ? data.expense_account : null,
             }
 
             let response;
@@ -382,19 +379,17 @@ export function CategoryForm({
                                         control={form.control}
                                         name="parent"
                                         render={({ field, fieldState }) => (
-                                            <LabeledSelect
+                                            <CategorySelector
                                                 label="Categoría Superior"
-                                                value={field.value || "none"}
+                                                icon={<LucideIcons.FolderTree className="h-4 w-4" />}
+                                                value={field.value}
                                                 onChange={field.onChange}
                                                 error={fieldState.error?.message}
                                                 placeholder="Sin padre"
-                                                options={[
-                                                    { value: "none", label: "Raíz (Sin padre)" },
-                                                    ...categories.filter(cat => cat.id && cat.id !== initialData?.id).map((cat) => ({
-                                                        value: cat.id.toString(),
-                                                        label: cat.name
-                                                    }))
-                                                ]}
+                                                showPlusButton={false}
+                                                excludeId={initialData?.id}
+                                                allowNone={true}
+                                                noneLabel="Raíz (Sin padre)"
                                             />
                                         )}
                                     />
@@ -403,56 +398,82 @@ export function CategoryForm({
 
                             <FormSection title="Cuentas Contables por Defecto" icon={LucideIcons.Library} />
 
-                            <div className="grid grid-cols-4 gap-4">
-                                <div className="col-span-2">
-                                    <FormField
-                                        control={form.control}
-                                        name="asset_account"
-                                        render={({ field, fieldState }) => (
-                                            <AccountSelector
-                                                label="Activo (Inventario)"
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                accountType="ASSET"
-                                                placeholder="Cuenta de activo..."
-                                                error={fieldState.error?.message}
-                                            />
-                                        )}
-                                    />
+                            <div className="flex items-center justify-between p-4 border rounded-md">
+                                <div className="space-y-0.5">
+                                    <div className="text-sm font-medium">Mapeo Contable Personalizado</div>
+                                    <div className="text-xs text-muted-foreground">Sobreescribir las cuentas globales para los productos de esta categoría.</div>
                                 </div>
-                                <div className="col-span-2">
-                                    <FormField
-                                        control={form.control}
-                                        name="income_account"
-                                        render={({ field, fieldState }) => (
-                                            <AccountSelector
-                                                label="Ingresos (Ventas)"
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                accountType="INCOME"
-                                                placeholder="Cuenta de ingreso..."
-                                                error={fieldState.error?.message}
-                                            />
-                                        )}
-                                    />
-                                </div>
-                                <div className="col-span-2">
-                                    <FormField
-                                        control={form.control}
-                                        name="expense_account"
-                                        render={({ field, fieldState }) => (
-                                            <AccountSelector
-                                                label="Gastos (Costo)"
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                accountType="EXPENSE"
-                                                placeholder="Cuenta de gasto..."
-                                                error={fieldState.error?.message}
-                                            />
-                                        )}
-                                    />
-                                </div>
+                                <FormField
+                                    control={form.control}
+                                    name="has_custom_accounting"
+                                    render={({ field }) => (
+                                        <FormControl>
+                                            <div className="flex items-center space-x-2">
+                                                <input 
+                                                    type="checkbox" 
+                                                    role="switch" 
+                                                    className="w-9 h-5 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out bg-input checked:bg-primary appearance-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                                    checked={field.value || false} 
+                                                    onChange={(e) => field.onChange(e.target.checked)} 
+                                                />
+                                            </div>
+                                        </FormControl>
+                                    )}
+                                />
                             </div>
+
+                            {form.watch("has_custom_accounting") && (
+                                <div className="grid grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="col-span-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="asset_account"
+                                            render={({ field, fieldState }) => (
+                                                <AccountSelector
+                                                    label="Activo (Inventario)"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    accountType="ASSET"
+                                                    placeholder="Cuenta de activo..."
+                                                    error={fieldState.error?.message}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="income_account"
+                                            render={({ field, fieldState }) => (
+                                                <AccountSelector
+                                                    label="Ingresos (Ventas)"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    accountType="INCOME"
+                                                    placeholder="Cuenta de ingreso..."
+                                                    error={fieldState.error?.message}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="expense_account"
+                                            render={({ field, fieldState }) => (
+                                                <AccountSelector
+                                                    label="Gastos (Costo)"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    accountType="EXPENSE"
+                                                    placeholder="Cuenta de gasto..."
+                                                    error={fieldState.error?.message}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </form>
                     </Form>
                 </FormSplitLayout>
