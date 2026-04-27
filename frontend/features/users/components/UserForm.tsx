@@ -332,6 +332,8 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
                                                                     description={field.value ? "ACTIVO" : "INACTIVO"}
                                                                     checked={field.value}
                                                                     onCheckedChange={field.onChange}
+                                                                    icon={<ShieldCheck className={cn("h-4 w-4 transition-colors", field.value ? "text-success" : "text-muted-foreground/30")} />}
+                                                                    className={cn(field.value ? "bg-success/5 border-success/20 shadow-sm" : "border-dashed")}
                                                                 />
                                                             )}
                                                         />

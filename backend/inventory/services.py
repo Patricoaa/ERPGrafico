@@ -743,7 +743,6 @@ class ProductService:
                     mfg_press_digital=template.mfg_press_digital,
                     mfg_postpress_finishing=template.mfg_postpress_finishing,
                     mfg_postpress_binding=template.mfg_postpress_binding,
-                    mfg_default_delivery_days=template.mfg_default_delivery_days,
                 )
                 variant.attribute_values.set(combo)
                 variant.save()  # Triggers display name generation

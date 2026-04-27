@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/currency'
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { useDeviceContext, MIN_TOUCH_TARGET } from '@/hooks/useDeviceContext'
+import { useTouchMode } from '@/hooks/useTouchMode'
 import type { CartItem as CartItemType, Product, UoM } from '@/types/pos'
 
 interface CartItemProps {
@@ -47,6 +48,7 @@ function CartItemComponent({
     posMode = 'SHOPPING'
 }: CartItemProps) {
     const { isTouchPOS } = useDeviceContext()
+    const { isTouchMode } = useTouchMode()
     const itemUom = uoms.find(u => u.id === item.uom)
 
     const productForSelector = originalProduct
@@ -112,8 +114,8 @@ function CartItemComponent({
                         )}
                         value={item.qty}
                         onChange={(e) => onQuantityChange(item.cartItemId, e.target.value)}
-                        onClick={() => onOpenNumpad(item.cartItemId, 'qty', item.qty)}
-                        readOnly
+                        onClick={() => isTouchMode && onOpenNumpad(item.cartItemId, 'qty', item.qty)}
+                        readOnly={isTouchMode}
                         min="0.01"
                     />
                     {maxQty !== undefined && maxQty !== Infinity && (
@@ -161,8 +163,8 @@ function CartItemComponent({
                             className="h-7 w-20 text-right text-xs bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0 pr-1"
                             value={item.unit_price_gross || ""}
                             placeholder="0"
-                            onClick={() => onOpenNumpad(item.cartItemId, 'price', item.unit_price_gross || 0)}
-                            readOnly
+                            onClick={() => isTouchMode && onOpenNumpad(item.cartItemId, 'price', item.unit_price_gross || 0)}
+                            readOnly={isTouchMode}
                             onChange={handlePriceChange}
                         />
                     ) : (
@@ -188,8 +190,8 @@ function CartItemComponent({
                             )}
                             value={item.discount_amount || ""}
                             placeholder="Dscto"
-                            onClick={() => onOpenNumpad(item.cartItemId, 'discount', item.discount_amount || 0)}
-                            readOnly
+                            onClick={() => isTouchMode && onOpenNumpad(item.cartItemId, 'discount', item.discount_amount || 0)}
+                            readOnly={isTouchMode}
                             onChange={handleDiscountChange}
                         />
                         {(item.discount_percentage || 0) > 0 && (

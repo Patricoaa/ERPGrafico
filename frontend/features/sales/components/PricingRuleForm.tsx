@@ -381,10 +381,11 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
                         render={({ field }) => (
                             <LabeledSwitch
                                 label="Estado de la Regla"
-                                description="La regla se encuentra activa"
+                                description={field.value ? "Regla activa" : "Regla inactiva"}
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
-
+                                icon={<Zap className={cn("h-4 w-4 transition-colors", field.value ? "text-success" : "text-muted-foreground/30")} />}
+                                className={cn(field.value ? "bg-success/5 border-success/20 shadow-sm" : "border-dashed")}
                             />
                         )}
                     />

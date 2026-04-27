@@ -41,7 +41,6 @@ export const productSchema = z.object({
     mfg_press_special: z.boolean().default(false),
     mfg_postpress_finishing: z.boolean().default(false),
     mfg_postpress_binding: z.boolean().default(false),
-    mfg_default_delivery_days: z.preprocess((v) => Number(v) || 3, z.number().min(0)),
     // Recurrence
     recurrence_period: z.enum(['MONTHLY', 'QUARTERLY', 'SEMIANNUAL', 'ANNUAL', 'WEEKLY']).optional(),
     renewal_notice_days: z.preprocess((v) => Number(v) || 30, z.number().min(0)).optional(),

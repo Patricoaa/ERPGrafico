@@ -1,5 +1,5 @@
 import { FormField } from "@/components/ui/form"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, FormSection, FormTabsContent } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, FormSection, FormTabsContent, LabeledSwitch } from "@/components/shared"
 import { Switch } from "@/components/ui/switch"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
@@ -15,7 +15,7 @@ interface ProductSubscriptionTabProps {
 
 export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionTabProps) {
     return (
-        <FormTabsContent value="subscription" className="mt-0 space-y-10 animate-in fade-in duration-500">
+        <div className="space-y-10 animate-in fade-in duration-500">
             <div className="grid grid-cols-4 gap-x-8 gap-y-10 items-start">
                 {/* 1. Subscription Setup */}
                 <div className="col-span-2 space-y-4">
@@ -26,18 +26,16 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                 control={form.control}
                                 name="subscription_supplier"
                                 render={({ field, fieldState }) => (
-                                    <LabeledContainer label="Proveedor" error={fieldState.error?.message}>
-                                        <div className="h-[34px]">
-                                            <AdvancedContactSelector
-                                                value={field.value || ""}
-                                                onChange={field.onChange}
-                                                contactType="SUPPLIER"
-                                                placeholder="Buscar..."
-                                                disabled={isEditing}
-                                                className="border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent h-full px-3 text-xs font-black uppercase"
-                                            />
-                                        </div>
-                                    </LabeledContainer>
+                                    <AdvancedContactSelector
+                                        label="Proveedor"
+                                        value={field.value || ""}
+                                        onChange={field.onChange}
+                                        contactType="SUPPLIER"
+                                        placeholder="Buscar..."
+                                        disabled={isEditing}
+                                        error={fieldState.error?.message}
+                                        className="h-full px-3 text-xs font-black uppercase"
+                                    />
                                 )}
                             />
                         </div>
@@ -119,7 +117,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                             error={fieldState.error?.message}
                                             {...field}
                                             value={field.value ?? ""}
-                                            className="h-[34px] font-mono font-black"
+                                            className="font-mono font-black"
                                         />
                                     )}
                                 />
@@ -137,7 +135,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                             error={fieldState.error?.message}
                                             {...field}
                                             value={field.value ?? ""}
-                                            className="h-[34px] font-mono font-black"
+                                            className="font-mono font-black"
                                         />
                                     )}
                                 />
@@ -193,13 +191,14 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                 control={form.control}
                                 name="is_variable_amount"
                                 render={({ field }) => (
-                                    <div className="flex items-center justify-between p-3 rounded-xl border border-primary/10 bg-background/50">
-                                        <div className="space-y-0.5">
-                                            <label className="text-[10px] font-black uppercase tracking-widest">Costo Variable</label>
-                                            <p className="text-[9px] text-muted-foreground italic">El monto se ajusta según consumo cada periodo.</p>
-                                        </div>
-                                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                    </div>
+                                    <LabeledSwitch
+                                        label="Costo Variable"
+                                        description="El monto se ajusta según consumo cada periodo."
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        icon={<Wallet className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
+                                        className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                    />
                                 )}
                             />
                         </div>
@@ -245,13 +244,14 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                 control={form.control}
                                 name="is_indefinite"
                                 render={({ field }) => (
-                                    <div className="flex items-center justify-between p-3 rounded-xl border border-warning/20 bg-warning/5">
-                                        <div className="space-y-0.5">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-warning-700">Contrato Indefinido</label>
-                                            <p className="text-[9px] text-warning-600/60 italic">Renovación automática hasta cancelación manual.</p>
-                                        </div>
-                                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                    </div>
+                                    <LabeledSwitch
+                                        label="Contrato Indefinido"
+                                        description="Renovación automática hasta cancelación manual."
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        icon={<Calendar className={cn("h-4 w-4 transition-colors", field.value ? "text-warning" : "text-muted-foreground/30")} />}
+                                        className={cn(field.value ? "bg-warning/5 border-warning/20 shadow-sm" : "border-dashed")}
+                                    />
                                 )}
                             />
 
@@ -281,6 +281,6 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                     </div>
                 </div>
             </div>
-        </FormTabsContent>
+        </div>
     )
 }

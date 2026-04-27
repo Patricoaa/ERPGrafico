@@ -256,11 +256,6 @@ class Product(models.Model):
     )
     
     # Delivery Configuration
-    mfg_default_delivery_days = models.IntegerField(
-        _("Días de Entrega por Defecto"),
-        default=3,
-        help_text=_("Días a sumar a la fecha actual para la fecha estimada de entrega")
-    )
 
     # Subscription / Recurrence Configuration
     class RecurrencePeriod(models.TextChoices):

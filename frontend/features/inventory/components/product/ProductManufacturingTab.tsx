@@ -1,13 +1,13 @@
 "use client"
 
 import { UoM, Product } from "@/types/entities"
-import { LabeledInput, LabeledContainer, FormSection, FormTabsContent } from "@/components/shared"
+import { LabeledInput, LabeledContainer, FormSection, FormTabsContent, LabeledSwitch, LabeledSeparator } from "@/components/shared"
 import { FormField } from "@/components/ui/form"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import { Package, Plus, Trash2, Layers, Check, ChevronUp, ChevronDown, X, Clock, Settings2, Search } from "lucide-react"
+import { Package, Plus, Trash2, Layers, Check, ChevronUp, ChevronDown, X, Clock, Settings2, Search, Monitor, Printer, Scissors } from "lucide-react"
 import { UseFormReturn, useFieldArray } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { ProductInitialData } from "@/types/forms"
@@ -16,8 +16,7 @@ import { cn } from "@/lib/utils"
 
 import { useState } from "react"
 import { BOMManager } from "@/features/production/components/BOMManager"
-import { ProductSelector } from "@/components/selectors/ProductSelector"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { ProductSelector, UoMSelector } from "@/components/selectors"
 
 interface ProductManufacturingTabProps {
     form: UseFormReturn<ProductFormValues>
@@ -27,7 +26,7 @@ interface ProductManufacturingTabProps {
     variantMode?: boolean
 }
 
-export function ProductManufacturingTab({ form, initialData, products, uoms, variantMode = false }: ProductManufacturingTabProps) {
+export function ProductManufacturingTab({ form, products, uoms, variantMode = false, initialData }: ProductManufacturingTabProps) {
     const { fields: bomFields, append: appendBom, remove: removeBom } = useFieldArray({
         control: form.control,
         name: "boms"
@@ -35,55 +34,39 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
 
     const hasBom = form.watch("has_bom")
     const isEditing = !!initialData
+    const requiresAdvancedmfg = form.watch("requires_advanced_manufacturing")
+    const isExpress = form.watch("mfg_auto_finalize")
+    const hasVariants = form.watch("has_variants")
+    const productionMode = requiresAdvancedmfg ? "advanced" : (isExpress ? "express" : "simple")
 
     return (
-        <FormTabsContent value="manufacturing" className="mt-0 space-y-6">
+        <div className="space-y-10 animate-in fade-in duration-500">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
                 {!variantMode && (
-                    <div className="md:col-span-4 space-y-6">
+                    <div className="md:col-span-5 space-y-6">
                         <div className="space-y-6">
                             <FormSection title="Ajustes de Producción" icon={Settings2} />
 
                             <div className="space-y-6">
-                                <FormField<ProductFormValues>
-                                    control={form.control}
-                                    name="mfg_default_delivery_days"
-                                    render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            {...field}
-                                            label="Días de Entrega Estándar"
-                                            type="number"
-                                            icon={<Clock className="h-4 w-4" />}
-                                            suffix="Días"
-                                            error={fieldState.error?.message}
-                                            hint="Tiempo estimado desde la orden hasta la entrega."
-                                            className="font-black h-11"
-                                        />
-                                    )}
-                                />
 
-                                <LabeledContainer 
+                                <LabeledContainer
                                     label="Modo de Producción"
-                                    icon={<Settings2 className="h-4 w-4 opacity-50" />}
+
                                 >
                                     <Tabs
-                                        value={form.watch("requires_advanced_manufacturing") ? "advanced" : (form.watch("mfg_auto_finalize") ? "express" : "simple")}
+                                        value={productionMode}
                                         onValueChange={(value) => {
-                                            if (value === "simple") {
-                                                form.setValue("requires_advanced_manufacturing", false);
-                                                form.setValue("mfg_auto_finalize", false);
-                                                form.setValue("track_inventory", true);
-                                            } else if (value === "express") {
-                                                form.setValue("requires_advanced_manufacturing", false);
-                                                form.setValue("mfg_auto_finalize", true);
-                                                form.setValue("has_bom", true);
-                                                form.setValue("track_inventory", false);
-                                            } else if (value === "advanced") {
-                                                form.setValue("requires_advanced_manufacturing", true);
-                                                form.setValue("mfg_auto_finalize", false);
-                                                form.setValue("has_bom", true);
-                                                form.setValue("track_inventory", false);
-                                            }
+                                            if (value === productionMode) return;
+                                            const patch =
+                                                value === "simple" ? { requires_advanced_manufacturing: false, mfg_auto_finalize: false, track_inventory: true }
+                                                : value === "express" ? { has_bom: true, requires_advanced_manufacturing: false, mfg_auto_finalize: true, track_inventory: false }
+                                                : { has_bom: true, requires_advanced_manufacturing: true, mfg_auto_finalize: false, track_inventory: false };
+                                            
+                                            Object.entries(patch).forEach(([k, v]) => {
+                                                if (form.getValues(k as any) !== v) {
+                                                    form.setValue(k as any, v as any, { shouldDirty: true, shouldValidate: false, shouldTouch: false });
+                                                }
+                                            });
                                         }}
                                         className="w-full"
                                     >
@@ -112,29 +95,16 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                         control={form.control}
                                         name="has_bom"
                                         render={({ field }) => {
-                                            const isExpress = form.watch("mfg_auto_finalize")
-                                            const hasVariants = form.watch("has_variants")
-                                            const shouldDisable = isExpress && !hasVariants
-
                                             return (
-                                                <div className={cn(
-                                                    "flex items-center justify-between p-4 rounded-lg border-2 transition-all",
-                                                    field.value ? "bg-primary/5 border-primary/20" : "bg-background border-dashed border-muted-foreground/20"
-                                                )}>
-                                                    <div className="space-y-1">
-                                                        <label className="text-xs font-black uppercase tracking-widest">Lista de Materiales</label>
-                                                        <p className="text-[9px] text-muted-foreground font-medium leading-tight">
-                                                            {shouldDisable
-                                                                ? "Requerido para modo Express."
-                                                                : "Habilitar receta de fabricación."}
-                                                        </p>
-                                                    </div>
-                                                    <Switch
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                        disabled={shouldDisable}
-                                                    />
-                                                </div>
+                                                <LabeledSwitch
+                                                    label="Lista de Materiales"
+                                                    description={isExpress && !hasVariants ? "Requerido para modo Express." : "Habilitar receta de fabricación."}
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                    disabled={isExpress && !hasVariants}
+                                                    icon={<Package className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
+                                                    className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                                />
                                             )
                                         }}
                                     />
@@ -143,131 +113,111 @@ export function ProductManufacturingTab({ form, initialData, products, uoms, var
                                         control={form.control}
                                         name="has_variants"
                                         render={({ field }) => (
-                                            <div className={cn(
-                                                "flex items-center justify-between p-4 rounded-lg border-2 transition-all",
-                                                field.value ? "bg-warning/5 border-warning/20" : "bg-background border-dashed border-muted-foreground/20"
-                                            )}>
-                                                <div className="space-y-1">
-                                                    <label className="text-xs font-black uppercase tracking-widest">Variantes</label>
-                                                    <p className="text-[9px] text-muted-foreground font-medium leading-tight">
-                                                        Múltiples versiones del mismo producto.
-                                                    </p>
-                                                </div>
-                                                <Switch
-                                                    checked={field.value}
-                                                    onCheckedChange={field.onChange}
-                                                />
-                                            </div>
+                                            <LabeledSwitch
+                                                label="Variantes"
+                                                description="Múltiples versiones del mismo producto."
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                                icon={<Layers className={cn("h-4 w-4 transition-colors", field.value ? "text-warning" : "text-muted-foreground/30")} />}
+                                                className={cn(field.value ? "bg-warning/5 border-warning/20 shadow-sm" : "border-dashed")}
+                                            />
                                         )}
                                     />
                                 </div>
 
                                 {form.watch("requires_advanced_manufacturing") && (
-                                    <div className="space-y-4 pt-4 border-t-2 border-dashed animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <h4 className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Etapas de Flujo Requeridas</h4>
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <LabeledSeparator
+                                            label="Etapas de Flujo Requeridas"
+                                            icon={<Layers className="h-3 w-3" />}
+                                        />
 
                                         <div className="space-y-2">
                                             {[
-                                                { name: "mfg_enable_prepress", label: "Pre-Impresión", icon: <Layers className="h-3 w-3" /> },
-                                                { name: "mfg_enable_press", label: "Impresión", icon: <Layers className="h-3 w-3" /> },
-                                                { name: "mfg_enable_postpress", label: "Post-Impresión", icon: <Layers className="h-3 w-3" /> }
+                                                { name: "mfg_enable_prepress", label: "Pre-Impresión", icon: Monitor },
+                                                { name: "mfg_enable_press", label: "Impresión", icon: Printer },
+                                                { name: "mfg_enable_postpress", label: "Post-Impresión", icon: Scissors }
                                             ].map((stage) => (
                                                 <FormField<ProductFormValues>
                                                     key={stage.name}
                                                     control={form.control}
                                                     name={stage.name as any}
                                                     render={({ field }) => (
-                                                        <div className={cn(
-                                                            "flex items-center justify-between p-3 rounded-md border-2 transition-all",
-                                                            field.value ? "bg-primary/5 border-primary/20" : "bg-muted/10 border-transparent"
-                                                        )}>
-                                                            <div className="flex items-center gap-2">
-                                                                {stage.icon}
-                                                                <label className="text-[10px] font-bold uppercase tracking-tight">{stage.label}</label>
-                                                            </div>
-                                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                        </div>
+                                                        <LabeledSwitch
+                                                            label={stage.label}
+                                                            checked={field.value}
+                                                            onCheckedChange={field.onChange}
+                                                            icon={<stage.icon className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
+                                                            className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                                        />
                                                     )}
                                                 />
                                             ))}
                                         </div>
                                     </div>
                                 )}
+                            </div>
                         </div>
                     </div>
-                </div>
                 )}
 
-                <div className={cn(variantMode ? "col-span-4" : "col-span-3", "space-y-6")}>
-                    {(hasBom || variantMode) && (
+                <div className={cn(variantMode ? "md:col-span-12" : "md:col-span-7", "space-y-6")}>
+                    {isEditing && (
+                        <div className={cn("space-y-4", !(hasBom || variantMode) && "hidden")}>
+                            <FormSection title="Gestión de Recetas (BOM)" icon={Layers} />
+                            <div className={cn("rounded-2xl overflow-hidden bg-muted/20 border shadow-inner p-1", variantMode && "p-0 border-none bg-transparent shadow-none")}>
+                                <div className="bg-card rounded-xl border overflow-hidden">
+                                    <BOMManager
+                                        product={initialData as any}
+                                        variantMode={variantMode}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {!isEditing && (hasBom || variantMode) && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-600">
                             <FormSection title="Gestión de Recetas (BOM)" icon={Layers} />
-
-                            {isEditing ? (
-                                <div className={cn("rounded-2xl overflow-hidden bg-muted/20 border shadow-inner p-1", variantMode && "p-0 border-none bg-transparent shadow-none")}>
-                                    <div className="bg-card rounded-xl border overflow-hidden">
-                                        <BOMManager
-                                            product={initialData as any}
-                                            variantMode={variantMode}
-                                            onBomsChange={(loadedBoms) => {
-                                                if (!loadedBoms) return;
-                                                const mapped = loadedBoms.map(b => ({
-                                                    id: b.id,
-                                                    name: b.name || "Lista de Materiales",
-                                                    active: b.active || false,
-                                                    lines: b.lines?.length > 0 ? b.lines.map((l: any) => ({
-                                                        id: l.id,
-                                                        component: l.product_id?.toString() || l.component?.toString() || "1",
-                                                        quantity: parseFloat(l.quantity) || 1
-                                                    })) : [{ component: "dummy", quantity: 1 }]
-                                                }));
-                                                form.setValue("boms", mapped, { shouldValidate: true });
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {bomFields.map((field, index) => (
-                                        <BOMItemField
-                                            key={field.id}
-                                            form={form}
-                                            bomIndex={index}
-                                            products={products}
-                                            uoms={uoms}
-                                            onRemove={() => removeBom(index)}
-                                            onSetDefault={() => {
-                                                bomFields.forEach((_, i) => form.setValue(`boms.${i}.active`, i === index))
-                                            }}
-                                        />
-                                    ))}
-                                    {bomFields.length === 0 && (
-                                        <div className="py-20 border-4 border-dashed rounded-3xl flex flex-col items-center justify-center text-center px-10 bg-muted/5 group hover:border-primary/20 transition-all duration-500">
-                                            <div className="p-6 rounded-2xl bg-background border shadow-sm mb-4 group-hover:scale-105 transition-transform duration-500">
-                                                <Layers className="h-10 w-10 text-primary opacity-40" />
-                                            </div>
-                                            <h4 className="font-black uppercase tracking-widest text-muted-foreground/80">Receta no Definida</h4>
-                                            <p className="text-[10px] text-muted-foreground/50 max-w-xs mt-2 font-medium leading-relaxed italic">
-                                                Establezca los materiales y proporciones para automatizar el cálculo de costos y descontar stock.
-                                            </p>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                className="mt-6 font-black uppercase text-[10px] h-8 rounded-lg"
-                                                onClick={() => appendBom({ name: "Nueva Receta", active: true, lines: [] })}
-                                            >
-                                                <Plus className="h-3.5 w-3.5 mr-2" /> Crear Primera BOM
-                                            </Button>
+                            <div className="space-y-4">
+                                {bomFields.map((field, index) => (
+                                    <BOMItemField
+                                        key={field.id}
+                                        form={form}
+                                        bomIndex={index}
+                                        products={products}
+                                        uoms={uoms}
+                                        onRemove={() => removeBom(index)}
+                                        onSetDefault={() => {
+                                            bomFields.forEach((_, i) => form.setValue(`boms.${i}.active`, i === index))
+                                        }}
+                                    />
+                                ))}
+                                {bomFields.length === 0 && (
+                                    <div className="py-20 border-4 border-dashed rounded-3xl flex flex-col items-center justify-center text-center px-10 bg-muted/5 group hover:border-primary/20 transition-all duration-500">
+                                        <div className="p-6 rounded-2xl bg-background border shadow-sm mb-4 group-hover:scale-105 transition-transform duration-500">
+                                            <Package className="h-10 w-10 text-primary opacity-40" />
                                         </div>
-                                    )}
-                                </div>
-                            )}
+                                        <h4 className="font-black uppercase tracking-widest text-muted-foreground/80">Receta no Definida</h4>
+                                        <p className="text-[10px] text-muted-foreground/50 max-w-xs mt-2 font-medium leading-relaxed italic">
+                                            Establezca los materiales y proporciones para automatizar el cálculo de costos y descontar stock.
+                                        </p>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="mt-6 font-black uppercase text-[10px] h-8 rounded-lg"
+                                            onClick={() => appendBom({ name: "Nueva Receta", active: true, lines: [] })}
+                                        >
+                                            <Plus className="h-3.5 w-3.5 mr-2" /> Crear Primera BOM
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
             </div>
-        </FormTabsContent>
+        </div>
     )
 }
 
@@ -465,67 +415,14 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                                                         const availableUoms = uoms.filter((u) => uomIds.has(String(u.id)));
 
                                                         return (
-                                                            <Popover>
-                                                                <PopoverTrigger asChild>
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        role="combobox"
-                                                                        className="h-8 text-[10px] px-2 w-full justify-between font-normal"
-                                                                    >
-                                                                        {field.value
-                                                                            ? uoms.find((u) => String(u.id) === String(field.value))?.name
-                                                                            : "-"}
-                                                                        <ChevronDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
-                                                                    </Button>
-                                                                </PopoverTrigger>
-                                                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                                                    <div className="p-2">
-                                                                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                                                            <Search className="mr-2 h-3 w-3 shrink-0 opacity-50" />
-                                                                            <input
-                                                                                className="flex h-8 w-full rounded-md bg-transparent py-2 text-xs outline-none placeholder:text-muted-foreground"
-                                                                                placeholder="Buscar UdM..."
-                                                                                onChange={(e) => {
-                                                                                    const val = e.target.value.toLowerCase()
-                                                                                    const inputs = document.querySelectorAll('.uom-item-mfg')
-                                                                                    inputs.forEach((el) => {
-                                                                                        if (el.textContent?.toLowerCase().includes(val)) {
-                                                                                            (el as HTMLElement).style.display = 'flex'
-                                                                                        } else {
-                                                                                            (el as HTMLElement).style.display = 'none'
-                                                                                        }
-                                                                                    })
-                                                                                }}
-                                                                            />
-                                                                        </div>
-                                                                        <div className="max-h-[150px] overflow-y-auto space-y-1">
-                                                                            {availableUoms.map((u) => (
-                                                                                <div
-                                                                                    key={u.id}
-                                                                                    className={cn(
-                                                                                        "uom-item-mfg relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-xs outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                                        field.value === String(u.id) && "bg-accent"
-                                                                                    )}
-                                                                                    onClick={() => {
-                                                                                        field.onChange(String(u.id))
-                                                                                        document.body.click()
-                                                                                    }}
-                                                                                >
-                                                                                    <span>{u.name as string}</span>
-                                                                                    {field.value === String(u.id) && (
-                                                                                        <Check className="ml-auto h-3 w-3 opacity-100" />
-                                                                                    )}
-                                                                                </div>
-                                                                            ))}
-                                                                            {availableUoms.length === 0 && (
-                                                                                <div className="p-3 text-[10px] text-center text-muted-foreground">
-                                                                                    Seleccione componente
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                    </div>
-                                                                </PopoverContent>
-                                                            </Popover>
+                                                            <UoMSelector
+                                                                variant="inline"
+                                                                value={field.value ?? ""}
+                                                                onChange={field.onChange}
+                                                                uoms={uoms}
+                                                                product={product as any}
+                                                                className="h-8 text-[10px] px-2 w-full justify-between font-normal border rounded-md"
+                                                            />
                                                         );
                                                     }}
                                                 />

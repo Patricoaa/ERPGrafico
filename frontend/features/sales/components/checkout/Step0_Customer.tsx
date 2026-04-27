@@ -27,18 +27,15 @@ export function Step0_Customer({
             </div>
 
             <div className="w-full max-w-md">
-                <LabeledContainer 
-                    label="Buscar Cliente" 
+                <AdvancedContactSelector
+                    label="Buscar Cliente"
                     icon={<User className="h-4 w-4" />}
-                >
-                    <AdvancedContactSelector
-                        value={selectedCustomerId}
-                        onChange={setSelectedCustomerId}
-                        onSelectContact={(contact) => setSelectedCustomerName(contact.name)}
-                        placeholder="Nombre, RUT o Email..."
-                        className="border-none shadow-none focus-visible:ring-0 h-9"
-                    />
-                </LabeledContainer>
+                    value={selectedCustomerId}
+                    onChange={setSelectedCustomerId}
+                    onSelectContact={(contact) => setSelectedCustomerName(contact.name)}
+                    placeholder="Nombre, RUT o Email..."
+                    className="h-9"
+                />
             </div>
         </div>
     )

@@ -196,7 +196,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'mfg_enable_postpress', 'mfg_prepress_design', 'mfg_prepress_specs',
             'mfg_prepress_folio', 'mfg_press_offset', 'mfg_press_digital',
             'mfg_press_special', 'mfg_postpress_finishing', 'mfg_postpress_binding',
-            'mfg_default_delivery_days', 'recurrence_period', 'renewal_notice_days',
+            'recurrence_period', 'renewal_notice_days',
             'is_variable_amount', 'is_dynamic_pricing', 'track_inventory', 'can_be_sold', 'can_be_purchased',
             'uom', 'sale_uom', 'purchase_uom', 'allowed_sale_uoms', 'receiving_warehouse',
             'sale_price', 'sale_price_gross', 'cost_price', 'is_favorite', 'active', 'income_account', 'expense_account',

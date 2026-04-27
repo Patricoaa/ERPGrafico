@@ -32,6 +32,7 @@ interface AdvancedContactSelectorProps {
     error?: string
     required?: boolean
     className?: string
+    icon?: React.ReactNode
 }
 
 export function AdvancedContactSelector({
@@ -45,7 +46,8 @@ export function AdvancedContactSelector({
     label,
     error,
     required,
-    className
+    className,
+    icon
 }: AdvancedContactSelectorProps) {
     const { contacts, singleContact, loading: searchLoading, fetchContacts, fetchSingleContact } = useContactSearch()
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
@@ -141,23 +143,33 @@ export function AdvancedContactSelector({
                             variant="ghost"
                             role="combobox"
                             aria-expanded={open}
-                            className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                            className={cn(
+                                "w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
+                                icon && "pl-1"
+                            )}
                             disabled={disabled}
                         >
-                            {selectedContact ? (
-                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                    {selectedContact.contact_type === 'COMPANY'
-                                        ? <Building2 className={cn("h-3.5 w-3.5 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />
-                                        : <User className={cn("h-3.5 w-3.5 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />
-                                    }
-                                    <span className="font-medium text-sm truncate">{selectedContact.name}</span>
-                                    <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
-                                        {selectedContact.tax_id ? formatRUT(selectedContact.tax_id) : 'S/Rut'}
-                                    </span>
-                                </div>
-                            ) : (
-                                <span className="text-muted-foreground">{placeholder}</span>
-                            )}
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                {icon && (
+                                    <div className="flex items-center justify-center text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0">
+                                        {icon}
+                                    </div>
+                                )}
+                                {selectedContact ? (
+                                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                        {selectedContact.contact_type === 'COMPANY'
+                                            ? <Building2 className={cn("h-3.5 w-3.5 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />
+                                            : <User className={cn("h-3.5 w-3.5 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />
+                                        }
+                                        <span className="font-medium text-sm truncate">{selectedContact.name}</span>
+                                        <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
+                                            {selectedContact.tax_id ? formatRUT(selectedContact.tax_id) : 'S/Rut'}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <span className="text-muted-foreground">{placeholder}</span>
+                                )}
+                            </div>
                             {!disabled && <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
                         </Button>
                     </PopoverTrigger>

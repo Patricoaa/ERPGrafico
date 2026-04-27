@@ -32,14 +32,13 @@ export default async function BillingPage({ searchParams }: PageProps) {
             href: "/billing?view=config",
             subTabs: [
                 { value: "accounts", label: "Cuentas", href: "/billing?view=config&tab=accounts", iconName: "users" },
-                { value: "tax", label: "Impuestos", href: "/billing?view=config&tab=tax", iconName: "percent" },
                 { value: "dtes", label: "Documentos", href: "/billing?view=config&tab=dtes", iconName: "file-text" }
             ]
         },
     ]
 
     const getHeaderConfig = () => {
-        if (viewMode === 'config') return { title: "Configuración de Facturación", description: "Gestione las cuentas contables, impuestos y parámetros de DTE.", iconName: "settings" as const }
+        if (viewMode === 'config') return { title: "Configuración de Facturación", description: "Gestione las cuentas contables y parámetros de documentos electrónicos.", iconName: "settings" as const }
         return {
             title: viewMode === 'sales' ? "Facturación de Ventas" : "Facturación de Compras",
             description: viewMode === 'sales'

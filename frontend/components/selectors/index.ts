@@ -7,3 +7,6 @@ export * from './ProductSelector';
 export * from './TreasuryAccountSelector';
 export * from './UoMSelector';
 export * from './UserSelector';
+export * from './CategorySelector';
+export * from './WarehouseSelector'
+export * from './ProductTypeSelector'
