@@ -19,7 +19,7 @@ import { FormSkeleton } from "@/components/shared"
 
 // Lazy load heavy components
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
-const TransactionViewModal = lazy(() => 
+const TransactionViewModal = lazy(() =>
     import("@/components/shared/TransactionViewModal").then(module => ({ default: module.TransactionViewModal }))
 )
 
@@ -148,10 +148,10 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
 
                 return (
                     <div className="flex justify-center w-full">
-                        <StatusBadge 
-                            status={status} 
-                            label={label} 
-                            size="sm" 
+                        <StatusBadge
+                            status={status}
+                            label={label}
+                            size="sm"
                             className="uppercase font-bold tracking-tight"
                         />
                     </div>
@@ -164,36 +164,36 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
             cell: ({ row }) => {
                 const m = row.original;
                 const type = m.movement_type;
-                
+
                 // Define entities in the flow
                 let sourceData: { label: string, type: 'contact' | 'account' | 'text', id?: number, accountCode?: string } = { label: 'Particular', type: 'text' };
                 let destData: { label: string, type: 'contact' | 'account' | 'text', id?: number, accountCode?: string } = { label: 'Particular', type: 'text' };
 
                 if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
-                    sourceData = { 
-                        label: m.from_account_name || 'Origen', 
-                        type: 'account', 
+                    sourceData = {
+                        label: m.from_account_name || 'Origen',
+                        type: 'account',
                         id: m.from_account_account_id || undefined,
                         accountCode: m.from_account_code || ''
                     };
-                    destData = { 
-                        label: m.to_account_name || 'Destino', 
-                        type: 'account', 
+                    destData = {
+                        label: m.to_account_name || 'Destino',
+                        type: 'account',
                         id: m.to_account_account_id || undefined,
                         accountCode: m.to_account_code || ''
                     };
                 } else if (type === 'INBOUND') {
                     sourceData = m.partner_id ? { label: m.partner_name || 'Particular', type: 'contact', id: m.partner_id } : { label: m.partner_name || 'Particular', type: 'text' };
-                    destData = { 
-                        label: m.to_account_name || 'Caja', 
-                        type: 'account', 
+                    destData = {
+                        label: m.to_account_name || 'Caja',
+                        type: 'account',
                         id: m.to_account_account_id || undefined,
                         accountCode: m.to_account_code || ''
                     };
                 } else if (type === 'OUTBOUND') {
-                    sourceData = { 
-                        label: m.from_account_name || 'Caja', 
-                        type: 'account', 
+                    sourceData = {
+                        label: m.from_account_name || 'Caja',
+                        type: 'account',
                         id: m.from_account_account_id || undefined,
                         accountCode: m.from_account_code || ''
                     };
@@ -203,8 +203,8 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 const EntityLink = ({ data }: { data: typeof sourceData }) => {
                     if (data.type === 'contact' && data.id) {
                         return (
-                            <DataCell.ContactLink 
-                                contactId={data.id} 
+                            <DataCell.ContactLink
+                                contactId={data.id}
                                 className="text-[11px] font-bold"
                             >
                                 {data.label}
@@ -214,7 +214,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     if (data.type === 'account' && data.id) {
                         const accountId = m.movement_type === 'INBOUND' && data === destData ? m.to_account : (m.movement_type === 'OUTBOUND' && data === sourceData ? m.from_account : (m.movement_type === 'TRANSFER' || m.movement_type === 'ADJUSTMENT' ? (data === sourceData ? m.from_account : m.to_account) : null));
                         return (
-                            <DataCell.Link 
+                            <DataCell.Link
                                 onClick={() => openTreasuryAccount(accountId)}
                                 className="text-[11px] font-bold"
                             >
@@ -307,42 +307,34 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 />
             </Suspense>
 
-            {movements.length === 0 && !loading ? (
-                <EmptyState
-                    context="finance"
-                    title="No hay movimientos"
-                    description="Aún no se han registrado ingresos o egresos de fondos en el sistema para el periodo actual."
-                    action={
-                        <Button onClick={() => setOpenModal(true)} variant="outline">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Registrar Movimiento
-                        </Button>
-                    }
-                />
-            ) : (
-                <DataTable
-                    columns={columns}
-                    data={movements}
-                    cardMode
-                    isLoading={loading}
-                    globalFilterFields={["notes", "reference", "partner_name", "from_account_name", "to_account_name"]}
-                    searchPlaceholder="Buscar movimientos..."
-                    useAdvancedFilter={true}
-                    facetedFilters={[
-                        {
-                            column: "movement_type",
-                            title: "Tipo",
-                            options: [
-                                { label: "Depósito", value: "INBOUND" },
-                                { label: "Retiro", value: "OUTBOUND" },
-                                { label: "Traspaso", value: "TRANSFER" },
-                                { label: "Ajuste", value: "ADJUSTMENT" },
-                            ],
-                        },
-                    ]}
-                    createAction={createAction}
-                />
-            )}
+            <DataTable
+                columns={columns}
+                data={movements}
+                cardMode
+                isLoading={loading}
+                globalFilterFields={["notes", "reference", "partner_name", "from_account_name", "to_account_name"]}
+                searchPlaceholder="Buscar movimientos..."
+                useAdvancedFilter={true}
+                facetedFilters={[
+                    {
+                        column: "movement_type",
+                        title: "Tipo",
+                        options: [
+                            { label: "Depósito", value: "INBOUND" },
+                            { label: "Retiro", value: "OUTBOUND" },
+                            { label: "Traspaso", value: "TRANSFER" },
+                            { label: "Ajuste", value: "ADJUSTMENT" },
+                        ],
+                    },
+                ]}
+                createAction={createAction}
+                emptyState={{
+                    context: "finance",
+                    title: "No hay movimientos",
+                    description: "Aún no se han registrado ingresos o egresos de fondos en el sistema para el periodo actual.",
+
+                }}
+            />
 
             <Suspense fallback={<FormSkeleton />}>
                 <TransactionViewModal

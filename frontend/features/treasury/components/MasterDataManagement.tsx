@@ -12,18 +12,39 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { cn } from "@/lib/utils"
-import { Label } from "@/components/ui/label"
-import { LabeledInput, LabeledSelect, CancelButton, FormSection, MultiSelectTagInput } from "@/components/shared"
-import { Badge } from "@/components/ui/badge"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { ProductSelector } from "@/components/selectors/ProductSelector"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { Form, FormField } from "@/components/ui/form"
+import {
+    CancelButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput,
+    BaseModal, FormFooter, FormSplitLayout, ActionSlideButton, ActionConfirmModal
+} from "@/components/shared"
+import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { Column } from "@tanstack/react-table";
+
+// --- Schemas ---
+
+const bankSchema = z.object({
+    name: z.string().min(1, "El nombre es requerido"),
+    code: z.string().nullable().optional(),
+    swift_code: z.string().max(11, "Máximo 11 caracteres").nullable().optional(),
+})
+
+type BankFormValues = z.infer<typeof bankSchema>
+
+const paymentMethodSchema = z.object({
+    name: z.string().min(1, "El nombre es requerido"),
+    method_type: z.string().min(1, "El tipo es requerido"),
+    treasury_account: z.string().min(1, "La cuenta es requerida"),
+    requires_reference: z.boolean().default(false),
+    allow_for_sales: z.boolean().default(true),
+    allow_for_purchases: z.boolean().default(true),
+})
+
+type PaymentMethodFormValues = z.infer<typeof paymentMethodSchema>
 
 // --- Bank Management ---
 
@@ -189,31 +210,35 @@ interface BankModalProps {
 }
 
 function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
-    const [name, setName] = useState("")
-    const [code, setCode] = useState("")
-    const [swiftCode, setSwiftCode] = useState("")
     const [loading, setLoading] = useState(false)
+
+    const form = useForm<BankFormValues>({
+        resolver: zodResolver(bankSchema),
+        defaultValues: {
+            name: "",
+            code: "",
+            swift_code: "",
+        },
+    })
 
     useEffect(() => {
         if (open) {
-            requestAnimationFrame(() => {
-                setName(bank?.name || "")
-                setCode(bank?.code || "")
-                setSwiftCode(bank?.swift_code || "")
+            form.reset({
+                name: bank?.name || "",
+                code: bank?.code || "",
+                swift_code: bank?.swift_code || "",
             })
         }
-    }, [open, bank])
+    }, [open, bank, form])
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const onSubmit = async (data: BankFormValues) => {
         setLoading(true)
         try {
-            const payload = { name, code, swift_code: swiftCode }
             if (bank) {
-                await api.patch(`/treasury/banks/${bank.id}/`, payload)
+                await api.patch(`/treasury/banks/${bank.id}/`, data)
                 toast.success("Banco actualizado")
             } else {
-                await api.post("/treasury/banks/", payload)
+                await api.post("/treasury/banks/", data)
                 toast.success("Banco creado")
             }
             onSuccess()
@@ -229,6 +254,8 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
             open={open}
             onOpenChange={onOpenChange}
             size={bank ? "xl" : "md"}
+            hideScrollArea={true}
+            contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">
                     <Landmark className="h-5 w-5 text-muted-foreground" />
@@ -236,59 +263,92 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
                 </div>
             }
             description={bank ? "Modifique los datos del banco y revise su historial." : "Ingrese el nombre y código identificador del nuevo banco."}
-            hideScrollArea={true}
-            className="h-[80vh]"
             footer={
-                <>
-                    <CancelButton onClick={() => onOpenChange(false)} />
-                    <ActionSlideButton type="submit" form="bank-form" loading={loading} disabled={loading}>
-                        {bank ? "Actualizar" : "Crear"}
-                    </ActionSlideButton>
-                </>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <ActionSlideButton
+                                type="submit"
+                                form="bank-form"
+                                loading={loading}
+                                disabled={loading}
+                                onClick={form.handleSubmit(onSubmit)}
+                            >
+                                {bank ? "Guardar Cambios" : "Crear Banco"}
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
             }
         >
-            <div className="flex-1 flex overflow-hidden h-full">
-                {/* Left Side: Form */}
-                <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
-                    <form id="bank-form" onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid gap-4">
-                            <LabeledInput
-                                label="Nombre"
-                                required
-                                value={name}
-                                onChange={e => setName(e.target.value)}
-                                placeholder="Ej: Banco de Chile"
-                            />
-                            <div className="grid grid-cols-2 gap-4">
-                                <LabeledInput
-                                    label="Código (Alias)"
-                                    value={code}
-                                    onChange={e => setCode(e.target.value)}
-                                    placeholder="Ej: BCHILE"
+            <FormSplitLayout
+                showSidebar={!!bank?.id}
+                sidebar={
+                    bank?.id && (
+                        <ActivitySidebar
+                            entityType="bank"
+                            entityId={bank.id}
+                            title="Historial"
+                        />
+                    )
+                }
+            >
+                <Form {...form}>
+                    <form id="bank-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
+                        <div className="grid grid-cols-4 gap-4">
+                            <div className="col-span-4">
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Nombre"
+                                            required
+                                            error={fieldState.error?.message}
+                                            placeholder="Ej: Banco de Chile"
+                                            {...field}
+                                            value={field.value || ""}
+                                        />
+                                    )}
                                 />
-                                <LabeledInput
-                                    label="Código SWIFT/BIC"
-                                    value={swiftCode}
-                                    onChange={e => setSwiftCode(e.target.value)}
-                                    placeholder="Ej: BCHICLRM"
-                                    maxLength={11}
-                                    hint="Código internacional para transferencias"
+                            </div>
+                            <div className="col-span-2">
+                                <FormField
+                                    control={form.control}
+                                    name="code"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Código (Alias)"
+                                            error={fieldState.error?.message}
+                                            placeholder="Ej: BCHILE"
+                                            {...field}
+                                            value={field.value || ""}
+                                        />
+                                    )}
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <FormField
+                                    control={form.control}
+                                    name="swift_code"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Código SWIFT/BIC"
+                                            error={fieldState.error?.message}
+                                            placeholder="Ej: BCHICLRM"
+                                            maxLength={11}
+                                            hint="Código internacional para transferencias"
+                                            {...field}
+                                            value={field.value || ""}
+                                        />
+                                    )}
                                 />
                             </div>
                         </div>
                     </form>
-                </div>
-
-                {/* Right Side: Activity Sidebar */}
-                {bank?.id && (
-                    <ActivitySidebar
-                            entityType="bank"
-                            entityId={bank.id}
-                            className="h-full border-none"
-                            title="Historial"
-                        />
-                )}
-            </div>
+                </Form>
+            </FormSplitLayout>
         </BaseModal>
     )
 }
@@ -361,6 +421,15 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
         setDialogOpen(true)
     }
 
+    const methodTypeLabels: Record<string, string> = {
+        CASH: "Efectivo Directo",
+        CARD_TERMINAL: "Tarjeta (Terminal POS Integrado)",
+        TRANSFER: "Transferencia Bancaria",
+        DEBIT_CARD: "Tarjeta Débito Empresa",
+        CREDIT_CARD: "Tarjeta Crédito Empresa",
+        CHECK: "Cheque",
+    }
+
     const columns = [
         {
             accessorKey: "name",
@@ -377,10 +446,12 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
         },
         {
             accessorKey: "method_type_display",
-            header: ({ column }: { column: Column<PaymentMethod, unknown> }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
+            header: ({ column }: { column: Column<PaymentMethod, unknown> }) => <DataTableColumnHeader column={column} title="Categoría Operativa" className="justify-center" />,
             cell: ({ row }: { row: { original: PaymentMethod } }) => (
                 <div className="flex justify-center w-full">
-                    <StatusBadge status={row.original.method_type} label={row.original.method_type_display} size="sm" />
+                    <DataCell.Text className="text-muted-foreground font-medium text-xs text-center uppercase tracking-tighter">
+                        {row.original.method_type_display || methodTypeLabels[row.original.method_type] || row.original.method_type}
+                    </DataCell.Text>
                 </div>
             )
         },
@@ -392,16 +463,16 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                     <DataCell.Secondary className="text-center">{row.original.treasury_account_name}</DataCell.Secondary>
                     <div className="flex justify-center gap-1">
                         {row.original.allow_for_sales && (
-                            <DataCell.Badge 
-                                variant="outline" 
+                            <DataCell.Badge
+                                variant="outline"
                                 className="text-[9px] px-1 h-3.5 bg-income/5 text-income border-income/10 font-black uppercase tracking-tighter"
                             >
                                 Ventas
                             </DataCell.Badge>
                         )}
                         {row.original.allow_for_purchases && (
-                            <DataCell.Badge 
-                                variant="outline" 
+                            <DataCell.Badge
+                                variant="outline"
                                 className="text-[9px] px-1 h-3.5 bg-asset/5 text-asset border-asset/10 font-black uppercase tracking-tighter"
                             >
                                 Compras
@@ -417,7 +488,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                     <DataCell.Action
                         icon={Lock}
                         title="Gestionado por terminal — modifique el dispositivo"
-                        onClick={() => {}}
+                        onClick={() => { }}
                         className="text-muted-foreground cursor-default opacity-50"
                     />
                 ) : (
@@ -503,69 +574,44 @@ interface PaymentMethodModalProps {
 }
 
 function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMethodModalProps) {
-    const [name, setName] = useState("")
-    const [type, setType] = useState("DEBIT_CARD")
-    const [accountId, setAccountId] = useState<string | null>(null)
-    const [requiresRef, setRequiresRef] = useState(false)
-    const [allowSales, setAllowSales] = useState(true)
-    const [allowPurchases, setAllowPurchases] = useState(true)
     const [loading, setLoading] = useState(false)
-    const [accounts, setAccounts] = useState<{id: number | string, name: string}[]>([])
 
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await api.get("/treasury/accounts/")
-                requestAnimationFrame(() => setAccounts(response.data))
-            } catch (err) { }
-        }
-        requestAnimationFrame(() => fetchData())
-    }, [])
+    const form = useForm<PaymentMethodFormValues>({
+        resolver: zodResolver(paymentMethodSchema),
+        defaultValues: {
+            name: "",
+            method_type: "DEBIT_CARD",
+            treasury_account: "",
+            requires_reference: false,
+            allow_for_sales: true,
+            allow_for_purchases: true,
+        },
+    })
 
     useEffect(() => {
         if (open) {
-            requestAnimationFrame(() => {
-                setName(method?.name || "")
-                setType(method?.method_type || "DEBIT_CARD")
+            const acc = method?.treasury_account
+            const accountId = acc ? (typeof acc === 'object' ? (acc as any).id.toString() : acc.toString()) : ""
 
-                // Handle both ID and object cases for initialization
-                const acc = method?.treasury_account
-                setAccountId(acc ? (typeof acc === 'object' ? (acc as any).id.toString() : acc.toString()) : null)
-
-                setRequiresRef(method?.requires_reference || false)
-                setAllowSales(method?.allow_for_sales ?? true)
-                setAllowPurchases(method?.allow_for_purchases ?? true)
+            form.reset({
+                name: method?.name || "",
+                method_type: method?.method_type || "DEBIT_CARD",
+                treasury_account: accountId,
+                requires_reference: method?.requires_reference || false,
+                allow_for_sales: method?.allow_for_sales ?? true,
+                allow_for_purchases: method?.allow_for_purchases ?? true,
             })
         }
-    }, [open, method])
+    }, [open, method, form])
 
-    const handleTypeChange = (newType: string) => {
-        setType(newType)
-    }
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!accountId) {
-            toast.error("Debe seleccionar una cuenta")
-            return
-        }
+    const onSubmit = async (data: PaymentMethodFormValues) => {
         setLoading(true)
         try {
-            const payload = {
-                name,
-                method_type: type,
-                treasury_account: accountId,
-                requires_reference: requiresRef,
-                allow_for_sales: allowSales,
-                allow_for_purchases: allowPurchases,
-
-            }
             if (method) {
-                await api.patch(`/treasury/payment-methods/${method.id}/`, payload)
+                await api.patch(`/treasury/payment-methods/${method.id}/`, data)
                 toast.success("Método actualizado")
             } else {
-                await api.post("/treasury/payment-methods/", payload)
+                await api.post("/treasury/payment-methods/", data)
                 toast.success("Método creado")
             }
             onSuccess()
@@ -580,7 +626,9 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            size={method ? "xl" : "lg"}
+            size={method ? "xl" : "md"}
+            hideScrollArea={true}
+            contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">
                     <CreditCard className="h-5 w-5 text-muted-foreground" />
@@ -588,83 +636,123 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                 </div>
             }
             description={method ? "Modifique el método de pago y revise su historial." : "Defina el método de pago vinculado a una cuenta de tesorería."}
-            hideScrollArea={true}
-            className="h-[85vh]"
             footer={
-                <>
-                    <CancelButton onClick={() => onOpenChange(false)} />
-                    <ActionSlideButton type="submit" form="method-form" loading={loading} disabled={loading}>
-                        {method ? "Actualizar" : "Crear"}
-                    </ActionSlideButton>
-                </>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <ActionSlideButton
+                                type="submit"
+                                form="method-form"
+                                loading={loading}
+                                disabled={loading}
+                                onClick={form.handleSubmit(onSubmit)}
+                            >
+                                {method ? "Guardar Cambios" : "Crear Método"}
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
             }
         >
-            <div className="flex-1 flex overflow-hidden h-full">
-                {/* Left Side: Form */}
-                <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
-                    <form id="method-form" onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid gap-4">
-                            <LabeledInput
-                                label="Nombre"
-                                required
-                                value={name}
-                                onChange={e => setName(e.target.value)}
-                                placeholder="Ej: Visa Santander Debito"
-                            />
-                            <div className="grid grid-cols-2 gap-4">
-                                <LabeledSelect
-                                    label="Tipo"
-                                    value={type}
-                                    onChange={handleTypeChange}
-                                    options={[
-                                        { value: "CASH", label: "Efectivo" },
-                                        { value: "DEBIT_CARD", label: "Tarjeta de Débito" },
-                                        { value: "CREDIT_CARD", label: "Tarjeta de Crédito" },
-                                        { value: "TRANSFER", label: "Transferencia" },
-                                        { value: "CHECK", label: "Cheque" },
-                                    ]}
-                                />
-                                <LabeledSelect
-                                    label="Cuenta"
-                                    value={accountId || ""}
-                                    onChange={setAccountId}
-                                    placeholder="Seleccionar..."
-                                    options={accounts.map(acc => ({ value: acc.id.toString(), label: acc.name }))}
+            <FormSplitLayout
+                showSidebar={!!method?.id}
+                sidebar={
+                    method?.id && (
+                        <ActivitySidebar
+                            entityType="paymentmethod"
+                            entityId={method.id}
+                            title="Historial"
+                        />
+                    )
+                }
+            >
+                <Form {...form}>
+                    <form id="method-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
+                        <div className="grid grid-cols-4 gap-4">
+                            <div className="col-span-4">
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Nombre"
+                                            required
+                                            error={fieldState.error?.message}
+                                            placeholder="Ej: Visa Santander Debito"
+                                            {...field}
+                                        />
+                                    )}
                                 />
                             </div>
-                            <div className="pt-2">
-                                <MultiSelectTagInput
-                                    label="Permisos de Uso"
-                                    options={[
-                                        { label: "Ventas", value: "sales" },
-                                        { label: "Compras", value: "purchases" }
-                                    ]}
-                                    value={[
-                                        ...(allowSales ? ["sales"] : []),
-                                        ...(allowPurchases ? ["purchases"] : [])
-                                    ]}
-                                    onChange={(vals) => {
-                                        setAllowSales(vals.includes("sales"))
-                                        setAllowPurchases(vals.includes("purchases"))
-                                    }}
-                                    placeholder="Defina dónde se permite este método..."
+                            <div className="col-span-2">
+                                <FormField
+                                    control={form.control}
+                                    name="method_type"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledSelect
+                                            label="Tipo"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            error={fieldState.error?.message}
+                                            options={[
+                                                { value: "CASH", label: "Efectivo Directo" },
+                                                { value: "CARD_TERMINAL", label: "Tarjeta (Terminal POS Integrado)" },
+                                                { value: "TRANSFER", label: "Transferencia Bancaria" },
+                                                { value: "DEBIT_CARD", label: "Tarjeta Débito Empresa" },
+                                                { value: "CREDIT_CARD", label: "Tarjeta Crédito Empresa" },
+                                                { value: "CHECK", label: "Cheque" },
+                                            ]}
+                                        />
+                                    )}
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <FormField
+                                    control={form.control}
+                                    name="treasury_account"
+                                    render={({ field, fieldState }) => (
+                                        <TreasuryAccountSelector
+                                            label="Cuenta de tesorería"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            error={fieldState.error?.message}
+                                        />
+                                    )}
+                                />
+                            </div>
+
+                            <div className="col-span-4">
+                                <FormSection title="Permisos de Uso" icon={Lock} />
+                                <FormField
+                                    control={form.control}
+                                    name="allow_for_sales"
+                                    render={({ field }) => (
+                                        <div className="pt-2">
+                                            <MultiSelectTagInput
+                                                label="Habilitado para"
+                                                options={[
+                                                    { label: "Ventas", value: "sales" },
+                                                    { label: "Compras", value: "purchases" }
+                                                ]}
+                                                value={[
+                                                    ...(form.watch("allow_for_sales") ? ["sales"] : []),
+                                                    ...(form.watch("allow_for_purchases") ? ["purchases"] : [])
+                                                ]}
+                                                onChange={(vals) => {
+                                                    form.setValue("allow_for_sales", vals.includes("sales"))
+                                                    form.setValue("allow_for_purchases", vals.includes("purchases"))
+                                                }}
+                                                placeholder="Defina dónde se permite este método..."
+                                            />
+                                        </div>
+                                    )}
                                 />
                             </div>
                         </div>
-
                     </form>
-                </div>
-
-                {/* Right Side: Activity Sidebar */}
-                {method?.id && (
-                    <ActivitySidebar
-                            entityType="paymentmethod"
-                            entityId={method.id}
-                            className="h-full border-none"
-                            title="Historial"
-                        />
-                )}
-            </div>
+                </Form>
+            </FormSplitLayout>
         </BaseModal>
     )
 }
