@@ -1,28 +1,38 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
+import * as z from "zod"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { getErrorMessage } from "@/lib/errors"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Upload, FileText, AlertCircle, CheckCircle2, Loader2, RefreshCw, ArrowRight } from "lucide-react"
+import { LabeledSelect, GenericWizard, WizardStep, FormSection, DocumentAttachmentDropzone } from "@/components/shared"
+import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
+import { FileUp, Columns, Table as TableIcon, AlertCircle, CheckCircle2, RefreshCw, FileSearch, Landmark, FileText } from "lucide-react"
 import api from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { LabeledSelect } from "@/components/shared"
 
-interface TreasuryAccount {
-    id: number
-    name: string
-    code: string
-    account_type: string
-}
+const importSchema = z.object({
+    treasury_account_id: z.string().min(1, "Debes seleccionar una cuenta"),
+    bank_format: z.string().min(1, "Debes seleccionar un formato"),
+    file: z.any().optional(), // Use any to avoid instanceof issues in Turbopack
+    mapping: z.record(z.any()).optional()
+})
+
+type ImportFormValues = z.infer<typeof importSchema>
 
 interface BankFormat {
     [key: string]: string
+}
+
+interface ImportPreviewData {
+    columns: Array<string | number>;
+    rows: Array<Array<unknown>>;
+    file_type: string;
+    filename: string;
 }
 
 interface StatementImportModalProps {
@@ -31,86 +41,49 @@ interface StatementImportModalProps {
     onSuccess: () => void
 }
 
-type Step = 'UPLOAD' | 'MAPPING' | 'CONFIRM'
+// Removed Step type as it's handled by GenericWizard
 
-interface ColumnMapping {
-    [key: string]: string | number | null // Field ('date') -> Column Index/Name
-}
+// No longer needed here as it's handled by Zod
 
 export default function StatementImportModal({ open, onOpenChange, onSuccess }: StatementImportModalProps) {
-    const [step, setStep] = useState<Step>('UPLOAD')
-    const [file, setFile] = useState<File | null>(null)
-    const [treasuryAccountId, setTreasuryAccountId] = useState<string>("")
-    const [bankFormat, setBankFormat] = useState<string>("GENERIC_CSV")
+
+    const [previewData, setPreviewData] = useState<ImportPreviewData | null>(null)
+    const [bankFormats, setBankFormats] = useState<BankFormat>({})
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const [success, setSuccess] = useState(false)
 
-    const [treasuryAccounts, setTreasuryAccounts] = useState<TreasuryAccount[]>([])
-    const [bankFormats, setBankFormats] = useState<BankFormat>({})
-
-    interface ImportPreviewData {
-        columns: Array<string | number>;
-        rows: Array<Array<unknown>>;
-        file_type: string;
-        filename: string;
-    }
-
-    // Preview Data
-    const [previewData, setPreviewData] = useState<ImportPreviewData | null>(null)
-
-    // Column Mapping State
-    const [mapping, setMapping] = useState<ColumnMapping>({
-        date: null,
-        description: null,
-        debit: null,
-        credit: null,
-        balance: null,
-        reference: null,
-        transaction_id: null
+    const form = useForm<ImportFormValues>({
+        resolver: zodResolver(importSchema) as any,
+        defaultValues: {
+            treasury_account_id: "",
+            bank_format: "GENERIC_CSV",
+            file: undefined,
+            mapping: {
+                date: null,
+                description: null,
+                debit: null,
+                credit: null,
+                balance: null,
+                reference: null,
+                transaction_id: null
+            }
+        }
     })
+
+    const treasuryAccountId = form.watch("treasury_account_id")
+    const bankFormat = form.watch("bank_format")
+    const file = form.watch("file")
+    const mapping = form.watch("mapping") || {}
 
     const REQUIRED_FIELDS = ['date', 'description', 'debit', 'credit', 'balance']
 
-    useEffect(() => {
-        if (open) {
-            fetchTreasuryAccounts()
-            fetchBankFormats()
-            resetForm()
-        }
-    }, [open])
-
-    const resetForm = () => {
-        setStep('UPLOAD')
-        setFile(null)
-        setTreasuryAccountId("")
-        setBankFormat("GENERIC_CSV")
+    const resetForm = useCallback(() => {
+        form.reset()
         setPreviewData(null)
-        setMapping({
-            date: null,
-            description: null,
-            debit: null,
-            credit: null,
-            balance: null,
-            reference: null,
-            transaction_id: null
-        })
         setError(null)
-        setSuccess(false)
-    }
+    }, [form])
 
-    const fetchTreasuryAccounts = async () => {
-        try {
-            const response = await api.get('/treasury/accounts/')
-            // Filter to only show checking accounts as requested
-            const checkingAccounts = response.data.filter((acc: TreasuryAccount) => acc.account_type === 'CHECKING')
-            setTreasuryAccounts(checkingAccounts)
-        } catch (error) {
-            console.error('Error fetching treasury accounts:', error)
-        }
-    }
-
-    const fetchBankFormats = async () => {
+    const fetchBankFormats = useCallback(async () => {
         try {
             const response = await api.get('/treasury/statements/formats/')
             setBankFormats(response.data.formats)
@@ -121,18 +94,27 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                 'GENERIC_EXCEL': 'Excel Genérico',
             })
         }
-    }
+    }, [])
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = e.target.files?.[0]
+    useEffect(() => {
+        if (open) {
+            fetchBankFormats()
+            resetForm()
+        }
+    }, [open, resetForm, fetchBankFormats])
+
+    const handleFileChange = (selectedFile: File | null) => {
         if (selectedFile) {
-            setFile(selectedFile)
+            form.setValue("file", selectedFile)
             setError(null)
+        } else {
+            // @ts-expect-error - explicitly clearing the file field
+            form.setValue("file", undefined)
         }
     }
 
     const handlePreview = async () => {
-        if (!file) return
+        if (!file) return false
         setLoading(true)
         setError(null)
         try {
@@ -143,15 +125,15 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                 headers: { 'Content-Type': 'multipart/form-data' }
             })
             setPreviewData(response.data)
-            setStep('MAPPING')
 
             // Update bank format if it's generic and file type matches excel
             if (response.data.file_type === 'excel' && bankFormat === 'GENERIC_CSV') {
-                setBankFormat('GENERIC_EXCEL')
+                form.setValue('bank_format', 'GENERIC_EXCEL')
             }
+
             const cols = response.data.columns
             const newMapping = { ...mapping }
-            cols.forEach((col: any, idx: number) => {
+            cols.forEach((col: string | number) => {
                 const colStr = String(col).toLowerCase()
                 if (colStr.includes('fech') || colStr.includes('date')) newMapping.date = col
                 if (colStr.includes('desc') || colStr.includes('glos') || colStr.includes('detalle')) newMapping.description = col
@@ -160,11 +142,12 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                 if (colStr.includes('sald') || colStr.includes('balan')) newMapping.balance = col
                 if (colStr.includes('ref') || colStr.includes('doc')) newMapping.reference = col
             })
-            setMapping(newMapping)
-
+            form.setValue('mapping', newMapping)
+            return true
         } catch (error: unknown) {
             console.error('Preview error:', error)
             setError("No se pudo generar la vista previa. Revisa el archivo.")
+            return false
         } finally {
             setLoading(false)
         }
@@ -172,17 +155,16 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
 
     const handleSubmit = async () => {
         setError(null)
-        setSuccess(false)
 
         if (!treasuryAccountId) {
             setError("Selecciona una cuenta de tesorería")
-            return
+            return false
         }
 
         // Validate generic mapping
         if (isGenericFormat() && !validateMapping()) {
             setError("Debes mapear todas las columnas obligatorias (Fecha, Descripción, Cargos, Abonos, Saldos)")
-            return
+            return false
         }
 
         try {
@@ -196,8 +178,8 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
             if (isGenericFormat()) {
                 const config = {
                     columns: mapping,
-                    header_row: 0, // Simplified assumption
-                    delimiter: bankFormat === 'GENERIC_CSV' ? ';' : undefined  // Heuristic, backend should auto-detect though
+                    header_row: 0,
+                    delimiter: bankFormat === 'GENERIC_CSV' ? ';' : undefined
                 }
                 formData.append('custom_config', JSON.stringify(config))
             }
@@ -208,18 +190,15 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                 }
             })
 
-            setSuccess(true)
-            setTimeout(() => {
-                onSuccess()
-                handleClose()
-            }, 1500)
-
+            onSuccess()
+            return true
         } catch (error: unknown) {
             console.error('Error importing:', error)
             setError(
                 getErrorMessage(error) ||
                 'Error al importar la cartola.'
             )
+            return false
         } finally {
             setLoading(false)
         }
@@ -238,189 +217,104 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
         setTimeout(resetForm, 300)
     }
 
-    const handleNext = () => {
-        if (step === 'UPLOAD') {
-            if (!file) {
-                setError('Sube un archivo primero')
-                return
-            }
-            if (isGenericFormat()) {
-                handlePreview()
-            } else {
-                handleSubmit() // Direct import for specific formats
-            }
-        } else if (step === 'MAPPING') {
-            handleSubmit()
-        }
-    }
-
-    return (
-        <BaseModal
-            open={open}
-            onOpenChange={handleClose}
-            variant="wizard"
-            size={step === 'MAPPING' ? "full" : "lg"}
-            title={
-                <div className="flex items-center gap-4">
-                    <Upload className="h-6 w-6" />
-                    <div className="space-y-1">
-                        <div className="text-2xl font-black tracking-tight text-foreground/90 uppercase">Importar Cartola</div>
-                        <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="h-5 text-[10px] font-bold uppercase tracking-wider bg-muted/50 border-warning/20 text-warning/80">
-                                {step === 'UPLOAD' ? 'Paso 1: Carga' : 'Paso 2: Mapeo'}
-                            </Badge>
-                            <span className="text-muted-foreground text-[11px] font-medium uppercase tracking-widest opacity-70">
-                                • Conciliación Bancaria
-                            </span>
+    const steps: WizardStep[] = [
+        {
+            id: 'UPLOAD',
+            title: 'Carga de Archivo',
+            component: (
+                <div className="px-4 pb-4 pt-2 space-y-6 animate-in fade-in zoom-in-95 duration-500">
+                    <FormSection title="Cuenta de Destino" icon={Landmark} />
+                    <div className="grid grid-cols-4 gap-4">
+                        <div className="col-span-3">
+                            <TreasuryAccountSelector
+                                label="Seleccione la Cuenta Bancaria"
+                                value={treasuryAccountId}
+                                onChange={(val) => form.setValue("treasury_account_id", val)}
+                                type="CHECKING"
+                            />
                         </div>
+                        <div className="col-span-1">
+                            <LabeledSelect
+                                label="Formato *"
+                                value={bankFormat}
+                                onChange={(val) => form.setValue("bank_format", val)}
+                                options={Object.entries(bankFormats).map(([key, label]) => ({
+                                    value: key,
+                                    label: label
+                                }))}
+                            />
+                        </div>
+                    </div>
+
+                    <FormSection title="Archivo de Cartola" icon={FileUp} />
+                    <div className="space-y-6">
+                        <DocumentAttachmentDropzone
+                            file={file}
+                            onFileChange={handleFileChange}
+                            accept=".csv,.xls,.xlsx"
+                            label="Documento de Cartola"
+                        />
+
+                        {error && (
+                            <div className="animate-in fade-in slide-in-from-top-2">
+                                <Alert variant="destructive" className="rounded-lg border-destructive/20 bg-destructive/5">
+                                    <AlertCircle className="h-4 w-4 text-destructive" />
+                                    <AlertDescription className="text-xs font-bold uppercase tracking-wider text-destructive/80 leading-relaxed">
+                                        {error}
+                                    </AlertDescription>
+                                </Alert>
+                            </div>
+                        )}
                     </div>
                 </div>
+            ),
+            isValid: !!treasuryAccountId && !!bankFormat && !!file,
+            onNext: async () => {
+                if (isGenericFormat()) {
+                    return await handlePreview()
+                } else {
+                    return await handleSubmit()
+                }
             }
-            footer={
-                <div className="flex justify-between items-center w-full">
-                    <Button
-                        variant="ghost"
-                        onClick={step === 'MAPPING' ? () => setStep('UPLOAD') : handleClose}
-                        disabled={loading}
-                        className="rounded-lg px-6 h-11 text-muted-foreground hover:bg-muted/50 transition-all font-bold uppercase tracking-widest text-[10px]"
-                    >
-                        {step === 'MAPPING' ? "Atrás" : "Cancelar"}
-                    </Button>
+        },
+        ...(isGenericFormat() ? [{
+            id: 'MAPPING',
+            title: 'Mapeo de Columnas',
+            component: (
+                <div className="px-4 pb-4 pt-2 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                    <FormSection title="Mapeo de Columnas" icon={Columns} />
 
-                    <div className="flex items-center gap-3">
-                        <Button
-                            onClick={handleNext}
-                            disabled={loading || success || (step === 'UPLOAD' && !file)}
-                            className={cn(
-                                "rounded-lg px-8 h-11 shadow-lg transition-all font-black uppercase tracking-widest text-[10px] group",
-                                step === 'UPLOAD' && isGenericFormat()
-                                    ? "bg-primary hover:bg-primary/90 shadow-primary/20"
-                                    : "bg-success hover:bg-success/90 shadow-success/20"
-                            )}
-                        >
-                            {loading ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />
-                            ) : null}
-                            {step === 'UPLOAD' && isGenericFormat() ? (
-                                <>
-                                    Siguiente
-                                    <ArrowRight className="ml-2 h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-                                </>
-                            ) : (
-                                <>
-                                    {success ? "Completado" : "Importar Cartola"}
-                                    {!loading && !success && <CheckCircle2 className="ml-2 h-3.5 w-3.5 group-hover:scale-110 transition-transform" />}
-                                </>
-                            )}
-                        </Button>
-                    </div>
-                </div>
-            }
-        >
-            <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
-                {step === 'UPLOAD' && (
-                    <div className="space-y-10 py-4 max-w-xl mx-auto">
-                        <div className="p-8 rounded-lg bg-muted/5 border border-border/50 space-y-8">
-                            <div className="space-y-2">
-                                <LabeledSelect
-                                    label="Cuenta Corriente de Tesorería *"
-                                    value={treasuryAccountId}
-                                    onChange={setTreasuryAccountId}
-                                    placeholder="Selecciona cuenta corriente..."
-                                    options={treasuryAccounts.map((account) => ({
-                                        value: account.id.toString(),
-                                        label: (
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-bold">{account.code}</span>
-                                                <span className="text-muted-foreground opacity-60">•</span>
-                                                <span>{account.name}</span>
-                                            </div>
-                                        )
-                                    }))}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <LabeledSelect
-                                    label="Formato de Importación *"
-                                    value={bankFormat}
-                                    onChange={setBankFormat}
-                                    options={Object.entries(bankFormats).map(([key, label]) => ({
-                                        value: key,
-                                        label: label
-                                    }))}
-                                />
-                                {isGenericFormat() && (
-                                    <div className="flex items-center gap-2 text-[10px] text-info font-bold uppercase tracking-wider mt-2 opacity-80">
-                                        <RefreshCw className="w-3 h-3" />
-                                        Modo flexible: Se requerirá mapeo manual
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="space-y-8">
-                            <div className="flex items-center gap-3">
-                                <div className="flex-1 h-px bg-border/60" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 flex items-center gap-2 px-3">
-                                    <FileText className="h-3.5 w-3.5" />
-                                    Carga de Archivo
-                                </span>
-                                <div className="flex-1 h-px bg-border/60" />
-                            </div>
-
-                            <div className="relative group/file">
-                                <Input
-                                    type="file"
-                                    onChange={handleFileChange}
-                                    accept=".csv,.xls,.xlsx"
-                                    className={cn(
-                                        "cursor-pointer h-24 border-dashed border-2 hover:border-primary/40 hover:bg-primary/5 transition-all text-center pt-8 file:hidden"
-                                    )}
-                                />
-                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-muted-foreground group-hover/file:text-primary transition-colors">
-                                    <Upload className="h-6 w-6 mb-2 opacity-50" />
-                                    <span className="text-xs font-bold uppercase tracking-widest">
-                                        {file ? file.name : "Seleccionar CSV o Excel"}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {step === 'MAPPING' && previewData && (
-                    <div className="space-y-8 max-w-[95vw] mx-auto animate-in fade-in slide-in-from-right-4 duration-500">
-                        <div className="rounded-lg border border-border/50 shadow-xl shadow-primary/5 p-1 bg-card overflow-hidden">
-                            <div className="max-h-[60vh] overflow-x-auto overflow-y-auto w-full relative custom-scrollbar">
+                    <div className="rounded-lg border border-border/40 overflow-hidden bg-background">
+                        <div className="max-h-[50vh] overflow-x-auto overflow-y-auto w-full relative custom-scrollbar">
+                            {previewData && (
                                 <Table className="w-max min-w-full border-separate border-spacing-0">
                                     <TableHeader className="sticky top-0 z-20">
                                         <TableRow className="bg-muted/80 backdrop-blur-md hover:bg-muted/80 border-none">
                                             {previewData.columns.map((col, idx) => (
-                                                <TableHead key={idx} className="w-[280px] p-0 border-b border-border/50">
+                                                <TableHead key={idx} className="w-[280px] p-0 border-b border-border/40">
                                                     <div className="flex flex-col gap-3 p-4">
                                                         <div className="flex items-center justify-between">
-                                                            <span className="text-[10px] font-black text-muted-foreground/60 bg-muted px-2 py-0.5 rounded-full border border-border/50">
-                                                                COL {idx + 1}
+                                                            <span className="text-[10px] font-black text-muted-foreground/50 bg-muted/30 px-2 py-0.5 rounded border border-border/40">
+                                                                COLUMNA {idx + 1}
                                                             </span>
                                                         </div>
                                                         <span className="text-[11px] font-black text-foreground/70 uppercase tracking-widest break-all line-clamp-1 min-h-4" title={String(col)}>
                                                             {String(col)}
                                                         </span>
                                                         <Select
-                                                            value={Object.entries(mapping).find(([_, v]) => v === col)?.[0] || "ignore"}
+                                                            value={Object.entries(mapping).find((entry) => entry[1] === col)?.[0] || "ignore"}
                                                             onValueChange={(val) => {
                                                                 const newMapping = { ...mapping }
                                                                 if (val !== 'ignore') {
                                                                     newMapping[val] = col
                                                                 } else {
-                                                                    const key = Object.entries(mapping).find(([_, v]) => v === col)?.[0]
-                                                                    if (key) newMapping[key] = null
+                                                                    const entry = Object.entries(mapping).find((e) => e[1] === col)
+                                                                    if (entry) newMapping[entry[0]] = null
                                                                 }
-                                                                setMapping(newMapping)
+                                                                form.setValue("mapping", newMapping)
                                                             }}
                                                         >
-                                                        <SelectTrigger className={cn("h-9 text-[10px] font-bold uppercase tracking-wider bg-background border border-border rounded-md", "h-9 text-[10px] font-bold uppercase tracking-wider bg-background")}>
+                                                            <SelectTrigger className="h-9 text-[10px] font-bold uppercase tracking-wider bg-background">
                                                                 <SelectValue placeholder="Ignorar Columna" />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -451,60 +345,80 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                                         ))}
                                     </TableBody>
                                 </Table>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-3 items-center justify-center p-4 rounded-lg bg-muted/5 border border-dashed border-border/60">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mr-2">Estado de Mapeo:</span>
-                            {REQUIRED_FIELDS.map(f => {
-                                const labels: Record<string, string> = {
-                                    date: 'Fecha',
-                                    description: 'Descripción',
-                                    debit: 'Cargos',
-                                    credit: 'Abonos',
-                                    balance: 'Saldo'
-                                }
-                                return (
-                                    <Badge
-                                        key={f}
-                                        variant="outline"
-                                        className={cn(
-                                            "h-6 px-3 text-[9px] font-black uppercase tracking-wider transition-all",
-                                            mapping[f] !== null
-                                                ? "bg-success/10 border-success/20 text-success shadow-sm shadow-success/5"
-                                                : "bg-muted/50 border-border text-muted-foreground/40 line-through"
-                                        )}
-                                    >
-                                        {labels[f]} {mapping[f] !== null && '✓'}
-                                    </Badge>
-                                )
-                            })}
+                            )}
                         </div>
                     </div>
-                )}
 
-                {error && (
-                    <div className="max-w-xl mx-auto pt-4 animate-in fade-in slide-in-from-top-2">
-                        <Alert variant="destructive" className="rounded-lg border-destructive/20 bg-destructive/5">
-                            <AlertCircle className="h-4 w-4 text-destructive" />
-                            <AlertDescription className="text-xs font-bold uppercase tracking-wider text-destructive/80 leading-relaxed">
-                                {error}
-                            </AlertDescription>
-                        </Alert>
-                    </div>
-                )}
+                    <FormSection title="Estado de Mapeo" icon={TableIcon} />
 
-                {success && (
-                    <div className="max-w-xl mx-auto pt-4 animate-in fade-in slide-in-from-top-2">
-                        <Alert className="rounded-lg border-success/20 bg-success/5">
-                            <CheckCircle2 className="h-4 w-4 text-success" />
-                            <AlertDescription className="text-xs font-black uppercase tracking-[0.2em] text-success">
-                                Importación Finalizada con Éxito
-                            </AlertDescription>
-                        </Alert>
+                    <div className="flex flex-wrap gap-3 items-center justify-center py-2">
+                        {REQUIRED_FIELDS.map(f => {
+                            const labels: Record<string, string> = {
+                                date: 'Fecha',
+                                description: 'Descripción',
+                                debit: 'Cargos',
+                                credit: 'Abonos',
+                                balance: 'Saldo'
+                            }
+                            return (
+                                <Badge
+                                    key={f}
+                                    variant="outline"
+                                    className={cn(
+                                        "h-6 px-3 text-[9px] font-black uppercase tracking-wider transition-all",
+                                        mapping[f] !== null
+                                            ? "bg-success/10 border-success/20 text-success shadow-sm shadow-success/5"
+                                            : "bg-muted/50 border-border text-muted-foreground/40 line-through"
+                                    )}
+                                >
+                                    {labels[f]} {mapping[f] !== null && '✓'}
+                                </Badge>
+                            )
+                        })}
                     </div>
-                )}
-            </div>
-        </BaseModal>
+
+                    {error && (
+                        <div className="max-w-xl mx-auto animate-in fade-in slide-in-from-top-2">
+                            <Alert variant="destructive" className="rounded-lg border-destructive/20 bg-destructive/5">
+                                <AlertCircle className="h-4 w-4 text-destructive" />
+                                <AlertDescription className="text-xs font-bold uppercase tracking-wider text-destructive/80 leading-relaxed">
+                                    {error}
+                                </AlertDescription>
+                            </Alert>
+                        </div>
+                    )}
+                </div>
+            ),
+            isValid: validateMapping(),
+            onNext: async () => {
+                return await handleSubmit()
+            }
+        }] : [])
+    ]
+
+    return (
+        <GenericWizard
+            open={open}
+            onOpenChange={handleClose}
+            title={
+                <div className="flex items-center gap-2">
+                    <FileSearch className="h-5 w-5 text-muted-foreground" />
+                    <span>Importar Cartola Bancaria</span>
+                </div>
+            }
+            steps={steps}
+            onComplete={async () => { }} // Handled in onNext of last step
+            size={previewData && isGenericFormat() ? "full" : "lg"}
+            contentClassName="p-0"
+            isLoading={loading}
+            isCompleting={loading}
+            successContent={
+                <div className="flex flex-col items-center justify-center py-10 space-y-4">
+                    <CheckCircle2 className="h-16 w-16 text-success animate-bounce" />
+                    <h3 className="text-xl font-black uppercase tracking-widest text-foreground">Importación Exitosa</h3>
+                    <p className="text-muted-foreground text-sm font-medium">La cartola ha sido procesada correctamente.</p>
+                </div>
+            }
+        />
     )
 }

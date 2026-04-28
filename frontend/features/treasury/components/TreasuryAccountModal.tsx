@@ -135,7 +135,7 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            size={accountId ? "xl" : "lg"}
+            size={accountId ? "xl" : "md"}
             hideScrollArea={true}
             contentClassName="p-0"
             title={
@@ -195,7 +195,7 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                     </div>
                 ) : (
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
                             {isSystemManaged && (
                                 <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5 text-xs text-amber-600">
                                     <Lock className="h-4 w-4 mt-0.5 shrink-0" />
@@ -235,13 +235,13 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                                                     disabled={isSystemManaged || !!accountId}
                                                     error={fieldState.error?.message}
                                                     options={[
-                                                        { value: "CHECKING", label: "Cuenta Corriente" },
-                                                        { value: "CREDIT_CARD", label: "Tarjeta de Crédito" },
-                                                        { value: "DEBIT_CARD", label: "Tarjeta de Débito" },
-                                                        { value: "CHECKBOOK", label: "Chequera" },
-                                                        { value: "CASH", label: "Efectivo" },
-                                                        { value: "BRIDGE", label: "Cuenta Puente (Clearing)" },
-                                                        { value: "MERCHANT", label: "Cuenta Recaudadora" }
+                                                        { value: "CASH", label: "Caja Física (Efectivo)" },
+                                                        { value: "CHECKING", label: "Cuenta Bancaria (Corriente/Vista)" },
+                                                        { value: "DEBIT_CARD", label: "Tarjeta de Débito (Cta. Propia)" },
+                                                        { value: "CREDIT_CARD", label: "Tarjeta de Crédito (Cta. Propia)" },
+                                                        { value: "CHECKBOOK", label: "Chequera / Instrumentos" },
+                                                        { value: "BRIDGE", label: "Cuenta Puente (Liquidación/Clearing)" },
+                                                        { value: "MERCHANT", label: "Cuenta Recaudadora (Pasarela/Wallet)" }
                                                     ]}
                                                 />
                                             )}

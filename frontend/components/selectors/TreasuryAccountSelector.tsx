@@ -26,7 +26,7 @@ interface TreasuryAccountSelectorProps {
     paymentMethod?: 'CASH' | 'CARD' | 'TRANSFER'
 
     // Legacy filter (optional)
-    type?: 'BANK' | 'CASH'
+    type?: 'BANK' | 'CASH' | 'CHECKING' | 'CREDIT_CARD'
 
     // Exclude specific account
     excludeId?: number
@@ -76,11 +76,24 @@ export function TreasuryAccountSelector({
 
     const getIcon = (accountType: string) => {
         switch (accountType) {
-            case 'BANK': return <Landmark className="h-4 w-4" />
+            case 'CHECKING': return <Landmark className="h-4 w-4" />
             case 'CASH': return <Wallet className="h-4 w-4" />
-            case 'CARD': return <CreditCard className="h-4 w-4" />
+            case 'CREDIT_CARD':
+            case 'DEBIT_CARD': return <CreditCard className="h-4 w-4" />
+            case 'BRIDGE':
+            case 'MERCHANT': return <Loader2 className="h-4 w-4" />
             default: return <Banknote className="h-4 w-4" />
         }
+    }
+
+    const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+        'CASH': 'Caja Física',
+        'CHECKING': 'Banco',
+        'DEBIT_CARD': 'Débito Empresa',
+        'CREDIT_CARD': 'Crédito Empresa',
+        'CHECKBOOK': 'Chequera',
+        'BRIDGE': 'Clearing',
+        'MERCHANT': 'Recaudadora',
     }
 
     const handleSelect = (account: any) => {
@@ -163,7 +176,9 @@ export function TreasuryAccountSelector({
                                 <div className="flex flex-col flex-1">
                                     <div className="flex items-center justify-between">
                                         <span className="font-medium">{account.name}</span>
-                                        <span className="text-xs text-muted-foreground ml-2">{account.account_type}</span>
+                                        <span className="text-xs text-muted-foreground ml-2">
+                                            {ACCOUNT_TYPE_LABELS[account.account_type] || account.account_type}
+                                        </span>
                                     </div>
                                     {account.current_balance !== undefined && account.current_balance !== null && (
                                         <span className="text-xs text-muted-foreground">

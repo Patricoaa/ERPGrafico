@@ -38,6 +38,7 @@ export interface TreasuryAccount {
     account_name?: string
     account_code?: string | null
     account_type: TreasuryAccountType
+    account_type_display?: string
     allows_cash: boolean
     allows_card: boolean
     allows_transfer: boolean

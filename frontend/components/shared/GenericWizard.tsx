@@ -56,9 +56,14 @@ export function GenericWizard({
     size = "md",
     ...props
 }: GenericWizardProps) {
-    const [currentStep, setCurrentStep] = useState(initialStep)
-    const [isStepTransitioning, startTransition] = useTransition()
-    const [isFinished, setIsFinished] = useState(false)
+    const [currentStep, setCurrentStep] = React.useState(initialStep)
+    const [isStepTransitioning, startTransition] = React.useTransition()
+    const [isFinished, setIsFinished] = React.useState(false)
+
+    // Sync internal state with prop to allow external navigation jumps
+    React.useEffect(() => {
+        setCurrentStep(initialStep)
+    }, [initialStep])
 
     const totalSteps = steps.length
     const currentStepData = steps[currentStep]
@@ -101,29 +106,10 @@ export function GenericWizard({
         </div>
     )
 
-    // Industrial step progress bar
-    const progressBar = (
-        <div className="flex gap-1 w-full">
-            {steps.map((_, idx) => (
-                <div
-                    key={idx}
-                    className={cn(
-                        "h-0.5 flex-1 transition-all duration-300",
-                        idx < currentStep && "bg-primary",
-                        idx === currentStep && "bg-primary animate-pulse",
-                        idx > currentStep && "bg-border/40"
-                    )}
-                />
-            ))}
-        </div>
-    )
 
     // Footer actions
     const footer = !isFinished && (
-        <div className="flex flex-col gap-3 w-full">
-            {/* Progress bar */}
-            {progressBar}
-            
+        <div className="flex flex-col w-full">
             {/* Navigation */}
             <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">

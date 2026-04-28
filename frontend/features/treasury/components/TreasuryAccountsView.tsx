@@ -85,43 +85,48 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         }
     }
 
+    const typeLabels: Record<string, string> = {
+        CASH: "Caja Física (Efectivo)",
+        CHECKING: "Cuenta Bancaria",
+        DEBIT_CARD: "T. Débito Empresa",
+        CREDIT_CARD: "T. Crédito Empresa",
+        CHECKBOOK: "Chequera / Instr.",
+        BRIDGE: "Cta. Puente (Clearing)",
+        MERCHANT: "Cta. Recaudadora",
+    }
+
     const columns: ColumnDef<TreasuryAccount>[] = [
         {
             accessorKey: "name",
             header: ({ column }: { column: any }) => (
-                <DataTableColumnHeader column={column} title="Nombre | Tipo" className="justify-center" />
+                <DataTableColumnHeader column={column} title="Nombre de Cuenta" className="justify-center" />
             ),
-            cell: ({ row }: { row: any }) => {
-                const acc = row.original
-                const labels: Record<string, string> = {
-                    'CHECKING': 'Cta. Corriente',
-                    'CREDIT_CARD': 'T. Crédito',
-                    'DEBIT_CARD': 'T. Débito',
-                    'CHECKBOOK': 'Chequera',
-                    'CASH': 'Efectivo',
-                    'BRIDGE': 'Puente (Clearing)',
-                    'MERCHANT': 'Recaudadora',
-                }
-                return (
-                    <div className="flex flex-col items-center text-center w-full">
-                        <DataCell.Text className="font-bold text-primary">{acc.name}</DataCell.Text>
-                        <div className="flex items-center justify-center gap-1.5 mt-1">
-                            <StatusBadge 
-                                status={acc.account_type} 
-                                label={labels[acc.account_type] || acc.account_type}
-                                size="sm"
-                                className="bg-muted/50 border-muted"
-                            />
-                            {acc.bank_name && (
-                                <DataCell.Secondary className="text-[9px] flex items-center gap-0.5">
-                                    <Landmark className="h-2.5 w-2.5" />
-                                    {acc.bank_name}
-                                </DataCell.Secondary>
-                            )}
-                        </div>
-                    </div>
-                )
-            },
+            cell: ({ row }: { row: any }) => (
+                <div className="flex flex-col items-center text-center w-full">
+                    <DataCell.Text className="font-bold text-primary uppercase tracking-tight">
+                        {row.original.name}
+                    </DataCell.Text>
+                    {row.original.bank_name && (
+                        <DataCell.Secondary className="text-[10px] flex items-center gap-1 mt-0.5">
+                            <Landmark className="h-3 w-3" />
+                            {row.original.bank_name}
+                        </DataCell.Secondary>
+                    )}
+                </div>
+            ),
+        },
+        {
+            accessorKey: "account_type_display",
+            header: ({ column }: { column: any }) => (
+                <DataTableColumnHeader column={column} title="Tipología" className="justify-center" />
+            ),
+            cell: ({ row }: { row: any }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Text className="text-muted-foreground font-medium text-xs">
+                        {row.original.account_type_display || typeLabels[row.original.account_type] || row.original.account_type}
+                    </DataCell.Text>
+                </div>
+            ),
         },
         {
             accessorKey: "account_name",
@@ -159,7 +164,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         },
         {
             accessorKey: "account_type",
-            header: "Tipo",
+            header: "Tipo (Filtro)",
             enableHiding: true,
         },
         createActionsColumn<TreasuryAccount>({
@@ -199,13 +204,13 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                             column: "account_type",
                             title: "Tipo de Cuenta",
                             options: [
-                                { label: "Caja (Efectivo)", value: "CASH" },
-                                { label: "Cta. Corriente", value: "CHECKING" },
-                                { label: "T. Crédito", value: "CREDIT_CARD" },
-                                { label: "T. Débito", value: "DEBIT_CARD" },
-                                { label: "Chequera", value: "CHECKBOOK" },
-                                { label: "Puente (Clearing)", value: "BRIDGE" },
-                                { label: "Recaudadora", value: "MERCHANT" },
+                                { label: "Caja Física (Efectivo)", value: "CASH" },
+                                { label: "Cuenta Bancaria", value: "CHECKING" },
+                                { label: "T. Débito Empresa", value: "DEBIT_CARD" },
+                                { label: "T. Crédito Empresa", value: "CREDIT_CARD" },
+                                { label: "Chequera / Instr.", value: "CHECKBOOK" },
+                                { label: "Cta. Puente (Clearing)", value: "BRIDGE" },
+                                { label: "Cta. Recaudadora", value: "MERCHANT" },
                             ]
                         }
                     ]}

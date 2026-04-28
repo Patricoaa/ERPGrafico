@@ -383,13 +383,13 @@ class TreasuryAccountManager(models.Manager):
 
 class TreasuryAccount(models.Model):
     class Type(models.TextChoices):
-        CHECKING = 'CHECKING', _('Cuenta Corriente')
-        CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito')
-        DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito')
-        CHECKBOOK = 'CHECKBOOK', _('Chequera')
-        CASH = 'CASH', _('Efectivo')
-        BRIDGE = 'BRIDGE', _('Cuenta Puente (Clearing)')
-        MERCHANT = 'MERCHANT', _('Cuenta Recaudadora Pasarela')
+        CHECKING = 'CHECKING', _('Cuenta Bancaria (Corriente/Vista)')
+        CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito (Cta. Propia)')
+        DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito (Cta. Propia)')
+        CHECKBOOK = 'CHECKBOOK', _('Chequera / Instrumentos')
+        CASH = 'CASH', _('Caja Física (Efectivo)')
+        BRIDGE = 'BRIDGE', _('Cuenta Puente (Liquidación/Clearing)')
+        MERCHANT = 'MERCHANT', _('Cuenta Recaudadora (Pasarela/Wallet)')
 
     # Types que NO son efectivo/banco directo — usan prefijos contables distintos.
     _NON_CASH_EQUIVALENT_TYPES = frozenset({'BRIDGE', 'MERCHANT'})
@@ -1153,12 +1153,12 @@ class PaymentTerminalDevice(models.Model):
 class PaymentMethod(models.Model):
     """Métodos de pago específicos asociados a una cuenta de tesorería"""
     class Type(models.TextChoices):
-        CASH = 'CASH', _('Efectivo')
-        CARD = 'CARD', _('Tarjeta')
-        DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito')
-        CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito')
-        CARD_TERMINAL = 'CARD_TERMINAL', _('Tarjeta (Terminal Integrado)')
-        TRANSFER = 'TRANSFER', _('Transferencia')
+        CASH = 'CASH', _('Efectivo Directo')
+        CARD = 'CARD', _('Tarjeta (Manual)')
+        DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta Débito Empresa')
+        CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta Crédito Empresa')
+        CARD_TERMINAL = 'CARD_TERMINAL', _('Tarjeta (Terminal POS Integrado)')
+        TRANSFER = 'TRANSFER', _('Transferencia Bancaria')
         CHECK = 'CHECK', _('Cheque')
 
     name = models.CharField(_("Nombre"), max_length=100)
