@@ -969,13 +969,21 @@ class ReconciliationRule(models.Model):
         default=0,
         help_text=_("Contador de veces que esta regla ha generado un match")
     )
-    success_rate = models.DecimalField(
-        _("Tasa de Éxito"),
-        max_digits=5,
-        decimal_places=2,
+    times_succeeded = models.IntegerField(
+        _("Veces Confirmada"),
         default=0,
-        help_text=_("Porcentaje de matches confirmados vs sugeridos")
+        help_text=_("Contador de veces que un match sugerido por esta regla fue confirmado")
     )
+
+    @property
+    def success_rate(self) -> float:
+        """
+        Tasa de éxito derivada: (times_succeeded / times_applied) * 100.
+        Retorna 0.0 si no se ha aplicado nunca para evitar ZeroDivisionError.
+        """
+        if self.times_applied == 0:
+            return 0.0
+        return round((self.times_succeeded / self.times_applied) * 100, 2)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -80,7 +80,7 @@ class RuleService:
         Filtra pagos candidatos según criterios de la regla.
         """
         filters = Q(
-            treasury_account=line.statement.treasury_account,
+            account=line.statement.treasury_account.account,
             is_reconciled=False
         )
         
@@ -150,14 +150,15 @@ class RuleService:
         payment_amount = abs(payment.amount)
         
         # 1. Score de monto
+        amount_weight = weights.get('amount', 0)
         if line_amount == payment_amount:
-            score += weights.get('amount', 40)
+            score += amount_weight
         elif abs(line_amount - payment_amount) <= payment_amount * Decimal('0.05'):  # ±5%
-            score += weights.get('amount', 40) * 0.7
+            score += amount_weight * 0.7
         
         # 2. Score de fecha
         date_diff = abs((line.transaction_date - payment.date).days)
-        date_weight = weights.get('date', 30)
+        date_weight = weights.get('date', 0)
         
         if date_diff == 0:
             score += date_weight
@@ -169,7 +170,7 @@ class RuleService:
             score += date_weight * 0.3
         
         # 3. Score de referencia
-        ref_weight = weights.get('reference', 20)
+        ref_weight = weights.get('reference', 0)
         if line.reference and payment.transaction_number:
             ref_line = line.reference.upper()
             ref_payment = payment.transaction_number.upper()
@@ -185,7 +186,7 @@ class RuleService:
                     score += ref_weight * (common / max(len(words_line), len(words_payment)))
         
         # 4. Score de contacto
-        contact_weight = weights.get('contact', 10)
+        contact_weight = weights.get('contact', 0)
         if payment.contact and line.description:
             contact_name = payment.contact.name.upper()
             description = line.description.upper()
@@ -283,12 +284,12 @@ class RuleService:
     ) -> Dict[str, Any]:
         """
         Obtiene estadísticas de uso de una regla.
-        
+
         Args:
             rule_id: ID de la regla
             date_from: Fecha inicio (opcional)
             date_to: Fecha fin (opcional)
-        
+
         Returns:
             Dict con estadísticas de la regla
         """
@@ -296,47 +297,43 @@ class RuleService:
             rule = ReconciliationRule.objects.get(id=rule_id)
         except ReconciliationRule.DoesNotExist:
             return {'error': 'Regla no encontrada'}
-        
-        # TODO: Implementar tracking de matches por regla
-        # Por ahora retornar campos del modelo
-        
+
         return {
             'rule_id': rule.id,
             'name': rule.name,
             'times_applied': rule.times_applied,
-            'success_rate': float(rule.success_rate),
+            'times_succeeded': rule.times_succeeded,
+            'success_rate': rule.success_rate,  # @property derivada
             'is_active': rule.is_active,
             'priority': rule.priority,
-            'auto_confirm': rule.auto_confirm
+            'auto_confirm': rule.auto_confirm,
         }
     
     @staticmethod
     @transaction.atomic
-    def increment_rule_usage(rule_id: int, success: bool = True):
+    def increment_rule_usage(rule_id: int, success: bool = True) -> None:
         """
-        Incrementa contador de uso de regla y actualiza tasa de éxito.
-        
+        Incrementa contadores de uso de una regla de forma atómica.
+
+        Utiliza contadores enteros separados (times_applied / times_succeeded)
+        en lugar de un promedio móvil flotante para evitar deriva acumulada.
+        La tasa de éxito se deriva como propiedad calculada en memoria.
+
         Args:
-            rule_id: ID de regla
-            success: Si el match fue confirmado o no
+            rule_id: ID de la regla a actualizar
+            success: True si el match fue confirmado por el usuario, False si fue descartado
         """
-        try:
-            rule = ReconciliationRule.objects.get(id=rule_id)
-            
-            # Incrementar contador
-            rule.times_applied += 1
-            
-            # Actualizar tasa de éxito (promedio móvil simple)
-            if success:
-                current_successes = (rule.success_rate * (rule.times_applied - 1)) / 100
-                new_successes = current_successes + 1
-                rule.success_rate = (new_successes / rule.times_applied) * 100
-            else:
-                current_successes = (rule.success_rate * (rule.times_applied - 1)) / 100
-                rule.success_rate = (current_successes / rule.times_applied) * 100
-            
-            rule.save()
-        except ReconciliationRule.DoesNotExist:
+        from django.db.models import F
+
+        fields_to_increment: List[str] = ['times_applied']
+        if success:
+            fields_to_increment.append('times_succeeded')
+
+        updated = ReconciliationRule.objects.filter(id=rule_id).update(
+            **{field: F(field) + 1 for field in fields_to_increment}
+        )
+        # Si la regla no existe simplemente ignoramos (evita DoesNotExist en hot-path)
+        if not updated:
             pass
 
     @staticmethod

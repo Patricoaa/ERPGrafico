@@ -445,16 +445,39 @@ class MatchingService:
             b.save()
             total_payments_amount += b.net_amount
             
-        # Calculate Difference and assign to first line (Arbitrary anchor)
+        # Calculate Difference and distribute proportionally
         difference = total_lines_amount - total_payments_amount
         
-        # Reset diff on all lines first
-        for l in lines:
-            l.difference_amount = Decimal(0)
-            l.save()
+        if lines and total_lines_amount > 0:
+            remaining_diff = difference
+            distribution_log = []
             
-        # Assign to first line
-        if lines:
+            for i, l in enumerate(lines):
+                # If it's the last line, assign the remaining difference to avoid rounding issues
+                if i == len(lines) - 1:
+                    l_diff = remaining_diff
+                else:
+                    line_abs = abs(l.credit - l.debit)
+                    proportion = line_abs / total_lines_amount
+                    l_diff = (difference * proportion).quantize(Decimal('0.01'))
+                    remaining_diff -= l_diff
+                
+                l.difference_amount = l_diff
+                if difference_reason:
+                    l.difference_reason = difference_reason
+                l.save()
+                
+                if l_diff != 0:
+                    distribution_log.append(f"L{l.line_number}: {l_diff}")
+            
+            # Document distribution in group notes
+            if distribution_log:
+                dist_str = ", ".join(distribution_log)
+                notes_prefix = f"{notes}\n" if notes else ""
+                group.notes = f"{notes_prefix}[Reparto proporcional: {dist_str}]"
+                group.save()
+        elif lines:
+            # Fallback if total_lines_amount is 0
             lines[0].difference_amount = difference
             if difference_reason:
                 lines[0].difference_reason = difference_reason
@@ -547,7 +570,7 @@ class MatchingService:
                     date=line.transaction_date,
                     reference=f"Transferencia Conciliación {line.statement.display_id}",
                     description=f"Movimiento de fondos por conciliación ({p.get_payment_method_display()})",
-                    status=JournalEntry.State.POSTED
+                    status=JournalEntry.State.DRAFT
                 )
                 
                 # Dr Bank (Destination)

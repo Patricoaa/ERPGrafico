@@ -133,6 +133,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         lineId?: number
     }>({ open: false, type: null })
 
+    const [confidenceThreshold, setConfidenceThreshold] = useState<number>(90)
+
     // ─── Fetching Data ────────────────────────────────────────────────────────
 
     const fetchStatement = useCallback(async () => {
@@ -342,7 +344,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const confirmAutoMatch = async () => {
         try {
             setAutoMatching(true)
-            const response = await api.post(`/treasury/statements/${statementId}/auto_match/`, { confidence_threshold: 90 })
+            const response = await api.post(`/treasury/statements/${statementId}/auto_match/`, { confidence_threshold: confidenceThreshold })
             toast.success(`Conciliación Finalizada`, {
                 description: `${response.data.matched_count} de ${response.data.total_unreconciled} líneas conciliadas automáticamente.`
             })
@@ -662,8 +664,37 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 onOpenChange={(open) => !open && setActionDialog({ open: false, type: null })}
                 onConfirm={confirmAutoMatch}
                 title="Conciliación Automática"
-                description="Se buscarán coincidencias automáticas basadas en monto y fecha para las líneas no conciliadas. Los resultados se mostrarán como Match Sugerido."
+                description={
+                    <div className="space-y-6 pt-2">
+                        <p>Se buscarán coincidencias automáticas basadas en monto y fecha. Las sugerencias con un score superior al umbral se procesarán automáticamente.</p>
+                        
+                        <div className="space-y-3 bg-muted/30 p-4 rounded-lg border border-border/50">
+                            <div className="flex justify-between items-center">
+                                <Label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+                                    Umbral de Confianza
+                                </Label>
+                                <Badge variant="outline" className="font-mono font-bold text-primary bg-primary/5 border-primary/20">
+                                    {confidenceThreshold}%
+                                </Badge>
+                            </div>
+                            <input 
+                                type="range" 
+                                min="50" 
+                                max="100" 
+                                step="1"
+                                value={confidenceThreshold}
+                                onChange={(e) => setConfidenceThreshold(parseInt(e.target.value))}
+                                className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                            />
+                            <div className="flex justify-between text-[9px] font-bold text-muted-foreground uppercase opacity-50">
+                                <span>Flexible (50%)</span>
+                                <span>Estricto (100%)</span>
+                            </div>
+                        </div>
+                    </div>
+                }
                 variant="default"
+                confirmText="Iniciar Auto-Match"
             />
 
             {/* Difference Handling Modal */}
