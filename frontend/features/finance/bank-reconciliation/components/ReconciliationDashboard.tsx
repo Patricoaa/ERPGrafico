@@ -63,16 +63,16 @@ export function ReconciliationDashboard() {
             <div className="flex items-center justify-between gap-4 px-1 pb-2 border-b border-border/10">
                 <div className="flex flex-col gap-0.5">
                     <h2 className="text-xl font-black tracking-tight text-foreground/80 uppercase">Dashboard de Tesorería</h2>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-60">Monitoreo de flujo y conciliación</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] opacity-60">Monitoreo de flujo y conciliación</p>
                 </div>
                 <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                    <SelectTrigger className="w-[240px] h-9 rounded-md border-border/40 font-bold uppercase text-[10px] tracking-wider">
+                    <SelectTrigger className="w-[240px] h-9 rounded-md border-border/40 font-bold uppercase text-xs tracking-wider">
                         <SelectValue placeholder="Todas las cuentas" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all" className="text-[10px] font-bold uppercase">Todas las cuentas</SelectItem>
+                        <SelectItem value="all" className="text-xs font-bold uppercase">Todas las cuentas</SelectItem>
                         {accounts.map(acc => (
-                            <SelectItem key={acc.id} value={acc.id.toString()} className="text-[10px] font-bold uppercase">{acc.name}</SelectItem>
+                            <SelectItem key={acc.id} value={acc.id.toString()} className="text-xs font-bold uppercase">{acc.name}</SelectItem>
                         ))}
                     </SelectContent>
                 </Select>

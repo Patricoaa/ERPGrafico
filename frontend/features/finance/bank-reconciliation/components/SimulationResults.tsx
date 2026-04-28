@@ -66,13 +66,13 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
                         <TableRow key={i} className="group transition-colors">
                             <TableCell className="py-3">
                                 <div className="text-xs font-black uppercase text-foreground/80">{res.line.description}</div>
-                                <div className="text-[10px] font-mono text-muted-foreground mt-1">
+                                <div className="text-[10px] font-mono text-muted-foreground mt-1"> {/* intentional: badge density */}
                                     {formatPlainDate(res.line.date)} • <span className="font-bold text-foreground/60">${res.line.amount}</span>
                                 </div>
                             </TableCell>
                             <TableCell className="py-3">
                                 <div className="text-xs font-black uppercase text-foreground/80">{res.payment.partner || 'Concepto General'}</div>
-                                <div className="text-[10px] font-mono text-muted-foreground mt-1">
+                                <div className="text-[10px] font-mono text-muted-foreground mt-1"> {/* intentional: badge density */}
                                     Ref: <span className="font-bold">{res.payment.reference || 'N/A'}</span> • <span className="font-bold">${res.payment.amount}</span>
                                 </div>
                             </TableCell>

@@ -686,6 +686,11 @@ class AccountingSettings(models.Model):
         verbose_name=_("Cuenta de Ajuste por Redondeo"),
         help_text=_("Para justificar diferencias de redondeo")
     )
+    auto_post_reconciliation_adjustments = models.BooleanField(
+        _("Auto-Publicar Ajustes de Conciliación"),
+        default=False,
+        help_text=_("Si se activa, los ajustes contables generados desde la conciliación bancaria se crearán en estado PUBLICADO (POSTED) en lugar de BORRADOR (DRAFT).")
+    )
     terminal_commission_bridge_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='settings_terminal_comm_bridge',

@@ -108,6 +108,9 @@ class ReconciliationService:
         
         BankStatementLine.objects.bulk_create(bulk_lines)
         
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('treasury')
+        
         return {
             'statement': statement,
             'total_lines': len(bulk_lines),

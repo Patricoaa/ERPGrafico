@@ -65,13 +65,13 @@ export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
                             <Badge 
                                 key={type} 
                                 variant="secondary" 
-                                className="text-[10px] font-black uppercase bg-destructive/5 text-destructive border-destructive/10"
+                                className="text-[10px] font-black uppercase bg-destructive/5 text-destructive border-destructive/10" // intentional: badge density
                             >
                                 {info.label}: {info.count}
                             </Badge>
                         ))}
                         {differences.count === 0 && (
-                            <span className="text-[10px] font-black uppercase text-success flex items-center gap-1">
+                            <span className="text-[10px] font-black uppercase text-success flex items-center gap-1"> {/* intentional: badge density */}
                                 <CheckCircle2 className="h-2.5 w-2.5" /> Sin ajustes
                             </span>
                         )}
@@ -86,7 +86,7 @@ export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
                 </CardHeader>
                 <CardContent>
                     <div className="text-3xl font-black font-heading tracking-tighter">{statements.total}</div>
-                    <div className="flex justify-between text-[10px] font-bold text-muted-foreground mt-3 uppercase tracking-wider">
+                    <div className="flex justify-between text-xs font-bold text-muted-foreground mt-3 uppercase tracking-wider">
                         <span className="text-success">{statements.confirmed} confirmados</span>
                         <span className="text-primary">{statements.draft} en borrador</span>
                     </div>
