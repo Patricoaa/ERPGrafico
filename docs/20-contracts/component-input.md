@@ -206,6 +206,74 @@ Wrapper `fieldset + legend` para controles que **no son** `<input>` nativos (dat
 | [`FolioValidationInput`](./component-contracts.md#folio-validation-input) | Folio DTE con validación de unicidad asíncrona |
 | [`PeriodValidationDateInput`](./component-contracts.md#period-validation-date-input) | Fecha con validación de periodo contable/tributario |
 | [`DatePicker`](./component-contracts.md#datepicker) | Selector de fecha simple |
+| [`MultiTagInput`](#multitaginput) | Entrada de múltiples etiquetas (tags) con estilo notched |
+
+---
+
+## MultiTagInput 🟡
+
+Componente de entrada múltiple que permite añadir valores escribiendo y pulsando `Enter`. Los valores aparecen como etiquetas (badges) dentro del propio campo.
+
+```tsx
+<MultiTagInput
+  label="Etiquetas"
+  values={tags}
+  onAdd={(newTag) => setTags([...tags, newTag])}
+  onRemove={(tag) => setTags(tags.filter(t => t !== tag))}
+  placeholder="Escribe y pulsa Enter..."
+  hint="Ej: Rojo, Azul, XL"
+/>
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `label` | `string` | ❌ | — | Texto del legend. |
+| `values` | `string[]` | ✅ | — | Arreglo de strings con los valores actuales. |
+| `onAdd` | `(val: string) => void` | ✅ | — | Callback invocado al pulsar `Enter`. |
+| `onRemove` | `(val: string) => void` | ✅ | — | Callback invocado al eliminar una etiqueta o pulsar `Backspace`. |
+| `placeholder` | `string` | ❌ | — | Texto mostrado cuando la lista de `values` está vacía. |
+| `required` | `boolean` | ❌ | `false` | Muestra `*` rojo. |
+| `error` | `string` | ❌ | — | Mensaje de error visual. |
+| `hint` | `string` | ❌ | — | Texto de ayuda debajo del campo. |
+| `disabled` | `boolean` | ❌ | `false` | Deshabilita el control. |
+
+### Comportamiento de teclado
+
+- **Enter**: Procesa el texto actual, invoca `onAdd` y limpia el input.
+- **Backspace**: Si el input está vacío, invoca `onRemove` con el último elemento del arreglo.
+
+---
+
+## MultiSelectTagInput 🟡
+
+Variante del selector múltiple que utiliza un dropdown para elegir entre opciones predefinidas. Ideal para categorías, etiquetas de sistema o selecciones de una lista cerrada.
+
+```tsx
+<MultiSelectTagInput
+  label="Categorías"
+  options={[
+    { label: 'Electrónica', value: 'elec' },
+    { label: 'Hogar', value: 'home' }
+  ]}
+  value={selectedIds}
+  onChange={setSelectedIds}
+  placeholder="Seleccione categorías..."
+/>
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `label` | `string` | ❌ | — | Texto del legend. |
+| `options` | `MultiSelectOption[]` | ✅ | — | `{ label: string, value: string }[]`. |
+| `value` | `string[]` | ✅ | — | Arreglo de valores (values) seleccionados. |
+| `onChange` | `(vals: string[]) => void` | ✅ | — | Callback con el nuevo arreglo de valores. |
+| `placeholder` | `string` | ❌ | `"Seleccionar..."` | Texto cuando no hay selección. |
+| `required` | `boolean` | ❌ | `false` | Muestra `*` rojo. |
+| `error` | `string` | ❌ | — | Mensaje de error visual. |
+| `hint` | `string` | ❌ | — | Texto de ayuda. |
+| `disabled` | `boolean` | ❌ | `false` | Deshabilita el control. |
+
+---
 
 ## Do / Don't
 

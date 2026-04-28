@@ -50,7 +50,7 @@ export function UoMSelector({
     label = 'Unidad',
     error,
     quantity = 1,
-    variant = 'inline',
+    variant = 'standalone',
     className,
     required
 }: UoMSelectorProps) {

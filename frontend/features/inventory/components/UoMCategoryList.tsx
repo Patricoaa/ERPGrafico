@@ -12,8 +12,8 @@ import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton, LabeledInput } from "@/components/shared"
-import { Plus, Pencil, Trash2, Ruler } from "lucide-react"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { Plus, Pencil, Trash2 } from "lucide-react"
+import { UoMCategoryForm } from "./UoMCategoryForm"
 import { toast } from "sonner"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { cn } from "@/lib/utils"
@@ -74,27 +74,10 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
         fetchCategories()
     }, [])
 
-    const handleSave = async () => {
-        if (!currentCategory.name) {
-            toast.error("El nombre es requerido")
-            return
-        }
-        setIsSaving(true)
-        try {
-            if (currentCategory.id) {
-                await api.put(`/inventory/uom-categories/${currentCategory.id}/`, currentCategory)
-                toast.success("Categoría actualizada")
-            } else {
-                await api.post('/inventory/uom-categories/', currentCategory)
-                toast.success("Categoría creada")
-            }
-            setIsModalOpen(false)
+    const handleSave = async (category?: UoMCategory) => {
+        setIsModalOpen(false)
+        if (category) {
             fetchCategories()
-        } catch (error) {
-            showApiError(error, "Error al guardar")
-            console.error(error)
-        } finally {
-            setIsSaving(false)
         }
     }
 
@@ -194,7 +177,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
                 createAction={createAction}
             />
 
-            <BaseModal
+            <UoMCategoryForm
                 open={isModalOpen || !!externalOpen}
                 onOpenChange={(open) => {
                     if (!open) {
@@ -203,41 +186,9 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
                         setIsModalOpen(true)
                     }
                 }}
-                size={currentCategory.id ? "lg" : "md"}
-                title={
-                    <div className="flex items-center gap-3">
-                        <Ruler className="h-5 w-5 text-muted-foreground" />
-                        <span>{currentCategory.id ? "Editar Categoría de Medida" : "Nueva Categoría de Medida"}</span>
-                    </div>
-                }
-                description={currentCategory.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo (ej: Peso, Volumen)."}
-                footer={
-                    <div className="flex justify-end gap-2 w-full">
-                        <CancelButton onClick={() => setIsModalOpen(false)} disabled={isSaving} />
-                        <SubmitButton onClick={handleSave} loading={isSaving}>Guardar</SubmitButton>
-                    </div>
-                }
-            >
-                <div className="flex flex-1 overflow-hidden">
-                    <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                        <LabeledInput
-                            label="Nombre"
-                            required
-                            id="cat-name"
-                            placeholder="Ej: Peso, Volumen, Unidades"
-                            value={currentCategory.name || ''}
-                            onChange={e => setCurrentCategory({ ...currentCategory, name: e.target.value })}
-                        />
-                    </div>
-
-                    {currentCategory.id && (
-                        <ActivitySidebar
-                                entityId={currentCategory.id}
-                                entityType="uom_category"
-                            />
-                    )}
-                </div>
-            </BaseModal>
+                initialData={currentCategory.id ? currentCategory : undefined}
+                onSuccess={handleSave}
+            />
 
             <ActionConfirmModal
                 open={deleteConfirm.isOpen}

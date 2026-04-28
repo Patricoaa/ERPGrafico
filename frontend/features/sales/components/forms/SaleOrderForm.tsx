@@ -70,7 +70,7 @@ const OrderTotals = ({ control }: { control: Control<SaleOrderFormValues> }) => 
                 <div className="text-right font-mono font-bold text-sm">
                     <MoneyDisplay amount={totals.net} />
                 </div>
-                
+
                 <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground self-center">IVA Trasladado (19%)</span>
                 <div className="text-right font-mono font-bold text-sm">
                     <MoneyDisplay amount={totals.tax} />
@@ -337,313 +337,313 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                 <Form {...form}>
                     <form id="sale-order-form" onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-10 py-6">
                         <div className="space-y-6">
-                        <div className="space-y-4">
-                            <FormSection title="Líneas de Venta" icon={Plus} />
-                            
-                            <div className="flex justify-end">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => append({ product: "", description: "", quantity: 1, uom: "", unit_price: 0, unit_price_gross: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null })}
-                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-primary/30 hover:bg-primary/5 shadow-sm"
-                                >
-                                    <Plus className="mr-2 h-3.5 w-3.5" />
-                                    Nueva Línea
-                                </Button>
-                            </div>
+                            <div className="space-y-4">
+                                <FormSection title="Líneas de Venta" icon={Plus} />
 
-                            <div className="rounded-lg border border-dashed">
-                                <Table>
-                                    <TableHeader className="bg-muted/30 border-b-2">
-                                        <TableRow className="hover:bg-transparent">
-                                            <TableHead className="w-[30%] text-[10px] font-black uppercase tracking-widest">Producto / Servicio</TableHead>
-                                            <TableHead className="w-[12%] text-[10px] font-black uppercase tracking-widest text-center">Cant.</TableHead>
-                                            <TableHead className="w-[12%] text-[10px] font-black uppercase tracking-widest">Unidad</TableHead>
-                                            <TableHead className="w-[20%] text-[10px] font-black uppercase tracking-widest text-right">P. Unitario Bruto</TableHead>
-                                            <TableHead className="w-[20%] text-[10px] font-black uppercase tracking-widest text-right">Total Línea</TableHead>
-                                            <TableHead className="w-[6%]"></TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {fields.map((row, index) => (
-                                            <TableRow key={row.id}>
-                                                <TableCell className="align-top">
-                                                    <FormField<SaleOrderFormValues>
-                                                        control={form.control as any}
-                                                        name={`lines.${index}.product`}
-                                                        render={({ field }) => (
-                                                            <div className="space-y-1">
-                                                                <div className="flex gap-2 items-start">
-                                                                    <div className="flex-1">
-                                                                        <ProductSelector
-                                                                            value={field.value as any}
-                                                                            restrictStock={true}
-                                                                            context="sale"
-                                                                            onChange={async (value: string | null) => {
-                                                                                const selectedProduct = products.find(p => p.id.toString() === value)
+                                <div className="flex justify-end">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => append({ product: "", description: "", quantity: 1, uom: "", unit_price: 0, unit_price_gross: 0, tax_rate: 19, custom_specs: {}, manufacturing_data: null })}
+                                        className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-primary/30 hover:bg-primary/5 shadow-sm"
+                                    >
+                                        <Plus className="mr-2 h-3.5 w-3.5" />
+                                        Nueva Línea
+                                    </Button>
+                                </div>
 
-                                                                                if (selectedProduct?.product_type === 'CONSUMABLE') {
-                                                                                    toast.error("Producto no vendible", {
-                                                                                        description: "Los productos consumibles son para uso interno y no pueden venderse directamente."
-                                                                                    })
-                                                                                    return
-                                                                                }
+                                <div className="rounded-lg border border-dashed">
+                                    <Table>
+                                        <TableHeader className="bg-muted/30 border-b-2">
+                                            <TableRow className="hover:bg-transparent">
+                                                <TableHead className="w-[30%] text-[10px] font-black uppercase tracking-widest">Producto / Servicio</TableHead>
+                                                <TableHead className="w-[12%] text-[10px] font-black uppercase tracking-widest text-center">Cantidad</TableHead>
+                                                <TableHead className="w-[12%] text-[10px] font-black uppercase tracking-widest">Unidad</TableHead>
+                                                <TableHead className="w-[20%] text-[10px] font-black uppercase tracking-widest text-right">P. Unitario Bruto</TableHead>
+                                                <TableHead className="w-[20%] text-[10px] font-black uppercase tracking-widest text-right">Total Línea</TableHead>
+                                                <TableHead className="w-[6%]"></TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {fields.map((row, index) => (
+                                                <TableRow key={row.id}>
+                                                    <TableCell className="align-top">
+                                                        <FormField<SaleOrderFormValues>
+                                                            control={form.control as any}
+                                                            name={`lines.${index}.product`}
+                                                            render={({ field }) => (
+                                                                <div className="space-y-1">
+                                                                    <div className="flex gap-2 items-start">
+                                                                        <div className="flex-1">
+                                                                            <ProductSelector
+                                                                                value={field.value as any}
+                                                                                restrictStock={true}
+                                                                                context="sale"
+                                                                                onChange={async (value: string | null) => {
+                                                                                    const selectedProduct = products.find(p => p.id.toString() === value)
 
-                                                                                field.onChange(value)
-                                                                                // Auto-populate price, description and UoM from product
-                                                                                if (selectedProduct) {
-                                                                                    const qty = form.getValues(`lines.${index}.quantity`) || 1
-                                                                                    const uomId = selectedProduct.uom
-
-                                                                                    // Call API for price
-                                                                                    const { net, gross } = await fetchEffectivePrice(selectedProduct, qty, uomId)
-
-                                                                                    form.setValue(`lines.${index}.unit_price`, net)
-                                                                                    form.setValue(`lines.${index}.unit_price_gross`, gross)
-                                                                                    form.setValue(`lines.${index}.description`, selectedProduct.name)
-                                                                                    form.setValue(`lines.${index}.uom`, uomId?.toString() || "")
-
-                                                                                    // Reset custom specs if not custom manufacturable
-                                                                                    if (selectedProduct.product_type !== 'MANUFACTURABLE_CUSTOM') {
-                                                                                        form.setValue(`lines.${index}.custom_specs`, {})
+                                                                                    if (selectedProduct?.product_type === 'CONSUMABLE') {
+                                                                                        toast.error("Producto no vendible", {
+                                                                                            description: "Los productos consumibles son para uso interno y no pueden venderse directamente."
+                                                                                        })
+                                                                                        return
                                                                                     }
-                                                                                }
-                                                                            }}
-                                                                        />
-                                                                    </div>
-                                                                </div>
-                                                                {(() => {
-                                                                    const prod = products.find(p => p.id.toString() === field.value)
-                                                                    if (!prod) return null
 
-                                                                    return (
-                                                                        <div className="flex gap-1.5 flex-wrap mt-2">
-                                                                            {prod.product_type === 'STORABLE' && (
-                                                                                <>
-                                                                                    <span className={cn("text-[8px] font-black uppercase px-2 py-0.5 rounded-full border leading-none tracking-tighter",
-                                                                                        (prod.current_stock || 0) > 0 ? "border-success/30 text-success bg-success/5" : "border-destructive/10 text-destructive/40 bg-muted/30"
-                                                                                    )}>
-                                                                                        Stock: {prod.current_stock || 0}
-                                                                                    </span>
-                                                                                    <span className={cn("text-[8px] font-black uppercase px-2 py-0.5 rounded-full border leading-none tracking-tighter",
-                                                                                        (prod.qty_available || 0) > 0 ? "border-success/30 text-success bg-success/5" : "border-warning/30 text-warning bg-warning/5"
-                                                                                    )}>
-                                                                                        Disp: {prod.qty_available || 0}
-                                                                                    </span>
-                                                                                </>
-                                                                            )}
+                                                                                    field.onChange(value)
+                                                                                    // Auto-populate price, description and UoM from product
+                                                                                    if (selectedProduct) {
+                                                                                        const qty = form.getValues(`lines.${index}.quantity`) || 1
+                                                                                        const uomId = selectedProduct.uom
 
-                                                                            {prod.product_type === 'MANUFACTURABLE' && prod.has_bom && (
-                                                                                <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-info/30 text-info bg-info/5 leading-none tracking-tighter">
-                                                                                    Fab: {prod.manufacturable_quantity ?? 'N/A'}
-                                                                                </span>
-                                                                            )}
+                                                                                        // Call API for price
+                                                                                        const { net, gross } = await fetchEffectivePrice(selectedProduct, qty, uomId)
 
-                                                                            {(prod.product_type === 'MANUFACTURABLE' || prod.product_type === 'MANUFACTURABLE_CUSTOM') && prod.active && (
-                                                                                <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-success/30 text-success bg-success/5 leading-none tracking-tighter">
-                                                                                    Activo
-                                                                                </span>
-                                                                            )}
+                                                                                        form.setValue(`lines.${index}.unit_price`, net)
+                                                                                        form.setValue(`lines.${index}.unit_price_gross`, gross)
+                                                                                        form.setValue(`lines.${index}.description`, selectedProduct.name)
+                                                                                        form.setValue(`lines.${index}.uom`, uomId?.toString() || "")
+
+                                                                                        // Reset custom specs if not custom manufacturable
+                                                                                        if (selectedProduct.product_type !== 'MANUFACTURABLE_CUSTOM') {
+                                                                                            form.setValue(`lines.${index}.custom_specs`, {})
+                                                                                        }
+                                                                                    }
+                                                                                }}
+                                                                            />
                                                                         </div>
-                                                                    )
-                                                                })()}
-                                                            </div>
-                                                        )}
-                                                    />
-                                                </TableCell>
-                                                <TableCell className="align-top">
-                                                    <FormField<SaleOrderFormValues>
-                                                        control={form.control as any}
-                                                        name={`lines.${index}.quantity`}
-                                                        render={({ field }) => (
-                                                            <div className="flex flex-col gap-1">
-                                                                <LabeledInput
-                                                                    type="number"
-                                                                    step="0.01"
-                                                                    {...(field as any)}
-                                                                    className={cn(
-                                                                        "h-10 text-center font-mono font-black border-2",
-                                                                        (() => {
-                                                                            const productId = form.getValues(`lines.${index}.product`)
-                                                                            const product = products.find(p => p.id.toString() === productId)
-                                                                            if (!product) return "bg-muted/10 opacity-50"
-                                                                            let maxQty = Infinity
-                                                                            if (product.product_type === 'STORABLE') maxQty = product.qty_available || 0
-                                                                            if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity || 0
+                                                                    </div>
+                                                                    {(() => {
+                                                                        const prod = products.find(p => p.id.toString() === field.value)
+                                                                        if (!prod) return null
 
-                                                                            const currentVal = parseFloat((field as any).value?.toString()) || 0
-                                                                            return currentVal >= maxQty && maxQty > 0 ? "border-warning/50 text-warning bg-warning/5" : "border-primary/5 focus:border-primary/30"
-                                                                        })()
-                                                                    )}
-                                                                    onChange={async (e) => {
-                                                                        let val = parseFloat(e.target.value) || 0
-                                                                        const productId = form.getValues(`lines.${index}.product`)
-                                                                        const product = products.find(p => p.id.toString() === productId)
-
-                                                                        if (product) {
-                                                                            let maxQty = Infinity
-                                                                            if (product.product_type === 'STORABLE') maxQty = product.qty_available || 0
-                                                                            if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity || 0
-
-                                                                            if (val > maxQty) {
-                                                                                val = maxQty
-                                                                                toast.info(`Stock máximo alcanzado: ${maxQty}`)
-                                                                            }
-                                                                        }
-                                                                        field.onChange(val)
-                                                                        if (product) {
-                                                                            const uomId = parseInt(form.getValues(`lines.${index}.uom`))
-                                                                            const { net, gross } = await fetchEffectivePrice(product, val, isNaN(uomId) ? undefined : uomId)
-                                                                            form.setValue(`lines.${index}.unit_price`, net)
-                                                                            form.setValue(`lines.${index}.unit_price_gross`, gross)
-                                                                        }
-                                                                    }}
-                                                                />
-                                                                {(() => {
-                                                                    const productId = form.getValues(`lines.${index}.product`)
-                                                                    const product = products.find(p => p.id.toString() === productId)
-                                                                    if (!product) return null
-
-                                                                    let maxQty = null
-                                                                    if (product.product_type === 'STORABLE') maxQty = product.qty_available || 0
-                                                                    if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity ?? 0
-
-                                                                    if (maxQty !== null && maxQty !== Infinity) {
                                                                         return (
-                                                                            <div className="flex justify-center mt-1">
-                                                                                <span className="text-[8px] font-black text-muted-foreground/40 uppercase tracking-tighter">
-                                                                                    Límite: {maxQty}
-                                                                                </span>
+                                                                            <div className="flex gap-1.5 flex-wrap mt-2">
+                                                                                {prod.product_type === 'STORABLE' && (
+                                                                                    <>
+                                                                                        <span className={cn("text-[8px] font-black uppercase px-2 py-0.5 rounded-full border leading-none tracking-tighter",
+                                                                                            (prod.current_stock || 0) > 0 ? "border-success/30 text-success bg-success/5" : "border-destructive/10 text-destructive/40 bg-muted/30"
+                                                                                        )}>
+                                                                                            Stock: {prod.current_stock || 0}
+                                                                                        </span>
+                                                                                        <span className={cn("text-[8px] font-black uppercase px-2 py-0.5 rounded-full border leading-none tracking-tighter",
+                                                                                            (prod.qty_available || 0) > 0 ? "border-success/30 text-success bg-success/5" : "border-warning/30 text-warning bg-warning/5"
+                                                                                        )}>
+                                                                                            Disp: {prod.qty_available || 0}
+                                                                                        </span>
+                                                                                    </>
+                                                                                )}
+
+                                                                                {prod.product_type === 'MANUFACTURABLE' && prod.has_bom && (
+                                                                                    <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-info/30 text-info bg-info/5 leading-none tracking-tighter">
+                                                                                        Fab: {prod.manufacturable_quantity ?? 'N/A'}
+                                                                                    </span>
+                                                                                )}
+
+                                                                                {(prod.product_type === 'MANUFACTURABLE' || prod.product_type === 'MANUFACTURABLE_CUSTOM') && prod.active && (
+                                                                                    <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-success/30 text-success bg-success/5 leading-none tracking-tighter">
+                                                                                        Activo
+                                                                                    </span>
+                                                                                )}
                                                                             </div>
                                                                         )
-                                                                    }
-                                                                    return null
-                                                                })()}
-                                                            </div>
-                                                        )}
-                                                    />
-                                                </TableCell>
-                                                <TableCell className="align-top">
-                                                    <FormField<SaleOrderFormValues>
-                                                        control={form.control as any}
-                                                        name={`lines.${index}.uom`}
-                                                        render={({ field }) => {
-                                                            const productId = form.watch(`lines.${index}.product`) || ""
-                                                            const selectedProduct = products.find(p => p.id.toString() === productId)
-                                                            const quantity = Number(form.watch(`lines.${index}.quantity`)) || 1
+                                                                    })()}
+                                                                </div>
+                                                            )}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="align-top">
+                                                        <FormField<SaleOrderFormValues>
+                                                            control={form.control as any}
+                                                            name={`lines.${index}.quantity`}
+                                                            render={({ field }) => (
+                                                                <div className="flex flex-col gap-1">
+                                                                    <LabeledInput
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        {...(field as any)}
+                                                                        className={cn(
+                                                                            "h-10 text-center font-mono font-black border-2",
+                                                                            (() => {
+                                                                                const productId = form.getValues(`lines.${index}.product`)
+                                                                                const product = products.find(p => p.id.toString() === productId)
+                                                                                if (!product) return "bg-muted/10 opacity-50"
+                                                                                let maxQty = Infinity
+                                                                                if (product.product_type === 'STORABLE') maxQty = product.qty_available || 0
+                                                                                if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity || 0
 
-                                                            return (
-                                                                <UoMSelector
-                                                                    product={selectedProduct || null}
-                                                                    context="sale"
-                                                                    value={(field as any).value || ""}
-                                                                    onChange={async (val) => {
-                                                                        field.onChange(val)
-                                                                        const qty = Number(form.getValues(`lines.${index}.quantity`)) || 1
-                                                                        const uomId = parseInt(val)
-                                                                        if (selectedProduct) {
-                                                                            const { net, gross } = await fetchEffectivePrice(selectedProduct, qty, isNaN(uomId) ? undefined : uomId)
-                                                                            form.setValue(`lines.${index}.unit_price`, net)
-                                                                            form.setValue(`lines.${index}.unit_price_gross`, gross)
+                                                                                const currentVal = parseFloat((field as any).value?.toString()) || 0
+                                                                                return currentVal >= maxQty && maxQty > 0 ? "border-warning/50 text-warning bg-warning/5" : "border-primary/5 focus:border-primary/30"
+                                                                            })()
+                                                                        )}
+                                                                        onChange={async (e) => {
+                                                                            let val = parseFloat(e.target.value) || 0
+                                                                            const productId = form.getValues(`lines.${index}.product`)
+                                                                            const product = products.find(p => p.id.toString() === productId)
+
+                                                                            if (product) {
+                                                                                let maxQty = Infinity
+                                                                                if (product.product_type === 'STORABLE') maxQty = product.qty_available || 0
+                                                                                if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity || 0
+
+                                                                                if (val > maxQty) {
+                                                                                    val = maxQty
+                                                                                    toast.info(`Stock máximo alcanzado: ${maxQty}`)
+                                                                                }
+                                                                            }
+                                                                            field.onChange(val)
+                                                                            if (product) {
+                                                                                const uomId = parseInt(form.getValues(`lines.${index}.uom`))
+                                                                                const { net, gross } = await fetchEffectivePrice(product, val, isNaN(uomId) ? undefined : uomId)
+                                                                                form.setValue(`lines.${index}.unit_price`, net)
+                                                                                form.setValue(`lines.${index}.unit_price_gross`, gross)
+                                                                            }
+                                                                        }}
+                                                                    />
+                                                                    {(() => {
+                                                                        const productId = form.getValues(`lines.${index}.product`)
+                                                                        const product = products.find(p => p.id.toString() === productId)
+                                                                        if (!product) return null
+
+                                                                        let maxQty = null
+                                                                        if (product.product_type === 'STORABLE') maxQty = product.qty_available || 0
+                                                                        if (product.product_type === 'MANUFACTURABLE' && product.has_bom) maxQty = product.manufacturable_quantity ?? 0
+
+                                                                        if (maxQty !== null && maxQty !== Infinity) {
+                                                                            return (
+                                                                                <div className="flex justify-center mt-1">
+                                                                                    <span className="text-[8px] font-black text-muted-foreground/40 uppercase tracking-tighter">
+                                                                                        Límite: {maxQty}
+                                                                                    </span>
+                                                                                </div>
+                                                                            )
                                                                         }
-                                                                    }}
-                                                                    uoms={uoms}
-                                                                    showConversionHint={true}
-                                                                    quantity={quantity}
-                                                                    label="Unidad"
-                                                                />
-                                                            )
-                                                        }}
-                                                    />
-                                                </TableCell>
-                                                <TableCell className="text-right text-xs align-top">
-                                                    <FormField<SaleOrderFormValues>
-                                                        control={form.control as any}
-                                                        name={`lines.${index}.unit_price_gross`}
-                                                        render={({ field }) => {
-                                                            const productId = form.watch(`lines.${index}.product`)
-                                                            const product = products.find(p => p.id.toString() === productId)
-                                                            const isDynamic = product?.is_dynamic_pricing
-                                                            const grossPrice = Number(field.value) || 0
-                                                            const netPrice = form.watch(`lines.${index}.unit_price`) || 0
+                                                                        return null
+                                                                    })()}
+                                                                </div>
+                                                            )}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="align-top">
+                                                        <FormField<SaleOrderFormValues>
+                                                            control={form.control as any}
+                                                            name={`lines.${index}.uom`}
+                                                            render={({ field }) => {
+                                                                const productId = form.watch(`lines.${index}.product`) || ""
+                                                                const selectedProduct = products.find(p => p.id.toString() === productId)
+                                                                const quantity = Number(form.watch(`lines.${index}.quantity`)) || 1
+
+                                                                return (
+                                                                    <UoMSelector
+                                                                        product={selectedProduct || null}
+                                                                        context="sale"
+                                                                        value={(field as any).value || ""}
+                                                                        onChange={async (val) => {
+                                                                            field.onChange(val)
+                                                                            const qty = Number(form.getValues(`lines.${index}.quantity`)) || 1
+                                                                            const uomId = parseInt(val)
+                                                                            if (selectedProduct) {
+                                                                                const { net, gross } = await fetchEffectivePrice(selectedProduct, qty, isNaN(uomId) ? undefined : uomId)
+                                                                                form.setValue(`lines.${index}.unit_price`, net)
+                                                                                form.setValue(`lines.${index}.unit_price_gross`, gross)
+                                                                            }
+                                                                        }}
+                                                                        uoms={uoms}
+                                                                        showConversionHint={true}
+                                                                        quantity={quantity}
+                                                                        label="Unidad"
+                                                                    />
+                                                                )
+                                                            }}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="text-right text-xs align-top">
+                                                        <FormField<SaleOrderFormValues>
+                                                            control={form.control as any}
+                                                            name={`lines.${index}.unit_price_gross`}
+                                                            render={({ field }) => {
+                                                                const productId = form.watch(`lines.${index}.product`)
+                                                                const product = products.find(p => p.id.toString() === productId)
+                                                                const isDynamic = product?.is_dynamic_pricing
+                                                                const grossPrice = Number(field.value) || 0
+                                                                const netPrice = form.watch(`lines.${index}.unit_price`) || 0
+
+                                                                return (
+                                                                    <div className="flex flex-col items-end gap-1.5 pt-1 pr-1">
+                                                                        {isDynamic ? (
+                                                                            <LabeledInput
+                                                                                type="number"
+                                                                                className="h-10 w-full text-right font-mono font-black border-primary/10 bg-primary/5"
+                                                                                value={grossPrice || ""}
+                                                                                placeholder="0"
+                                                                                onChange={(e) => {
+                                                                                    const val = parseFloat(e.target.value) || 0;
+                                                                                    field.onChange(val);
+                                                                                    form.setValue(`lines.${index}.unit_price`, PricingUtils.grossToNet(val));
+                                                                                }}
+                                                                            />
+                                                                        ) : (
+                                                                            <div className="font-mono font-bold text-sm text-foreground/80">
+                                                                                <MoneyDisplay amount={grossPrice} />
+                                                                            </div>
+                                                                        )}
+                                                                        <div className="text-[9px] font-black text-muted-foreground/30 leading-none flex items-center gap-1 uppercase tracking-tighter">
+                                                                            Net: <MoneyDisplay amount={netPrice} inline />
+                                                                        </div>
+                                                                    </div>
+                                                                )
+                                                            }}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-bold text-sm align-top">
+                                                        {(() => {
+                                                            const qty = Number(form.watch(`lines.${index}.quantity`)) || 0
+                                                            const unitGross = Number(form.watch(`lines.${index}.unit_price_gross`)) || 0
+                                                            const unitNet = Number(form.watch(`lines.${index}.unit_price`)) || 0
+                                                            const lineTotal = Math.round(qty * unitGross)
+                                                            const lineNetTotal = Math.round(qty * unitNet)
 
                                                             return (
-                                                                <div className="flex flex-col items-end gap-1.5 pt-1 pr-1">
-                                                                    {isDynamic ? (
-                                                                        <LabeledInput
-                                                                            type="number"
-                                                                            className="h-10 w-full text-right font-mono font-black border-primary/10 bg-primary/5"
-                                                                            value={grossPrice || ""}
-                                                                            placeholder="0"
-                                                                            onChange={(e) => {
-                                                                                const val = parseFloat(e.target.value) || 0;
-                                                                                field.onChange(val);
-                                                                                form.setValue(`lines.${index}.unit_price`, PricingUtils.grossToNet(val));
-                                                                            }}
-                                                                        />
-                                                                    ) : (
-                                                                        <div className="font-mono font-bold text-sm text-foreground/80">
-                                                                            <MoneyDisplay amount={grossPrice} />
-                                                                        </div>
-                                                                    )}
-                                                                    <div className="text-[9px] font-black text-muted-foreground/30 leading-none flex items-center gap-1 uppercase tracking-tighter">
-                                                                        Net: <MoneyDisplay amount={netPrice} inline />
+                                                                <div className="flex flex-col items-end gap-1">
+                                                                    <div className="font-mono font-black text-sm text-primary">
+                                                                        <MoneyDisplay amount={lineTotal} />
+                                                                    </div>
+                                                                    <div className="text-[9px] font-black text-muted-foreground/40 leading-none flex gap-1 uppercase tracking-tighter">
+                                                                        Neto: <MoneyDisplay amount={lineNetTotal} inline />
                                                                     </div>
                                                                 </div>
                                                             )
-                                                        }}
-                                                    />
-                                                </TableCell>
-                                                <TableCell className="text-right font-bold text-sm align-top">
-                                                    {(() => {
-                                                        const qty = Number(form.watch(`lines.${index}.quantity`)) || 0
-                                                        const unitGross = Number(form.watch(`lines.${index}.unit_price_gross`)) || 0
-                                                        const unitNet = Number(form.watch(`lines.${index}.unit_price`)) || 0
-                                                        const lineTotal = Math.round(qty * unitGross)
-                                                        const lineNetTotal = Math.round(qty * unitNet)
-
-                                                        return (
-                                                            <div className="flex flex-col items-end gap-1">
-                                                                <div className="font-mono font-black text-sm text-primary">
-                                                                    <MoneyDisplay amount={lineTotal} />
-                                                                </div>
-                                                                <div className="text-[9px] font-black text-muted-foreground/40 leading-none flex gap-1 uppercase tracking-tighter">
-                                                                    Neto: <MoneyDisplay amount={lineNetTotal} inline />
-                                                                </div>
-                                                            </div>
-                                                        )
-                                                    })()}
-                                                </TableCell>
-                                                <TableCell className="align-top">
-                                                    <div className="flex items-center gap-1">
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            onClick={() => remove(index)}
-                                                            disabled={fields.length === 1}
-                                                            className="h-8 w-8 text-destructive"
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 pt-4 border-t border-dashed">
-                            <FormSection title="Resumen de Valores" icon={Plus} />
-                            <div className="flex justify-end">
-                                <div className="w-full md:w-1/2">
-                                    <OrderTotals control={form.control as any} />
+                                                        })()}
+                                                    </TableCell>
+                                                    <TableCell className="align-top">
+                                                        <div className="flex items-center gap-1">
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => remove(index)}
+                                                                disabled={fields.length === 1}
+                                                                className="h-8 w-8 text-destructive"
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
                                 </div>
                             </div>
-                        </div>
+
+                            <div className="space-y-4 pt-4 border-t border-dashed">
+                                <FormSection title="Resumen de Valores" icon={Plus} />
+                                <div className="flex justify-end">
+                                    <div className="w-full md:w-1/2">
+                                        <OrderTotals control={form.control as any} />
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </Form>

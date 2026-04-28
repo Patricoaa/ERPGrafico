@@ -1,4 +1,9 @@
 from rest_framework import serializers
+from rest_framework.fields import empty
+import logging
+
+logger = logging.getLogger(__name__)
+
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
     CustomFieldTemplate, ProductCustomField,
@@ -275,7 +280,16 @@ class ProductSerializer(serializers.ModelSerializer):
                     except (ValueError, TypeError):
                         if (field == 'allowed_sale_uoms' or field == 'attribute_values') and raw_value.isdigit():
                             ret[field] = [int(raw_value)]
+                elif raw_value == '':
+                    ret[field] = None
+            elif field in ret and ret[field] == '':
+                ret[field] = None
                         
+        # General cleanup of empty strings for any other field
+        for key in list(ret.keys()):
+            if ret[key] == '':
+                ret[key] = None
+
         return super().to_internal_value(ret)
 
     def get_current_stock(self, obj):
@@ -367,6 +381,13 @@ class ProductSerializer(serializers.ModelSerializer):
                         })
         
         return data
+
+    def run_validation(self, data=empty):
+        try:
+            return super().run_validation(data)
+        except serializers.ValidationError as e:
+            logger.error(f"Validation error in ProductSerializer: {e.detail}. Data: {data}")
+            raise e
 
     def create(self, validated_data):
         boms_data = validated_data.pop('boms', [])

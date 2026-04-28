@@ -39,9 +39,18 @@ const adjustmentSchema = z.object({
     quantity: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "Debe ser mayor a 0"),
     uom_id: z.string().optional(),
     unit_cost: z.string().refine((val) => !isNaN(Number(val)) && Number(val) >= 0, "Debe ser mayor o igual a 0"),
+    total_cost: z.string().optional(),
     adjustment_reason: z.string().min(1, "Seleccione un motivo"),
     description: z.string().optional(),
     partner_contact_id: z.string().optional(),
+}).refine((data) => {
+    if ((data.adjustment_reason === 'PARTNER_CONTRIBUTION' || data.adjustment_reason === 'PARTNER_WITHDRAWAL') && !data.partner_contact_id) {
+        return false;
+    }
+    return true;
+}, {
+    message: "El socio es obligatorio para este motivo",
+    path: ["partner_contact_id"]
 })
 
 interface AdjustmentFormProps {
@@ -49,6 +58,7 @@ interface AdjustmentFormProps {
     preSelectedWarehouse?: string
     onSuccess?: () => void
     onCancel?: () => void
+    onLoadingChange?: (loading: boolean) => void
 }
 
 interface StockMovePayload {
@@ -62,11 +72,21 @@ interface StockMovePayload {
     partner_contact_id?: string;
 }
 
-export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuccess, onCancel }: AdjustmentFormProps) {
+export function AdjustmentForm({ 
+    preSelectedProduct, 
+    preSelectedWarehouse, 
+    onSuccess, 
+    onCancel,
+    onLoadingChange 
+}: AdjustmentFormProps) {
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [productUoMs, setProductUoMs] = useState<UoM[]>([])
     const [baseUoM, setBaseUoM] = useState<UoM | null>(null)
     const [isLoading, setIsLoading] = useState(false)
+
+    useEffect(() => {
+        onLoadingChange?.(isLoading)
+    }, [isLoading, onLoadingChange])
     const [productDetails, setProductDetails] = useState<Product | null>(null)
     const [partners, setPartners] = useState<{ id: number, name: string }[]>([])
     const [periodStatus, setPeriodStatus] = useState<{ is_closed: boolean; period_name?: string; date?: string; error?: string } | null>(null)
@@ -77,7 +97,8 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
             type: "IN",
             description: "",
             quantity: "",
-            unit_cost: "0",
+            unit_cost: "0.00",
+            total_cost: "0.00",
             adjustment_reason: "CORRECTION",
             product_id: preSelectedProduct || "",
             warehouse_id: preSelectedWarehouse || "",
@@ -92,6 +113,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
     const adjustmentReason = form.watch("adjustment_reason")
     const quantity = Number(form.watch("quantity") || 0)
     const unitCost = Number(form.watch("unit_cost") || 0)
+    const totalCostWatch = Number(form.watch("total_cost") || 0)
 
     const isPartnerReason = adjustmentReason === 'PARTNER_CONTRIBUTION' || adjustmentReason === 'PARTNER_WITHDRAWAL'
 
@@ -252,7 +274,7 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form id="adjustment-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0 space-y-0">
 
                 {periodStatus?.is_closed && (
                     <Alert variant="destructive" className="bg-destructive/5 border-destructive/20 text-destructive py-2 mb-2">
@@ -269,107 +291,119 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                     value={moveType}
                     onValueChange={(val) => form.setValue("type", val as "IN" | "OUT")}
                     orientation="horizontal"
-                    variant="underline"
+                    listClassName={cn(
+                        moveType === 'IN' 
+                            ? "[&_[data-state=active]]:text-success [&_[data-state=active]]:bg-success/5 [&_[data-state=active]]:border-success/20" 
+                            : "[&_[data-state=active]]:text-destructive [&_[data-state=active]]:bg-destructive/5 [&_[data-state=active]]:border-destructive/20"
+                    )}
+                    className="flex-1 flex flex-col min-h-0"
+                    headerClassName="bg-transparent"
+                    pillClassName="bg-transparent border-none"
+                    contentClassName="flex-1 flex flex-col overflow-hidden bg-background"
                 >
-                    <div className="space-y-4 pt-4">
+                    <div className="flex-1 overflow-y-auto space-y-8 pt-6 px-8 pb-8 scrollbar-thin">
                         <FormSection title="Clasificación y Origen" icon={Info} />
 
-                        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                                <div className={cn("md:col-span-4")}>
+                        <div className="grid grid-cols-4 gap-6">
+                            <div className="col-span-2">
+                                <FormField
+                                    control={form.control}
+                                    name="adjustment_reason"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledSelect
+                                            label="Motivo de Ajuste"
+                                            required
+                                            value={field.value}
+                                            onChange={(val) => {
+                                                field.onChange(val)
+                                                if (val !== 'PARTNER_CONTRIBUTION' && val !== 'PARTNER_WITHDRAWAL') {
+                                                    form.setValue('partner_contact_id', '')
+                                                }
+                                                if (val === 'PARTNER_CONTRIBUTION') form.setValue('type', 'IN')
+                                                if (val === 'PARTNER_WITHDRAWAL') form.setValue('type', 'OUT')
+                                            }}
+                                            error={fieldState.error?.message}
+                                            options={[
+                                                { value: "CORRECTION", label: "Corrección de Inventario" },
+                                                ...(moveType === 'OUT' ? [{ value: "LOSS", label: "Merma / Pérdida" }] : []),
+                                                ...(moveType === 'IN' ? [{ value: "GAIN", label: "Sobrante / Ganancia" }] : []),
+                                                { value: "REVALUATION", label: "Revalorización" },
+                                                ...(moveType === 'IN' ? [{ value: "PARTNER_CONTRIBUTION", label: "Aporte de Socio" }] : []),
+                                                ...(moveType === 'OUT' ? [{ value: "PARTNER_WITHDRAWAL", label: "Retiro de Socio" }] : []),
+                                            ]}
+                                        />
+                                    )}
+                                />
+                            </div>
+
+                            <div className="col-span-2">
+                                {isPartnerReason ? (
                                     <FormField
                                         control={form.control}
-                                        name="adjustment_reason"
+                                        name="partner_contact_id"
                                         render={({ field, fieldState }) => (
                                             <LabeledSelect
-                                                label="Motivo de Ajuste"
+                                                label="Socio del Movimiento"
+                                                required
                                                 value={field.value}
-                                                onChange={(val) => {
-                                                    field.onChange(val)
-                                                    if (val !== 'PARTNER_CONTRIBUTION' && val !== 'PARTNER_WITHDRAWAL') {
-                                                        form.setValue('partner_contact_id', '')
-                                                    }
-                                                    if (val === 'PARTNER_CONTRIBUTION') form.setValue('type', 'IN')
-                                                    if (val === 'PARTNER_WITHDRAWAL') form.setValue('type', 'OUT')
-                                                }}
+                                                onChange={field.onChange}
+                                                placeholder="Seleccione un socio..."
+                                                className="border-warning/20 bg-warning/5"
                                                 error={fieldState.error?.message}
-                                                options={[
-                                                    { value: "CORRECTION", label: "Corrección de Inventario" },
-                                                    ...(moveType === 'OUT' ? [{ value: "LOSS", label: "Merma / Pérdida" }] : []),
-                                                    ...(moveType === 'IN' ? [{ value: "GAIN", label: "Sobrante / Ganancia" }] : []),
-                                                    { value: "REVALUATION", label: "Revalorización" },
-                                                    ...(moveType === 'IN' ? [{ value: "PARTNER_CONTRIBUTION", label: "Aporte de Socio" }] : []),
-                                                    ...(moveType === 'OUT' ? [{ value: "PARTNER_WITHDRAWAL", label: "Retiro de Socio" }] : []),
-                                                ]}
+                                                options={partners.map(p => ({
+                                                    value: p.id.toString(),
+                                                    label: p.name
+                                                }))}
+                                            />
+                                        )}
+                                    />
+                                ) : (
+                                    <FormField
+                                        control={form.control}
+                                        name="description"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Notas / Referencia Interna"
+                                                placeholder="Ej: Ajuste mensual detectado en conteo..."
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+                                )}
+                            </div>
+
+                            {isPartnerReason && (
+                                <div className="col-span-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="description"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Referencia"
+                                                placeholder="Notas del socio..."
+                                                error={fieldState.error?.message}
+                                                {...field}
                                             />
                                         )}
                                     />
                                 </div>
-
-                                <div className={cn(isPartnerReason ? "md:col-span-4" : "md:col-span-8")}>
-                                    {isPartnerReason ? (
-                                        <FormField
-                                            control={form.control}
-                                            name="partner_contact_id"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledSelect
-                                                    label="Socio del Movimiento"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    placeholder="Seleccione un socio..."
-                                                    className="border-warning/20 bg-warning/5"
-                                                    error={fieldState.error?.message}
-                                                    options={partners.map(p => ({
-                                                        value: p.id.toString(),
-                                                        label: p.name
-                                                    }))}
-                                                />
-                                            )}
-                                        />
-                                    ) : (
-                                        <FormField
-                                            control={form.control}
-                                            name="description"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Notas / Referencia Interna"
-                                                    placeholder="Ej: Ajuste mensual detectado en conteo..."
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            )}
-                                        />
-                                    )}
-                                </div>
-
-                                {isPartnerReason && (
-                                    <div className="md:col-span-4">
-                                        <FormField
-                                            control={form.control}
-                                            name="description"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Referencia"
-                                                    placeholder="Notas del socio..."
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            )}
-                                        />
-                                    </div>
-                                )}
-                            </div>
+                            )}
+                        </div>
 
                         <FormSection title="Detalles del Movimiento" icon={WarehouseIcon} />
 
                         <div className="space-y-6">
-                                {/* Row 1: Almacén | Producto */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Row 1: Almacén | Producto */}
+                            <div className="grid grid-cols-4 gap-6">
+                                <div className="col-span-2">
                                     <FormField
                                         control={form.control}
                                         name="warehouse_id"
                                         render={({ field, fieldState }) => (
                                             <LabeledSelect
                                                 label="Almacén de Ubicación"
+                                                required
                                                 value={field.value}
                                                 onChange={field.onChange}
                                                 placeholder="Seleccionar ubicación..."
@@ -381,13 +415,16 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                                             />
                                         )}
                                     />
+                                </div>
 
+                                <div className="col-span-2">
                                     <FormField
                                         control={form.control}
                                         name="product_id"
                                         render={({ field, fieldState }) => (
                                             <ProductSelector
                                                 label="Producto a Ajustar"
+                                                required
                                                 value={field.value}
                                                 onChange={field.onChange}
                                                 placeholder="Buscar producto por SKU o Nombre..."
@@ -399,25 +436,38 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                                         )}
                                     />
                                 </div>
+                            </div>
 
-                                {/* Row 2: Cantidad | Unidad | Costo */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Row 2: Cantidad | Unidad | Costo */}
+                            <div className="grid grid-cols-4 gap-6">
+                                <div className="col-span-1">
                                     <FormField
                                         control={form.control}
                                         name="quantity"
                                         render={({ field, fieldState }) => (
                                             <LabeledInput
                                                 label="Cantidad"
+                                                required
                                                 type="number"
                                                 step="0.01"
                                                 placeholder="0.00"
-                                                className="font-bold text-lg h-11"
                                                 error={fieldState.error?.message}
                                                 {...field}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    field.onChange(val);
+                                                    if (moveType === 'IN') {
+                                                        const q = Number(val) || 0;
+                                                        const u = Number(form.getValues("unit_cost")) || 0;
+                                                        form.setValue("total_cost", Math.ceil(q * u).toString());
+                                                    }
+                                                }}
                                             />
                                         )}
                                     />
+                                </div>
 
+                                <div className="col-span-1">
                                     <FormField
                                         control={form.control}
                                         name="uom_id"
@@ -436,58 +486,80 @@ export function AdjustmentForm({ preSelectedProduct, preSelectedWarehouse, onSuc
                                             />
                                         )}
                                     />
+                                </div>
 
+                                 <div className="col-span-1">
                                     <FormField
                                         control={form.control}
                                         name="unit_cost"
                                         render={({ field, fieldState }) => (
                                             <LabeledInput
                                                 {...field}
-                                                label="Costo Unitario"
+                                                label="Unitario"
+                                                required
                                                 type={moveType === 'IN' ? "number" : "text"}
-                                                step={moveType === 'IN' ? "0.01" : undefined}
-                                                readOnly={moveType === 'OUT'}
-                                                placeholder="0.00"
+                                                step={moveType === 'IN' ? "1" : undefined}
+                                                disabled={moveType === 'OUT'}
+                                                placeholder="0"
                                                 icon="$"
-                                                hint={`Valor Total: $${totalValue.toLocaleString('es-CL', { minimumFractionDigits: 2 })}`}
                                                 error={fieldState.error?.message}
-                                                value={moveType === 'OUT' ? Number(field.value).toFixed(2) : field.value}
-                                                onChange={(e) => moveType === 'IN' && field.onChange(e)}
-                                                className={cn("font-mono", moveType === 'OUT' && "opacity-80 bg-muted/50 cursor-default")}
+                                                value={moveType === 'OUT' ? Math.ceil(Number(field.value)).toString() : field.value}
+                                                onChange={(e) => {
+                                                    if (moveType === 'OUT') return;
+                                                    const val = e.target.value;
+                                                    field.onChange(val);
+                                                    const u = Number(val) || 0;
+                                                    const q = Number(form.getValues("quantity")) || 0;
+                                                    form.setValue("total_cost", Math.ceil(u * q).toString());
+                                                }}
                                             />
                                         )}
                                     />
                                 </div>
 
-                                {/* Conversion Alert / Info */}
-                                {conversion && baseUoM && (
-                                    <div className="flex gap-2 p-3 bg-primary/5 rounded border border-primary/20 text-[10px] animate-in slide-in-from-top-2 duration-300">
-                                        <Info className="h-4 w-4 text-primary shrink-0" />
-                                        <p className="leading-tight">
-                                            <span className="font-bold uppercase text-primary">Conversión Automática: </span>
-                                            Se registrará como <span className="font-black">{conversion.qty.toFixed(4).replace(/\.?0+$/, '')} {baseUoM.name}</span> a un costo base de <span className="font-black">${conversion.cost.toFixed(2)}</span>.
-                                        </p>
-                                    </div>
-                                )}
+                                <div className="col-span-1">
+                                    <FormField
+                                        control={form.control}
+                                        name="total_cost"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                {...field}
+                                                label="Total"
+                                                type={moveType === 'IN' ? "number" : "text"}
+                                                step={moveType === 'IN' ? "1" : undefined}
+                                                disabled={moveType === 'OUT'}
+                                                placeholder="0"
+                                                icon="$"
+                                                error={fieldState.error?.message}
+                                                value={moveType === 'OUT' ? Math.ceil(quantity * unitCost).toString() : field.value}
+                                                onChange={(e) => {
+                                                    if (moveType === 'OUT') return;
+                                                    const val = e.target.value;
+                                                    field.onChange(val);
+                                                    const t = Number(val) || 0;
+                                                    const q = Number(form.getValues("quantity")) || 0;
+                                                    if (q > 0) {
+                                                        form.setValue("unit_cost", Math.ceil(t / q).toString());
+                                                    }
+                                                }}
+                                            />
+                                        )}
+                                    />
+                                </div>
                             </div>
 
-                <FormFooter
-                    actions={
-                        <>
-                            {onCancel && <CancelButton onClick={onCancel} />}
-                            <SubmitButton
-                                loading={isLoading}
-                                disabled={periodStatus?.is_closed}
-                                className={cn(
-                                    "px-8",
-                                    moveType === 'IN' ? 'bg-success hover:bg-success/90' : 'bg-destructive hover:bg-destructive/90'
-                                )}
-                            >
-                                {moveType === 'IN' ? "Registrar Entrada" : "Registrar Salida"}
-                            </SubmitButton>
-                        </>
-                    }
-                />
+                            {/* Conversion Alert / Info */}
+                            {conversion && baseUoM && (
+                                <Alert className="bg-primary/5 border-primary/20 animate-in slide-in-from-top-2 duration-300">
+                                    <Info className="h-4 w-4 text-primary" />
+                                    <AlertTitle className="text-[10px] font-bold uppercase text-primary mb-0.5">Conversión Automática</AlertTitle>
+                                    <AlertDescription className="text-[11px] leading-tight">
+                                        Se registrará como <span className="font-black">{conversion.qty.toFixed(4).replace(/\.?0+$/, '')} {baseUoM.name}</span> a un costo base de <span className="font-black">${conversion.cost.toFixed(2)}</span>.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                        </div>
+
                     </div>
                 </FormTabs>
             </form>

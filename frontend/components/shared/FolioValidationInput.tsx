@@ -1,13 +1,12 @@
 "use client"
 
-import { useEffect, useCallback } from "react"
+import { useEffect, useRef, useState } from "react"
 import { AlertCircle, Loader2, CheckCircle } from "lucide-react"
 import { LabeledInput } from "./LabeledInput"
 import { useFolioValidation, FolioValidationResult } from "@/hooks/useFolioValidation"
 import { cn } from "@/lib/utils"
 import { useTouchMode } from "@/hooks/useTouchMode"
 import { NumpadModal } from "@/features/pos/components/NumpadModal"
-import { useState } from "react"
 
 interface FolioValidationInputProps {
     value: string
@@ -43,13 +42,18 @@ export function FolioValidationInput({
     const [numpadOpen, setNumpadOpen] = useState(false)
     const [tempValue, setTempValue] = useState("")
 
-    // Notify parent about validity changes
+    // Stable ref for parent callback — avoids retriggering effects when parent
+    // passes a new inline arrow on every render (root cause of update-depth loop).
+    const onValidityChangeRef = useRef(onValidityChange)
     useEffect(() => {
-        if (onValidityChange) {
-            const isValid = !validationResult || validationResult.is_unique
-            onValidityChange(isValid, validationResult)
-        }
-    }, [validationResult, onValidityChange])
+        onValidityChangeRef.current = onValidityChange
+    })
+
+    // Notify parent about validity changes — callback NOT in deps.
+    useEffect(() => {
+        const isValid = !validationResult || validationResult.is_unique
+        onValidityChangeRef.current?.(isValid, validationResult)
+    }, [validationResult])
 
     // Trigger validation when inputs change
     useEffect(() => {

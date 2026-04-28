@@ -103,7 +103,7 @@ export function Step1_Items({
                             <TableHead className="font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Producto/Servicio</TableHead>
                             <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Original</TableHead>
                             <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Entregado</TableHead>
-                            <TableHead className="w-28 text-center font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Cant. Corregir</TableHead>
+                            <TableHead className="w-28 text-center font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Cantidad Corregir</TableHead>
                             <TableHead className="w-32 text-center font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Precio</TableHead>
                             <TableHead className="font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Motivo / Razón</TableHead>
                         </TableRow>

@@ -43,6 +43,7 @@ interface ProductSelectorProps {
     simpleOnly?: boolean
     label?: string
     error?: string
+    required?: boolean
     variant?: 'standalone' | 'inline'
 }
 
@@ -67,6 +68,7 @@ export function ProductSelector({
     simpleOnly = false,
     label,
     error,
+    required = false,
     variant = 'standalone'
 }: ProductSelectorProps) {
     const { products: fetchedProducts, singleProduct, loading: searchLoading, fetchProducts, fetchSingleProduct } = useProductSearch()
@@ -215,8 +217,10 @@ export function ProductSelector({
                     aria-expanded={open}
                     disabled={disabled}
                     className={cn(
-                        "w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent min-w-0",
-                        variant === 'inline' && "h-8 text-xs px-2"
+                        "w-full justify-between overflow-hidden py-0 shadow-none focus-visible:ring-0 transition-all",
+                        variant === 'standalone' 
+                            ? "h-[1.5rem] px-3 border-none bg-transparent hover:bg-primary/[0.03]" 
+                            : cn("h-9 text-xs px-2 border border-border/80 rounded-md bg-background hover:bg-primary/[0.02]", className)
                     )}
                 >
                     {selectedProduct ? (
@@ -374,6 +378,7 @@ export function ProductSelector({
                         {label && (
                             <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
                                 {label}
+                                {required && <span className="text-destructive ml-0.5">*</span>}
                             </legend>
                         )}
                         {selectButton}

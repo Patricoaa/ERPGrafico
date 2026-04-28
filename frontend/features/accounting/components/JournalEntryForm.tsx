@@ -2,11 +2,11 @@
 
 import { getErrorMessage } from "@/lib/errors"
 import { useState, useEffect, useRef, useCallback } from "react"
-import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { JournalEntryInitialData } from "@/types/forms"
 import * as z from "zod"
-import { CalendarIcon, Plus, Trash2, Pencil, BookOpen } from "lucide-react"
+import { CalendarIcon, Plus, Pencil, BookOpen } from "lucide-react"
 import { format } from "date-fns"
 import { BaseModal } from "@/components/shared/BaseModal"
 
@@ -18,14 +18,7 @@ import {
     FormItem,
     FormMessage,
 } from "@/components/ui/form"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -33,7 +26,7 @@ import { accountingApi } from "@/features/accounting/api/accountingApi"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useServerDate } from "@/hooks/useServerDate"
-import { LabeledInput, LabeledContainer, CancelButton, SubmitButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection } from "@/components/shared";
+import { LabeledInput, LabeledContainer, CancelButton, SubmitButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable } from "@/components/shared";
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -72,27 +65,7 @@ interface JournalEntryFormProps {
     onOpenChange?: (open: boolean) => void
 }
 
-const TotalBalance = ({ control }: { control: Control<JournalEntryFormValues> }) => {
-    const items = useWatch({
-        control,
-        name: "items",
-    })
 
-    const totalDebit = items?.reduce((sum, item) => sum + (Number(item.debit) || 0), 0) || 0
-    const totalCredit = items?.reduce((sum, item) => sum + (Number(item.credit) || 0), 0) || 0
-    const diff = totalDebit - totalCredit
-    const isBalanced = Math.abs(diff) < 0.01
-
-    return (
-        <div className="flex justify-end space-x-4 text-sm font-medium pt-2 border-t">
-            <div className={cn("flex flex-col items-end", isBalanced ? "text-success" : "text-destructive")}>
-                <span>Total Debe: {totalDebit.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
-                <span>Total Haber: {totalCredit.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
-                {!isBalanced && <span>Diferencia: {diff.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>}
-            </div>
-        </div>
-    )
-}
 
 export function JournalEntryForm({
     accounts: accountsProp,
@@ -159,11 +132,6 @@ export function JournalEntryForm({
     })
 
     const selectedDate = form.watch("date")
-
-    const { fields, append, remove } = useFieldArray({
-        control: form.control,
-        name: "items",
-    })
 
     const lastResetKey = useRef<string | null>(null)
 
@@ -341,119 +309,7 @@ export function JournalEntryForm({
 
                                 <FormSection title="Líneas del Asiento" />
 
-                                <div className="border rounded-md p-2">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow className="hover:bg-transparent border-b">
-                                                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-[300px] text-center">Cuenta</TableHead>
-                                                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center">Glosa</TableHead>
-                                                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-[150px] text-center">Debe</TableHead>
-                                                <TableHead className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground w-[150px] text-center">Haber</TableHead>
-                                                <TableHead className="w-[50px] text-center"></TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {fields.map((field, index) => (
-                                                <TableRow key={field.id} className="hover:bg-primary/5 transition-colors">
-                                                    <TableCell className="p-2">
-                                                        <FormField
-                                                            control={form.control}
-                                                            name={`items.${index}.account`}
-                                                            render={({ field }) => (
-                                                                <FormItem className="space-y-0">
-                                                                    <FormControl>
-                                                                        <AccountSelector
-                                                                            value={field.value}
-                                                                            onChange={field.onChange}
-                                                                        />
-                                                                    </FormControl>
-                                                                    <FormMessage />
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell className="p-2">
-                                                        <FormField
-                                                            control={form.control}
-                                                            name={`items.${index}.label`}
-                                                            render={({ field }) => (
-                                                                <FormItem className="space-y-0">
-                                                                    <FormControl>
-                                                                        <LabeledInput
-                                                                            {...field}
-                                                                            className="h-8 text-center"
-                                                                        />
-                                                                    </FormControl>
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell className="p-2">
-                                                        <FormField
-                                                            control={form.control}
-                                                            name={`items.${index}.debit`}
-                                                            render={({ field }) => (
-                                                                <FormItem className="space-y-0 text-center">
-                                                                    <FormControl>
-                                                                        <LabeledInput
-                                                                            type="number"
-                                                                            step="1"
-                                                                            {...field}
-                                                                            onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))}
-                                                                            onFocus={(e) => e.target.select()}
-                                                                            className="h-8 text-right font-mono font-bold"
-                                                                        />
-                                                                    </FormControl>
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell className="p-2">
-                                                        <FormField
-                                                            control={form.control}
-                                                            name={`items.${index}.credit`}
-                                                            render={({ field }) => (
-                                                                <FormItem className="space-y-0 text-center">
-                                                                    <FormControl>
-                                                                        <LabeledInput
-                                                                            type="number"
-                                                                            step="1"
-                                                                            {...field}
-                                                                            onChange={e => field.onChange(Math.ceil(e.target.valueAsNumber || 0))}
-                                                                            onFocus={(e) => e.target.select()}
-                                                                            className="h-8 text-right font-mono font-bold"
-                                                                        />
-                                                                    </FormControl>
-                                                                </FormItem>
-                                                            )}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell className="p-2 text-center">
-                                                        <IconButton
-                                                            onClick={() => remove(index)}
-                                                            className="h-8 w-8 text-muted-foreground/30 hover:text-destructive"
-                                                            title="Eliminar línea"
-                                                        >
-                                                            <Trash2 className="h-3.5 w-3.5" />
-                                                        </IconButton>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                    <div className="flex justify-between items-center mt-2 px-2">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/5"
-                                            onClick={() => append({ account: "", label: "", debit: 0, credit: 0 })}
-                                        >
-                                            <Plus className="mr-2 h-3.5 w-3.5" /> Agregar Línea
-                                        </Button>
-                                        <TotalBalance control={form.control} />
-                                    </div>
-                                </div>
+                                <AccountingLinesTable control={form.control} name="items" />
 
                                 <FormMessage className="text-right" />
                                 {form.formState.errors.items?.root && (
