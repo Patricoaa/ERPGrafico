@@ -8,6 +8,7 @@ Crea ajustes contables para comisiones, intereses y otros conceptos.
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
 from typing import Dict, Optional
 from .models import BankStatementLine
@@ -27,6 +28,7 @@ class DifferenceService:
     EXCHANGE_DIFF = 'EXCHANGE_DIFF'
     ROUNDING = 'ROUNDING'
     ERROR = 'ERROR'
+    TAX = 'TAX'
     OTHER = 'OTHER'
     
     DIFFERENCE_CHOICES = [
@@ -34,7 +36,8 @@ class DifferenceService:
         (INTEREST, 'Intereses Percibidos/Pagados'),
         (EXCHANGE_DIFF, 'Diferencia de Cambio'),
         (ROUNDING, 'Ajuste por Redondeo'),
-        (ERROR, 'Error de Registro'),
+        (ERROR, _('Error de Registro')),
+        (TAX, _('Retención / Impuesto')),
         (OTHER, 'Otro')
     ]
     
@@ -45,6 +48,7 @@ class DifferenceService:
         EXCHANGE_DIFF: 'exchange_difference_account',
         ROUNDING: 'rounding_adjustment_account',
         ERROR: 'error_adjustment_account',
+        TAX: 'tax_withholding_account',
         OTHER: 'miscellaneous_adjustment_account'
     }
     

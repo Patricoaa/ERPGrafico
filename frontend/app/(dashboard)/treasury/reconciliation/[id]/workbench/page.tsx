@@ -62,7 +62,7 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
         try {
             setConfirming(true)
             await api.post(`/treasury/statements/${statementId}/confirm/`)
-            alert('✅ Cartola confirmada exitosamente')
+            toast.success('Cartola confirmada exitosamente')
             router.push('/treasury/reconciliation')
         } catch (error: unknown) {
             console.error('Error confirming statement:', error)

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { ExclusionModal } from "./ExclusionModal"
 import { LabeledSelect, LabeledInput } from "@/components/shared"
 import {
     Ban, CheckCircle2, ChevronRight, Filter,
@@ -380,10 +381,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             header: "Fecha",
             cell: ({ row }) => (
                 <div className="flex flex-col">
-                    <span className="font-mono font-bold text-[10.5px]">
+                    <span className="font-mono font-bold text-xs">
                         {format(new Date(row.original.transaction_date), 'dd MMM yy', { locale: es })}
                     </span>
-                    <span className="text-[9px] font-black uppercase text-muted-foreground opacity-50">L{row.original.line_number}</span>
+                    <span className="text-[10px] font-black uppercase text-muted-foreground opacity-50">L{row.original.line_number}</span>
                 </div>
             ),
             size: 80,
@@ -395,16 +396,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 const isSuggested = lineSuggestions.some(s => s.line_data.id === row.original.id)
                 return (
                     <div className="flex flex-col gap-0.5 max-w-[220px]">
-                        <span className={cn("text-[11px] font-bold truncate", isSuggested && "text-warning")}>
+                        <span className={cn("text-xs font-bold truncate", isSuggested && "text-warning")}>
                             {row.original.description}
                         </span>
                         {row.original.reference && (
-                            <span className="text-[9px] font-mono text-muted-foreground truncate opacity-70">REF: {row.original.reference}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground truncate opacity-70">REF: {row.original.reference}</span>
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
                                 <Sparkles className="h-2.5 w-2.5 text-warning" />
-                                <span className="text-[8px] font-black uppercase tracking-tighter text-warning">Sugerencia IA</span>
+                                <span className="text-[10px] font-black uppercase text-warning">Match Sugerido</span>
                             </div>
                         )}
                     </div>
@@ -422,7 +423,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         <span className={cn("font-mono font-black text-[13px] tracking-tight", isCredit ? "text-success" : "text-destructive")}>
                             {formatCurrency(amount)}
                         </span>
-                        <span className="text-[8px] font-black uppercase tracking-widest opacity-40">
+                        <span className="text-[10px] font-black uppercase opacity-40">
                             {isCredit ? "Abono" : "Cargo"}
                         </span>
                     </div>
@@ -467,10 +468,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             header: "Documento",
             cell: ({ row }) => (
                 <div className="flex flex-col">
-                    <span className="font-mono font-bold text-[11px] tracking-tighter">
+                    <span className="font-mono font-bold text-xs">
                         {row.original.display_id || row.original.code || 'PEND'}
                     </span>
-                    <span className="text-[9px] font-medium text-muted-foreground">
+                    <span className="text-[10px] font-medium text-muted-foreground">
                         {format(new Date(row.original.date), 'dd/MM/yy', { locale: es })}
                     </span>
                 </div>
@@ -489,12 +490,12 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             {row.original.contact_name}
                         </span>
                         {isBatch && (
-                            <Badge variant="secondary" className="w-fit text-[8px] h-3.5 px-1 font-black uppercase tracking-tighter bg-info/10 text-info">Lote Terminal</Badge>
+                            <Badge variant="secondary" className="w-fit text-[10px] h-4 px-1.5 font-black uppercase bg-info/10 text-info">Lote Terminal</Badge>
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
                                 <Sparkles className="h-2.5 w-2.5 text-warning shadow-sm" />
-                                <span className="text-[8px] font-black uppercase tracking-tighter text-warning">Sugerencia IA</span>
+                                <span className="text-[10px] font-black uppercase text-warning">Match Sugerido</span>
                             </div>
                         )}
                     </div>
@@ -529,7 +530,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         </Badge>
                     </div>
                     {statement && (
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
+                        <p className="text-xs font-bold text-muted-foreground uppercase opacity-60">
                             {statement.reconciled_lines} de {statement.total_lines} líneas procesadas ({Math.round(statement.reconciled_lines/statement.total_lines*100)}%)
                         </p>
                     )}
@@ -585,7 +586,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     </div>
 
                     <div className="flex gap-3">
-                        <Button variant="ghost" className="font-bold text-white/50 hover:text-white uppercase tracking-widest text-[10px]" onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}>
+                        <Button variant="ghost" className="font-bold text-white/50 hover:text-white uppercase text-[11px]" onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}>
                             Limpiar
                         </Button>
                         <Button
@@ -628,23 +629,32 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             </div>
 
             {/* ─── Modals ─── */}
-            <ActionConfirmModal
+            <ExclusionModal
                 open={actionDialog.open && (actionDialog.type === 'exclude' || actionDialog.type === 'bulk_exclude')}
                 onOpenChange={(open) => !open && setActionDialog({ open: false, type: null })}
-                onConfirm={async () => {
+                title={actionDialog.type === 'bulk_exclude' ? `Excluir ${selectedLines.length} Movimientos` : "Excluir Movimiento"}
+                onConfirm={async (reason, notes) => {
                     try {
                         if (actionDialog.type === 'bulk_exclude') {
-                            await api.post(`/treasury/statement-lines/bulk_exclude/`, { line_ids: selectedLines.map(l => l.id) })
+                            await api.post(`/treasury/statement-lines/bulk_exclude/`, { 
+                                line_ids: selectedLines.map(l => l.id),
+                                exclusion_reason: reason,
+                                exclusion_notes: notes
+                            })
                             setSelectedLines([])
                         } else {
-                            await api.patch(`/treasury/statement-lines/${actionDialog.lineId}/`, { reconciliation_state: 'EXCLUDED' })
+                            await api.patch(`/treasury/statement-lines/${actionDialog.lineId}/`, { 
+                                reconciliation_state: 'EXCLUDED',
+                                exclusion_reason: reason,
+                                exclusion_notes: notes
+                            })
                         }
+                        toast.success("Movimientos excluidos correctamente")
                         await fetchUnreconciledLines()
+                    } catch (error) {
+                        showApiError(error)
                     } finally { setActionDialog({ open: false, type: null }) }
                 }}
-                title="Excluir Movimiento"
-                description="El movimiento se ocultará de la conciliación activa. Puedes recuperarlo en la pestaña de 'Excluidos'."
-                variant="destructive"
             />
 
             <ActionConfirmModal
@@ -652,7 +662,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 onOpenChange={(open) => !open && setActionDialog({ open: false, type: null })}
                 onConfirm={confirmAutoMatch}
                 title="Conciliación Automática"
-                description="El sistema procesará todas las líneas pendientes utilizando reglas de inteligencia artificial. ¿Deseas continuar?"
+                description="Se buscarán coincidencias automáticas basadas en monto y fecha para las líneas no conciliadas. Los resultados se mostrarán como Match Sugerido."
                 variant="default"
             />
 
@@ -676,7 +686,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         label="Motivo del Ajuste"
                         value={diffType}
                         onChange={setDiffType}
-                        className="font-bold uppercase text-[11px] tracking-tight"
+                        className="font-bold uppercase text-xs"
                         options={[
                             { value: "COMMISSION", label: "Comisión Bancaria" },
                             { value: "TAX", label: "Retención / Impuesto" },

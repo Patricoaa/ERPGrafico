@@ -109,7 +109,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             await fetchStatement()
         } catch (error) {
             console.error('Error unmatching line:', error)
-            alert('Error al deshacer la reconciliación')
+            toast.error('Error al deshacer la reconciliación')
         } finally {
             setUnmatchDialog({ open: false, lineId: null })
         }
@@ -119,7 +119,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         try {
             setConfirming(true)
             await api.post(`/treasury/statements/${id}/confirm/`)
-            alert('✅ Cartola confirmada exitosamente')
+            toast.success('Cartola confirmada exitosamente')
             router.push('/treasury/reconciliation')
         } catch (error: unknown) {
             console.error('Error confirming statement:', error)

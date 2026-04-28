@@ -56,22 +56,22 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
             <Table>
                 <TableHeader className="bg-muted/30">
                     <TableRow className="hover:bg-transparent">
-                        <TableHead className="text-[10px] font-black uppercase tracking-widest py-3">Línea Banco</TableHead>
-                        <TableHead className="text-[10px] font-black uppercase tracking-widest py-3">Coincidencia Sistema</TableHead>
-                        <TableHead className="text-right text-[10px] font-black uppercase tracking-widest py-3">Score</TableHead>
+                        <TableHead className="text-xs font-black uppercase py-3">Línea Banco</TableHead>
+                        <TableHead className="text-xs font-black uppercase py-3">Coincidencia Sistema</TableHead>
+                        <TableHead className="text-right text-xs font-black uppercase py-3">Score</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {results.map((res, i) => (
                         <TableRow key={i} className="group transition-colors">
                             <TableCell className="py-3">
-                                <div className="text-[11px] font-black uppercase tracking-tight text-foreground/80">{res.line.description}</div>
+                                <div className="text-xs font-black uppercase text-foreground/80">{res.line.description}</div>
                                 <div className="text-[10px] font-mono text-muted-foreground mt-1">
                                     {formatPlainDate(res.line.date)} • <span className="font-bold text-foreground/60">${res.line.amount}</span>
                                 </div>
                             </TableCell>
                             <TableCell className="py-3">
-                                <div className="text-[11px] font-black uppercase tracking-tight text-foreground/80">{res.payment.partner || 'Concepto General'}</div>
+                                <div className="text-xs font-black uppercase text-foreground/80">{res.payment.partner || 'Concepto General'}</div>
                                 <div className="text-[10px] font-mono text-muted-foreground mt-1">
                                     Ref: <span className="font-bold">{res.payment.reference || 'N/A'}</span> • <span className="font-bold">${res.payment.amount}</span>
                                 </div>
