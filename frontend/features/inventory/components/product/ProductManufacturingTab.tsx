@@ -57,15 +57,43 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                         value={productionMode}
                                         onValueChange={(value) => {
                                             if (value === productionMode) return;
-                                            const patch =
-                                                value === "simple" ? { requires_advanced_manufacturing: false, mfg_auto_finalize: false, track_inventory: true }
-                                                : value === "express" ? { has_bom: true, requires_advanced_manufacturing: false, mfg_auto_finalize: true, track_inventory: false }
-                                                : { has_bom: true, requires_advanced_manufacturing: true, mfg_auto_finalize: false, track_inventory: false };
-                                            
-                                            Object.entries(patch).forEach(([k, v]) => {
-                                                if (form.getValues(k as any) !== v) {
-                                                    form.setValue(k as any, v as any, { shouldDirty: true, shouldValidate: false, shouldTouch: false });
+                                            // IMPORTANT: All form.setValue calls MUST be deferred via rAF.
+                                            //
+                                            // Root cause of the infinite loop:
+                                            //   Going simple→advanced mounts new Radix Presence nodes (stage
+                                            //   switches + BOM section) while simultaneously detaching old ones.
+                                            //   Radix usePresence calls setState() inside React's commit phase
+                                            //   (during safelyDetachRef). If form.setValue fires synchronously
+                                            //   from onValueChange, RHF notifies its subscribers in the same
+                                            //   commit, causing a second setState inside the commit → infinite
+                                            //   loop. simple→express→advanced doesn't trigger this because
+                                            //   express already mounted the BOM section, so no new Presence
+                                            //   nodes appear when advancing to the next tab.
+                                            //
+                                            //   requestAnimationFrame pushes the mutations to the next frame,
+                                            //   fully decoupled from the current commit phase.
+                                            const patch: Record<string, unknown> =
+                                                value === "simple" ? {
+                                                    requires_advanced_manufacturing: false,
+                                                    mfg_auto_finalize: false,
                                                 }
+                                                    : value === "express" ? {
+                                                        has_bom: true,
+                                                        requires_advanced_manufacturing: false,
+                                                        mfg_auto_finalize: true,
+                                                    }
+                                                        : {
+                                                            has_bom: true,
+                                                            requires_advanced_manufacturing: true,
+                                                            mfg_auto_finalize: false,
+                                                        };
+
+                                            requestAnimationFrame(() => {
+                                                Object.entries(patch).forEach(([k, v]) => {
+                                                    if (form.getValues(k as any) !== v) {
+                                                        form.setValue(k as any, v as any, { shouldDirty: true, shouldValidate: false, shouldTouch: false });
+                                                    }
+                                                });
                                             });
                                         }}
                                         className="w-full"
@@ -125,37 +153,40 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                     />
                                 </div>
 
-                                {form.watch("requires_advanced_manufacturing") && (
-                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <LabeledSeparator
-                                            label="Etapas de Flujo Requeridas"
-                                            icon={<Layers className="h-3 w-3" />}
-                                        />
+                                <div
+                                    className={cn(
+                                        "space-y-4 animate-in fade-in slide-in-from-top-2 duration-300",
+                                        !requiresAdvancedmfg && "hidden"
+                                    )}
+                                >
+                                    <LabeledSeparator
+                                        label="Etapas de Flujo Requeridas"
+                                        icon={<Layers className="h-3 w-3" />}
+                                    />
 
-                                        <div className="space-y-2">
-                                            {[
-                                                { name: "mfg_enable_prepress", label: "Pre-Impresión", icon: Monitor },
-                                                { name: "mfg_enable_press", label: "Impresión", icon: Printer },
-                                                { name: "mfg_enable_postpress", label: "Post-Impresión", icon: Scissors }
-                                            ].map((stage) => (
-                                                <FormField<ProductFormValues>
-                                                    key={stage.name}
-                                                    control={form.control}
-                                                    name={stage.name as any}
-                                                    render={({ field }) => (
-                                                        <LabeledSwitch
-                                                            label={stage.label}
-                                                            checked={field.value}
-                                                            onCheckedChange={field.onChange}
-                                                            icon={<stage.icon className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-                                                            className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
-                                                        />
-                                                    )}
-                                                />
-                                            ))}
-                                        </div>
+                                    <div className="space-y-2">
+                                        {[
+                                            { name: "mfg_enable_prepress", label: "Pre-Impresión", icon: Monitor },
+                                            { name: "mfg_enable_press", label: "Impresión", icon: Printer },
+                                            { name: "mfg_enable_postpress", label: "Post-Impresión", icon: Scissors }
+                                        ].map((stage) => (
+                                            <FormField<ProductFormValues>
+                                                key={stage.name}
+                                                control={form.control}
+                                                name={stage.name as any}
+                                                render={({ field }) => (
+                                                    <LabeledSwitch
+                                                        label={stage.label}
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                        icon={<stage.icon className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
+                                                        className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                                    />
+                                                )}
+                                            />
+                                        ))}
                                     </div>
-                                )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -318,7 +349,7 @@ function BOMItemField({ form, bomIndex, products, uoms, onRemove, onSetDefault }
                             <TableHeader className="bg-muted/30">
                                 <TableRow className="h-8 hover:bg-transparent">
                                     <TableHead className="text-[10px] h-8 px-2 font-bold">Componente</TableHead>
-                                    <TableHead className="text-[10px] h-8 w-[70px] px-2 font-bold text-center">Cant.</TableHead>
+                                    <TableHead className="text-[10px] h-8 w-[70px] px-2 font-bold text-center">Cantidad</TableHead>
                                     <TableHead className="text-[10px] h-8 w-[80px] px-2 font-bold text-center">Unidad</TableHead>
                                     <TableHead className="text-[10px] h-8 w-[32px] px-2"></TableHead>
                                 </TableRow>

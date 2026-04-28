@@ -9,16 +9,13 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
-import { CancelButton, SubmitButton, LabeledInput, LabeledContainer } from "@/components/shared"
-import { Pencil, Trash2, Search, Check, Ruler, ChevronDown } from "lucide-react"
+import { Pencil, Trash2, Search } from "lucide-react"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { UoMForm } from "./UoMForm"
 
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from "sonner"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
@@ -31,12 +28,12 @@ interface UoMListProps {
 }
 
 export function UoMList({ externalOpen, onExternalOpenChange, createAction }: UoMListProps) {
-    const { uoms, categories, refetch, saveUoM, deleteUoM, isSaving } = useUoMs()
+    const { uoms, refetch, deleteUoM } = useUoMs()
 
     // Modal State
     const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
     const [isUoMModalOpen, setIsUoMModalOpen] = useState(false)
-    const [currentUoM, setCurrentUoM] = useState<Partial<UoM>>({})
+    const [editingUoM, setEditingUoM] = useState<Partial<UoM>>({})
 
     const router = useRouter()
     const pathname = usePathname()
@@ -44,24 +41,13 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
 
     const handleCloseModal = () => {
         setIsUoMModalOpen(false)
-        setCurrentUoM({})
+        setEditingUoM({})
         onExternalOpenChange?.(false)
 
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
-    }
-
-    const handleSaveUoM = async () => {
-        try {
-            await saveUoM(currentUoM)
-            toast.success(currentUoM.id ? "Unidad actualizada" : "Unidad creada")
-            setIsUoMModalOpen(false)
-        } catch (error) {
-            showApiError(error, "Error al guardar")
-            console.error(error)
         }
     }
 
@@ -150,7 +136,7 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
         createActionsColumn<UoM>({
             renderActions: (item) => (
                 <>
-                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => { setCurrentUoM(item); setIsUoMModalOpen(true) }} />
+                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => { setEditingUoM(item); setIsUoMModalOpen(true) }} />
                     <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item.id)} />
                 </>
             ),
@@ -211,7 +197,7 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                 createAction={createAction}
             />
 
-            <BaseModal
+            <UoMForm
                 open={isUoMModalOpen || !!externalOpen}
                 onOpenChange={(open) => {
                     if (!open) {
@@ -220,165 +206,9 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                         setIsUoMModalOpen(true)
                     }
                 }}
-                size={currentUoM.id ? "lg" : "md"}
-                title={
-                    <div className="flex items-center gap-3">
-                        <Ruler className="h-5 w-5 text-muted-foreground" />
-                        <span>{currentUoM.id ? "Editar Unidad de Medida" : "Nueva Unidad de Medida"}</span>
-                    </div>
-                }
-                description={currentUoM.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión."}
-                footer={
-                    <div className="flex justify-end gap-2 w-full">
-                        <CancelButton onClick={() => setIsUoMModalOpen(false)} disabled={isSaving} />
-                        <SubmitButton onClick={handleSaveUoM} loading={isSaving}>
-                            Guardar Unidad
-                        </SubmitButton>
-                    </div>
-                }
-            >
-                <div className="flex flex-1 overflow-hidden min-h-[400px]">
-                    <div className="flex-1 overflow-y-auto p-6">
-                        <div className="space-y-6">
-                            <LabeledInput
-                                label="Nombre de Unidad"
-                                required
-                                placeholder="Ej: Kilogramo, Metro, Litro"
-                                value={currentUoM.name || ''}
-                                onChange={e => setCurrentUoM({ ...currentUoM, name: e.target.value })}
-                            />
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <LabeledContainer label="Categoría" suffix={<ChevronDown className="h-4 w-4 opacity-50" />}>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                role="combobox"
-                                                className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !currentUoM.category && "text-muted-foreground")}
-                                            >
-                                                {currentUoM.category
-                                                    ? categories.find(cat => cat.id === currentUoM.category)?.name
-                                                    : "Seleccionar categoría..."}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                            <div className="p-2">
-                                                <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                    <input
-                                                        className="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                                                        placeholder="Buscar categoría..."
-                                                        onChange={(e) => {
-                                                            const val = e.target.value.toLowerCase()
-                                                            const items = document.querySelectorAll('.category-item')
-                                                            items.forEach((el) => {
-                                                                if (el.textContent?.toLowerCase().includes(val)) {
-                                                                    (el as HTMLElement).style.display = 'flex'
-                                                                } else {
-                                                                    (el as HTMLElement).style.display = 'none'
-                                                                }
-                                                            })
-                                                        }}
-                                                    />
-                                                </div>
-                                                <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                    {categories.map((cat) => (
-                                                        <div
-                                                            key={cat.id}
-                                                            className={cn(
-                                                                "category-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                currentUoM.category === cat.id && "bg-accent"
-                                                            )}
-                                                            onClick={() => {
-                                                                setCurrentUoM({ ...currentUoM, category: cat.id })
-                                                                document.body.click()
-                                                            }}
-                                                        >
-                                                            <span>{cat.name}</span>
-                                                            {currentUoM.category === cat.id && (
-                                                                <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </PopoverContent>
-                                    </Popover>
-                                </LabeledContainer>
-
-                                <LabeledContainer label="Tipo de Unidad" suffix={<ChevronDown className="h-4 w-4 opacity-50" />}>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                role="combobox"
-                                                className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !currentUoM.uom_type && "text-muted-foreground")}
-                                            >
-                                                {currentUoM.uom_type === 'REFERENCE' ? 'Referencia (Base)' :
-                                                    currentUoM.uom_type === 'BIGGER' ? 'Más Grande que base' :
-                                                        currentUoM.uom_type === 'SMALLER' ? 'Más Pequeña que base' :
-                                                            "Seleccionar tipo..."}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                            <div className="p-2">
-                                                <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                    {[
-                                                        { value: 'REFERENCE', label: 'Referencia (Base de la categoría)' },
-                                                        { value: 'BIGGER', label: 'Más Grande que la base' },
-                                                        { value: 'SMALLER', label: 'Más Pequeña que la base' }
-                                                    ].map((opt) => (
-                                                        <div
-                                                            key={opt.value}
-                                                            className={cn(
-                                                                "type-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                currentUoM.uom_type === opt.value && "bg-accent"
-                                                            )}
-                                                            onClick={() => {
-                                                                setCurrentUoM({ ...currentUoM, uom_type: opt.value as UoM['uom_type'] })
-                                                                document.body.click()
-                                                            }}
-                                                        >
-                                                            <span>{opt.label}</span>
-                                                            {currentUoM.uom_type === opt.value && (
-                                                                <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                            )}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        </PopoverContent>
-                                    </Popover>
-                                </LabeledContainer>
-                            </div>
-
-                            {currentUoM.uom_type && currentUoM.uom_type !== 'REFERENCE' && (
-                                <div className="animate-in fade-in zoom-in-95 duration-300">
-                                    <LabeledInput
-                                        label="Ratio de Conversión"
-                                        required
-                                        type="number"
-                                        step="0.00001"
-                                        value={currentUoM.ratio || ''}
-                                        onChange={e => setCurrentUoM({ ...currentUoM, ratio: e.target.value })}
-                                        className="font-mono text-sm"
-                                        hint={currentUoM.uom_type === 'BIGGER'
-                                            ? 'Cuántas unidades base equivalen a esta unidad'
-                                            : 'Cuántas unidades de estas equivalen a la unidad base'}
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                    {currentUoM.id && (
-                        <ActivitySidebar
-                            entityId={currentUoM.id}
-                            entityType="uom"
-                        />
-                    )}
-                </div>
-            </BaseModal>
+                initialData={editingUoM.id ? editingUoM : undefined}
+                onSuccess={refetch}
+            />
 
             <ActionConfirmModal
                 open={deleteConfirm.isOpen}

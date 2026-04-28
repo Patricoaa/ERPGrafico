@@ -12,6 +12,7 @@ import { Eye, ArrowRightLeft, Plus } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
+import { CancelButton, SubmitButton, FormFooter } from "@/components/shared"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { cn } from "@/lib/utils"
 import { TransactionType } from "@/types/transactions"
@@ -45,6 +46,7 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
     const [loading, setLoading] = useState(true)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: TransactionType, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [showAdjustmentModal, setShowAdjustmentModal] = useState(false)
+    const [isFormLoading, setIsFormLoading] = useState(false)
 
     const router = useRouter()
     const pathname = usePathname()
@@ -204,6 +206,8 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
                     }
                 }}
                 size="lg"
+                hideScrollArea={true}
+                contentClassName="p-0"
                 title={
                     <div className="flex items-center gap-4">
                         <ArrowRightLeft className="h-6 w-6 text-muted-foreground" />
@@ -213,19 +217,31 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
                         </div>
                     </div>
                 }
+                footer={
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={handleCloseModal} />
+                                <SubmitButton
+                                    form="adjustment-form"
+                                    loading={isFormLoading}
+                                    variant="primary"
+                                    className="px-8"
+                                >
+                                    Confirmar Ajuste
+                                </SubmitButton>
+                            </>
+                        }
+                    />
+                }
             >
                 <AdjustmentForm
+                    onLoadingChange={setIsFormLoading}
                     onSuccess={() => {
-                        setShowAdjustmentModal(false);
-                        onExternalOpenChange?.(false);
                         handleCloseModal();
                         fetchMoves();
                     }}
-                    onCancel={() => {
-                        setShowAdjustmentModal(false);
-                        onExternalOpenChange?.(false);
-                        handleCloseModal();
-                    }}
+                    onCancel={handleCloseModal}
                 />
             </BaseModal>
         </div>

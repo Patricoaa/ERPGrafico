@@ -7,11 +7,12 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, LabeledInput, LabeledContainer, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledContainer, FormSection, FormFooter, FormSplitLayout, LabeledSwitch } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
     Form,
+    FormControl,
     FormField
 } from "@/components/ui/form"
 import api from "@/lib/api"
@@ -20,6 +21,7 @@ import * as LucideIcons from "lucide-react"
 import { Check } from "lucide-react"
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { ActivitySidebar } from "@/features/audit/components"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const ICON_OPTIONS = [
@@ -73,12 +75,12 @@ const ICON_OPTIONS = [
     { name: "Wifi", label: "Internet" },
 ]
 
-function RichIconSelector({ value, onChange, label, error }: { value: string, onChange: (val: string) => void, label?: string, error?: string }) {
+function RichIconSelector({ value, onChange, label, error, required }: { value: string, onChange: (val: string) => void, label?: string, error?: string, required?: boolean }) {
     const SelectedIcon = (LucideIcons as any)[value] || LucideIcons.Package
     const selectedLabel = ICON_OPTIONS.find(i => i.name === value)?.label || value
 
     return (
-        <LabeledContainer label={label} error={error}>
+        <LabeledContainer label={label} error={error} required={required}>
             <Popover>
                 <PopoverTrigger asChild>
                     <Button
@@ -146,7 +148,7 @@ function RichIconSelector({ value, onChange, label, error }: { value: string, on
 const categorySchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
     prefix: z.string().max(10, "El prefijo no puede exceder 10 caracteres").optional().nullable(),
-    icon: z.string().optional(),
+    icon: z.string().min(1, "El icono es requerido"),
     parent: z.string().optional(),
     has_custom_accounting: z.boolean().optional(),
     asset_account: z.string().optional().nullable(),
@@ -285,7 +287,7 @@ export function CategoryForm({
             <BaseModal
                 open={open}
                 onOpenChange={setOpen}
-                size={initialData ? "lg" : "md"}
+                size="lg"
                 hideScrollArea={true}
                 contentClassName="p-0"
                 title={
@@ -320,11 +322,10 @@ export function CategoryForm({
             >
                 <FormSplitLayout
                     showSidebar={!!initialData?.id}
-                    sidebar={sidebar}
+                    sidebar={initialData?.id ? <ActivitySidebar entityId={initialData.id} entityType="category" /> : sidebar}
                 >
                     <Form {...form}>
-                        <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            <FormSection title="Información General" icon={LucideIcons.Tag} />
+                        <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
 
                             <div className="grid grid-cols-4 gap-4">
                                 <div className="col-span-3">
@@ -366,6 +367,7 @@ export function CategoryForm({
                                         render={({ field, fieldState }) => (
                                             <RichIconSelector
                                                 label="Icono Visual"
+                                                required
                                                 value={field.value || "Package"}
                                                 onChange={field.onChange}
                                                 error={fieldState.error?.message}
@@ -398,29 +400,20 @@ export function CategoryForm({
 
                             <FormSection title="Cuentas Contables por Defecto" icon={LucideIcons.Library} />
 
-                            <div className="flex items-center justify-between p-4 border rounded-md">
-                                <div className="space-y-0.5">
-                                    <div className="text-sm font-medium">Mapeo Contable Personalizado</div>
-                                    <div className="text-xs text-muted-foreground">Sobreescribir las cuentas globales para los productos de esta categoría.</div>
-                                </div>
-                                <FormField
-                                    control={form.control}
-                                    name="has_custom_accounting"
-                                    render={({ field }) => (
-                                        <FormControl>
-                                            <div className="flex items-center space-x-2">
-                                                <input 
-                                                    type="checkbox" 
-                                                    role="switch" 
-                                                    className="w-9 h-5 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out bg-input checked:bg-primary appearance-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                                                    checked={field.value || false} 
-                                                    onChange={(e) => field.onChange(e.target.checked)} 
-                                                />
-                                            </div>
-                                        </FormControl>
-                                    )}
-                                />
-                            </div>
+                            <FormField
+                                control={form.control}
+                                name="has_custom_accounting"
+                                render={({ field }) => (
+                                    <LabeledSwitch
+                                        label="Mapeo Contable Personalizado"
+                                        description={field.value ? "Cuentas específicas para esta categoría." : "Usar configuración contable global."}
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        icon={<LucideIcons.Calculator className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
+                                        className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                    />
+                                )}
+                            />
 
                             {form.watch("has_custom_accounting") && (
                                 <div className="grid grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">

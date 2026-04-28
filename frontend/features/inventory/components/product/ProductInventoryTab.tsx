@@ -170,55 +170,54 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                     className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
                                 />
 
-                                {field.value && (
-                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-400">
-                                        <FormField<ProductFormValues>
-                                            control={form.control}
-                                            name="receiving_warehouse"
-                                            render={({ field: whField, fieldState }) => (
-                                                <WarehouseSelector
-                                                    label="Bodega de Recepción"
-                                                    value={whField.value}
-                                                    onChange={whField.onChange}
-                                                    error={fieldState.error?.message}
-                                                    disabled={isEditing}
-                                                />
-                                            )}
-                                        />
-
-                                        <FormField<ProductFormValues>
-                                            control={form.control}
-                                            name="preferred_supplier"
-                                            render={({ field: supplierField, fieldState }) => (
-                                                <AdvancedContactSelector
-                                                    label="Proveedor Preferencial"
-                                                    value={supplierField.value || ""}
-                                                    onChange={supplierField.onChange}
-                                                    contactType="SUPPLIER"
-                                                    placeholder="Buscar proveedor..."
-                                                    error={fieldState.error?.message}
-                                                />
-                                            )}
-                                        />
-
-                                        {initialData && (
-                                            <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-muted/20 border shadow-inner overflow-hidden">
-                                                <div className="flex flex-col items-center bg-background/60 py-3 rounded-xl border border-dashed">
-                                                    <span className="text-[9px] font-black uppercase tracking-tight text-muted-foreground mb-1">A Mano</span>
-                                                    <span className="text-lg font-mono font-black">{initialData.current_stock || 0}</span>
-                                                </div>
-                                                <div className="flex flex-col items-center bg-background/60 py-3 rounded-xl border border-dashed">
-                                                    <span className="text-[9px] font-black uppercase tracking-tight text-amber-600/80 mb-1">Reservado</span>
-                                                    <span className="text-lg font-mono font-black text-amber-600">{initialData.qty_reserved || 0}</span>
-                                                </div>
-                                                <div className="flex flex-col items-center bg-emerald-500/5 py-3 rounded-xl border border-emerald-500/20">
-                                                    <span className="text-[9px] font-black uppercase tracking-tight text-emerald-600 mb-1">Disponible</span>
-                                                    <span className="text-lg font-mono font-black text-emerald-600">{initialData.qty_available || 0}</span>
-                                                </div>
-                                            </div>
+                                {/* Kept mounted with CSS visibility — avoids unmount of Radix Popover-based selectors during production-mode commits, which would loop via usePresence/safelyDetachRef. */}
+                                <div className={cn("space-y-4 animate-in fade-in slide-in-from-top-2 duration-400", !field.value && "hidden")}>
+                                    <FormField<ProductFormValues>
+                                        control={form.control}
+                                        name="receiving_warehouse"
+                                        render={({ field: whField, fieldState }) => (
+                                            <WarehouseSelector
+                                                label="Bodega de Recepción"
+                                                value={whField.value}
+                                                onChange={whField.onChange}
+                                                error={fieldState.error?.message}
+                                                disabled={isEditing}
+                                            />
                                         )}
-                                    </div>
-                                )}
+                                    />
+
+                                    <FormField<ProductFormValues>
+                                        control={form.control}
+                                        name="preferred_supplier"
+                                        render={({ field: supplierField, fieldState }) => (
+                                            <AdvancedContactSelector
+                                                label="Proveedor Preferencial"
+                                                value={supplierField.value || ""}
+                                                onChange={supplierField.onChange}
+                                                contactType="SUPPLIER"
+                                                placeholder="Buscar proveedor..."
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
+                                    />
+
+                                    {initialData && (
+                                        <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-muted/20 border shadow-inner overflow-hidden">
+                                            <div className="flex flex-col items-center bg-background/60 py-3 rounded-xl border border-dashed">
+                                                <span className="text-[9px] font-black uppercase tracking-tight text-muted-foreground mb-1">A Mano</span>
+                                                <span className="text-lg font-mono font-black">{initialData.current_stock || 0}</span>
+                                            </div>
+                                            <div className="flex flex-col items-center bg-background/60 py-3 rounded-xl border border-dashed">
+                                                <span className="text-[9px] font-black uppercase tracking-tight text-amber-600/80 mb-1">Reservado</span>
+                                                <span className="text-lg font-mono font-black text-amber-600">{initialData.qty_reserved || 0}</span>
+                                            </div>
+                                            <div className="flex flex-col items-center bg-emerald-500/5 py-3 rounded-xl border border-emerald-500/20">
+                                                <span className="text-[9px] font-black uppercase tracking-tight text-emerald-600 mb-1">Disponible</span>
+                                                <span className="text-lg font-mono font-black text-emerald-600">{initialData.qty_available || 0}</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
                     />

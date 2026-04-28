@@ -18,8 +18,7 @@ import { toast } from "sonner"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
-import { LabeledInput, LabeledSelect, CancelButton, FormSection } from "@/components/shared"
-import { Checkbox } from "@/components/ui/checkbox"
+import { LabeledInput, LabeledSelect, CancelButton, FormSection, MultiSelectTagInput } from "@/components/shared"
 import { Badge } from "@/components/ui/badge"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
@@ -633,15 +632,23 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                                     options={accounts.map(acc => ({ value: acc.id.toString(), label: acc.name }))}
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-3 p-3 rounded-lg border bg-muted/20">
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox id="allow-sales" checked={allowSales} onCheckedChange={(v) => setAllowSales(!!v)} />
-                                    <Label htmlFor="allow-sales" className="text-sm cursor-pointer">Permitir para ventas</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox id="allow-purchases" checked={allowPurchases} onCheckedChange={(v) => setAllowPurchases(!!v)} />
-                                    <Label htmlFor="allow-purchases" className="text-sm cursor-pointer">Permitir para compras</Label>
-                                </div>
+                            <div className="pt-2">
+                                <MultiSelectTagInput
+                                    label="Permisos de Uso"
+                                    options={[
+                                        { label: "Ventas", value: "sales" },
+                                        { label: "Compras", value: "purchases" }
+                                    ]}
+                                    value={[
+                                        ...(allowSales ? ["sales"] : []),
+                                        ...(allowPurchases ? ["purchases"] : [])
+                                    ]}
+                                    onChange={(vals) => {
+                                        setAllowSales(vals.includes("sales"))
+                                        setAllowPurchases(vals.includes("purchases"))
+                                    }}
+                                    placeholder="Defina dónde se permite este método..."
+                                />
                             </div>
                         </div>
 

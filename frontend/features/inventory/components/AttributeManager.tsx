@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, { useEffect, useState, useMemo } from "react"
+import React, { useEffect, useState, useMemo, useCallback } from "react"
 import api from "@/lib/api"
 import { Plus, Trash2, Tag, LayoutDashboard, Eye, X, Loader2 } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
@@ -14,12 +14,10 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { cn } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { CancelButton, SubmitButton, IconButton, LabeledInput } from "@/components/shared"
+import { CancelButton, SubmitButton, IconButton, LabeledInput, MultiTagInput, ActionConfirmModal } from "@/components/shared"
 
 interface ProductAttribute {
     id: number
@@ -46,7 +44,6 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
     const [selectedAttribute, setSelectedAttribute] = useState<ProductAttribute | null>(null)
     const [newAttrName, setNewAttrName] = useState("")
     const [newAttrValues, setNewAttrValues] = useState<string[]>([])
-    const [tagInput, setTagInput] = useState("")
     const [newValueName, setNewValueName] = useState("")
     const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
     const [isSaving, setIsSaving] = useState(false)
@@ -61,7 +58,6 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
         setSelectedAttribute(null)
         setNewAttrName("")
         setNewAttrValues([])
-        setTagInput("")
         
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
@@ -135,11 +131,9 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
         }
     }
 
-    const addTag = () => {
-        const tag = tagInput.trim()
+    const addTag = (tag: string) => {
         if (tag && !newAttrValues.includes(tag)) {
             setNewAttrValues([...newAttrValues, tag])
-            setTagInput("")
         }
     }
 
@@ -173,7 +167,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
         }
     })
 
-    const handleDeleteAttribute = (id: number) => deleteAttrConfirm.requestConfirm(id)
+    const handleDeleteAttribute = useCallback((id: number) => deleteAttrConfirm.requestConfirm(id), [deleteAttrConfirm])
 
     const deleteValueConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -185,7 +179,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
         }
     })
 
-    const handleDeleteValue = (id: number) => deleteValueConfirm.requestConfirm(id)
+    const handleDeleteValue = useCallback((id: number) => deleteValueConfirm.requestConfirm(id), [deleteValueConfirm])
 
     const columns = useMemo<ColumnDef<ProductAttribute>[]>(() => [
         {
@@ -238,16 +232,17 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                                 className="flex items-center gap-1 px-2.5 py-0.5 h-6 text-[10px] font-bold border-secondary/50"
                             >
                                 {val.value}
-                                <button
+                                <IconButton
+                                    variant="ghost"
+                                    className="ml-1 h-4 w-4 p-0 text-muted-foreground hover:text-destructive transition-colors"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         handleDeleteValue(val.id)
                                     }}
-                                    className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
                                     title="Eliminar valor"
                                 >
                                     <X className="h-3 w-3" />
-                                </button>
+                                </IconButton>
                             </DataCell.Badge>
                         ))}
                         <IconButton
@@ -291,7 +286,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                 </>
             ),
         }),
-    ], [])
+    ], [handleDeleteValue, handleDeleteAttribute])
 
     const selectedAttributes = useMemo(() => {
         return attributes.filter((_, index) => selectedRows[index])
@@ -378,47 +373,14 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                                 placeholder="Escribe el nombre..."
                             />
 
-                            <div className="space-y-3">
-                                <p className="text-[10px] text-muted-foreground">Escribe los valores que deseas añadir (ej: Rojo, Azul) y pulsa Enter.</p>
-                                <div className="flex gap-2">
-                                    <LabeledInput
-                                        label="Nuevos Valores"
-                                        containerClassName="flex-1"
-                                        value={tagInput}
-                                        onChange={(e) => setTagInput(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault()
-                                                addTag()
-                                            }
-                                        }}
-                                        placeholder="Ej: Rojo..."
-                                    />
-                                    <IconButton type="button" onClick={addTag} variant="secondary" className="shrink-0 self-end">
-                                        <Plus className="h-4 w-4" />
-                                    </IconButton>
-                                </div>
-                                
-                                <div className="flex flex-wrap gap-2 pt-2 min-h-[60px] p-3 rounded-md border border-dashed bg-muted/20">
-                                    {newAttrValues.map((tag, i) => (
-                                        <DataCell.Badge key={i} variant="secondary" className="flex items-center gap-1.5 py-1 px-2.5 text-xs font-medium animate-in zoom-in-50 duration-200">
-                                            {tag}
-                                            <button 
-                                                type="button" 
-                                                onClick={() => removeTag(tag)}
-                                                className="hover:text-destructive transition-colors"
-                                            >
-                                                <X className="h-3 w-3" />
-                                            </button>
-                                        </DataCell.Badge>
-                                    ))}
-                                    {newAttrValues.length === 0 && (
-                                        <div className="flex items-center justify-center w-full h-full text-muted-foreground text-[11px] italic">
-                                            Lista de nuevos valores vacía
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                            <MultiTagInput
+                                label="Nuevos Valores"
+                                placeholder="Escribe un valor y pulsa Enter..."
+                                values={newAttrValues}
+                                onAdd={addTag}
+                                onRemove={removeTag}
+                                hint="Escribe los valores que deseas añadir (ej: Rojo, Azul) y pulsa Enter."
+                            />
                         </div>
                     </div>
 

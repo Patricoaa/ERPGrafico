@@ -75,7 +75,7 @@ export function Step1_GeneralInfo({
                                 Para anulaciones, descuentos o devoluciones. Rebaja la deuda.
                             </p>
                         </div>
- 
+
                         <div
                             className={cn(
                                 "cursor-pointer rounded-lg border-2 p-4 transition-all hover:bg-muted/50",
@@ -187,8 +187,8 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
                             <th className="px-4 py-3 text-left font-black text-[10px] uppercase tracking-widest text-muted-foreground w-[40px]">#</th>
                             <th className="px-4 py-3 text-left font-black text-[10px] uppercase tracking-widest text-muted-foreground">Producto / Descripción</th>
                             <th className="px-4 py-3 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-24">UOM</th>
-                            <th className="px-4 py-3 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-28">Cant. Orig.</th>
-                            <th className="px-4 py-3 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-32">Cant. Nota</th>
+                            <th className="px-4 py-3 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-28">Cantidad Orig.</th>
+                            <th className="px-4 py-3 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-32">Cantidad Nota</th>
                             <th className="px-4 py-3 text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground w-40">Costo Unit.</th>
                             <th className="px-4 py-3 text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground w-40">Subtotal</th>
                         </tr>

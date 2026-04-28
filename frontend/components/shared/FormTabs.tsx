@@ -32,6 +32,10 @@ export interface FormTabsProps {
     footer?: React.ReactNode
     children: React.ReactNode
     contentClassName?: string
+    /** Additional classes for the header wrapper (horizontal only) */
+    headerClassName?: string
+    /** Additional classes for the centered pill wrapper (horizontal only) */
+    pillClassName?: string
 }
 
 export function FormTabs({
@@ -46,7 +50,9 @@ export function FormTabs({
     header,
     footer,
     children,
-    contentClassName
+    contentClassName,
+    headerClassName,
+    pillClassName
 }: FormTabsProps) {
     const visible = items.filter((i) => !i.hidden)
     const effectiveListClassName = listClassName || tabsListClassName
@@ -147,8 +153,8 @@ export function FormTabs({
         if (isVertical) return list;
 
         return (
-            <div className="flex justify-center w-full bg-muted/5">
-                <div className="bg-muted/20 p-1.5 rounded-t-[1.75rem] border-x border-t border-border/40 mb-[-1px] flex items-center justify-center">
+            <div className={cn("flex justify-center w-full", headerClassName || "bg-muted/5")}>
+                <div className={cn("p-1.5 rounded-t-[1.75rem] border-x border-t border-border/40 mb-[-1px] flex items-center justify-center", pillClassName || "bg-muted/20")}>
                     {list}
                 </div>
             </div>
@@ -163,7 +169,7 @@ export function FormTabs({
                 orientation="vertical"
                 className={cn(
                     "flex-1 grid overflow-visible min-h-0 h-full",
-                    "grid-cols-[2.5rem_minmax(0,1fr)]",
+                    "grid-cols-[0.5rem_minmax(0,1fr)] grid-rows-1",
                     className
                 )}
             >

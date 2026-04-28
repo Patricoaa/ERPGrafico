@@ -4,8 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BaseModal, EmptyState, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection } from "@/components/shared"
-import { Checkbox } from "@/components/ui/checkbox"
+import { BaseModal, EmptyState, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput } from "@/components/shared"
 import { toast } from "sonner"
 import {
     Settings,
@@ -490,14 +489,6 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
         }
     }, [open, device])
 
-    const toggleMethod = (code: number) => {
-        setSupportedMethods(prev =>
-            prev.includes(code)
-                ? prev.filter(c => c !== code)
-                : [...prev, code]
-        )
-    }
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!providerId) {
@@ -581,38 +572,17 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
                 />
 
                 <div className="space-y-3 pt-2">
-                    <FormSection title="Capacidades del Hardware" icon={CreditCard} />
-                    <div className="grid grid-cols-2 gap-4">
-                        <div
-                            className={cn(
-                                "flex items-center space-x-3 p-3 border rounded-md cursor-pointer transition-colors",
-                                supportedMethods.includes(2) ? "bg-primary/5 border-primary/30" : "bg-background border-border"
-                            )}
-                            onClick={() => toggleMethod(2)}
-                        >
-                            <Checkbox checked={supportedMethods.includes(2)} onCheckedChange={() => toggleMethod(2)} />
-                            <div className="space-y-0.5">
-                                <span className="text-xs font-black uppercase tracking-tight">Débito</span>
-                                <p className="text-[9px] text-muted-foreground leading-none">Ventas directas</p>
-                            </div>
-                        </div>
-                        <div
-                            className={cn(
-                                "flex items-center space-x-3 p-3 border rounded-md cursor-pointer transition-colors",
-                                supportedMethods.includes(1) ? "bg-primary/5 border-primary/30" : "bg-background border-border"
-                            )}
-                            onClick={() => toggleMethod(1)}
-                        >
-                            <Checkbox checked={supportedMethods.includes(1)} onCheckedChange={() => toggleMethod(1)} />
-                            <div className="space-y-0.5">
-                                <span className="text-xs font-black uppercase tracking-tight">Crédito</span>
-                                <p className="text-[9px] text-muted-foreground leading-none">Cuotas / Otros</p>
-                            </div>
-                        </div>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground italic">
-                        Marque solo los métodos que su terminal física permite procesar.
-                    </p>
+                    <MultiSelectTagInput
+                        label="Capacidades del Hardware"
+                        options={[
+                            { label: "DÉBITO", value: "2" },
+                            { label: "CRÉDITO", value: "1" }
+                        ]}
+                        value={supportedMethods.map(m => m.toString())}
+                        onChange={(vals) => setSupportedMethods(vals.map(v => parseInt(v)))}
+                        placeholder="Seleccione capacidades..."
+                        hint="Marque solo los métodos que su terminal física permite procesar."
+                    />
                 </div>
             </form>
         </BaseModal>

@@ -1,9 +1,10 @@
 import { PageLayoutSkeleton } from "@/components/shared"
 
-export default function DashboardLoading() {
+export default function ProductionLoading() {
     return (
         <PageLayoutSkeleton 
-            hasTabs={false}
+            hasTabs={true}
+            tabsCount={3}
             contentType="table"
         />
     )

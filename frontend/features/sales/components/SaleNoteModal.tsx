@@ -241,8 +241,8 @@ export function SaleNoteModal({
                             <tr>
                                 <th className="px-3 py-2 text-left font-black text-[10px] uppercase tracking-widest text-muted-foreground">Producto</th>
                                 <th className="px-3 py-2 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-20">Unidad</th>
-                                <th className="px-3 py-2 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-20">Cant. Orig.</th>
-                                <th className="px-3 py-2 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-24">Cant. Nota</th>
+                                <th className="px-3 py-2 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-20">Cantidad Orig.</th>
+                                <th className="px-3 py-2 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-24">Cantidad Nota</th>
                                 <th className="px-3 py-2 text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground w-32">Precio Unit.</th>
                                 <th className="px-3 py-2 text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground w-32">Subtotal</th>
                             </tr>

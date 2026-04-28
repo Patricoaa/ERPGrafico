@@ -154,14 +154,18 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
     const canBeSold = form.watch("can_be_sold")
     const hasVariants = form.watch("has_variants")
 
-    // Consolidated Business Rules and Tab Validity
+    // Effect 1: Product-type-driven business rules.
+    // Fires only when product_type changes. Each branch is idempotent — setValue
+    // is guarded by getValues comparison to avoid spurious notifications.
+    // Production-mode rules (advanced/express/simple) live in ProductManufacturingTab's
+    // Tabs onValueChange handler — not here — to avoid cross-component cascade.
     useEffect(() => {
         const opts = { shouldDirty: false, shouldValidate: false, shouldTouch: false }
-        const isManufacturable = productType === 'MANUFACTURABLE' || watchedAdvancedMfg;
 
-        // 1. Business Rules
-        if (productType === "STORABLE" && !isManufacturable) {
-            if (!form.getValues("track_inventory")) form.setValue("track_inventory", true, opts)
+        if (productType === "STORABLE") {
+            if (!form.getValues("track_inventory") && !form.getValues("requires_advanced_manufacturing") && !form.getValues("mfg_auto_finalize")) {
+                form.setValue("track_inventory", true, opts)
+            }
         } else if (productType === "CONSUMABLE") {
             if (form.getValues("track_inventory")) form.setValue("track_inventory", false, opts)
             if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false, opts)
@@ -171,16 +175,12 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             if (form.getValues("track_inventory")) form.setValue("track_inventory", false, opts)
             if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false, opts)
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [productType])
 
-        if (!isManufacturable && form.getValues("is_dynamic_pricing")) {
-            form.setValue("is_dynamic_pricing", false, opts);
-        }
-
-        if (isManufacturable && form.getValues("can_be_purchased")) {
-            form.setValue("can_be_purchased", false, opts);
-        }
-
-        // 2. Tab Validity Check
+    // Effect 2: Tab redirect when active tab becomes invalid.
+    // Pure read of derived state — never mutates form fields.
+    useEffect(() => {
         const isTabValid = (tab: string): boolean => {
             switch (tab) {
                 case "general": return true
@@ -471,14 +471,23 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             formData.append('category', data.category)
             formData.append('product_type', data.product_type)
             formData.append('sale_price', data.sale_price.toString())
+            formData.append('sale_price_gross', (data.sale_price_gross || 0).toString())
             formData.append('is_dynamic_pricing', data.is_dynamic_pricing ? 'true' : 'false')
-            formData.append('uom', data.uom || '')
-            formData.append('sale_uom', data.sale_uom || '')
+            
+            // Related IDs - Sanitization (Avoid sending empty strings which can cause 400 errors)
+            if (data.category) formData.append('category', data.category)
+            if (data.uom) formData.append('uom', data.uom)
+            if (data.sale_uom) formData.append('sale_uom', data.sale_uom)
             if (data.purchase_uom) formData.append('purchase_uom', data.purchase_uom)
             if (data.receiving_warehouse) formData.append('receiving_warehouse', data.receiving_warehouse)
+            
             if (data.income_account) formData.append('income_account', data.income_account)
             if (data.expense_account) formData.append('expense_account', data.expense_account)
-            if (data.preferred_supplier) formData.append('preferred_supplier', data.preferred_supplier)
+            if (data.preferred_supplier) {
+                formData.append('preferred_supplier', data.preferred_supplier)
+            } else {
+                formData.append('preferred_supplier', '') // Clear preferred supplier
+            }
 
             if (data.allowed_sale_uoms && data.allowed_sale_uoms.length > 0) {
                 data.allowed_sale_uoms.forEach(id => formData.append('allowed_sale_uoms', id))
@@ -507,7 +516,8 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                 data.attribute_values.forEach(v => formData.append('attribute_values', v))
             }
 
-            if (!initialData && data.boms && data.boms.length > 0) {
+            // BOMs - Always send if present (fixes persistence bug on PUT)
+            if (data.boms && data.boms.length > 0) {
                 formData.append('boms', JSON.stringify(data.boms))
             }
             if (data.product_custom_fields && data.product_custom_fields.length > 0) {
@@ -630,17 +640,16 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
         },
     ]
 
-    const modalTitle = (
-        <div className="flex items-center gap-3">
-            <Package className="h-6 w-6 text-primary" />
-            <span>{initialData ? 'Editar Producto' : 'Nuevo Producto'}</span>
+    const tabHeader = (
+        <div className="flex flex-col p-6 pb-2">
+            <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-3">
+                <Package className="h-6 w-6 text-primary" />
+                {initialData ? "Editar Producto" : "Nuevo Producto"}
+            </h1>
+            <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest mt-1">
+                Ficha Maestra <span className="opacity-30">|</span> Gestión de Inventario
+            </div>
         </div>
-    )
-
-    const modalDescription = (
-        <span className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-widest mt-1">
-            Ficha Maestra <span className="opacity-30">|</span> Gestión de Inventario
-        </span>
     )
 
     const footerSlot = (
@@ -657,24 +666,44 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
     )
 
     const formContent = (
-        <FormTabs
-            items={tabItems}
-            value={activeTab}
-            onValueChange={setActiveTab}
-            orientation="vertical"
-            contentClassName="bg-transparent"
-        >
-            {isFetchingInitialData ? (
-                <div className="p-6 flex-1">
-                    <FormSkeleton hasTabs tabs={6} cards={2} fields={5} />
-                </div>
-            ) : (
-                <Form {...form}>
-                        <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col min-w-0">
-                            <fieldset disabled={loading} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full">
-                                <FormTabsContent value="general" className="mt-0 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden">
-                                    <div className="grid grid-cols-6 gap-6 h-full overflow-hidden">
-                                        <div className="col-span-4 overflow-y-auto pr-2 space-y-8 pb-8 scrollbar-thin">
+        <>
+            <Form {...form}>
+                <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
+                {isFetchingInitialData ? (
+                    <div className="p-6 flex-1">
+                        <FormSkeleton hasTabs tabs={6} cards={2} fields={5} />
+                    </div>
+                ) : (
+                    <FormTabs
+                        items={tabItems}
+                        value={activeTab}
+                        onValueChange={setActiveTab}
+                        orientation="vertical"
+                        header={tabHeader}
+                        className="flex-1"
+                        contentClassName="bg-transparent"
+                    >
+                        <fieldset disabled={loading} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full min-h-0">
+                                <FormTabsContent value="general" className="h-full w-full flex-1 flex flex-col m-0 p-0 border-0 outline-none overflow-hidden">
+                                    <FormSplitLayout
+                                        sidebar={
+                                            initialData?.id ? (
+                                                <ActivitySidebar entityId={initialData.id.toString()} entityType="product" />
+                                            ) : (
+                                                <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-xl bg-muted/5 m-4">
+                                                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                                                        <History className="h-6 w-6 text-primary" />
+                                                    </div>
+                                                    <h3 className="text-sm font-bold text-foreground">Historial de Actividad</h3>
+                                                    <p className="text-xs text-muted-foreground mt-2 max-w-[200px]">
+                                                        El registro de cambios estará disponible una vez que el producto sea creado.
+                                                    </p>
+                                                </div>
+                                            )
+                                        }
+                                        showSidebar={true}
+                                    >
+                                        <div className="space-y-8 pr-2 pb-8">
                                             <ProductBasicInfo
                                                 form={form}
                                                 isEditing={!!initialData}
@@ -690,23 +719,7 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                                                 uoms={uoms}
                                             />
                                         </div>
-
-                                        <div className="col-span-2 border-l pl-6 overflow-y-auto scrollbar-thin">
-                                            {initialData?.id ? (
-                                                <ActivitySidebar entityId={initialData.id.toString()} entityType="product" />
-                                            ) : (
-                                                <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-xl bg-muted/5">
-                                                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                                                        <History className="h-6 w-6 text-primary" />
-                                                    </div>
-                                                    <h3 className="text-sm font-bold text-foreground">Historial de Actividad</h3>
-                                                    <p className="text-xs text-muted-foreground mt-2 max-w-[200px]">
-                                                        El registro de cambios estará disponible una vez que el producto sea creado.
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                    </FormSplitLayout>
                                 </FormTabsContent>
 
                                 {(productType === 'MANUFACTURABLE' || hasBom) && (
@@ -764,9 +777,10 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                                     </FormTabsContent>
                                 )}
                             </fieldset>
-                        </form>
-                </Form>
-            )}
+                        </FormTabs>
+                    )}
+                </form>
+            </Form>
 
             {/* Nested Modals */}
             <PricingRuleForm
@@ -780,14 +794,13 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                 productId={initialData?.id}
                 productName={initialData?.name}
             />
-        </FormTabs>
+        </>
     )
 
     return (
         <BaseModal
-            title={modalTitle}
-            description={modalDescription}
             open={open}
+            headerClassName="sr-only"
             onOpenChange={(newOpen) => {
                 if (!newOpen && Object.keys(form.formState.dirtyFields).length > 0) {
                     setConfirmCloseOpen(true)

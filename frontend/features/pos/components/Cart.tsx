@@ -114,7 +114,7 @@ export function Cart({
                     <div className="flex justify-between items-center">
                         <span className="font-bold text-xl tracking-tight">Resumen de Venta</span>
                         <div className="flex items-center gap-2">
-                             {currentDraftId && (
+                            {currentDraftId && (
                                 <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 bg-primary/5 text-primary">
                                     #{currentDraftId}
                                 </span>
@@ -124,7 +124,7 @@ export function Cart({
                             </span>
                         </div>
                     </div>
-                    
+
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             {lastSaved && (
@@ -159,7 +159,7 @@ export function Cart({
                             <TableHeader className="bg-background/50 sticky top-0 z-10">
                                 <TableRow className="hover:bg-transparent shadow-[0_1px_0_hsl(var(--border)_/_0.5)] border-0">
                                     <TableHead className={cn("text-xs py-2 h-[34px]", showLineDiscounts ? "w-[20%]" : "w-[25%]")}>Producto</TableHead>
-                                    <TableHead className="w-[12%] text-xs py-2 text-center h-[34px]">Cant.</TableHead>
+                                    <TableHead className="w-[12%] text-xs py-2 text-center h-[34px]">Cantidad</TableHead>
                                     <TableHead className="w-[13%] text-xs py-2 text-center h-[34px]">Unidad</TableHead>
                                     <TableHead className="w-[15%] text-xs py-2 text-right h-[34px]">Precio Unit.</TableHead>
                                     {showLineDiscounts && (
@@ -274,7 +274,7 @@ export function Cart({
                             <span>IVA (19%)</span>
                             <span>{formatCurrency(totals.total_tax)}</span>
                         </div>
-                        
+
                         {/* Line Discounts (Sum of all per-item discounts) */}
                         {(totals.line_discount_total || 0) > 0 && (
                             <div className="flex justify-between text-sm text-muted-foreground/80 italic">

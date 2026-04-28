@@ -12,6 +12,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { CancelButton, SubmitButton, FormFooter } from "@/components/shared"
 import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -22,6 +23,7 @@ export function StockReport() {
     const [loading, setLoading] = useState(true)
     const [adjustingProduct, setAdjustingProduct] = useState<any | null>(null)
     const [insightsProduct, setInsightsProduct] = useState<any | null>(null)
+    const [isFormLoading, setIsFormLoading] = useState(false)
 
     const fetchReport = React.useCallback(async () => {
         setLoading(true)
@@ -171,6 +173,8 @@ export function StockReport() {
                 open={!!adjustingProduct}
                 onOpenChange={(open) => !open && setAdjustingProduct(null)}
                 size="lg"
+                hideScrollArea={true}
+                contentClassName="p-0"
                 title={
                     <div className="flex items-center gap-4">
                         <ArrowRightLeft className="h-6 w-6 text-muted-foreground" />
@@ -182,9 +186,27 @@ export function StockReport() {
                         </div>
                     </div>
                 }
+                footer={
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setAdjustingProduct(null)} />
+                                <SubmitButton
+                                    form="adjustment-form"
+                                    loading={isFormLoading}
+                                    variant="primary"
+                                    className="px-8"
+                                >
+                                    Confirmar Ajuste
+                                </SubmitButton>
+                            </>
+                        }
+                    />
+                }
             >
                 {adjustingProduct && (
                     <AdjustmentForm
+                        onLoadingChange={setIsFormLoading}
                         preSelectedProduct={adjustingProduct.id.toString()}
                         onSuccess={() => {
                             setAdjustingProduct(null);

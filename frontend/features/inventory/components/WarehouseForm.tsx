@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { WarehouseInitialData } from "@/types/forms"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, LabeledInput, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
+import { CancelButton, LabeledInput, FormFooter, FormSplitLayout } from "@/components/shared"
 import {
     Form,
     FormField,
@@ -15,8 +15,8 @@ import {
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { List } from "lucide-react"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 import { SubmitButton } from "@/components/shared/ActionButtons"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 
 const warehouseSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -140,10 +140,20 @@ export function WarehouseForm({ sidebar,  onSuccess, initialData, open: openProp
                 }
             >
             <FormSplitLayout
-                sidebar={initialData?.id ? sidebar : undefined}
+                sidebar={initialData?.id ? (
+                    <ActivitySidebar 
+                        entityId={initialData.id} 
+                        entityType="warehouse" 
+                    />
+                ) : undefined}
+                showSidebar={!!initialData?.id}
             >
                 <Form {...form}>
-                    <form id="warehouse-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <form 
+                        id="warehouse-form" 
+                        onSubmit={form.handleSubmit(onSubmit)} 
+                        className="space-y-6 px-4 pb-4 pt-2"
+                    >
 
                                 <div className="grid grid-cols-4 gap-4">
                                     <div className="col-span-3">

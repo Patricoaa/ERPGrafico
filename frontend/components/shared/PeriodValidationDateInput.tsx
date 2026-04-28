@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { Loader2 } from "lucide-react"
 import { usePeriodValidation } from "@/hooks/usePeriodValidation"
 import { cn } from "@/lib/utils"
@@ -36,17 +36,21 @@ export function PeriodValidationDateInput({
 }: PeriodValidationDateInputProps) {
     const { validatePeriod, isValidating, isClosed, message, clearPeriodValidation } = usePeriodValidation()
 
-    // Notify parent about validity changes
+    // Stable ref for parent callback — avoids retriggering effects when parent
+    // passes a new inline arrow on every render (root cause of update-depth loop).
+    const onValidityChangeRef = useRef(onValidityChange)
     useEffect(() => {
-        if (onValidityChange) {
-            onValidityChange(!isClosed && !!date)
-        }
-    }, [isClosed, date, onValidityChange])
+        onValidityChangeRef.current = onValidityChange
+    })
+
+    // Notify parent about validity changes — callback NOT in deps.
+    useEffect(() => {
+        onValidityChangeRef.current?.(!isClosed && !!date)
+    }, [isClosed, date])
 
     // Trigger validation when date changes
     useEffect(() => {
         if (date && !disabled) {
-            // Need to stringify date to YYYY-MM-DD for backend
             const dateStr = format(date, "yyyy-MM-dd")
             validatePeriod(dateStr, validationType)
         } else {

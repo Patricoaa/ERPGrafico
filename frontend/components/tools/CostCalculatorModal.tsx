@@ -17,10 +17,10 @@ import { resolveMediaUrl } from "@/lib/api"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { BaseDrawer } from "@/components/shared/BaseDrawer"
-import { 
-    POSSearchSkeleton, 
-    POSGridSkeleton, 
-    POSCartItemsSkeleton 
+import {
+    POSSearchSkeleton,
+    POSGridSkeleton,
+    POSCartItemsSkeleton
 } from "@/features/pos/components/skeletons/POSLayoutSkeleton"
 
 interface Product {
@@ -92,8 +92,8 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
     const { data: products = [], isLoading: loadingProducts } = useQuery({
         queryKey: ['products', { active: true, can_be_sold: true }],
         queryFn: async () => {
-            const data = await inventoryApi.getProducts({ 
-                active: true, 
+            const data = await inventoryApi.getProducts({
+                active: true,
                 can_be_sold: true,
                 fields: 'id,name,cost_price,image,uom_name,internal_code,barcode,product_type,available_uoms,category,uom'
             })
@@ -206,244 +206,244 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
     }
 
     return (
-            <BaseDrawer
-                open={open}
-                onOpenChange={handleOpenChangeProxy}
-                icon={Calculator}
-                title={
-                    <div className="flex items-center gap-3">
-                        <span>Calculadora de Costos</span>
-                        <span className="bg-primary/10 text-primary border border-primary/20 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold animate-pulse shrink-0 uppercase tracking-widest h-5 rounded-sm flex items-center mt-1">
-                            <Info className="h-3 w-3 mr-1" />
-                            Modo Simulación
-                        </span>
-                    </div>
-                }
-                subtitle="Simulación rápida de materiales para determinar costos de producción"
-                height="full"
-                contentClassName="p-0 flex flex-col overflow-hidden"
-            >
+        <BaseDrawer
+            open={open}
+            onOpenChange={handleOpenChangeProxy}
+            icon={Calculator}
+            title={
+                <div className="flex items-center gap-3">
+                    <span>Calculadora de Costos</span>
+                    <span className="bg-primary/10 text-primary border border-primary/20 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold animate-pulse shrink-0 uppercase tracking-widest h-5 rounded-sm flex items-center mt-1">
+                        <Info className="h-3 w-3 mr-1" />
+                        Modo Simulación
+                    </span>
+                </div>
+            }
+            subtitle="Simulación rápida de materiales para determinar costos de producción"
+            height="full"
+            contentClassName="p-0 flex flex-col overflow-hidden"
+        >
 
-                <div className="flex-1 overflow-hidden flex divide-x">
-                    {/* Panel Izquierdo: Catálogo */}
-                    <div className="w-[60%] flex flex-col p-4 gap-4 bg-muted/20 min-h-0">
-                        <Card className="flex-1 flex flex-col overflow-hidden shadow-none border bg-background">
-                            {loading ? (
-                                <POSSearchSkeleton />
-                            ) : (
-                                <div className="p-4 border-b bg-background/50 space-y-3">
-                                    <SearchBar 
-                                        value={searchTerm}
-                                        onChange={setSearchTerm}
-                                        placeholder="Buscar por nombre, código o código de barras..."
-                                        autoFocus={false}
-                                    />
+            <div className="flex-1 overflow-hidden flex divide-x">
+                {/* Panel Izquierdo: Catálogo */}
+                <div className="w-[60%] flex flex-col p-4 gap-4 bg-muted/20 min-h-0">
+                    <Card className="flex-1 flex flex-col overflow-hidden shadow-none border bg-background">
+                        {loading ? (
+                            <POSSearchSkeleton />
+                        ) : (
+                            <div className="p-4 border-b bg-background/50 space-y-3">
+                                <SearchBar
+                                    value={searchTerm}
+                                    onChange={setSearchTerm}
+                                    placeholder="Buscar por nombre, código o código de barras..."
+                                    autoFocus={false}
+                                />
 
-                                    <CategoryFilter 
-                                        categories={categories}
-                                        selectedCategoryId={selectedCategoryId}
-                                        onSelectCategory={setSelectedCategoryId}
-                                    />
-                                </div>
-                            )}
-
-                            <ScrollArea className="flex-1">
-                                <CardContent className="p-6">
-                                    {loading ? (
-                                        <POSGridSkeleton count={8} />
-                                    ) : (
-                                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                            {filteredProducts.map(product => (
-                                                <Card
-                                                    key={product.id}
-                                                    className="group cursor-pointer hover:shadow-md transition-all border-2 active:scale-95 relative flex flex-col overflow-hidden h-full"
-                                                    onClick={() => addItem(product)}
-                                                >
-                                                    <div className="aspect-square bg-muted/50 flex items-center justify-center relative">
-                                                        {product.image ? (
-                                                            <img
-                                                                src={resolveMediaUrl(product.image) ?? undefined}
-                                                                alt={product.name}
-                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                                            />
-                                                        ) : (
-                                                            <DynamicIcon 
-                                                                name={(typeof product.category === 'object' ? product.category?.icon : categories.find((c: any) => c.id === product.category)?.icon) || "Package"} 
-                                                                className="h-12 w-12 text-muted-foreground/20 group-hover:scale-110 transition-transform" 
-                                                            />
-                                                        )}
-                                                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                                            <span className="bg-primary text-primary-foreground shadow-lg text-[9px] font-bold uppercase px-2 py-1 rounded border border-primary/20 flex items-center gap-1">
-                                                                <Plus className="h-3 w-3" /> Agregar
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <CardContent className="p-3 text-center flex-1 flex flex-col justify-center gap-1.5">
-                                                        <div className="flex justify-center gap-1">
-                                                            {product.internal_code && (
-                                                                <span className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70 border border-muted-foreground/30 rounded-sm text-muted-foreground flex items-center">
-                                                                    {product.internal_code}
-                                                                </span>
-                                                            )}
-                                                            {product.code && product.code !== product.internal_code && (
-                                                                <span className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70 bg-secondary text-secondary-foreground rounded-sm flex items-center">
-                                                                    {product.code}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <p className="text-sm font-bold leading-tight line-clamp-2">
-                                                            {product.name}
-                                                        </p>
-                                                        <div className="mt-0.5">
-                                                            <span className="text-base font-black text-primary">
-                                                                {formatCurrency(product.cost_price || 0)}
-                                                            </span>
-                                                            <span className="text-[10px] text-muted-foreground ml-1 uppercase">
-                                                                /{product.uom_name}
-                                                            </span>
-                                                        </div>
-                                                    </CardContent>
-                                                </Card>
-                                            ))}
-                                            {filteredProducts.length === 0 && (
-                                                <div className="col-span-full py-12 text-center text-muted-foreground italic">
-                                                    No se encontraron productos.
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </ScrollArea>
-                        </Card>
-                    </div>
-
-                    {/* Panel Derecho: Selección */}
-                    <div className="w-[40%] flex flex-col p-4 bg-muted/10 gap-4 min-h-0">
-                        <Card className="flex-1 flex flex-col min-h-0 overflow-hidden shadow-none border bg-background">
-                            {/* List Header */}
-                            <div className="grid grid-cols-12 gap-2 px-6 py-2 bg-muted/20 border-b text-[10px] font-bold uppercase text-muted-foreground/60 tracking-widest shrink-0">
-                                <div className="col-span-6">Descripción</div>
-                                <div className="col-span-2 text-center">Cant.</div>
-                                <div className="col-span-2">Unidad</div>
-                                <div className="col-span-2 text-right">Subtotal</div>
+                                <CategoryFilter
+                                    categories={categories}
+                                    selectedCategoryId={selectedCategoryId}
+                                    onSelectCategory={setSelectedCategoryId}
+                                />
                             </div>
+                        )}
 
-                            <ScrollArea className="flex-1">
+                        <ScrollArea className="flex-1">
+                            <CardContent className="p-6">
                                 {loading ? (
-                                    <POSCartItemsSkeleton count={6} />
-                                ) : selectedItems.length === 0 ? (
-                                    <div className="h-[300px] flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-4">
-                                        <div className="h-16 w-16 rounded-sm bg-muted/50 flex items-center justify-center">
-                                            <Calculator className="h-8 w-8 text-muted-foreground/20" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="font-bold text-sm">Tu lista está vacía</p>
-                                            <p className="max-w-[200px] text-[11px] italic opacity-70">
-                                                Agrega productos del catálogo para calcular costos.
-                                            </p>
-                                        </div>
-                                    </div>
+                                    <POSGridSkeleton count={8} />
                                 ) : (
-                                    <div className="divide-y pb-2">
-                                        {selectedItems.map((item, index) => (
-                                            <div key={item.id} className="grid grid-cols-12 gap-2 px-6 py-3 items-center group hover:bg-primary/5 transition-colors">
-                                                <div className="col-span-6 flex items-center gap-3 min-w-0">
-                                                    <div className="w-8 h-8 rounded-sm bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border">
-                                                        {item.product.image ? (
-                                                            <img src={resolveMediaUrl(item.product.image) ?? undefined} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <DynamicIcon 
-                                                                name={(typeof item.product.category === 'object' ? item.product.category?.icon : categories.find((c: any) => c.id === item.product.category)?.icon) || "Package"} 
-                                                                className="h-4 w-4 text-muted-foreground/20" 
-                                                            />
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                        {filteredProducts.map(product => (
+                                            <Card
+                                                key={product.id}
+                                                className="group cursor-pointer hover:shadow-md transition-all border-2 active:scale-95 relative flex flex-col overflow-hidden h-full"
+                                                onClick={() => addItem(product)}
+                                            >
+                                                <div className="aspect-square bg-muted/50 flex items-center justify-center relative">
+                                                    {product.image ? (
+                                                        <img
+                                                            src={resolveMediaUrl(product.image) ?? undefined}
+                                                            alt={product.name}
+                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                                        />
+                                                    ) : (
+                                                        <DynamicIcon
+                                                            name={(typeof product.category === 'object' ? product.category?.icon : categories.find((c: any) => c.id === product.category)?.icon) || "Package"}
+                                                            className="h-12 w-12 text-muted-foreground/20 group-hover:scale-110 transition-transform"
+                                                        />
+                                                    )}
+                                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                                        <span className="bg-primary text-primary-foreground shadow-lg text-[9px] font-bold uppercase px-2 py-1 rounded border border-primary/20 flex items-center gap-1">
+                                                            <Plus className="h-3 w-3" /> Agregar
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <CardContent className="p-3 text-center flex-1 flex flex-col justify-center gap-1.5">
+                                                    <div className="flex justify-center gap-1">
+                                                        {product.internal_code && (
+                                                            <span className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70 border border-muted-foreground/30 rounded-sm text-muted-foreground flex items-center">
+                                                                {product.internal_code}
+                                                            </span>
+                                                        )}
+                                                        {product.code && product.code !== product.internal_code && (
+                                                            <span className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70 bg-secondary text-secondary-foreground rounded-sm flex items-center">
+                                                                {product.code}
+                                                            </span>
                                                         )}
                                                     </div>
-                                                    <div className="min-w-0">
-                                                        <p className="text-xs font-bold truncate leading-none mb-1">{item.product.name}</p>
-                                                        <p className="text-[9px] text-muted-foreground uppercase font-medium">
-                                                            {item.product.internal_code} • {formatCurrency(item.unit_cost)}
-                                                        </p>
+                                                    <p className="text-sm font-bold leading-tight line-clamp-2">
+                                                        {product.name}
+                                                    </p>
+                                                    <div className="mt-0.5">
+                                                        <span className="text-base font-black text-primary">
+                                                            {formatCurrency(product.cost_price || 0)}
+                                                        </span>
+                                                        <span className="text-[10px] text-muted-foreground ml-1 uppercase">
+                                                            /{product.uom_name}
+                                                        </span>
                                                     </div>
-                                                </div>
-                                                <div className="col-span-2">
-                                                    <Input
-                                                        type="number"
-                                                        min="0"
-                                                        step="0.01"
-                                                        value={item.quantity}
-                                                        onChange={e => updateQuantity(item.id, parseFloat(e.target.value) || 0)}
-                                                        className="h-7 px-1 text-center font-bold text-xs border-muted-foreground/20 focus-visible:ring-primary"
-                                                    />
-                                                </div>
-                                                <div className="col-span-2">
-                                                    <Select value={String(item.uom_id ?? '')} onValueChange={val => updateUom(item.id, parseInt(val))}>
-                                                        <SelectTrigger className="h-7 text-[10px] border-muted-foreground/20 px-2 bg-background">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {(item.product.available_uoms || []).map(uom => (
-                                                                <SelectItem key={uom.id} value={String(uom.id)} className="text-[10px]">
-                                                                    {uom.name}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="col-span-2 flex items-center justify-end gap-2 pr-1">
-                                                    <div className="text-right">
-                                                        <p className="text-xs font-black text-primary">
-                                                            {formatCurrency(item.subtotal)}
-                                                        </p>
-                                                    </div>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        onClick={() => removeItem(item.id)}
-                                                        className="h-6 w-6 rounded-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
-                                                    >
-                                                        <Trash2 className="h-3 w-3" />
-                                                    </Button>
-                                                </div>
-                                            </div>
+                                                </CardContent>
+                                            </Card>
                                         ))}
+                                        {filteredProducts.length === 0 && (
+                                            <div className="col-span-full py-12 text-center text-muted-foreground italic">
+                                                No se encontraron productos.
+                                            </div>
+                                        )}
                                     </div>
                                 )}
-                            </ScrollArea>
+                            </CardContent>
+                        </ScrollArea>
+                    </Card>
+                </div>
 
-                            {/* Totals Section Align with POS */}
-                            <div className="p-6 bg-muted/20 border-t space-y-4 shrink-0">
-                                <div className="space-y-1.5">
-                                    <div className="flex justify-between items-center text-xs text-muted-foreground uppercase tracking-widest font-bold">
-                                        <span>Costo Neto</span>
-                                        <span>{formatCurrency(totalCost)}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs text-muted-foreground uppercase tracking-widest font-bold">
-                                        <span>IVA Estimado (19%)</span>
-                                        <span>{formatCurrency(Math.round(totalCost * 0.19))}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center pt-3 border-t">
-                                        <div className="flex flex-col">
+                {/* Panel Derecho: Selección */}
+                <div className="w-[40%] flex flex-col p-4 bg-muted/10 gap-4 min-h-0">
+                    <Card className="flex-1 flex flex-col min-h-0 overflow-hidden shadow-none border bg-background">
+                        {/* List Header */}
+                        <div className="grid grid-cols-12 gap-2 px-6 py-2 bg-muted/20 border-b text-[10px] font-bold uppercase text-muted-foreground/60 tracking-widest shrink-0">
+                            <div className="col-span-6">Descripción</div>
+                            <div className="col-span-2 text-center">Cantidad</div>
+                            <div className="col-span-2">Unidad</div>
+                            <div className="col-span-2 text-right">Subtotal</div>
+                        </div>
 
-                                            <span className="text-lg font-black text-primary uppercase tracking-tighter">
-                                                Total
-                                            </span>
+                        <ScrollArea className="flex-1">
+                            {loading ? (
+                                <POSCartItemsSkeleton count={6} />
+                            ) : selectedItems.length === 0 ? (
+                                <div className="h-[300px] flex flex-col items-center justify-center p-12 text-center text-muted-foreground gap-4">
+                                    <div className="h-16 w-16 rounded-sm bg-muted/50 flex items-center justify-center">
+                                        <Calculator className="h-8 w-8 text-muted-foreground/20" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="font-bold text-sm">Tu lista está vacía</p>
+                                        <p className="max-w-[200px] text-[11px] italic opacity-70">
+                                            Agrega productos del catálogo para calcular costos.
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="divide-y pb-2">
+                                    {selectedItems.map((item, index) => (
+                                        <div key={item.id} className="grid grid-cols-12 gap-2 px-6 py-3 items-center group hover:bg-primary/5 transition-colors">
+                                            <div className="col-span-6 flex items-center gap-3 min-w-0">
+                                                <div className="w-8 h-8 rounded-sm bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border">
+                                                    {item.product.image ? (
+                                                        <img src={resolveMediaUrl(item.product.image) ?? undefined} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <DynamicIcon
+                                                            name={(typeof item.product.category === 'object' ? item.product.category?.icon : categories.find((c: any) => c.id === item.product.category)?.icon) || "Package"}
+                                                            className="h-4 w-4 text-muted-foreground/20"
+                                                        />
+                                                    )}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-xs font-bold truncate leading-none mb-1">{item.product.name}</p>
+                                                    <p className="text-[9px] text-muted-foreground uppercase font-medium">
+                                                        {item.product.internal_code} • {formatCurrency(item.unit_cost)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="col-span-2">
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    value={item.quantity}
+                                                    onChange={e => updateQuantity(item.id, parseFloat(e.target.value) || 0)}
+                                                    className="h-7 px-1 text-center font-bold text-xs border-muted-foreground/20 focus-visible:ring-primary"
+                                                />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <Select value={String(item.uom_id ?? '')} onValueChange={val => updateUom(item.id, parseInt(val))}>
+                                                    <SelectTrigger className="h-7 text-[10px] border-muted-foreground/20 px-2 bg-background">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {(item.product.available_uoms || []).map(uom => (
+                                                            <SelectItem key={uom.id} value={String(uom.id)} className="text-[10px]">
+                                                                {uom.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="col-span-2 flex items-center justify-end gap-2 pr-1">
+                                                <div className="text-right">
+                                                    <p className="text-xs font-black text-primary">
+                                                        {formatCurrency(item.subtotal)}
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => removeItem(item.id)}
+                                                    className="h-6 w-6 rounded-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                                                >
+                                                    <Trash2 className="h-3 w-3" />
+                                                </Button>
+                                            </div>
                                         </div>
-                                        <span className="text-3xl font-black text-primary tracking-tighter">
-                                            {formatCurrency(Math.round(totalCost * 1.19))}
+                                    ))}
+                                </div>
+                            )}
+                        </ScrollArea>
+
+                        {/* Totals Section Align with POS */}
+                        <div className="p-6 bg-muted/20 border-t space-y-4 shrink-0">
+                            <div className="space-y-1.5">
+                                <div className="flex justify-between items-center text-xs text-muted-foreground uppercase tracking-widest font-bold">
+                                    <span>Costo Neto</span>
+                                    <span>{formatCurrency(totalCost)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-xs text-muted-foreground uppercase tracking-widest font-bold">
+                                    <span>IVA Estimado (19%)</span>
+                                    <span>{formatCurrency(Math.round(totalCost * 0.19))}</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-3 border-t">
+                                    <div className="flex flex-col">
+
+                                        <span className="text-lg font-black text-primary uppercase tracking-tighter">
+                                            Total
                                         </span>
                                     </div>
-                                </div>
-
-                                <div className="bg-primary/5 border border-primary/10 rounded-sm p-3 flex items-start gap-3">
-                                    <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                                    <p className="text-[10px] text-primary/80 leading-relaxed font-medium uppercase tracking-tight">
-                                        Esta es una simulación de costos de producción basada en el precio de costo de los materiales seleccionados. No afecta movimientos de stock ni genera registros comerciales.
-                                    </p>
+                                    <span className="text-3xl font-black text-primary tracking-tighter">
+                                        {formatCurrency(Math.round(totalCost * 1.19))}
+                                    </span>
                                 </div>
                             </div>
-                        </Card>
-                    </div>
+
+                            <div className="bg-primary/5 border border-primary/10 rounded-sm p-3 flex items-start gap-3">
+                                <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                                <p className="text-[10px] text-primary/80 leading-relaxed font-medium uppercase tracking-tight">
+                                    Esta es una simulación de costos de producción basada en el precio de costo de los materiales seleccionados. No afecta movimientos de stock ni genera registros comerciales.
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
                 </div>
-            </BaseDrawer>
+            </div>
+        </BaseDrawer>
     )
 }

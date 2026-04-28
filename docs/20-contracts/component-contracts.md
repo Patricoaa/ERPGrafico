@@ -301,6 +301,30 @@ Primitivo único para el par label + campo de texto. Reemplaza el patrón deprec
 
 ---
 
+## MultiTagInput 🟡
+
+> 📄 Ver **[component-input.md](./component-input.md#multitaginput)**.
+
+Componente para entrada de múltiples etiquetas (tags) con procesamiento mediante la tecla `Enter`.
+
+```tsx
+<MultiTagInput label="Valores" values={tags} onAdd={add} onRemove={remove} />
+```
+
+---
+
+## MultiSelectTagInput 🟡
+
+> 📄 Ver **[component-input.md](./component-input.md#multiselecttaginput)**.
+
+Selector múltiple con dropdown y etiquetas para opciones predefinidas.
+
+```tsx
+<MultiSelectTagInput label="Categorías" options={opts} value={val} onChange={set} />
+```
+
+---
+
 ## FolioValidationInput 🟢
 
 Text input with real-time DTE folio uniqueness validation.
@@ -467,6 +491,26 @@ interface ReportNode {
 Also exports `ReportTableSkeleton` for suspense boundaries.
 
 States handled: loading (isLoading → ReportTableSkeleton), empty (EmptyState), populated.
+
+---
+
+## AccountingLinesTable 🟢
+
+Tabla estándar para ingreso de líneas de asiento doble (Debe/Haber). Contiene internamente la selección de cuenta contable, glosa, cálculos de balance e interfaz de inserción/borrado de filas. 
+Usa `useFieldArray` internamente conectándose a un react-hook-form superior.
+
+```tsx
+<AccountingLinesTable control={form.control} name="items" />
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `control` | `Control<any>` | ✅ | — | Form control de `react-hook-form` |
+| `name` | `string` | ✅ | — | Nombre del field array en el schema |
+
+La estructura esperada en el array de form values (zod schema) es un array de objetos con `account`, `label`, `debit`, y `credit`.
+
+States handled: Validaciones de input, cálculo en tiempo real de saldos totales.
 
 ---
 

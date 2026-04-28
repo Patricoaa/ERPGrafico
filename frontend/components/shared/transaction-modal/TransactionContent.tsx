@@ -161,9 +161,9 @@ export function TransactionContent({
                                             <div className="flex items-center gap-1.5 mt-0.5">
                                                 <span className="text-[9px] font-mono text-muted-foreground uppercase opacity-60">Destino:</span>
                                                 <span className="text-[9px] font-black text-primary uppercase tracking-wider">
-                                                    {line.destination === 'DIVIDEND' ? 'Dividendo' : 
-                                                     line.destination === 'REINVEST' ? 'Reinversión' : 
-                                                     line.destination === 'RETAINED' ? 'Retenida' : 'Pérdida'}
+                                                    {line.destination === 'DIVIDEND' ? 'Dividendo' :
+                                                        line.destination === 'REINVEST' ? 'Reinversión' :
+                                                            line.destination === 'RETAINED' ? 'Retenida' : 'Pérdida'}
                                                 </span>
                                             </div>
                                         </div>
@@ -194,7 +194,7 @@ export function TransactionContent({
                 <TableHeader className="bg-muted/30">
                     <TableRow className="hover:bg-transparent border-none">
                         <TableHead className="text-[10px] font-black uppercase tracking-widest h-12 px-6">Descripción del Producto</TableHead>
-                        <TableHead className="text-center text-[10px] font-black uppercase tracking-widest h-12 w-[80px]">Cant.</TableHead>
+                        <TableHead className="text-center text-[10px] font-black uppercase tracking-widest h-12 w-[80px]">Cantidad</TableHead>
                         <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[120px]">P. Unit.</TableHead>
                         <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[120px]">Descuento</TableHead>
                         <TableHead className="text-right text-[10px] font-black uppercase tracking-widest h-12 w-[140px] px-6">Subtotal</TableHead>

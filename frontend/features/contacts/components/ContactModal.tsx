@@ -297,7 +297,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
         >
             <Form {...form}>
 
-                <form id="contact-form" onSubmit={form.handleSubmit(onSubmit)} className="h-full w-full flex flex-col overflow-visible">
+                <form id="contact-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
                     <FormTabs
                         items={tabItems}
                         value={activeTab}
@@ -315,6 +315,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                             </div>
                         }
                         className="flex-1"
+                        contentClassName="bg-transparent"
                     >
                                 <FormTabsContent value="profile" className="h-full w-full flex-1 flex flex-col m-0 p-0 border-0 outline-none">
                                     <FormSplitLayout

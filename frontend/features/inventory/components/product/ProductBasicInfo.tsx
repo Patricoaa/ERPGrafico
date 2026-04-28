@@ -119,15 +119,20 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                             control={form.control}
                             name="product_type"
                             render={({ field, fieldState }) => (
-                                <ProductTypeSelector 
-                                    value={field.value} 
+                                <ProductTypeSelector
+                                    value={field.value}
                                     onChange={(val) => {
                                         field.onChange(val);
-                                        // Side effect logic moved from selector to form
                                         if (val === 'STORABLE') {
                                             form.setValue('track_inventory', true);
+                                            form.setValue('can_be_purchased', true);
+                                        } else if (val === 'MANUFACTURABLE') {
+                                            form.setValue('track_inventory', true);
+                                            form.setValue('can_be_purchased', false);
+                                            form.setValue('is_dynamic_pricing', false);
                                         } else {
                                             form.setValue('track_inventory', false);
+                                            form.setValue('is_dynamic_pricing', false);
                                         }
                                     }}
                                     disabled={isEditing} 

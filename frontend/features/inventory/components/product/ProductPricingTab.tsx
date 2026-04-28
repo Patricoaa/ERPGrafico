@@ -71,7 +71,7 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                             <TableRow className="bg-muted/50 hover:bg-muted/50 border-none">
                                 <TableHead>Nivel</TableHead>
                                 <TableHead>Descripción / Vigencia</TableHead>
-                                <TableHead>Cant. Mín</TableHead>
+                                <TableHead>Cantidad Mín</TableHead>
                                 <TableHead className="text-right">Precio / Descuento</TableHead>
                                 <TableHead className="text-center w-[100px]">Estado</TableHead>
                                 <TableHead className="text-right w-[60px]"></TableHead>

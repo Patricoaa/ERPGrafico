@@ -73,10 +73,10 @@ import { WizardHeader } from "./WizardHeader"
 import { WizardStickyFooter } from "./WizardStickyFooter"
 import { WizardRightSidebar } from "./WizardRightSidebar"
 import { RectificationStep } from "./steps/RectificationStep"
-import type { 
-    WorkOrder, 
-    WorkOrderMaterial, 
-    WorkOrderTask, 
+import type {
+    WorkOrder,
+    WorkOrderMaterial,
+    WorkOrderTask,
     WorkOrderStage,
     ProductMinimal,
     UoM,
@@ -353,7 +353,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [open, viewingStepIndex, isViewingCurrentStage, order, actualStepIndex, transitioning, pendingTasks, canApproveAll])
 
-    const handleTransition = async (nextStageId: string, data: Record<string, unknown> = {}) => { 
+    const handleTransition = async (nextStageId: string, data: Record<string, unknown> = {}) => {
         const currentOrder = order;
         if (!currentOrder) return;
 
@@ -748,7 +748,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                     <thead className="bg-muted/50">
                                                                         <tr>
                                                                             <th className="p-2 text-left">Componente</th>
-                                                                            <th className="p-2 text-right">Cant. Planificada</th>
+                                                                            <th className="p-2 text-right">Cantidad Planificada</th>
                                                                             <th className="p-2 text-left">UoM</th>
                                                                             <th className="p-2 text-right">Costo Total</th>
                                                                             <th className="p-2 text-left">Origen</th>
@@ -777,8 +777,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                 <td className="p-2 text-right font-bold">{formatCurrency(m.total_cost)}</td>
                                                                                 <td className="p-2">
                                                                                     <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                                                        {m.source}
-                                                    </span>
+                                                                                        {m.source}
+                                                                                    </span>
                                                                                 </td>
                                                                                 <td className="p-2">
                                                                                     {m.source === 'MANUAL' && isViewingCurrentStage && (
@@ -1150,14 +1150,14 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         </Button>
                                                                     </div>
                                                                 )}
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                                                                            OC-{m.purchase_order_number}
-                                                                        </span>
-                                                                        <span className="text-[10px] font-medium text-muted-foreground">
-                                                                            ({m.supplier_name})
-                                                                        </span>
-                                                                    </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
+                                                                        OC-{m.purchase_order_number}
+                                                                    </span>
+                                                                    <span className="text-[10px] font-medium text-muted-foreground">
+                                                                        ({m.supplier_name})
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     ))}
@@ -1528,7 +1528,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             }}
                             isMaterialApprovalIncomplete={
                                 !!(STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' &&
-                                order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))
+                                    order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))
                             }
                             hasMaterials={orderHasMaterials}
                             isRectificationStep={STAGES[viewingStepIndex]?.id === 'RECTIFICATION'}
@@ -1600,7 +1600,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                 <tr>
                                     <th className="p-2 text-left">Proveedor</th>
                                     <th className="p-2 text-left">Servicio</th>
-                                    <th className="p-2 text-right">Cant.</th>
+                                    <th className="p-2 text-right">Cantidad</th>
                                     <th className="p-2 text-right">P. Bruto</th>
                                     <th className="p-2 text-right">Total Bruto</th>
                                 </tr>
