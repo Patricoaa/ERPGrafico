@@ -84,7 +84,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
             cell: ({ row }) => (
                 <div className="flex flex-col items-center justify-center w-full">
                     <span className="font-medium text-sm">{row.original.name}</span>
-                    <span className="text-[10px] text-muted-foreground truncate max-w-[280px] text-center">
+                    <span className="text-xs text-muted-foreground truncate max-w-[280px] text-center">
                         {row.original.description}
                     </span>
                 </div>
@@ -96,7 +96,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cuenta" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <Badge variant="outline" className="font-mono text-[10px]">{row.getValue("account_name")}</Badge>
+                    <Badge variant="outline" className="font-mono text-xs">{row.getValue("account_name")}</Badge>
                 </div>
             ),
             filterFn: "arrIncludes",
@@ -108,7 +108,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
             cell: ({ row }) => (
                 <div className="flex gap-1 flex-wrap justify-center w-full">
                     {row.original.match_config.criteria?.map((c) => (
-                        <Badge key={c} variant="secondary" className="text-[10px] lowercase">
+                        <Badge key={c} variant="secondary" className="text-xs lowercase">
                             {c.replace('_', ' ')}
                         </Badge>
                     ))}
@@ -141,7 +141,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
                     )}>
                         {row.original.success_rate}%
                     </span>
-                    <span className="text-[9px] text-muted-foreground font-mono">{row.original.times_applied} usos</span>
+                    <span className="text-[10px] text-muted-foreground font-mono">{row.original.times_applied} usos</span>
                 </div>
             ),
         },
@@ -239,7 +239,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
 
                     <Card variant="dashed" className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Auto-Confirmar</p>
+                            <p className="text-xs font-bold uppercase text-muted-foreground">Auto-Confirmar</p>
                             <p className="text-xs text-muted-foreground">Reconciliar automáticamente si el score es alto</p>
                         </div>
                         <Switch
@@ -249,7 +249,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
                     </Card>
 
                     <div className="space-y-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Criterios de Coincidencia</p>
+                        <p className="text-xs font-bold uppercase text-muted-foreground">Criterios de Coincidencia</p>
                         <div className="grid grid-cols-2 gap-2">
                             {['amount_exact', 'transaction_id', 'date_range', 'reference'].map(criteria => (
                                 <div key={criteria} className="flex items-center space-x-2 border p-2 rounded">
@@ -278,7 +278,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
                     </div>
 
                     <div className="space-y-2">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Score Mínimo ({editingRule.match_config?.min_score || 50}%)</p>
+                        <p className="text-xs font-bold uppercase text-muted-foreground">Score Mínimo ({editingRule.match_config?.min_score || 50}%)</p>
                         <div className="flex items-center gap-4">
                             <input
                                 type="range" min="0" max="100" step="5"

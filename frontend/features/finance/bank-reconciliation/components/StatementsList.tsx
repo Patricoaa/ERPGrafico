@@ -117,7 +117,7 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
             cell: ({ row }) => (
                 <div className="flex flex-col items-center justify-center w-full">
                     <span className="font-semibold text-xs">{row.original.total_lines} total</span>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                         {row.original.reconciled_lines} rec.
                     </span>
                 </div>
@@ -133,7 +133,7 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
                 return (
                     <div className="flex items-center justify-center gap-2 min-w-[120px] w-full">
                         <Progress value={progress} className="h-1.5 w-16" />
-                        <span className="text-[10px] font-mono font-bold w-8 text-right">
+                        <span className="text-xs font-mono font-bold w-10 text-right">
                             {Math.round(progress)}%
                         </span>
                     </div>

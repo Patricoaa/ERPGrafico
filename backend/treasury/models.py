@@ -857,6 +857,27 @@ class BankStatementLine(models.Model):
     # Notas
     notes = models.TextField(_("Notas"), blank=True)
     
+    # Exclusión
+    class ExclusionReason(models.TextChoices):
+        DUPLICATE = 'DUPLICATE', _('Transacción Duplicada')
+        INTERNAL = 'INTERNAL', _('Traspaso Interno no Conciliable')
+        ADJUSTMENT = 'ADJUSTMENT', _('Ajuste de Saldo')
+        ERROR = 'ERROR', _('Error de Importación / Datos Corruptos')
+        OTHER = 'OTHER', _('Otro (Especificar en notas)')
+
+    exclusion_reason = models.CharField(
+        _("Razón de Exclusión"),
+        max_length=50,
+        choices=ExclusionReason.choices,
+        blank=True,
+        null=True
+    )
+    exclusion_notes = models.TextField(
+        _("Notas de Exclusión"),
+        blank=True,
+        null=True
+    )
+    
     history = HistoricalRecords()
     
     class Meta:

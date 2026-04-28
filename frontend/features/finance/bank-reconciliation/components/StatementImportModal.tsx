@@ -19,7 +19,7 @@ const importSchema = z.object({
     treasury_account_id: z.string().min(1, "Debes seleccionar una cuenta"),
     bank_format: z.string().min(1, "Debes seleccionar un formato"),
     file: z.any().optional(), // Use any to avoid instanceof issues in Turbopack
-    mapping: z.record(z.any()).optional()
+    mapping: z.record(z.string(), z.any()).optional()
 })
 
 type ImportFormValues = z.infer<typeof importSchema>
@@ -108,8 +108,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
             form.setValue("file", selectedFile)
             setError(null)
         } else {
-            // @ts-expect-error - explicitly clearing the file field
-            form.setValue("file", undefined)
+            form.setValue("file", undefined as any)
         }
     }
 
@@ -229,7 +228,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                             <TreasuryAccountSelector
                                 label="Seleccione la Cuenta Bancaria"
                                 value={treasuryAccountId}
-                                onChange={(val) => form.setValue("treasury_account_id", val)}
+                                onChange={(val) => form.setValue("treasury_account_id", val || "")}
                                 type="CHECKING"
                             />
                         </div>
@@ -259,7 +258,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                             <div className="animate-in fade-in slide-in-from-top-2">
                                 <Alert variant="destructive" className="rounded-lg border-destructive/20 bg-destructive/5">
                                     <AlertCircle className="h-4 w-4 text-destructive" />
-                                    <AlertDescription className="text-xs font-bold uppercase tracking-wider text-destructive/80 leading-relaxed">
+                                    <AlertDescription className="text-xs font-bold uppercase text-destructive/80 leading-relaxed">
                                         {error}
                                     </AlertDescription>
                                 </Alert>
@@ -294,11 +293,11 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                                                 <TableHead key={idx} className="w-[280px] p-0 border-b border-border/40">
                                                     <div className="flex flex-col gap-3 p-4">
                                                         <div className="flex items-center justify-between">
-                                                            <span className="text-[10px] font-black text-muted-foreground/50 bg-muted/30 px-2 py-0.5 rounded border border-border/40">
+                                                            <span className="text-xs font-black text-muted-foreground/50 bg-muted/30 px-2 py-0.5 rounded border border-border/40">
                                                                 COLUMNA {idx + 1}
                                                             </span>
                                                         </div>
-                                                        <span className="text-[11px] font-black text-foreground/70 uppercase tracking-widest break-all line-clamp-1 min-h-4" title={String(col)}>
+                                                        <span className="text-xs font-black text-foreground/70 uppercase break-all line-clamp-1 min-h-4" title={String(col)}>
                                                             {String(col)}
                                                         </span>
                                                         <Select
@@ -314,18 +313,18 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                                                                 form.setValue("mapping", newMapping)
                                                             }}
                                                         >
-                                                            <SelectTrigger className="h-9 text-[10px] font-bold uppercase tracking-wider bg-background">
+                                                            <SelectTrigger className="h-9 text-xs font-bold uppercase bg-background">
                                                                 <SelectValue placeholder="Ignorar Columna" />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                <SelectItem value="ignore" className="text-[10px] font-bold uppercase tracking-wider">Ignorar Columna</SelectItem>
-                                                                <SelectItem value="date" className="text-[10px] font-bold uppercase tracking-wider">Fecha Movimiento</SelectItem>
-                                                                <SelectItem value="description" className="text-[10px] font-bold uppercase tracking-wider">Descripción / Glosa</SelectItem>
-                                                                <SelectItem value="debit" className="text-[10px] font-bold uppercase tracking-wider text-destructive">Cargos (Egresos)</SelectItem>
-                                                                <SelectItem value="credit" className="text-[10px] font-bold uppercase tracking-wider text-success">Abonos (Ingresos)</SelectItem>
-                                                                <SelectItem value="balance" className="text-[10px] font-bold uppercase tracking-wider">Saldo</SelectItem>
-                                                                <SelectItem value="reference" className="text-[10px] font-bold uppercase tracking-wider font-mono">Referencia / Doc</SelectItem>
-                                                                <SelectItem value="transaction_id" className="text-[10px] font-bold uppercase tracking-wider font-mono">ID Ext. Transacción</SelectItem>
+                                                                <SelectItem value="ignore" className="text-xs font-bold uppercase">Ignorar Columna</SelectItem>
+                                                                <SelectItem value="date" className="text-xs font-bold uppercase">Fecha Movimiento</SelectItem>
+                                                                <SelectItem value="description" className="text-xs font-bold uppercase">Descripción / Glosa</SelectItem>
+                                                                <SelectItem value="debit" className="text-xs font-bold uppercase text-destructive">Cargos (Egresos)</SelectItem>
+                                                                <SelectItem value="credit" className="text-xs font-bold uppercase text-success">Abonos (Ingresos)</SelectItem>
+                                                                <SelectItem value="balance" className="text-xs font-bold uppercase">Saldo</SelectItem>
+                                                                <SelectItem value="reference" className="text-xs font-bold uppercase font-mono">Referencia / Doc</SelectItem>
+                                                                <SelectItem value="transaction_id" className="text-xs font-bold uppercase font-mono">ID Ext. Transacción</SelectItem>
                                                             </SelectContent>
                                                         </Select>
                                                     </div>
@@ -365,7 +364,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                                     key={f}
                                     variant="outline"
                                     className={cn(
-                                        "h-6 px-3 text-[9px] font-black uppercase tracking-wider transition-all",
+                                        "h-6 px-3 text-[10px] font-black uppercase transition-all",
                                         mapping[f] !== null
                                             ? "bg-success/10 border-success/20 text-success shadow-sm shadow-success/5"
                                             : "bg-muted/50 border-border text-muted-foreground/40 line-through"
@@ -381,7 +380,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                         <div className="max-w-xl mx-auto animate-in fade-in slide-in-from-top-2">
                             <Alert variant="destructive" className="rounded-lg border-destructive/20 bg-destructive/5">
                                 <AlertCircle className="h-4 w-4 text-destructive" />
-                                <AlertDescription className="text-xs font-bold uppercase tracking-wider text-destructive/80 leading-relaxed">
+                                <AlertDescription className="text-xs font-bold uppercase text-destructive/80 leading-relaxed">
                                     {error}
                                 </AlertDescription>
                             </Alert>

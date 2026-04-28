@@ -710,6 +710,12 @@ class AccountingSettings(models.Model):
         verbose_name=_("Cuenta de Ajustes Varios"),
         help_text=_("Cuenta por defecto para otros ajustes")
     )
+    tax_withholding_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_tax_withholding',
+        verbose_name=_("Cuenta de Retenciones / Impuestos"),
+        help_text=_("Cuenta para ajustes de conciliación por retenciones de impuestos.")
+    )
 
     # POS Cash Control Accounts
     pos_cash_difference_gain_account = models.ForeignKey(

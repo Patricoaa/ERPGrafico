@@ -568,6 +568,9 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
         """Exclude multiple lines from reconciliation"""
         try:
             line_ids = request.data.get('line_ids', [])
+            exclusion_reason = request.data.get('exclusion_reason')
+            exclusion_notes = request.data.get('exclusion_notes', '')
+
             if not line_ids:
                 return Response({'error': 'line_ids requerido'}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -578,7 +581,9 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
             
             # Update state
             BankStatementLine.objects.filter(id__in=line_ids).update(
-                reconciliation_status='EXCLUDED'
+                reconciliation_status='EXCLUDED',
+                exclusion_reason=exclusion_reason,
+                exclusion_notes=exclusion_notes
             )
             
             return Response({'message': f'{len(line_ids)} movimientos excluidos'})
