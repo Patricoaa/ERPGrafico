@@ -42,21 +42,21 @@ ID · Título
 
 Objetivo: corregir bugs visibles, alinear terminología, preparar terreno técnico.
 
-### S0.1 · Reemplazar `alert()` nativos por toast
+### S0.1 · Reemplazar `alert()` nativos por toast [COMPLETADA]
 - **Gaps:** F6
 - **Dificultad:** S
 - **Archivos:** `frontend/app/(dashboard)/treasury/reconciliation/[id]/page.tsx:122`, `[id]/workbench/page.tsx:65`
 - **Cambios:** sustituir `alert('✅ ...')` por `toast.success(...)` desde `sonner`. Verificar no quedan otros `alert()` en feature.
 - **DoD:** grep `alert(` en `features/finance/bank-reconciliation/` y rutas asociadas = 0 hits.
 
-### S0.2 · Renombrar "Sugerencia IA" → "Match Sugerido"
+### S0.2 · Renombrar "Sugerencia IA" → "Match Sugerido" [COMPLETADA]
 - **Gaps:** F17
 - **Dificultad:** S
 - **Archivos:** `ReconciliationPanel.tsx` (líneas ~407, ~497)
 - **Cambios:** texto + i18n key si existe. Mantener ícono `Sparkles`.
 - **DoD:** ningún string `IA` en componentes de reconciliation.
 
-### S0.3 · Agregar `TAX` a `DifferenceService.DIFFERENCE_CHOICES`
+### S0.3 · Agregar `TAX` a `DifferenceService.DIFFERENCE_CHOICES` [COMPLETADA]
 - **Gaps:** B21
 - **Dificultad:** S
 - **Archivos:** `backend/treasury/difference_service.py:32-39`, `backend/treasury/migrations/` (no requiere migración — es enum en código), `backend/accounting/models.py` (`AccountingSettings` agregar `tax_withholding_account` FK).
@@ -66,7 +66,7 @@ Objetivo: corregir bugs visibles, alinear terminología, preparar terreno técni
   - Migración `accounting`: agregar campo `tax_withholding_account = ForeignKey(Account, null=True, blank=True)`
 - **DoD:** POST con `difference_type='TAX'` desde frontend ya no cae a `OTHER`.
 
-### S0.4 · Tipografía mínima legible
+### S0.4 · Tipografía mínima legible [COMPLETADA]
 - **Gaps:** F34, F35
 - **Dificultad:** M
 - **Archivos:** `ReconciliationPanel.tsx`, `DashboardKPIs.tsx`, `StatementsList.tsx`, `ReconciliationRules.tsx`, `StatementImportModal.tsx`, páginas en `app/(dashboard)/treasury/reconciliation/**`
@@ -75,7 +75,7 @@ Objetivo: corregir bugs visibles, alinear terminología, preparar terreno técni
   - Reducir mezcla `tracking-tighter` ↔ `tracking-widest` — usar 1 sólo por bloque.
 - **DoD:** type-check + visual smoke test (Storybook/dev) sin regresión.
 
-### S0.5 · Razón obligatoria al excluir línea
+### S0.5 · Razón obligatoria al excluir línea [COMPLETADA]
 - **Gaps:** F14
 - **Dificultad:** S
 - **Archivos:** `ReconciliationPanel.tsx` (`actionDialog` exclude), `backend/treasury/views.py` (action `bulk_exclude` y `partial_update` de line)
@@ -84,42 +84,44 @@ Objetivo: corregir bugs visibles, alinear terminología, preparar terreno técni
   - Backend: añadir campos `excluded_reason`, `excluded_notes` a `BankStatementLine`. Migración 0019.
   - Endpoint `/bulk_exclude/` y `PATCH` aceptan/almacenan razón.
 - **DoD:** PATCH sin `excluded_reason` cuando `reconciliation_state='EXCLUDED'` retorna 400.
++
++**Sprint 0 Finalizado: 2026-04-28.**
 
 ---
 
-## SPRINT 1 — Estabilizar matching & differences (1.5 semanas)
+## SPRINT 1 — Estabilizar matching & differences (1.5 semanas) [COMPLETADA]
 
-Objetivo: corregir bugs lógicos del motor de matching y diferencias.
+Objetivo: corregir bugs lógicos del motor de matching y diferencias. Finalizado: 2026-04-28.
 
-### S1.1 · Fix `success_rate` en `RuleService.increment_rule_usage`
+### S1.1 · Fix `success_rate` en `RuleService.increment_rule_usage` [COMPLETADA]
 - **Gaps:** B14
 - **Dificultad:** S
 - **Archivos:** `backend/treasury/rule_service.py:313-340`
 - **Cambios:** reescribir cálculo con `successes` y `attempts` separados (agregar campo `times_succeeded` IntegerField a `ReconciliationRule`, derivar `success_rate` como property). Migración 0020.
 - **DoD:** test unitario: 1 success, 1 fail → success_rate = 50%.
 
-### S1.2 · Fix `RuleService.simulate_rule` weights
+### S1.2 · Fix `RuleService.simulate_rule` weights [COMPLETADA]
 - **Gaps:** B15
 - **Dificultad:** S
 - **Archivos:** `backend/treasury/rule_service.py:343-414`
 - **Cambios:** asegurar que `_calculate_rule_score` usa `temp_rule.match_config['weights']` (ya hace, pero verificar default fallback usa los del config simulado, no defaults).
 - **DoD:** test: simular regla con weights `{amount:80, date:20}` produce score distinto del default.
 
-### S1.3 · `confidence_threshold` configurable en UI auto-match
+### S1.3 · Umbral de confianza configurable en UI auto-match [COMPLETADA]
 - **Gaps:** F16
 - **Dificultad:** S
 - **Archivos:** `ReconciliationPanel.tsx` (`actionDialog.automatch`)
 - **Cambios:** modal automatch incluye slider 50–100 (default 90). Pasa al endpoint.
 - **DoD:** payload de `/auto_match/` incluye threshold del slider.
 
-### S1.4 · Distribuir `difference_amount` entre líneas del grupo
+### S1.4 · Reparto proporcional de diferencia [COMPLETADA]
 - **Gaps:** B22
 - **Dificultad:** M
 - **Archivos:** `backend/treasury/matching_service.py:418-463` (`create_match_group`)
 - **Cambios:** repartir diferencia proporcional al `abs(amount)` de cada línea en lugar de asignar todo a `lines[0]`. Documentar reparto en `notes` del grupo.
 - **DoD:** test: grupo con líneas $100/$200/$300 y diff $60 → líneas reciben $10/$20/$30.
 
-### S1.5 · `JournalEntry` de diferencia en estado DRAFT, no POSTED
+### S1.5 · Asientos de ajuste en estado Borrador [COMPLETADA]
 - **Gaps:** B23
 - **Dificultad:** S
 - **Archivos:** `backend/treasury/difference_service.py:125-126`

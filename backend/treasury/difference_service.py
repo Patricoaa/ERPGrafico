@@ -76,7 +76,8 @@ class DifferenceService:
         settings = AccountingSettings.objects.select_related(
             'bank_commission_account', 'interest_income_account', 
             'exchange_difference_account', 'rounding_adjustment_account', 
-            'error_adjustment_account', 'miscellaneous_adjustment_account'
+            'error_adjustment_account', 'tax_withholding_account',
+            'miscellaneous_adjustment_account'
         ).first()
         
         if not settings:
@@ -125,9 +126,6 @@ class DifferenceService:
             else:
                 JournalItem.objects.create(entry=entry, account=treasury_account, debit=abs_diff, credit=0)
                 JournalItem.objects.create(entry=entry, account=difference_account, debit=0, credit=abs_diff)
-        
-        entry.status = 'POSTED'
-        entry.save()
         
         line.difference_journal_entry = entry
         line.difference_reason = difference_type
