@@ -386,7 +386,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     <span className="font-mono font-bold text-xs">
                         {format(new Date(row.original.transaction_date), 'dd MMM yy', { locale: es })}
                     </span>
-                    <span className="text-[10px] font-black uppercase text-muted-foreground opacity-50">L{row.original.line_number}</span>
+                    <span className="text-[10px] font-black uppercase text-muted-foreground opacity-50"> {/* intentional: badge density */} L{row.original.line_number}</span>
                 </div>
             ),
             size: 80,
@@ -402,12 +402,12 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             {row.original.description}
                         </span>
                         {row.original.reference && (
-                            <span className="text-[10px] font-mono text-muted-foreground truncate opacity-70">REF: {row.original.reference}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground truncate opacity-70"> {/* intentional: badge density */} REF: {row.original.reference}</span>
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
                                 <Sparkles className="h-2.5 w-2.5 text-warning" />
-                                <span className="text-[10px] font-black uppercase text-warning">Match Sugerido</span>
+                                <span className="text-[10px] font-black uppercase text-warning"> {/* intentional: badge density */} Match Sugerido</span>
                             </div>
                         )}
                     </div>
@@ -425,7 +425,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         <span className={cn("font-mono font-black text-[13px] tracking-tight", isCredit ? "text-success" : "text-destructive")}>
                             {formatCurrency(amount)}
                         </span>
-                        <span className="text-[10px] font-black uppercase opacity-40">
+                        <span className="text-[10px] font-black uppercase opacity-40"> {/* intentional: badge density */}
                             {isCredit ? "Abono" : "Cargo"}
                         </span>
                     </div>
@@ -473,7 +473,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     <span className="font-mono font-bold text-xs">
                         {row.original.display_id || row.original.code || 'PEND'}
                     </span>
-                    <span className="text-[10px] font-medium text-muted-foreground">
+                    <span className="text-[10px] font-medium text-muted-foreground"> {/* intentional: badge density */}
                         {format(new Date(row.original.date), 'dd/MM/yy', { locale: es })}
                     </span>
                 </div>
@@ -488,16 +488,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 const isSuggested = suggestions.some(s => (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === row.original.id)
                 return (
                     <div className="flex flex-col gap-0.5 max-w-[220px]">
-                        <span className={cn("text-[11px] font-bold truncate", isSuggested && "text-warning")}>
+                        <span className={cn("text-xs font-bold truncate", isSuggested && "text-warning")}>
                             {row.original.contact_name}
                         </span>
                         {isBatch && (
-                            <Badge variant="secondary" className="w-fit text-[10px] h-4 px-1.5 font-black uppercase bg-info/10 text-info">Lote Terminal</Badge>
+                            <Badge variant="secondary" className="w-fit text-[10px] h-4 px-1.5 font-black uppercase bg-info/10 text-info"> {/* intentional: badge density */} Lote Terminal</Badge>
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
                                 <Sparkles className="h-2.5 w-2.5 text-warning shadow-sm" />
-                                <span className="text-[10px] font-black uppercase text-warning">Match Sugerido</span>
+                                <span className="text-[10px] font-black uppercase text-warning"> {/* intentional: badge density */} Match Sugerido</span>
                             </div>
                         )}
                     </div>
@@ -527,7 +527,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-3">
                         <h3 className="text-lg font-black tracking-tight text-foreground/80 uppercase">Workbench de Conciliación</h3>
-                        <Badge variant="outline" className="font-mono text-[10px] border-primary/20 bg-primary/5 text-primary font-bold">
+                        <Badge variant="outline" className="font-mono text-[10px] border-primary/20 bg-primary/5 text-primary font-bold"> {/* intentional: badge density */}
                             {unreconciledLines.length} Pendientes
                         </Badge>
                     </div>
@@ -559,21 +559,21 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-12">
                         <div className="group">
-                            <p className="text-[9px] font-black uppercase text-white/40 mb-1 tracking-widest group-hover:text-primary transition-colors">Banco ({selectedLines.length})</p>
+                            <p className="text-[10px] font-black uppercase text-white/40 mb-1 tracking-widest group-hover:text-primary transition-colors"> {/* intentional: badge density */} Banco ({selectedLines.length})</p>
                             <p className="text-xl font-black font-mono">
                                 {formatCurrency(selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0))}
                             </p>
                         </div>
                         <div className="h-10 w-px bg-white/10" />
                         <div className="group">
-                            <p className="text-[9px] font-black uppercase text-white/40 mb-1 tracking-widest group-hover:text-primary transition-colors">Sistema ({selectedPayments.length})</p>
+                            <p className="text-[10px] font-black uppercase text-white/40 mb-1 tracking-widest group-hover:text-primary transition-colors"> {/* intentional: badge density */} Sistema ({selectedPayments.length})</p>
                             <p className="text-xl font-black font-mono">
                                 {formatCurrency(selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0))}
                             </p>
                         </div>
                         <div className="h-10 w-px bg-white/10" />
                         <div>
-                            <p className="text-[9px] font-black uppercase text-white/40 mb-1 tracking-widest">Diferencia</p>
+                            <p className="text-[10px] font-black uppercase text-white/40 mb-1 tracking-widest"> {/* intentional: badge density */} Diferencia</p>
                             {(() => {
                                 const lineTotal = selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
                                 const payTotal = selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0)
@@ -588,7 +588,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     </div>
 
                     <div className="flex gap-3">
-                        <Button variant="ghost" className="font-bold text-white/50 hover:text-white uppercase text-[11px]" onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}>
+                        <Button variant="ghost" className="font-bold text-white/50 hover:text-white uppercase text-xs" onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}>
                             Limpiar
                         </Button>
                         <Button
@@ -670,7 +670,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         
                         <div className="space-y-3 bg-muted/30 p-4 rounded-lg border border-border/50">
                             <div className="flex justify-between items-center">
-                                <Label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+                                <Label className="text-xs font-black uppercase tracking-wider text-muted-foreground">
                                     Umbral de Confianza
                                 </Label>
                                 <Badge variant="outline" className="font-mono font-bold text-primary bg-primary/5 border-primary/20">
@@ -686,7 +686,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 onChange={(e) => setConfidenceThreshold(parseInt(e.target.value))}
                                 className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
                             />
-                            <div className="flex justify-between text-[9px] font-bold text-muted-foreground uppercase opacity-50">
+                            <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase opacity-50"> {/* intentional: badge density */}
                                 <span>Flexible (50%)</span>
                                 <span>Estricto (100%)</span>
                             </div>

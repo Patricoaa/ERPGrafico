@@ -483,6 +483,9 @@ class MatchingService:
                 lines[0].difference_reason = difference_reason
             lines[0].save()
             
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('treasury')
+        
         return group
 
     @staticmethod
@@ -557,7 +560,7 @@ class MatchingService:
             b.save()
 
         # Update All TreasuryMovements in Group AND Handle Transfer if Accounts Differs
-        for p in group.payments.all():
+        for p in group.movements.all():
             
             # Check for Account Mismatch (e.g. Card TreasuryMovement vs Bank Statement)
             # If TreasuryMovement was registered in "Transbank Account" but matched to "Bank Statement"
@@ -593,8 +596,8 @@ class MatchingService:
                     partner_name=p.contact.name if p.contact else ''
                 )
                 
-                # Link entry to payment? maybe append to notes or add M2M?
-                # Ideally we track this, but for now just create it.
+                # Link entry to match group for explicit tracking
+                group.transfer_journal_entries.add(transfer_entry)
 
             p.is_reconciled = True
             p.reconciled_at = timezone.now()
@@ -605,6 +608,9 @@ class MatchingService:
                                          # Let's link it to the first line if 1:1, or None if N:M?
                                          # For now, let's skip legacy field to encourage 'reconciliation_match' usage.
             p.save()
+        
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('treasury')
         
         return line
     
@@ -647,7 +653,7 @@ class MatchingService:
 
         # Disband Group (Remove all links)
         # 1. TreasuryMovements
-        for p in group.payments.all():
+        for p in group.movements.all():
             p.is_reconciled = False
             p.reconciled_at = None
             p.reconciliation_match = None
@@ -680,6 +686,10 @@ class MatchingService:
         group.delete()
         
         line.refresh_from_db()
+        
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('treasury')
+        
         return line
     
     @staticmethod
@@ -758,6 +768,10 @@ class MatchingService:
                         # Skip si falla
                         continue
         
+        if matched_count > 0:
+            from core.cache import invalidate_report_cache
+            invalidate_report_cache('treasury')
+            
         return {
             'matched_count': matched_count,
             'total_unreconciled': total_unreconciled,

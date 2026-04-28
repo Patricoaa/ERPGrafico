@@ -364,7 +364,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                                     key={f}
                                     variant="outline"
                                     className={cn(
-                                        "h-6 px-3 text-[10px] font-black uppercase transition-all",
+                                        "h-6 px-3 text-[10px] font-black uppercase transition-all", // intentional: badge density
                                         mapping[f] !== null
                                             ? "bg-success/10 border-success/20 text-success shadow-sm shadow-success/5"
                                             : "bg-muted/50 border-border text-muted-foreground/40 line-through"

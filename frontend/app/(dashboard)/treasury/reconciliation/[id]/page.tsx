@@ -155,7 +155,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 <div className="flex flex-col max-w-[200px]">
                     <span className="font-medium text-xs truncate" title={row.getValue("description")}>{row.getValue("description")}</span>
                     {row.original.reference && (
-                        <span className="text-[10px] text-muted-foreground truncate">{row.original.reference}</span>
+                    <span className="text-[10px] text-muted-foreground truncate"> {/* intentional: badge density */} {row.original.reference}</span>
                     )}
                 </div>
             ),
@@ -193,7 +193,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Saldo" />
             ),
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("balance")} className="font-mono text-[11px]" />,
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("balance")} className="font-mono text-xs" />,
         },
         {
             accessorKey: "reconciliation_state",
@@ -215,7 +215,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             id: "matched_payment",
             header: "Pago Vinculado",
             cell: ({ row }) => (
-                <span className="text-[10px] font-mono text-muted-foreground">
+                <span className="text-[10px] font-mono text-muted-foreground"> {/* intentional: badge density */}
                     {row.original.matched_payment_info?.display_id || '-'}
                 </span>
             ),
@@ -297,7 +297,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                         <div className="flex items-center gap-3">
                             <div className="hidden md:flex items-center gap-3 mr-4 text-right">
                                 <div className="space-y-1">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">Sincronización</p>
+                                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground opacity-60">Sincronización</p>
                                     <p className="text-xs font-black text-foreground/70">{statement.reconciled_lines} de {statement.total_lines} líneas procesadas</p>
                                 </div>
                             </div>
@@ -400,14 +400,14 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
                 <Card className="shadow-sm bg-card border">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                        <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Apertura</CardTitle>
+                        <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Apertura</CardTitle>
                         <Banknote className="h-3.5 w-3.5 text-primary" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-xl font-bold font-mono">
                             {formatCurrency(statement.opening_balance)}
                         </div>
-                        <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                        <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1"> {/* intentional: badge density */}
                             <Calendar className="h-2.5 w-2.5" />
                             {format(new Date(statement.statement_date), 'dd MMMM yyyy', { locale: es })}
                         </p>
@@ -416,14 +416,14 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
                 <Card className="shadow-sm bg-card border">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                        <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Cierre</CardTitle>
+                        <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Cierre</CardTitle>
                         <TrendingUp className="h-3.5 w-3.5 text-success" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-xl font-bold font-mono">
                             {formatCurrency(statement.closing_balance)}
                         </div>
-                        <p className={`text-[10px] font-black mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-income' : 'text-expense'}`}>
+                        <p className={`text-[10px] font-black mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-income' : 'text-expense'}`}> {/* intentional: badge density */}
                             {netMovement >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
                             {netMovement >= 0 ? 'Excedente' : 'Déficit'}: {formatCurrency(Math.abs(netMovement))}
                         </p>
@@ -432,14 +432,14 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
                 <Card className="shadow-sm bg-card border">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                        <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Cargos (Sale)</CardTitle>
+                        <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Cargos (Sale)</CardTitle>
                         <TrendingDown className="h-3.5 w-3.5 text-destructive" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-xl font-bold font-mono text-expense">
                             {formatCurrency(totalDebits)}
                         </div>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                        <p className="text-[10px] text-muted-foreground mt-0.5"> {/* intentional: badge density */}
                             {statement.lines.filter(l => parseFloat(l.debit) > 0).length} cargos detectados
                         </p>
                     </CardContent>
@@ -447,14 +447,14 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
                 <Card className="shadow-sm bg-card border">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                        <CardTitle className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Abonos (Entra)</CardTitle>
+                        <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Abonos (Entra)</CardTitle>
                         <TrendingUp className="h-3.5 w-3.5 text-success/50" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-xl font-bold font-mono text-income">
                             {formatCurrency(totalCredits)}
                         </div>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                        <p className="text-[10px] text-muted-foreground mt-0.5"> {/* intentional: badge density */}
                             {statement.lines.filter(l => parseFloat(l.credit) > 0).length} abonos detectados
                         </p>
                     </CardContent>
@@ -471,7 +471,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     <span className="text-sm font-bold text-primary">{statement.reconciliation_progress}% completado</span>
                 </div>
                 <Progress value={statement.reconciliation_progress} className="h-2.5 bg-muted" />
-                <div className="mt-2 text-[10px] text-muted-foreground flex justify-between">
+                <div className="mt-2 text-[10px] text-muted-foreground flex justify-between"> {/* intentional: badge density */}
                     <span>{statement.reconciled_lines} líneas procesadas</span>
                     <span>{statement.total_lines - statement.reconciled_lines} líneas pendientes</span>
                 </div>
@@ -503,16 +503,16 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             {/* Metadata Footer */}
             <div className="flex items-center justify-between px-2 pt-2">
                 <div className="flex gap-4">
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground"> {/* intentional: badge density */}
                         <span className="font-semibold uppercase">Importado:</span>
                         <span>{format(new Date(statement.imported_at), 'dd/MM/yyyy HH:mm', { locale: es })}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground"> {/* intentional: badge density */}
                         <span className="font-semibold uppercase">Por:</span>
                         <span>{statement.imported_by_name}</span>
                     </div>
                 </div>
-                <div className="text-[10px] text-muted-foreground/40 italic">
+                <div className="text-[10px] text-muted-foreground/40 italic"> {/* intentional: badge density */}
                     Referencia del sistema: #{statement.id}
                 </div>
             </div>

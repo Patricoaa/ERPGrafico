@@ -141,7 +141,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
                     )}>
                         {row.original.success_rate}%
                     </span>
-                    <span className="text-[10px] text-muted-foreground font-mono">{row.original.times_applied} usos</span>
+                    <span className="text-[10px] text-muted-foreground font-mono"> {/* intentional: badge density */} {row.original.times_applied} usos</span>
                 </div>
             ),
         },

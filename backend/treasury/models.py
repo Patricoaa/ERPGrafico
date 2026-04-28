@@ -49,6 +49,14 @@ class ReconciliationMatch(models.Model):
     
     notes = models.TextField(_("Notas"), blank=True)
     
+    # Tracking for transfers generated during reconciliation (e.g. cross-account match)
+    transfer_journal_entries = models.ManyToManyField(
+        'accounting.JournalEntry',
+        related_name='reconciliation_matches_transfers',
+        blank=True,
+        verbose_name=_("Asientos de Transferencia")
+    )
+    
     history = HistoricalRecords()
     
     class Meta:
@@ -892,16 +900,6 @@ class BankStatementLine(models.Model):
             models.Index(fields=['transaction_id']),
         ]
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('treasury')
-
-    def delete(self, *args, **kwargs):
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('treasury')
-        super().delete(*args, **kwargs)
-    
     def __str__(self):
         return f"{self.statement.display_id} - Línea {self.line_number}"
     
