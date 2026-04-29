@@ -47,11 +47,34 @@ class InvoiceSerializer(serializers.ModelSerializer):
         ]
 
     def get_serialized_payments(self, obj):
-        return TreasuryMovementSerializer(obj.payments.all(), many=True).data
+        from treasury.models import PaymentAllocation
+        payments_data = []
+        
+        # 1. Direct payments (Legacy or Full Payments)
+        direct_payments = obj.payments.all()
+        if direct_payments.exists():
+            direct_data = TreasuryMovementSerializer(direct_payments, many=True).data
+            for p in direct_data:
+                p['is_partial_allocation'] = False
+                p['allocated_amount'] = p['amount']
+            payments_data.extend(direct_data)
+            
+        # 2. Add Allocations (S5)
+        allocations = PaymentAllocation.objects.filter(invoice=obj).select_related('treasury_movement')
+        for alloc in allocations:
+            p_data = TreasuryMovementSerializer(alloc.treasury_movement).data
+            p_data['is_partial_allocation'] = True
+            p_data['allocated_amount'] = alloc.amount
+            p_data['allocation_notes'] = alloc.notes
+            payments_data.append(p_data)
+            
+        return payments_data
 
     def get_pending_amount(self, obj):
+        from treasury.models import PaymentAllocation
         total_paid = sum(p.amount for p in obj.payments.all())
-        return obj.total - total_paid
+        total_allocated = sum(a.amount for a in PaymentAllocation.objects.filter(invoice=obj))
+        return obj.total - (total_paid + total_allocated)
 
     def get_lines(self, obj):
         # 1. Check for persistent lines linked to this Note
