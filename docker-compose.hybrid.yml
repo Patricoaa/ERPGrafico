@@ -5,7 +5,7 @@
 # Este archivo DESACTIVA el frontend y el nginx de Docker para que corras el
 # frontend de manera nativa en Windows con `npm run dev`.
 #
-# Pasos:
+# Pasos:Q
 # 1. Ejecutar el comando de arriba
 # 2. Abrir terminal en ./frontend
 # 3. Ejecutar: npm run dev
