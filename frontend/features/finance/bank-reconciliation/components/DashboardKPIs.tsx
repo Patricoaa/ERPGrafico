@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, Clock, AlertTriangle, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CardSkeleton } from "@/components/shared"
+import Link from "next/link"
 
 import type { DashboardKPIData } from "../types"
 
@@ -35,18 +36,20 @@ export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
                 </CardContent>
             </Card>
 
-            <Card className="border-border/40 shadow-sm hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-xs font-black uppercase text-muted-foreground">Pendiente Conciliar</CardTitle>
-                    <Clock className="h-4 w-4 text-warning" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-3xl font-black font-heading tracking-tighter text-warning">{lines.pending}</div>
-                    <p className="text-xs font-bold text-muted-foreground mt-3 uppercase tracking-wider">
-                        Movimientos por procesar
-                    </p>
-                </CardContent>
-            </Card>
+            <Link href="/treasury/reconciliation?tab=statements&filter=in_progress" className="block outline-none">
+                <Card className="border-border/40 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:border-primary/20 group">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-xs font-black uppercase text-muted-foreground group-hover:text-primary transition-colors">Sin Conciliar</CardTitle>
+                        <Clock className="h-4 w-4 text-warning group-hover:animate-pulse" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-black font-heading tracking-tighter text-warning">{lines.pending}</div>
+                        <p className="text-xs font-bold text-muted-foreground mt-3 uppercase tracking-wider">
+                            Movimientos por procesar
+                        </p>
+                    </CardContent>
+                </Card>
+            </Link>
 
             <Card className="border-border/40 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -79,19 +82,22 @@ export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
                 </CardContent>
             </Card>
 
-            <Card className="border-border/40 shadow-sm hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-xs font-black uppercase text-muted-foreground">Cartolas</CardTitle>
-                    <FileText className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-3xl font-black font-heading tracking-tighter">{statements.total}</div>
-                    <div className="flex justify-between text-xs font-bold text-muted-foreground mt-3 uppercase tracking-wider">
-                        <span className="text-success">{statements.confirmed} confirmados</span>
-                        <span className="text-primary">{statements.draft} en borrador</span>
-                    </div>
-                </CardContent>
-            </Card>
+            <Link href="/treasury/reconciliation?tab=statements" className="block outline-none">
+                <Card className="border-border/40 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:border-primary/20 group">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-xs font-black uppercase text-muted-foreground group-hover:text-primary transition-colors">Cartolas</CardTitle>
+                        <FileText className="h-4 w-4 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-black font-heading tracking-tighter">{statements.total}</div>
+                        <div className="flex justify-between text-xs font-bold text-muted-foreground mt-3 uppercase tracking-wider">
+                            <span className="text-success">{statements.confirmed} confirmados</span>
+                            <span className="text-primary">{statements.draft} en borrador</span>
+                        </div>
+                    </CardContent>
+                </Card>
+            </Link>
         </div>
     )
 }
+

@@ -84,7 +84,7 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
                 <DataCell.Action
                     icon={ArrowRight}
                     title="Resolver"
-                    onClick={() => router.push(`/treasury/reconciliation/${item.statement_id}/match`)}
+                    onClick={() => router.push(`/treasury/reconciliation/${item.statement_id}/workbench`)}
                 />
             )
         })
@@ -97,11 +97,11 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
                 data={data}
                 isLoading={loading}
                 cardMode
-                searchPlaceholder="Filtrar pendientes..."
+                searchPlaceholder="Filtrar sin conciliar..."
                 globalFilterFields={["description", "account"]}
                 rightAction={
                     <Button variant="ghost" size="sm" className="h-8 text-xs font-black uppercase tracking-widest border border-border/40" asChild>
-                        <Link href="/treasury/reconciliation/match">
+                        <Link href="/treasury/reconciliation?tab=statements&filter=in_progress">
                             Ver Todo
                         </Link>
                     </Button>

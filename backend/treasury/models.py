@@ -42,7 +42,8 @@ class ReconciliationMatch(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
         related_name='created_matches',
         verbose_name=_("Creado Por")
     )
@@ -846,14 +847,6 @@ class BankStatementLine(models.Model):
     @property
     def reconciliation_state(self):
         return self.reconciliation_status
-    matched_payment = models.ForeignKey(
-        'TreasuryMovement',
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='matched_lines',
-        verbose_name=_("Movimiento Matched"),
-        help_text=_("DEPRECATED: Use reconciliation_match instead")
-    )
     reconciliation_match = models.ForeignKey(
         'ReconciliationMatch',
         on_delete=models.SET_NULL,

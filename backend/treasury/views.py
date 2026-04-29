@@ -667,7 +667,7 @@ class BankStatementViewSet(viewsets.ModelViewSet):
 
 class BankStatementLineViewSet(viewsets.ModelViewSet):
     """ViewSet for bank statement lines"""
-    queryset = BankStatementLine.objects.all().select_related('statement', 'matched_payment', 'reconciled_by')
+    queryset = BankStatementLine.objects.all().select_related('statement', 'reconciled_by')
     serializer_class = BankStatementLineSerializer
     pagination_class = StandardResultsSetPagination
     
