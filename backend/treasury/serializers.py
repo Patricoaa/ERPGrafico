@@ -57,7 +57,7 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
         model = TreasuryAccount
         fields = ['id', 'name', 'code', 'currency', 'account', 'account_name', 'account_code', 'account_type', 'account_type_display',
                   'bank', 'bank_name', 'account_number', 'allows_cash', 'allows_card', 'allows_transfer', 'allows_check',
-                  'is_system_managed', 'current_balance', 'payment_methods']
+                  'is_system_managed', 'current_balance', 'payment_methods', 'default_bank_format']
 
 
 class POSTerminalSerializer(serializers.ModelSerializer):

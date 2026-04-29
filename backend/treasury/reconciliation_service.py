@@ -83,6 +83,12 @@ class ReconciliationService:
         # Validar datos parseados
         validation_result = ReconciliationService.validate_statement(parsed_data, treasury_account)
         
+        if treasury_account.default_bank_format and treasury_account.default_bank_format != bank_format:
+            validation_result['warnings'].append({
+                "line": None,
+                "message": f"El formato seleccionado ({bank_format}) difiere del formato por defecto de la cuenta ({treasury_account.default_bank_format})."
+            })
+        
         if validation_result['errors']:
             raise ValueError(f"Validación falló: {', '.join(validation_result['errors'])}")
         
@@ -158,6 +164,97 @@ class ReconciliationService:
             'total_lines': len(bulk_lines),
             'errors': validation_result['errors'],
             'warnings': validation_result['warnings']
+        }
+
+    @staticmethod
+    def dry_run_import(
+        file,
+        treasury_account_id: int,
+        bank_format: str,
+        custom_config: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Parsea y valida una cartola sin persistirla.
+        Reutiliza parse_file + validate_statement.
+        """
+        # Validar cuenta de tesorería
+        try:
+            treasury_account = TreasuryAccount.objects.get(id=treasury_account_id)
+        except TreasuryAccount.DoesNotExist:
+            raise ValueError(f"Cuenta de tesorería {treasury_account_id} no encontrada")
+        
+        # Obtener configuración del formato
+        try:
+            parser_config = get_parser_config(bank_format)
+            if custom_config:
+                parser_config.update(custom_config)
+        except ValueError as e:
+            raise ValueError(f"Formato inválido: {e}")
+        
+        # Calcular hash del archivo para evitar duplicados
+        file.seek(0)
+        file_content = file.read()
+        file_hash = hashlib.sha256(file_content).hexdigest()
+        file.seek(0) # Reset para que el parser pueda leerlo
+        
+        is_duplicate = False
+        warnings = []
+        
+        if BankStatement.objects.filter(file_hash=file_hash).exists():
+            is_duplicate = True
+            warnings.append({
+                "line": None,
+                "message": "Este archivo ya ha sido importado anteriormente."
+            })
+        
+        # Parsear archivo
+        try:
+            parsed_data = ReconciliationService.parse_file(file, parser_config)
+        except Exception as e:
+            raise ValueError(f"Error al parsear archivo: {e}")
+        
+        # Validar datos parseados
+        validation_result = ReconciliationService.validate_statement(parsed_data, treasury_account)
+        
+        if treasury_account.default_bank_format and treasury_account.default_bank_format != bank_format:
+            validation_result['warnings'].append({
+                "line": None,
+                "message": f"El formato seleccionado ({bank_format}) difiere del formato por defecto de la cuenta ({treasury_account.default_bank_format})."
+            })
+        
+        # Filtrar duplicados de transacciones (simulado)
+        seen_tx_ids = set()
+        skipped_count = 0
+        valid_lines_count = 0
+        
+        for line_data in parsed_data.get('lines', []):
+            tx_id = line_data.get('transaction_id', '')
+            if tx_id and tx_id in seen_tx_ids:
+                skipped_count += 1
+                continue
+            
+            if tx_id:
+                seen_tx_ids.add(tx_id)
+            valid_lines_count += 1
+            
+        if skipped_count > 0:
+            validation_result['warnings'].append({
+                "line": None,
+                "message": f"Se omitirían {skipped_count} transacciones con ID de transacción duplicado."
+            })
+            
+        all_warnings = warnings + validation_result['warnings']
+            
+        return {
+            'total_lines': valid_lines_count,
+            'period_start': validation_result.get('period_start'),
+            'period_end': validation_result.get('period_end'),
+            'opening_balance': parsed_data.get('opening_balance', Decimal('0')),
+            'closing_balance': parsed_data.get('closing_balance', Decimal('0')),
+            'is_duplicate': is_duplicate,
+            'errors': validation_result['errors'],
+            'warnings': all_warnings,
+            'can_import': len(validation_result['errors']) == 0
         }
     
     @staticmethod

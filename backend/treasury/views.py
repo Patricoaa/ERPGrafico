@@ -453,6 +453,44 @@ class BankStatementViewSet(viewsets.ModelViewSet):
             return Response({'error': f'Error al importar cartola: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=False, methods=['post'])
+    def dry_run(self, request):
+        """
+        Validate and parse a bank statement without persisting.
+        """
+        file = request.FILES.get('file')
+        treasury_account_id = request.data.get('treasury_account_id')
+        bank_format = request.data.get('bank_format', 'GENERIC_CSV')
+        custom_config = request.data.get('custom_config')
+        
+        if custom_config and isinstance(custom_config, str):
+            try:
+                import json
+                custom_config = json.loads(custom_config)
+            except Exception:
+                pass
+        
+        if not file:
+            return Response({'error': 'Archivo es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not treasury_account_id:
+            return Response({'error': 'Cuenta de tesorería es requerida'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            result = ReconciliationService.dry_run_import(
+                file=file,
+                treasury_account_id=treasury_account_id,
+                bank_format=bank_format,
+                custom_config=custom_config
+            )
+            return Response(result)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': f'Error al validar cartola: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'])
     def preview(self, request):
         """
         Generate file preview for column mapping
