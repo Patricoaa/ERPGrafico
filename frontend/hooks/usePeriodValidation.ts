@@ -1,39 +1,36 @@
 "use client"
 
-import { useState, useMemo, useCallback } from 'react'
-import { validateTaxPeriod } from '@/lib/actions/tax-actions'
-import { validateAccountingPeriod } from '@/lib/actions/accounting-actions'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { validateTaxPeriod } from '@/features/tax/actions'
+import { validateAccountingPeriod } from '@/features/accounting/actions'
+
+type ValidationType = 'tax' | 'accounting' | 'both'
 
 export function usePeriodValidation() {
     const [isValidating, setIsValidating] = useState(false)
     const [isClosed, setIsClosed] = useState(false)
     const [message, setMessage] = useState<string | null>(null)
 
-    // Debounce helper
-    const debounce = <T extends (...args: any[]) => any>(
-        func: T,
-        wait: number
-    ): ((...args: Parameters<T>) => void) => {
-        let timeout: NodeJS.Timeout | null = null
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const reqIdRef = useRef(0)
 
-        return (...args: Parameters<T>) => {
-            if (timeout) clearTimeout(timeout)
-            timeout = setTimeout(() => func(...args), wait)
-        }
-    }
+    useEffect(() => () => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }, [])
 
-    const validatePeriodImmediate = async (date: string, type: 'tax' | 'accounting' | 'both' = 'tax') => {
+    const validatePeriodImmediate = useCallback(async (date: string, type: ValidationType = 'tax') => {
         if (!date) {
             setIsClosed(false)
             setMessage(null)
             return
         }
 
+        const myReqId = ++reqIdRef.current
         setIsValidating(true)
         try {
             let taxClosed = false
             let accountingClosed = false
-            
+
             if (type === 'tax' || type === 'both') {
                 const result = await validateTaxPeriod(date)
                 taxClosed = result.is_closed
@@ -44,9 +41,11 @@ export function usePeriodValidation() {
                 accountingClosed = result.is_closed
             }
 
+            if (myReqId !== reqIdRef.current) return
+
             const closed = taxClosed || accountingClosed
             setIsClosed(closed)
-            
+
             if (closed) {
                 if (taxClosed && accountingClosed) {
                     setMessage("Los periodos tributario y contable para esta fecha están cerrados.")
@@ -59,22 +58,27 @@ export function usePeriodValidation() {
                 setMessage(null)
             }
         } catch (error) {
+            if (myReqId !== reqIdRef.current) return
             console.error('Error validating period:', error)
-            // We don't block on network error to avoid stuck UI, but we log it
             setIsClosed(false)
             setMessage(null)
         } finally {
-            setIsValidating(false)
+            if (myReqId === reqIdRef.current) {
+                setIsValidating(false)
+            }
         }
-    }
+    }, [])
 
-    // Memoized debounced version
-    const validatePeriod = useMemo(
-        () => debounce(validatePeriodImmediate, 500),
-        []
-    )
+    const validatePeriod = useCallback((date: string, type: ValidationType = 'tax') => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current)
+        timeoutRef.current = setTimeout(() => {
+            validatePeriodImmediate(date, type)
+        }, 500)
+    }, [validatePeriodImmediate])
 
     const clearPeriodValidation = useCallback(() => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current)
+        reqIdRef.current++
         setIsClosed(false)
         setMessage(null)
         setIsValidating(false)

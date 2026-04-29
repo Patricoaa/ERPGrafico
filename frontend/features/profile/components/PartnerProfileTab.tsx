@@ -27,10 +27,9 @@ import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { PartnerStatement, PartnerTransaction } from "@/features/contacts/types/partner"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { TableSkeleton } from "@/components/shared/TableSkeleton"
+import { TableSkeleton, Skeleton } from "@/components/shared"
 
 const TransactionViewModal = lazy(() => import("@/components/shared/TransactionViewModal"))
 
@@ -255,7 +254,7 @@ export function PartnerProfileTab({ contactId }: Props) {
 
             </Accordion>
 
-            <Suspense fallback={<div className="p-8 text-center text-muted-foreground">Cargando...</div>}>
+            <Suspense fallback={<div className="p-8 flex justify-center"><Skeleton className="h-20 w-full max-w-md" /></div>}>
                 {selectedMovementId && (
                     <TransactionViewModal
                         open={detailsOpen}
@@ -273,7 +272,7 @@ export function PartnerProfileTab({ contactId }: Props) {
 function InfoField({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
     return (
         <div className="space-y-1.5">
-            <span className={FORM_STYLES.label}>{label}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
             <div className="flex items-center gap-2 h-10 px-3 rounded-lg border bg-muted/20 text-sm font-medium text-foreground">
                 <span className="text-muted-foreground">{icon}</span>
                 {value}

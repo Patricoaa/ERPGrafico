@@ -12,16 +12,16 @@ import { Zap } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton, CardSkeleton } from '@/components/shared'
 import { Progress } from '@/components/ui/progress'
 import { SheetCloseButton } from '@/components/shared/SheetCloseButton'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import { ActionCategory } from './ActionCategory'
-import { filterAvailableActions, getStatusVariant, getStatusLabel } from '@/lib/actions/utils'
+import { filterAvailableActions, getStatusVariant, getStatusLabel } from '@/lib/action-utils'
 import { formatPlainDate } from '@/lib/utils'
-import { purchaseOrderActions } from '@/lib/actions/purchase-actions'
-import { saleOrderActions } from '@/lib/actions/sale-actions'
+import { purchaseOrderActions } from '@/features/purchasing/actions'
+import { saleOrderActions } from '@/features/sales/actions'
 import type { UserPermissions } from '@/types/actions'
 import { Order } from '../types'
 
@@ -121,7 +121,10 @@ export function OrderActionPanel({
                 <SheetHeader className="px-6 pt-6 pb-4">
                     <SheetTitle className="text-xl">
                         {loading ? (
-                            <Skeleton className="h-7 w-48" />
+                            <div className="flex items-center gap-2">
+                                <Skeleton className="h-7 w-32 font-mono" />
+                                <Skeleton className="h-6 w-20 rounded-full" />
+                            </div>
                         ) : (
                             <div className="flex items-center gap-2">
                                 <span className="font-mono">
@@ -135,7 +138,10 @@ export function OrderActionPanel({
                     </SheetTitle>
                     <SheetDescription>
                         {loading ? (
-                            <Skeleton className="h-4 w-64" />
+                            <div className="flex flex-col gap-2">
+                                <Skeleton className="h-5 w-48" />
+                                <Skeleton className="h-3 w-32" />
+                            </div>
                         ) : (
                             <div className="flex flex-col gap-1">
                                 <span className="text-base font-medium text-foreground">
@@ -158,10 +164,8 @@ export function OrderActionPanel({
 
                 <ScrollArea className="flex-1 px-6">
                     {loading ? (
-                        <div className="space-y-4 py-6">
-                            {[1, 2, 3].map(i => (
-                                <Skeleton key={i} className="h-32 w-full" />
-                            ))}
+                        <div className="py-6">
+                            <CardSkeleton count={3} variant="list" />
                         </div>
                     ) : (
                         <div className="space-y-6 py-6">

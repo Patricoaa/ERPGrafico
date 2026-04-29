@@ -1,8 +1,6 @@
 import { Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { FormSkeleton, PageHeader, PageTabs } from "@/components/shared"
 import { WorkflowSettings } from "@/features/workflow"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 interface PageProps {
@@ -32,7 +30,7 @@ export default async function WorkflowSettingsPage({ searchParams }: PageProps) 
                 <PageTabs tabs={tabs} activeValue={activeTab} />
             </div>
 
-            <Suspense fallback={<LoadingFallback message="Cargando configuración..." />}>
+            <Suspense fallback={<FormSkeleton fields={5} />}>
                 <div className="pt-4">
                     <WorkflowSettings activeTab={activeTab} />
                 </div>
@@ -40,4 +38,3 @@ export default async function WorkflowSettingsPage({ searchParams }: PageProps) 
         </div>
     )
 }
-

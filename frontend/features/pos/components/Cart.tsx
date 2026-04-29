@@ -5,6 +5,7 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '@/components/ui/table'
 import { ShoppingCart, Zap, Clock, User, FileText, Truck, Calendar, Edit } from 'lucide-react'
@@ -12,6 +13,7 @@ import { cn } from '@/lib/utils'
 import { CartItem } from './CartItem'
 import { formatCurrency } from '@/lib/currency'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
+import { useTouchMode } from '@/hooks/useTouchMode'
 import type { CartItem as CartItemType, Product, UoM, StockLimits, WizardState } from '@/types/pos'
 import { useSalesSettings } from '@/features/settings'
 
@@ -73,6 +75,7 @@ export function Cart({
     wizardState
 }: CartProps) {
     const { isTouchPOS } = useDeviceContext()
+    const { isTouchMode } = useTouchMode()
     const { canApplyLineDiscount, canApplyGlobalDiscount } = useSalesSettings()
 
     const showLineDiscounts = canApplyLineDiscount
@@ -111,7 +114,7 @@ export function Cart({
                     <div className="flex justify-between items-center">
                         <span className="font-bold text-xl tracking-tight">Resumen de Venta</span>
                         <div className="flex items-center gap-2">
-                             {currentDraftId && (
+                            {currentDraftId && (
                                 <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 bg-primary/5 text-primary">
                                     #{currentDraftId}
                                 </span>
@@ -121,7 +124,7 @@ export function Cart({
                             </span>
                         </div>
                     </div>
-                    
+
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             {lastSaved && (
@@ -156,7 +159,7 @@ export function Cart({
                             <TableHeader className="bg-background/50 sticky top-0 z-10">
                                 <TableRow className="hover:bg-transparent shadow-[0_1px_0_hsl(var(--border)_/_0.5)] border-0">
                                     <TableHead className={cn("text-xs py-2 h-[34px]", showLineDiscounts ? "w-[20%]" : "w-[25%]")}>Producto</TableHead>
-                                    <TableHead className="w-[12%] text-xs py-2 text-center h-[34px]">Cant.</TableHead>
+                                    <TableHead className="w-[12%] text-xs py-2 text-center h-[34px]">Cantidad</TableHead>
                                     <TableHead className="w-[13%] text-xs py-2 text-center h-[34px]">Unidad</TableHead>
                                     <TableHead className="w-[15%] text-xs py-2 text-right h-[34px]">Precio Unit.</TableHead>
                                     {showLineDiscounts && (
@@ -271,7 +274,7 @@ export function Cart({
                             <span>IVA (19%)</span>
                             <span>{formatCurrency(totals.total_tax)}</span>
                         </div>
-                        
+
                         {/* Line Discounts (Sum of all per-item discounts) */}
                         {(totals.line_discount_total || 0) > 0 && (
                             <div className="flex justify-between text-sm text-muted-foreground/80 italic">
@@ -282,37 +285,34 @@ export function Cart({
 
                         {/* Global Discount (Editable) */}
                         {(showTotalDiscounts || (totals.global_discount_total || 0) > 0) && (
-                            <div
-                                className={cn(
-                                    "flex justify-between items-center transition-all duration-200 rounded-lg p-1.5 -mx-1.5",
-                                    showTotalDiscounts 
-                                        ? "cursor-pointer hover:bg-primary/10/50 group" 
-                                        : "text-muted-foreground"
-                                )}
-                                onClick={() => showTotalDiscounts && onOpenNumpad('cart', 'discount', totalDiscountAmount || 0)}
-                            >
-                                <div className="flex items-center gap-1.5">
-                                    <span className={cn(
-                                        "text-sm font-medium",
-                                        showTotalDiscounts ? "text-primary" : "text-muted-foreground"
-                                    )}>
-                                        Descuento Global
-                                    </span>
-                                    {showTotalDiscounts && (
-                                        <Edit className="h-3 w-3 text-primary/50 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    )}
-                                </div>
-                                <div className={cn(
-                                    "font-mono text-sm px-2 py-1 rounded border border-dashed transition-colors",
-                                    (totals.global_discount_total || 0) > 0 
-                                        ? "text-primary bg-primary/10/50 border-primary/20" 
-                                        : "text-muted-foreground/40 border-muted-foreground/20 group-hover:border-primary/20 group-hover:text-primary/50"
+                            <div className="flex justify-between items-center py-1">
+                                <span className={cn(
+                                    "text-sm font-medium",
+                                    (totalDiscountAmount || 0) > 0 ? "text-primary font-bold" : "text-muted-foreground"
                                 )}>
-                                    {(totals.global_discount_total || 0) > 0 
-                                        ? `-${formatCurrency(totals.global_discount_total || 0)}` 
-                                        : showTotalDiscounts ? "Añadir..." : "$0"
-                                    }
-                                </div>
+                                    Descuento Global
+                                </span>
+                                {showTotalDiscounts ? (
+                                    <Input
+                                        type="number"
+                                        className={cn(
+                                            "h-7 w-24 text-right text-sm bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0 pr-1",
+                                            (totalDiscountAmount || 0) > 0 && "text-primary font-bold"
+                                        )}
+                                        value={totalDiscountAmount || ""}
+                                        placeholder="0"
+                                        onClick={() => isTouchMode && onOpenNumpad('cart', 'discount', totalDiscountAmount || 0)}
+                                        readOnly={isTouchMode}
+                                        onChange={(e) => onTotalDiscountChange?.(parseFloat(e.target.value) || 0)}
+                                    />
+                                ) : (
+                                    <span className={cn(
+                                        "font-medium",
+                                        (totals.global_discount_total || 0) > 0 && "text-primary"
+                                    )}>
+                                        -{formatCurrency(totals.global_discount_total || 0)}
+                                    </span>
+                                )}
                             </div>
                         )}
 

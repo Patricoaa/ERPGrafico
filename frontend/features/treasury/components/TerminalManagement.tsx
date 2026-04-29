@@ -3,23 +3,19 @@
 import { useState, useEffect } from "react"
 import { useTerminals, type Terminal, type PaymentMethod } from "@/features/treasury"
 import api from "@/lib/api"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, History, MonitorSmartphone, Smartphone } from "lucide-react"
+import { CancelButton, IconButton, LabeledInput, LabeledSelect, CardSkeleton, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
+import { Plus, Power, PowerOff, Settings, MapPin, Trash2, Loader2, CreditCard, Banknote, Landmark, MonitorSmartphone, Smartphone } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { FORM_STYLES } from "@/lib/styles"
-import { cn } from "@/lib/utils"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 
 
@@ -29,8 +25,7 @@ interface TerminalManagementProps {
     createAction?: React.ReactNode
 }
 
-import { Skeleton } from "@/components/ui/skeleton"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { ActionSlideButton } from "@/components/shared";
 
 export function TerminalManagement({ externalOpen, onExternalOpenChange, createAction }: TerminalManagementProps) {
     const { terminals, toggleActive, deleteTerminal, refetch, isLoading } = useTerminals()
@@ -82,11 +77,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                 </div>
             )}
             {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {[1, 2, 3].map((i) => (
-                        <TerminalCardSkeleton key={i} />
-                    ))}
-                </div>
+                <CardSkeleton count={3} variant="grid" />
             ) : terminals.length === 0 ? (
                 <EmptyState
                     context="finance"
@@ -106,7 +97,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                 </div>
             )}
 
-            <TerminalDialog
+            <TerminalModal
                 open={dialogOpen}
                 onOpenChange={(open) => {
                     setDialogOpen(open)
@@ -125,40 +116,6 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                 variant="destructive"
             />
         </div>
-    )
-}
-
-function TerminalCardSkeleton() {
-    return (
-        <Card className="bg-background border-2 shadow-none">
-            <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                    <div className="space-y-2 w-full">
-                        <Skeleton className="h-5 w-1/2" />
-                        <div className="flex items-center gap-2">
-                            <Skeleton className="h-4 w-12" />
-                            <Skeleton className="h-4 w-16" />
-                        </div>
-                    </div>
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                </div>
-                <Skeleton className="h-3 w-1/3 mt-3" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Skeleton className="h-3 w-1/4" />
-                    <div className="flex flex-wrap gap-1.5">
-                        <Skeleton className="h-5 w-16" />
-                        <Skeleton className="h-5 w-20" />
-                        <Skeleton className="h-5 w-14" />
-                    </div>
-                </div>
-                <div className="pt-2 border-t flex justify-end gap-2">
-                    <Skeleton className="h-7 w-20" />
-                    <Skeleton className="h-7 w-10" />
-                </div>
-            </CardContent>
-        </Card>
     )
 }
 
@@ -195,9 +152,9 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                             />
                         </div>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8 -mr-2">
+                    <IconButton onClick={onEdit} className="h-8 w-8 -mr-2">
                         <Settings className="h-4 w-4" />
-                    </Button>
+                    </IconButton>
                 </div>
                 {terminal.location && (
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2">
@@ -240,21 +197,19 @@ function TerminalCard({ terminal, onEdit, onToggleActive, onDelete }: {
                         {terminal.is_active ? <PowerOff className="h-3 w-3 mr-1" /> : <Power className="h-3 w-3 mr-1" />}
                         {terminal.is_active ? "Desactivar" : "Activar"}
                     </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs text-destructive hover:text-destructive/80 hover:bg-destructive/5"
+                    <IconButton
+                        className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
                         onClick={onDelete}
                     >
                         <Trash2 className="h-3 w-3" />
-                    </Button>
+                    </IconButton>
                 </div>
             </CardContent>
         </Card>
     )
 }
 
-function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
+function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
     open: boolean
     onOpenChange: (open: boolean) => void
     terminal: Terminal | null
@@ -303,7 +258,7 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
         try {
             const res = await api.get('/treasury/payment-methods/')
             const methods = (res.data.results || res.data).filter((m: any) => m.is_active)
-            
+
             // Allow if it's for sales
             const collectionMethods = methods.filter((m: any) => m.allow_for_sales === true)
             requestAnimationFrame(() => setAllMethods(collectionMethods))
@@ -414,6 +369,8 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
             open={open}
             onOpenChange={onOpenChange}
             size={terminal ? "xl" : "lg"}
+            hideScrollArea={true}
+            contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">
                     <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
@@ -431,112 +388,130 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                     <span>{terminal ? "Modifique la configuración del terminal y revise su historial." : "Configuración del terminal y asignación de métodos de pago."}</span>
                 </div>
             }
-            hideScrollArea={true}
-            className="h-[90vh]"
             footer={
-                <>
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <ActionSlideButton type="submit" form="terminal-form" disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Guardar Terminal
-                    </ActionSlideButton>
-                </>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <ActionSlideButton type="submit" form="terminal-form" loading={loading} disabled={loading}>
+                                {terminal ? "Guardar Cambios" : "Crear Terminal"}
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
             }
         >
-            <div className="flex-1 flex overflow-hidden h-full">
-                {/* Left Side: Form */}
-                <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
-                    <form id="terminal-form" onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Nombre <span className="text-destructive">*</span></Label>
-                                <Input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Caja 1" required className={FORM_STYLES.input} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Código <span className="text-destructive">*</span></Label>
-                                <Input value={code} onChange={e => setCode(e.target.value)} placeholder="TERM-01" required className={cn(FORM_STYLES.input, "uppercase")} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>Ubicación</Label>
-                                <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="Ej: Entrada" className={FORM_STYLES.input} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className={FORM_STYLES.label}>IP (Opcional)</Label>
-                                <Input value={ipAddress} onChange={e => setIpAddress(e.target.value)} placeholder="192.168.1.100" className={FORM_STYLES.input} />
-                            </div>
-                        </div>
+            <FormSplitLayout
+                showSidebar={!!terminal?.id}
+                sidebar={
+                    <ActivitySidebar
+                        entityType="terminal"
+                        entityId={terminal?.id || 0}
+                        className="h-full border-none"
+                        title="Historial"
+                    />
+                }
+            >
+                <form id="terminal-form" onSubmit={handleSubmit} className="space-y-6 px-4 pb-4 pt-2">
+                    <div className="grid grid-cols-2 gap-4">
+                        <LabeledInput
+                            label="Nombre"
+                            required
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            placeholder="Ej: Caja 1"
+                        />
+                        <LabeledInput
+                            label="Código"
+                            required
+                            value={code}
+                            onChange={e => setCode(e.target.value)}
+                            placeholder="TERM-01"
+                            className="uppercase"
+                        />
+                        <LabeledInput
+                            label="Ubicación"
+                            value={location}
+                            onChange={e => setLocation(e.target.value)}
+                            placeholder="Ej: Entrada"
+                        />
+                        <LabeledInput
+                            label="IP (Opcional)"
+                            value={ipAddress}
+                            onChange={e => setIpAddress(e.target.value)}
+                            placeholder="192.168.1.100"
+                        />
+                    </div>
 
-                        <div className="space-y-2 border-l-2 border-primary/30 pl-4 py-1">
-                            <Label className={cn(FORM_STYLES.label, "flex items-center gap-2")}>
-                                <Smartphone className="h-4 w-4 text-primary" />
-                                Integración con Hardware
-                            </Label>
-                            <div className="grid gap-2">
-                                <Select value={deviceId} onValueChange={setDeviceId}>
-                                    <SelectTrigger className={FORM_STYLES.input}>
-                                        <SelectValue placeholder="Sin dispositivo integrado" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">Ninguno (Manual)</SelectItem>
-                                        {allDevices.map(dev => (
-                                            <SelectItem key={dev.id} value={dev.id.toString()}>
-                                                {dev.name} ({dev.provider_name})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <p className="text-[10px] text-muted-foreground italic">
-                                    Vincule este Terminal POS a una maquinita física para automatizar el envío de montos.
-                                </p>
-                            </div>
-                        </div>
+                    <div className="space-y-2">
+                        <LabeledSelect
+                            label="Integración con Hardware"
+                            placeholder="Sin dispositivo integrado"
+                            value={deviceId}
+                            onChange={setDeviceId}
+                            options={[
+                                { value: "none", label: "Ninguno (Manual)" },
+                                ...allDevices.map(dev => ({
+                                    value: dev.id.toString(),
+                                    label: `${dev.name} (${dev.provider_name})`
+                                }))
+                            ]}
 
-                        <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
-                            <div className="flex justify-between items-center">
-                                <Label className={cn(FORM_STYLES.label, "mb-0")}>Métodos de Pago Permitidos</Label>
-                                <span className="text-[9px] font-mono font-black text-muted-foreground uppercase opacity-70">
-                                    {selectedMethodIds.length} seleccionados
-                                </span>
-                            </div>
+                        />
+                    </div>
 
-                            <div className="space-y-5">
+
+                    <div className="mt-2">
+                        <FormSection title="Métodos de Pago Permitidos" icon={CreditCard} />
+
+                        <div className="mt-6 px-2 lg:px-6">
+
+
+                            <div className="max-h-[500px] overflow-y-auto pr-4 scrollbar-thin space-y-8 py-2">
                                 {typeOrder.map(type => {
                                     const groupMethods = methodsGrouped[type] || []
                                     if (groupMethods.length === 0) return null
 
                                     return (
-                                        <div key={type} className="space-y-2">
-                                            <h4 className="text-xs uppercase font-bold text-muted-foreground flex items-center gap-2 border-b pb-1">
-                                                {type === 'CASH' && <Banknote className="h-3.5 w-3.5" />}
-                                                {type === 'TERMINAL' && <Smartphone className="h-3.5 w-3.5 text-primary" />}
-                                                {type === 'CARD' && <CreditCard className="h-3.5 w-3.5" />}
-                                                {type === 'TRANSFER' && <Landmark className="h-3.5 w-3.5 text-info" />}
-                                                {getTypeLabel(type)}
-                                            </h4>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <div key={type} className="space-y-4">
+                                            <div className="flex items-center gap-3 text-muted-foreground/70 pl-1">
+                                                {type === 'CASH' && <Banknote className="h-4 w-4" />}
+                                                {type === 'TERMINAL' && <Smartphone className="h-4 w-4" />}
+                                                {type === 'CARD' && <CreditCard className="h-4 w-4" />}
+                                                {type === 'TRANSFER' && <Landmark className="h-4 w-4" />}
+                                                <h4 className="text-[11px] font-black uppercase tracking-[0.2em]">
+                                                    {getTypeLabel(type)}
+                                                </h4>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                 {groupMethods.map(method => {
                                                     const isSelected = selectedMethodIds.includes(method.id)
                                                     return (
                                                         <div
                                                             key={method.id}
                                                             onClick={() => toggleMethod(method.id)}
-                                                            className={`
-                                                                flex items-start space-x-2 p-2 rounded-lg border cursor-pointer transition-all
-                                                                ${isSelected
-                                                                    ? 'bg-primary/5 border-primary/30 shadow-sm'
-                                                                    : 'bg-background border-transparent hover:border-border'
-                                                                }
-                                                            `}
+                                                            className={cn(
+                                                                "flex items-center space-x-3 p-3 rounded-xl border transition-all cursor-pointer group",
+                                                                isSelected
+                                                                    ? "bg-primary/5 border-primary/40 shadow-sm ring-1 ring-primary/20"
+                                                                    : "bg-background hover:bg-muted/30 border-border/60 hover:border-border"
+                                                            )}
                                                         >
                                                             <Checkbox
                                                                 checked={isSelected}
                                                                 onCheckedChange={() => toggleMethod(method.id)}
-                                                                className="mt-0.5"
+                                                                className={isSelected ? "text-primary border-primary" : "border-muted-foreground/40 group-hover:border-primary/50"}
                                                             />
                                                             <div className="flex flex-col">
-                                                                <span className="text-xs font-semibold">{method.name}</span>
-                                                                <span className="text-[10px] text-muted-foreground">
-                                                                    Cuenta: {method.treasury_account_name}
+                                                                <span className={cn(
+                                                                    "text-sm font-semibold transition-colors",
+                                                                    isSelected ? "text-foreground" : "text-muted-foreground"
+                                                                )}>
+                                                                    {method.name}
+                                                                </span>
+                                                                <span className="text-[10px] text-muted-foreground/70 font-medium">
+                                                                    Cta: {method.treasury_account_name}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -548,19 +523,10 @@ function TerminalDialog({ open, onOpenChange, terminal, onSuccess }: {
                                 })}
                             </div>
                         </div>
-                    </form>
-                </div>
+                    </div>
 
-                {/* Right Side: Activity Sidebar */}
-                {terminal?.id && (
-                    <ActivitySidebar
-                            entityType="terminal"
-                            entityId={terminal.id}
-                            className="h-full border-none"
-                            title="Historial"
-                        />
-                )}
-            </div>
+                </form>
+            </FormSplitLayout>
         </BaseModal>
     )
 }

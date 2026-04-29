@@ -4,13 +4,14 @@ import { useState } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Hash, Landmark, CreditCard, Save, Loader2 } from "lucide-react"
+import { LabeledInput } from "@/components/shared"
+import { Hash, Landmark, CreditCard } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { FORM_STYLES } from "@/lib/styles"
-import { cn, formatPlainDate } from "@/lib/utils"
-import { EmptyState } from "@/components/shared/EmptyState"
+
+import { formatPlainDate } from "@/lib/utils"
+import { EmptyState, MoneyDisplay, CancelButton, SubmitButton, FormSection } from "@/components/shared"
+import { Card } from "@/components/ui/card"
 
 export interface Payment {
     id: number
@@ -86,21 +87,23 @@ export function PaymentReferenceModal({
             size="xs"
             footer={(
                 <div className="flex w-full gap-2">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)} className="flex-1">Cancelar</Button>
-                    <Button
+                    <CancelButton onClick={() => onOpenChange(false)} className="flex-1" />
+                    <SubmitButton
                         className="flex-[2] bg-income hover:bg-income/90 h-12 text-lg font-bold"
                         onClick={handleSave}
-                        disabled={loading || !selectedPaymentId || !transactionNumber}
+                        disabled={!selectedPaymentId || !transactionNumber}
+                        loading={loading}
+                        icon={null}
                     >
-                        {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Guardar Registro"}
-                    </Button>
+                        Guardar Registro
+                    </SubmitButton>
                 </div>
             )}
         >
             <div className="py-2 space-y-6">
                 {pendingPayments.length > 1 && (
                     <div className="grid gap-2">
-                        <Label className="text-[11px] font-bold uppercase text-muted-foreground">Seleccionar Pago</Label>
+                        <FormSection title="Seleccionar Pago" icon={Hash} />
                         <div className="flex flex-col gap-2">
                             {pendingPayments.map((p) => (
                                 <Button
@@ -110,7 +113,7 @@ export function PaymentReferenceModal({
                                     onClick={() => setSelectedPaymentId(p.id)}
                                 >
                                     <div className="flex w-full justify-between items-center">
-                                        <span className="font-bold">${Number(p.amount).toLocaleString()}</span>
+                                        <MoneyDisplay amount={p.amount} className="font-bold" />
                                         <span className="text-[10px] font-bold uppercase text-muted-foreground opacity-60">
                                             {p.payment_method === 'BANK' || p.payment_method === 'TRANSFER' ? 'Transferencia' : 'Tarjeta'}
                                         </span>
@@ -124,7 +127,7 @@ export function PaymentReferenceModal({
 
                 {selectedPayment && (
                     <div className="space-y-4">
-                        <div className={cn("flex items-center gap-4 p-4", FORM_STYLES.card)}>
+                        <Card variant="dashed" className="flex items-center gap-4 p-4">
                             <div className="p-3 bg-card border rounded-full shadow-sm">
                                 {selectedPayment.payment_method === 'TRANSFER' ? (
                                     <Landmark className="h-6 w-6 text-primary" />
@@ -133,25 +136,23 @@ export function PaymentReferenceModal({
                                 )}
                             </div>
                             <div>
-                                <div className="text-lg font-black">${Number(selectedPayment.amount).toLocaleString()}</div>
+                                <MoneyDisplay amount={selectedPayment.amount} className="text-lg font-black" />
                                 <div className="text-xs text-muted-foreground uppercase font-bold">
                                     Pago de {formatPlainDate(selectedPayment.date || selectedPayment.created_at)}
                                 </div>
                             </div>
-                        </div>
+                        </Card>
 
-                        <div className="grid gap-2">
-                            <Label className="text-[11px] font-bold uppercase text-muted-foreground flex items-center gap-1">
-                                <Hash className="h-3 w-3" /> Número de Folio / Operación / Voucher
-                            </Label>
-                            <Input
+                        <div>
+                            <LabeledInput
+                                label={<span className="flex items-center gap-1"><Hash className="h-3 w-3" /> Número de Folio / Operación / Voucher</span>}
                                 placeholder="Ej: 99884455"
                                 value={transactionNumber}
                                 onChange={(e) => setTransactionNumber(e.target.value)}
-                                className={cn(FORM_STYLES.input, "text-lg font-bold h-12")}
+                                className="text-lg font-bold h-12"
                                 autoFocus
                             />
-                            <p className="text-[10px] text-muted-foreground italic">
+                            <p className="text-[10px] text-muted-foreground italic mt-1">
                                 * Esto completará el registro del pago y lo marcará como validado.
                             </p>
                         </div>

@@ -2,24 +2,16 @@
 
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
     Plus, Edit, Trash2, Check, Loader2, Workflow, Box, Layers, Copy
 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { BOMFormDialog } from "./BOMFormDialog"
+import { BOMFormModal } from "./BOMFormModal"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { Label } from "@/components/ui/label"
+import { LabeledSelect } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
@@ -56,7 +48,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             } else if (product?.id) {
                 params.parent_id = product.id
             }
-            
+
             const res = await api.get(`/production/boms/`, { params })
             setBoms(res.data)
             onBomsChange?.(res.data)
@@ -71,7 +63,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
     // Fetch variants
     useEffect(() => {
         const loadVariants = async () => {
-            if (product?.has_variants) {
+            if (product?.has_variants && product?.id) {
                 try {
                     const res = await api.get(`/inventory/products/?parent_template=${product.id}&show_technical_variants=true`)
                     setVariants(res.data.results || res.data)
@@ -83,11 +75,13 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             }
         }
         loadVariants()
-    }, [product])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [product?.id, product?.has_variants])
 
     useEffect(() => {
         fetchBoms()
-    }, [product, selectedVariantId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [product?.id, selectedVariantId])
 
     const handleCreate = () => {
         setEditingBom(undefined)
@@ -172,7 +166,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 return (
                     <div className="flex items-center justify-center gap-2 w-full">
                         {isBase ? (
-                            <DataCell.Badge 
+                            <DataCell.Badge
                                 variant="outline"
                                 className="text-[9px] font-black uppercase tracking-widest bg-primary/5 text-primary border-primary/20 h-5 px-1.5"
                             >
@@ -193,8 +187,8 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             header: ({ column }) => <DataTableColumnHeader column={column} title="Rendimiento (Output)" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.NumericFlow 
-                        value={row.original.yield_quantity} 
+                    <DataCell.NumericFlow
+                        value={row.original.yield_quantity}
                         unit={row.original.yield_uom_name || product?.uom_name}
                     />
                 </div>
@@ -205,12 +199,12 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <button 
+                    <button
                         onClick={() => !row.original.active && handleToggleActive(row.original)}
                         className={cn(!row.original.active && "hover:scale-105 transition-transform")}
                     >
-                        <StatusBadge 
-                            status={row.original.active ? "active" : "inactive"} 
+                        <StatusBadge
+                            status={row.original.active ? "active" : "inactive"}
                             className="cursor-pointer"
                         />
                     </button>
@@ -282,49 +276,40 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
 
                     {product?.has_variants && (
                         <div className="mt-4 bg-primary/5 p-5 rounded-md border-2 border-primary/20 shadow-sm transition-all hover:shadow-md animate-in fade-in slide-in-from-top-2 duration-500">
-                            <div className="flex flex-col md:flex-row md:items-center gap-6">
-                                <div className="flex items-center gap-3 shrink-0">
-                                    <Layers className="h-5 w-5 text-muted-foreground" />
-                                    <div>
-                                        <Label className="text-[11px] font-black uppercase tracking-widest text-primary leading-none">Contexto de Manufactura</Label>
-                                        <p className="text-[9px] font-bold text-muted-foreground leading-none mt-1 uppercase tracking-tighter">Seleccione variante para configurar proceso propio.</p>
-                                    </div>
-                                </div>
-                                <div className="flex-1 flex flex-col md:flex-row items-center gap-4">
-                                    <Select
-                                        value={selectedVariantId}
-                                        onValueChange={setSelectedVariantId}
-                                    >
-                                        <SelectTrigger className="w-full md:w-[360px] h-10 bg-background font-mono shadow-sm rounded-sm border-2 border-primary/20 ring-primary/20 focus:ring-2">
-                                            <SelectValue placeholder="Seleccione variante..." />
-                                        </SelectTrigger>
-                                        <SelectContent align="start" className="rounded-sm border-2">
-                                            <SelectItem value="all" className="font-black text-[10px] uppercase tracking-widest text-primary hover:bg-primary/5">
-                                                -- Ver Todas las Recetas --
-                                            </SelectItem>
-                                            {variants.map(v => (
-                                                <SelectItem key={v.id} value={v.id.toString()} className="text-[10px]">
-                                                    <div className="flex items-center gap-3 font-bold uppercase">
-                                                        <span className="font-mono bg-muted text-[9px] px-1.5 py-0.5 rounded-sm border">{v.internal_code || v.code}</span>
-                                                        <span className="opacity-80">{v.variant_display_name || v.name}</span>
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <Button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            handleCreate()
-                                        }}
-                                        className="w-full md:w-auto h-10 px-6 gap-2 rounded-sm font-black uppercase tracking-widest text-[11px] shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
-                                        disabled={selectedVariantId === "all"}
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                        Configurar Receta
-                                    </Button>
-                                </div>
+                            <div className="flex-1 flex flex-col md:flex-row items-center gap-4">
+                                <LabeledSelect
+                                    label="Contexto de Manufactura"
+                                    icon={<Layers className="h-4 w-4 opacity-50" />}
+                                    containerClassName="flex-1"
+                                    value={selectedVariantId}
+                                    onChange={setSelectedVariantId}
+                                    placeholder="Seleccione variante..."
+                                    className="font-mono"
+                                    options={[
+                                        { value: "all", label: "-- Ver Todas las Recetas --" },
+                                        ...variants.map(v => ({
+                                            value: v.id.toString(),
+                                            label: (
+                                                <div className="flex items-center gap-3 font-bold uppercase">
+                                                    <span className="font-mono bg-muted text-[9px] px-1.5 py-0.5 rounded-sm border">{v.internal_code || v.code}</span>
+                                                    <span className="opacity-80">{v.variant_display_name || v.name}</span>
+                                                </div>
+                                            )
+                                        }))
+                                    ]}
+                                />
+                                <Button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleCreate()
+                                    }}
+                                    className="w-full md:w-auto h-10 px-6 gap-2 rounded-sm font-black uppercase tracking-widest text-[11px] shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
+                                    disabled={selectedVariantId === "all"}
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    Configurar Receta
+                                </Button>
                             </div>
                         </div>
                     )}
@@ -353,7 +338,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             )}
 
             <div className="p-0">
-                <DataTable 
+                <DataTable
                     columns={columns}
                     data={boms}
                     isLoading={loading}
@@ -373,7 +358,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 />
             </div>
 
-            <BOMFormDialog
+            <BOMFormModal
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
                 product={

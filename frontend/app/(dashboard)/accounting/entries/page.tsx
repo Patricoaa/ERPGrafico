@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef, useMemo } from "react"
 import {
     ColumnDef,
 } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
+
 import { toast } from "sonner"
 import { StatusBadge } from "@/components/shared"
 import { JournalEntryForm } from "@/features/accounting/components/JournalEntryForm"
@@ -13,7 +13,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Trash2, CheckCircle, Eye, Pencil } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { formatPlainDate } from "@/lib/utils"
+
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
@@ -45,7 +45,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
     const [viewingTransaction, setViewingTransaction] = useState<{ type: 'journal_entry', id: number | string } | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null)
-    
+
     // Guard for async operations
     const isMounted = useRef(true)
 
@@ -65,10 +65,15 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         return () => { isMounted.current = false }
     }, [])
 
-    // Synchronize external modal trigger
+    // Synchronize external modal trigger (guard against repeated opens)
+    const didOpenExternal = useRef(false)
     useEffect(() => {
-        if (externalOpen) {
+        if (externalOpen && !didOpenExternal.current) {
+            didOpenExternal.current = true
             setIsFormOpen(true)
+        }
+        if (!externalOpen) {
+            didOpenExternal.current = false
         }
     }, [externalOpen])
 
@@ -92,7 +97,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         if (!loading) {
             setLoading(true)
         }
-        
+
         try {
             const response = await api.get('/accounting/entries/')
             if (isMounted.current) {
@@ -252,13 +257,13 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     createAction={createAction}
                 />
 
-                <JournalEntryForm 
-                    accounts={accounts} 
+                <JournalEntryForm
+                    accounts={accounts}
                     initialData={editingEntry as unknown as import('@/types/forms').JournalEntryInitialData | undefined}
                     onSuccess={() => {
                         fetchEntries()
                         handleFormOpenChange(false)
-                    }} 
+                    }}
                     open={isFormOpen}
                     onOpenChange={handleFormOpenChange}
                 />

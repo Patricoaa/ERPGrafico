@@ -12,20 +12,18 @@ import {
     createPayrollItem, updatePayrollItem, deletePayrollItem,
     getPayrollConcepts, payPrevired, paySalary,
     getPayrollPayments
-} from "@/lib/hr/api"
-import { getEmployeePayrollPreview } from "@/lib/profile/api"
-import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
+} from '@/features/hr/api/hrApi'
+import { getEmployeePayrollPreview } from '@/features/profile/api/profileApi'
+import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import type { Payroll, PayrollItem, PayrollConcept, PayrollPayment } from "@/types/hr"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Input } from "@/components/ui/input"
+
 import { BaseModal } from "@/components/shared/BaseModal"
 import {
-    Form, FormControl, FormField, FormItem, FormLabel, FormMessage
+    Form, FormField
 } from "@/components/ui/form"
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui/select"
+import { LabeledInput, LabeledSelect } from "@/components/shared"
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
@@ -33,12 +31,11 @@ import {
 import {
     Loader2, Trash2, BookOpen,
     DollarSign, ShieldCheck, Sparkles,
-    CheckCircle2, FileText, ArrowLeft, X
+    CheckCircle2, FileText, ArrowLeft
 } from "lucide-react"
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { PayrollCard } from "@/features/hr/components/PayrollCard"
 import { cn } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -330,12 +327,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
             </div>
 
             {/* Custom Close Button for Sheet (Top Right Corner) */}
-            {isSheet && (
-                <SheetCloseButton 
-                    onClick={onClose!} 
-                    className="absolute top-4 right-4 z-[60] bg-muted/50 backdrop-blur-sm border shadow-sm"
-                />
-            )}
+            {/* Removed: BaseDrawer already provides a close button */}
 
             {/* Scroll Area for Content */}
             <div className={cn("flex-1", isSheet ? "overflow-y-auto custom-scrollbar p-6 bg-muted/30" : "")}>
@@ -357,7 +349,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
             </div>
 
             {/* Dialogs */}
-            <PaymentDialog
+            <PaymentModal
                 open={salaryDialog}
                 onOpenChange={setSalaryDialog}
                 title="Registrar Pago de Sueldo"
@@ -373,7 +365,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                     setSalaryDialog(false)
                 }}
             />
-            <PaymentDialog
+            <PaymentModal
                 open={previredDialog}
                 onOpenChange={setPreviredDialog}
                 title="Registrar Pago de Previred"
@@ -502,50 +494,37 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
                     onSubmit={form.handleSubmit(onSubmit)} 
                     className="space-y-5 text-left py-2"
                 >
-                    <FormField control={form.control} name="concept" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className={FORM_STYLES.label}>Concepto de Remuneración</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                    <SelectTrigger className="rounded-lg h-11 transition-all focus:ring-primary/20">
-                                        <SelectValue placeholder="Seleccionar..." />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent className="rounded-lg">
-                                    {concepts.map(c => (
-                                        <SelectItem key={c.id} value={c.id.toString()} className="rounded-lg">
-                                            {c.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </FormItem>
+                    <FormField control={form.control} name="concept" render={({ field, fieldState }) => (
+                        <LabeledSelect
+                            label="Concepto de Remuneración"
+                            value={field.value}
+                            onChange={field.onChange}
+                            error={fieldState.error?.message}
+                            placeholder="Seleccionar..."
+                            options={concepts.map(c => ({
+                                value: c.id.toString(),
+                                label: c.name
+                            }))}
+                        />
                     )} />
 
-                    <FormField control={form.control} name="amount" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className={FORM_STYLES.label}>Monto ($)</FormLabel>
-                            <FormControl>
-                                <Input
-                                    {...field}
-                                    type="number"
-                                    className="rounded-lg h-11 font-bold text-lg transition-all focus:ring-primary/20"
-                                />
-                            </FormControl>
-                        </FormItem>
+                    <FormField control={form.control} name="amount" render={({ field, fieldState }) => (
+                        <LabeledInput
+                            {...field}
+                            type="number"
+                            label="Monto ($)"
+                            error={fieldState.error?.message}
+                            className="font-bold text-lg"
+                        />
                     )} />
 
-                    <FormField control={form.control} name="description" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className={FORM_STYLES.label}>Observaciones (Opcional)</FormLabel>
-                            <FormControl>
-                                <Input
-                                    {...field}
-                                    className="rounded-lg h-11 transition-all focus:ring-primary/20"
-                                    placeholder="Detalle adicional..."
-                                />
-                            </FormControl>
-                        </FormItem>
+                    <FormField control={form.control} name="description" render={({ field, fieldState }) => (
+                        <LabeledInput
+                            {...field}
+                            label="Observaciones (Opcional)"
+                            placeholder="Detalle adicional..."
+                            error={fieldState.error?.message}
+                        />
                     )} />
                 </form>
             </Form>

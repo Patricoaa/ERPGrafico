@@ -1,27 +1,22 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { WarehouseInitialData } from "@/types/forms"
 import * as z from "zod"
-import { Plus, BookOpen, Tag } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { CancelButton, LabeledInput, FormFooter, FormSplitLayout } from "@/components/shared"
 import {
     Form,
-    FormControl,
     FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
-import { FORM_STYLES } from "@/lib/styles"
-import { List, Warehouse } from "lucide-react"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { List } from "lucide-react"
+import { SubmitButton } from "@/components/shared/ActionButtons"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 
 const warehouseSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -32,14 +27,14 @@ const warehouseSchema = z.object({
 type WarehouseFormValues = z.infer<typeof warehouseSchema>
 
 interface WarehouseFormProps {
-    auditSidebar?: React.ReactNode
+    sidebar?: React.ReactNode
     onSuccess?: () => void
     initialData?: WarehouseInitialData
     open?: boolean
     onOpenChange?: (open: boolean) => void
 }
 
-export function WarehouseForm({ auditSidebar,  onSuccess, initialData, open: openProp, onOpenChange }: WarehouseFormProps) {
+export function WarehouseForm({ sidebar,  onSuccess, initialData, open: openProp, onOpenChange }: WarehouseFormProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
@@ -55,9 +50,21 @@ export function WarehouseForm({ auditSidebar,  onSuccess, initialData, open: ope
         },
     })
 
+    const lastResetId = useRef<number | undefined>(undefined)
+    const wasOpen = useRef(false)
+
     // Reset form when initialData changes or modal opens
     useEffect(() => {
-        if (open) {
+        if (!open) {
+            wasOpen.current = false
+            return
+        }
+
+        const currentId = initialData?.id
+        const isNewOpen = !wasOpen.current
+        const isNewData = currentId !== lastResetId.current
+
+        if (isNewOpen || isNewData) {
             if (initialData) {
                 form.reset(initialData)
             } else {
@@ -67,6 +74,8 @@ export function WarehouseForm({ auditSidebar,  onSuccess, initialData, open: ope
                     address: "",
                 })
             }
+            lastResetId.current = currentId
+            wasOpen.current = true
         }
     }, [open, initialData, form])
 
@@ -98,6 +107,8 @@ export function WarehouseForm({ auditSidebar,  onSuccess, initialData, open: ope
                 open={open}
                 onOpenChange={setOpen}
                 size={initialData ? "lg" : "md"}
+                hideScrollArea={true}
+                contentClassName="p-0"
                 title={
                     <div className="flex items-center gap-3">
                         <List className="h-5 w-5 text-muted-foreground" />
@@ -116,76 +127,85 @@ export function WarehouseForm({ auditSidebar,  onSuccess, initialData, open: ope
                     </div>
                 }
                 footer={
-                    <div className="flex justify-end gap-2 w-full">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setOpen(false)}
-                        >
-                            Cancelar
-                        </Button>
-                        <ActionSlideButton form="warehouse-form" type="submit" disabled={loading}>
-                            {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Almacén"}
-                        </ActionSlideButton>
-                    </div>
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setOpen(false)} />
+                                <SubmitButton form="warehouse-form" loading={loading}>
+                                    {initialData ? "Guardar Cambios" : "Crear Almacén"}
+                                </SubmitButton>
+                            </>
+                        }
+                    />
                 }
             >
-                <div className="flex-1 flex overflow-hidden min-h-[400px]">
-                    <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
-                        <Form {...form}>
-                            <form id="warehouse-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Bodega Principal" className={FORM_STYLES.input} {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="code"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="BOD01" className={FORM_STYLES.input} {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <FormField
-                            control={form.control}
-                            name="address"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Dirección</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Av. Principal 123" className={FORM_STYLES.input} {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+            <FormSplitLayout
+                sidebar={initialData?.id ? (
+                    <ActivitySidebar 
+                        entityId={initialData.id} 
+                        entityType="warehouse" 
+                    />
+                ) : undefined}
+                showSidebar={!!initialData?.id}
+            >
+                <Form {...form}>
+                    <form 
+                        id="warehouse-form" 
+                        onSubmit={form.handleSubmit(onSubmit)} 
+                        className="space-y-6 px-4 pb-4 pt-2"
+                    >
+
+                                <div className="grid grid-cols-4 gap-4">
+                                    <div className="col-span-3">
+                                        <FormField
+                                            control={form.control}
+                                            name="name"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Nombre de Bodega"
+                                                    required
+                                                    placeholder="Ej: Bodega Central"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="col-span-1">
+                                        <FormField
+                                            control={form.control}
+                                            name="code"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Código Interno"
+                                                    required
+                                                    placeholder="Ej: BOD-01"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+
+                                    <div className="col-span-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="address"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Dirección Física"
+                                                    placeholder="Ej: Av. Industrial 1234, Santiago"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                </div>
                     </form>
                 </Form>
-                </div>
-
-                {initialData?.id && (
-                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                        {auditSidebar}
-                    </div>
-                )}
-            </div>
-            </BaseModal>
+            </FormSplitLayout>
+        </BaseModal>
         </>
     )
 }

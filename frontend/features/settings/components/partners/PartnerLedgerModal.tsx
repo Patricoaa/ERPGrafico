@@ -6,31 +6,18 @@ import {
     ArrowUpRight,
     ArrowDownLeft,
     Calendar,
-    ArrowDownCircle,
-    ArrowUpCircle,
-    Info,
-    Receipt,
-    Download,
-    Plus,
     Wallet,
     LogOut
 } from "lucide-react"
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-} from "@/components/ui/sheet"
-import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
+import { BaseDrawer } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { PartnerStatement, PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
 import { formatCurrency, formatPlainDate as formatDate, cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
-import { Skeleton } from "@/components/ui/skeleton"
+import { TableSkeleton } from "@/components/shared"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
@@ -180,70 +167,47 @@ export function PartnerLedgerModal({
     }, [data])
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent
-                side="bottom"
-                hideOverlay={true}
-                hideCloseButton={true}
-                className="h-[85vh] sm:h-[90vh] p-0 border-t-0 bg-background rounded-t-[2.5rem] shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.25)] flex flex-col"
-            >
-                {/* Visual Handle for "Drawer" feel */}
-                <div className="w-12 h-1.5 bg-muted-foreground/20 rounded-full mx-auto my-4 shrink-0 shadow-inner" />
-
-                <SheetCloseButton 
-                    onClick={() => onOpenChange(false)}
-                    className="absolute top-4 right-8 z-[60]"
-                />
-
-                <SheetHeader className="px-8 pb-2 space-y-0">
-                    <SheetTitle>
-                        <div className="flex items-center gap-4">
-                            <History className="h-5 w-5 text-muted-foreground" />
-                            <div className="flex flex-col">
-                                <span className="text-xl font-black tracking-tight text-foreground leading-none">Libro Auxiliar de Socio</span>
-                                <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-1 opacity-60">{partnerName}</span>
-                            </div>
-                        </div>
-                    </SheetTitle>
-                </SheetHeader>
-
-                <div className="flex-1 overflow-y-auto px-8 pb-8 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent">
-                    {loading ? (
-                        <div className="space-y-6 mt-4">
-                            <Skeleton className="h-96 w-full rounded-lg" />
-                        </div>
-                    ) : (
-                        <div className="mt-4 animate-in fade-in duration-500">
-                            <DataTable
-                                columns={columns}
-                                data={transactionsWithBalance}
-                                isLoading={loading}
-                                cardMode={false}
-                                searchPlaceholder="Filtrar por concepto (ej: aporte, retiro)..."
-                                filterColumn="description"
-                                toolbarAction={
-                                    <>
-                                        <DropdownMenuItem
-                                            onClick={() => setIsContributionOpen(true)}
-                                            className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-success focus:bg-success/10 focus:text-success cursor-pointer transition-colors"
-                                        >
-                                            <Wallet className="h-4 w-4 mr-2" />
-                                            Registrar Aporte
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onClick={() => setIsWithdrawalOpen(true)}
-                                            className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer transition-colors"
-                                        >
-                                            <LogOut className="h-4 w-4 mr-2" />
-                                            Registrar Retiro
-                                        </DropdownMenuItem>
-                                    </>
-                                }
-                            />
-                        </div>
-                    )}
+        <BaseDrawer 
+            open={open} 
+            onOpenChange={onOpenChange}
+            title="Libro Auxiliar de Socio"
+            subtitle={partnerName}
+            icon={History}
+        >
+            {loading ? (
+                <div className="mt-4">
+                    <TableSkeleton rows={8} columns={5} />
                 </div>
-            </SheetContent>
+            ) : (
+                <div className="mt-4 animate-in fade-in duration-500">
+                    <DataTable
+                        columns={columns}
+                        data={transactionsWithBalance}
+                        isLoading={loading}
+                        cardMode={false}
+                        searchPlaceholder="Filtrar por concepto (ej: aporte, retiro)..."
+                        filterColumn="description"
+                        toolbarAction={
+                            <>
+                                <DropdownMenuItem
+                                    onClick={() => setIsContributionOpen(true)}
+                                    className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-success focus:bg-success/10 focus:text-success cursor-pointer transition-colors"
+                                >
+                                    <Wallet className="h-4 w-4 mr-2" />
+                                    Registrar Aporte
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => setIsWithdrawalOpen(true)}
+                                    className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer transition-colors"
+                                >
+                                    <LogOut className="h-4 w-4 mr-2" />
+                                    Registrar Retiro
+                                </DropdownMenuItem>
+                            </>
+                        }
+                    />
+                </div>
+            )}
 
             <PartnerContributionWizard
                 open={isContributionOpen}
@@ -257,6 +221,6 @@ export function PartnerLedgerModal({
                 onSuccess={fetchData}
                 initialPartnerId={partnerId?.toString()}
             />
-        </Sheet>
+        </BaseDrawer>
     )
 }

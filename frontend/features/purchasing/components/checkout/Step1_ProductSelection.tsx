@@ -16,7 +16,6 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { PricingUtils } from "@/lib/pricing"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { CheckoutLine } from "../../types"
 import { ProductMinimal, UoM } from "@/types/entities"
@@ -30,7 +29,6 @@ interface Step1_ProductSelectionProps {
 }
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Label } from "@/components/ui/label"
 import { Calculator, AlertTriangle } from "lucide-react"
 
 export function Step1_ProductSelection({
@@ -178,38 +176,40 @@ export function Step1_ProductSelection({
                                                     <p className="text-[12px] font-bold uppercase tracking-wide">Conversor Bruto → Neto</p>
                                                 </div>
                                                 <p className="text-[11px] text-muted-foreground">Útil para boletas. Ingresa el precio bruto (IVA incluido) para obtener el neto.</p>
-                                                <div className="space-y-1">
-                                                    <Label className="text-[10px] uppercase font-bold">Monto Bruto (c/IVA)</Label>
-                                                    <Input
-                                                        type="number"
-                                                        placeholder="Ej: 11.900"
-                                                        value={grossInput}
-                                                        onChange={(e) => setGrossInput(e.target.value)}
-                                                        className="h-8 text-sm"
-                                                    />
-                                                </div>
-                                                {netResult !== null && (
-                                                    <div className="rounded-md bg-muted/60 border p-3 space-y-1.5 text-[12px]">
-                                                        <div className="flex justify-between">
-                                                            <span className="text-muted-foreground">Neto (sin IVA)</span>
-                                                            <span className="font-bold text-success">
-                                                                {netResult.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex justify-between">
-                                                            <span className="text-muted-foreground">IVA (19%)</span>
-                                                            <span className="font-medium">
-                                                                {ivaAmount?.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                            </span>
-                                                        </div>
-                                                        <div className="border-t pt-1.5 flex justify-between">
-                                                            <span className="text-muted-foreground">Bruto</span>
-                                                            <span className="font-medium">
-                                                                {Number(grossInput).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                            </span>
-                                                        </div>
+                                                <div className="space-y-1.5">
+                                                    <div className="space-y-1.5">
+                                                        <span className="text-[10px] uppercase font-bold text-muted-foreground px-0.5">Monto Bruto (c/IVA)</span>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="Ej: 11.900"
+                                                            value={grossInput}
+                                                            onChange={(e) => setGrossInput(e.target.value)}
+                                                            className="h-8 text-sm"
+                                                        />
                                                     </div>
-                                                )}
+                                                    {netResult !== null && (
+                                                        <div className="rounded-md bg-muted/60 border p-3 space-y-1.5 text-[12px]">
+                                                            <div className="flex justify-between">
+                                                                <span className="text-muted-foreground">Neto (sin IVA)</span>
+                                                                <span className="font-bold text-success">
+                                                                    {netResult.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex justify-between">
+                                                                <span className="text-muted-foreground">IVA (19%)</span>
+                                                                <span className="font-medium">
+                                                                    {ivaAmount?.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                </span>
+                                                            </div>
+                                                            <div className="border-t pt-1.5 flex justify-between">
+                                                                <span className="text-muted-foreground">Bruto</span>
+                                                                <span className="font-medium">
+                                                                    {Number(grossInput).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </PopoverContent>
                                     </Popover>
@@ -227,11 +227,13 @@ export function Step1_ProductSelection({
                                         value={line.product?.toString() || line.id?.toString() || ""}
                                         context="purchase"
                                         onChange={(val) => handleProductChange(index, val)}
+                                        variant="inline"
+                                        placeholder="Seleccionar..."
                                     />
                                     {(() => {
                                         const product = products.find(p => p.id.toString() === (line.product?.toString() || line.id?.toString()))
                                         const prefSupplierId = product?.preferred_supplier && (typeof product.preferred_supplier === 'object' ? product.preferred_supplier.id : product.preferred_supplier);
-                                        
+
                                         if (product && prefSupplierId && selectedSupplierId && prefSupplierId.toString() !== selectedSupplierId) {
                                             return (
                                                 <div className="flex items-center gap-1 mt-1 text-[10px] text-warning font-medium">
@@ -268,7 +270,7 @@ export function Step1_ProductSelection({
                                         uoms={uoms}
                                         showConversionHint={true}
                                         quantity={Number(line.quantity || line.qty) || 1}
-                                        label="Unidad"
+                                        variant="inline"
                                     />
                                 </TableCell>
                                 <TableCell>

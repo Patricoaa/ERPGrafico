@@ -18,7 +18,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { getTasks } from "@/lib/workflow/api"
+import { getTasks } from '@/features/workflow/api/workflowApi'
 import { PermissionGuard } from "@/components/auth/PermissionGuard"
 
 const actions = [

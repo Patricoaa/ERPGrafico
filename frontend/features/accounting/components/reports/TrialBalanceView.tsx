@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTrialBalance } from '../../hooks/useTrialBalance';
-import { LoadingFallback } from '@/components/shared/LoadingFallback';
+import { TableSkeleton } from '@/components/shared';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calculator, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { LabeledInput, PeriodValidationDateInput } from '@/components/shared';
 
 export function TrialBalanceView() {
     const { data, isLoading, fetchTrialBalance } = useTrialBalance();
@@ -30,35 +31,41 @@ export function TrialBalanceView() {
     };
 
     if (isLoading && !data) {
-        return <LoadingFallback variant="card" message="Calculando balance de comprobación..." />;
+        return <TableSkeleton rows={10} columns={8} />;
     }
 
     return (
         <div className="space-y-6 pt-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
             {/* Filters Header */}
-            <div className="flex flex-col md:flex-row gap-4 items-end bg-muted/30 p-4 rounded-lg border border-border/50">
-                <div className="grid gap-2">
-                    <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5" /> Desde
-                    </label>
-                    <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="bg-background border border-input rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                    />
-                </div>
-                <div className="grid gap-2">
-                    <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5" /> Hasta
-                    </label>
-                    <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="bg-background border border-input rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                    />
-                </div>
+            <div className="flex flex-col md:flex-row gap-4 items-center bg-muted/30 p-4 rounded-lg border border-border/50">
+                <PeriodValidationDateInput
+                    label="Desde"
+                    date={startDate ? new Date(startDate + 'T12:00:00') : undefined}
+                    onDateChange={(d) => {
+                        if (!d) {
+                            setStartDate("")
+                            return
+                        }
+                        setStartDate(d.toISOString().split('T')[0])
+                    }}
+                    className="w-full md:w-auto"
+                    icon={<Calendar className="w-3.5 h-3.5" />}
+                    validationType="accounting"
+                />
+                <PeriodValidationDateInput
+                    label="Hasta"
+                    date={endDate ? new Date(endDate + 'T12:00:00') : undefined}
+                    onDateChange={(d) => {
+                        if (!d) {
+                            setEndDate("")
+                            return
+                        }
+                        setEndDate(d.toISOString().split('T')[0])
+                    }}
+                    className="w-full md:w-auto"
+                    icon={<Calendar className="w-3.5 h-3.5" />}
+                    validationType="accounting"
+                />
                 <div className="flex-1" />
 
                 {data && (

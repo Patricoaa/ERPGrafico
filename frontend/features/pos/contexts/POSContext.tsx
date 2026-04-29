@@ -5,7 +5,7 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect, useMemo } from 'react'
 import type { Product, CartItem, Category, UoM, POSSession, BOMCache, ComponentCache, BOM, WizardState, Customer } from '@/types/pos'
-import * as CartUtils from '@/lib/pos/cart-utils'
+import * as CartUtils from '@/features/pos/utils/cart-utils'
 import api from '@/lib/api'
 
 
@@ -131,13 +131,15 @@ export function POSProvider({ children }: { children: ReactNode }) {
         }
     }, [selectedCustomerId])
 
-    // Reset draft state when session changes - Adjust state during render pattern
+    // Reset draft state when session changes
     const [handledSessionId, setHandledSessionId] = useState<number | null>(null);
-    if (currentSession?.id && currentSession.id !== handledSessionId) {
-        setHandledSessionId(currentSession.id);
-        setCurrentDraftId(null);
-        setWizardState(null);
-    }
+    useEffect(() => {
+        if (currentSession?.id && currentSession.id !== handledSessionId) {
+            setHandledSessionId(currentSession.id);
+            setCurrentDraftId(null);
+            setWizardState(null);
+        }
+    }, [currentSession?.id, handledSessionId]);
 
     // Caches
     const [bomCache, setBomCache] = useState<BOMCache>({})
@@ -178,7 +180,7 @@ export function POSProvider({ children }: { children: ReactNode }) {
     }, [defaultCustomerId])
 
     // Computed values
-    const totals = CartUtils.calculateCartTotals(items, totalDiscountAmount)
+    const totals = useMemo(() => CartUtils.calculateCartTotals(items, totalDiscountAmount), [items, totalDiscountAmount])
 
     const value = useMemo<POSContextValue>(() => ({
         // Session

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Eye } from "lucide-react"
 import { useReconciliation } from "../hooks/useReconciliation"
 import type { BankStatement } from "../types"
-import { StatementImportDialog } from "@/features/treasury"
+import { StatementImportModal } from "@/features/treasury"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -23,12 +23,12 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
     const router = useRouter()
     const { fetchStatements, loading } = useReconciliation()
     const [statements, setStatements] = useState<BankStatement[]>([])
-    const [importDialogOpen, setImportDialogOpen] = useState(false)
+    const [importModalOpen, setImportModalOpen] = useState(false)
 
     // Open import dialog when triggered via URL (?modal=import)
     useEffect(() => {
         if (externalOpen) {
-            requestAnimationFrame(() => setImportDialogOpen(true))
+            requestAnimationFrame(() => setImportModalOpen(true))
         }
     }, [externalOpen])
 
@@ -43,13 +43,13 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
 
     const handleImportSuccess = () => {
         loadData()
-        setImportDialogOpen(false)
+        setImportModalOpen(false)
         // Clear modal param from URL
         router.replace('/treasury/reconciliation?tab=statements')
     }
 
-    const handleDialogChange = (open: boolean) => {
-        setImportDialogOpen(open)
+    const handleModalChange = (open: boolean) => {
+        setImportModalOpen(open)
         if (!open) {
             router.replace('/treasury/reconciliation?tab=statements')
         }
@@ -117,7 +117,7 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
             cell: ({ row }) => (
                 <div className="flex flex-col items-center justify-center w-full">
                     <span className="font-semibold text-xs">{row.original.total_lines} total</span>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                         {row.original.reconciled_lines} rec.
                     </span>
                 </div>
@@ -133,7 +133,7 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
                 return (
                     <div className="flex items-center justify-center gap-2 min-w-[120px] w-full">
                         <Progress value={progress} className="h-1.5 w-16" />
-                        <span className="text-[10px] font-mono font-bold w-8 text-right">
+                        <span className="text-xs font-mono font-bold w-10 text-right">
                             {Math.round(progress)}%
                         </span>
                     </div>
@@ -187,9 +187,9 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
                 createAction={createAction}
             />
 
-            <StatementImportDialog
-                open={importDialogOpen}
-                onOpenChange={handleDialogChange}
+            <StatementImportModal
+                open={importModalOpen}
+                onOpenChange={handleModalChange}
                 onSuccess={handleImportSuccess}
             />
         </>

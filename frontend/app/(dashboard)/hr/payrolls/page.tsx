@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { CreatePayrollDialog, PayrollDetailSheet } from "@/features/hr"
-import { getPayrolls, deletePayroll, paySalary, payPrevired, createAdvance } from "@/lib/hr/api"
+import { CreatePayrollModal, PayrollDetailSheet } from "@/features/hr"
+import { getPayrolls, deletePayroll, paySalary, payPrevired, createAdvance } from '@/features/hr/api/hrApi'
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import type { Payroll } from "@/types/hr"
 import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button"
 import { Loader2, Eye, Trash2, Coins, CreditCard, Wallet } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { cn } from "@/lib/utils"
-import { PaymentDialog } from "@/features/treasury"
+import { PaymentModal } from "@/features/treasury"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 
@@ -54,7 +54,7 @@ export default function PayrollsPage({ createAction }: { createAction?: React.Re
             const executeAction = async () => {
                 if (confirm("¿Generar automáticamente liquidaciones borrador para todos los empleados activos este mes?")) {
                     try {
-                        const { triggerDraftPayrolls } = await import("@/lib/hr/api")
+                        const { triggerDraftPayrolls } = await import('@/features/hr/api/hrApi')
                         const res = await triggerDraftPayrolls()
                         toast.success(res.detail)
                         fetchPayrolls()
@@ -301,7 +301,7 @@ export default function PayrollsPage({ createAction }: { createAction?: React.Re
 
     return (
         <div className="space-y-4">
-            <CreatePayrollDialog
+            <CreatePayrollModal
                 open={dialogOpen}
                 onOpenChange={handleOpenChange}
                 onSaved={(id) => { handleOpenChange(false); openDetail(id) }}
@@ -341,7 +341,7 @@ export default function PayrollsPage({ createAction }: { createAction?: React.Re
                     onUpdate={fetchPayrolls}
                 />
 
-                <PaymentDialog
+                <PaymentModal
                     open={!!paymentMode}
                     onOpenChange={(o) => !o && setPaymentMode(null)}
                     isPurchase={true}

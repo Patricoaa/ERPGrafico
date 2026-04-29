@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronsUpDown, Search, Loader2, Package, Eye, Calendar, X, ClipboardList } from "lucide-react"
+import { Check, ChevronDown, Search, Loader2, Package, Eye, Calendar, X, ClipboardList } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -16,21 +16,31 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { useWorkOrderSearch } from "@/features/production/hooks/useWorkOrderSearch"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { WorkOrder } from "@/types/entities"
+// Removed LabeledContainer import as it's now internal
+
 
 
 
 interface AdvancedWorkOrderSelectorProps {
     value?: string | number | null
     onChange: (value: string | null) => void
-    placeholder?: string
     disabled?: boolean
+    label?: string
+    error?: string
+    required?: boolean
+    placeholder?: string
+    className?: string
 }
 
 export function AdvancedWorkOrderSelector({
     value,
     onChange,
     placeholder = "Vincular a Orden de Trabajo (Opcional)...",
-    disabled = false
+    disabled = false,
+    label,
+    error,
+    required,
+    className
 }: AdvancedWorkOrderSelectorProps) {
     const { orders, singleOrder, loading: searchLoading, fetchOrders, fetchSingleOrder } = useWorkOrderSearch()
     const [open, setOpen] = useState(false)
@@ -85,34 +95,42 @@ export function AdvancedWorkOrderSelector({
     }
 
     return (
-        <>
-            <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                    <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={open}
-                        disabled={disabled}
-                        className={cn(
-                            "w-full justify-between h-auto py-2 px-3 bg-background border-dashed hover:border-info/50 transition-colors",
-                            selectedOrder && "border-primary/20 bg-primary/10/30",
-                            disabled && "opacity-50 cursor-not-allowed"
-                        )}
-                    >
+        <div className={cn("relative w-full group", className)}>
+            <fieldset 
+                className={cn(
+                    "notched-field w-full group transition-all border-dashed",
+                    open && "focused",
+                    error && "error",
+                    disabled && "opacity-50 cursor-not-allowed bg-muted/10",
+                    selectedOrder && "border-primary/20 bg-primary/10/30 border-solid"
+                )}
+            >
+                {label && (
+                    <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
+                        {label}
+                        {required && <span className="ml-1 text-destructive">*</span>}
+                    </legend>
+                )}
+                <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            role="combobox"
+                            aria-expanded={open}
+                            disabled={disabled}
+                            className={cn(
+                                "w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
+                                disabled && "opacity-50 cursor-not-allowed"
+                            )}
+                        >
                         {selectedOrder ? (
-                            <div className="flex items-center gap-2 truncate text-left">
-                                <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
-                                    <ClipboardList className="h-4 w-4" />
-                                </div>
-                                <div className="flex flex-col items-start truncate leading-tight">
-                                    <span className="font-medium text-sm truncate w-full text-primary">OT-{selectedOrder.number}</span>
-                                    <span className="text-[10px] text-muted-foreground truncate w-full leading-tight">
-                                        {selectedOrder.product_name}
-                                    </span>
-                                </div>
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                <ClipboardList className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                <span className="font-semibold text-sm text-primary shrink-0">OT-{selectedOrder.number}</span>
+                                <span className="text-sm text-muted-foreground truncate">{selectedOrder.product_name}</span>
                             </div>
                         ) : (
-                            <span className="text-muted-foreground italic text-sm">{placeholder}</span>
+                            <span className="text-muted-foreground italic text-sm truncate">{placeholder}</span>
                         )}
                         <div className="flex items-center gap-2">
                             {selectedOrder && (
@@ -123,7 +141,7 @@ export function AdvancedWorkOrderSelector({
                                     <X className="h-3 w-3" />
                                 </div>
                             )}
-                            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-40" />
+                            <ChevronDown className="h-4 w-4 shrink-0 opacity-40" />
                         </div>
                     </Button>
                 </PopoverTrigger>
@@ -195,7 +213,13 @@ export function AdvancedWorkOrderSelector({
                         </div>
                     </div>
                 </PopoverContent>
-            </Popover>
+                </Popover>
+            </fieldset>
+            {error && (
+                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
+                    {error}
+                </p>
+            )}
 
             {previewId && (
                 <TransactionViewModal
@@ -205,6 +229,6 @@ export function AdvancedWorkOrderSelector({
                     id={previewId}
                 />
             )}
-        </>
+        </div>
     )
 }

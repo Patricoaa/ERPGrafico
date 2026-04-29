@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { usePartnerSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormField, FormItem } from "@/components/ui/form"
 import { 
     Building2, 
     Check, 
@@ -14,7 +14,7 @@ import {
     Info
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
+
 
 const partnerAccountingSchema = z.object({
     partner_capital_social_account: z.union([z.string(), z.number()]).nullable(),
@@ -88,7 +88,7 @@ export function PartnerAccountingTab({ onSavingChange }: PartnerAccountingTabPro
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* 1. Patrimonio Row */}
-                <IndustrialCard variant="industrial" className="md:col-span-2">
+                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card md:col-span-2">
                     <CardHeader className="pb-4 border-b bg-muted/20">
                         <div className="flex items-center gap-3">
                             <Building2 className="h-5 w-5 text-primary" />
@@ -106,15 +106,13 @@ export function PartnerAccountingTab({ onSavingChange }: PartnerAccountingTabPro
                                     name="partner_capital_social_account"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Cuenta Raíz de Capital Social</FormLabel>
-                                            <FormControl>
-                                                <AccountSelector
-                                                    value={field.value as string}
-                                                    onChange={(val) => field.onChange(val)}
-                                                    accountType="EQUITY"
-                                                    placeholder="3.1.0X Capital Social..."
-                                                />
-                                            </FormControl>
+                                            <AccountSelector
+                                                label="Cuenta Raíz de Capital Social"
+                                                value={field.value as string}
+                                                onChange={(val) => field.onChange(val)}
+                                                accountType="EQUITY"
+                                                placeholder="3.1.0X Capital Social..."
+                                            />
                                             <p className="text-[9px] text-muted-foreground italic mt-1">Se usará como nodo padre para las sub-cuentas individuales de socios.</p>
                                         </FormItem>
                                     )}
@@ -125,15 +123,13 @@ export function PartnerAccountingTab({ onSavingChange }: PartnerAccountingTabPro
                                     name="partner_retained_earnings_account"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Utilidades Retenidas (Consolidada)</FormLabel>
-                                            <FormControl>
-                                                <AccountSelector
-                                                    value={field.value as string}
-                                                    onChange={(val) => field.onChange(val)}
-                                                    accountType="EQUITY"
-                                                    placeholder="3.2.0X Utilidades Retenidas..."
-                                                />
-                                            </FormControl>
+                                            <AccountSelector
+                                                label="Utilidades Retenidas (Consolidada)"
+                                                value={field.value as string}
+                                                onChange={(val) => field.onChange(val)}
+                                                accountType="EQUITY"
+                                                placeholder="3.2.0X Utilidades Retenidas..."
+                                            />
                                             <p className="text-[9px] text-muted-foreground italic mt-1">Cuenta de patrimonio donde se acumulan las utilidades no distribuidas.</p>
                                         </FormItem>
                                     )}
@@ -144,15 +140,13 @@ export function PartnerAccountingTab({ onSavingChange }: PartnerAccountingTabPro
                                     name="partner_current_year_earnings_account"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Utilidad del Ejercicio Actual</FormLabel>
-                                            <FormControl>
-                                                <AccountSelector
-                                                    value={field.value as string}
-                                                    onChange={(val) => field.onChange(val)}
-                                                    accountType="EQUITY"
-                                                    placeholder="3.4.0X Resultado del Ejercicio..."
-                                                />
-                                            </FormControl>
+                                            <AccountSelector
+                                                label="Utilidad del Ejercicio Actual"
+                                                value={field.value as string}
+                                                onChange={(val) => field.onChange(val)}
+                                                accountType="EQUITY"
+                                                placeholder="3.4.0X Resultado del Ejercicio..."
+                                            />
                                             <p className="text-[9px] text-muted-foreground italic mt-1">Cuenta puente que recibe el resultado neto antes de la distribución.</p>
                                         </FormItem>
                                     )}
@@ -160,10 +154,10 @@ export function PartnerAccountingTab({ onSavingChange }: PartnerAccountingTabPro
                             </form>
                         </Form>
                     </CardContent>
-                </IndustrialCard>
+                </Card>
 
                 {/* 2. Operativas Row */}
-                <IndustrialCard variant="industrial" className="md:col-span-2">
+                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card md:col-span-2">
                     <CardHeader className="pb-4 border-b bg-muted/20">
                         <div className="flex items-center gap-3">
                             <Info className="h-5 w-5 text-primary" />
@@ -181,15 +175,13 @@ export function PartnerAccountingTab({ onSavingChange }: PartnerAccountingTabPro
                                     name="partner_dividends_payable_account"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Dividendos por Pagar (Pasivo)</FormLabel>
-                                            <FormControl>
-                                                <AccountSelector
-                                                    value={field.value as string}
-                                                    onChange={(val) => field.onChange(val)}
-                                                    accountType="LIABILITY"
-                                                    placeholder="2.1.0X Dividendos por Pagar..."
-                                                />
-                                            </FormControl>
+                                            <AccountSelector
+                                                label="Dividendos por Pagar (Pasivo)"
+                                                value={field.value as string}
+                                                onChange={(val) => field.onChange(val)}
+                                                accountType="LIABILITY"
+                                                placeholder="2.1.0X Dividendos por Pagar..."
+                                            />
                                             <p className="text-[9px] text-muted-foreground italic mt-1">Obligación con socios por utilidades ya asignadas pero no pagadas.</p>
                                         </FormItem>
                                     )}
@@ -200,15 +192,13 @@ export function PartnerAccountingTab({ onSavingChange }: PartnerAccountingTabPro
                                     name="partner_capital_receivable_account"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Capital por Cobrar (Activo)</FormLabel>
-                                            <FormControl>
-                                                <AccountSelector
-                                                    value={field.value as string}
-                                                    onChange={(val) => field.onChange(val)}
-                                                    accountType="ASSET"
-                                                    placeholder="1.1.0X Capital por Cobrar..."
-                                                />
-                                            </FormControl>
+                                            <AccountSelector
+                                                label="Capital por Cobrar (Activo)"
+                                                value={field.value as string}
+                                                onChange={(val) => field.onChange(val)}
+                                                accountType="ASSET"
+                                                placeholder="1.1.0X Capital por Cobrar..."
+                                            />
                                             <p className="text-[9px] text-muted-foreground italic mt-1">Cuenta de activo que refleja el capital suscrito pendiente de ingreso.</p>
                                         </FormItem>
                                     )}
@@ -216,7 +206,7 @@ export function PartnerAccountingTab({ onSavingChange }: PartnerAccountingTabPro
                             </form>
                         </Form>
                     </CardContent>
-                </IndustrialCard>
+                </Card>
             </div>
             
             {/* Health Check Alert */}

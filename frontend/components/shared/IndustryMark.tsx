@@ -98,7 +98,7 @@ function RegistrationMarks({
  *
  * Renders decorative corner marks that evoke the registration/crop marks
  * used in offset printing and graphic production. This component is a key
- * differentiator of the "Industrial Premium" aesthetic.
+ * differentiator of the design aesthetic.
  *
  * Use `showRegistration` to add classic prepress registration symbols (⊕)
  * outside the content boundary — ideal for the main page layout delimiter.

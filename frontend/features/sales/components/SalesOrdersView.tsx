@@ -12,7 +12,7 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
 import { OrderHubStatus } from "@/features/orders/components/OrderHubStatus"
-import { getHubStatuses } from "@/lib/order-status-utils"
+import { getHubStatuses } from '@/features/orders/utils/status'
 import { OrderCard } from "@/features/orders/components/OrderCard"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
@@ -323,7 +323,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     onReset={() => setDateRange(undefined)}
                     customFilters={
                         <DateRangeFilter
-                            onRangeChange={setDateRange}
+                            onDateChange={setDateRange}
                             label={viewMode === 'orders' ? "Fecha de Venta" : "Fecha de Emisión"}
                             className="bg-transparent border-none w-full"
                         />

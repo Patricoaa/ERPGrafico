@@ -1,31 +1,19 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { PurchaseOrderInitialData, PurchaseOrderLine } from "@/types/forms"
 import { ProductMinimal, UoM } from "@/types/entities"
 import * as z from "zod"
-import { Plus, Trash2 } from "lucide-react"
-import { FORM_STYLES } from "@/lib/styles"
+import { Plus, Trash2, DollarSign } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput, FormSection, FormFooter, CancelButton } from "@/components/shared"
 import {
     Form,
-    FormControl,
     FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
 } from "@/components/ui/form"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import {
     Table,
@@ -35,14 +23,11 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+
 
 const purchaseLineSchema = z.object({
     id: z.number().optional(),
@@ -81,15 +66,18 @@ const OrderTotals = ({ control }: { control: Control<PurchaseOrderFormValues> })
     const total = subtotal + tax
 
     return (
-        <div className="space-y-1 text-right pt-4 border-t">
-            <div className="text-sm text-muted-foreground">
-                Subtotal: {subtotal.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+        <div className="space-y-1 text-right pt-4 border-t flex flex-col items-end">
+            <div className="text-sm text-muted-foreground flex gap-1">
+                <span>Subtotal:</span>
+                <MoneyDisplay amount={subtotal} inline />
             </div>
-            <div className="text-sm text-muted-foreground">
-                IVA (19%): {tax.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+            <div className="text-sm text-muted-foreground flex gap-1">
+                <span>IVA (19%):</span>
+                <MoneyDisplay amount={tax} inline />
             </div>
-            <div className="text-lg font-bold">
-                Total: {total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+            <div className="text-lg font-bold flex gap-1">
+                <span>Total:</span>
+                <MoneyDisplay amount={total} inline />
             </div>
         </div>
     )
@@ -147,8 +135,20 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
 
 
 
+    const lastResetId = useRef<number | undefined>(undefined)
+    const wasOpen = useRef(false)
+
     useEffect(() => {
-        if (open) {
+        if (!open) {
+            wasOpen.current = false
+            return
+        }
+
+        const currentId = initialData?.id
+        const isNewOpen = !wasOpen.current
+        const isNewData = currentId !== lastResetId.current
+
+        if (isNewOpen || isNewData) {
             fetchData()
             if (initialData) {
                 form.reset({
@@ -171,6 +171,8 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                     lines: [{ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 }],
                 })
             }
+            lastResetId.current = currentId
+            wasOpen.current = true
         }
     }, [open, initialData, form])
 
@@ -203,34 +205,36 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
             title="Editar Orden de Compra"
             description="Modifique los datos de la orden de compra."
             footer={
-                <>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setOpen(false)}
-                    >
-                        Cancelar
-                    </Button>
-                    <ActionSlideButton type="submit" form="purchase-order-form" disabled={loading}>
-                        {loading ? "Guardando..." : "Guardar Cambios"}
-                    </ActionSlideButton>
-                </>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => setOpen(false)} />
+                            <ActionSlideButton type="submit" form="purchase-order-form" loading={loading}>
+                                Guardar Cambios
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
             }
         >
             <Form {...form}>
                 <form id="purchase-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className={FORM_STYLES.sectionHeader}>Líneas de Compra</h3>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => append({ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 })}
-                            >
-                                <Plus className="mr-2 h-4 w-4" />
-                                Agregar Producto
-                            </Button>
+                        <div className="space-y-4">
+                            <FormSection title="Líneas de Compra" icon={Plus} />
+                            
+                            <div className="flex justify-end">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => append({ product: "", quantity: 1, uom: "", unit_cost: 0, tax_rate: 19 })}
+                                    className="h-9 px-4 text-[10px] font-black uppercase tracking-widest border-primary/30 hover:bg-primary/5 shadow-sm"
+                                >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Agregar Producto
+                                </Button>
+                            </div>
                         </div>
 
                         <div className="rounded-lg border border-dashed">
@@ -279,10 +283,9 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                     control={form.control}
                                                     name={`lines.${index}.quantity`}
                                                     render={({ field }) => (
-                                                        <Input
+                                                        <LabeledInput
                                                             type="number"
                                                             step="0.01"
-                                                            className={FORM_STYLES.input}
                                                             {...field}
                                                             onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                                                         />
@@ -318,10 +321,9 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                     control={form.control}
                                                     name={`lines.${index}.unit_cost`}
                                                     render={({ field }) => (
-                                                        <Input
+                                                        <LabeledInput
                                                             type="number"
                                                             step="1"
-                                                            className={FORM_STYLES.input}
                                                             {...field}
                                                             onChange={(e) => field.onChange(Math.ceil(parseFloat(e.target.value) || 0))}
                                                         />
@@ -329,7 +331,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                 />
                                             </TableCell>
                                             <TableCell className="text-right font-medium">
-                                                {(Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_cost`)) || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                <MoneyDisplay amount={Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_cost`)) || 0} />
                                             </TableCell>
                                             <TableCell>
                                                 <Button
@@ -353,21 +355,20 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                         <FormField
                             control={form.control}
                             name="notes"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Notas / Observaciones</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder="Notas adicionales..."
-                                            className={FORM_STYLES.textarea}
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    label="Notas / Observaciones"
+                                    as="textarea"
+                                    placeholder="Notas adicionales..."
+                                    error={fieldState.error?.message}
+                                    {...field}
+                                />
                             )}
                         />
-                        <OrderTotals control={form.control} />
+                        <div className="space-y-4">
+                            <FormSection title="Resumen de Valores" icon={DollarSign} />
+                            <OrderTotals control={form.control} />
+                        </div>
                     </div>
                 </form>
             </Form>

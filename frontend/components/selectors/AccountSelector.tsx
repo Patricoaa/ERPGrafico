@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Check, ChevronsUpDown, Search, Loader2, BookKey } from "lucide-react"
+import { Check, ChevronDown, Search, Loader2, BookKey } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -24,9 +24,12 @@ interface AccountSelectorProps {
     showAll?: boolean
     isReconcilable?: boolean
     disabled?: boolean
+    label?: string
+    error?: string
+    className?: string
 }
 
-export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable, disabled = false }: AccountSelectorProps) {
+export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable, disabled = false, label, error, className }: AccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
     const { accounts: allAccounts, loading: accountsLoading, fetchAccounts } = useAccountSearch()
@@ -87,32 +90,41 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
     }
 
     return (
-        <div className="flex gap-2 w-full">
-            <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                    <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={open}
-                        disabled={disabled}
-                        className="flex-1 justify-between overflow-hidden h-auto py-2 px-3"
-                    >
-                        {selectedAccount ? (
-                            <div className="flex items-center gap-2 truncate text-left">
-                                <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-                                    <BookKey className="h-4 w-4" />
+        <div className={cn("relative w-full flex flex-col group", className)}>
+            <fieldset 
+                className={cn(
+                    "notched-field w-full group transition-all",
+                    open && "focused",
+                    error && "error",
+                    disabled && "opacity-50 cursor-not-allowed bg-muted/10"
+                )}
+            >
+                {label && (
+                    <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
+                        {label}
+                    </legend>
+                )}
+                <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            role="combobox"
+                            aria-expanded={open}
+                            disabled={disabled}
+                            className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                        >
+                            {selectedAccount ? (
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <BookKey className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                    <span className="font-mono text-xs font-semibold shrink-0 text-primary">{selectedAccount.code}</span>
+                                    <span className="text-sm truncate text-foreground">{selectedAccount.name}</span>
                                 </div>
-                                <div className="flex flex-col items-start truncate leading-tight">
-                                    <span className="font-medium text-sm truncate w-full">{selectedAccount.code}</span>
-                                    <span className="text-[10px] text-muted-foreground truncate w-full">{selectedAccount.name}</span>
-                                </div>
-                            </div>
-                        ) : (
-                            <span className="text-muted-foreground">{placeholder}</span>
-                        )}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                </PopoverTrigger>
+                            ) : (
+                                <span className="text-muted-foreground truncate">{placeholder}</span>
+                            )}
+                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
                     <div className="p-2">
                         <div className="flex items-center px-3 border rounded-md mb-2">
@@ -164,7 +176,13 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                         </div>
                     </div>
                 </PopoverContent>
-            </Popover>
+                </Popover>
+            </fieldset>
+            {error && (
+                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
+                    {error}
+                </p>
+            )}
 
             <BaseModal
                 open={modalOpen}

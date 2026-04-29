@@ -6,8 +6,7 @@ import Link from "next/link"
 import api from "@/lib/api"
 import { Plus, Pencil, Search, FileText, Calendar, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { LabeledInput } from "@/components/shared"
 import { toast } from "sonner"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -190,17 +189,15 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
                 }
             >
                 <div className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>Nombre o Referencia</Label>
-                        <Input
-                            value={newBudget.name}
-                            onChange={e => setNewBudget({ ...newBudget, name: e.target.value })}
-                            placeholder="Ej: Presupuesto Operativo"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Año del Presupuesto</Label>
-                        <Input
+                    <LabeledInput
+                        label="Nombre o Referencia"
+                        value={newBudget.name}
+                        onChange={e => setNewBudget({ ...newBudget, name: e.target.value })}
+                        placeholder="Ej: Presupuesto Operativo"
+                    />
+                    <div>
+                        <LabeledInput
+                            label="Año del Presupuesto"
                             type="number"
                             min={2020}
                             max={2100}
@@ -215,15 +212,13 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
                                 })
                             }}
                         />
-                        <p className="text-[10px] text-muted-foreground">Los presupuestos se restringen obligatoriamente a un año completo (01 Ene - 31 Dic).</p>
+                        <p className="text-[10px] text-muted-foreground mt-1">Los presupuestos se restringen obligatoriamente a un año completo (01 Ene - 31 Dic).</p>
                     </div>
-                    <div className="space-y-2">
-                        <Label>Descripción</Label>
-                        <Input
-                            value={newBudget.description}
-                            onChange={e => setNewBudget({ ...newBudget, description: e.target.value })}
-                        />
-                    </div>
+                    <LabeledInput
+                        label="Descripción"
+                        value={newBudget.description}
+                        onChange={e => setNewBudget({ ...newBudget, description: e.target.value })}
+                    />
                 </div>
             </BaseModal>
 

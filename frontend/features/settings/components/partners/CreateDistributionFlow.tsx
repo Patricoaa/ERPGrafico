@@ -4,14 +4,8 @@ import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
 import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { 
-    Select, 
-    SelectContent, 
-    SelectItem, 
-    SelectTrigger, 
-    SelectValue 
-} from "@/components/ui/select"
+import { Card } from "@/components/ui/card"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/types/partner"
 import { accountingApi } from "@/features/accounting/api/accountingApi"
@@ -31,7 +25,6 @@ import {
     AlertTitle, 
     AlertDescription 
 } from "@/components/ui/alert"
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
 
 interface ModalProps {
     open: boolean
@@ -247,54 +240,47 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             component: (
                 <div className="grid gap-6">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                            <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest pl-1">Ejercicio Fiscal Cerrado</Label>
-                            <Select 
-                                value={formData.fiscal_year_id}
-                                onValueChange={(val) => {
-                                    const fy = fiscalYears.find(f => f.id.toString() === val)
-                                    setFormData(prev => ({ 
-                                        ...prev, 
-                                        fiscal_year_id: val,
-                                        net_result: fy?.net_result?.toString() || "" 
-                                    }))
-                                }}
-                            >
-                                <SelectTrigger className="font-bold">
-                                    <SelectValue placeholder="Seleccione un año cerrado" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {fiscalYears.map(fy => (
-                                        <SelectItem key={fy.id} value={fy.id.toString()}>{fy.year} - Cerrado</SelectItem>
-                                    ))}
-                                    {fiscalYears.length === 0 && (
-                                        <p className="text-[10px] p-2 text-muted-foreground text-center">No hay años cerrados disponibles</p>
-                                    )}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest pl-1">Fecha de Resolución</Label>
-                            <Input 
-                                type="date" 
-                                value={formData.resolution_date}
-                                onChange={(e) => setFormData(prev => ({ ...prev, resolution_date: e.target.value }))}
-                                className="font-medium"
-                            />
-                        </div>
+                        <LabeledSelect
+                            label="Ejercicio Fiscal Cerrado"
+                            value={formData.fiscal_year_id}
+                            onChange={(val) => {
+                                const fy = fiscalYears.find(f => f.id.toString() === val)
+                                setFormData(prev => ({
+                                    ...prev,
+                                    fiscal_year_id: val,
+                                    net_result: fy?.net_result?.toString() || ""
+                                }))
+                            }}
+                            placeholder="Seleccione un año cerrado"
+                            className="font-bold"
+                            options={fiscalYears.map(fy => ({ value: fy.id.toString(), label: `${fy.year} - Cerrado` }))}
+                        />
+                        <PeriodValidationDateInput
+                            label="Fecha de Resolución"
+                            date={formData.resolution_date ? new Date(formData.resolution_date + 'T12:00:00') : undefined}
+                            onDateChange={(d) => {
+                                if (!d) {
+                                    setFormData(prev => ({ ...prev, resolution_date: "" }))
+                                    return
+                                }
+                                setFormData(prev => ({ ...prev, resolution_date: d.toISOString().split('T')[0] }))
+                            }}
+                            validationType="accounting"
+                            className="font-medium"
+                        />
                     </div>
-                    
-                    <div className="grid gap-2">
-                        <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest pl-1">Resultado Neto ($)</Label>
+
+                    <div>
                         <div className="relative">
-                            <Input 
-                                type="number" 
+                            <LabeledInput
+                                label="Resultado Neto ($)"
+                                type="number"
                                 placeholder="0"
                                 value={formData.net_result}
                                 readOnly
-                                className="font-mono text-2xl h-14 pl-12 bg-muted/50 cursor-not-allowed"
+                                className="font-mono text-2xl pl-10 bg-muted/50 cursor-not-allowed"
                             />
-                            <Calculator className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Calculator className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                             <div className="absolute right-4 top-1/2 -translate-y-1/2">
                                 <span className={cn(
                                     "text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-sm",
@@ -307,22 +293,18 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                            <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest pl-1">Número de Acta</Label>
-                            <Input 
-                                value={formData.acta_number}
-                                onChange={(e) => setFormData(prev => ({ ...prev, acta_number: e.target.value }))}
-                                placeholder="Ej: Acta N° 42"
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest pl-1">Notas Internas</Label>
-                            <Input 
-                                value={formData.notes}
-                                onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                                placeholder="Distribuir según pacto social"
-                            />
-                        </div>
+                        <LabeledInput
+                            label="Número de Acta"
+                            value={formData.acta_number}
+                            onChange={(e) => setFormData(prev => ({ ...prev, acta_number: e.target.value }))}
+                            placeholder="Ej: Acta N° 42"
+                        />
+                        <LabeledInput
+                            label="Notas Internas"
+                            value={formData.notes}
+                            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                            placeholder="Distribuir según pacto social"
+                        />
                     </div>
 
                     <Alert className="bg-primary/5 border-primary/20">
@@ -349,14 +331,14 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             component: (
                 <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <IndustrialCard variant="standard" className="p-4 bg-muted/20">
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-4 bg-muted/20">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Monto a Distribuir</p>
                             <p className="text-xl font-mono font-bold text-primary">{formatCurrency(draftResolution?.net_result || 0)}</p>
-                        </IndustrialCard>
-                        <IndustrialCard variant="standard" className="p-4 bg-muted/20">
+                        </Card>
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-4 bg-muted/20">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Ejercicio</p>
                             <p className="text-xl font-heading font-black">{draftResolution?.fiscal_year}</p>
-                        </IndustrialCard>
+                        </Card>
                     </div>
 
                     <div className="border rounded-sm overflow-hidden min-h-[300px]">

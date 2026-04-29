@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { formatCurrency } from "@/lib/currency"
 import { formatPlainDate } from "@/lib/utils"
+import { Skeleton } from "@/components/shared"
 import {
     FileText,
     Box,
@@ -171,9 +172,9 @@ export function PurchaseNoteSummarySidebar({
                 </div>
 
                 {isProcessing && (
-                    <div className="mt-4 flex items-center justify-center gap-2 text-xs font-bold text-primary animate-pulse">
-                        <div className="h-2 w-2 rounded-full bg-primary animate-bounce" />
-                        Procesando documento...
+                    <div className="mt-4 flex flex-col gap-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-3 w-2/3 mx-auto" />
                     </div>
                 )}
             </div>

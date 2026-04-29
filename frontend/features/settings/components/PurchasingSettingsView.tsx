@@ -8,7 +8,7 @@ import { toast } from "sonner"
 import api from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { FormSkeleton } from "@/components/shared/FormSkeleton"
+import { FormSkeleton } from "@/components/shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 
 import { purchasingSchema, type PurchasingFormValues } from "./PurchasingSettingsView.schema"
@@ -108,18 +108,14 @@ function AccountField({ form, name, label, accountType }: { form: UseFormReturn<
         <FormField
             control={form.control}
             name={name}
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel className="text-[10px] font-black uppercase text-muted-foreground">{label}</FormLabel>
-                    <FormControl>
-                        <AccountSelector
-                            value={field.value as string}
-                            onChange={(val) => field.onChange(val)}
-                            accountType={accountType}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
+            render={({ field, fieldState }) => (
+                <AccountSelector
+                    label={label}
+                    value={field.value as string}
+                    onChange={(val) => field.onChange(val)}
+                    accountType={accountType}
+                    error={fieldState.error?.message}
+                />
             )}
         />
     )

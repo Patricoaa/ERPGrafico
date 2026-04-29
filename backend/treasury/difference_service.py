@@ -8,6 +8,7 @@ Crea ajustes contables para comisiones, intereses y otros conceptos.
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from decimal import Decimal
 from typing import Dict, Optional
 from .models import BankStatementLine
@@ -27,6 +28,7 @@ class DifferenceService:
     EXCHANGE_DIFF = 'EXCHANGE_DIFF'
     ROUNDING = 'ROUNDING'
     ERROR = 'ERROR'
+    TAX = 'TAX'
     OTHER = 'OTHER'
     
     DIFFERENCE_CHOICES = [
@@ -34,7 +36,8 @@ class DifferenceService:
         (INTEREST, 'Intereses Percibidos/Pagados'),
         (EXCHANGE_DIFF, 'Diferencia de Cambio'),
         (ROUNDING, 'Ajuste por Redondeo'),
-        (ERROR, 'Error de Registro'),
+        (ERROR, _('Error de Registro')),
+        (TAX, _('Retención / Impuesto')),
         (OTHER, 'Otro')
     ]
     
@@ -45,6 +48,7 @@ class DifferenceService:
         EXCHANGE_DIFF: 'exchange_difference_account',
         ROUNDING: 'rounding_adjustment_account',
         ERROR: 'error_adjustment_account',
+        TAX: 'tax_withholding_account',
         OTHER: 'miscellaneous_adjustment_account'
     }
     
@@ -72,7 +76,8 @@ class DifferenceService:
         settings = AccountingSettings.objects.select_related(
             'bank_commission_account', 'interest_income_account', 
             'exchange_difference_account', 'rounding_adjustment_account', 
-            'error_adjustment_account', 'miscellaneous_adjustment_account'
+            'error_adjustment_account', 'tax_withholding_account',
+            'miscellaneous_adjustment_account'
         ).first()
         
         if not settings:
@@ -98,11 +103,14 @@ class DifferenceService:
         
         difference_label = dict(DifferenceService.DIFFERENCE_CHOICES)[difference_type]
         
+        # Determine initial status from settings
+        initial_status = JournalEntry.State.POSTED if settings.auto_post_reconciliation_adjustments else JournalEntry.State.DRAFT
+        
         entry = JournalEntry.objects.create(
             date=line.transaction_date,
             reference=f"Ajuste {line.statement.display_id} #{line.line_number}",
             description=f"{difference_label} - {notes}" if notes else difference_label,
-            status=JournalEntry.State.DRAFT
+            status=initial_status
         )
         
         abs_diff = abs(difference)
@@ -121,9 +129,6 @@ class DifferenceService:
             else:
                 JournalItem.objects.create(entry=entry, account=treasury_account, debit=abs_diff, credit=0)
                 JournalItem.objects.create(entry=entry, account=difference_account, debit=0, credit=abs_diff)
-        
-        entry.status = 'POSTED'
-        entry.save()
         
         line.difference_journal_entry = entry
         line.difference_reason = difference_type

@@ -38,7 +38,10 @@
 | "selector", "N+1", "select_related", "prefetch_related", "slow query" | [add-selector.md](30-playbooks/add-selector.md) | 30 |
 | "what is X", "domain term", "glossary" | [domain-glossary.md](00-context/domain-glossary.md) | 00 |
 | "architecture", "folder structure", "where does X go" | [frontend-fsd.md](10-architecture/frontend-fsd.md) / [backend-apps.md](10-architecture/backend-apps.md) | 10 |
+| "which component", "component decision", "what to use" | [component-decision-tree.md](20-contracts/component-decision-tree.md) | 20 |
 | "component API", "prop signature", "StatusBadge usage" | [component-contracts.md](20-contracts/component-contracts.md) | 20 |
+| "selector component", "entity search", "combobox", "AccountSelector" | [component-selectors.md](20-contracts/component-selectors.md) | 20 |
+| "form size", "form pattern", "when to use tabs", "wizard vs form", "form surface", "form layout" | [component-form-patterns.md](20-contracts/component-form-patterns.md) | 20 |
 | "hook signature", "return shape" | [hook-contracts.md](20-contracts/hook-contracts.md) | 20 |
 | "entity state", "status values" | [state-map.md](20-contracts/state-map.md) | 20 |
 | "testing strategy", "coverage", "fixtures" | [testing.md](40-quality/testing.md) | 40 |
@@ -48,6 +51,7 @@
 | "deploy", "pipeline", "CI failure" | [ci-cd.md](40-quality/ci-cd.md) | 40 |
 | "any type", "TypeScript unknown", "type escape hatch" | [zero-any-policy.md](90-governance/zero-any-policy.md) | 90 |
 | "ADR", "decision record", "major change" | [adr/README.md](10-architecture/adr/README.md) | 10 |
+| "signals", "signal receiver", "post_save hook", "cross-app event" | [workflow-signals-registry.md](10-architecture/workflow-signals-registry.md) | 10 |
 
 ## Global invariants (violate = PR rejected)
 
@@ -67,6 +71,8 @@ You are operating on ERPGrafico. Before any implementation:
 - [ ] Matched intent in routing table above
 - [ ] Read target playbook fully
 - [ ] Read all preconditions listed in playbook frontmatter
+- [ ] **UI Pre-flight:** Consulted `docs/20-contracts/component-decision-tree.md` to avoid re-inventing components.
+- [ ] **Styling Pre-flight:** Read `frontend/app/globals.css` to verify available semantic color tokens.
 - [ ] Verified invariants above are not violated by proposed change
 - [ ] Ran validation commands listed in playbook
 

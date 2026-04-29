@@ -20,6 +20,28 @@ export interface AccountFilters {
     code?: string
     name?: string
     account_type?: string
+    is_leaf?: boolean
+}
+
+export interface LedgerData {
+    movements: LedgerMovement[]
+    opening_balance: number
+    closing_balance: number
+    period_debit: number
+    period_credit: number
+}
+
+export interface LedgerMovement {
+    id: number
+    date: string
+    description: string
+    label?: string
+    debit: string | number
+    credit: string | number
+    balance: string | number
+    entry_id: number
+    partner?: string
+    reference?: string
 }
 
 export const IS_CATEGORIES = [

@@ -1,7 +1,7 @@
 "use client"
 
 import { type ReactNode, lazy, Suspense, useState } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { TableSkeleton } from "@/components/shared"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -17,7 +17,6 @@ const UsersSettingsView = lazy(() =>
 export default function UsersSettingsPage() {
     const searchParams = useSearchParams()
     const activeTab = searchParams.get("tab") || "users"
-    const [headerActions, setHeaderActions] = useState<ReactNode>(null)
 
     const tabs = [
         { value: "users", label: "Usuarios", iconName: "users", href: "/settings/users?tab=users" },
@@ -52,7 +51,6 @@ export default function UsersSettingsPage() {
                 description={description}
                 variant="minimal"
                 iconName={iconName}
-                titleActions={headerActions}
             />
             
             <div className="pt-2">
@@ -60,10 +58,9 @@ export default function UsersSettingsPage() {
             </div>
 
             <div className="mt-6">
-                <Suspense fallback={<LoadingFallback message="Cargando configuración de usuarios..." />}>
+                <Suspense fallback={<TableSkeleton rows={10} columns={5} />}>
                     <UsersSettingsView 
                         activeTab={activeTab} 
-                        onActionsChange={setHeaderActions} 
                     />
                 </Suspense>
             </div>

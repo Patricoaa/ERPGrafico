@@ -73,7 +73,6 @@ export interface Product {
     mfg_press_digital?: boolean
     mfg_postpress_finishing?: boolean
     mfg_postpress_binding?: boolean
-    mfg_default_delivery_days?: number
     parent_template?: number | null
     attribute_values?: number[]
     attribute_values_data?: ProductAttributeValue[]

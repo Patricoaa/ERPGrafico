@@ -1,8 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { PageTabs, CardSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load feature components
@@ -27,11 +25,20 @@ export default async function BillingPage({ searchParams }: PageProps) {
     const tabs = [
         { value: "sales", label: "Emitidos (Ventas)", iconName: "receipt", href: "/billing?view=sales" },
         { value: "purchases", label: "Recibidos (Compras)", iconName: "file-badge", href: "/billing?view=purchases" },
-        { value: "config", label: "Config", iconName: "settings", href: "/billing?view=config" },
+        { 
+            value: "config", 
+            label: "Config", 
+            iconName: "settings", 
+            href: "/billing?view=config",
+            subTabs: [
+                { value: "accounts", label: "Cuentas", href: "/billing?view=config&tab=accounts", iconName: "users" },
+                { value: "dtes", label: "Documentos", href: "/billing?view=config&tab=dtes", iconName: "file-text" }
+            ]
+        },
     ]
 
     const getHeaderConfig = () => {
-        if (viewMode === 'config') return { title: "Configuración de Facturación", description: "Gestione las cuentas contables, impuestos y parámetros de DTE.", iconName: "settings" as const }
+        if (viewMode === 'config') return { title: "Configuración de Facturación", description: "Gestione las cuentas contables y parámetros de documentos electrónicos.", iconName: "settings" as const }
         return {
             title: viewMode === 'sales' ? "Facturación de Ventas" : "Facturación de Compras",
             description: viewMode === 'sales'
@@ -46,10 +53,10 @@ export default async function BillingPage({ searchParams }: PageProps) {
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader title={config.title} description={config.description} iconName={config.iconName} variant="minimal" />
-            <PageTabs tabs={tabs} activeValue={viewMode} />
+            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={configTab} />
 
             <div className="pt-2">
-                <Suspense fallback={<LoadingFallback variant="list" />}>
+                <Suspense fallback={<CardSkeleton variant="list" count={5} />}>
                     {viewMode === 'sales' && <SalesInvoicesClientView />}
                     {viewMode === 'purchases' && <PurchaseInvoicesClientView />}
                     {viewMode === 'config' && <BillingSettingsView activeTab={configTab} />}

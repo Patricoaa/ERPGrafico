@@ -1,25 +1,21 @@
-import { useState, useEffect } from "react"
+import * as React from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import api from "@/lib/api"
-import { Button } from "@/components/ui/button"
+
 import { BaseModal } from "@/components/shared/BaseModal"
 
 // ... other imports same
 import {
     Form,
-    FormControl,
     FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import { Loader2, Users } from "lucide-react"
-import { FORM_STYLES } from "@/lib/styles"
+import { Users } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
+import { LabeledInput, CancelButton, FormFooter, FormSplitLayout } from "@/components/shared"
 import { AppGroup } from "@/types/entities"
 
 const formSchema = z.object({
@@ -61,13 +57,27 @@ export function GroupForm({
         },
     })
 
+    const lastResetId = useRef<number | undefined>(undefined)
+    const wasOpen = useRef(false)
+
     useEffect(() => {
-        if (isOpen) {
+        if (!isOpen) {
+            wasOpen.current = false
+            return
+        }
+
+        const currentId = initialData?.id
+        const isNewOpen = !wasOpen.current
+        const isNewData = currentId !== lastResetId.current
+
+        if (isNewOpen || isNewData) {
             form.reset({
                 name: initialData?.name || "",
             })
+            lastResetId.current = currentId
+            wasOpen.current = true
         }
-    }, [initialData, isOpen, form])
+    }, [isOpen, initialData, form])
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true)
@@ -89,9 +99,21 @@ export function GroupForm({
         }
     }
 
-    const Trigger = () => {
+    const RenderTrigger = () => {
         if (isControlled) return null;
         if (!trigger) return null;
+
+        if (React.isValidElement(trigger)) {
+            return React.cloneElement(trigger as React.ReactElement, {
+                // @ts-ignore
+                onClick: (e: React.MouseEvent) => {
+                    // @ts-ignore
+                    if (trigger.props.onClick) trigger.props.onClick(e);
+                    setOpen(true);
+                }
+            });
+        }
+
         return (
             <div onClick={() => setOpen?.(true)}>
                 {trigger}
@@ -101,7 +123,7 @@ export function GroupForm({
 
     return (
         <>
-            <Trigger />
+            <RenderTrigger />
             <BaseModal
                 open={isOpen}
                 onOpenChange={setOpen}
@@ -118,36 +140,38 @@ export function GroupForm({
                     </div>
                 }
                 footer={
-                    <div className="flex justify-end space-x-2 w-full">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setOpen(false)}
-                        >
-                            Cancelar
-                        </Button>
-                        <ActionSlideButton type="submit" form="group-form" disabled={isLoading}>
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Guardar
-                        </ActionSlideButton>
-                    </div>
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setOpen(false)} disabled={isLoading} />
+                                <ActionSlideButton type="submit" form="group-form" loading={isLoading}>
+                                    Guardar
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
                 }
             >
                 <Form {...form}>
-                    <form id="group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Ej: Bodega, Ventas..." {...field} className={FORM_STYLES.input} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                    <form id="group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pr-6 pl-1 pb-4 pt-4">
+                        
+                        <div className="grid grid-cols-4 gap-4">
+                            <div className="col-span-4">
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Nombre del Grupo"
+                                            required
+                                            placeholder="Ej: Bodega, Ventas..."
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
+                                    )}
+                                />
+                            </div>
+                        </div>
                     </form>
                 </Form>
             </BaseModal>

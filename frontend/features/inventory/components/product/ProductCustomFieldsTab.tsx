@@ -3,7 +3,7 @@ import { Plus, Settings2, Trash2 } from "lucide-react"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { UseFormReturn, useFieldArray } from "react-hook-form"
 import { ProductFormValues } from "./schema"
-import { TabsContent } from "@/components/ui/tabs"
+import { FormTabsContent } from "@/components/shared"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { CustomFieldTemplate } from "@/types/entities"
@@ -21,7 +21,7 @@ export function ProductCustomFieldsTab({ form, fieldTemplates, onShowTemplateFor
     })
 
     return (
-        <TabsContent value="custom" className="mt-0 space-y-8">
+        <FormTabsContent value="custom" className="mt-0 space-y-8">
             <div className="flex items-end justify-between mb-4">
                 <div className="flex-1 space-y-1 mr-4">
                     <div className="flex items-center gap-2">
@@ -114,6 +114,6 @@ export function ProductCustomFieldsTab({ form, fieldTemplates, onShowTemplateFor
                     </TableBody>
                 </Table>
             </div>
-        </TabsContent>
+        </FormTabsContent>
     )
 }

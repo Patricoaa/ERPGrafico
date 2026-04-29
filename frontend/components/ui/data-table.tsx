@@ -77,6 +77,14 @@ interface DataTableProps<TData, TValue> {
     autoExpand?: boolean
     /** Primary create action rendered at the right-most end of the toolbar, after the button group */
     createAction?: React.ReactNode
+    /** Custom empty state props */
+    emptyState?: {
+        title?: string
+        description?: string
+        icon?: React.ComponentType<{ className?: string }>
+        action?: React.ReactNode
+        context?: "general" | "search" | "error" | "finance" | "inventory" | "contacts" | "production"
+    }
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -122,6 +130,7 @@ export function DataTable<TData, TValue>({
     getSubRows,
     autoExpand,
     createAction,
+    emptyState: customEmptyState,
 }: DataTableProps<TData, TValue>) {
     // Uncontrolled mode: let TanStack Table manage sorting/filters/visibility/
     // expansion/selection state internally. Previous controlled-state wiring
@@ -239,8 +248,11 @@ export function DataTable<TData, TValue>({
                         className="h-24 p-0"
                     >
                         <EmptyState
-                            context="search"
-                            description="Intenta ajustar los filtros de búsqueda para encontrar lo que buscas."
+                            context={customEmptyState?.context || "search"}
+                            title={customEmptyState?.title}
+                            description={customEmptyState?.description || "Intenta ajustar los filtros de búsqueda para encontrar lo que buscas."}
+                            icon={customEmptyState?.icon}
+                            action={customEmptyState?.action}
                         />
                     </TableCell>
                 </TableRow>
@@ -451,9 +463,11 @@ export function DataTable<TData, TValue>({
                                         className="h-24 p-0"
                                     >
                                         <EmptyState
-                                            icon={SearchX}
-                                            title="No se encontraron resultados"
-                                            description="Intenta ajustar los filtros de búsqueda para encontrar lo que buscas."
+                                            context={customEmptyState?.context || "search"}
+                                            icon={customEmptyState?.icon || SearchX}
+                                            title={customEmptyState?.title || "No se encontraron resultados"}
+                                            description={customEmptyState?.description || "Intenta ajustar los filtros de búsqueda para encontrar lo que buscas."}
+                                            action={customEmptyState?.action}
                                         />
                                     </TableCell>
                                 </TableRow>

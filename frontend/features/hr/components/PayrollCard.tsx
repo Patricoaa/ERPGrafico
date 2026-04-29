@@ -9,16 +9,19 @@ import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
 import {
-    Loader2, Trash2, Pencil, Sparkles, AlertCircle, DollarSign, Clock, CheckCircle2, Plus
+    Loader2, Trash2, Pencil, Sparkles, AlertCircle, DollarSign, Clock, CheckCircle2, Plus, History
 } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
+
 import { cn } from "@/lib/utils"
 import type { Payroll, PayrollItem } from "@/types/hr"
 import { DataCell } from "@/components/ui/data-table-cells"
-import { FORM_STYLES } from "@/lib/styles"
+
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { FormSection } from "@/components/shared"
+
+const LABEL_STYLE = "text-[10px] font-black uppercase text-muted-foreground tracking-widest"
 
 interface PayrollCardProps {
     payroll: Payroll
@@ -156,7 +159,7 @@ export function PayrollCard({
     }
 
     return (
-        <IndustrialCard className={cn("max-w-4xl mx-auto overflow-hidden", className)}>
+        <Card className={cn("max-w-4xl mx-auto overflow-hidden rounded-none shadow-2xl ring-1 ring-border bg-card", className)}>
             <div className="h-2 w-full bg-primary" />
             {/* 1. DOCUMENT HEADER */}
             <CardHeader className="pb-0 pt-8 px-10">
@@ -173,7 +176,7 @@ export function PayrollCard({
 
                         <div className="grid grid-cols-2 gap-x-8 gap-y-3 pt-6">
                             <div className="space-y-1">
-                                <p className={FORM_STYLES.label}>Datos del Empleado</p>
+                                <p className={LABEL_STYLE}>Datos del Empleado</p>
                                 <div className="flex flex-col">
                                     <span className="text-sm font-bold text-foreground leading-tight">
                                         {payroll.employee_detail?.contact_detail?.name || payroll.employee_name || (payroll as any).employee?.name || "—"}
@@ -191,7 +194,7 @@ export function PayrollCard({
                                 </div>
                             </div>
                             <div className="space-y-1 text-right">
-                                <p className={FORM_STYLES.label}>Periodo Laboral</p>
+                                <p className={LABEL_STYLE}>Periodo Laboral</p>
                                 <div className="flex flex-col">
                                     <span className="text-sm font-bold text-foreground leading-tight">
                                         {payroll.period_label}
@@ -221,19 +224,19 @@ export function PayrollCard({
                 {/* STATS BAR */}
                 <div className="mt-1 grid grid-cols-4 border rounded-lg overflow-hidden bg-muted/50 shadow-sm border/60 divide-x divide-border">
                     <div className="p-4 text-center space-y-1">
-                        <p className={FORM_STYLES.label}>Días Pactados</p>
+                        <p className={LABEL_STYLE}>Días Pactados</p>
                         <p className="text-sm font-bold text-foreground">{payroll.agreed_days || 0}</p>
                     </div>
                     <div className="p-4 text-center space-y-1">
-                        <p className={FORM_STYLES.label}>Ausencias</p>
+                        <p className={LABEL_STYLE}>Ausencias</p>
                         <p className="text-sm font-bold text-expense">{payroll.absent_days || 0}</p>
                     </div>
                     <div className="p-4 text-center space-y-1">
-                        <p className={FORM_STYLES.label}>Trabajados</p>
+                        <p className={LABEL_STYLE}>Trabajados</p>
                         <p className="text-sm font-bold text-foreground">{payroll.worked_days || 0}</p>
                     </div>
                     <div className="p-4 text-center space-y-1 bg-primary/[0.03]">
-                        <p className={cn(FORM_STYLES.label, "text-primary/70")}>Sueldo Base</p>
+                        <p className={cn(LABEL_STYLE, "text-primary/70")}>Sueldo Base</p>
                         <div className="flex items-center justify-center gap-1">
                             <span className="text-[10px] font-bold text-primary/40">$</span>
                             <MoneyDisplay amount={parseFloat(payroll.base_salary || "0")} className="text-sm font-black text-primary" />
@@ -245,21 +248,15 @@ export function PayrollCard({
 
             <CardContent className="px-10 py-8">
                 {/* 2. CONSOLIDATED DETAIL TABLE */}
-                <div className="flex items-center gap-2 pt-2 pb-6">
-                    <div className="flex-1 h-px bg-border/60" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 px-3">
-                        Detalle de Conceptos
-                    </span>
-                    <div className="flex-1 h-px bg-border/60" />
-                </div>
+                <FormSection title="Detalle de Conceptos" icon={Clock} className="pb-6" />
 
                 <div className="border border/60 rounded-lg overflow-hidden shadow-sm bg-card transition-all">
                     <Table>
                         <TableHeader className="bg-muted/80 border-b border/60 transition-colors">
                             <TableRow className="hover:bg-transparent border-none py-1">
-                                <TableHead className={cn(FORM_STYLES.label, "h-11 pl-8 text-muted-foreground")}>Conceptos de Remuneración</TableHead>
-                                <TableHead className={cn(FORM_STYLES.label, "h-11 text-success text-right")}>Haberes (+)</TableHead>
-                                <TableHead className={cn(FORM_STYLES.label, "h-11 text-expense text-right pr-8")}>Descuentos (-)</TableHead>
+                                <TableHead className={cn(LABEL_STYLE, "h-11 pl-8 text-muted-foreground")}>Conceptos de Remuneración</TableHead>
+                                <TableHead className={cn(LABEL_STYLE, "h-11 text-success text-right")}>Haberes (+)</TableHead>
+                                <TableHead className={cn(LABEL_STYLE, "h-11 text-expense text-right pr-8")}>Descuentos (-)</TableHead>
                                 {!isReadOnly && <TableHead className="h-11 w-[80px]"></TableHead>}
                             </TableRow>
                         </TableHeader>
@@ -318,9 +315,7 @@ export function PayrollCard({
                         {/* APORTES PATRONALES (ONLY IF ALLOWED) */}
                         {showEmployerContributions && employerContributions.length > 0 && (
                             <div className="space-y-4 p-5 bg-muted/50 rounded-lg border border/60">
-                                <h3 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2 mb-2">
-                                    <AlertCircle className="h-3 w-3" /> Costo Empresa / Aportes Patronales
-                                </h3>
+                                <FormSection title="Costo Empresa / Aportes Patronales" icon={AlertCircle} className="mb-2" />
                                 <div className="space-y-2.5">
                                     {employerContributions.map(c => (
                                         <div key={c.id} className="flex justify-between items-center text-[11px] group/item">
@@ -335,7 +330,7 @@ export function PayrollCard({
                         {/* NOTES SECTION */}
                         {payroll.notes && (
                             <div className="p-4 space-y-2">
-                                <span className={FORM_STYLES.label}>Observaciones</span>
+                                <span className={LABEL_STYLE}>Observaciones</span>
                                 <p className="text-xs text-muted-foreground italic leading-relaxed">&quot;{payroll.notes}&quot;</p>
                             </div>
                         )}
@@ -356,10 +351,7 @@ export function PayrollCard({
                         {/* HISTORIAL DE PAGOS (Moved to right column) */}
                         {(unifiedPayments.length > 0) && (
                             <div className="bg-muted/50 rounded-lg border border/60 p-5 space-y-4">
-                                <div className="flex justify-between items-center pb-2 border-b border/60">
-                                    <h4 className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Historial de Pagos</h4>
-                                    <span className={cn(FORM_STYLES.label, "text-muted-foreground opacity-20 uppercase tracking-widest")}>Recibos</span>
-                                </div>
+                                <FormSection title="Historial de Pagos" icon={History} />
                                 <div className="space-y-3">
                                     {unifiedPayments.map(p => (
                                         <div key={p.id} className="flex justify-between items-center group/pay">
@@ -410,11 +402,11 @@ export function PayrollCard({
                 <div className="mt-20 pt-10 border-t border-border/50 grid grid-cols-2 gap-24">
                     <div className="space-y-4">
                         <div className="h-[1px] w-full bg-border/50 mb-2"></div>
-                        <p className={cn(FORM_STYLES.label, "text-center text-muted-foreground/40")}>Firma del Empleador</p>
+                        <p className={cn(LABEL_STYLE, "text-center text-muted-foreground/40")}>Firma del Empleador</p>
                     </div>
                     <div className="space-y-4">
                         <div className="h-[1px] w-full bg-border/50 mb-2"></div>
-                        <p className={cn(FORM_STYLES.label, "text-center text-muted-foreground/40")}>Firma del Trabajador</p>
+                        <p className={cn(LABEL_STYLE, "text-center text-muted-foreground/40")}>Firma del Trabajador</p>
                     </div>
                 </div>
                 <div className="mt-16 text-center space-y-2">
@@ -441,6 +433,6 @@ export function PayrollCard({
                 description={`¿Eliminar línea: ${itemToDelete?.concept_detail?.name || 'Item'}?`}
                 variant="destructive"
             />
-        </IndustrialCard>
+        </Card>
     )
 }

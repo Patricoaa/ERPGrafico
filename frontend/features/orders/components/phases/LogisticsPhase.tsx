@@ -4,12 +4,12 @@ import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
 import { Package, Ban } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { formatDocumentId } from "@/lib/order-status-utils"
+import { formatDocumentId } from '@/features/orders/utils/status'
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { saleOrderActions } from "@/lib/actions/sale-actions"
-import { purchaseOrderActions } from "@/lib/actions/purchase-actions"
+import { saleOrderActions } from '@/features/sales/actions'
+import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { Order, OrderLine, PhaseDocument } from "../../types"
 
 interface LogisticsPhaseProps {

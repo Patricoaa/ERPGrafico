@@ -31,7 +31,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
 import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -43,7 +42,7 @@ import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner, PartnerSummary } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
 import { formatCurrency, cn } from "@/lib/utils"
-import { Skeleton } from "@/components/ui/skeleton"
+import { CardSkeleton, TableSkeleton } from "@/components/shared"
 import {
     SubscriptionMovementModal,
     EquityTransferModal,
@@ -132,10 +131,8 @@ export function EquityCompositionTab({
     if (loading) {
         return (
             <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 w-full rounded" />)}
-                </div>
-                <Skeleton className="h-[400px] w-full rounded" />
+                <CardSkeleton count={4} variant="grid" />
+                <TableSkeleton rows={10} columns={9} />
             </div>
         )
     }

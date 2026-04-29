@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, lazy, Suspense } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { CardSkeleton, TableSkeleton } from "@/components/shared"
 
 // Lazy load components
 const TerminalManagement = lazy(() => import("@/features/treasury/components/TerminalManagement"))
@@ -36,7 +36,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
     return (
         <Tabs value={activeTab} className="space-y-4">
             <TabsContent value="pos-terminals" className="mt-0 outline-none">
-                <Suspense fallback={<LoadingFallback variant="card" />}>
+                <Suspense fallback={<CardSkeleton variant="grid" count={3} />}>
                     <TerminalManagement
                         externalOpen={isTerminalModalOpen}
                         onExternalOpenChange={setIsTerminalModalOpen}
@@ -46,13 +46,13 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
             </TabsContent>
 
             <TabsContent value="sessions" className="mt-0 outline-none">
-                <Suspense fallback={<LoadingFallback message="Cargando sesiones..." />}>
+                <Suspense fallback={<TableSkeleton rows={8} columns={5} />}>
                     <POSSessionsView hideHeader />
                 </Suspense>
             </TabsContent>
 
             <TabsContent value="batches" className="mt-0 outline-none">
-                <Suspense fallback={<LoadingFallback message="Cargando lotes..." />}>
+                <Suspense fallback={<TableSkeleton rows={8} columns={5} />}>
                     <TerminalBatchesManagement
                         showTitle={false}
                         externalOpenBatch={isBatchModalOpen}
@@ -65,7 +65,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
             </TabsContent>
 
             <TabsContent value="devices" className="mt-0 outline-none">
-                <Suspense fallback={<LoadingFallback variant="card" />}>
+                <Suspense fallback={<CardSkeleton variant="grid" count={3} />}>
                    <PaymentHardwareManagement
                         externalDeviceOpen={isDeviceModalOpen}
                         onExternalDeviceOpenChange={setIsDeviceModalOpen}
@@ -76,7 +76,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
             </TabsContent>
 
             <TabsContent value="providers" className="mt-0 outline-none">
-                <Suspense fallback={<LoadingFallback variant="card" />}>
+                <Suspense fallback={<CardSkeleton variant="grid" count={3} />}>
                    <PaymentHardwareManagement
                         externalProviderOpen={isProviderModalOpen}
                         onExternalProviderOpenChange={setIsProviderModalOpen}

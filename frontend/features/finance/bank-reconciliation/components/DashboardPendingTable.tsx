@@ -26,10 +26,10 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
             header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" />,
             cell: ({ row }) => (
                 <div className="flex flex-col">
-                    <span className="font-mono font-bold text-[11px] tracking-tight">
+                    <span className="font-mono font-bold text-xs tracking-tight">
                         {formatPlainDate(row.getValue("date"))}
                     </span>
-                    <span className="text-muted-foreground text-[10px] uppercase font-bold tracking-widest opacity-60">
+                    <span className="text-muted-foreground text-[10px] uppercase font-bold tracking-widest opacity-60"> {/* intentional: badge density */}
                         {row.original.days_pending} días
                     </span>
                 </div>
@@ -39,7 +39,7 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
             accessorKey: "account",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cuenta" />,
             cell: ({ row }) => (
-                <Badge variant="outline" className="rounded-sm text-[10px] border-border/40 font-bold uppercase tracking-wider bg-muted/20">
+                <Badge variant="outline" className="rounded-sm text-[10px] border-border/40 font-bold uppercase tracking-wider bg-muted/20"> {/* intentional: badge density */}
                     {row.getValue("account")}
                 </Badge>
             ),
@@ -48,7 +48,7 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
             accessorKey: "description",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Descripción" />,
             cell: ({ row }) => (
-                <p className="text-[11px] font-medium text-foreground/70 truncate max-w-[200px]" title={row.getValue("description")}>
+                <p className="text-xs font-medium text-foreground/70 truncate max-w-[200px]" title={row.getValue("description")}>
                     {row.getValue("description")}
                 </p>
             ),
@@ -73,7 +73,7 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
             accessorKey: "is_overdue",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
             cell: ({ row }) => row.original.is_overdue && (
-                <Badge variant="destructive" className="text-[9px] uppercase font-black px-1.5 h-4 tracking-tighter shadow-sm shadow-destructive/20">
+                <Badge variant="destructive" className="text-[10px] uppercase font-black px-1.5 h-4 tracking-tighter shadow-sm shadow-destructive/20"> {/* intentional: badge density */}
                     Crítico
                 </Badge>
             ),
@@ -100,7 +100,7 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
                 searchPlaceholder="Filtrar pendientes..."
                 globalFilterFields={["description", "account"]}
                 rightAction={
-                    <Button variant="ghost" size="sm" className="h-8 text-[10px] font-black uppercase tracking-widest border border-border/40" asChild>
+                    <Button variant="ghost" size="sm" className="h-8 text-xs font-black uppercase tracking-widest border border-border/40" asChild>
                         <Link href="/treasury/reconciliation/match">
                             Ver Todo
                         </Link>

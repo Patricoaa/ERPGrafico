@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
-import { AdvanceFormDialog } from "@/features/hr"
-import { getAdvances, createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/lib/hr/api"
+import { AdvanceFormModal } from "@/features/hr"
+import { getAdvances, createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls } from '@/features/hr/api/hrApi'
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
-import { PaymentDialog } from "@/features/treasury"
+import { PaymentModal } from "@/features/treasury"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 
 
@@ -34,7 +34,7 @@ export default function AdvancesPage({ createAction }: { createAction?: React.Re
     const [editingAdvance, setEditingAdvance] = useState<SalaryAdvance | null>(null)
     const dialogOpen = isNewModalOpen || !!editingAdvance
 
-    const [paymentDialogOpen, setPaymentDialogOpen] = useState(false)
+    const [paymentModalOpen, setPaymentModalOpen] = useState(false)
     const [tempAdvanceData, setTempAdvanceData] = useState<Record<string, unknown> | null>(null)
 
     const setDialogOpen = (open: boolean) => {
@@ -172,7 +172,7 @@ export default function AdvancesPage({ createAction }: { createAction?: React.Re
                 />
             )}
 
-            <AdvanceFormDialog
+            <AdvanceFormModal
                 open={dialogOpen}
                 onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditingAdvance(null) }}
                 advance={editingAdvance}
@@ -186,14 +186,14 @@ export default function AdvancesPage({ createAction }: { createAction?: React.Re
                     } else {
                         setTempAdvanceData(data || null)
                         setDialogOpen(false)
-                        setPaymentDialogOpen(true)
+                        setPaymentModalOpen(true)
                     }
                 }}
             />
 
-            <PaymentDialog
-                open={paymentDialogOpen}
-                onOpenChange={setPaymentDialogOpen}
+            <PaymentModal
+                open={paymentModalOpen}
+                onOpenChange={setPaymentModalOpen}
                 title="Registrar Pago de Anticipo"
                 total={tempAdvanceData ? parseFloat(String(tempAdvanceData.amount)) : 0}
                 pendingAmount={tempAdvanceData ? parseFloat(String(tempAdvanceData.amount)) : 0}
@@ -209,7 +209,7 @@ export default function AdvancesPage({ createAction }: { createAction?: React.Re
                         } as Parameters<typeof createAdvance>[0])
                         toast.success("Anticipo registrado y pago contabilizado")
                         fetchAll()
-                        setPaymentDialogOpen(false)
+                        setPaymentModalOpen(false)
                         setTempAdvanceData(null)
                     } catch (e: unknown) {
                         toast.error((e as { response?: { data?: { detail?: string } } })?.response?.data?.detail || "Error al registrar anticipo")

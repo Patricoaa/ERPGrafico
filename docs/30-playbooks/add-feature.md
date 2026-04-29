@@ -19,7 +19,7 @@ forbidden:
   - cross-feature internal imports
 status: active
 owner: frontend-team
-last_review: 2026-04-21
+last_review: 2026-04-23
 ---
 
 # Playbook — Add frontend feature
@@ -41,6 +41,8 @@ A new business capability needs UI (list + detail + forms). Backend endpoint alr
 
 ```
 features/[name]/
+  api/
+    [name]Api.ts       # HTTP calls — thin axios wrappers
   components/
     [Name]List.tsx
     [Name]Detail.tsx
@@ -67,6 +69,29 @@ export const [Name]Schema = z.object({
 })
 export type [Name]Input = z.infer<typeof [Name]Schema>
 ```
+
+### 2b. Write API module
+
+```ts
+// features/[name]/api/[name]Api.ts
+import { api } from '@/lib/api'
+import type { [Name]Input, [Name] } from '../types'
+
+export const [name]Api = {
+  list: (params?: Record<string, unknown>) =>
+    api.get<PaginatedResponse<[Name]>>('/api/[app]/[name]s/', { params }),
+  get: (id: string) =>
+    api.get<[Name]>(`/api/[app]/[name]s/${id}/`),
+  create: (data: [Name]Input) =>
+    api.post<[Name]>('/api/[app]/[name]s/', data),
+  update: (id: string, data: Partial<[Name]Input>) =>
+    api.patch<[Name]>(`/api/[app]/[name]s/${id}/`, data),
+  remove: (id: string) =>
+    api.delete(`/api/[app]/[name]s/${id}/`),
+}
+```
+
+Hooks import from `./api/[name]Api`, never from `@/lib/api` directly. See [frontend-fsd.md](../10-architecture/frontend-fsd.md) import rules.
 
 ### 3. Write hooks
 

@@ -4,9 +4,8 @@ import { useState, useEffect, useMemo } from "react"
 import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { LabeledInput, FormSection } from "@/components/shared"
 import {
     Calculator,
     FileText,
@@ -26,7 +25,6 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { useServerDate } from "@/hooks/useServerDate"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { FORM_STYLES } from "@/lib/styles"
 import { TaxPeriod, TaxCalculationData } from "../types"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -208,7 +206,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                     </div>
                     <div className="space-y-8">
                         <div className="space-y-4">
-                            <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Año Tributario</Label>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Año Tributario</p>
                             <div className="grid grid-cols-4 gap-3">
                                 {[2024, 2025, 2026].map(y => (
                                     <div
@@ -225,7 +223,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                             </div>
                         </div>
                         <div className="space-y-4">
-                            <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Mes de Declaración</Label>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">Mes de Declaración</p>
                             <div className="grid grid-cols-4 gap-3">
                                 {Array.from({ length: 12 }, (_, i) => i + 1).map(m => {
                                     const disabled = isPeriodDisabled(period.year, m)
@@ -260,12 +258,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                 <div className="space-y-10 max-w-4xl mx-auto pb-6">
                     <div className="grid grid-cols-2 gap-12">
                         <section className="space-y-8">
-                            <div className="flex items-center gap-3">
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80 flex items-center gap-2 px-3">
-                                    <ArrowUpRight className="h-3.5 w-3.5" /> Débito Fiscal
-                                </span>
-                                <div className="flex-1 h-px bg-border/60" />
-                            </div>
+                            <FormSection title="Débito Fiscal" icon={ArrowUpRight} />
                             <div className="space-y-4 bg-muted/5 p-6 rounded-lg border border-border/50">
                                 <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
                                     <span>Ventas Afectas</span>
@@ -284,12 +277,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                             </div>
                         </section>
                         <section className="space-y-8">
-                            <div className="flex items-center gap-3">
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2 px-3">
-                                    <ArrowDownLeft className="h-3.5 w-3.5" /> Crédito Fiscal
-                                </span>
-                                <div className="flex-1 h-px bg-border/60" />
-                            </div>
+                            <FormSection title="Crédito Fiscal" icon={ArrowDownLeft} />
                             <div className="space-y-4 bg-primary/5 p-6 rounded-lg border border-primary/10">
                                 <div className="flex justify-between items-center text-xs uppercase font-bold text-primary/50">
                                     <span>Compras Afectas</span>
@@ -335,41 +323,60 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             component: (
                 <div className="space-y-10 max-w-4xl mx-auto pb-6">
                     <div className="grid grid-cols-2 gap-x-12 gap-y-8">
-                        <div className="col-span-full flex items-center gap-3">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-warning flex items-center gap-2 px-3">
-                                <HandCoins className="h-3.5 w-3.5" /> Retenciones
-                            </span>
-                            <div className="flex-1 h-px bg-border/40" />
+                        <div className="col-span-full">
+                            <FormSection title="Retenciones" icon={HandCoins} />
                         </div>
                         <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>PPM (Pagos Provisionales)</Label>
-                            <Input type="number" value={manualFields.ppm_amount} onChange={e => setManualFields({ ...manualFields, ppm_amount: Number(e.target.value) })} className={FORM_STYLES.input} />
+                            <LabeledInput
+                                label="PPM (Pagos Provisionales)"
+                                type="number"
+                                value={manualFields.ppm_amount}
+                                onChange={e => setManualFields({ ...manualFields, ppm_amount: Number(e.target.value) })}
+                            />
                         </div>
                         <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Retención Honorarios (13.75%)</Label>
-                            <Input type="number" value={manualFields.withholding_tax} onChange={e => setManualFields({ ...manualFields, withholding_tax: Number(e.target.value) })} className={FORM_STYLES.input} />
+                            <LabeledInput
+                                label="Retención Honorarios (13.75%)"
+                                type="number"
+                                value={manualFields.withholding_tax}
+                                onChange={e => setManualFields({ ...manualFields, withholding_tax: Number(e.target.value) })}
+                            />
                         </div>
                         <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Impuesto Único 2da Cat.</Label>
-                            <Input type="number" value={manualFields.second_category_tax} onChange={e => setManualFields({ ...manualFields, second_category_tax: Number(e.target.value) })} className={FORM_STYLES.input} />
+                            <LabeledInput
+                                label="Impuesto Único 2da Cat."
+                                type="number"
+                                value={manualFields.second_category_tax}
+                                onChange={e => setManualFields({ ...manualFields, second_category_tax: Number(e.target.value) })}
+                            />
                         </div>
                         <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Préstamo Solidario (3%)</Label>
-                            <Input type="number" value={manualFields.loan_retention} onChange={e => setManualFields({ ...manualFields, loan_retention: Number(e.target.value) })} className={FORM_STYLES.input} />
+                            <LabeledInput
+                                label="Préstamo Solidario (3%)"
+                                type="number"
+                                value={manualFields.loan_retention}
+                                onChange={e => setManualFields({ ...manualFields, loan_retention: Number(e.target.value) })}
+                            />
                         </div>
-                        <div className="col-span-full flex items-center gap-3 pt-4">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2 px-3">
-                                <History className="h-3.5 w-3.5" /> Ajustes de IVA
-                            </span>
-                            <div className="flex-1 h-px bg-border/40" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Remanente Mes Anterior</Label>
-                            <Input type="number" readOnly value={manualFields.vat_credit_carryforward} className={cn(FORM_STYLES.input, "bg-muted/50")} />
+                        <div className="col-span-full">
+                            <FormSection title="Ajustes de IVA" icon={History} />
                         </div>
                         <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Reajuste Art. 31</Label>
-                            <Input type="number" value={manualFields.vat_correction_amount} onChange={e => setManualFields({ ...manualFields, vat_correction_amount: Number(e.target.value) })} className={FORM_STYLES.input} />
+                            <LabeledInput
+                                label="Remanente Mes Anterior"
+                                type="number"
+                                readOnly
+                                value={manualFields.vat_credit_carryforward}
+                                containerClassName="opacity-60"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <LabeledInput
+                                label="Reajuste Art. 31"
+                                type="number"
+                                value={manualFields.vat_correction_amount}
+                                onChange={e => setManualFields({ ...manualFields, vat_correction_amount: Number(e.target.value) })}
+                            />
                         </div>
                     </div>
                 </div>

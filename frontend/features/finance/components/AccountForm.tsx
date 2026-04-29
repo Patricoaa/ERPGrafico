@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { toast } from "sonner"
+
 import { Plus, BookOpen, Tag } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
 
@@ -14,26 +14,16 @@ import {
     FormControl,
     FormField,
     FormItem,
-    FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
+
 import { Button } from "@/components/ui/button"
-import { Switch } from "@/components/ui/switch"
 import api from "@/lib/api"
-import { cn } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
+
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { AccountPayload } from "@/features/accounting/types"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { LabeledInput, LabeledSelect, FormSection, FormFooter, CancelButton, FormSplitLayout, ActionSlideButton } from "@/components/shared"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -111,7 +101,7 @@ export function AccountForm({
     const watchParentId = form.watch("parent")
     useEffect(() => {
         if (!watchParentId || watchParentId === "__none__" || watchParentId === "none") return;
-        
+
         const parent = accounts.find((a: any) => a.id.toString() === watchParentId.toString());
         if (parent) {
             // Force account_type to match parent
@@ -164,6 +154,8 @@ export function AccountForm({
                 open={open}
                 onOpenChange={setOpen}
                 size={initialData ? "lg" : "md"}
+                hideScrollArea={true}
+                contentClassName="p-0"
                 title={
                     <div className="flex items-center gap-3">
                         <Tag className="h-5 w-5 text-muted-foreground" />
@@ -182,123 +174,99 @@ export function AccountForm({
                     </div>
                 }
                 footer={
-                    <div className="flex justify-end space-x-2 w-full">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setOpen(false)}
-                        >
-                            Cancelar
-                        </Button>
-                        <ActionSlideButton type="submit" form="account-form" disabled={loading}>
-                            {loading ? (initialData ? "Guardando..." : "Creando...") : (initialData ? "Guardar Cambios" : "Crear Cuenta")}
-                        </ActionSlideButton>
-                    </div>
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setOpen(false)} />
+                                <ActionSlideButton type="submit" form="account-form" loading={loading}>
+                                    {initialData ? "Guardar Cambios" : "Crear Cuenta"}
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
                 }
             >
-                <div className="flex-1 flex overflow-hidden min-h-[400px]">
-                    <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
-                        <Form {...form}>
-                            <form id="account-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
-                                <div className="grid grid-cols-2 gap-4">
+                <FormSplitLayout
+                    sidebar={auditSidebar}
+                    showSidebar={!!initialData?.id}
+                >
+                    <Form {...form}>
+                        <form id="account-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
+
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="col-span-1">
                                     <FormField
-                                control={form.control}
-                                name="code"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Código</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="Automático"
+                                        control={form.control}
+                                        name="code"
+                                        render={({ field }) => (
+                                            <LabeledInput
+                                                label="Código"
+                                                placeholder="Auto"
+                                                disabled
+                                                hint="Jerárquico"
                                                 {...field}
-                                                readOnly={true}
-                                                disabled={true}
-                                                className={cn(FORM_STYLES.input, "bg-muted cursor-not-allowed opacity-70")}
                                             />
-                                        </FormControl>
-                                        <div className="text-[10px] text-muted-foreground italic px-1 pt-1">
-                                            El código se genera automáticamente al guardar según la ubicación jerárquica.
-                                        </div>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                                    <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Caja" className={FORM_STYLES.input} {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                            control={form.control}
-                            name="account_type"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Tipo</FormLabel>
-                                        <Select 
-                                            onValueChange={field.onChange} 
-                                            value={field.value}
-                                            disabled={!!parentId && parentId !== "__none__" && parentId !== "none"}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger className={cn(FORM_STYLES.input, !!parentId && "bg-muted/50 opacity-80")}>
-                                                    <SelectValue placeholder="Seleccione tipo" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="ASSET">Activo</SelectItem>
-                                                <SelectItem value="LIABILITY">Pasivo</SelectItem>
-                                                <SelectItem value="EQUITY">Patrimonio</SelectItem>
-                                                <SelectItem value="INCOME">Ingreso</SelectItem>
-                                                <SelectItem value="EXPENSE">Gasto</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        {!!parentId && parentId !== "__none__" && parentId !== "none" && (
-                                            <p className="text-[10px] text-warning font-medium mt-1">Heredado de la jerarquía del padre.</p>
                                         )}
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                                    />
+                                </div>
+                                <div className="col-span-3">
                                     <FormField
-                            control={form.control}
-                            name="parent"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Cuenta Padre (Opcional)</FormLabel>
-                                    <FormControl>
-                                        <AccountSelector
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            showAll={true}
-                                            placeholder="Sin padre (Nivel raíz)"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Nombre"
+                                                required
+                                                placeholder="Ej: Caja Chica"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
                                 </div>
 
-                             </form>
-                         </Form>
-                    </div>
-
-                    {!!initialData?.id && (
-                        <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                            {auditSidebar}
-                        </div>
-                    )}
-                </div>
+                                <div className="col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="account_type"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Tipo de Cuenta"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                                disabled={!!parentId && parentId !== "__none__" && parentId !== "none"}
+                                                options={[
+                                                    { value: "ASSET", label: "Activo" },
+                                                    { value: "LIABILITY", label: "Pasivo" },
+                                                    { value: "EQUITY", label: "Patrimonio" },
+                                                    { value: "INCOME", label: "Ingreso" },
+                                                    { value: "EXPENSE", label: "Gasto" },
+                                                ]}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                                <div className="col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="parent"
+                                        render={({ field, fieldState }) => (
+                                            <AccountSelector
+                                                label="Cuenta Padre (Opcional)"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                showAll={true}
+                                                placeholder="Sin padre (Raíz)"
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                        </form>
+                    </Form>
+                </FormSplitLayout>
             </BaseModal>
         </>
     )

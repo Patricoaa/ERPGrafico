@@ -16,7 +16,7 @@ import {
 import { formatCurrency, cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { PaymentDialog } from "@/features/treasury/components/PaymentDialog"
+import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import { TaxDeclaration, TaxPaymentData } from "../types"
 
 interface F29PaymentModalProps {
@@ -140,7 +140,7 @@ export function F29PaymentModal({
             </BaseModal>
 
             {/* New Payment Dialog */}
-            <PaymentDialog
+            <PaymentModal
                 open={isRegisteringPayment}
                 onOpenChange={setIsRegisteringPayment}
                 total={Number(declaration.vat_to_pay)}

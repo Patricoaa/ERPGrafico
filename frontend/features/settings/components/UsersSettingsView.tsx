@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useMemo, useCallback } from "react"
+
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -15,24 +15,20 @@ import { UserForm } from "@/features/users/components/UserForm"
 import { GroupForm } from "@/features/users/components/GroupForm"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/features/settings/components/GroupManagement"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import { LAYOUT_TOKENS } from "@/lib/styles"
 import { type AppUser } from "@/types/entities"
 import { cn } from "@/lib/utils"
 
 interface UsersSettingsViewProps {
     activeTab: string
-    onActionsChange?: (actions: React.ReactNode) => void
 }
 
-export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsViewProps) {
+export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
     const [loading, setLoading] = useState(true)
     const [users, setUsers] = useState<AppUser[]>([])
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
 
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
         try {
             const res = await api.get('/core/users/')
             setUsers(res.data.results || res.data)
@@ -41,13 +37,13 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
         } finally {
             setLoading(false)
         }
-    }
+    }, [])
 
     useEffect(() => {
         fetchUsers()
-    }, [])
+    }, [fetchUsers])
 
-    const columns: ColumnDef<AppUser>[] = [
+    const columns: ColumnDef<AppUser>[] = useMemo(() => [
         {
             accessorKey: "username",
             header: ({ column }) => (
@@ -130,34 +126,41 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
                     <UserForm
                         initialData={transformedUser}
                         onSuccess={fetchUsers}
-                        trigger={
-                            <div>
-                                <DataCell.Action icon={Edit} title="Editar" />
-                            </div>
-                        }
+                        trigger={<DataCell.Action icon={Edit} title="Editar" />}
                     />
                 )
             }
         })
-    ]
+    ], [fetchUsers])
 
-    useEffect(() => {
-        onActionsChange?.(null)
-    }, [activeTab, onActionsChange])
-
-    const usersCreateAction = (
+    const usersCreateAction = useMemo(() => (
         <UserForm
             onSuccess={fetchUsers}
             trigger={<ToolbarCreateButton label="Nuevo Usuario" />}
         />
-    )
+    ), [fetchUsers])
 
-    const groupsCreateAction = (
+
+
+    const groupsCreateAction = useMemo(() => (
         <ToolbarCreateButton
             label="Nuevo Grupo"
             onClick={() => setIsGroupModalOpen(true)}
         />
-    )
+    ), [])
+
+    const roleFilters = useMemo(() => [
+        {
+            column: "role",
+            title: "Rol",
+            options: [
+                { label: "Admin", value: "ADMIN" },
+                { label: "Gerente", value: "MANAGER" },
+                { label: "Operador", value: "OPERATOR" },
+                { label: "Lectura", value: "READ_ONLY" },
+            ],
+        },
+    ], [])
 
     return (
         <div className="pt-4">
@@ -171,18 +174,7 @@ export function UsersSettingsView({ activeTab, onActionsChange }: UsersSettingsV
                         globalFilterFields={["username", "email", "first_name", "last_name"]}
                         searchPlaceholder="Buscar usuario por nombre, email o username..."
                         useAdvancedFilter={true}
-                        facetedFilters={[
-                            {
-                                column: "role",
-                                title: "Rol",
-                                options: [
-                                    { label: "Admin", value: "ADMIN" },
-                                    { label: "Gerente", value: "MANAGER" },
-                                    { label: "Operador", value: "OPERATOR" },
-                                    { label: "Lectura", value: "READ_ONLY" },
-                                ],
-                            },
-                        ]}
+                        facetedFilters={roleFilters}
                         createAction={usersCreateAction}
                     />
                 </TabsContent>

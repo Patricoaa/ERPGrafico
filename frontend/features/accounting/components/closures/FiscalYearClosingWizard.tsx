@@ -1,6 +1,7 @@
 import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import { GenericWizard, WizardStep } from '@/components/shared/GenericWizard';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
     ShieldCheck,
@@ -15,9 +16,8 @@ import {
 } from 'lucide-react';
 import { FiscalYearPreviewResult } from '../../types';
 import { formatCurrency } from '@/lib/utils';
-import { IndustrialCard } from '@/components/shared/IndustrialCard';
 import { cn } from '@/lib/utils';
-import { LoadingFallback } from '@/components/shared/LoadingFallback';
+import { TableSkeleton, LabeledContainer, CancelButton, SubmitButton, IconButton } from '@/components/shared';
 import { BaseModal } from '@/components/shared/BaseModal';
 
 // Lazy load TrialBalanceView
@@ -125,21 +125,21 @@ export function FiscalYearClosingWizard({
             component: preview ? (
                 <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                        <IndustrialCard variant="standard" className="p-5 border-t-2 border-t-success bg-success/5">
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-5 border-t-2 border-t-success bg-success/5">
                             <p className="text-[10px] font-bold uppercase text-success tracking-widest mb-2">Total Ingresos</p>
                             <p className="text-2xl font-mono font-black text-success">
                                 {formatCurrency(parseFloat(preview.income_total || '0'))}
                             </p>
-                        </IndustrialCard>
-                        <IndustrialCard variant="standard" className="p-5 border-t-2 border-t-destructive bg-destructive/5">
+                        </Card>
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-5 border-t-2 border-t-destructive bg-destructive/5">
                             <p className="text-[10px] font-bold uppercase text-destructive tracking-widest mb-2">Total Egresos</p>
                             <p className="text-2xl font-mono font-black text-destructive">
                                 {formatCurrency(Math.abs(parseFloat(preview.expense_total || '0')))}
                             </p>
-                        </IndustrialCard>
+                        </Card>
                     </div>
 
-                    <IndustrialCard variant="industrial" className="p-6 bg-primary/5 border-primary/20 flex items-center justify-between">
+                    <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card p-6 bg-primary/5 border-primary/20 flex items-center justify-between">
                         <div>
                             <p className="text-xs font-bold uppercase text-muted-foreground tracking-widest mb-2">Resultado Neto Proyectado</p>
                             <p className="text-3xl font-mono font-black text-foreground tabular-nums tracking-tighter">
@@ -152,7 +152,7 @@ export function FiscalYearClosingWizard({
                         )}>
                             {parseFloat(preview.net_result || '0') >= 0 ? "Utilidad" : "Pérdida"}
                         </div>
-                    </IndustrialCard>
+                    </Card>
                 </div>
             ) : null
         },
@@ -170,8 +170,10 @@ export function FiscalYearClosingWizard({
                         </AlertDescription>
                     </Alert>
 
-                    <div className="space-y-3">
-                        <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest px-1">Cuenta de Capital/Utilidades</label>
+                    <LabeledContainer 
+                        label="Cuenta de Capital/Utilidades"
+                        labelClassName="text-[10px] font-bold uppercase text-muted-foreground tracking-widest px-1"
+                    >
                         <div className="p-5 border-2 border-primary/30 bg-muted/20 rounded-sm flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <Scale className="w-5 h-5 text-muted-foreground" />
@@ -184,7 +186,7 @@ export function FiscalYearClosingWizard({
                             </div>
                             <CheckCircle2 className="w-6 h-6 text-primary opacity-50" />
                         </div>
-                    </div>
+                    </LabeledContainer>
                 </div>
             ) : null
         },
@@ -228,6 +230,8 @@ export function FiscalYearClosingWizard({
                 onOpenChange={onClose}
                 size="xl"
                 showCloseButton={false}
+                hideScrollArea={true}
+                contentClassName="p-0"
                 title=""
             >
                 <div className="flex flex-col items-center justify-center p-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
@@ -241,23 +245,22 @@ export function FiscalYearClosingWizard({
                     </div>
 
                     <div className="flex flex-col gap-3 w-full max-w-sm pt-4">
-                        <Button 
+                        <SubmitButton 
                             className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest text-[11px] h-11"
                             onClick={() => {
                                 onClose();
                                 window.location.href = `/settings/partners?tab=distributions&modal=new-distribution&yearId=${year}`;
                             }}
+                            icon={<PieChart className="w-4 h-4 mr-2" />}
                         >
-                            <PieChart className="w-4 h-4 mr-2" />
                             Iniciar Distribución de Utilidades
-                        </Button>
-                        <Button 
-                            variant="ghost" 
+                        </SubmitButton>
+                        <CancelButton 
                             className="text-muted-foreground font-bold uppercase tracking-widest text-[10px]"
                             onClick={onClose}
                         >
                             Finalizar Proceso
-                        </Button>
+                        </CancelButton>
                     </div>
                 </div>
             </BaseModal>
@@ -290,11 +293,12 @@ export function FiscalYearClosingWizard({
             open={showTrialBalance}
             onOpenChange={setShowTrialBalance}
             title={`Balance de Comprobación - Ejercicio ${year}`}
-            className="max-w-6xl h-[85vh]"
             size="xl"
+            hideScrollArea={true}
+            contentClassName="p-0"
         >
-            <div className="h-full flex flex-col">
-                <Suspense fallback={<LoadingFallback variant="card" message="Cargando reporte de balance..." />}>
+            <div className="h-full flex flex-col p-4">
+                <Suspense fallback={<TableSkeleton rows={10} columns={5} />}>
                     <TrialBalanceView />
                 </Suspense>
             </div>

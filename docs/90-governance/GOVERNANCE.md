@@ -3,7 +3,7 @@ layer: 90-governance
 doc: governance
 status: active
 owner: core-team
-last_review: 2026-04-21
+last_review: 2026-04-23
 ---
 
 # GOVERNANCE — Project constitution
@@ -31,7 +31,7 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 11. No raw Tailwind colors (`bg-red-500`, `text-blue-600`). Semantic tokens only.
 12. Primary color: Electric Violet `oklch(62% 0.244 301)` via `text-primary` / `bg-primary`.
 13. `font-sans` (Onest) for body; `font-heading` (Syne) for headings.
-14. Border radius default: `0.125rem`. No `rounded-xl` / `rounded-full` on form components without ADR.
+14. Border radius default: `0.5rem`. No `rounded-xl` / `rounded-full` on form components without ADR.
 15. 8pt grid — padding/margin/gap multiples of 8px.
 16. Minimum interactive height: `h-10` (40px).
 17. Source of truth: `frontend/app/globals.css`. No theme changes elsewhere.
@@ -40,7 +40,7 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 
 18. `StatusBadge` is the ONLY authorized status renderer.
 19. All shared components handle `loading` (Skeleton), `empty` (EmptyState), `error` (toast).
-20. Shared components documented in `20-contracts/component-contracts.md` with full prop table.
+20. Shared components documented in `20-contracts/component-*.md` with full prop table.
 21. Do not modify `components/ui/` (Shadcn base). Extend in `components/shared/`.
 22. Promotion to `components/shared/` requires ≥3 consumers + contract entry.
 
@@ -66,8 +66,8 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 
 ## 8. Backend layering
 
-34. Views ≤20 lines per action. Business logic in `services/`.
-35. Complex reads in `selectors.py`.
+34. Views ≤20 lines per action. Business logic in `services.py`.
+35. Complex reads in `services.py` or `ViewSet.get_queryset()`.
 36. Permission class declared on every viewset.
 37. Multi-table writes wrapped in `transaction.atomic()`.
 38. Async side effects via Celery — never synchronous in request path when >300ms.

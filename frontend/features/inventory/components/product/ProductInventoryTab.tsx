@@ -1,19 +1,14 @@
 "use client"
-
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
+import { useMemo } from "react"
+import { FormField } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
-import { Package, Settings2, Plus, Warehouse, ChevronsUpDown, Search, Check } from "lucide-react"
+import { Package, Warehouse, ChevronDown, Search, Check, Truck, AlertCircle } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
-import { TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-
-import { useState } from "react"
-import { FORM_STYLES } from "@/lib/styles"
+import { LabeledContainer, FormTabsContent, FormSection, LabeledSwitch } from "@/components/shared"
+import { UoMSelector, WarehouseSelector, AdvancedContactSelector } from "@/components/selectors"
 import { cn } from "@/lib/utils"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Product, UoM } from "@/types/entities"
 import { ProductInitialData } from "@/types/forms"
 
@@ -22,437 +17,212 @@ interface ProductInventoryTabProps {
     initialData?: ProductInitialData | (Partial<Product> & { qty_reserved?: number })
     warehouses?: { id: number, name: string }[]
     uoms?: UoM[]
+    isEditing?: boolean
 }
 
-export function ProductInventoryTab({ form, initialData, warehouses = [], uoms = [] }: ProductInventoryTabProps) {
+export function ProductInventoryTab({ form, initialData, warehouses = [], uoms = [], isEditing }: ProductInventoryTabProps) {
     const productType = form.watch("product_type")
     const trackInventory = form.watch("track_inventory")
+    const canBeSold = form.watch("can_be_sold")
+    const stockUomId = form.watch("uom")
+
+    const purchaseUomProduct = useMemo(() => ({ uom: stockUomId } as any), [stockUomId])
 
     // Determine if switch is disabled based on requirements
     const isSwitchDisabled = productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'SERVICE'
 
     return (
-        <TabsContent value="logistics" className="mt-0 space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                    {/* Units of Measure Section */}
-                    <div className="space-y-6">
-                        <div className="flex items-center gap-2 pt-2 pb-2">
-                            <div className="flex-1 h-px bg-border" />
-                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-                                <Settings2 className="h-3 w-3" /> Unidades de Medida
-                            </span>
-                            <div className="flex-1 h-px bg-border" />
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-4">
+        <div className="space-y-10 animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-x-8 gap-y-10 items-start">
+                {/* Units Section */}
+                <div className="col-span-2 space-y-4">
+                    <FormSection title="Unidades y Conversión" icon={Package} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
                             <FormField<ProductFormValues>
                                 control={form.control}
                                 name="uom"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <div className="flex items-center gap-2">
-                                            <Package className="h-3.5 w-3.5 text-muted-foreground" />
-                                            <FormLabel className={FORM_STYLES.label}>Unidad de Stock (Base)</FormLabel>
-                                        </div>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button
-                                                        variant="outline"
-                                                        role="combobox"
-                                                        className={cn("w-full justify-between font-normal h-10 rounded-md", !field.value && "text-muted-foreground", FORM_STYLES.input)}
-                                                    >
-                                                        {field.value
-                                                            ? uoms.find((u) => u.id.toString() === field.value?.toString())?.name
-                                                            : "Seleccionar unidad..."}
-                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                                <div className="p-2">
-                                                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                        <input
-                                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                                                            placeholder="Buscar UdM..."
-                                                            onChange={(e) => {
-                                                                const val = e.target.value.toLowerCase()
-                                                                const inputs = document.querySelectorAll('.uom-base-item')
-                                                                inputs.forEach((el) => {
-                                                                    if (el.textContent?.toLowerCase().includes(val)) {
-                                                                        (el as HTMLElement).style.display = 'flex'
-                                                                    } else {
-                                                                        (el as HTMLElement).style.display = 'none'
-                                                                    }
-                                                                })
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                        {uoms.map((u) => (
-                                                            <div
-                                                                key={u.id}
-                                                                className={cn(
-                                                                    "uom-base-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                    field.value === u.id.toString() && "bg-accent"
-                                                                )}
-                                                                onClick={() => {
-                                                                    field.onChange(u.id.toString())
-                                                                    document.body.click()
-                                                                }}
-                                                            >
-                                                                <span>{u.name}</span>
-                                                                {field.value === u.id.toString() && (
-                                                                    <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </PopoverContent>
-                                        </Popover>
-                                        <FormMessage />
-                                    </FormItem>
+                                render={({ field, fieldState }) => (
+                                    <UoMSelector
+                                        label="Unidad de Stock (Base)"
+                                        variant="standalone"
+                                        required
+                                        value={field.value || ""}
+                                        onChange={field.onChange}
+                                        uoms={uoms}
+                                        error={fieldState.error?.message}
+                                        disabled={isEditing}
+                                    />
                                 )}
                             />
+                        </div>
 
+                        <div className="col-span-2">
                             <FormField<ProductFormValues>
                                 control={form.control}
                                 name="purchase_uom"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>Unidad de Compra</FormLabel>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button
-                                                        variant="outline"
-                                                        role="combobox"
-                                                        className={cn("w-full justify-between font-normal h-10 rounded-md", !field.value && "text-muted-foreground", FORM_STYLES.input)}
-                                                    >
-                                                        {field.value
-                                                            ? uoms.find((u) => String(u.id) === String(field.value))?.name
-                                                            : "Igual a Stock"}
-                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                                <div className="p-2">
-                                                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                        <input
-                                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                                                            placeholder="Buscar UdM..."
-                                                            onChange={(e) => {
-                                                                const val = e.target.value.toLowerCase()
-                                                                const inputs = document.querySelectorAll('.uom-purchase-item')
-                                                                inputs.forEach((el) => {
-                                                                    if (el.textContent?.toLowerCase().includes(val)) {
-                                                                        (el as HTMLElement).style.display = 'flex'
-                                                                    } else {
-                                                                        (el as HTMLElement).style.display = 'none'
-                                                                    }
-                                                                })
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                        <div
-                                                            className={cn(
-                                                                "uom-purchase-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                !field.value && "bg-accent"
-                                                            )}
-                                                            onClick={() => {
-                                                                field.onChange("")
-                                                                document.body.click()
-                                                            }}
-                                                        >
-                                                            <span className="italic text-muted-foreground">Igual a Stock</span>
-                                                            {!field.value && (
-                                                                <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                            )}
-                                                        </div>
-                                                        {uoms.map((u) => (
-                                                            <div
-                                                                key={u.id}
-                                                                className={cn(
-                                                                    "uom-purchase-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                    field.value === u.id.toString() && "bg-accent"
-                                                                )}
-                                                                onClick={() => {
-                                                                    field.onChange(u.id.toString())
-                                                                    document.body.click()
-                                                                }}
-                                                            >
-                                                                <span>{u.name}</span>
-                                                                {field.value === u.id.toString() && (
-                                                                    <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </PopoverContent>
-                                        </Popover>
-                                        <FormMessage />
-                                    </FormItem>
+                                render={({ field, fieldState }) => (
+                                    <UoMSelector
+                                        label="Unidad de Compra"
+                                        variant="standalone"
+                                        value={field.value || ""}
+                                        onChange={field.onChange}
+                                        uoms={uoms}
+                                        product={purchaseUomProduct}
+                                        context="purchase"
+                                        error={fieldState.error?.message}
+                                        disabled={!stockUomId}
+                                    />
                                 )}
                             />
+                        </div>
 
-                            {/* Sale UoM Selection UI */}
-                            {form.watch("can_be_sold") && (
+                        <div className="col-span-2">
+                            {canBeSold && (
                                 <FormField<ProductFormValues>
                                     control={form.control}
                                     name="allowed_sale_uoms"
-                                    render={({ field }) => {
-                                        const stockUomId = form.watch("uom");
+                                    render={({ field, fieldState }) => {
                                         const stockUom = uoms.find(u => u.id.toString() === stockUomId?.toString());
                                         const stockCategoryId = stockUom?.category;
-
                                         const selectedIds = field.value || [];
                                         const sortedUoms = [...uoms].sort((a, b) => a.name.localeCompare(b.name));
 
                                         return (
-                                            <FormItem className="space-y-3 pt-4 border-t mt-2">
-                                                <div className="flex items-center justify-between">
-                                                    <FormLabel className={FORM_STYLES.label}>Unidades de Venta Permitidas</FormLabel>
-                                                    {stockUom && (
-                                                        <span className="text-[10px] text-primary/70 font-bold uppercase tracking-tighter">
-                                                            Cat: {stockUom.category_name || "Desconocida"}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-wrap gap-2 p-3 rounded-md border bg-muted/5 min-h-[50px] items-center">
-                                                    {!stockCategoryId ? (
-                                                        <span className="text-[10px] text-muted-foreground italic px-1">
-                                                            Seleccione primero una Unidad de Stock.
-                                                        </span>
-                                                    ) : (
-                                                        <>
-                                                            {sortedUoms
-                                                                .filter(u => u.category === stockCategoryId)
-                                                                .map((u: UoM) => {
-                                                                    const isSelected = selectedIds.includes(u.id.toString());
-                                                                    const isBaseUom = u.id.toString() === stockUomId?.toString();
+                                            <LabeledContainer
+                                                label="Unidades de Venta Permitidas"
+                                                error={fieldState.error?.message}
+                                            >
+                                                <div className="flex flex-col gap-3 p-3 w-full">
+                                                    <div className="flex flex-wrap gap-2 items-center w-full">
+                                                        {!stockCategoryId ? (
+                                                            <div className="w-full flex items-center gap-2 text-[10px] text-muted-foreground italic">
+                                                                <AlertCircle className="h-3 w-3" />
+                                                                Defina primero la Unidad de Stock.
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                {sortedUoms
+                                                                    .filter(u => u.category === stockCategoryId)
+                                                                    .map((u: UoM) => {
+                                                                        const isSelected = selectedIds.includes(u.id.toString());
+                                                                        const isBaseUom = u.id.toString() === stockUomId?.toString();
 
-                                                                    return (
-                                                                        <div
-                                                                            key={u.id}
-                                                                            className={cn(
-                                                                                "cursor-pointer px-2 py-1 rounded-full text-[10px] transition-all hover:scale-105 active:scale-95 border",
-                                                                                isSelected ? "bg-primary text-white border-primary shadow-sm font-bold" : "bg-background border-primary/20 hover:bg-muted font-normal text-muted-foreground",
-                                                                                isBaseUom && "ring-1 ring-primary ring-offset-1"
-                                                                            )}
-                                                                            onClick={() => {
-                                                                                if (isSelected) {
-                                                                                    // Don't deselect base UoM
-                                                                                    if (isBaseUom) return;
-                                                                                    const newList = selectedIds.filter((id: string) => id !== u.id.toString());
-                                                                                    field.onChange(newList);
-                                                                                } else {
-                                                                                    const newList = [...selectedIds, u.id.toString()];
-                                                                                    field.onChange(newList);
-                                                                                }
-                                                                            }}
-                                                                        >
-                                                                            {u.name}
-                                                                            {isBaseUom && <span className="ml-1 opacity-70">(BASE)</span>}
-                                                                            {isSelected && !isBaseUom && <Plus className="ml-1.5 h-2.5 w-2.5 inline-block rotate-45" />}
-                                                                        </div>
-                                                                    );
-                                                                })
-                                                            }
-                                                        </>
-                                                    )}
+                                                                        return (
+                                                                            <button
+                                                                                key={u.id}
+                                                                                type="button"
+                                                                                className={cn(
+                                                                                    "px-3 py-1.5 rounded-lg text-[10px] transition-all border-2",
+                                                                                    isSelected
+                                                                                        ? "bg-primary/10 border-primary/40 text-primary font-black shadow-sm"
+                                                                                        : "bg-background border-primary/5 hover:border-primary/20 text-muted-foreground/60 font-black uppercase tracking-tight",
+                                                                                    isBaseUom && "ring-2 ring-primary ring-offset-2"
+                                                                                )}
+                                                                                onClick={() => {
+                                                                                    if (isSelected) {
+                                                                                        if (isBaseUom) return;
+                                                                                        const newList = selectedIds.filter((id: string) => id !== u.id.toString());
+                                                                                        field.onChange(newList);
+                                                                                    } else {
+                                                                                        const newList = [...selectedIds, u.id.toString()];
+                                                                                        field.onChange(newList);
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                {u.name}
+                                                                                {isBaseUom && <span className="ml-1 opacity-50">(BASE)</span>}
+                                                                            </button>
+                                                                        );
+                                                                    })
+                                                                }
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[9px] text-muted-foreground/60 leading-relaxed italic">
+                                                        * Solo unidades de la misma categoría para conversiones precisas.
+                                                    </p>
                                                 </div>
-                                                <FormDescription className="text-[9px]">
-                                                    Seleccione las unidades permitidas para vender este producto. La unidad base siempre es permitida.
-                                                </FormDescription>
-                                                <FormMessage />
-                                            </FormItem>
+                                            </LabeledContainer>
                                         );
                                     }}
                                 />
                             )}
                         </div>
                     </div>
+                </div>
 
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2 pt-2 pb-2">
-                            <div className="flex-1 h-px bg-border" />
-                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
-                                <Warehouse className="h-3 w-3" /> Control de Inventario
-                            </span>
-                            <div className="flex-1 h-px bg-border" />
-                        </div>
+                {/* Logistics Section */}
+                <div className="col-span-2 space-y-4">
+                    <FormSection title="Control y Abastecimiento" icon={Warehouse} />
+                    <FormField<ProductFormValues>
+                        control={form.control}
+                        name="track_inventory"
+                        render={({ field }) => (
+                            <div className="space-y-6">
+                                <LabeledSwitch
+                                    label="Seguimiento de Inventario"
+                                    description="Habilita el control de existencias y movimientos para este producto."
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    disabled={isSwitchDisabled}
+                                    icon={<Warehouse className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
+                                    className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                />
 
-                        <FormField<ProductFormValues>
-                            control={form.control}
-                            name="track_inventory"
-                            render={({ field }) => (
-                                <div className="space-y-4">
-                                    {productType === 'MANUFACTURABLE' ? (
-                                        <div className={cn("flex items-center justify-between p-4 rounded-md border bg-primary/5 border-primary/20", FORM_STYLES.card)}>
-                                            <div className="space-y-0.5">
-                                                <div className="flex items-center gap-2">
-                                                    <FormLabel className={FORM_STYLES.label}>Control de Inventario</FormLabel>
-                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-muted/50 border-border/50 text-muted-foreground">Automático</span>
-                                                </div>
-                                                <FormDescription className="text-[10px]">
-                                                    Gestionado por el Modo de Producción seleccionado.
-                                                </FormDescription>
-                                            </div>
-                                            <div className="flex items-center gap-2 cursor-help" title={field.value ? "Activado (Simple/Lote)" : "Desactivado (Sobre Pedido)"}>
-                                                <Switch
-                                                    checked={field.value}
-                                                    disabled
-                                                    className="opacity-50"
-                                                />
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <FormItem className={cn("flex items-center justify-between p-4 rounded-md border bg-background/50", FORM_STYLES.card)}>
-                                            <div className="space-y-0.5">
-                                                <FormLabel className={FORM_STYLES.label}>Controlar Stock</FormLabel>
-                                                <FormDescription className="text-[10px]">
-                                                    {productType === 'STORABLE' ? 'Obligatorio para productos almacenables.' :
-                                                        productType === 'SERVICE' || productType === 'CONSUMABLE' ? 'Desactivado para servicios y consumibles.' :
-                                                            'Habilitar si desea rastrear cantidades en stock.'}
-                                                </FormDescription>
-                                            </div>
-                                            <FormControl>
-                                                <Switch
-                                                    checked={field.value}
-                                                    onCheckedChange={field.onChange}
-                                                    disabled={isSwitchDisabled}
-                                                />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-
-                                    {field.value && (
-                                        <div className="space-y-4 pt-2 border-t mt-4 animate-in fade-in slide-in-from-top-1 bg-background/30 p-4 rounded-md">
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
-                                                name="receiving_warehouse"
-                                                render={({ field: whField }) => (
-                                                    <FormItem className="space-y-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <Warehouse className="h-3.5 w-3.5 text-primary" />
-                                                            <FormLabel className={FORM_STYLES.label}>Bodega de Recepción por Defecto</FormLabel>
-                                                        </div>
-                                                        <Popover>
-                                                            <PopoverTrigger asChild>
-                                                                <FormControl>
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        role="combobox"
-                                                                        className={cn("w-full justify-between font-normal h-10 rounded-md", !whField.value && "text-muted-foreground", FORM_STYLES.input)}
-                                                                    >
-                                                                        {whField.value
-                                                                            ? warehouses.find((wh) => wh.id.toString() === whField.value?.toString())?.name
-                                                                            : "Seleccionar bodega..."}
-                                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                                    </Button>
-                                                                </FormControl>
-                                                            </PopoverTrigger>
-                                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                                                <div className="p-2">
-                                                                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                                                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                                        <input
-                                                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                                                                            placeholder="Buscar bodega..."
-                                                                            onChange={(e) => {
-                                                                                const val = e.target.value.toLowerCase()
-                                                                                const inputs = document.querySelectorAll('.wh-item')
-                                                                                inputs.forEach((el) => {
-                                                                                    if (el.textContent?.toLowerCase().includes(val)) {
-                                                                                        (el as HTMLElement).style.display = 'flex'
-                                                                                    } else {
-                                                                                        (el as HTMLElement).style.display = 'none'
-                                                                                    }
-                                                                                })
-                                                                            }}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                                        {warehouses.map((wh) => (
-                                                                            <div
-                                                                                key={wh.id}
-                                                                                className={cn(
-                                                                                    "wh-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                                    whField.value === wh.id.toString() && "bg-accent"
-                                                                                )}
-                                                                                onClick={() => {
-                                                                                    whField.onChange(wh.id.toString())
-                                                                                    document.body.click()
-                                                                                }}
-                                                                            >
-                                                                                <span>{wh.name}</span>
-                                                                                {whField.value === wh.id.toString() && (
-                                                                                    <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                                                )}
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            </PopoverContent>
-                                                        </Popover>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
+                                {/* Kept mounted with CSS visibility — avoids unmount of Radix Popover-based selectors during production-mode commits, which would loop via usePresence/safelyDetachRef. */}
+                                <div className={cn("space-y-4 animate-in fade-in slide-in-from-top-2 duration-400", !field.value && "hidden")}>
+                                    <FormField<ProductFormValues>
+                                        control={form.control}
+                                        name="receiving_warehouse"
+                                        render={({ field: whField, fieldState }) => (
+                                            <WarehouseSelector
+                                                label="Bodega de Recepción"
+                                                value={whField.value}
+                                                onChange={whField.onChange}
+                                                error={fieldState.error?.message}
+                                                disabled={isEditing}
                                             />
+                                        )}
+                                    />
 
-                                            <FormField<ProductFormValues>
-                                                control={form.control}
-                                                name="preferred_supplier"
-                                                render={({ field: supplierField }) => (
-                                                    <FormItem className="space-y-1 mt-4">
-                                                        <div className="flex items-center gap-2">
-                                                            <Package className="h-3.5 w-3.5 text-primary" />
-                                                            <FormLabel className={FORM_STYLES.label}>Proveedor Preferido</FormLabel>
-                                                        </div>
-                                                        <FormControl>
-                                                            <AdvancedContactSelector
-                                                                value={supplierField.value || ""}
-                                                                onChange={supplierField.onChange}
-                                                                contactType="SUPPLIER"
-                                                                placeholder="Seleccionar proveedor preferido..."
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
+                                    <FormField<ProductFormValues>
+                                        control={form.control}
+                                        name="preferred_supplier"
+                                        render={({ field: supplierField, fieldState }) => (
+                                            <AdvancedContactSelector
+                                                label="Proveedor Preferencial"
+                                                value={supplierField.value || ""}
+                                                onChange={supplierField.onChange}
+                                                contactType="SUPPLIER"
+                                                placeholder="Buscar proveedor..."
+                                                error={fieldState.error?.message}
                                             />
-                                        </div>
-                                    )}
+                                        )}
+                                    />
 
-                                    {field.value && initialData && (
-                                        <div className={cn("grid grid-cols-3 gap-2 p-3 bg-muted/20", FORM_STYLES.card)}>
-                                            <div className="flex flex-col items-center bg-background rounded p-2 shadow-sm">
-                                                <span className="text-[10px] uppercase text-muted-foreground font-bold">A Mano</span>
-                                                <span className="text-lg font-bold tabular-nums">{initialData.current_stock || 0}</span>
+                                    {initialData && (
+                                        <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-muted/20 border shadow-inner overflow-hidden">
+                                            <div className="flex flex-col items-center bg-background/60 py-3 rounded-xl border border-dashed">
+                                                <span className="text-[9px] font-black uppercase tracking-tight text-muted-foreground mb-1">A Mano</span>
+                                                <span className="text-lg font-mono font-black">{initialData.current_stock || 0}</span>
                                             </div>
-                                            <div className="flex flex-col items-center bg-warning/10 rounded p-2 shadow-sm border border-warning/10">
-                                                <span className="text-[10px] uppercase text-warning font-bold">Reservado</span>
-                                                <span className="text-lg font-bold tabular-nums text-warning">{initialData.qty_reserved || 0}</span>
+                                            <div className="flex flex-col items-center bg-background/60 py-3 rounded-xl border border-dashed">
+                                                <span className="text-[9px] font-black uppercase tracking-tight text-amber-600/80 mb-1">Reservado</span>
+                                                <span className="text-lg font-mono font-black text-amber-600">{initialData.qty_reserved || 0}</span>
                                             </div>
-                                            <div className="flex flex-col items-center bg-success/10 rounded p-2 shadow-sm border border-success/10">
-                                                <span className="text-[10px] uppercase text-success font-bold">Disponible</span>
-                                                <span className="text-lg font-bold tabular-nums text-success">{initialData.qty_available || 0}</span>
+                                            <div className="flex flex-col items-center bg-emerald-500/5 py-3 rounded-xl border border-emerald-500/20">
+                                                <span className="text-[9px] font-black uppercase tracking-tight text-emerald-600 mb-1">Disponible</span>
+                                                <span className="text-lg font-mono font-black text-emerald-600">{initialData.qty_available || 0}</span>
                                             </div>
                                         </div>
                                     )}
                                 </div>
-                            )}
-                        />
-                    </div>
+                            </div>
+                        )}
+                    />
                 </div>
             </div>
-        </TabsContent>
+        </div>
     )
 }

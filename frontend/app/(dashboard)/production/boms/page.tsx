@@ -9,10 +9,9 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTable } from "@/components/ui/data-table"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Plus, Pencil, Trash2, Layers, CheckCircle2, XCircle } from "lucide-react"
 import api from "@/lib/api"
-import { BOMFormDialog } from "@/features/production/components/BOMFormDialog"
+import { BOMFormModal } from "@/features/production/components/BOMFormModal"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
@@ -225,7 +224,7 @@ export default function BOMsPage({ createAction }: BOMsPageProps = {}) {
                 />
             </div>
 
-            <BOMFormDialog
+            <BOMFormModal
                 open={isFormOpen}
                 onOpenChange={handleFormClose}
                 onSuccess={fetchBoms}

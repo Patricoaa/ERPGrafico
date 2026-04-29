@@ -3,25 +3,23 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Banknote, ArrowLeftRight, Settings2 } from "lucide-react"
-import { FormSkeleton } from "@/components/shared/FormSkeleton"
+import { FormSkeleton } from "@/components/shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { Separator } from "@/components/ui/separator"
 type SavingStatus = "idle" | "saving" | "synced" | "error"
 
 import { treasurySchema, type TreasuryFormValues } from "./TreasurySettingsView.schema"
 
 interface TreasurySettingsViewProps {
+    activeTab: string
     onSavingChange?: (status: SavingStatus) => void
 }
 
-export function TreasurySettingsView({ onSavingChange }: TreasurySettingsViewProps) {
+export function TreasurySettingsView({ activeTab = "conciliation", onSavingChange }: TreasurySettingsViewProps) {
     const [loading, setLoading] = useState(true)
 
     const form = useForm<TreasuryFormValues>({
@@ -105,24 +103,8 @@ export function TreasurySettingsView({ onSavingChange }: TreasurySettingsViewPro
         <div className="max-w-6xl mx-auto space-y-6">
             <Form {...form}>
                 <form className="space-y-6">
-                    <Tabs defaultValue="conciliation" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 h-12 p-1 bg-muted/50 rounded-md border-2">
-                            <TabsTrigger value="conciliation" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                                <ArrowLeftRight className="h-3.5 w-3.5" />
-                                Conciliación
-                            </TabsTrigger>
-                            <TabsTrigger value="audit" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                                <Banknote className="h-3.5 w-3.5" />
-                                Arqueo
-                            </TabsTrigger>
-                            <TabsTrigger value="movements" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                                <Settings2 className="h-3.5 w-3.5" />
-                                Movimientos
-                            </TabsTrigger>
-                        </TabsList>
-
-                        {/* --- Tab: Reconciliation --- */}
-                        <TabsContent value="conciliation" className="m-0 p-0 border-0 outline-none mt-6">
+                    {activeTab === "conciliation" && (
+                        <div className="m-0 p-0 border-0 outline-none mt-6">
                             <Card className="rounded-md border-2">
                                 <CardHeader className="pb-4">
                                     <div className="flex items-center gap-2">
@@ -142,10 +124,11 @@ export function TreasurySettingsView({ onSavingChange }: TreasurySettingsViewPro
                                     </div>
                                 </CardContent>
                             </Card>
-                        </TabsContent>
+                        </div>
+                    )}
 
-                        {/* --- Tab: Audit (Arqueo) --- */}
-                        <TabsContent value="audit" className="m-0 p-0 border-0 outline-none mt-6">
+                    {activeTab === "audit" && (
+                        <div className="m-0 p-0 border-0 outline-none mt-6">
                             <Card className="rounded-md border-2">
                                 <CardHeader className="pb-4">
                                     <div className="flex items-center gap-2">
@@ -161,10 +144,11 @@ export function TreasurySettingsView({ onSavingChange }: TreasurySettingsViewPro
                                     </div>
                                 </CardContent>
                             </Card>
-                        </TabsContent>
+                        </div>
+                    )}
 
-                        {/* --- Tab: Movements --- */}
-                        <TabsContent value="movements" className="m-0 p-0 border-0 outline-none mt-6">
+                    {activeTab === "movements" && (
+                        <div className="m-0 p-0 border-0 outline-none mt-6">
                             <Card className="rounded-md border-2">
                                 <CardHeader className="pb-4">
                                     <div className="flex items-center gap-2">
@@ -183,7 +167,7 @@ export function TreasurySettingsView({ onSavingChange }: TreasurySettingsViewPro
                                             <AccountField form={form} name="pos_system_error_account" label="Ajuste Operativo (Corrección)" accountType="EXPENSE" />
                                         </div>
                                     </div>
-                                    
+
                                     <div>
                                         <p className="text-[10px] font-black uppercase text-muted-foreground/60 mb-6 border-b-2 border-primary/10 pb-1 w-fit tracking-tighter">Retiros y Salidas de Efectivo</p>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
@@ -195,8 +179,8 @@ export function TreasurySettingsView({ onSavingChange }: TreasurySettingsViewPro
                                     </div>
                                 </CardContent>
                             </Card>
-                        </TabsContent>
-                    </Tabs>
+                        </div>
+                    )}
                 </form>
             </Form>
         </div>
@@ -216,18 +200,14 @@ function AccountField({ form, name, label, accountType }: AccountFieldProps) {
         <FormField
             control={form.control}
             name={name}
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">{label}</FormLabel>
-                    <FormControl>
-                        <AccountSelector
-                            value={field.value as string}
-                            onChange={(val) => field.onChange(val)}
-                            accountType={accountType}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
+            render={({ field, fieldState }) => (
+                <AccountSelector
+                    label={label}
+                    value={field.value as string}
+                    onChange={(val) => field.onChange(val)}
+                    accountType={accountType}
+                    error={fieldState.error?.message}
+                />
             )}
         />
     )

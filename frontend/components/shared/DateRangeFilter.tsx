@@ -17,28 +17,31 @@ import {
 
 interface DateRangeFilterProps {
     className?: string
-    onRangeChange: (range: DateRange | undefined) => void
+    date?: DateRange | undefined
+    onDateChange: (date: DateRange | undefined) => void
     label?: string
     defaultRange?: DateRange
 }
 
 export function DateRangeFilter({
     className,
-    onRangeChange,
+    date: controlledDate,
+    onDateChange,
     label = "Filtrar por fecha",
     defaultRange,
 }: DateRangeFilterProps) {
-    const [date, setDate] = React.useState<DateRange | undefined>(defaultRange)
+    const [internalDate, setInternalDate] = React.useState<DateRange | undefined>(defaultRange)
+    const date = controlledDate !== undefined ? controlledDate : internalDate
 
     const handleSelect = (newDate: DateRange | undefined) => {
-        setDate(newDate)
-        onRangeChange(newDate)
+        setInternalDate(newDate)
+        onDateChange(newDate)
     }
 
     const clearDate = (e: React.MouseEvent) => {
         e.stopPropagation()
-        setDate(undefined)
-        onRangeChange(undefined)
+        setInternalDate(undefined)
+        onDateChange(undefined)
     }
 
     return (

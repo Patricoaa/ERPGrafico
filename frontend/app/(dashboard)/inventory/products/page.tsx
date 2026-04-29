@@ -2,10 +2,7 @@ import { Metadata } from "next"
 import { Suspense } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ProductList, CategoryList, PricingRuleList } from "@/features/inventory"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { TableSkeleton, PageTabs, PageHeader, ToolbarCreateButton } from "@/components/shared"
 
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
@@ -86,7 +83,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
             <Tabs value={activeTab} className="space-y-4 pt-4">
                 <div className="pt-0 min-h-[400px]">
                     <TabsContent value="products" className="mt-0 outline-none">
-                        <Suspense fallback={<LoadingFallback />}>
+                        <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                             <ProductList
                                 externalOpen={activeTab === 'products' && resolvedParams.modal === 'new'}
                                 createAction={activeTab === 'products' ? createAction : null}
@@ -94,7 +91,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                         </Suspense>
                     </TabsContent>
                     <TabsContent value="categories" className="mt-0 outline-none">
-                        <Suspense fallback={<LoadingFallback />}>
+                        <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                             <CategoryList
                                 externalOpen={activeTab === 'categories' && resolvedParams.modal === 'new'}
                                 createAction={activeTab === 'categories' ? createAction : null}
@@ -102,7 +99,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                         </Suspense>
                     </TabsContent>
                     <TabsContent value="pricing-rules" className="mt-0 outline-none">
-                        <Suspense fallback={<LoadingFallback />}>
+                        <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                             <PricingRuleList
                                 externalOpen={activeTab === 'pricing-rules' && resolvedParams.modal === 'new'}
                                 createAction={activeTab === 'pricing-rules' ? createAction : null}

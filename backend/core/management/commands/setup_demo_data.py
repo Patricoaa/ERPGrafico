@@ -1105,7 +1105,7 @@ class Command(BaseCommand):
         safe, _ = TreasuryAccount.objects.get_or_create(
             code="CAJA-FUERTE",
             defaults={
-                'name': "Caja Fuerte Principal",
+                'name': "Caja Fuerte (Tesorería Central)",
                 'currency': "CLP",
                 'account': acc_safe,
                 'account_type': TreasuryAccount.Type.CASH,
@@ -1115,7 +1115,7 @@ class Command(BaseCommand):
         
         # Default Payment Method for Safe
         PaymentMethod.objects.get_or_create(
-            name="Efectivo (Fuerte)",
+            name="Efectivo Tesorería Central",
             treasury_account=safe,
             defaults={
                 'method_type': PaymentMethod.Type.CASH,
@@ -1129,7 +1129,7 @@ class Command(BaseCommand):
         till1, _ = TreasuryAccount.objects.get_or_create(
             code="CAJA-POS-01",
             defaults={
-                'name': "Gaveta POS 01",
+                'name': "Caja Física POS 01",
                 'currency': "CLP",
                 'account': acc_till1,
                 'account_type': TreasuryAccount.Type.CASH,
@@ -1139,7 +1139,7 @@ class Command(BaseCommand):
         
         # Default Payment Method for Till 1
         PaymentMethod.objects.get_or_create(
-            name="Efectivo POS 01",
+            name="Efectivo (Recaudación POS 01)",
             treasury_account=till1,
             defaults={
                 'method_type': PaymentMethod.Type.CASH,
@@ -1152,7 +1152,7 @@ class Command(BaseCommand):
         petty, _ = TreasuryAccount.objects.get_or_create(
             code="CAJA-CHICA",
             defaults={
-                'name': "Caja Chica Administración",
+                'name': "Caja Chica (Fondo Fijo)",
                 'currency': "CLP",
                 'account': acc_petty,
                 'account_type': TreasuryAccount.Type.CASH,
@@ -1162,7 +1162,7 @@ class Command(BaseCommand):
         
         # Default Payment Method for Petty Cash
         PaymentMethod.objects.get_or_create(
-            name="Efectivo Caja Chica",
+            name="Efectivo Fondo Fijo Adm.",
             treasury_account=petty,
             defaults={
                 'method_type': PaymentMethod.Type.CASH,
@@ -1203,7 +1203,7 @@ class Command(BaseCommand):
         caja01, _ = TreasuryAccount.objects.get_or_create(
             code="CAJA-TALLER",
             defaults={
-                'name': "Caja Taller", 
+                'name': "Caja Física Taller", 
                 'currency': "CLP", 
                 'account': acc_workshop, 
                 'account_type': TreasuryAccount.Type.CASH,
@@ -1213,7 +1213,7 @@ class Command(BaseCommand):
         
         # Payment Method for Workshop
         pm_efectivo_taller, _ = PaymentMethod.objects.get_or_create(
-            name="Efectivo Taller",
+            name="Efectivo (Pagos Taller)",
             treasury_account=caja01,
             defaults={
                 'method_type': PaymentMethod.Type.CASH,
@@ -1288,7 +1288,7 @@ class Command(BaseCommand):
         tuu_bridge, _ = TreasuryAccount.objects.get_or_create(
             code="PUENTE-TUU",
             defaults={
-                'name': "Puente Liquidación TUU",
+                'name': "Cuenta Puente Liquidación TUU",
                 'currency': "CLP",
                 'account': acc_tuu_bridge,
                 'account_type': TreasuryAccount.Type.BRIDGE,
@@ -1337,7 +1337,7 @@ class Command(BaseCommand):
         if not t1_created and t1.payment_terminal_device != tuu_device:
             t1.payment_terminal_device = tuu_device
             t1.save()  # Triggers signal → auto-creates CARD_TERMINAL method
-        cash_pm_01 = PaymentMethod.objects.get(name="Efectivo POS 01")
+        cash_pm_01 = PaymentMethod.objects.get(name="Efectivo (Recaudación POS 01)")
         # Signal already added CARD_TERMINAL; ensure cash is also present
         t1.allowed_payment_methods.add(cash_pm_01)
 

@@ -1,8 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { TableSkeleton, PageHeader, PageTabs, PageHeaderButton } from "@/components/shared"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
@@ -33,7 +31,17 @@ export default async function AccountingPage({ searchParams }: PageProps) {
         { value: "entries", label: "Asientos", iconName: "file-text", href: "/accounting?view=entries" },
         { value: "closures", label: "Cierre Contable", iconName: "calendar", href: "/accounting?view=closures" },
         { value: "tax", label: "Impuestos mensuales (F29)", iconName: "landmark", href: "/accounting?view=tax" },
-        { value: "config", label: "Config", iconName: "settings", href: "/accounting?view=config" },
+        {
+            value: "config",
+            label: "Config",
+            iconName: "settings",
+            href: "/accounting?view=config",
+            subTabs: [
+                { value: "structure", label: "Estructura Contable", href: "/accounting?view=config&tab=structure", iconName: "settings-2" },
+                { value: "defaults", label: "Cuentas por Defecto", href: "/accounting?view=config&tab=defaults", iconName: "book-open" },
+                { value: "tax", label: "Impuestos", href: "/accounting?view=config&tab=tax", iconName: "receipt" }
+            ]
+        },
     ]
 
     const getHeaderConfig = () => {
@@ -63,16 +71,16 @@ export default async function AccountingPage({ searchParams }: PageProps) {
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader title={config.title} description={config.description} iconName={config.icon} variant="minimal" titleActions={config.titleAction} />
-            <PageTabs tabs={tabs} activeValue={viewMode} />
+            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={configTab} />
 
             <div className="pt-2">
-                <Suspense fallback={<LoadingFallback />}>
+                <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                     {viewMode === 'ledger' && <AccountsView externalOpen={modal === 'new'} createAction={createAction} />}
                     {viewMode === 'entries' && <EntriesView externalOpen={modal === 'new'} createAction={createAction} />}
                     {viewMode === 'closures' && <ClosuresView externalOpen={modal === 'fy'} />}
                     {viewMode === 'trial-balance' && <TrialBalanceView />}
                     {viewMode === 'tax' && <TaxDeclarationsView externalOpen={modal === 'new'} createAction={createAction} />}
-                    {viewMode === 'config' && <AccountingSettingsView />}
+                    {viewMode === 'config' && <AccountingSettingsView activeTab={configTab} />}
                 </Suspense>
             </div>
         </div>

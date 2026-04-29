@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getTasks, Task } from "@/lib/workflow/api"
+import { getTasks, Task } from '@/features/workflow/api/workflowApi'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -12,8 +12,9 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
-import { useAuth } from "@/contexts/AuthContext"
 import { useRef } from "react"
+import { CardSkeleton, MoneyDisplay } from "@/components/shared"
+import { useAuth } from "@/contexts/AuthContext"
 
 const HUB_STAGE_LABELS: Record<string, string> = {
     origin: 'Origen',
@@ -262,9 +263,7 @@ export function TaskInbox() {
                             ) : task.data?.order_total ? (
                                 <div className="flex justify-between items-center">
                                     <span className="opacity-70">Total Orden:</span>
-                                    <span className="font-mono font-bold text-success">
-                                        ${Number(task.data.order_total).toLocaleString('es-CL')}
-                                    </span>
+                                    <MoneyDisplay amount={task.data.order_total} className="text-success" />
                                 </div>
                             ) : null}
                             <div className="flex justify-between items-center pt-1 mt-1 border-t border-border/30">
@@ -328,28 +327,20 @@ export function TaskInbox() {
                             {!task.data?.is_default_customer && task.data?.customer_name !== 'Publico General' && (
                                 <div className="flex justify-between items-center text-destructive/90">
                                     <span className="opacity-70">Deuda Pendiente:</span>
-                                    <span className="font-mono font-bold">
-                                        ${Number(task.data?.customer_debt || 0).toLocaleString('es-CL')}
-                                    </span>
+                                    <MoneyDisplay amount={task.data?.customer_debt || 0} />
                                 </div>
                             )}
                             <div className="flex justify-between items-center">
                                 <span className="opacity-70">Línea de Crédito:</span>
-                                <span className="font-mono font-bold text-success">
-                                    ${Number(task.data?.explicit_credit || task.data?.credit_available || 0).toLocaleString('es-CL')}
-                                </span>
+                                <MoneyDisplay amount={task.data?.explicit_credit || task.data?.credit_available || 0} className="text-success" />
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="opacity-70">Crédito Pre-aprobado:</span>
-                                <span className="font-mono font-bold text-info">
-                                    ${Number(task.data?.pos_credit || 0).toLocaleString('es-CL')}
-                                </span>
+                                <MoneyDisplay amount={task.data?.pos_credit || 0} className="text-info" />
                             </div>
                             <div className="flex justify-between items-center pt-1 mt-1 border-t border-border/30">
                                 <span className="font-bold text-warning">Crédito pendiente de aprobación:</span>
-                                <span className="font-mono font-bold text-warning underline decoration-warning/30 underline-offset-2">
-                                    ${Number(task.data?.required_credit || 0).toLocaleString('es-CL')}
-                                </span>
+                                <MoneyDisplay amount={task.data?.required_credit || 0} className="text-warning underline decoration-warning/30 underline-offset-2" />
                             </div>
                         </div>
 
@@ -455,11 +446,7 @@ export function TaskInbox() {
 
                     <TabsContent value="approvals" className="mt-4">
                         {loading ? (
-                            <div className="space-y-2">
-                                {[1, 2, 3].map(i => (
-                                    <div key={i} className="h-20 rounded-md bg-muted/50 animate-pulse" />
-                                ))}
-                            </div>
+                            <CardSkeleton variant="compact" count={3} className="gap-2" />
                         ) : (
                             <>
                                 {approvalsPending.length > 0 && (
@@ -496,11 +483,7 @@ export function TaskInbox() {
 
                     <TabsContent value="tasks" className="mt-4">
                         {loading ? (
-                            <div className="space-y-2">
-                                {[1, 2, 3].map(i => (
-                                    <div key={i} className="h-20 rounded-md bg-muted/50 animate-pulse" />
-                                ))}
-                            </div>
+                            <CardSkeleton variant="compact" count={3} className="gap-2" />
                         ) : operationalTasks.length === 0 ? (
                             <div className="text-center py-12 bg-muted/10 rounded-lg border border-dashed text-muted-foreground">
                                 <ListTodo className="h-8 w-8 mx-auto mb-2 opacity-20" />

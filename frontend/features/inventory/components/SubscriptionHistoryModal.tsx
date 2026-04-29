@@ -1,6 +1,6 @@
 "use client"
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { FormSkeleton } from "@/components/shared"
 
 import { useState, useEffect, useMemo } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -13,14 +13,10 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import {
-    Loader2,
+
     History,
-    TrendingUp,
     FileText,
-    BarChart3,
     LayoutDashboard,
-    Calendar,
-    DollarSign,
     Receipt
 } from "lucide-react"
 import api from "@/lib/api"
@@ -29,7 +25,7 @@ import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FormTabs, FormTabsContent } from "@/components/shared"
 import {
     ResponsiveContainer,
     BarChart,
@@ -93,6 +89,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
     const [loading, setLoading] = useState(false)
     const { openHub } = useHubPanel()
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
+    const [activeTab, setActiveTab] = useState("historial")
 
     useEffect(() => {
         if (open && subscriptionId) {
@@ -136,56 +133,52 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                 open={open}
                 onOpenChange={onOpenChange}
                 size="full"
+                hideScrollArea={true}
+                allowOverflow={true}
                 className="max-w-5xl"
                 headerClassName="sr-only"
                 title={`Historial de Suscripción: ${data?.product_name}`}
             >
-                <div className="flex flex-col h-full overflow-hidden">
-                    <div className="p-6 pb-2 border-b flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <History className="h-5 w-5 text-muted-foreground" />
-                            <div>
-                                <h2 className="text-xl font-bold">Historial de Suscripción</h2>
-                                {data && (
-                                    <p className="text-sm text-muted-foreground font-medium">
-                                        {data.product_name} | {data.supplier_name}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
+                <div className="flex flex-col h-full overflow-visible">
                     {loading ? (
-                        <div className="flex-1 flex flex-col items-center justify-center py-20 gap-4">
-                            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                            <Skeleton className="h-4 w-[200px]" />
+                        <div className="p-6">
+                            <FormSkeleton hasTabs tabs={3} cards={1} fields={6} />
                         </div>
                     ) : !data ? (
                         <div className="flex-1 flex items-center justify-center py-20">
                             <p className="text-muted-foreground">Error al cargar datos.</p>
                         </div>
-                    ) : (
-                        <Tabs defaultValue="historial" className="flex-1 flex flex-col overflow-hidden">
-                            <div className="px-6 border-b">
-                                <TabsList className="bg-transparent h-12 w-full justify-start gap-6 rounded-none p-0">
-                                    <TabsTrigger value="historial" className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none px-2 font-bold text-xs uppercase tracking-tight transition-all">
-                                        <History className="h-4 w-4 mr-2" />
-                                        Historial de Costos
-                                    </TabsTrigger>
-                                    <TabsTrigger value="orders" className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none px-2 font-bold text-xs uppercase tracking-tight transition-all">
-                                        <FileText className="h-4 w-4 mr-2" />
-                                        Órdenes de Compra (OCS)
-                                    </TabsTrigger>
-                                    <TabsTrigger value="notes" className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent rounded-none px-2 font-bold text-xs uppercase tracking-tight transition-all">
-                                        <Receipt className="h-4 w-4 mr-2" />
-                                        Notas de Crédito / Débito
-                                    </TabsTrigger>
-                                </TabsList>
-                            </div>
+                        ) : (
+                            <FormTabs
+                                value={activeTab}
+                                onValueChange={setActiveTab}
+                                orientation="vertical"
+                                header={
+                                    <div className="p-6 pb-2 flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <History className="h-5 w-5 text-muted-foreground" />
+                                            <div>
+                                                <h2 className="text-xl font-bold">Historial de Suscripción</h2>
+                                                {data && (
+                                                    <p className="text-sm text-muted-foreground font-medium">
+                                                        {data.product_name} | {data.supplier_name}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                items={[
+                                    { value: "historial", label: "Historial de Costos", icon: History },
+                                    { value: "orders", label: "Órdenes de Compra (OCS)", icon: FileText },
+                                    { value: "notes", label: "Notas de Crédito / Débito", icon: Receipt }
+                                ]}
+                                className="flex-1 overflow-visible"
+                            >
+                                <div className="flex-1 overflow-auto p-6 scrollbar-thin">
 
-                            <div className="flex-1 overflow-auto p-6">
                                 {/* HISTORIAL TAB */}
-                                <TabsContent value="historial" className="mt-0 space-y-6">
+                                <FormTabsContent value="historial" className="mt-0 space-y-6">
                                     <div className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <Card className="bg-primary/10/30 border-primary/10 shadow-none">
@@ -214,7 +207,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                         </div>
 
                                         <div className="flex justify-end">
-                                            <DateRangeFilter onRangeChange={setDateRange} label="Periodo para el gráfico" />
+                                            <DateRangeFilter onDateChange={setDateRange} label="Periodo para el gráfico" />
                                         </div>
                                     </div>
 
@@ -257,10 +250,10 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                             description="No hay datos para el periodo seleccionado."
                                         />
                                     )}
-                                </TabsContent>
+                                </FormTabsContent>
 
                                 {/* ORDERS TAB */}
-                                <TabsContent value="orders" className="mt-0">
+                                <FormTabsContent value="orders" className="mt-0">
                                     <div className="rounded-md border shadow-sm overflow-hidden bg-card">
                                         <Table>
                                             <TableHeader>
@@ -283,8 +276,8 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                         </TableCell>
                                                         <TableCell className="text-center">
                                                             <div className="flex justify-center">
-                                                                <StatusBadge 
-                                                                    status={order.status === 'PAID' || order.status === 'RECEIVED' ? 'SUCCESS' : 'NEUTRAL'} 
+                                                                <StatusBadge
+                                                                    status={order.status === 'PAID' || order.status === 'RECEIVED' ? 'SUCCESS' : 'NEUTRAL'}
                                                                     label={translateStatus(order.status)}
                                                                 />
                                                             </div>
@@ -324,10 +317,10 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                             </TableBody>
                                         </Table>
                                     </div>
-                                </TabsContent>
+                                </FormTabsContent>
 
                                 {/* NOTES TAB */}
-                                <TabsContent value="notes" className="mt-0">
+                                <FormTabsContent value="notes" className="mt-0">
                                     <div className="rounded-md border shadow-sm overflow-hidden bg-card">
                                         <Table>
                                             <TableHeader>
@@ -359,8 +352,8 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                         </TableCell>
                                                         <TableCell className="text-center">
                                                             <div className="flex justify-center">
-                                                                <StatusBadge 
-                                                                    status={note.status === 'PAID' || note.status === 'POSTED' ? 'SUCCESS' : 'NEUTRAL'} 
+                                                                <StatusBadge
+                                                                    status={note.status === 'PAID' || note.status === 'POSTED' ? 'SUCCESS' : 'NEUTRAL'}
                                                                     label={translateStatus(note.status)}
                                                                 />
                                                             </div>
@@ -400,9 +393,9 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                             </TableBody>
                                         </Table>
                                     </div>
-                                </TabsContent>
+                                </FormTabsContent>
                             </div>
-                        </Tabs>
+                        </FormTabs>
                     )}
                 </div>
             </BaseModal>

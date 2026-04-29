@@ -1,9 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { PageTabs, TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 
@@ -79,7 +76,18 @@ export default async function SalesPage({ searchParams }: PageProps) {
                 { value: "blacklist", label: "Lista Negra", href: "/sales?view=credits&sub=blacklist" },
             ]
         },
-        { value: "config", label: "Config", iconName: "settings", href: "/sales?view=config" },
+        { 
+            value: "config", 
+            label: "Config", 
+            iconName: "settings", 
+            href: "/sales?view=config",
+            subTabs: [
+                { value: "income", label: "Ingresos", href: "/sales?view=config&tab=income", iconName: "trending-up" },
+                { value: "credit", label: "Crédito", href: "/sales?view=config&tab=credit", iconName: "credit-card" },
+                { value: "config_pos", label: "POS", href: "/sales?view=config&tab=config_pos", iconName: "settings" },
+                { value: "terminals", label: "Terminales", href: "/sales?view=config&tab=terminals", iconName: "wallet" }
+            ]
+        },
     ]
 
     const getHeaderConfig = () => {
@@ -195,10 +203,10 @@ export default async function SalesPage({ searchParams }: PageProps) {
                 variant="minimal"
             />
 
-            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={subView} />
+            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={viewMode === 'config' ? configTab : subView} />
 
             <div className="pt-4">
-                <Suspense fallback={<LoadingFallback />}>
+                <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                     {viewMode === 'orders' && (
                         <div className="pt-2">
                             <SalesOrdersClientView

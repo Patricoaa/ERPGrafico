@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { InvoiceHubStatus } from "@/features/billing/components/InvoiceHubStatus"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { IndustrialCard } from "@/components/shared/IndustrialCard"
+import { Card } from "@/components/ui/card"
 import { Invoice } from "@/features/billing/types"
 
 type InvoiceType = 'sale_invoice' | 'purchase_invoice'
@@ -78,15 +78,14 @@ export function InvoiceCard({ item, type, onClick, onActionSuccess, className, i
     }
 
     return (
-        <IndustrialCard
-            variant="list"
+        <Card
             role="button"
             tabIndex={0}
             data-order-card="true"
             aria-selected={isSelected}
             data-state={isSelected ? 'selected' : undefined}
             className={cn(
-                "group flex flex-col p-4 relative z-10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 transition-all",
+                "group flex flex-col p-4 relative z-10 cursor-pointer rounded-none border border-border/50 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1",
                 isSelected && "ring-2 ring-inset ring-primary/40 bg-primary/5 border-transparent",
                 className
             )}
@@ -220,6 +219,6 @@ export function InvoiceCard({ item, type, onClick, onActionSuccess, className, i
                     )}
                 </div>
             )}
-        </IndustrialCard>
+        </Card>
     )
 }

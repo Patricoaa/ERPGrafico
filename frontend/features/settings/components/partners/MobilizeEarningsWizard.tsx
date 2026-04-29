@@ -4,7 +4,7 @@ import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
 import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { LabeledInput, PeriodValidationDateInput } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
@@ -207,25 +207,27 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                         </div>
 
                         <div className="space-y-3 pt-2">
-                            <Label className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Opciones Adicionales</Label>
-                            
-                            <div className="grid gap-2">
-                                <Label className="text-sm">Fecha Contable</Label>
-                                <Input 
-                                    type="date" 
-                                    value={date} 
-                                    onChange={(e) => setDate(e.target.value)} 
-                                />
-                            </div>
-                            
-                            <div className="grid gap-2">
-                                <Label className="text-sm">Descripción del Asiento</Label>
-                                <Input 
-                                    value={description} 
-                                    onChange={(e) => setDescription(e.target.value)} 
-                                    placeholder="Distribución extraordinaria de utilidades..."
-                                />
-                            </div>
+                            <span className="text-xs uppercase tracking-wider font-bold text-muted-foreground">Opciones Adicionales</span>
+
+                            <PeriodValidationDateInput
+                                label="Fecha Contable"
+                                date={date ? new Date(date + 'T12:00:00') : undefined}
+                                onDateChange={(d) => {
+                                    if (!d) {
+                                        setDate("")
+                                        return
+                                    }
+                                    setDate(d.toISOString().split('T')[0])
+                                }}
+                                validationType="accounting"
+                            />
+
+                            <LabeledInput
+                                label="Descripción del Asiento"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="Distribución extraordinaria de utilidades..."
+                            />
                         </div>
                     </div>
                 )

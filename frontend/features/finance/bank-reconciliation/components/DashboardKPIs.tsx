@@ -3,7 +3,7 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, Clock, AlertTriangle, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Skeleton } from "@/components/ui/skeleton"
+import { CardSkeleton } from "@/components/shared"
 
 import type { DashboardKPIData } from "../types"
 
@@ -14,19 +14,7 @@ interface DashboardKPIsProps {
 
 export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
     if (loading || !data) {
-        return <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map(i => (
-                <Card key={i} className="border-border/40">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <Skeleton className="h-4 w-24 rounded" />
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-8 w-1/2 rounded mb-2" />
-                        <Skeleton className="h-1.5 w-full rounded" />
-                    </CardContent>
-                </Card>
-            ))}
-        </div>
+        return <CardSkeleton count={4} variant="grid" />
     }
 
     const { lines, reconciliation_rate, differences, statements } = data
@@ -35,13 +23,13 @@ export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card className="border-border/40 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Tasa de Conciliación</CardTitle>
+                    <CardTitle className="text-xs font-black uppercase text-muted-foreground">Tasa de Conciliación</CardTitle>
                     <CheckCircle2 className="h-4 w-4 text-success" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-3xl font-black font-heading tracking-tighter">{reconciliation_rate}%</div>
                     <Progress value={reconciliation_rate} className="h-1.5 mt-3" />
-                    <p className="text-[10px] font-bold text-muted-foreground mt-3 uppercase tracking-wider">
+                    <p className="text-xs font-bold text-muted-foreground mt-3 uppercase tracking-wider">
                         {lines.reconciled} de {lines.total} líneas procesadas
                     </p>
                 </CardContent>
@@ -49,12 +37,12 @@ export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
 
             <Card className="border-border/40 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Pendiente Conciliar</CardTitle>
+                    <CardTitle className="text-xs font-black uppercase text-muted-foreground">Pendiente Conciliar</CardTitle>
                     <Clock className="h-4 w-4 text-warning" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-3xl font-black font-heading tracking-tighter text-warning">{lines.pending}</div>
-                    <p className="text-[10px] font-bold text-muted-foreground mt-3 uppercase tracking-wider">
+                    <p className="text-xs font-bold text-muted-foreground mt-3 uppercase tracking-wider">
                         Movimientos por procesar
                     </p>
                 </CardContent>
@@ -62,7 +50,7 @@ export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
 
             <Card className="border-border/40 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Diferencias</CardTitle>
+                    <CardTitle className="text-xs font-black uppercase text-muted-foreground">Diferencias</CardTitle>
                     <AlertTriangle className={`h-4 w-4 ${differences.count > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
                 </CardHeader>
                 <CardContent>
@@ -77,13 +65,13 @@ export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
                             <Badge 
                                 key={type} 
                                 variant="secondary" 
-                                className="text-[9px] font-black uppercase tracking-tighter bg-destructive/5 text-destructive border-destructive/10"
+                                className="text-[10px] font-black uppercase bg-destructive/5 text-destructive border-destructive/10" // intentional: badge density
                             >
                                 {info.label}: {info.count}
                             </Badge>
                         ))}
                         {differences.count === 0 && (
-                            <span className="text-[9px] font-black uppercase tracking-widest text-success flex items-center gap-1">
+                            <span className="text-[10px] font-black uppercase text-success flex items-center gap-1"> {/* intentional: badge density */}
                                 <CheckCircle2 className="h-2.5 w-2.5" /> Sin ajustes
                             </span>
                         )}
@@ -93,12 +81,12 @@ export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
 
             <Card className="border-border/40 shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Cartolas</CardTitle>
+                    <CardTitle className="text-xs font-black uppercase text-muted-foreground">Cartolas</CardTitle>
                     <FileText className="h-4 w-4 text-primary" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-3xl font-black font-heading tracking-tighter">{statements.total}</div>
-                    <div className="flex justify-between text-[9px] font-bold text-muted-foreground mt-3 uppercase tracking-wider">
+                    <div className="flex justify-between text-xs font-bold text-muted-foreground mt-3 uppercase tracking-wider">
                         <span className="text-success">{statements.confirmed} confirmados</span>
                         <span className="text-primary">{statements.draft} en borrador</span>
                     </div>

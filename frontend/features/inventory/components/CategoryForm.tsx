@@ -1,43 +1,27 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { ProductCategory, Product } from "@/types/entities"
+import { ProductCategory } from "@/types/entities"
 import { cn } from "@/lib/utils"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { CancelButton, LabeledInput, LabeledContainer, FormSection, FormFooter, FormSplitLayout, LabeledSwitch } from "@/components/shared"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
     Form,
     FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+    FormField
 } from "@/components/ui/form"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { AccountSelector, CategorySelector } from "@/components/selectors"
 import * as LucideIcons from "lucide-react"
 import { Check } from "lucide-react"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { FORM_STYLES } from "@/lib/styles"
+import { ActivitySidebar } from "@/features/audit/components"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const ICON_OPTIONS = [
@@ -91,75 +75,82 @@ const ICON_OPTIONS = [
     { name: "Wifi", label: "Internet" },
 ]
 
-function RichIconSelector({ value, onChange }: { value: string, onChange: (val: string) => void }) {
+function RichIconSelector({ value, onChange, label, error, required }: { value: string, onChange: (val: string) => void, label?: string, error?: string, required?: boolean }) {
     const SelectedIcon = (LucideIcons as any)[value] || LucideIcons.Package
     const selectedLabel = ICON_OPTIONS.find(i => i.name === value)?.label || value
 
     return (
-        <Popover>
-            <PopoverTrigger asChild>
-                <Button variant="outline" role="combobox" className={cn("w-full justify-between font-normal", FORM_STYLES.input)}>
-                    <div className="flex items-center gap-2">
-                        <SelectedIcon className="h-4 w-4" />
-                        <span>{selectedLabel}</span>
+        <LabeledContainer label={label} error={error} required={required}>
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        role="combobox"
+                        className="w-full justify-between !h-[1.5rem] !py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent font-normal"
+                    >
+                        <div className="flex items-center gap-2">
+                            <SelectedIcon className="h-4 w-4" />
+                            <span>{selectedLabel}</span>
+                        </div>
+                        <LucideIcons.ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                    <div className="p-2">
+                        <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
+                            <LucideIcons.Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                            <Input
+                                className="border-0 shadow-none focus-visible:ring-0 bg-transparent px-0"
+                                placeholder="Buscar icono..."
+                                onChange={(e) => {
+                                    const val = e.target.value.toLowerCase()
+                                    const inputs = document.querySelectorAll('.icon-item')
+                                    inputs.forEach((el) => {
+                                        if (el.textContent?.toLowerCase().includes(val)) {
+                                            (el as HTMLElement).style.display = 'flex'
+                                        } else {
+                                            (el as HTMLElement).style.display = 'none'
+                                        }
+                                    })
+                                }}
+                            />
+                        </div>
+                        <div className="h-[250px] overflow-y-auto p-1 grid grid-cols-2 gap-1">
+                            {ICON_OPTIONS.map((item) => {
+                                const Icon = (LucideIcons as any)[item.name] || LucideIcons.Package
+                                const isSelected = value === item.name
+                                return (
+                                    <div
+                                        key={item.name}
+                                        className={cn(
+                                            "icon-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                            isSelected && "bg-accent"
+                                        )}
+                                        onClick={() => {
+                                            onChange(item.name)
+                                            document.body.click()
+                                        }}
+                                    >
+                                        <Icon className="h-4 w-4 shrink-0 mr-2" />
+                                        <span className="flex-1 truncate text-xs">{item.label}</span>
+                                        {isSelected && <Check className="ml-auto h-4 w-4 opacity-100" />}
+                                    </div>
+                                )
+                            })}
+                        </div>
                     </div>
-                    <LucideIcons.ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                <div className="p-2">
-                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                        <LucideIcons.Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                        <input
-                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                            placeholder="Buscar icono..."
-                            onChange={(e) => {
-                                const val = e.target.value.toLowerCase()
-                                const inputs = document.querySelectorAll('.icon-item')
-                                inputs.forEach((el) => {
-                                    if (el.textContent?.toLowerCase().includes(val)) {
-                                        (el as HTMLElement).style.display = 'flex'
-                                    } else {
-                                        (el as HTMLElement).style.display = 'none'
-                                    }
-                                })
-                            }}
-                        />
-                    </div>
-                    <div className="h-[250px] overflow-y-auto p-1 grid grid-cols-2 gap-1">
-                        {ICON_OPTIONS.map((item) => {
-                            const Icon = (LucideIcons as any)[item.name] || LucideIcons.Package
-                            const isSelected = value === item.name
-                            return (
-                                <div
-                                    key={item.name}
-                                    className={cn(
-                                        "icon-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                        isSelected && "bg-accent"
-                                    )}
-                                    onClick={() => {
-                                        onChange(item.name)
-                                        document.body.click()
-                                    }}
-                                >
-                                    <Icon className="h-4 w-4 shrink-0 mr-2" />
-                                    <span className="flex-1 truncate text-xs">{item.label}</span>
-                                    {isSelected && <Check className="ml-auto h-4 w-4 opacity-100" />}
-                                </div>
-                            )
-                        })}
-                    </div>
-                </div>
-            </PopoverContent>
-        </Popover>
+                </PopoverContent>
+            </Popover>
+        </LabeledContainer>
     )
 }
 
 const categorySchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
     prefix: z.string().max(10, "El prefijo no puede exceder 10 caracteres").optional().nullable(),
-    icon: z.string().optional(),
+    icon: z.string().min(1, "El icono es requerido"),
     parent: z.string().optional(),
+    has_custom_accounting: z.boolean().optional(),
     asset_account: z.string().optional().nullable(),
     income_account: z.string().optional().nullable(),
     expense_account: z.string().optional().nullable(),
@@ -168,7 +159,7 @@ const categorySchema = z.object({
 type CategoryFormValues = z.infer<typeof categorySchema>
 
 interface CategoryFormProps {
-    auditSidebar?: React.ReactNode
+    sidebar?: React.ReactNode
     onSuccess?: (category: ProductCategory) => void
     initialData?: ProductCategory
     open?: boolean
@@ -177,7 +168,7 @@ interface CategoryFormProps {
 }
 
 export function CategoryForm({
-    auditSidebar,
+    sidebar,
     onSuccess,
     initialData,
     open: openProp,
@@ -189,43 +180,49 @@ export function CategoryForm({
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    const [categories, setCategories] = useState<ProductCategory[]>([] )
 
     const form = useForm<CategoryFormValues>({
         resolver: zodResolver(categorySchema),
         defaultValues: initialData ? {
             ...initialData,
             parent: (initialData.parent as any)?.id?.toString() || initialData.parent?.toString() || "none",
+            has_custom_accounting: !!(initialData.asset_account || initialData.income_account || initialData.expense_account),
             asset_account: (initialData.asset_account as any)?.id?.toString() || initialData.asset_account?.toString() || "none",
             income_account: (initialData.income_account as any)?.id?.toString() || initialData.income_account?.toString() || "none",
             expense_account: (initialData.expense_account as any)?.id?.toString() || initialData.expense_account?.toString() || "none",
         } : {
             name: "",
+            has_custom_accounting: false,
         },
     })
 
     const fetchData = async () => {
-        try {
-            const [catsRes] = await Promise.all([
-                api.get('/inventory/categories/')
-            ])
-            setCategories(catsRes.data.results || catsRes.data)
-        } catch (error) {
-            console.error("Error fetching dependencies:", error)
-        }
+        // Dependencies fetched by selectors
     }
 
-    useEffect(() => {
-        if (open) fetchData()
-    }, [open])
+    const lastResetId = React.useRef<number | undefined>(undefined)
+    const wasOpen = React.useRef(false)
 
-    // Reset form when initialData changes or modal opens
     useEffect(() => {
-        if (open) {
+        if (!open) {
+            wasOpen.current = false
+            return
+        }
+
+        const currentId = initialData?.id
+        const isNewOpen = !wasOpen.current
+        const isNewData = currentId !== lastResetId.current
+
+        if (isNewOpen) {
+            fetchData()
+        }
+
+        if (isNewOpen || isNewData) {
             if (initialData) {
                 form.reset({
                     ...initialData,
                     parent: (initialData.parent as { id?: number } | undefined)?.id?.toString() || initialData.parent?.toString() || "none",
+                    has_custom_accounting: !!(initialData.asset_account || initialData.income_account || initialData.expense_account),
                     asset_account: (initialData.asset_account as { id?: number } | undefined)?.id?.toString() || initialData.asset_account?.toString() || "none",
                     income_account: (initialData.income_account as { id?: number } | undefined)?.id?.toString() || initialData.income_account?.toString() || "none",
                     expense_account: (initialData.expense_account as { id?: number } | undefined)?.id?.toString() || initialData.expense_account?.toString() || "none",
@@ -235,11 +232,14 @@ export function CategoryForm({
                     name: "",
                     prefix: "",
                     parent: "none",
+                    has_custom_accounting: false,
                     asset_account: undefined,
                     income_account: undefined,
                     expense_account: undefined,
                 })
             }
+            lastResetId.current = currentId
+            wasOpen.current = true
         }
     }, [open, initialData, form])
 
@@ -249,9 +249,9 @@ export function CategoryForm({
             const payload = {
                 ...data,
                 parent: (data.parent && data.parent !== "__none__" && data.parent !== "none") ? data.parent : null,
-                asset_account: (data.asset_account && data.asset_account !== "__none__" && data.asset_account !== "none") ? data.asset_account : null,
-                income_account: (data.income_account && data.income_account !== "__none__" && data.income_account !== "none") ? data.income_account : null,
-                expense_account: (data.expense_account && data.expense_account !== "__none__" && data.expense_account !== "none") ? data.expense_account : null,
+                asset_account: (data.has_custom_accounting && data.asset_account && data.asset_account !== "__none__" && data.asset_account !== "none") ? data.asset_account : null,
+                income_account: (data.has_custom_accounting && data.income_account && data.income_account !== "__none__" && data.income_account !== "none") ? data.income_account : null,
+                expense_account: (data.has_custom_accounting && data.expense_account && data.expense_account !== "__none__" && data.expense_account !== "none") ? data.expense_account : null,
             }
 
             let response;
@@ -287,7 +287,9 @@ export function CategoryForm({
             <BaseModal
                 open={open}
                 onOpenChange={setOpen}
-                size={initialData ? "lg" : "md"}
+                size="lg"
+                hideScrollArea={true}
+                contentClassName="p-0"
                 title={
                     <div className="flex items-center gap-3">
                         <LucideIcons.Tag className="h-5 w-5 text-muted-foreground" />
@@ -306,166 +308,168 @@ export function CategoryForm({
                     </div>
                 }
                 footer={
-                    <div className="flex justify-end space-x-2 w-full">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setOpen(false)}
-                        >
-                            Cancelar
-                        </Button>
-                        <ActionSlideButton type="submit" form="category-form" disabled={loading}>
-                            {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Categoría"}
-                        </ActionSlideButton>
-                    </div>
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setOpen(false)} />
+                                <ActionSlideButton type="submit" form="category-form" loading={loading}>
+                                    {initialData ? "Guardar Cambios" : "Crear Categoría"}
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
                 }
             >
-                <div className="flex-1 flex overflow-hidden min-h-[400px]">
-                    <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
-                        <Form {...form}>
-                            <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Insumos" className={FORM_STYLES.input} {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="prefix"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Siglas (Prefijo)</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Ej: IMP, DIS, MER" className={FORM_STYLES.input} {...field} value={field.value || ""} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="icon"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Icono</FormLabel>
-                                    <FormControl>
-                                        <RichIconSelector
-                                            value={field.value || "Package"}
-                                            onChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        </div>
-                        <FormField
-                            control={form.control}
-                            name="parent"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Categoría Padre (Opcional)</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || "__none__"}>
-                                        <FormControl>
-                                            <SelectTrigger className={FORM_STYLES.input}>
-                                                <SelectValue placeholder="Sin padre" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="__none__">Sin padre</SelectItem>
-                                            {categories.filter(cat => cat.id).map((cat) => (
-                                                <SelectItem key={cat.id} value={cat.id.toString()}>
-                                                    {cat.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                <FormSplitLayout
+                    showSidebar={!!initialData?.id}
+                    sidebar={initialData?.id ? <ActivitySidebar entityId={initialData.id} entityType="category" /> : sidebar}
+                >
+                    <Form {...form}>
+                        <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
 
-                        <div className="flex items-center gap-2 pt-1">
-                            <div className="flex-1 h-px bg-border" />
-                            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Cuentas Contables</span>
-                            <div className="flex-1 h-px bg-border" />
-                        </div>
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="col-span-3">
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Nombre de Categoría"
+                                                required
+                                                placeholder="Ej: Insumos de Impresión"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+                                </div>
 
-                        <div className="grid grid-cols-3 gap-3">
-                        <FormField
-                            control={form.control}
-                            name="asset_account"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Activo (Inventario)</FormLabel>
-                                    <FormControl>
-                                        <AccountSelector
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="ASSET"
-                                            placeholder="Seleccionar..."
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="income_account"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Ingresos (Ventas)</FormLabel>
-                                    <FormControl>
-                                        <AccountSelector
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="INCOME"
-                                            placeholder="Seleccionar..."
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="expense_account"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Gastos (Costo)</FormLabel>
-                                    <FormControl>
-                                        <AccountSelector
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="EXPENSE"
-                                            placeholder="Seleccionar..."
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        </div>
-                    </form>
-                </Form>
-                </div>
+                                <div className="col-span-1">
+                                    <FormField
+                                        control={form.control}
+                                        name="prefix"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Siglas"
+                                                placeholder="Ej: IMP"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                                value={field.value || ""}
+                                            />
+                                        )}
+                                    />
+                                </div>
 
-                {initialData?.id && (
-                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                        {auditSidebar}
-                    </div>
-                )}
-            </div>
+                                <div className="col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="icon"
+                                        render={({ field, fieldState }) => (
+                                            <RichIconSelector
+                                                label="Icono Visual"
+                                                required
+                                                value={field.value || "Package"}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="col-span-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="parent"
+                                        render={({ field, fieldState }) => (
+                                            <CategorySelector
+                                                label="Categoría Superior"
+                                                icon={<LucideIcons.FolderTree className="h-4 w-4" />}
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                                placeholder="Sin padre"
+                                                showPlusButton={false}
+                                                excludeId={initialData?.id}
+                                                allowNone={true}
+                                                noneLabel="Raíz (Sin padre)"
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </div>
+
+                            <FormSection title="Cuentas Contables por Defecto" icon={LucideIcons.Library} />
+
+                            <FormField
+                                control={form.control}
+                                name="has_custom_accounting"
+                                render={({ field }) => (
+                                    <LabeledSwitch
+                                        label="Mapeo Contable Personalizado"
+                                        description={field.value ? "Cuentas específicas para esta categoría." : "Usar configuración contable global."}
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        icon={<LucideIcons.Calculator className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
+                                        className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                    />
+                                )}
+                            />
+
+                            {form.watch("has_custom_accounting") && (
+                                <div className="grid grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="col-span-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="asset_account"
+                                            render={({ field, fieldState }) => (
+                                                <AccountSelector
+                                                    label="Activo (Inventario)"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    accountType="ASSET"
+                                                    placeholder="Cuenta de activo..."
+                                                    error={fieldState.error?.message}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="income_account"
+                                            render={({ field, fieldState }) => (
+                                                <AccountSelector
+                                                    label="Ingresos (Ventas)"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    accountType="INCOME"
+                                                    placeholder="Cuenta de ingreso..."
+                                                    error={fieldState.error?.message}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="expense_account"
+                                            render={({ field, fieldState }) => (
+                                                <AccountSelector
+                                                    label="Gastos (Costo)"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    accountType="EXPENSE"
+                                                    placeholder="Cuenta de gasto..."
+                                                    error={fieldState.error?.message}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </form>
+                    </Form>
+                </FormSplitLayout>
             </BaseModal>
         </>
     )

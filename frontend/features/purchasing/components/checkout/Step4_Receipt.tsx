@@ -1,19 +1,9 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { FileText, Receipt, FileCheck, Package } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
 import api from "@/lib/api"
 import { useServerDate } from "@/hooks/useServerDate"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import {
     Table,
     TableBody,
@@ -24,6 +14,8 @@ import {
 } from "@/components/ui/table"
 import { ReceiptData, CheckoutLine, PartialReceiptLine } from "../../types"
 import { Warehouse, UoM } from "@/types/entities"
+import { Package, Receipt, FileText, FileCheck } from "lucide-react"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 interface Step4_ReceiptProps {
     receiptData: ReceiptData
@@ -32,7 +24,7 @@ interface Step4_ReceiptProps {
 }
 
 // New UoMSelector component
-const UoMSelector = ({ line, currentUom, onUomChange, uoms }: { line: CheckoutLine, currentUom: number | string | undefined, onUomChange: (uomId: number) => void, uoms: UoM[] }) => {
+const LocalUoMSelector = ({ line, currentUom, onUomChange, uoms }: { line: CheckoutLine, currentUom: number | string | undefined, onUomChange: (uomId: number) => void, uoms: UoM[] }) => {
     const getFilteredUoMs = (line: CheckoutLine) => {
         if (!line || !uoms.length) return []
         const productUomId = line.uom?.toString()
@@ -45,21 +37,15 @@ const UoMSelector = ({ line, currentUom, onUomChange, uoms }: { line: CheckoutLi
     }
 
     return (
-        <Select
+        <LabeledSelect
             value={currentUom?.toString()}
-            onValueChange={(val) => onUomChange(parseInt(val))}
-        >
-            <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Unidad" />
-            </SelectTrigger>
-            <SelectContent>
-                {getFilteredUoMs(line).map((uom: UoM) => (
-                    <SelectItem key={uom.id} value={uom.id.toString()}>
-                        {uom.name}
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+            onChange={(val) => onUomChange(parseInt(val))}
+            options={getFilteredUoMs(line).map((uom: UoM) => ({
+                value: uom.id.toString(),
+                label: uom.name
+            }))}
+            className="w-full"
+        />
     )
 }
 
@@ -217,19 +203,23 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
         <div className="space-y-6">
             {/* Removed Warehouse Selector as per requirements */}
 
-            <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
-                <Label className="text-xs font-bold uppercase text-muted-foreground mb-3 block flex items-center gap-2">
-                    <Package className="h-4 w-4" />
-                    Tipo de {receiptLabel}
-                </Label>
+            <LabeledContainer
+                label={
+                    <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        <span>Tipo de {receiptLabel}</span>
+                    </div>
+                }
+                containerClassName="bg-primary/5 rounded-lg"
+            >
                 <RadioGroup
                     value={receiptData.type}
                     onValueChange={(val) => setReceiptData({ ...receiptData, type: val as any })}
-                    className="space-y-3"
+                    className="space-y-3 w-full p-2"
                 >
                     {receiptTypes.map((type) => (
                         <div key={type.id} className="relative">
-                            <Label
+                            <label
                                 htmlFor={`receipt-${type.id}`}
                                 className={`flex items-start gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all ${receiptData.type === type.id ? 'border-primary bg-primary/5' : ''
                                     }`}
@@ -242,15 +232,15 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                                     <span className="text-sm font-semibold block">{type.label}</span>
                                     <span className="text-xs text-muted-foreground">{type.description}</span>
                                 </div>
-                            </Label>
+                            </label>
                         </div>
                     ))}
                 </RadioGroup>
-            </div>
+            </LabeledContainer>
 
             {receiptData.type === 'PARTIAL' && orderLines.length > 0 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                    <Label className="text-sm font-semibold">Cantidades a Recibir</Label>
+                    <h4 className="text-xs font-black uppercase tracking-tighter text-primary/70">Cantidades a Recibir</h4>
                     <div className="rounded-md border">
                         <Table>
                             <TableHeader>
@@ -275,18 +265,17 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                                                 {pendingQty.toLocaleString('es-CL')}
                                             </TableCell>
                                             <TableCell>
-                                                <Input
+                                                <LabeledInput
                                                     type="number"
                                                     step="0.01"
                                                     min="0"
                                                     max={pendingQty}
                                                     value={currentReceivedQty}
                                                     onChange={(e) => updatePartialQty(line.id, line.product, e.target.value)}
-                                                    className="w-full"
                                                 />
                                             </TableCell>
                                             <TableCell>
-                                                <UoMSelector
+                                                <LocalUoMSelector
                                                     line={line}
                                                     currentUom={currentUom}
                                                     onUomChange={(uomId) => updatePartialUom(line.id, line.product, uomId)}
@@ -304,7 +293,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
 
             {hasSubscriptions && (receiptData.type as string) !== 'DEFERRED' && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                    <Label className="text-sm font-semibold">Fechas de Inicio de Suscripciones</Label>
+                    <h4 className="text-xs font-black uppercase tracking-tighter text-primary/70">Fechas de Inicio de Suscripciones</h4>
                     <div className="rounded-md border">
                         <Table>
                             <TableHeader>
@@ -322,11 +311,16 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                                         <TableRow key={productId || idx}>
                                             <TableCell className="font-medium">{line.product_name || line.name || line.description}</TableCell>
                                             <TableCell>
-                                                <Input
-                                                    type="date"
-                                                    value={currentDate}
-                                                    onChange={(e) => updateSubscriptionDate(productId, e.target.value)}
-                                                    className="w-full"
+                                                <PeriodValidationDateInput
+                                                    date={currentDate ? new Date(currentDate + 'T12:00:00') : undefined}
+                                                    onDateChange={(d) => {
+                                                        if (!d) {
+                                                            updateSubscriptionDate(productId, "")
+                                                            return
+                                                        }
+                                                        updateSubscriptionDate(productId, d.toISOString().split('T')[0])
+                                                    }}
+                                                    validationType="tax"
                                                 />
                                             </TableCell>
                                         </TableRow>
@@ -339,32 +333,23 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             )}
 
             {(receiptData.type as string) !== 'DEFERRED' && (
-                <div className="space-y-4 p-4 bg-muted/30 rounded-lg border border-dashed animate-in fade-in">
-                    <div className="space-y-2">
-                        <Label htmlFor="delivery-ref" className="text-xs font-bold uppercase">
-                            Referencia de Entrega (Opcional)
-                        </Label>
-                        <Input
-                            id="delivery-ref"
-                            type="text"
-                            placeholder="Ej: Guía de despacho #123"
-                            value={receiptData.deliveryReference || ''}
-                            onChange={(e) => setReceiptData({ ...receiptData, deliveryReference: e.target.value })}
-                        />
-                    </div>
+                <div className="space-y-6 p-4 bg-muted/30 rounded-lg border border-dashed animate-in fade-in">
+                    <LabeledInput
+                        label="Referencia de Entrega"
+                        placeholder="Ej: Guía de despacho #123"
+                        value={receiptData.deliveryReference || ''}
+                        onChange={(e) => setReceiptData({ ...receiptData, deliveryReference: e.target.value })}
+                        hint="Información opcional del transportista o documento físico"
+                    />
 
-                    <div className="space-y-2">
-                        <Label htmlFor="receipt-notes" className="text-xs font-bold uppercase">
-                            Notas de Recepción (Opcional)
-                        </Label>
-                        <textarea
-                            id="receipt-notes"
-                            placeholder="Observaciones sobre la recepción..."
-                            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                            value={receiptData.notes || ''}
-                            onChange={(e) => setReceiptData({ ...receiptData, notes: e.target.value })}
-                        />
-                    </div>
+                    <LabeledInput
+                        label="Notas de Recepción"
+                        as="textarea"
+                        placeholder="Observaciones sobre la recepción..."
+                        value={receiptData.notes || ''}
+                        onChange={(e) => setReceiptData({ ...receiptData, notes: e.target.value })}
+                        hint="Detalles sobre daños, diferencias o estado general"
+                    />
                 </div>
             )}
 

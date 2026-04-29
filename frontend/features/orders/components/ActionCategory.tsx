@@ -6,11 +6,11 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { ActionButton } from "./ActionButton"
 import { Action, ActionCategory as CategoryType } from "@/types/actions"
-import { getActionBadgeCount } from "@/lib/actions/utils"
+import { getActionBadgeCount } from '@/lib/action-utils'
 import dynamic from "next/dynamic"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { FormSkeleton } from "@/components/shared"
 
 // Lazy Loaded Modals to satisfy PERF-01 (Prevent massive bundle on Hub Engine)
 // Lazy Loaded Modals - More robust import pattern to handle default/named exports and prevent load failures
@@ -18,7 +18,7 @@ const DocumentCompletionModal = dynamic(() => import("@/components/shared/Docume
 const DeliveryModal = dynamic(() => import("@/features/sales").then(m => m.DeliveryModal))
 const ReceiptModal = dynamic(() => import("@/features/purchasing/components/ReceiptModal").then(m => m.ReceiptModal))
 const PaymentHistoryModal = dynamic(() => import("./PaymentHistoryModal").then(m => m.PaymentHistoryModal))
-const PaymentModal = dynamic(() => import("@/features/treasury/components/PaymentDialog").then(m => m.PaymentDialog))
+const PaymentModal = dynamic(() => import("@/features/treasury/components/PaymentModal").then(m => m.PaymentModal))
 const PaymentReferenceModal = dynamic(() => import("@/features/treasury/components/PaymentReferenceModal").then(m => m.PaymentReferenceModal))
 const NoteCheckoutWizard = dynamic(() => import("@/features/billing/components/NoteCheckoutWizard").then(m => m.NoteCheckoutWizard))
 const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => m.DocumentListModal))
@@ -371,7 +371,7 @@ export const ActionCategory = forwardRef(({
             )}
 
             {/* Modals with Suspense to prevent layout unmount on first load */}
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<FormSkeleton />}>
                 {activeModal === 'complete-folio' && (
                 <DocumentCompletionModal
                     open={true}

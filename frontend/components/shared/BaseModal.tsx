@@ -32,6 +32,7 @@ export interface BaseModalProps extends
     headerClassName?: string
     footerClassName?: string
     hideScrollArea?: boolean
+    allowOverflow?: boolean
     variant?: BaseModalVariant
     showCloseButton?: boolean
 }
@@ -50,6 +51,7 @@ export function BaseModal({
     headerClassName,
     footerClassName,
     hideScrollArea = false,
+    allowOverflow = false,
     variant = "default",
     showCloseButton = true,
     ...props
@@ -83,7 +85,8 @@ export function BaseModal({
                 size={size}
                 showCloseButton={false}
                 className={cn(
-                    "p-0 overflow-hidden flex flex-col max-h-[95vh]",
+                    "p-0 flex flex-col max-h-[95vh]",
+                    allowOverflow ? "overflow-visible" : "overflow-hidden",
                     isTransaction && "border-none shadow-2xl",
                     className
                 )}
@@ -127,7 +130,11 @@ export function BaseModal({
 
                 {/* Content Area */}
                 {hideScrollArea || isRaw ? (
-                    <div className={cn("flex-1 overflow-hidden", contentClassName)}>
+                    <div className={cn(
+                        "flex-1 flex flex-col min-h-0",
+                        allowOverflow ? "overflow-visible" : "overflow-hidden",
+                        contentClassName
+                    )}>
                         {children}
                     </div>
                 ) : (
@@ -146,3 +153,4 @@ export function BaseModal({
         </Dialog>
     )
 }
+

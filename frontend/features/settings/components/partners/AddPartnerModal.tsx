@@ -3,9 +3,9 @@
 import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
+import { CancelButton, SubmitButton } from "@/components/shared"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { LabeledInput, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
@@ -84,13 +84,10 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
 
     const footerContent = (
         <div className="flex w-full gap-3 justify-end">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                Cancelar
-            </Button>
-            <Button onClick={handleSubmit} disabled={loading || !formData.contact_id || newAmount <= 0}>
-                {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+            <SubmitButton onClick={handleSubmit} disabled={!formData.contact_id || newAmount <= 0} loading={loading}>
                 Confirmar Incorporación
-            </Button>
+            </SubmitButton>
         </div>
     )
 
@@ -111,35 +108,35 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
             <div className="space-y-6">
                 {/* Selector de nuevo socio */}
                 <div className="grid gap-4 p-4 border rounded-lg bg-muted/30">
-                    <div className="grid gap-2">
-                        <Label>Seleccionar Persona / Empresa</Label>
-                        <AdvancedContactSelector 
-                            value={formData.contact_id} 
+                    <LabeledContainer label="Seleccionar Persona / Empresa">
+                        <AdvancedContactSelector
+                            value={formData.contact_id}
                             onChange={(val) => setFormData(prev => ({ ...prev, contact_id: val || "" }))}
                             placeholder="Busque por nombre o RUT..."
+                            className="border-0 focus-visible:ring-0 h-9"
                         />
-                    </div>
+                    </LabeledContainer>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="amount">Aporte de Capital ($)</Label>
-                            <Input 
-                                id="amount" 
-                                type="number" 
-                                value={formData.amount}
-                                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                                placeholder="0"
-                                className="font-mono"
-                            />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="date">Fecha de Incorporación</Label>
-                            <Input 
-                                id="date" 
-                                type="date" 
-                                value={formData.date}
-                                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                            />
-                        </div>
+                        <LabeledInput
+                            label="Aporte de Capital ($)"
+                            type="number"
+                            value={formData.amount}
+                            onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                            placeholder="0"
+                            className="font-mono"
+                        />
+                        <PeriodValidationDateInput
+                            label="Fecha de Incorporación"
+                            date={formData.date ? new Date(formData.date + 'T12:00:00') : undefined}
+                            onDateChange={(d) => {
+                                if (!d) {
+                                    setFormData(prev => ({ ...prev, date: "" }))
+                                    return
+                                }
+                                setFormData(prev => ({ ...prev, date: d.toISOString().split('T')[0] }))
+                            }}
+                            validationType="accounting"
+                        />
                     </div>
                 </div>
 

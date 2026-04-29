@@ -65,7 +65,7 @@ export function DocumentListModal({
         work_orders: {
             title: 'Órdenes de Trabajo (OT)',
             icon: ClipboardList,
-            headers: ['N° OT', 'Producto', 'Cant.', 'Vencimiento', 'Estado']
+            headers: ['N° OT', 'Producto', 'Cantidad', 'Vencimiento', 'Estado']
         }
     }
 

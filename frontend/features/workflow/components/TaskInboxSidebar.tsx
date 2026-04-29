@@ -1,7 +1,7 @@
 "use client"
 
-import { X, Inbox } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Inbox } from "lucide-react"
+import { SheetCloseButton } from "@/components/shared"
 import { TaskInbox } from "@/features/workflow/components/TaskInbox"
 import { cn } from "@/lib/utils"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -31,14 +31,8 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
                     <Inbox className="h-5 w-5 text-muted-foreground" />
                     <h2 className="text-lg font-bold tracking-tight text-white">Bandeja de Entrada</h2>
                 </div>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onClose}
-                    className="rounded-lg h-9 w-9 hover:bg-white/10 text-muted-foreground hover:text-white transition-all"
-                >
-                    <X className="h-5 w-5" />
-                </Button>
+                <SheetCloseButton onClick={onClose} />
+
             </div>
 
             {/* Task Inbox Content */}
