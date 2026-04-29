@@ -396,10 +396,51 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({'suggestions': suggestions})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        """Get bank statement line suggestions for this payment"""
+
+    @action(detail=True, methods=['post'])
+    def allocate(self, request, pk=None):
+        """S5.2: Set partial allocations for a payment"""
+        movement = self.get_object()
+        allocations_data = request.data.get('allocations')
+        
+        # Determine if we should validate the sum. For S5, the rule is to allow draft state
+        # in some contexts, but usually we validate strict sum. We'll allow a query param.
+        # Although the roadmap says 'permisivo', let's default to permissive during the dialog,
+        # but the frontend sends them incrementally. Wait, the frontend dialog sends all splits at once.
+        validate_sum = request.query_params.get('validate_sum', 'false').lower() == 'true'
+        
+        if not allocations_data or not isinstance(allocations_data, list):
+            return Response(
+                {'error': 'Debe proveer una lista de "allocations"'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         try:
-            suggestions = MatchingService.suggest_lines_for_payment(pk)
-            return Response({'suggestions': suggestions})
+            from treasury.allocation_service import AllocationService
+            created = AllocationService.allocate(
+                movement=movement,
+                allocations=allocations_data,
+                user=request.user,
+                validate_sum=validate_sum
+            )
+            return Response(
+                PaymentAllocationSerializer(created, many=True).data,
+                status=status.HTTP_201_CREATED
+            )
+        except ValidationError as e:
+            # e.messages is a list if it comes from django ValidationError
+            err = e.message if hasattr(e, 'message') else str(e)
+            return Response({'error': err}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'])
+    def allocations(self, request, pk=None):
+        """S5.2: Get allocations for a payment"""
+        try:
+            from treasury.allocation_service import AllocationService
+            allocs = AllocationService.get_allocations(pk)
+            return Response(PaymentAllocationSerializer(allocs, many=True).data)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

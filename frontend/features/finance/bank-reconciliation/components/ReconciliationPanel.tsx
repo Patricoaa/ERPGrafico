@@ -9,11 +9,12 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ExclusionModal } from "./ExclusionModal"
+import { SplitAllocationDialog } from "./SplitAllocationDialog"
 import { SuggestionsPanel } from "./SuggestionsPanel"
 import { DateRangeFilter, LabeledInput, LabeledSelect, TableSkeleton } from "@/components/shared"
 import {
     Ban, CheckCircle2, ChevronRight, Filter,
-    Loader2, Search, Sparkles, X, AlertCircle, Wand2, Info, Calculator
+    Loader2, Search, Sparkles, X, AlertCircle, Wand2, Info, Calculator, SplitSquareHorizontal
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -24,8 +25,7 @@ import {
     useUnreconciledLinesQuery,
     useUnreconciledPaymentsQuery,
     useLineSuggestionsQuery,
-    usePaymentSuggestionsQuery,
-    QueryPaginationParams
+    usePaymentSuggestionsQuery
 } from "../hooks/useReconciliationQueries"
 import {
     useMatchMutation,
@@ -118,6 +118,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         type: 'exclude' | 'bulk_exclude' | 'automatch' | null,
         lineId?: number
     }>({ open: false, type: null })
+
+    const [splitDialog, setSplitDialog] = useState<{ open: boolean, payment: ReconciliationSystemItem | null }>({
+        open: false, payment: null
+    })
 
     const [confidenceThreshold, setConfidenceThreshold] = useState<number>(90)
     
@@ -435,7 +439,22 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 </div>
             ),
             size: 100,
-        }
+        },
+        createActionsColumn<ReconciliationSystemItem>({
+            headerLabel: "",
+            renderActions: (item) => [
+                <DataCell.Action
+                    key="split"
+                    icon={SplitSquareHorizontal}
+                    title="Distribuir"
+                    className="text-primary hover:text-primary/80"
+                    onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setSplitDialog({ open: true, payment: item })
+                    }}
+                />
+            ]
+        })
     ], [suggestions])
 
     // ─── Render ───────────────────────────────────────────────────────────────
@@ -549,7 +568,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     </p>
                                     <p className="text-xl font-black font-mono">
                                         {formatCurrency(
-                                            (selectedLines.length > 0 ? selectedLines : unreconciledLines).reduce((acc, l) => 
+                                            (selectedLines.length > 0 ? selectedLines : unreconciledLines).reduce((acc: number, l: any) => 
                                                 acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0
                                             )
                                         )}
@@ -562,7 +581,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     </p>
                                     <p className="text-xl font-black font-mono">
                                         {formatCurrency(
-                                            (selectedPayments.length > 0 ? selectedPayments : unreconciledPayments).reduce((acc, p) => 
+                                            (selectedPayments.length > 0 ? selectedPayments : unreconciledPayments).reduce((acc: number, p: any) => 
                                                 acc + Math.abs(parseFloat(p.amount)), 0
                                             )
                                         )}
@@ -577,8 +596,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         const lineItems = selectedLines.length > 0 ? selectedLines : unreconciledLines
                                         const payItems = selectedPayments.length > 0 ? selectedPayments : unreconciledPayments
                                         
-                                        const lineTotal = lineItems.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
-                                        const payTotal = payItems.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0)
+                                        const lineTotal = lineItems.reduce((acc: number, l: any) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
+                                        const payTotal = payItems.reduce((acc: number, p: any) => acc + Math.abs(parseFloat(p.amount)), 0)
                                         const diff = lineTotal - payTotal
                                         
                                         return (
@@ -740,6 +759,13 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         // Handled in mutation
                     } finally { setActionDialog({ open: false, type: null }) }
                 }}
+            />
+
+            <SplitAllocationDialog 
+                open={splitDialog.open} 
+                onOpenChange={(open) => !open && setSplitDialog({ open: false, payment: null })}
+                payment={splitDialog.payment}
+                treasuryAccountId={treasuryAccountId}
             />
 
             <ActionConfirmModal

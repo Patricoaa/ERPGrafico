@@ -136,3 +136,30 @@ export interface QueryPaginationParams {
     amount_min?: number
     amount_max?: number
 }
+
+// S5.1: Payment Allocation
+export interface PaymentAllocation {
+    id: number
+    treasury_movement: number
+    amount: string
+    notes?: string
+    invoice?: number
+    invoice_display_id?: string
+    sale_order?: number
+    sale_order_display_id?: string
+    purchase_order?: number
+    purchase_order_display_id?: string
+    bank_statement_line?: number
+    bank_statement_line_display?: string
+    created_at: string
+    created_by_name?: string
+}
+
+export interface PaymentAllocationPayload {
+    amount: number | string
+    notes?: string
+    invoice?: number
+    sale_order?: number
+    purchase_order?: number
+    bank_statement_line?: number
+}

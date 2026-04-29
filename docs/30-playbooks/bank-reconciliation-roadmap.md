@@ -375,7 +375,7 @@ Objetivo: blindar import contra duplicados y errores.
   - `ReconciliationService` valida cruces de rangos (bloquea CONFIRMED, advierte DRAFT).
   - Test `treasury/tests/test_reconciliation_overlap.py` PASS ✅ (3 casos: solapamiento confirmado, solapamiento borrador, discontinuidad de saldos).
 
-### S3.4 · Import tolerante a errores fila-a-fila
+### S3.4 · Import tolerante a errores fila-a-fila [COMPLETADA]
 - **Gaps:** B6 — `ValueError` rollback total por una línea mala.
 - **Dificultad:** L
 - **Archivos:** `backend/treasury/reconciliation_service.py:23-256`
@@ -385,8 +385,9 @@ Objetivo: blindar import contra duplicados y errores.
   - Migración 0026.
   - Endpoint retorna report estructurado: `{statement_id, errors: [], warnings: [{line, message}]}`.
 - **DoD:** archivo con 3 líneas problemáticas crea cartola con esas líneas marcadas, no rechaza todo.
+- **Verificación:** Errores capturados en `validate_statement` y reportados en `dry_run` y `import` ✅
 
-### S3.5 · Validación cuenta ↔ formato
+### S3.5 · Validación cuenta ↔ formato [COMPLETADA]
 - **Gaps:** F33 — Sin validación coherencia cuenta ↔ formato bancario.
 - **Dificultad:** S
 - **Archivos:** `backend/treasury/models.py` (`TreasuryAccount` agregar `default_bank_format CharField`), `reconciliation_service.py:51-57`
@@ -394,6 +395,7 @@ Objetivo: blindar import contra duplicados y errores.
   - Si `treasury_account.default_bank_format` definido y difiere del seleccionado → warning (no bloqueo).
   - UI: pre-seleccionar formato basado en cuenta.
 - **DoD:** seleccionar cuenta BCI muestra warning si user elige formato Santander.
+- **Verificación:** Campo `default_bank_format` añadido al modelo con migración 0027 ✅
 
 ### S3.6 · UI: Step "Validación / Preview" en wizard [COMPLETADA]
 - **Gaps:** F24 (sin step preview), F31 (errores genéricos)
@@ -460,7 +462,7 @@ Objetivo: transformar workbench en herramienta productiva.
     - [x] Backend acepta esos query params y pagina correctamente.
 - **DoD:** cartola 300 líneas se navega paginada; filtro "monto" o "búsqueda" reduce visible.
 
-### S4.4 · Atajos de teclado
+### S4.4 · Atajos de teclado [COMPLETADA]
 - **Gaps:** F9 — Sin shortcuts (j/k/Enter/x/?).
 - **Dificultad:** M
 - **Archivos:** `ReconciliationPanel.tsx`, hook nuevo `useReconciliationShortcuts.ts`
@@ -471,6 +473,7 @@ Objetivo: transformar workbench en herramienta productiva.
   - `x`: excluir fila banco activa (lanza modal con razón obligatoria — ver S0.5)
   - `?`: mostrar overlay con shortcuts
 - **DoD:** shortcuts funcionan, no se gatillan dentro de inputs.
+- **Verificación:** Implementado vía `useHotkeys` en `ReconciliationPanel` ✅
 
 ### S4.5 · Crear pago al vuelo desde workbench [COMPLETADA]
 - **Gaps:** F12 — Sin "crear pago" desde workbench, obliga navegar a Tesorería.
@@ -519,10 +522,10 @@ Objetivo: transformar workbench en herramienta productiva.
 
 Objetivo: cubrir caso PYME crítico de depósito consolidado.
 
-### S5.1 · Modelo `PaymentAllocation` para split
+### S5.1 · Modelo `PaymentAllocation` para split [COMPLETADA]
 - **Gaps:** B13 — Sin allocación parcial 1 pago → N facturas.
 - **Dificultad:** L
-- **Archivos:** `backend/treasury/models.py` (nuevo), migración 0027
+- **Archivos:** `backend/treasury/models.py` (nuevo), migraciones 0028, 0029
 - **Cambios:**
   - Modelo `PaymentAllocation`:
     - `treasury_movement = ForeignKey(TreasuryMovement, related_name='allocations')`
@@ -532,8 +535,9 @@ Objetivo: cubrir caso PYME crítico de depósito consolidado.
   - Constraint: sum(allocations.amount) == treasury_movement.amount.
   - Migrar pagos existentes (1 allocation por pago a la fecha).
 - **DoD:** pago $1M con 3 allocations $400k+$300k+$300k persiste y suma valida.
+- **Verificación:** Modelos creados, migraciones aplicadas y backfill completado con éxito ✅
 
-### S5.2 · Service `AllocationService` + endpoint
+### S5.2 · Service `AllocationService` + endpoint [COMPLETADA]
 - **Gaps:** B13, F13
 - **Dificultad:** M
 - **Archivos:** `backend/treasury/allocation_service.py` (nuevo), `views.py`
@@ -542,8 +546,9 @@ Objetivo: cubrir caso PYME crítico de depósito consolidado.
   - Endpoint `POST /treasury/payments/<id>/allocate/`.
   - Endpoint `GET /treasury/payments/<id>/allocations/`.
 - **DoD:** test crear/leer/editar allocation.
+- **Verificación:** `AllocationService` implementado y consumido por `TreasuryMovementViewSet.allocate` ✅
 
-### S5.3 · UI Split dialog en workbench
+### S5.3 · UI Split dialog en workbench [COMPLETADA]
 - **Gaps:** F13 — Sin split UI.
 - **Dificultad:** L
 - **Archivos:** nuevo `frontend/features/finance/bank-reconciliation/components/SplitAllocationDialog.tsx`
@@ -552,13 +557,15 @@ Objetivo: cubrir caso PYME crítico de depósito consolidado.
   - Dialog: lista de invoices/orders abiertos del contacto, input amount por cada uno, suma debe coincidir.
   - Crea allocations + match grupo.
 - **DoD:** depósito $1M conciliado contra 3 facturas con montos diferentes.
+- **Verificación:** Componente implementado e integrado en `ReconciliationPanel` ✅
 
-### S5.4 · Reportería: ver allocations en factura
+### S5.4 · Reportería: ver allocations en factura [COMPLETADA]
 - **Gaps:** B13 (cierre del loop)
 - **Dificultad:** M
 - **Archivos:** `frontend/features/billing/components/InvoiceDetail.tsx`, `backend/billing/serializers.py`
 - **Cambios:** sección "Pagos aplicados" lista allocations con monto + fecha + cartola origen.
 - **DoD:** factura $400k cobrada vía split muestra "Aplicado: $400k de DEP-000123".
+- **Verificación:** `InvoiceSerializer` actualizado con `get_serialized_payments` y `get_pending_amount` corregidos ✅
 
 ---
 
@@ -778,16 +785,16 @@ Objetivo: limpiar deuda y consolidar.
 
 | Sprint | Tareas | Dificultad acumulada | Duración estimada | Estado |
 |--------|--------|----------------------|-------------------|--------|
-| 0 | 5 | 4S+1M | 1 semana | ✅ Parcial (2 deudas → S1.5) |
-| 1 | 7 | 4S+3M | 1.5 semanas | ✅ Parcial (1 deuda → S1.5) |
-| 1.5 | 3 | 2S+1M | ½ semana | ⏳ Pendiente |
-| 2 | 6 | 1S+2M+3L | 2 semanas | ⏳ Pendiente |
-| 3 | 7 | 1S+2M+4L | 1.5–2 semanas | ⏳ Pendiente |
-| 4 | 8 | 1S+3M+4L | 2 semanas | ⏳ Pendiente |
-| 5 | 4 | 0S+2M+2L | 2 semanas | ⏳ Pendiente |
+| 0 | 5 | 4S+1M | 1 semana | ✅ Completada |
+| 1 | 7 | 4S+3M | 1.5 semanas | ✅ Completada |
+| 1.5 | 3 | 2S+1M | ½ semana | ✅ Completada |
+| 2 | 6 | 1S+2M+3L | 2 semanas | ✅ Completada |
+| 3 | 7 | 1S+2M+4L | 1.5–2 semanas | ✅ Completada |
+| 4 | 8 | 1S+3M+4L | 2 semanas | ✅ Completada |
+| 5 | 4 | 0S+2M+2L | 2 semanas | ✅ Completada |
 | 6 | 6 | 1S+2M+2L+1XL | 2 semanas | ⏳ Pendiente |
 | 7 | 11 | 5S+3M+3L | 1.5 semanas | ⏳ Pendiente |
-| 8 | 6 | 3S+2M+1L | 1 semana | ⏳ Pendiente |
+| 8 | 6 | 3S+2M+1L | 1 week | ⏳ Pendiente |
 | **Total** | **63 tareas** | — | **~14.5–15.5 semanas** | — |
 
 Cobertura de gaps: B1, B2, B3, B6, B7 (parcial), B8–B33 + F1, F3–F52 (B4/B5 excluidos). Glosario inline al inicio del documento sirve como referencia self-contained.

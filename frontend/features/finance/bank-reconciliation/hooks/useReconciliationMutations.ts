@@ -289,3 +289,28 @@ export function useUnmatchMutation(statementId: number, treasuryAccountId: numbe
         }
     })
 }
+
+/**
+ * S5.2: Create or update partial allocations for a treasury movement
+ */
+export function useAllocateMutation(movementId: number, treasuryAccountId?: number) {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async ({ allocations, validateSum = false }: { allocations: any[], validateSum?: boolean }) => {
+            return api.post(`/treasury/movements/${movementId}/allocate/?validate_sum=${validateSum}`, { allocations })
+        },
+        onSuccess: () => {
+            toast.success("Distribución guardada correctamente")
+        },
+        onError: (err) => {
+            showApiError(err, "Error al guardar la distribución")
+        },
+        onSettled: () => {
+            if (treasuryAccountId) {
+                queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledPayments(treasuryAccountId) })
+            }
+            // Invalidate other generic movement/payment queries if necessary
+        }
+    })
+}

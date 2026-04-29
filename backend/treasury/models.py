@@ -1726,7 +1726,111 @@ class POSSessionAudit(models.Model):
         return f"Arqueo Sesión #{self.session.id} - Diff: {self.difference}"
 
 
+# ---------------------------------------------------------------------------
+# S5.1 — Split Allocation (Gap B13)
+# ---------------------------------------------------------------------------
 
+class PaymentAllocation(models.Model):
+    """
+    Distribución de un movimiento de tesorería entre múltiples documentos.
+    Permite split: 1 pago → N facturas/órdenes/líneas de cartola.
+
+    Constraint de suma (permisivo):
+        sum(allocations.amount) puede ser menor al movement.amount mientras
+        la allocation esté en construcción. AllocationService.validate_sum()
+        se invoca explícitamente al confirmar la conciliación.
+
+    Exactamente 1 FK destino debe estar definida por registro (validado en clean()).
+    """
+
+    from decimal import Decimal as _Decimal
+
+    treasury_movement = models.ForeignKey(
+        'TreasuryMovement',
+        on_delete=models.CASCADE,
+        related_name='allocations',
+        verbose_name=_("Movimiento de Tesorería")
+    )
+
+    # — Destino (exactamente 1 debe ser non-null) —
+    invoice = models.ForeignKey(
+        'billing.Invoice',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='payment_allocations',
+        verbose_name=_("Factura")
+    )
+    sale_order = models.ForeignKey(
+        'sales.SaleOrder',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='payment_allocations',
+        verbose_name=_("Orden de Venta")
+    )
+    purchase_order = models.ForeignKey(
+        'purchasing.PurchaseOrder',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='payment_allocations',
+        verbose_name=_("Orden de Compra")
+    )
+    bank_statement_line = models.ForeignKey(
+        'BankStatementLine',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='payment_allocations',
+        verbose_name=_("Línea de Cartola")
+    )
+
+    amount = models.DecimalField(
+        _("Monto Asignado"),
+        max_digits=14,
+        decimal_places=2,
+        validators=[MinValueValidator(_Decimal('0.01'))]
+    )
+    notes = models.TextField(_("Notas"), blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='created_allocations',
+        verbose_name=_("Creado Por")
+    )
+
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Distribución de Pago")
+        verbose_name_plural = _("Distribuciones de Pago")
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['treasury_movement'], name='idx_palloc_movement'),
+            models.Index(fields=['invoice'], name='idx_palloc_invoice'),
+        ]
+
+    def __str__(self) -> str:
+        return f"Alloc #{self.id} — {self.treasury_movement_id} → ${self.amount}"
+
+    def clean(self) -> None:
+        """Valida que exactamente 1 FK destino esté definida."""
+        targets = [self.invoice_id, self.sale_order_id,
+                   self.purchase_order_id, self.bank_statement_line_id]
+        defined = sum(1 for t in targets if t is not None)
+        if defined == 0:
+            raise ValidationError(
+                _("Debe especificar al menos un documento destino "
+                  "(factura, orden de venta, orden de compra o línea de cartola).")
+            )
+        if defined > 1:
+            raise ValidationError(
+                _("Solo puede asignar a un documento por fila de distribución.")
+            )
+
+    def save(self, *args, **kwargs) -> None:
+        self.clean()
+        super().save(*args, **kwargs)
 
 
 
