@@ -119,7 +119,7 @@ class MatchingService:
         # 2. Scoring estándar (evitando duplicados)
         seen_ids = {s['payment_data']['id'] for s in suggestions}
         
-        for payment in payments_query[:50]:  # Limitar procesamiento
+        for payment in payments_query[:200]:  # B10: cap aumentado de 50→200 para evitar falsos negativos silenciosos en cuentas con muchos pagos
             if payment.id in seen_ids:
                 continue
                 
@@ -326,22 +326,39 @@ class MatchingService:
         score += id_score
         
         # 4. Description match (10 puntos)
-        # Buscar RUT o nombre de contacto en descripción
+        # S2.5: normalizar descripción de la línea (quitar prefijos bancarios de ruido)
+        # S2.6: reemplazar substring strict por fuzzy matching con rapidfuzz
         if payment.contact:
             contact_name = payment.contact.name.upper()
-            description = line.description.upper()
-            
-            if contact_name in description:
-                score += 10
-                reasons.append('contact_name_match')
-            else:
-                # Buscar palabras clave (mínimo 3 letras)
-                words = [w for w in contact_name.split() if len(w) >= 3]
-                matches = sum(1 for word in words if word in description)
-                if matches >= 2:
-                    score += 5
-                    reasons.append('contact_partial_match')
-        
+
+            bank_format = line.statement.bank_format if line.statement else None
+            # Normalizar descripción de la línea bancaria
+            from .glossa_normalizer import normalize_description
+            normalized_description = normalize_description(line.description, bank_format)
+
+            try:
+                from rapidfuzz import fuzz as _fuzz
+                ratio = _fuzz.partial_ratio(contact_name, normalized_description)
+                if ratio == 100:
+                    score += 10
+                    reasons.append('contact_name_match')
+                elif ratio >= 80:
+                    # Escala lineal 5–9 pts entre ratio 80 y 99
+                    score += int(5 + (ratio - 80) / 19 * 4)
+                    reasons.append('contact_fuzzy_match')
+                # ratio < 80 → 0 pts (no penalizamos)
+            except ImportError:
+                # Fallback sin rapidfuzz: substring o palabras clave
+                if contact_name in normalized_description:
+                    score += 10
+                    reasons.append('contact_name_match')
+                else:
+                    words = [w for w in contact_name.split() if len(w) >= 3]
+                    matches = sum(1 for word in words if word in normalized_description)
+                    if matches >= 2:
+                        score += 5
+                        reasons.append('contact_partial_match')
+
         # Serializar payment data
         from .serializers import TreasuryMovementSerializer
         payment_data = TreasuryMovementSerializer(payment).data
@@ -537,18 +554,19 @@ class MatchingService:
         group.confirmed_by = user
         group.save()
         
-        # Update All Lines in Group
-        for l in group.lines.all():
+        # S2.2: bulk_update todas las líneas del grupo en una sola operación.
+        # S2.3 Fase 1: No escribimos reconciled_lines — es contador denormalizado
+        # que será convertido a @property en S2.3 Fase 2.
+        now = timezone.now()
+        lines_in_group = list(group.lines.all())
+        for l in lines_in_group:
             l.reconciliation_status = 'RECONCILED'
-            l.reconciled_at = timezone.now()
+            l.reconciled_at = now
             l.reconciled_by = user
-            l.save()
-            
-            # Update Statement counters logic (Optimization: update once per statement)
-            l.statement.reconciled_lines = l.statement.lines.filter(
-                reconciliation_status='RECONCILED'
-            ).count()
-            l.statement.save()
+        BankStatementLine.objects.bulk_update(
+            lines_in_group,
+            ['reconciliation_status', 'reconciled_at', 'reconciled_by']
+        )
 
         # Update All Terminal Batches in Group
         for b in group.terminal_batches.all():
@@ -660,20 +678,19 @@ class MatchingService:
             p.bank_statement_line = None
             p.save()
             
-        # 2. Lines
-        for l in group.lines.all():
+        # 2. Lines — S2.2: bulk_update, S2.3 Fase 1: sin escribir reconciled_lines
+        lines_to_reset = list(group.lines.all())
+        for l in lines_to_reset:
             l.reconciliation_match = None
             l.matched_payment = None
             l.reconciliation_status = 'UNRECONCILED'
             l.reconciled_at = None
             l.difference_amount = Decimal(0)
-            l.save()
-            
-            # Update statement
-            l.statement.reconciled_lines = l.statement.lines.filter(
-                 reconciliation_status='RECONCILED'
-            ).count()
-            l.statement.save()
+        BankStatementLine.objects.bulk_update(
+            lines_to_reset,
+            ['reconciliation_match', 'matched_payment', 'reconciliation_status',
+             'reconciled_at', 'difference_amount']
+        )
             
         # 3. TerminalBatches
         for b in group.terminal_batches.all():
@@ -699,83 +716,194 @@ class MatchingService:
         confidence_threshold: float = 90.0
     ) -> Dict[str, Any]:
         """
-        Intenta matching automático para todas las líneas de una cartola.
-        Solo confirma matches con score >= threshold.
-        
+        S2.1: Matching automático con batch pre-fetch.
+
+        Estrategia O(1 query candidatos + N scoring en RAM) en lugar de O(N queries):
+          1. Pre-fetch en 1 query todos los TreasuryMovements no reconciliados
+             de la cuenta en el rango de fechas de la cartola.
+          2. Construir índice en memoria (dict) por amount y por transaction_number.
+          3. Pre-fetch reglas activas de la cuenta (1 query).
+          4. Por cada línea, filtrar candidatos en RAM y calcular score sin tocar DB.
+          5. Confirmar matches que superen el threshold con create_match_group.
+
         Args:
             statement_id: ID de la cartola
             confidence_threshold: Score mínimo para auto-match (default: 90)
-        
+
         Returns:
-            {
-                'matched_count': int,
-                'total_unreconciled': int,
-                'matches': List[Dict]
-            }
+            {'matched_count': int, 'total_unreconciled': int, 'matches': List[Dict]}
         """
         try:
-            statement = BankStatement.objects.get(id=statement_id)
+            statement = BankStatement.objects.select_related(
+                'treasury_account', 'treasury_account__account'
+            ).get(id=statement_id)
         except BankStatement.DoesNotExist:
             raise ValueError(f"Cartola {statement_id} no encontrada")
-        
+
         if statement.status == 'CONFIRMED':
             raise ValueError("Cartola ya confirmada")
-        
-        # Obtener líneas no reconciliadas
-        unreconciled_qs = statement.lines.filter(
-            reconciliation_status='UNRECONCILED'
+
+        account = statement.treasury_account
+
+        # ── 1. Pre-fetch líneas no reconciliadas (1 query) ──────────────────────
+        unreconciled_lines = list(
+            statement.lines.filter(
+                reconciliation_status='UNRECONCILED'
+            ).select_related('statement', 'statement__treasury_account')
         )
-        total_unreconciled = unreconciled_qs.count()
-        unreconciled_lines = unreconciled_qs.iterator()
-        
+        total_unreconciled = len(unreconciled_lines)
+
+        if total_unreconciled == 0:
+            return {'matched_count': 0, 'total_unreconciled': 0, 'matches': []}
+
+        # ── 2. Rango de fechas de la cartola con holgura ────────────────────────
+        dates = [l.transaction_date for l in unreconciled_lines]
+        range_min = min(dates) - timedelta(days=7)
+        range_max = max(dates) + timedelta(days=7)
+
+        # ── 3. Pre-fetch candidatos (1 query para toda la cartola) ───────────────
+        # Incluimos tanto INBOUND→to_account como OUTBOUND→from_account para cubrir
+        # cualquier sentido que tenga la cartola.
+        candidates_qs = TreasuryMovement.objects.filter(
+            Q(
+                is_reconciled=False,
+                is_pending_registration=False,
+                date__gte=range_min,
+                date__lte=range_max,
+            ) & (
+                Q(to_account=account) | Q(from_account=account)
+            )
+        ).select_related('contact', 'from_account', 'to_account')
+
+        all_candidates: List[TreasuryMovement] = list(candidates_qs)
+
+        # ── 4. Pre-fetch reglas activas (1 query) ────────────────────────────────
+        from .models import ReconciliationRule
+        active_rules = list(
+            ReconciliationRule.objects.filter(
+                Q(treasury_account=account) | Q(treasury_account__isnull=True),
+                is_active=True
+            ).order_by('priority')
+        )
+
+        # ── 5. Conjuntos de IDs ya matched (para skip inmediato) ─────────────────
+        already_matched_payment_ids: set[int] = set()
+
         matched_count = 0
-        matches = []
-        
+        matches: List[Dict[str, Any]] = []
+
         for line in unreconciled_lines:
-            suggestions = MatchingService.suggest_matches(line.id, limit=1)
-            
-            if suggestions:
-                top_suggestion = suggestions[0]
-                score = top_suggestion['score']
-                
-                # Condición de auto-match: Score >= threshold O Regla con auto_confirm
-                should_match = score >= confidence_threshold or top_suggestion.get('auto_confirm', False)
-                
-                if should_match:
-                    payment_id = top_suggestion['payment_data']['id']
-                    
-                    try:
-                        # Auto-match (Ahora usa el wrapper que crea grupos)
-                        MatchingService.manual_match(
-                            line.id,
-                            payment_id,
-                            None  # Sistema
-                        )
-                        
-                        # Si viene de una regla, confirmar el uso
-                        if top_suggestion.get('rule_id'):
-                            RuleService.increment_rule_usage(top_suggestion['rule_id'], success=True)
-                        
-                        matched_count += 1
-                        matches.append({
-                            'line_id': line.id,
-                            'line_number': line.line_number,
-                            'payment_id': payment_id,
+            line_amount = abs(line.credit - line.debit)
+            is_inbound = line.credit > line.debit
+
+            # ── 5a. Filtrar candidatos en RAM por sentido + account ──────────────
+            line_candidates = [
+                p for p in all_candidates
+                if p.id not in already_matched_payment_ids
+                and MatchingService._payment_matches_account_sense(p, account, is_inbound)
+            ]
+
+            # ── 5b. Score en RAM (sin queries adicionales) ───────────────────────
+            best_suggestion: Optional[Dict[str, Any]] = None
+            best_score: float = 0.0
+
+            # Reglas primero
+            for rule in active_rules:
+                config = rule.match_config
+                min_score = config.get('min_score', 50)
+                for p in line_candidates:
+                    score = RuleService._calculate_rule_score(line, p, rule)
+                    if score >= min_score and score > best_score:
+                        best_score = score
+                        best_suggestion = {
+                            'payment': p,
                             'score': score,
-                            'rule_applied': top_suggestion.get('rule_id') is not None
-                        })
-                    except Exception as e:
-                        # Skip si falla
-                        continue
-        
+                            'rule_id': rule.id,
+                            'auto_confirm': rule.auto_confirm,
+                        }
+
+            # Score estándar si ninguna regla supera threshold
+            if best_score < confidence_threshold:
+                for p in line_candidates:
+                    score_data = MatchingService._calculate_match_score(line, p)
+                    if score_data['score'] > best_score:
+                        best_score = score_data['score']
+                        best_suggestion = {
+                            'payment': p,
+                            'score': score_data['score'],
+                            'rule_id': None,
+                            'auto_confirm': False,
+                        }
+
+            if not best_suggestion:
+                continue
+
+            should_match = (
+                best_suggestion['score'] >= confidence_threshold
+                or best_suggestion.get('auto_confirm', False)
+            )
+
+            if not should_match:
+                continue
+
+            payment = best_suggestion['payment']
+
+            try:
+                MatchingService.create_match_group(
+                    [line.id],
+                    [payment.id],
+                    None,  # Sistema (B33: created_by nullable pending S7.4)
+                )
+
+                if best_suggestion.get('rule_id'):
+                    RuleService.increment_rule_usage(best_suggestion['rule_id'], success=True)
+
+                # Marcar como ya usado para evitar doble-match
+                already_matched_payment_ids.add(payment.id)
+
+                matched_count += 1
+                matches.append({
+                    'line_id': line.id,
+                    'line_number': line.line_number,
+                    'payment_id': payment.id,
+                    'score': best_suggestion['score'],
+                    'rule_applied': best_suggestion.get('rule_id') is not None,
+                })
+            except Exception:
+                continue
+
         if matched_count > 0:
             from core.cache import invalidate_report_cache
             invalidate_report_cache('treasury')
-            
+
         return {
             'matched_count': matched_count,
             'total_unreconciled': total_unreconciled,
-            'matches': matches
+            'matches': matches,
         }
+
+    @staticmethod
+    def _payment_matches_account_sense(
+        payment: TreasuryMovement,
+        account: 'TreasuryAccount',
+        is_inbound: bool,
+    ) -> bool:
+        """
+        S2.1 helper: verifica en RAM si un TreasuryMovement tiene el sentido
+        correcto para conciliarse con una línea de la cuenta dada.
+
+        is_inbound=True  → línea es Abono → buscamos INBOUND a la cuenta o TRANSFER hacia la cuenta.
+        is_inbound=False → línea es Cargo → buscamos OUTBOUND desde la cuenta o TRANSFER desde la cuenta.
+        """
+        if is_inbound:
+            return (
+                (payment.movement_type == 'INBOUND' and payment.to_account_id == account.pk)
+                or (payment.movement_type == 'TRANSFER' and payment.to_account_id == account.pk)
+            )
+        else:
+            return (
+                (payment.movement_type == 'OUTBOUND' and payment.from_account_id == account.pk)
+                or (payment.movement_type == 'TRANSFER' and payment.from_account_id == account.pk)
+            )
 
 

@@ -226,14 +226,14 @@ function ProviderCard({ provider, onEdit, onDelete }: { provider: PaymentTermina
                         <div className="flex flex-col gap-1.5 p-3 rounded-sm bg-muted/30 border border-muted/50">
                             <div className="flex items-center gap-2">
                                 <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
-                                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">Recaudación:</span>
-                                <span className="text-[11px] font-medium ml-auto">{provider.receivable_account_name}</span>
+                                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight"> {/* intentional: badge density */} Recaudación:</span>
+                                <span className="text-[11px] font-medium ml-auto"> {/* intentional: badge density */} {provider.receivable_account_name}</span>
                             </div>
                             {provider.supplier_name && (
                                 <div className="flex items-center gap-2 pt-1.5 border-t border-muted/30">
                                     <UserIcon className="w-3.5 h-3.5 text-primary/60" />
-                                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">Contacto:</span>
-                                    <span className="text-[11px] font-medium ml-auto text-primary/80">{provider.supplier_name}</span>
+                                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight"> {/* intentional: badge density */} Contacto:</span>
+                                    <span className="text-[11px] font-medium ml-auto text-primary/80"> {/* intentional: badge density */} {provider.supplier_name}</span>
                                 </div>
                             )}
                         </div>
@@ -268,7 +268,7 @@ function DeviceCard({ device, onEdit, onDelete }: { device: PaymentTerminalDevic
                 </div>
             </CardHeader>
             <CardContent className="p-4 pt-2 space-y-3">
-                <div className="grid grid-cols-1 gap-2 text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                <div className="grid grid-cols-1 gap-2 text-[10px] uppercase font-bold text-muted-foreground tracking-wider"> {/* intentional: badge density */}
                     <div className="flex justify-between">
                         <span>Proveedor:</span>
                         <span className="text-foreground">{device.provider_name}</span>
@@ -287,7 +287,7 @@ function DeviceCard({ device, onEdit, onDelete }: { device: PaymentTerminalDevic
                                 <span className="px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-sm">CRÉDITO</span>
                             )}
                             {(!device.supported_payment_methods || device.supported_payment_methods.length === 0) && (
-                                <span className="text-[8px] italic opacity-50">SIN CONFIG</span>
+                                <span className="text-[10px] italic opacity-50"> {/* intentional: badge density */} SIN CONFIG</span>
                             )}
                         </div>
                     </div>

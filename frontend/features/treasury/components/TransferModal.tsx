@@ -168,7 +168,7 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                                                 />
                                                 {sourceAccount && (
                                                     <div className="absolute -bottom-5 right-1 px-1.5 py-0.5 rounded bg-muted/30 border border-muted/50">
-                                                        <p className="text-[9px] font-mono leading-none">
+                                                        <p className="text-[10px] font-mono leading-none"> {/* intentional: badge density */}
                                                             DISP: <span className="font-bold text-emerald-600">{formatCurrency(sourceAccount.current_balance)}</span>
                                                         </p>
                                                     </div>
@@ -239,7 +239,7 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                                 <div className="col-span-2 flex items-end">
                                     {sourceAccount && toAccountId && amount && !isNaN(parseFloat(amount)) && (
                                         <div className="w-full p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/20 flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
-                                            <p className="text-[9px] text-amber-600 font-black uppercase tracking-widest mb-1">Impacto en Origen</p>
+                                            <p className="text-[10px] text-amber-600 font-black uppercase tracking-widest mb-1"> {/* intentional: badge density */} Impacto en Origen</p>
                                             <p className="text-xs font-black text-amber-700">
                                                 {formatCurrency(sourceAccount.current_balance - parseFloat(amount))}
                                             </p>

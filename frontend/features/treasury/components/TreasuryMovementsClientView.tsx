@@ -222,7 +222,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                             </DataCell.Link>
                         );
                     }
-                    return <DataCell.Secondary className="text-[11px] font-bold opacity-70">{data.label}</DataCell.Secondary>;
+                    return <DataCell.Secondary className="text-[11px] font-bold opacity-70"> {/* intentional: badge density */} {data.label}</DataCell.Secondary>;
                 };
 
                 return (
