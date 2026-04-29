@@ -427,15 +427,16 @@ Objetivo: blindar import contra duplicados y errores.
 
 Objetivo: transformar workbench en herramienta productiva.
 
-### S4.1 · Migrar `useReconciliation` a TanStack Query
+### S4.1 · Migrar `useReconciliation` a TanStack Query [COMPLETADA]
 - **Gaps:** F21 (sin TanStack Query, refetch full), F22 (sin AbortController, race conditions)
+- **Estado:** ✅ Completada. Implementado con queryKeys estructuradas, AbortSignal nativo y Optimistic Updates para matches.
 - **Dificultad:** L
-- **Archivos:** `frontend/features/finance/bank-reconciliation/hooks/useReconciliation.ts`, `ReconciliationPanel.tsx`, `ReconciliationDashboard.tsx`, `StatementsList.tsx`, `ReconciliationRules.tsx`
+- **Archivos:** `frontend/features/finance/bank-reconciliation/hooks/useReconciliation.ts` (ELIMINADO), `ReconciliationPanel.tsx`, `ReconciliationDashboard.tsx`, `StatementsList.tsx`, `ReconciliationRules.tsx`
 - **Cambios:**
-  - Convertir `fetchStatements`, `fetchAccounts`, `fetchRules`, `fetchDashboardData`, `fetchSuggestions`, `fetchUnreconciledLines`, `fetchUnreconciledPayments` en `useQuery` con `queryKey` estructurado.
-  - Match/exclude/unmatch como `useMutation` con `onSuccess` que invalida queryKeys puntuales.
-  - Optimistic update en match.
-  - `AbortController` automático via React Query al cambiar selección.
+  - [x] Convertir `fetchStatements`, `fetchAccounts`, `fetchRules`, `fetchDashboardData`, `fetchSuggestions`, `fetchUnreconciledLines`, `fetchUnreconciledPayments` en `useQuery`.
+  - [x] Match/exclude/unmatch como `useMutation` con invalidación de queryKeys.
+  - [x] Optimistic update en match (UI responde instantáneamente).
+  - [x] `AbortController` automático via React Query al cambiar selección.
 - **DoD:** seleccionar línea rápido (5 cambios en 1s) no dispara race; UI no parpadea en match (optimistic).
 
 ### S4.2 · Suggestions panel real (top-5 con score y razones)
