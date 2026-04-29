@@ -10,12 +10,11 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ExclusionModal } from "./ExclusionModal"
 import { SuggestionsPanel } from "./SuggestionsPanel"
-import { LabeledSelect, LabeledInput } from "@/components/shared"
+import { DateRangeFilter, LabeledInput, LabeledSelect, TableSkeleton } from "@/components/shared"
 import {
     Ban, CheckCircle2, ChevronRight, Filter,
     Loader2, Search, Sparkles, X, AlertCircle, Wand2, Info, Calculator
 } from "lucide-react"
-import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
@@ -25,15 +24,21 @@ import {
     useUnreconciledLinesQuery,
     useUnreconciledPaymentsQuery,
     useLineSuggestionsQuery,
-    usePaymentSuggestionsQuery
+    usePaymentSuggestionsQuery,
+    QueryPaginationParams
 } from "../hooks/useReconciliationQueries"
 import {
     useMatchMutation,
     useGroupMatchMutation,
     useAutoMatchMutation,
     useExcludeMutation,
-    useBulkExcludeMutation
+    useBulkExcludeMutation,
+    useCreateAndMatchMutation,
+    useUnmatchMutation
 } from "../hooks/useReconciliationMutations"
+
+import { MovementWizard, type MovementData } from "@/features/treasury/components/MovementWizard"
+import { AutoMatchProgressModal } from "./AutoMatchProgressModal"
 
 
 import { DataTable } from "@/components/ui/data-table"
@@ -44,75 +49,23 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 
-// ─── Interfaces ──────────────────────────────────────────────────────────────
-
-interface BankStatementLine {
-    id: number
-    line_number: number
-    transaction_date: string
-    description: string
-    reference: string
-    debit: string
-    credit: string
-    balance: string
-    reconciliation_state: string
-    reconciliation_state_display: string
-}
-
-interface PaymentData {
-    id: number
-    display_id: string
-    amount: string
-    date: string
-    contact_name: string
-    payment_type: string
-}
-
-interface BatchData {
-    id: number
-    display_id: string
-    net_amount: string
-    sales_date: string
-    payment_method_name: string
-    supplier_name?: string
-}
+// Types moved to types.ts or correctly imported
+import type { 
+    BankStatement, 
+    BankStatementLine, 
+    ReconciliationSystemItem, 
+    QueryPaginationParams
+} from "../types"
 
 interface PaymentSuggestion {
-    payment_data?: PaymentData
-    batch_data?: BatchData
     is_batch?: boolean
-    score: number
-    reasons: string[]
+    payment_data?: { id: number }
+    batch_data?: { id: number }
     difference: string
-    rule_id?: number
-    auto_confirm?: boolean
-}
-
-// Unified interface for the table rows in the system side
-interface ReconciliationSystemItem {
-    id: number
-    amount: string
-    date: string
-    contact_name: string
-    display_id?: string
-    code?: string
-    is_batch?: boolean
-    identifier?: string
-    name?: string
 }
 
 interface LineSuggestion {
-    line_data: BankStatementLine
-    score: number
-    reasons: string[]
-    difference: string
-}
-
-interface BankStatement {
-    id: number;
-    total_lines: number;
-    reconciled_lines: number;
-    name?: string;
+    line_data: { id: number }
 }
 
 interface ReconciliationPanelProps {
@@ -130,9 +83,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const lineIdStr = selectedLines.length === 1 ? selectedLines[0].id : 0
     const paymentIdStr = selectedPayments.length === 1 ? selectedPayments[0].id : 0
 
+    const [bankParams, setBankParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
+    const [systemParams, setSystemParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
+
     const { data: statement } = useStatementQuery(statementId)
-    const { data: unreconciledLines = [], isLoading: loadingLines } = useUnreconciledLinesQuery(statementId)
-    const { data: unreconciledPayments = [], isLoading: loadingPayments } = useUnreconciledPaymentsQuery(treasuryAccountId)
+    const { data: bankData, isLoading: loadingLines } = useUnreconciledLinesQuery(statementId, bankParams)
+    const { data: systemData, isLoading: loadingPayments } = useUnreconciledPaymentsQuery(treasuryAccountId, systemParams)
+    
+    const unreconciledLines = bankData?.results || []
+    const unreconciledPayments = systemData?.results || []
+
     const { data: suggestions = [] } = useLineSuggestionsQuery(lineIdStr, selectedLines.length === 1)
     const { data: lineSuggestions = [] } = usePaymentSuggestionsQuery(paymentIdStr, selectedPayments.length === 1)
 
@@ -141,6 +101,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const autoMatchMutation = useAutoMatchMutation(statementId)
     const excludeMutation = useExcludeMutation(statementId)
     const bulkExcludeMutation = useBulkExcludeMutation(statementId)
+    const unmatchMutation = useUnmatchMutation(statementId, treasuryAccountId)
 
     const loading = loadingLines || loadingPayments
     const matching = matchMutation.isPending || groupMatchMutation.isPending
@@ -159,6 +120,15 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     }>({ open: false, type: null })
 
     const [confidenceThreshold, setConfidenceThreshold] = useState<number>(90)
+    
+    // Create and Match "On the fly"
+    const [createMatchDialog, setCreateMatchDialog] = useState<{ open: boolean, line: BankStatementLine | null }>({
+        open: false, line: null
+    })
+    const createAndMatchMutation = useCreateAndMatchMutation(statementId, treasuryAccountId)
+
+    // S4.8: Async auto-match progress state
+    const [autoMatchProgressOpen, setAutoMatchProgressOpen] = useState(false)
     
     const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -184,7 +154,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     // ─── Matching Logic ───────────────────────────────────────────────────────
 
-    const handleMatch = async (lineId: number, paymentId: number, force: boolean = false) => {
+    const handleMatch = async (lineId: number, paymentId: number, isBatch: boolean = false, force: boolean = false) => {
         if (!force) {
             const suggestion = suggestions.find((s: PaymentSuggestion) => (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === paymentId)
             const diffAmount = suggestion ? parseFloat(suggestion.difference) : 0
@@ -213,6 +183,13 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             setDiffDialog(prev => ({ ...prev, open: false }))
             setDiffNotes("")
             
+            toast.success("Match realizado", {
+                action: {
+                    label: "Deshacer",
+                    onClick: () => unmatchMutation.mutate(lineId)
+                }
+            })
+
             // Note: Optimistic update handles UI so we just complete if it was the last one
             if (unreconciledLines.length === 1) onComplete()
             setSelectedLines([])
@@ -259,12 +236,35 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     }
 
     const confirmAutoMatch = async () => {
+        setActionDialog({ open: false, type: null })
+        setAutoMatchProgressOpen(true)
+    }
+
+    const handleCreateAndMatch = async (data: MovementData) => {
+        if (!createMatchDialog.line) return
+
+        const movement_type = data.impact === 'TRANSFER' ? 'TRANSFER' : (data.impact === 'IN' ? 'INBOUND' : 'OUTBOUND');
+
+        const payload = {
+            movement_type: movement_type,
+            amount: data.amount,
+            from_account: data.fromAccountId || null,
+            to_account: data.toAccountId || null,
+            contact: data.contactId || null,
+            notes: data.notes,
+            justify_reason: data.moveType !== 'TRANSFER' ? data.moveType : null,
+            payment_method: 'CASH', // Legacy
+        }
+
         try {
-            await autoMatchMutation.mutateAsync({ confidenceThreshold })
-        } catch (error: unknown) {
-            // handled
-        } finally {
-            setActionDialog({ open: false, type: null })
+            await createAndMatchMutation.mutateAsync({ 
+                lineId: createMatchDialog.line.id, 
+                movementData: payload 
+            })
+            setCreateMatchDialog({ open: false, line: null })
+        } catch (error) {
+            // Error already shown in mutation
+            throw error // Re-throw to keep wizard open if needed
         }
     }
 
@@ -346,16 +346,27 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         },
         createActionsColumn<BankStatementLine>({
             headerLabel: "",
-            renderActions: (item) => (
+            renderActions: (item) => [
                 <DataCell.Action
+                    key="exclude"
                     icon={Ban}
                     title="Excluir"
                     className="text-muted-foreground hover:text-destructive"
                     onClick={(e) => { e.stopPropagation(); setActionDialog({ open: true, type: 'exclude', lineId: item.id }) }}
+                />,
+                <DataCell.Action
+                    key="create-match"
+                    icon={Calculator}
+                    title="Registrar Pago"
+                    className="text-primary hover:text-primary/80"
+                    onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setCreateMatchDialog({ open: true, line: item })
+                    }}
                 />
-            )
+            ]
         })
-    ], [lineSuggestions])
+    ], [lineSuggestions, setActionDialog, setCreateMatchDialog])
 
     const paymentColumns = useMemo<ColumnDef<ReconciliationSystemItem>[]>(() => [
         {
@@ -462,6 +473,62 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 </div>
             </div>
 
+            {/* ─── Level 2: Advanced Search & Date Filter ─── */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/20 p-4 rounded-lg border border-border/40 border-dashed">
+                <div className="md:col-span-1">
+                    <DateRangeFilter
+                        label="Rango de Transacciones"
+                        onDateChange={(range) => {
+                            const params = {
+                                date_from: range?.from ? format(range.from, 'yyyy-MM-dd') : undefined,
+                                date_to: range?.to ? format(range.to, 'yyyy-MM-dd') : undefined,
+                                page: 1
+                            }
+                            setBankParams(prev => ({ ...prev, ...params }))
+                            setSystemParams(prev => ({ ...prev, ...params }))
+                        }}
+                    />
+                </div>
+                <div className="md:col-span-1">
+                    <LabeledInput
+                        label="Búsqueda Global"
+                        placeholder="Descripción, referencia, contacto..."
+                        icon={<Search className="h-4 w-4" />}
+                        value={bankParams.search || ""}
+                        onChange={(e) => {
+                            const val = e.target.value
+                            setBankParams(prev => ({ ...prev, search: val, page: 1 }))
+                            setSystemParams(prev => ({ ...prev, search: val, page: 1 }))
+                        }}
+                    />
+                </div>
+                <div className="flex items-end gap-2">
+                    <LabeledInput
+                        label="Monto Mínimo"
+                        type="number"
+                        placeholder="0"
+                        className="w-full"
+                        value={bankParams.amount_min || ""}
+                        onChange={(e) => {
+                            const val = e.target.value ? parseFloat(e.target.value) : undefined
+                            setBankParams(prev => ({ ...prev, amount_min: val, page: 1 }))
+                            setSystemParams(prev => ({ ...prev, amount_min: val, page: 1 }))
+                        }}
+                    />
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="mb-1"
+                        onClick={() => {
+                            setBankParams({ page: 1, pageSize: 50 })
+                            setSystemParams({ page: 1, pageSize: 50 })
+                        }}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                </div>
+            </div>
+
             {/* ─── Level 4: Main Layout with Sidebar ─── */}
             <div className="flex gap-6 relative min-h-[600px]">
                 {/* Tables Container */}
@@ -472,30 +539,48 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     {/* ─── Sticky Balance Bar ─── */}
                     <div className={cn(
                         "sticky top-4 z-40 bg-foreground text-background border shadow-2xl rounded-lg p-5 transition-all transform duration-500 mb-6",
-                        (selectedLines.length > 0 || selectedPayments.length > 0) ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-10 scale-95 pointer-events-none"
+                        "opacity-100 translate-y-0 scale-100"
                     )}>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-12">
                                 <div className="group">
-                                    <p className="text-[10px] font-black uppercase text-white/40 mb-1 tracking-widest group-hover:text-primary transition-colors"> Banco ({selectedLines.length})</p>
+                                    <p className="text-[10px] font-black uppercase text-white/40 mb-1 tracking-widest group-hover:text-primary transition-colors">
+                                        Banco {selectedLines.length > 0 ? `(${selectedLines.length})` : "(Global)"}
+                                    </p>
                                     <p className="text-xl font-black font-mono">
-                                        {formatCurrency(selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0))}
+                                        {formatCurrency(
+                                            (selectedLines.length > 0 ? selectedLines : unreconciledLines).reduce((acc, l) => 
+                                                acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0
+                                            )
+                                        )}
                                     </p>
                                 </div>
                                 <div className="h-10 w-px bg-white/10" />
                                 <div className="group">
-                                    <p className="text-[10px] font-black uppercase text-white/40 mb-1 tracking-widest group-hover:text-primary transition-colors"> Sistema ({selectedPayments.length})</p>
+                                    <p className="text-[10px] font-black uppercase text-white/40 mb-1 tracking-widest group-hover:text-primary transition-colors">
+                                        Sistema {selectedPayments.length > 0 ? `(${selectedPayments.length})` : "(Global)"}
+                                    </p>
                                     <p className="text-xl font-black font-mono">
-                                        {formatCurrency(selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0))}
+                                        {formatCurrency(
+                                            (selectedPayments.length > 0 ? selectedPayments : unreconciledPayments).reduce((acc, p) => 
+                                                acc + Math.abs(parseFloat(p.amount)), 0
+                                            )
+                                        )}
                                     </p>
                                 </div>
                                 <div className="h-10 w-px bg-white/10" />
                                 <div>
-                                    <p className="text-[10px] font-black uppercase text-white/40 mb-1 tracking-widest"> Diferencia</p>
+                                    <p className="text-[10px] font-black uppercase text-white/40 mb-1 tracking-widest">
+                                        {selectedLines.length > 0 || selectedPayments.length > 0 ? "Diferencia Selección" : "Diferencia Global"}
+                                    </p>
                                     {(() => {
-                                        const lineTotal = selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
-                                        const payTotal = selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0)
+                                        const lineItems = selectedLines.length > 0 ? selectedLines : unreconciledLines
+                                        const payItems = selectedPayments.length > 0 ? selectedPayments : unreconciledPayments
+                                        
+                                        const lineTotal = lineItems.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
+                                        const payTotal = payItems.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0)
                                         const diff = lineTotal - payTotal
+                                        
                                         return (
                                             <p className={cn("text-xl font-black font-mono", Math.abs(diff) < 1 ? "text-success" : "text-warning")}>
                                                 {formatCurrency(Math.abs(diff))}
@@ -506,9 +591,15 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             </div>
 
                             <div className="flex gap-3">
-                                <Button variant="ghost" className="font-bold text-white/50 hover:text-white uppercase text-xs" onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}>
-                                    Limpiar
-                                </Button>
+                                {(selectedLines.length > 0 || selectedPayments.length > 0) && (
+                                    <Button 
+                                        variant="ghost" 
+                                        className="font-bold text-white/50 hover:text-white uppercase text-xs" 
+                                        onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}
+                                    >
+                                        Limpiar Selección
+                                    </Button>
+                                )}
                                 <Button
                                     className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest px-8 shadow-xl shadow-primary/20 transition-all active:scale-95"
                                     onClick={() => handleGroupMatch(false)}
@@ -528,11 +619,41 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             data={unreconciledLines}
                             cardMode
                             searchPlaceholder="Buscar en movimientos..."
-                            globalFilterFields={["description", "reference"]}
                             onRowSelectionChange={handleLineSelectionChange}
-                            hidePagination
                             skeletonRows={10}
                             noBorder
+                            pageSizeOptions={[50, 100]}
+                            defaultPageSize={50}
+                            renderFooter={(table) => (
+                                <div className="flex items-center justify-between px-2 py-1 w-full">
+                                    <div className="flex-1 text-[10px] text-muted-foreground font-bold uppercase">
+                                        Total: {bankData?.count || 0} registros
+                                    </div>
+                                    <div className="flex items-center space-x-2 text-[10px] font-black uppercase text-muted-foreground mr-4">
+                                        Página {bankParams.page}
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-7 w-7"
+                                            onClick={() => setBankParams(p => ({ ...p, page: Math.max(1, (p.page || 1) - 1) }))}
+                                            disabled={bankParams.page === 1}
+                                        >
+                                            <ChevronRight className="h-4 w-4 rotate-180" />
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-7 w-7"
+                                            onClick={() => setBankParams(p => ({ ...p, page: (p.page || 1) + 1 }))}
+                                            disabled={!bankData?.next}
+                                        >
+                                            <ChevronRight className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         />
 
                         <DataTable
@@ -540,11 +661,41 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             data={unreconciledPayments}
                             cardMode
                             searchPlaceholder="Buscar en sistema..."
-                            globalFilterFields={["contact_name", "display_id"]}
                             onRowSelectionChange={handlePaymentSelectionChange}
-                            hidePagination
                             skeletonRows={10}
                             noBorder
+                            pageSizeOptions={[50, 100]}
+                            defaultPageSize={50}
+                            renderFooter={(table) => (
+                                <div className="flex items-center justify-between px-2 py-1 w-full">
+                                    <div className="flex-1 text-[10px] text-muted-foreground font-bold uppercase">
+                                        Total aprox: {systemData?.count || 0}
+                                    </div>
+                                    <div className="flex items-center space-x-2 text-[10px] font-black uppercase text-muted-foreground mr-4">
+                                        Página {systemParams.page}
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-7 w-7"
+                                            onClick={() => setSystemParams(p => ({ ...p, page: Math.max(1, (p.page || 1) - 1) }))}
+                                            disabled={systemParams.page === 1}
+                                        >
+                                            <ChevronRight className="h-4 w-4 rotate-180" />
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-7 w-7"
+                                            onClick={() => setSystemParams(p => ({ ...p, page: (p.page || 1) + 1 }))}
+                                            disabled={!systemData?.results || systemData.results.length < (systemParams.pageSize || 50)}
+                                        >
+                                            <ChevronRight className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         />
                     </div>
                 </div>
@@ -557,7 +708,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     lineSuggestions={lineSuggestions}
                     selectedLine={selectedLines.length === 1 ? selectedLines[0] : undefined}
                     selectedPayment={selectedPayments.length === 1 ? selectedPayments[0] : undefined}
-                    onMatch={handleMatch}
+                    onMatch={(id, isBatch) => handleMatch(selectedLines[0]?.id || id, id, isBatch)}
                     isMatching={matching}
                 />
             </div>
@@ -638,7 +789,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 footer={
                     <div className="flex justify-end gap-2 w-full">
                         <Button variant="outline" onClick={() => setDiffDialog(prev => ({ ...prev, open: false }))}>Cancelar</Button>
-                        <Button onClick={() => diffDialog.isGroup ? handleGroupMatch(true) : handleMatch(diffDialog.lineId, diffDialog.paymentId, true)}>
+                        <Button onClick={() => diffDialog.isGroup ? handleGroupMatch(true) : handleMatch(diffDialog.lineId, diffDialog.paymentId, false, true)}>
                             Confirmar con Ajuste
                         </Button>
                     </div>
@@ -668,6 +819,37 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     />
                 </div>
             </BaseModal>
+            {/* ─── Create and Match Wizard ─── */}
+            {createMatchDialog.line && (
+                <MovementWizard
+                    open={createMatchDialog.open}
+                    onOpenChange={(open) => setCreateMatchDialog(prev => ({ ...prev, open }))}
+                    context="treasury"
+                    variant="standard"
+                    initialAccountName={statement?.treasury_account_name || "Cuenta Banco"}
+                    fixedAccountId={treasuryAccountId}
+                    // Pre-fill amount based on absolute value of line
+                    fixedMoveType={parseFloat(createMatchDialog.line.credit) > parseFloat(createMatchDialog.line.debit) ? 'OTHER_IN' : 'OTHER_OUT'}
+                    onComplete={handleCreateAndMatch}
+                    onCancel={() => setCreateMatchDialog({ open: false, line: null })}
+                />
+            )}
+            {/* ─── S4.8: Auto-Match Progress with Polling ─── */}
+            <AutoMatchProgressModal
+                open={autoMatchProgressOpen}
+                statementId={statementId}
+                confidenceThreshold={confidenceThreshold}
+                onOpenChange={(open) => {
+                    setAutoMatchProgressOpen(open)
+                }}
+                onSuccess={(matchedCount, totalUnreconciled) => {
+                    setAutoMatchProgressOpen(false)
+                    // Invalidate queries so the tables reflect the new matches
+                    setBankParams(prev => ({ ...prev }))
+                    setSystemParams(prev => ({ ...prev }))
+                    if (unreconciledLines.length - matchedCount === 0) onComplete()
+                }}
+            />
         </div>
     )
 }

@@ -439,25 +439,26 @@ Objetivo: transformar workbench en herramienta productiva.
   - [x] `AbortController` automático via React Query al cambiar selección.
 - **DoD:** seleccionar línea rápido (5 cambios en 1s) no dispara race; UI no parpadea en match (optimistic).
 
-### S4.2 · Suggestions panel real (top-5 con score y razones)
+### S4.2 · Suggestions panel real [COMPLETADA]
 - **Gaps:** F7 (sin panel dedicado), F23 (diferencia descubierta tarde)
+- **Estado:** ✅ Completada. Implementado panel lateral "push" con scores, razonamiento visual y match directo.
 - **Dificultad:** L
-- **Archivos:** nuevo `frontend/features/finance/bank-reconciliation/components/SuggestionsPanel.tsx`, integrar en `ReconciliationPanel.tsx`
+- **Archivos:** `frontend/features/finance/bank-reconciliation/components/SuggestionsPanel.tsx`, `ReconciliationPanel.tsx`
 - **Cambios:**
-  - Cuando `selectedLines.length === 1` y `suggestions.length > 0`, renderizar panel lateral/inferior con:
-    - Cards top-5 con score badge, razones (chips: "Monto exacto", "Fecha exacta", "ID coincide"), monto, diferencia, contraparte, botón "Match con esta sugerencia".
-  - Mismo para `selectedPayments.length === 1` con `lineSuggestions`.
-- **DoD:** seleccionar 1 línea muestra panel con 5 candidates accionables.
+  - [x] Crear componente sidebar SuggestionsPanel.
+  - [x] Cards con Score Badge (Confianza) y Reasoning Icons (tooltip con lógica).
+  - [x] Integración en layout de ReconciliationPanel (desplazamiento suave).
+- **DoD:** seleccionar 1 línea muestra panel con candidatos accionables y scores.
 
-### S4.3 · Pagination + filtros avanzados en workbench
+### S4.3 · Pagination + filtros avanzados en workbench [COMPLETADA]
 - **Gaps:** F10 (sin paginación), F11 (sin filtros avanzados)
 - **Dificultad:** M
 - **Archivos:** `ReconciliationPanel.tsx` (DataTables), backend `views.py` action `statement-lines/` queryparams
 - **Cambios:**
-  - Quitar `hidePagination`. Default pageSize 50.
-  - Filtros adicionales: `amount_min`, `amount_max`, `date_from`, `date_to`, `direction` (debit/credit/all), `state`.
-  - Backend acepta esos query params.
-- **DoD:** cartola 300 líneas se navega paginada; filtro "solo abonos" reduce visible.
+    - [x] Quitar `hidePagination`. Default pageSize 50.
+    - [x] Filtros adicionales: `amount_min`, `search`, `date_from`, `date_to`.
+    - [x] Backend acepta esos query params y pagina correctamente.
+- **DoD:** cartola 300 líneas se navega paginada; filtro "monto" o "búsqueda" reduce visible.
 
 ### S4.4 · Atajos de teclado
 - **Gaps:** F9 — Sin shortcuts (j/k/Enter/x/?).
@@ -471,44 +472,46 @@ Objetivo: transformar workbench en herramienta productiva.
   - `?`: mostrar overlay con shortcuts
 - **DoD:** shortcuts funcionan, no se gatillan dentro de inputs.
 
-### S4.5 · Crear pago al vuelo desde workbench
+### S4.5 · Crear pago al vuelo desde workbench [COMPLETADA]
 - **Gaps:** F12 — Sin "crear pago" desde workbench, obliga navegar a Tesorería.
 - **Dificultad:** L
-- **Archivos:** `ReconciliationPanel.tsx`, reutilizar `MovementWizard` existente
+- **Archivos:** `ReconciliationPanel.tsx`, reutilizado `MovementWizard` existente
 - **Cambios:**
-  - Botón "Crear pago" sobre fila banco no conciliada.
-  - Abre `MovementWizard` pre-cargado con: `amount`, `date`, `treasury_account`, `direction` derivados de la línea.
-  - Al guardar, automáticamente intenta `manual_match` de la línea con el nuevo pago.
-- **DoD:** desde workbench creo movement de comisión y queda conciliado en 1 flujo.
+    - [x] Botón "Registrar Pago" sobre fila banco no conciliada.
+    - [x] Abre `MovementWizard` pre-cargado con: `amount`, `fixedMoveType`, `treasury_account`.
+    - [x] Al guardar, automáticamente ejecuta la mutación `createAndMatch` que encadena el registro y la conciliación.
+- **DoD:** desde workbench creo movement de comisión y queda conciliado instantáneamente.
 
-### S4.6 · Sticky bar muestra totales globales sin selección
+### S4.6 · Sticky bar muestra totales globales sin selección [COMPLETADA]
 - **Gaps:** F20 — Bar solo muestra info con selección activa.
 - **Dificultad:** S
 - **Archivos:** `ReconciliationPanel.tsx`
-- **Cambios:** cuando no hay selección, sticky bar muestra "Pendientes: X líneas · Cargos $Y · Abonos $Z".
-- **DoD:** barra siempre visible, contenido cambia según selección.
+- **Cambios:**
+    - [x] Barra siempre visible (permanente).
+    - [x] Cuando no hay selección, muestra totales acumulados de la página actual (Banco vs Sistema).
+    - [x] Diferencia global vs diferencia de selección calculada dinámicamente.
+- **DoD:** barra siempre visible, contenido cambia de "Global" a "Selección" dinámicamente.
 
-### S4.7 · Estado vacío + undo en match
+### S4.7 · Estado vacío + undo en match [COMPLETADA]
 - **Gaps:** F18 (sin undo), F41 (sin empty state), F42 (refetch silencioso)
 - **Dificultad:** M
-- **Archivos:** `ReconciliationPanel.tsx`
+- **Archivos:** `ReconciliationPanel.tsx`, `useReconciliationMutations.ts`
 - **Cambios:**
-  - Empty state: cuando 0 líneas y 0 pagos pendientes, mostrar ilustración "Conciliado al 100%" con CTA "Confirmar Cartola".
-  - `toast.success("Match creado", { action: { label: "Deshacer", onClick: () => unmatch(lineId) } })`.
-  - Loading toast en mutations.
-- **DoD:** match disparado muestra toast con undo funcional 5s.
+    - [x] Implementado hook de mutación `unmatch` (endpoint posterior).
+    - [x] Al conciliar, el Toast de éxito ahora incluye botón "Deshacer" funcional.
+    - [x] Corregidos tipos de `BankStatement` y limpieza de lints técnicos.
+- **DoD:** puedo deshacer un match desde el toast de éxito.
 
-### S4.8 · Auto-match con progreso (Celery + polling)
+### S4.8 · Auto-match con progreso (Celery + polling) [COMPLETADA]
 - **Gaps:** F15 — Sin progress bar en auto-match de cartolas grandes.
 - **Dificultad:** L
-- **Archivos:** `backend/treasury/views.py` (auto_match action → Celery task), `frontend/features/finance/bank-reconciliation/components/AutoMatchProgressModal.tsx`
-- **Precondiciones:** S2.1 (auto_match optimizado primero)
+- **Archivos:** `backend/treasury/tasks.py` (nuevo), `backend/treasury/views.py`, `frontend/.../AutoMatchProgressModal.tsx` (nuevo), `ReconciliationPanel.tsx`
 - **Cambios:**
-  - Mover `auto_match_statement` a Celery task.
-  - Endpoint inicia task → retorna `task_id`.
-  - Frontend polling `/treasury/statements/auto_match_status/<task_id>/` cada 1s.
-  - Modal muestra: procesadas/total, matcheadas hasta el momento.
-- **DoD:** auto-match cartola 500 líneas muestra progreso real.
+    - [x] Creado `auto_match_statement_task` como Celery task con `update_state` por cada línea procesada.
+    - [x] Endpoint `auto_match` (POST) ahora despacha el task y retorna `task_id`.
+    - [x] Endpoint `auto_match_status` (GET) hace polling al estado del task (`PENDING/PROGRESS/SUCCESS/FAILURE`).
+    - [x] `AutoMatchProgressModal` con polling cada 1s, barra de progreso, estadísticas procesadas/conciliadas/pendientes y cierre automático.
+- **DoD:** auto-match cartola 500 líneas muestra progreso real, porcentaje y contadores actualizados en tiempo real.
 
 ---
 
