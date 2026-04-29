@@ -279,6 +279,9 @@ class TreasuryMovement(models.Model):
             models.Index(fields=['is_reconciled']),
             models.Index(fields=['transaction_number']),
             models.Index(fields=['reference']),
+            # S2.4: Índices compuestos para queries de matching batch (B10)
+            models.Index(fields=['from_account', 'date', 'is_reconciled'], name='idx_movement_from_date_recon'),
+            models.Index(fields=['to_account', 'date', 'is_reconciled'], name='idx_movement_to_date_recon'),
         ]
 
     def __str__(self):
@@ -682,6 +685,16 @@ class BankStatement(models.Model):
         verbose_name=_("Cuenta de Tesorería")
     )
     statement_date = models.DateField(_("Fecha de la Cartola"))
+    period_start = models.DateField(
+        _("Inicio del Periodo"),
+        null=True,
+        help_text=_("Fecha de la transacción más antigua incluida")
+    )
+    period_end = models.DateField(
+        _("Fin del Periodo"),
+        null=True,
+        help_text=_("Fecha de la transacción más reciente incluida")
+    )
     opening_balance = models.DecimalField(
         _("Balance de Apertura"), 
         max_digits=20, 
@@ -727,6 +740,15 @@ class BankStatement(models.Model):
     )
     total_lines = models.IntegerField(_("Total de Líneas"), default=0)
     reconciled_lines = models.IntegerField(_("Líneas Reconciliadas"), default=0)
+    
+    file_hash = models.CharField(
+        _("Hash del Archivo"), 
+        max_length=64, 
+        unique=True, 
+        null=True, 
+        blank=True,
+        help_text=_("Hash SHA-256 para evitar duplicidad de archivos")
+    )
     
     notes = models.TextField(_("Notas"), blank=True)
     
@@ -862,6 +884,10 @@ class BankStatementLine(models.Model):
         verbose_name=_("Asiento de Ajuste")
     )
     
+    # Advertencias de importación
+    has_warning = models.BooleanField(_("Tiene Advertencia"), default=False)
+    warning_message = models.TextField(_("Mensaje de Advertencia"), blank=True, null=True)
+    
     # Notas
     notes = models.TextField(_("Notas"), blank=True)
     
@@ -898,6 +924,13 @@ class BankStatementLine(models.Model):
             models.Index(fields=['transaction_date']),
             models.Index(fields=['statement', 'reconciliation_status']),
             models.Index(fields=['transaction_id']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['statement', 'transaction_id'],
+                condition=~models.Q(transaction_id=''),
+                name='uniq_stmt_txnid'
+            )
         ]
 
     def __str__(self):

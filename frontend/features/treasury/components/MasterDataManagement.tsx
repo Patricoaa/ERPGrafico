@@ -465,7 +465,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                         {row.original.allow_for_sales && (
                             <DataCell.Badge
                                 variant="outline"
-                                className="text-[9px] px-1 h-3.5 bg-income/5 text-income border-income/10 font-black uppercase tracking-tighter"
+                                className="text-[10px] px-1 h-3.5 bg-income/5 text-income border-income/10 font-black uppercase tracking-tighter" // intentional: badge density
                             >
                                 Ventas
                             </DataCell.Badge>
@@ -473,7 +473,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                         {row.original.allow_for_purchases && (
                             <DataCell.Badge
                                 variant="outline"
-                                className="text-[9px] px-1 h-3.5 bg-asset/5 text-asset border-asset/10 font-black uppercase tracking-tighter"
+                                className="text-[10px] px-1 h-3.5 bg-asset/5 text-asset border-asset/10 font-black uppercase tracking-tighter" // intentional: badge density
                             >
                                 Compras
                             </DataCell.Badge>

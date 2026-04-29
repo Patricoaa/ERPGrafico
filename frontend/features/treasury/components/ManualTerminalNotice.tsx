@@ -154,14 +154,14 @@ export function ManualTerminalNotice({
                     </h4>
                     {paymentMethodName && (
                         <div className="flex justify-center">
-                            <span className="rounded-md border border-warning/20 bg-warning/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-warning-foreground">
+                            <span className="rounded-md border border-warning/20 bg-warning/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-warning-foreground"> {/* intentional: badge density */}
                                 {paymentMethodName}
                             </span>
                         </div>
                     )}
                     {reason === "TERMINAL_BYPASS" && failureReason && (
                         <div className="flex justify-center pt-1">
-                            <span className="font-mono text-[10px] text-muted-foreground bg-muted/40 border border-border px-2 py-0.5 rounded-md">
+                            <span className="font-mono text-[10px] text-muted-foreground bg-muted/40 border border-border px-2 py-0.5 rounded-md"> {/* intentional: badge density */}
                                 REF: {failureReason}
                             </span>
                         </div>
@@ -229,7 +229,7 @@ export function ManualTerminalNotice({
                 )}
             </div>
 
-            <p className="text-[9px] text-center text-muted-foreground uppercase tracking-[0.2em] font-medium opacity-50">
+            <p className="text-[10px] text-center text-muted-foreground uppercase tracking-[0.2em] font-medium opacity-50"> {/* intentional: badge density */}
                 Operación requiere verificación física del cajero
             </p>
         </div>
