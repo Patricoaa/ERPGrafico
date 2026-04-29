@@ -16,6 +16,31 @@ export interface BankStatement {
     imported_at: string
 }
 
+export interface BankStatementLine {
+    id: number
+    line_number: number
+    transaction_date: string
+    description: string
+    reference: string
+    debit: string
+    credit: string
+    balance: string
+    reconciliation_state: string
+    reconciliation_state_display: string
+}
+
+export interface ReconciliationSystemItem {
+    id: number
+    amount: string
+    date: string
+    contact_name: string
+    display_id?: string
+    code?: string
+    is_batch?: boolean
+    identifier?: string
+    name?: string
+}
+
 export interface MatchConfig {
     criteria?: string[]
     min_score?: number

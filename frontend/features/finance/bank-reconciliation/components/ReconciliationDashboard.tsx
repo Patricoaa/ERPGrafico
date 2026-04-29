@@ -1,15 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import api from "@/lib/api"
-import { useReconciliation } from "../hooks/useReconciliation"
+import { useState } from "react"
+import { useDashboardDataQuery, useAccountsQuery } from "../hooks/useReconciliationQueries"
 import { DashboardKPIs } from "./DashboardKPIs"
 import dynamic from "next/dynamic"
 import { DashboardPendingTable } from "./DashboardPendingTable"
 import { Select, SelectContent, SelectItem, SelectValue, SelectTrigger } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
 import { CardSkeleton } from "@/components/shared"
-import type { DashboardKPIData, TrendItem, DashboardPendingItem, TreasuryAccount } from "../types"
 
 const DashboardTrendChart = dynamic(() => import("./DashboardTrendChart").then(mod => mod.DashboardTrendChart), {
     ssr: false,
@@ -17,42 +14,14 @@ const DashboardTrendChart = dynamic(() => import("./DashboardTrendChart").then(m
 })
 
 export function ReconciliationDashboard() {
-    const { fetchAccounts, fetchDashboardData, loading } = useReconciliation()
-    const [stats, setStats] = useState<DashboardKPIData | null>(null)
-    const [trend, setTrend] = useState<TrendItem[]>([])
-    const [pending, setPending] = useState<DashboardPendingItem[]>([])
-    const [accounts, setAccounts] = useState<TreasuryAccount[]>([])
     const [selectedAccount, setSelectedAccount] = useState<string>("all")
+    
+    const { data: accounts = [] } = useAccountsQuery()
+    const { data: dashboardData, isLoading } = useDashboardDataQuery(selectedAccount)
 
-    const loadAccounts = async () => {
-        const data = await fetchAccounts()
-        setAccounts(data)
-    }
-
-    const loadDashboard = async () => {
-        const data = await fetchDashboardData(selectedAccount)
-        if (data) {
-            setStats(data.stats)
-            setTrend(data.trend)
-            setPending(data.pending)
-        }
-    }
-
-    useEffect(() => {
-        const init = async () => {
-            await loadAccounts()
-        }
-        init()
-    }, [])
-
-    useEffect(() => {
-        const init = async () => {
-            await loadDashboard()
-        }
-        init()
-    }, [selectedAccount])
-
-
+    const stats = dashboardData?.stats || null
+    const trend = dashboardData?.trend || []
+    const pending = dashboardData?.pending || []
 
     return (
         <div className="space-y-6">
@@ -78,11 +47,11 @@ export function ReconciliationDashboard() {
                 </Select>
             </div>
 
-            <DashboardKPIs data={stats} loading={loading} />
+            <DashboardKPIs data={stats} loading={isLoading} />
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
                 <DashboardTrendChart data={trend} />
-                <DashboardPendingTable data={pending} loading={loading} />
+                <DashboardPendingTable data={pending} loading={isLoading} />
             </div>
         </div>
     )

@@ -9,16 +9,33 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ExclusionModal } from "./ExclusionModal"
+import { SuggestionsPanel } from "./SuggestionsPanel"
 import { LabeledSelect, LabeledInput } from "@/components/shared"
 import {
     Ban, CheckCircle2, ChevronRight, Filter,
-    Loader2, Search, Sparkles, X, AlertCircle, Wand2
+    Loader2, Search, Sparkles, X, AlertCircle, Wand2, Info, Calculator
 } from "lucide-react"
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
 import { cn, formatCurrency } from "@/lib/utils"
+import {
+    useStatementQuery,
+    useUnreconciledLinesQuery,
+    useUnreconciledPaymentsQuery,
+    useLineSuggestionsQuery,
+    usePaymentSuggestionsQuery
+} from "../hooks/useReconciliationQueries"
+import {
+    useMatchMutation,
+    useGroupMatchMutation,
+    useAutoMatchMutation,
+    useExcludeMutation,
+    useBulkExcludeMutation
+} from "../hooks/useReconciliationMutations"
+
+
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -107,19 +124,27 @@ interface ReconciliationPanelProps {
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete }: ReconciliationPanelProps) {
-    const [unreconciledLines, setUnreconciledLines] = useState<BankStatementLine[]>([])
     const [selectedLines, setSelectedLines] = useState<BankStatementLine[]>([])
-    
-    const [unreconciledPayments, setUnreconciledPayments] = useState<ReconciliationSystemItem[]>([])
     const [selectedPayments, setSelectedPayments] = useState<ReconciliationSystemItem[]>([])
-    
-    const [suggestions, setSuggestions] = useState<PaymentSuggestion[]>([])
-    const [loading, setLoading] = useState(true)
-    const [matching, setMatching] = useState(false)
-    const [autoMatching, setAutoMatching] = useState(false)
-    const [loadingPayments, setLoadingPayments] = useState(false)
-    const [lineSuggestions, setLineSuggestions] = useState<LineSuggestion[]>([])
-    const [statement, setStatement] = useState<BankStatement | null>(null)
+
+    const lineIdStr = selectedLines.length === 1 ? selectedLines[0].id : 0
+    const paymentIdStr = selectedPayments.length === 1 ? selectedPayments[0].id : 0
+
+    const { data: statement } = useStatementQuery(statementId)
+    const { data: unreconciledLines = [], isLoading: loadingLines } = useUnreconciledLinesQuery(statementId)
+    const { data: unreconciledPayments = [], isLoading: loadingPayments } = useUnreconciledPaymentsQuery(treasuryAccountId)
+    const { data: suggestions = [] } = useLineSuggestionsQuery(lineIdStr, selectedLines.length === 1)
+    const { data: lineSuggestions = [] } = usePaymentSuggestionsQuery(paymentIdStr, selectedPayments.length === 1)
+
+    const matchMutation = useMatchMutation(statementId, treasuryAccountId)
+    const groupMatchMutation = useGroupMatchMutation(statementId, treasuryAccountId)
+    const autoMatchMutation = useAutoMatchMutation(statementId)
+    const excludeMutation = useExcludeMutation(statementId)
+    const bulkExcludeMutation = useBulkExcludeMutation(statementId)
+
+    const loading = loadingLines || loadingPayments
+    const matching = matchMutation.isPending || groupMatchMutation.isPending
+    const autoMatching = autoMatchMutation.isPending
 
     const [diffDialog, setDiffDialog] = useState<{ open: boolean, lineId: number, paymentId: number, amount: string, isGroup?: boolean }>({
         open: false, lineId: 0, paymentId: 0, amount: '0', isGroup: false
@@ -134,105 +159,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     }>({ open: false, type: null })
 
     const [confidenceThreshold, setConfidenceThreshold] = useState<number>(90)
-
-    // ─── Fetching Data ────────────────────────────────────────────────────────
-
-    const fetchStatement = useCallback(async () => {
-        try {
-            const response = await api.get(`/treasury/statements/${statementId}/`)
-            setStatement(response.data)
-        } catch (error) {
-            console.error('Error fetching statement:', error)
-        }
-    }, [statementId])
-
-    const fetchUnreconciledLines = useCallback(async () => {
-        try {
-            setLoading(true)
-            const response = await api.get('/treasury/statement-lines/', {
-                params: {
-                    statement: statementId,
-                    reconciliation_state: 'UNRECONCILED'
-                }
-            })
-            setUnreconciledLines(response.data)
-        } catch (error) {
-            console.error('Error fetching unreconciled lines:', error)
-        } finally {
-            setLoading(false)
-        }
-    }, [statementId])
-
-    const fetchUnreconciledPayments = useCallback(async () => {
-        try {
-            setLoadingPayments(true)
-            const [paymentsRes, batchesRes] = await Promise.all([
-                api.get('/treasury/payments/', {
-                    params: {
-                        is_reconciled: 'False',
-                        treasury_account: treasuryAccountId,
-                        limit: 100
-                    }
-                }),
-                api.get('/treasury/terminal-batches/', {
-                    params: {
-                        status: 'SETTLED',
-                        reconciliation_match__isnull: 'True'
-                    }
-                })
-            ])
-
-            const payments = (paymentsRes.data.results || paymentsRes.data) as ReconciliationSystemItem[]
-            const batches = ((batchesRes.data.results || batchesRes.data) as BatchData[]).map((b) => ({
-                id: b.id,
-                display_id: b.display_id,
-                amount: b.net_amount,
-                date: b.sales_date,
-                contact_name: b.supplier_name || 'Liquidación Terminal',
-                is_batch: true
-            }))
-
-            setUnreconciledPayments([...payments, ...batches])
-        } catch (error) {
-            console.error('Error fetching unreconciled payments:', error)
-        } finally {
-            setLoadingPayments(false)
-        }
-    }, [treasuryAccountId])
-
-    const fetchSuggestions = async (lineId: number) => {
-        try {
-            const response = await api.get(`/treasury/statement-lines/${lineId}/suggestions/`)
-            setSuggestions(response.data.suggestions || [])
-        } catch (error) {
-            setSuggestions([])
-        }
-    }
-
-    const fetchLineSuggestions = async (paymentId: number) => {
-        try {
-            const response = await api.get(`/treasury/payments/${paymentId}/suggestions/`)
-            setLineSuggestions(response.data.suggestions || [])
-        } catch (error) {
-            setLineSuggestions([])
-        }
-    }
+    
+    const [sidebarOpen, setSidebarOpen] = useState(false)
 
     useEffect(() => {
-        fetchUnreconciledLines()
-        fetchUnreconciledPayments()
-        fetchStatement()
-    }, [fetchUnreconciledLines, fetchUnreconciledPayments, fetchStatement])
-
-    useEffect(() => {
-        if (selectedLines.length === 1) fetchSuggestions(selectedLines[0].id)
-        else setSuggestions([])
-    }, [selectedLines])
-
-    useEffect(() => {
-        if (selectedPayments.length === 1) fetchLineSuggestions(selectedPayments[0].id)
-        else setLineSuggestions([])
-    }, [selectedPayments])
+        if (selectedLines.length === 1 || selectedPayments.length === 1) {
+            setSidebarOpen(true)
+        } else {
+            setSidebarOpen(false)
+        }
+    }, [selectedLines.length, selectedPayments.length])
 
     // ─── Selection Handlers ───────────────────────────────────────────────────
 
@@ -250,7 +186,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     const handleMatch = async (lineId: number, paymentId: number, force: boolean = false) => {
         if (!force) {
-            const suggestion = suggestions.find(s => (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === paymentId)
+            const suggestion = suggestions.find((s: PaymentSuggestion) => (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === paymentId)
             const diffAmount = suggestion ? parseFloat(suggestion.difference) : 0
 
             if (diffAmount !== 0) {
@@ -264,18 +200,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         }
 
         try {
-            setMatching(true)
-            const isBatch = suggestions.find(s => (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === paymentId)?.is_batch
-
-            if (isBatch) {
-                await api.post(`/treasury/statement-lines/match_group/`, {
-                    line_ids: [lineId],
-                    batch_ids: [paymentId],
-                    payment_ids: []
-                })
-            } else {
-                await api.post(`/treasury/statement-lines/${lineId}/match/`, { payment_id: paymentId })
-            }
+            const isBatch = suggestions.find((s: PaymentSuggestion) => (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === paymentId)?.is_batch
 
             const confirmData: Record<string, unknown> = {}
             if (force) {
@@ -283,17 +208,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 confirmData.notes = diffNotes
             }
 
-            await api.post(`/treasury/statement-lines/${lineId}/confirm/`, confirmData)
-            await fetchUnreconciledLines()
+            await matchMutation.mutateAsync({ lineId, paymentId, isBatch, confirmData })
+
             setDiffDialog(prev => ({ ...prev, open: false }))
             setDiffNotes("")
             
+            // Note: Optimistic update handles UI so we just complete if it was the last one
             if (unreconciledLines.length === 1) onComplete()
             setSelectedLines([])
         } catch (error: unknown) {
-            showApiError(error, 'Error al realizar match')
-        } finally {
-            setMatching(false)
+            // Handled in mutation
         }
     }
 
@@ -312,7 +236,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         }
 
         try {
-            setMatching(true)
             const payload: Record<string, unknown> = {
                 line_ids: selectedLines.map(l => l.id),
                 payment_ids: selectedPayments.filter(p => !p.is_batch).map(p => p.id),
@@ -321,38 +244,26 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
             if (force) { payload.difference_reason = diffType; payload.notes = diffNotes; }
 
-            await api.post('/treasury/statement-lines/match_group/', payload)
-            
             const confirmPayload: Record<string, unknown> = {}
             if (force) { confirmPayload.difference_type = diffType; confirmPayload.notes = diffNotes; }
 
-            await api.post(`/treasury/statement-lines/${selectedLines[0].id}/confirm/`, confirmPayload)
+            await groupMatchMutation.mutateAsync({ payload, confirmPayload, lineId: selectedLines[0].id })
 
-            await fetchUnreconciledLines()
-            await fetchUnreconciledPayments()
             setSelectedPayments([])
             setSelectedLines([])
             setDiffDialog(prev => ({ ...prev, open: false }))
             setDiffNotes("")
         } catch (error: unknown) {
-            showApiError(error, 'Error creando grupo')
-        } finally {
-            setMatching(false)
+            // Handled in mutation
         }
     }
 
     const confirmAutoMatch = async () => {
         try {
-            setAutoMatching(true)
-            const response = await api.post(`/treasury/statements/${statementId}/auto_match/`, { confidence_threshold: confidenceThreshold })
-            toast.success(`Conciliación Finalizada`, {
-                description: `${response.data.matched_count} de ${response.data.total_unreconciled} líneas conciliadas automáticamente.`
-            })
-            await fetchUnreconciledLines()
+            await autoMatchMutation.mutateAsync({ confidenceThreshold })
         } catch (error: unknown) {
-            showApiError(error, 'Error en auto-match')
+            // handled
         } finally {
-            setAutoMatching(false)
             setActionDialog({ open: false, type: null })
         }
     }
@@ -395,7 +306,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             accessorKey: "description",
             header: "Descripción",
             cell: ({ row }) => {
-                const isSuggested = lineSuggestions.some(s => s.line_data.id === row.original.id)
+                const isSuggested = lineSuggestions.some((s: LineSuggestion) => s.line_data.id === row.original.id)
                 return (
                     <div className="flex flex-col gap-0.5 max-w-[220px]">
                         <span className={cn("text-xs font-bold truncate", isSuggested && "text-warning")}>
@@ -485,7 +396,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             header: "Entidad / Concepto",
             cell: ({ row }) => {
                 const isBatch = row.original.is_batch
-                const isSuggested = suggestions.some(s => (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === row.original.id)
+                const isSuggested = suggestions.some((s: PaymentSuggestion) => (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === row.original.id)
                 return (
                     <div className="flex flex-col gap-0.5 max-w-[220px]">
                         <span className={cn("text-xs font-bold truncate", isSuggested && "text-warning")}>
@@ -551,82 +462,103 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 </div>
             </div>
 
-            {/* ─── Sticky Balance Bar ─── */}
-            <div className={cn(
-                "sticky top-4 z-40 bg-foreground text-background border shadow-2xl rounded-lg p-5 transition-all transform duration-500",
-                (selectedLines.length > 0 || selectedPayments.length > 0) ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-10 scale-95 pointer-events-none"
-            )}>
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-12">
-                        <div className="group">
-                            <p className="text-[10px] font-black uppercase text-white/40 mb-1 tracking-widest group-hover:text-primary transition-colors"> {/* intentional: badge density */} Banco ({selectedLines.length})</p>
-                            <p className="text-xl font-black font-mono">
-                                {formatCurrency(selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0))}
-                            </p>
-                        </div>
-                        <div className="h-10 w-px bg-white/10" />
-                        <div className="group">
-                            <p className="text-[10px] font-black uppercase text-white/40 mb-1 tracking-widest group-hover:text-primary transition-colors"> {/* intentional: badge density */} Sistema ({selectedPayments.length})</p>
-                            <p className="text-xl font-black font-mono">
-                                {formatCurrency(selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0))}
-                            </p>
-                        </div>
-                        <div className="h-10 w-px bg-white/10" />
-                        <div>
-                            <p className="text-[10px] font-black uppercase text-white/40 mb-1 tracking-widest"> {/* intentional: badge density */} Diferencia</p>
-                            {(() => {
-                                const lineTotal = selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
-                                const payTotal = selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0)
-                                const diff = lineTotal - payTotal
-                                return (
-                                    <p className={cn("text-xl font-black font-mono", Math.abs(diff) < 1 ? "text-success" : "text-warning")}>
-                                        {formatCurrency(Math.abs(diff))}
+            {/* ─── Level 4: Main Layout with Sidebar ─── */}
+            <div className="flex gap-6 relative min-h-[600px]">
+                {/* Tables Container */}
+                <div className={cn(
+                    "flex-1 transition-all duration-500 ease-[var(--ease-premium)]",
+                    sidebarOpen ? "mr-[380px]" : "mr-0"
+                )}>
+                    {/* ─── Sticky Balance Bar ─── */}
+                    <div className={cn(
+                        "sticky top-4 z-40 bg-foreground text-background border shadow-2xl rounded-lg p-5 transition-all transform duration-500 mb-6",
+                        (selectedLines.length > 0 || selectedPayments.length > 0) ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-10 scale-95 pointer-events-none"
+                    )}>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-12">
+                                <div className="group">
+                                    <p className="text-[10px] font-black uppercase text-white/40 mb-1 tracking-widest group-hover:text-primary transition-colors"> Banco ({selectedLines.length})</p>
+                                    <p className="text-xl font-black font-mono">
+                                        {formatCurrency(selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0))}
                                     </p>
-                                )
-                            })()}
+                                </div>
+                                <div className="h-10 w-px bg-white/10" />
+                                <div className="group">
+                                    <p className="text-[10px] font-black uppercase text-white/40 mb-1 tracking-widest group-hover:text-primary transition-colors"> Sistema ({selectedPayments.length})</p>
+                                    <p className="text-xl font-black font-mono">
+                                        {formatCurrency(selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0))}
+                                    </p>
+                                </div>
+                                <div className="h-10 w-px bg-white/10" />
+                                <div>
+                                    <p className="text-[10px] font-black uppercase text-white/40 mb-1 tracking-widest"> Diferencia</p>
+                                    {(() => {
+                                        const lineTotal = selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
+                                        const payTotal = selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0)
+                                        const diff = lineTotal - payTotal
+                                        return (
+                                            <p className={cn("text-xl font-black font-mono", Math.abs(diff) < 1 ? "text-success" : "text-warning")}>
+                                                {formatCurrency(Math.abs(diff))}
+                                            </p>
+                                        )
+                                    })()}
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <Button variant="ghost" className="font-bold text-white/50 hover:text-white uppercase text-xs" onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}>
+                                    Limpiar
+                                </Button>
+                                <Button
+                                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest px-8 shadow-xl shadow-primary/20 transition-all active:scale-95"
+                                    onClick={() => handleGroupMatch(false)}
+                                    disabled={matching || selectedLines.length === 0 || selectedPayments.length === 0}
+                                >
+                                    {matching ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                                    Conciliar Selección
+                                </Button>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="flex gap-3">
-                        <Button variant="ghost" className="font-bold text-white/50 hover:text-white uppercase text-xs" onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}>
-                            Limpiar
-                        </Button>
-                        <Button
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest px-8 shadow-xl shadow-primary/20 transition-all active:scale-95"
-                            onClick={() => handleGroupMatch(false)}
-                            disabled={matching || selectedLines.length === 0 || selectedPayments.length === 0}
-                        >
-                            {matching ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                            Conciliar Selección
-                        </Button>
+                    {/* ─── Main Workbench Grid ─── */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <DataTable
+                            columns={bankColumns}
+                            data={unreconciledLines}
+                            cardMode
+                            searchPlaceholder="Buscar en movimientos..."
+                            globalFilterFields={["description", "reference"]}
+                            onRowSelectionChange={handleLineSelectionChange}
+                            hidePagination
+                            skeletonRows={10}
+                            noBorder
+                        />
+
+                        <DataTable
+                            columns={paymentColumns}
+                            data={unreconciledPayments}
+                            cardMode
+                            searchPlaceholder="Buscar en sistema..."
+                            globalFilterFields={["contact_name", "display_id"]}
+                            onRowSelectionChange={handlePaymentSelectionChange}
+                            hidePagination
+                            skeletonRows={10}
+                            noBorder
+                        />
                     </div>
                 </div>
-            </div>
 
-            {/* ─── Main Workbench Grid ─── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <DataTable
-                    columns={bankColumns}
-                    data={unreconciledLines}
-                    cardMode
-                    searchPlaceholder="Buscar en movimientos..."
-                    globalFilterFields={["description", "reference"]}
-                    onRowSelectionChange={handleLineSelectionChange}
-                    hidePagination
-                    skeletonRows={10}
-                    noBorder
-                />
-
-                <DataTable
-                    columns={paymentColumns}
-                    data={unreconciledPayments}
-                    cardMode
-                    searchPlaceholder="Buscar en sistema..."
-                    globalFilterFields={["contact_name", "display_id"]}
-                    onRowSelectionChange={handlePaymentSelectionChange}
-                    hidePagination
-                    skeletonRows={10}
-                    noBorder
+                {/* Sidebar Suggestions */}
+                <SuggestionsPanel 
+                    isOpen={sidebarOpen}
+                    onClose={() => setSidebarOpen(false)}
+                    suggestions={suggestions}
+                    lineSuggestions={lineSuggestions}
+                    selectedLine={selectedLines.length === 1 ? selectedLines[0] : undefined}
+                    selectedPayment={selectedPayments.length === 1 ? selectedPayments[0] : undefined}
+                    onMatch={handleMatch}
+                    isMatching={matching}
                 />
             </div>
 
@@ -638,23 +570,23 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 onConfirm={async (reason, notes) => {
                     try {
                         if (actionDialog.type === 'bulk_exclude') {
-                            await api.post(`/treasury/statement-lines/bulk_exclude/`, { 
-                                line_ids: selectedLines.map(l => l.id),
-                                exclusion_reason: reason,
-                                exclusion_notes: notes
+                            await bulkExcludeMutation.mutateAsync({
+                                lineIds: selectedLines.map(l => l.id),
+                                reason,
+                                notes
                             })
                             setSelectedLines([])
                         } else {
-                            await api.patch(`/treasury/statement-lines/${actionDialog.lineId}/`, { 
-                                reconciliation_state: 'EXCLUDED',
-                                exclusion_reason: reason,
-                                exclusion_notes: notes
-                            })
+                            if (actionDialog.lineId) {
+                                await excludeMutation.mutateAsync({
+                                    lineId: actionDialog.lineId,
+                                    reason,
+                                    notes
+                                })
+                            }
                         }
-                        toast.success("Movimientos excluidos correctamente")
-                        await fetchUnreconciledLines()
                     } catch (error) {
-                        showApiError(error)
+                        // Handled in mutation
                     } finally { setActionDialog({ open: false, type: null }) }
                 }}
             />
