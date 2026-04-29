@@ -20,6 +20,16 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
 import { cn, formatCurrency } from "@/lib/utils"
+import { 
+    DndContext, 
+    DragEndEvent, 
+    useDraggable, 
+    useDroppable,
+    PointerSensor,
+    useSensor,
+    useSensors,
+} from "@dnd-kit/core"
+import { CSS } from "@dnd-kit/utilities"
 import {
     useStatementQuery,
     useUnreconciledLinesQuery,
@@ -72,6 +82,55 @@ interface ReconciliationPanelProps {
     statementId: number
     treasuryAccountId: number
     onComplete: () => void
+}
+
+// ─── DnD Wrappers ────────────────────────────────────────────────────────────
+
+function DraggablePayment({ id, children, disabled }: { id: number, children: React.ReactNode, disabled?: boolean }) {
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+        id: `payment-${id}`,
+        data: { type: 'payment', id },
+        disabled
+    });
+    
+    const style = {
+        transform: CSS.Translate.toString(transform),
+        zIndex: isDragging ? 50 : undefined,
+    };
+
+    return (
+        <div 
+            ref={setNodeRef} 
+            style={style} 
+            {...listeners} 
+            {...attributes}
+            className={cn(
+                "touch-none",
+                isDragging && "opacity-50 grayscale scale-95"
+            )}
+        >
+            {children}
+        </div>
+    );
+}
+
+function DroppableBankLine({ id, children }: { id: number, children: React.ReactNode }) {
+    const { setNodeRef, isOver } = useDroppable({
+        id: `line-${id}`,
+        data: { type: 'line', id }
+    });
+
+    return (
+        <div 
+            ref={setNodeRef}
+            className={cn(
+                "transition-all duration-200",
+                isOver && "bg-primary/20 scale-[1.02] shadow-lg ring-2 ring-primary ring-inset z-10 relative"
+            )}
+        >
+            {children}
+        </div>
+    );
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
@@ -136,6 +195,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     
     const [sidebarOpen, setSidebarOpen] = useState(false)
 
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        })
+    );
+    
     useEffect(() => {
         if (selectedLines.length === 1 || selectedPayments.length === 1) {
             setSidebarOpen(true)
@@ -243,6 +310,17 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         setActionDialog({ open: false, type: null })
         setAutoMatchProgressOpen(true)
     }
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        
+        if (over && active.data.current?.type === 'payment' && over.data.current?.type === 'line') {
+            const paymentId = active.data.current.id;
+            const lineId = over.data.current.id;
+            
+            handleMatch(lineId, paymentId);
+        }
+    };
 
     const handleCreateAndMatch = async (data: MovementData) => {
         if (!createMatchDialog.line) return
@@ -462,14 +540,15 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     if (loading) return <TableSkeleton rows={10} columns={4} className="py-6" />
 
     return (
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div className="space-y-6">
             {/* ─── Level 1 Hierarchy Toolbar ─── */}
             <div className="flex items-center justify-between bg-white border border-border/40 p-4 rounded-lg shadow-sm">
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-3">
-                        <h3 className="text-lg font-black tracking-tight text-foreground/80 uppercase">Workbench de Conciliación</h3>
+                        <h3 className="text-lg font-black tracking-tight text-foreground/80 uppercase">Mesa de Conciliación</h3>
                         <Badge variant="outline" className="font-mono text-[10px] border-primary/20 bg-primary/5 text-primary font-bold"> {/* intentional: badge density */}
-                            {unreconciledLines.length} Pendientes
+                            {unreconciledLines.length} Sin Conciliar
                         </Badge>
                     </div>
                     {statement && (
@@ -631,7 +710,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         </div>
                     </div>
 
-                    {/* ─── Main Workbench Grid ─── */}
+                    {/* ─── Main Mesa de Conciliación Grid ─── */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <DataTable
                             columns={bankColumns}
@@ -643,6 +722,11 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             noBorder
                             pageSizeOptions={[50, 100]}
                             defaultPageSize={50}
+                            renderRow={(row, children) => (
+                                <DroppableBankLine id={(row.original as BankStatementLine).id}>
+                                    {children}
+                                </DroppableBankLine>
+                            )}
                             renderFooter={(table) => (
                                 <div className="flex items-center justify-between px-2 py-1 w-full">
                                     <div className="flex-1 text-[10px] text-muted-foreground font-bold uppercase">
@@ -685,6 +769,11 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             noBorder
                             pageSizeOptions={[50, 100]}
                             defaultPageSize={50}
+                            renderRow={(row, children) => (
+                                <DraggablePayment id={(row.original as ReconciliationSystemItem).id}>
+                                    {children}
+                                </DraggablePayment>
+                            )}
                             renderFooter={(table) => (
                                 <div className="flex items-center justify-between px-2 py-1 w-full">
                                     <div className="flex-1 text-[10px] text-muted-foreground font-bold uppercase">
@@ -877,5 +966,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 }}
             />
         </div>
+        </DndContext>
     )
 }

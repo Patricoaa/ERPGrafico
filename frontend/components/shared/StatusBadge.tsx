@@ -39,7 +39,7 @@ const STATUS_CONFIG: Record<string, StatusStyle> = {
     // Financial / Treasury / Reconciliation
     COMPLETED: { label: "Completado", className: "bg-success/10 text-success border-success/20", type: "success" },
     UNRECONCILED: { label: "Sin Conciliar", className: "bg-info/10 text-info border-info/20", type: "info" },
-    MATCHED: { label: "Sugerido", className: "bg-warning/10 text-warning border-warning/20", type: "warning" },
+    MATCHED: { label: "Sugerido", className: "bg-info/10 text-info border-info/20", type: "info" },
     RECONCILED: { label: "Conciliado", className: "bg-success/10 text-success border-success/20", type: "success" },
     DISPUTED: { label: "Disputado", className: "bg-destructive/10 text-destructive border-destructive/20", type: "destructive" },
     EXCLUDED: { label: "Excluido", className: "bg-muted text-muted-foreground border-muted", type: "neutral" },

@@ -245,7 +245,7 @@ export function AutoMatchProgressModal({
                         </div>
                         <div className="rounded-lg bg-warning/5 border border-warning/20 p-3 text-center">
                             <p className="text-[10px] font-black uppercase tracking-widest text-warning/70 mb-1">
-                                Pendientes
+                                Sin Conciliar
                             </p>
                             <p className="text-2xl font-black font-mono text-warning">
                                 {(progress.total_unreconciled ?? progress.total) - (progress.matched_count ?? progress.matched)}

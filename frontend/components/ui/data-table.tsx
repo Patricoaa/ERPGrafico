@@ -23,7 +23,8 @@ import { Button } from "@/components/ui/button"
 import { TableSkeleton as SharedTableSkeleton } from "@/components/shared/TableSkeleton"
 import { cn } from "@/lib/utils"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { SearchX, CheckCircle2, ChevronRight, X } from "lucide-react"
+import { SearchX, CheckCircle2, ChevronRight, X, LucideIcon } from "lucide-react"
+import { EmptyStateContext } from "@/components/shared/EmptyState"
 
 import { DataTablePagination } from "./data-table-pagination"
 import { DataTableToolbar } from "./data-table-toolbar"
@@ -42,7 +43,7 @@ interface DataTableProps<TData, TValue> {
         options?: {
             label: string
             value: string
-            icon?: React.ComponentType<{ className?: string }>
+            icon?: LucideIcon
         }[]
     }[]
     toolbarAction?: React.ReactNode
@@ -75,16 +76,17 @@ interface DataTableProps<TData, TValue> {
     customFilterCount?: number
     getSubRows?: (originalRow: TData, index: number) => TData[] | undefined
     autoExpand?: boolean
+    initialColumnFilters?: { id: string; value: unknown }[]
     /** Primary create action rendered at the right-most end of the toolbar, after the button group */
     createAction?: React.ReactNode
-    /** Custom empty state props */
     emptyState?: {
         title?: string
         description?: string
-        icon?: React.ComponentType<{ className?: string }>
+        icon?: LucideIcon
         action?: React.ReactNode
-        context?: "general" | "search" | "error" | "finance" | "inventory" | "contacts" | "production"
+        context?: EmptyStateContext
     }
+    renderRow?: (row: Row<TData>, children: React.ReactNode) => React.ReactNode
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -131,6 +133,8 @@ export function DataTable<TData, TValue>({
     autoExpand,
     createAction,
     emptyState: customEmptyState,
+    initialColumnFilters = EMPTY_ARRAY,
+    renderRow,
 }: DataTableProps<TData, TValue>) {
     // Uncontrolled mode: let TanStack Table manage sorting/filters/visibility/
     // expansion/selection state internally. Previous controlled-state wiring
@@ -166,6 +170,7 @@ export function DataTable<TData, TValue>({
             },
             columnVisibility: initialVisibility,
             expanded: autoExpand ? true : {},
+            columnFilters: initialColumnFilters,
         },
     })
 
@@ -214,24 +219,47 @@ export function DataTable<TData, TValue>({
             table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
                     <React.Fragment key={row.id}>
-                        <TableRow
-                            data-state={row.getIsSelected() && "selected"}
-                            className={cn(
-                                "group border-b border-border/40 hover:bg-muted/50 transition-all",
-                                onRowClick && "cursor-pointer",
-                                row.getIsSelected() && "bg-primary/5"
-                            )}
-                            onClick={() => onRowClick?.(row.original)}
-                        >
-                            {row.getVisibleCells().map((cell) => (
-                                <TableCell
-                                    key={cell.id}
-                                    className="py-4"
+                        {renderRow ? (
+                            renderRow(row, (
+                                <TableRow
+                                    data-state={row.getIsSelected() && "selected"}
+                                    className={cn(
+                                        "group border-b border-border/40 hover:bg-muted/50 transition-all",
+                                        onRowClick && "cursor-pointer",
+                                        row.getIsSelected() && "bg-primary/5"
+                                    )}
+                                    onClick={() => onRowClick?.(row.original)}
                                 >
-                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                </TableCell>
-                            ))}
-                        </TableRow>
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell
+                                            key={cell.id}
+                                            className="py-4"
+                                        >
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow
+                                data-state={row.getIsSelected() && "selected"}
+                                className={cn(
+                                    "group border-b border-border/40 hover:bg-muted/50 transition-all",
+                                    onRowClick && "cursor-pointer",
+                                    row.getIsSelected() && "bg-primary/5"
+                                )}
+                                onClick={() => onRowClick?.(row.original)}
+                            >
+                                {row.getVisibleCells().map((cell) => (
+                                    <TableCell
+                                        key={cell.id}
+                                        className="py-4"
+                                    >
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        )}
                         {row.getIsExpanded() && renderSubComponent && (
                             <TableRow>
                                 <TableCell colSpan={row.getVisibleCells().length} className="p-0 bg-muted/30">
@@ -430,23 +458,45 @@ export function DataTable<TData, TValue>({
                             ) : table.getRowModel().rows?.length ? (
                                 table.getRowModel().rows.map((row) => (
                                     <React.Fragment key={row.id}>
-                                        <TableRow
-                                            data-state={row.getIsSelected() && "selected"}
-                                            className={cn(
-                                                "group hover:bg-muted/20 transition-colors",
-                                                onRowClick && "cursor-pointer"
-                                            )}
-                                            onClick={() => onRowClick?.(row.original)}
-                                        >
-                                            {row.getVisibleCells().map((cell) => (
-                                                <TableCell key={cell.id}>
-                                                    {flexRender(
-                                                        cell.column.columnDef.cell,
-                                                        cell.getContext()
+                                        {renderRow ? (
+                                            renderRow(row, (
+                                                <TableRow
+                                                    data-state={row.getIsSelected() && "selected"}
+                                                    className={cn(
+                                                        "group hover:bg-muted/20 transition-colors",
+                                                        onRowClick && "cursor-pointer"
                                                     )}
-                                                </TableCell>
-                                            ))}
-                                        </TableRow>
+                                                    onClick={() => onRowClick?.(row.original)}
+                                                >
+                                                    {row.getVisibleCells().map((cell) => (
+                                                        <TableCell key={cell.id}>
+                                                            {flexRender(
+                                                                cell.column.columnDef.cell,
+                                                                cell.getContext()
+                                                            )}
+                                                        </TableCell>
+                                                    ))}
+                                                </TableRow>
+                                            ))
+                                        ) : (
+                                            <TableRow
+                                                data-state={row.getIsSelected() && "selected"}
+                                                className={cn(
+                                                    "group hover:bg-muted/20 transition-colors",
+                                                    onRowClick && "cursor-pointer"
+                                                )}
+                                                onClick={() => onRowClick?.(row.original)}
+                                            >
+                                                {row.getVisibleCells().map((cell) => (
+                                                    <TableCell key={cell.id}>
+                                                        {flexRender(
+                                                            cell.column.columnDef.cell,
+                                                            cell.getContext()
+                                                        )}
+                                                    </TableCell>
+                                                ))}
+                                            </TableRow>
+                                        )}
                                         {row.getIsExpanded() && renderSubComponent && (
                                             <TableRow>
                                                 <TableCell colSpan={row.getVisibleCells().length} className="p-0 border-b border-border/50">

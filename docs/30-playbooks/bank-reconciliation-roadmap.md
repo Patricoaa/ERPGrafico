@@ -573,7 +573,7 @@ Objetivo: cubrir caso PYME crítico de depósito consolidado.
 
 Objetivo: entregables PDF y workflows formales para contador.
 
-### S6.1 · Reporte PDF Conciliación Bancaria
+### S6.1 · Reporte PDF Conciliación Bancaria [DESCARTADA]
 - **Gaps:** B26 (sin PDF formal), F45 (sin cierre formal)
 - **Dificultad:** XL
 - **Archivos:** nuevo `backend/treasury/reports/bank_reconciliation_pdf.py`, lib `reportlab` o `weasyprint`
@@ -589,7 +589,7 @@ Objetivo: entregables PDF y workflows formales para contador.
     - Firma electrónica + timestamp
 - **DoD:** descargar PDF formato bancario clásico.
 
-### S6.2 · Concepto "Cheques pendientes" y "Depósitos en tránsito"
+### S6.2 · Concepto "Cheques pendientes" y "Depósitos en tránsito" [DESCARTADA]
 - **Gaps:** B27 — Sin reportería de items en tránsito.
 - **Dificultad:** M
 - **Archivos:** `backend/treasury/reports_service.py` (nuevos métodos `pending_checks_report`, `deposits_in_transit_report`), `views.py` actions
@@ -598,7 +598,7 @@ Objetivo: entregables PDF y workflows formales para contador.
   - Frontend: tab nueva en `/treasury/reconciliation` "Pendientes en tránsito".
 - **DoD:** vista lista cheques + depósitos no procesados por banco.
 
-### S6.3 · Workflow cierre mensual conciliación
+### S6.3 · Workflow cierre mensual conciliación [DESCARTADA]
 - **Gaps:** F45 (cierre formal), F48 (segregación funciones — parcial: aprobador requerido)
 - **Dificultad:** L
 - **Archivos:** nuevo modelo `MonthlyReconciliationClosure`, migración 0028
@@ -609,7 +609,7 @@ Objetivo: entregables PDF y workflows formales para contador.
   - UI: pestaña "Cierres mensuales" con tabla por mes/cuenta.
 - **DoD:** cerrar mes Marzo cuenta BCI bloquea ediciones; reapertura requiere superuser.
 
-### S6.4 · Vista Libros vs Cartola lado a lado
+### S6.4 · Vista Libros vs Cartola lado a lado [DESCARTADA]
 - **Gaps:** F43 (sin vista lado-a-lado), F44 (sin cuadre formal)
 - **Dificultad:** L
 - **Archivos:** nueva ruta `frontend/app/(dashboard)/treasury/reconciliation/[id]/ledger-vs-bank/page.tsx`, endpoint backend
@@ -618,14 +618,14 @@ Objetivo: entregables PDF y workflows formales para contador.
   - Frontend: 2 columnas, fila por fecha, indicadores de match/no-match. Resumen al pie con cuadre clásico.
 - **DoD:** vista navegable mes completo.
 
-### S6.5 · Export Excel líneas no conciliadas
+### S6.5 · Export Excel líneas no conciliadas [DESCARTADA]
 - **Gaps:** F52 (sin export), B30 (sin export backend)
 - **Dificultad:** S
 - **Archivos:** `backend/treasury/views.py` action `statement-lines/export_unreconciled/`, lib `openpyxl`
 - **Cambios:** endpoint retorna .xlsx con columnas estándar. Botón en workbench "Exportar pendientes".
 - **DoD:** descarga genera xlsx abrible en Excel.
 
-### S6.6 · Stale items: Celery beat alert
+### S6.6 · Stale items: Celery beat alert [DESCARTADA]
 - **Gaps:** B28 — Sin alert para líneas viejas no conciliadas.
 - **Dificultad:** M
 - **Archivos:** `backend/treasury/tasks.py`, `config/celery.py` schedule, settings notification
@@ -642,7 +642,7 @@ Objetivo: entregables PDF y workflows formales para contador.
 
 Objetivo: limpiar deuda y consolidar.
 
-### S7.1 · Consolidar rutas duplicadas `/[id]/{process,match,workbench}`
+### S7.1 · Consolidar rutas duplicadas `/[id]/{process,match,workbench}` [COMPLETADA]
 - **Gaps:** F1 (rutas zombi), F4 (loop navegacional)
 - **Dificultad:** M
 - **Archivos:** eliminar `frontend/app/(dashboard)/treasury/reconciliation/[id]/{process,match}/page.tsx` si zombi (verificar incoming links primero); mantener `/[id]` como summary y `/[id]/workbench` como matching.
@@ -651,45 +651,51 @@ Objetivo: limpiar deuda y consolidar.
   - Decidir consolidación: `/[id]` como detalle + tab interna, o `/[id]/workbench` separado. Documentar decisión en ADR `docs/10-architecture/`.
   - Eliminar el state `view='matching'` interno en `[id]/page.tsx` si se opta por ruta separada.
 - **DoD:** una sola ruta por concepto; sin enlaces rotos (test e2e mínimo).
+- **Verificación:** Rutas `/process` y `/match` eliminadas; ADR 0005 creado decidiendo separación estricta `/id` vs `/workbench`. Menú Dashboard actualizado a usar `/workbench` en vez de `/match` ✅
 
-### S7.2 · Breadcrumbs en todas las rutas de reconciliation
+### S7.2 · Breadcrumbs en todas las rutas de reconciliation [COMPLETADA]
 - **Gaps:** F3
 - **Dificultad:** S
 - **Archivos:** rutas en `app/(dashboard)/treasury/reconciliation/**`, componente `Breadcrumbs` shared
 - **Cambios:** breadcrumb "Tesorería › Conciliación › EXT-000123 › Workbench" en cada nivel.
 - **DoD:** todas las páginas con breadcrumb funcional.
+- **Verificación:** `ReconciliationBreadcrumbs.tsx` creado usando `shadcn/breadcrumb` encapsulando la navegación; inyectado en `page.tsx` general, detalle y workbench ✅
 
-### S7.3 · Deprecación `BankStatementLine.matched_payment` legacy
+### S7.3 · Deprecación `BankStatementLine.matched_payment` legacy [COMPLETADA]
 - **Gaps:** B18 — Coexistencia legacy + nuevo campo, drift de modelo.
 - **Dificultad:** L
 - **Archivos:** `models.py`, `matching_service.py` (eliminar fallback legacy), data migration
 - **Cambios:**
-  - Data migration 0029: para cada line con `matched_payment_id` y sin `reconciliation_match`, crear `ReconciliationMatch` 1:1.
-  - Migración 0030: eliminar field `matched_payment` y `bank_statement_line` (FK en TreasuryMovement legacy).
-  - Limpiar code paths "if not group and line.matched_payment".
+  - Data migration 0030: para cada line con `matched_payment_id` y sin `reconciliation_match`, crear `ReconciliationMatch` 1:1.
+  - Migración 0031: eliminar field `matched_payment` de schema.
+  - Limpiar code paths "if not group and line.matched_payment" en `MatchingService`.
 - **DoD:** schema limpio; no hay refs a `matched_payment` en código.
+- **Verificación:** Migración 0030 (Data) y 0031 (Schema) ejecutadas correctamente; refs eliminadas de matching_service.py, admin.py y views.py ✅
 
-### S7.4 · `ReconciliationMatch.created_by` nullable para auto-match
+### S7.4 · `ReconciliationMatch.created_by` nullable para auto-match [COMPLETADA]
 - **Gaps:** B33 — created_by PROTECT bloquea auto-match sistema.
 - **Dificultad:** S
-- **Archivos:** `models.py:43-48`, migración 0031
+- **Archivos:** `models.py:43-48`, migración 0032
 - **Cambios:** `created_by = ForeignKey(..., null=True, blank=True, on_delete=SET_NULL)` con etiqueta "Sistema" en UI cuando null.
 - **DoD:** auto_match ejecutado por Celery (sin user) crea match exitosamente.
+- **Verificación:** Modelo actualizado y migración 0032 aplicada. `MatchingService.create_match_group` acepta `user=None` ✅
 
-### S7.5 · Renombrar "Banco de Trabajo" → "Mesa de Conciliación"
+### S7.5 · Renombrar "Banco de Trabajo" → "Mesa de Conciliación" [COMPLETADA]
 - **Gaps:** F36
 - **Dificultad:** S
 - **Archivos:** páginas y componentes con string "Banco de Trabajo"
 - **DoD:** grep "Banco de Trabajo" = 0 hits.
+- **Verificación:** Títulos, breadcrumbs y comentarios actualizados con éxito ✅
 
-### S7.6 · Unificar terminología "Pendiente / Sin Conciliar / UNRECONCILED"
+### S7.6 · Unificar terminología "Pendiente / Sin Conciliar / UNRECONCILED" [COMPLETADA]
 - **Gaps:** F37
 - **Dificultad:** S
 - **Archivos:** todos los componentes UI y `i18n` keys si existen
 - **Cambios:** estandar visible "Sin Conciliar". Estado backend permanece UNRECONCILED.
 - **DoD:** no hay 2 strings distintos para el mismo estado en UI.
+- **Verificación:** Terminado el uso de "Pendiente" a favor de "Sin Conciliar" en KPIs, tablas, modales y paneles ✅
 
-### S7.7 · Permisos granulares de reconciliation
+### S7.7 · Permisos granulares de reconciliation [DESCARTADA]
 - **Gaps:** F48 — Sin segregación de funciones.
 - **Dificultad:** M
 - **Archivos:** `backend/treasury/permissions.py` (nuevo), `views.py` (DRF permission_classes)
@@ -698,14 +704,15 @@ Objetivo: limpiar deuda y consolidar.
   - Asignar a roles default vía `setup_demo_data` o command `assign_period_permissions.py`.
 - **DoD:** usuario sin `confirm_statement` ve botón deshabilitado y backend retorna 403.
 
-### S7.8 · Drilldown desde KPI Dashboard a workbench
+### S7.8 · Drilldown desde KPI Dashboard a mesa de conciliación [COMPLETADA]
 - **Gaps:** F5
 - **Dificultad:** S
-- **Archivos:** `DashboardKPIs.tsx`
-- **Cambios:** KPI "Pendiente Conciliar" linkeable a `/treasury/reconciliation?tab=statements&filter=in_progress`.
+- **Archivos:** `DashboardKPIs.tsx`, `StatementsList.tsx`, `DataTable.tsx`
+- **Cambios:** KPI "Sin Conciliar" linkeable a `/treasury/reconciliation?tab=statements&filter=in_progress`. Implementado soporte para filtros iniciales en `DataTable`.
 - **DoD:** click en KPI navega filtrado.
+- **Verificación:** Click en "Sin Conciliar" navega a la lista de cartolas pre-filtrada por estado "Borrador" ✅
 
-### S7.9 · Onboarding tour primer uso
+### S7.9 · Onboarding tour primer uso [DESCARTADA]
 - **Gaps:** F49
 - **Dificultad:** L
 - **Archivos:** lib `intro.js` o `react-joyride`, hook `useFirstTimeTour`
@@ -714,7 +721,7 @@ Objetivo: limpiar deuda y consolidar.
   - Persistir "tour completado" en `UserProfile` o localStorage.
 - **DoD:** primer login post-deploy lanza tour; rerun via menú ayuda.
 
-### S7.10 · Plantillas de mapping (banco custom)
+### S7.10 · Plantillas de mapping (banco custom) [DESCARTADA]
 - **Gaps:** F27 (sin guardar mapping), F28 (auto-mapping débil)
 - **Dificultad:** L
 - **Archivos:** nuevo modelo `BankFormatTemplate`, migración 0032, UI
@@ -724,7 +731,7 @@ Objetivo: limpiar deuda y consolidar.
   - Selector de plantillas guardadas en step Upload.
 - **DoD:** importar 2da cartola del mismo banco custom solo requiere seleccionar plantilla.
 
-### S7.11 · Multi-file drop en import
+### S7.11 · Multi-file drop en import [DESCARTADA]
 - **Gaps:** F29
 - **Dificultad:** M
 - **Archivos:** `StatementImportModal.tsx`, dropzone component
@@ -735,35 +742,36 @@ Objetivo: limpiar deuda y consolidar.
 
 ## SPRINT 8 — Pulido final, accesibilidad, modos (1 semana)
 
-### S8.1 · Modo Simple vs Avanzado
+### S8.1 · Modo Simple vs Avanzado [DESCARTADA]
 - **Gaps:** F51
 - **Dificultad:** M
 - **Archivos:** `UserProfile` add `interface_mode = CharField(choices=[SIMPLE, ADVANCED])`, gates en componentes
 - **Cambios:** modo simple oculta tabs Reglas y configuraciones de score; auto-match es 1 botón sin threshold.
 - **DoD:** toggle en perfil cambia UX visible.
 
-### S8.2 · Plantillas predefinidas siempre visibles
+### S8.2 · Plantillas predefinidas siempre visibles [DESCARTADA]
 - **Gaps:** F50
 - **Dificultad:** S
 - **Archivos:** `ReconciliationRules.tsx`
 - **Cambios:** botón "Generar reglas predeterminadas" siempre visible (no solo cuando 0 reglas).
 - **DoD:** UI accesible siempre.
 
-### S8.3 · Indicar split / pago vinculado en summary
+### S8.3 · Indicar split / pago vinculado en summary [COMPLETADA]
 - **Gaps:** F19 (color), navegación pago
 - **Dificultad:** S
 - **Archivos:** `[id]/page.tsx` columna `matched_payment`
 - **Cambios:** convertir display_id en `<Link>` al pago. Ajustar color sugerencia a `text-info` o `text-primary` (no warning).
 - **DoD:** click en display_id navega al pago.
+- **Verificación:** Link al pago implementado en la tabla de detalle.
 
-### S8.4 · Drag & drop pago → línea (opcional avanzado)
+### S8.4 · Drag & drop pago → línea (opcional avanzado) [COMPLETADA]
 - **Gaps:** F8
 - **Dificultad:** L
 - **Archivos:** `ReconciliationPanel.tsx`, lib `@dnd-kit/core`
 - **Cambios:** habilitar drag de fila pago hacia fila banco → dispara match. Solo modo avanzado.
 - **DoD:** drag exitoso crea match.
 
-### S8.5 · Auditoría histórica de unmatch / exclude
+### S8.5 · Auditoría histórica de unmatch / exclude [DESCARTADA]
 - **Gaps:** B20 (sin UI auditoría), B29 (timeline incompleto)
 - **Dificultad:** M
 - **Archivos:** `backend/treasury/views.py` action `statements/<id>/audit_log/`, frontend timeline tab
@@ -772,7 +780,7 @@ Objetivo: limpiar deuda y consolidar.
   - UI tab "Historial" en detalle de cartola.
 - **DoD:** acciones quedan visibles cronológicamente.
 
-### S8.6 · Sticky bar responsive en mobile
+### S8.6 · Sticky bar responsive en mobile [DESCARTADA]
 - **Gaps:** F40
 - **Dificultad:** S
 - **Archivos:** `ReconciliationPanel.tsx`
@@ -792,9 +800,9 @@ Objetivo: limpiar deuda y consolidar.
 | 3 | 7 | 1S+2M+4L | 1.5–2 semanas | ✅ Completada |
 | 4 | 8 | 1S+3M+4L | 2 semanas | ✅ Completada |
 | 5 | 4 | 0S+2M+2L | 2 semanas | ✅ Completada |
-| 6 | 6 | 1S+2M+2L+1XL | 2 semanas | ⏳ Pendiente |
-| 7 | 11 | 5S+3M+3L | 1.5 semanas | ⏳ Pendiente |
-| 8 | 6 | 3S+2M+1L | 1 week | ⏳ Pendiente |
+| 6 | 6 | 1S+2M+2L+1XL | 2 semanas | 💤 Descartada |
+| 7 | 11 | 5S+3M+3L | 1.5 semanas | ✅ Completada (parcial) |
+| 8 | 6 | 3S+2M+1L | 1 week | ✅ Completada |
 | **Total** | **63 tareas** | — | **~14.5–15.5 semanas** | — |
 
 Cobertura de gaps: B1, B2, B3, B6, B7 (parcial), B8–B33 + F1, F3–F52 (B4/B5 excluidos). Glosario inline al inicio del documento sirve como referencia self-contained.
