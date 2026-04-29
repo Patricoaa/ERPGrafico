@@ -119,3 +119,20 @@ export interface ReconciliationDashboardStats {
     oldest_unreconciled_date: string | null
     recent_activity: RecentActivity[]
 }
+
+export interface PaginatedResponse<T> {
+    results: T[]
+    count: number
+    next: string | null
+    previous: string | null
+}
+
+export interface QueryPaginationParams {
+    page?: number
+    pageSize?: number
+    search?: string
+    date_from?: string
+    date_to?: string
+    amount_min?: number
+    amount_max?: number
+}

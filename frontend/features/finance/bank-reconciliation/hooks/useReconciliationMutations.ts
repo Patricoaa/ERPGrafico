@@ -234,3 +234,58 @@ export function useCreateDefaultRulesMutation() {
         }
     })
 }
+
+/**
+ * Encadena la creación de un movimiento de tesorería y su match automático con una línea
+ */
+export function useCreateAndMatchMutation(statementId: number, treasuryAccountId: number) {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async ({ lineId, movementData }: { lineId: number, movementData: any }) => {
+            // 1. Crear el movimiento
+            const movementRes = await api.post('/treasury/movements/', movementData)
+            const paymentId = movementRes.data.id
+
+            // 2. Realizar el match con la línea
+            await api.post(`/treasury/statement-lines/${lineId}/match/`, { payment_id: paymentId })
+            
+            return { lineId, paymentId }
+        },
+        onSuccess: () => {
+            toast.success("Pago registrado y conciliado correctamente")
+        },
+        onError: (err) => {
+            showApiError(err, "Error al crear y conciliar pago")
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledLines(statementId) })
+            queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledPayments(treasuryAccountId) })
+            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+        }
+    })
+}
+
+/**
+ * Revierte una conciliación (match) para permitir el 'Undo'
+ */
+export function useUnmatchMutation(statementId: number, treasuryAccountId: number) {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async (lineId: number) => {
+            return api.post(`/treasury/statement-lines/${lineId}/unmatch/`)
+        },
+        onSuccess: () => {
+            toast.success("Conciliación revertida")
+        },
+        onError: (err) => {
+            showApiError(err, "Error al deshacer conciliación")
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledLines(statementId) })
+            queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledPayments(treasuryAccountId) })
+            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+        }
+    })
+}

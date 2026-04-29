@@ -44,6 +44,16 @@ export function useRulesQuery() {
     })
 }
 
+export interface QueryPaginationParams {
+    page?: number
+    pageSize?: number
+    search?: string
+    date_from?: string
+    date_to?: string
+    amount_min?: number
+    amount_max?: number
+}
+
 export function useDashboardDataQuery(selectedAccount: string = 'all') {
     return useQuery({
         queryKey: reconciliationKeys.dashboard(selectedAccount),
@@ -63,56 +73,76 @@ export function useDashboardDataQuery(selectedAccount: string = 'all') {
     })
 }
 
-export function useUnreconciledLinesQuery(statementId: number) {
+export function useUnreconciledLinesQuery(statementId: number, params: QueryPaginationParams = {}) {
     return useQuery({
-        queryKey: reconciliationKeys.unreconciledLines(statementId),
+        queryKey: reconciliationKeys.unreconciledLines(statementId, params),
         queryFn: async ({ signal }) => {
             const res = await api.get('/treasury/statement-lines/', {
                 params: {
                     statement: statementId,
-                    reconciliation_state: 'UNRECONCILED'
+                    reconciliation_state: 'UNRECONCILED',
+                    page: params.page || 1,
+                    page_size: params.pageSize || 50,
+                    search: params.search,
+                    date_from: params.date_from,
+                    date_to: params.date_to,
+                    amount_min: params.amount_min,
+                    amount_max: params.amount_max
                 },
                 signal
             })
-            return res.data
+            return res.data // { count, next, previous, results }
         },
         enabled: !!statementId
     })
 }
 
-export function useUnreconciledPaymentsQuery(treasuryAccountId: number) {
+export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: QueryPaginationParams = {}) {
     return useQuery({
-        queryKey: reconciliationKeys.unreconciledPayments(treasuryAccountId),
+        queryKey: reconciliationKeys.unreconciledPayments(treasuryAccountId, params),
         queryFn: async ({ signal }) => {
             const [paymentsRes, batchesRes] = await Promise.all([
                 api.get('/treasury/payments/', {
                     params: {
                         is_reconciled: 'False',
                         treasury_account: treasuryAccountId,
-                        limit: 100
+                        page: params.page || 1,
+                        page_size: params.pageSize || 50,
+                        date_from: params.date_from,
+                        date_to: params.date_to,
+                        amount_min: params.amount_min,
+                        amount_max: params.amount_max
                     },
                     signal
                 }),
                 api.get('/treasury/terminal-batches/', {
                     params: {
                         status: 'SETTLED',
-                        reconciliation_match__isnull: 'True'
+                        reconciliation_match__isnull: 'True',
+                        // Batches are usually fewer, but we take a safety margin
+                        limit: 100 
                     },
                     signal
                 })
             ])
 
-            const payments = paymentsRes.data.results || paymentsRes.data
-            const batches = (batchesRes.data.results || batchesRes.data).map((b: any) => ({
+            const paymentsData = paymentsRes.data.results || paymentsRes.data
+            const batchesData = batchesRes.data.results || batchesRes.data
+
+            const payments = Array.isArray(paymentsData) ? paymentsData : []
+            const batches = Array.isArray(batchesData) ? batchesData.map((b: any) => ({
                 id: b.id,
                 display_id: b.display_id,
                 amount: b.net_amount,
                 date: b.sales_date,
                 contact_name: b.supplier_name || 'Liquidación Terminal',
                 is_batch: true
-            }))
+            })) : []
 
-            return [...payments, ...batches]
+            return {
+                results: [...payments, ...batches],
+                count: (paymentsRes.data.count || payments.length) + batches.length
+            }
         },
         enabled: !!treasuryAccountId
     })
