@@ -2,16 +2,14 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Banknote, LogOut, ArrowRightLeft, Loader2, AlertTriangle, Info, ShieldAlert, CheckCircle2 } from "lucide-react"
 import { cn, formatCurrency } from "@/lib/utils"
 import { Numpad } from "@/components/ui/numpad"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import api from "@/lib/api"
-import { FORM_STYLES } from '@/lib/styles'
-import { validateAccountingPeriod } from '@/lib/actions/accounting-actions'
+import { LabeledInput } from "@/components/shared"
+import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { toast } from 'sonner'
 import { GenericWizard, WizardStep } from '@/components/shared/GenericWizard'
 
@@ -101,94 +99,19 @@ export function MovementWizard({
     const [toAccountId, setToAccountId] = useState<string>("")
     const [fromAccountName, setFromAccountName] = useState("")
     const [toAccountName, setToAccountName] = useState("")
+    const [fromAccountBalance, setFromAccountBalance] = useState<number | null>(null)
+    const [toAccountBalance, setToAccountBalance] = useState<number | null>(null)
 
     const [amount, setAmount] = useState('0')
     const [notes, setNotes] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const [partnerCapitalInfo, setPartnerCapitalInfo] = useState<{ subscribed: number; balance: number; pending: number } | null>(null)
 
-    // Capital warning effect
-    useEffect(() => {
-        if (contactId && moveType === 'CAPITAL_CONTRIBUTION') {
-            api.get(`/contacts/${contactId}/`).then(res => {
-                const p = res.data
-                const subscribed = parseFloat(p.partner_total_contributions) || 0
-                const balance = parseFloat(p.partner_balance) || 0
-                const pending = Math.max(0, subscribed - balance)
-                requestAnimationFrame(() => setPartnerCapitalInfo({ subscribed, balance, pending }))
-            }).catch(() => requestAnimationFrame(() => setPartnerCapitalInfo(null)))
-        } else {
-            requestAnimationFrame(() => setPartnerCapitalInfo(null))
-        }
-    }, [contactId, moveType])
-
-    // Skip steps if fixedMoveType is provided
-    useEffect(() => {
-        if (fixedMoveType && open) {
-            requestAnimationFrame(() => {
-                if (context === 'treasury' && fixedMoveType !== 'TRANSFER') {
-                    setStepIndex(1) // Go to Account selection
-                } else {
-                    setStepIndex(3) // Go to Amount
-                }
-            })
-        }
-    }, [fixedMoveType, context, open])
-
-    const handleFinalComplete = async () => {
-        setSubmitting(true)
-        try {
-            const today = new Date().toISOString().split('T')[0]
-            const periodStatus = await validateAccountingPeriod(today)
-            if (periodStatus.is_closed) {
-                toast.error("No se puede registrar el movimiento: El periodo contable actual está cerrado.", {
-                    icon: <ShieldAlert className="h-4 w-4 text-destructive" />,
-                    duration: 5000
-                })
-                return
-            }
-
-            const numAmount = parseFloat(amount) || 0
-            const data: MovementData = {
-                impact,
-                moveType: impact === 'TRANSFER' ? 'TRANSFER' : moveType,
-                amount: numAmount,
-                notes,
-                contactId,
-            }
-
-            if (impact === 'TRANSFER') {
-                if (context === 'pos') {
-                    data.targetAccountId = parseInt(transferTargetId)
-                    data.isInflowForce = transferDirection === 'IN'
-                } else {
-                    if (fromAccountId) data.fromAccountId = parseInt(fromAccountId)
-                    if (toAccountId) data.toAccountId = parseInt(toAccountId)
-                }
-            } else {
-                if (context === 'pos') {
-                    if (impact === 'IN') data.toAccountId = fixedAccountId
-                    else data.fromAccountId = fixedAccountId
-                } else {
-                    if (impact === 'IN') {
-                        if (toAccountId) data.toAccountId = parseInt(toAccountId)
-                    } else {
-                        if (fromAccountId) data.fromAccountId = parseInt(fromAccountId)
-                    }
-                }
-            }
-
-            await onComplete(data)
-            onOpenChange(false)
-        } catch (error) {
-            console.error(error)
-        } finally {
-            setSubmitting(false)
-        }
-    }
+    const showReasonStep = context === 'treasury' && impact !== 'TRANSFER' && variant !== 'partners' && !fixedMoveType
 
     const steps: WizardStep[] = useMemo(() => {
-        const list: WizardStep[] = [
+        const list: (WizardStep | null)[] = [
+            // 0. Impact / Type
             {
                 id: 'impact',
                 title: 'Tipo de Movimiento',
@@ -299,9 +222,6 @@ export function MovementWizard({
                                         </Button>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className={FORM_STYLES.label}>
-                                            {transferDirection === 'OUT' ? 'Hacia dónde va' : 'De dónde viene'}
-                                        </Label>
                                         <TreasuryAccountSelector
                                             value={transferTargetId}
                                             onChange={(val) => setTransferTargetId(val || "")}
@@ -310,6 +230,7 @@ export function MovementWizard({
                                                 if (transferDirection === 'IN') setFromAccountName(acc.name)
                                                 else setToAccountName(acc.name)
                                             }}
+                                            label={transferDirection === 'OUT' ? 'Hacia dónde va' : 'De dónde viene'}
                                         />
                                     </div>
                                 </>
@@ -322,7 +243,6 @@ export function MovementWizard({
                                             className="justify-start h-auto py-3 px-4"
                                             onClick={() => {
                                                 setMoveType(t.value)
-                                                setStepIndex(3)
                                             }}
                                         >
                                             {t.label}
@@ -334,70 +254,84 @@ export function MovementWizard({
                             impact === 'TRANSFER' ? (
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <Label className={FORM_STYLES.label}>Origen (Retira)</Label>
                                         <TreasuryAccountSelector
                                             value={fromAccountId}
                                             onChange={(val) => setFromAccountId(val || "")}
-                                            onSelect={(acc) => setFromAccountName(acc.name)}
+                                            onSelect={(acc) => {
+                                                setFromAccountName(acc.name)
+                                                setFromAccountBalance(acc.current_balance)
+                                            }}
+                                            label="Origen (Retira)"
+                                            error={fromAccountId && (fromAccountBalance ?? 0) <= 0 ? "La cuenta de origen no tiene fondos suficientes" : undefined}
                                         />
                                     </div>
-                                    <div className="flex justify-center -my-2 relative z-10">
-                                        <div className="bg-background border rounded-full p-1.5 shadow-sm text-muted-foreground">
+                                    <div className="flex justify-center my-1 relative z-10">
+                                        <div className="bg-background border-2 rounded-full p-2 shadow-sm text-muted-foreground">
                                             <ArrowRightLeft className="w-4 h-4 rotate-90" />
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className={FORM_STYLES.label}>Destino (Deposita)</Label>
                                         <TreasuryAccountSelector
                                             value={toAccountId}
                                             onChange={(val) => setToAccountId(val || "")}
-                                            onSelect={(acc) => setToAccountName(acc.name)}
+                                            onSelect={(acc) => {
+                                                setToAccountName(acc.name)
+                                                setToAccountBalance(acc.current_balance)
+                                            }}
+                                            label="Destino (Deposita)"
+                                            error={fromAccountId && toAccountId && fromAccountId === toAccountId ? "La cuenta de destino debe ser diferente al origen" : undefined}
                                         />
                                     </div>
                                 </div>
                             ) : (
-                                <div className="space-y-2 p-4 bg-muted/20 border rounded-lg">
-                                    <Label className={FORM_STYLES.label}>
-                                        {impact === 'IN' ? 'Cuenta de Destino' : 'Cuenta de Origen'}
-                                    </Label>
+                                <div className="space-y-2">
                                     <TreasuryAccountSelector
                                         value={impact === 'IN' ? toAccountId : fromAccountId}
                                         onChange={(val) => impact === 'IN' ? setToAccountId(val || "") : setFromAccountId(val || "")}
-                                        onSelect={(acc) => impact === 'IN' ? setToAccountName(acc.name) : setFromAccountName(acc.name)}
+                                        onSelect={(acc) => {
+                                            if (impact === 'IN') {
+                                                setToAccountName(acc.name)
+                                                setToAccountBalance(acc.current_balance)
+                                            } else {
+                                                setFromAccountName(acc.name)
+                                                setFromAccountBalance(acc.current_balance)
+                                            }
+                                        }}
+                                        label={impact === 'IN' ? 'Cuenta de Destino' : 'Cuenta de Origen'}
+                                        error={impact === 'OUT' && fromAccountId && (fromAccountBalance ?? 0) <= 0 ? "La cuenta de origen no tiene fondos" : undefined}
                                     />
                                 </div>
                             )
                         )}
                     </div>
                 ),
-                isValid: impact === 'TRANSFER' 
-                    ? (context === 'pos' ? !!transferTargetId : (!!fromAccountId && !!toAccountId))
-                    : (context === 'pos' ? !!moveType : (impact === 'IN' ? !!toAccountId : !!fromAccountId)),
+                isValid: (() => {
+                    if (impact === 'TRANSFER') {
+                        if (context === 'pos') return !!transferTargetId
+                        return (!!fromAccountId && !!toAccountId && fromAccountId !== toAccountId && (fromAccountBalance ?? 0) > 0)
+                    }
+                    if (impact === 'OUT') {
+                        return !!fromAccountId && (fromAccountBalance ?? 0) > 0
+                    }
+                    return !!toAccountId
+                })(),
                 onNext: async () => {
-                    if (context === 'treasury' && impact !== 'TRANSFER' && variant !== 'partners' && !fixedMoveType) {
-                        return // Proceed to step 2 (Reason)
-                    }
-                    if (context === 'pos' && impact !== 'TRANSFER') {
-                        return // Already handled by button click but safe
-                    }
-                    setStepIndex(3) // Jump to Amount
-                    return false // Prevent automatic next
+                    return
                 }
             },
-            {
+            showReasonStep ? {
                 id: 'reason',
                 title: 'Motivo del Movimiento',
                 component: (
                     <div className="space-y-4 pt-2">
                         <div className="grid gap-2 max-h-[340px] overflow-y-auto pr-1">
-                            {MOVEMENT_TYPES[impact as 'IN' | 'OUT'].map((t) => (
+                            {impact !== 'TRANSFER' && MOVEMENT_TYPES[impact as 'IN' | 'OUT'].map((t) => (
                                 <Button
                                     key={t.value}
                                     variant={moveType === t.value ? "default" : "outline"}
                                     className="justify-start h-auto py-4 px-6 text-base"
                                     onClick={() => {
                                         setMoveType(t.value)
-                                        setStepIndex(3)
                                     }}
                                 >
                                     {t.label}
@@ -407,39 +341,25 @@ export function MovementWizard({
                     </div>
                 ),
                 isValid: !!moveType
-            },
+            } : null,
             {
                 id: 'amount',
-                title: 'Monto y Referencia',
+                title: 'Monto',
                 component: (
                     <div className="space-y-4 pt-2">
+                        <div className="flex justify-center">
                             <div className={cn(
-                                "capitalize font-bold border rounded px-2 py-0.5 text-xs",
-                                impact === "IN" ? "border-success/30 text-success bg-success/5" :
-                                    impact === "OUT" ? "border-warning/30 text-warning bg-warning/5" :
-                                        "border-info/30 text-info bg-info/5"
+                                "uppercase font-black border rounded-md px-4 py-1 text-[10px] tracking-[0.15em] text-center min-w-[120px]",
+                                impact === "IN" ? "border-success/40 text-success bg-success/5" :
+                                    impact === "OUT" ? "border-warning/40 text-warning bg-warning/5" :
+                                        "border-info/40 text-info bg-info/5"
                             )}>
                                 {impact === 'TRANSFER' ? 'Traspaso' : MOVEMENT_TYPES[impact as 'IN' | 'OUT'].find(t => t.value === moveType)?.label}
                             </div>
-
-                        <div className="bg-muted/30 p-3 rounded-lg border-2 border-primary/10">
-                            <div className="text-right mb-2">
-                                <div className="text-4xl font-black text-primary font-mono tracking-tighter">
-                                    {formatCurrency(parseFloat(amount) || 0)}
-                                </div>
-                            </div>
-                            <Numpad
-                                value={amount}
-                                onChange={setAmount}
-                                hideDisplay={true}
-                                allowDecimal={true}
-                                className="w-full max-w-full shadow-none border-0 p-0"
-                            />
                         </div>
 
                         {(moveType === 'PARTNER_WITHDRAWAL' || moveType === 'CAPITAL_CONTRIBUTION') && (
-                            <div className="space-y-2 bg-primary/5 p-4 rounded-lg border border-primary/20">
-                                <Label className={FORM_STYLES.label}>Socio Responsable</Label>
+                            <div className="space-y-2">
                                 <AdvancedContactSelector
                                     value={contactId ? contactId.toString() : null}
                                     onChange={(val) => setContactId(val ? parseInt(val) : undefined)}
@@ -450,6 +370,7 @@ export function MovementWizard({
                                     placeholder={contactName || "Seleccionar Socio..."}
                                     isPartnerOnly={true}
                                     disabled={!!initialContactId}
+                                    label="Socio Responsable"
                                 />
                                 {moveType === 'CAPITAL_CONTRIBUTION' && contactId && partnerCapitalInfo && (() => {
                                     const amountNum = parseFloat(amount) || 0
@@ -481,15 +402,30 @@ export function MovementWizard({
                                 })()}
                             </div>
                         )}
-                        <div className="space-y-2">
-                             <Label className={FORM_STYLES.label}>Observaciones (Opcional)</Label>
-                             <Textarea 
-                                placeholder="Notas adicionales del movimiento..."
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                className="min-h-[60px] resize-none"
-                             />
+
+                        <div className="p-4 rounded-lg border border-input bg-transparent">
+                            <div className="text-right mb-4 pr-2">
+                                <div className="text-5xl font-black text-primary font-mono tracking-tighter">
+                                    {formatCurrency(parseFloat(amount) || 0)}
+                                </div>
+                            </div>
+                            <Numpad
+                                value={amount}
+                                onChange={setAmount}
+                                hideDisplay={true}
+                                allowDecimal={true}
+                                className="w-full max-w-full shadow-none border-0 p-0"
+                            />
                         </div>
+                        <LabeledInput
+                             label="Observaciones (Opcional)"
+                             as="textarea"
+                             rows={3}
+                             placeholder="Notas adicionales del movimiento..."
+                             value={notes}
+                             onChange={(e) => setNotes(e.target.value)}
+                             containerClassName="mt-2"
+                        />
                     </div>
                 ),
                 isValid: parseFloat(amount) > 0 && ((moveType !== 'PARTNER_WITHDRAWAL' && moveType !== 'CAPITAL_CONTRIBUTION') || !!contactId)
@@ -508,14 +444,14 @@ export function MovementWizard({
                                 <p className="text-sm text-muted-foreground">Revise los detalles antes de registrar</p>
                             </div>
 
-                            <div className="bg-card border-2 rounded-lg divide-y-2 overflow-hidden">
+                            <div className="bg-transparent border rounded-lg divide-y overflow-hidden">
                                 <div className="p-4 flex justify-between items-center text-sm">
                                     <span className="text-muted-foreground font-medium">Operación:</span>
                                     <span className={cn(
-                                        "font-black uppercase tracking-widest px-3 py-1 rounded text-[10px]",
-                                        impact === "IN" ? "bg-success/10 text-success border border-success/30" : 
-                                        impact === "OUT" ? "bg-warning/10 text-warning border border-warning/30" : 
-                                        "bg-info/10 text-info border border-info/30"
+                                        "font-black uppercase tracking-[0.15em] px-3 py-1 rounded border text-[10px]",
+                                        impact === "IN" ? "bg-success/10 text-success border-success/30" : 
+                                        impact === "OUT" ? "bg-warning/10 text-warning border-warning/30" : 
+                                        "bg-info/10 text-info border-info/30"
                                     )}>
                                         {impact === 'IN' ? 'Ingreso' : impact === 'OUT' ? 'Salida' : 'Traspaso'}
                                     </span>
@@ -554,7 +490,7 @@ export function MovementWizard({
                                         </span>
                                     </div>
                                 )}
-                                <div className="p-4 flex justify-between items-center py-4 bg-muted/20">
+                                <div className="p-4 flex justify-between items-center py-4">
                                     <span className="text-muted-foreground font-bold">MONTO TOTAL:</span>
                                     <span className="text-2xl font-black text-primary">{formatCurrency(amountNum)}</span>
                                 </div>
@@ -571,8 +507,87 @@ export function MovementWizard({
                 isValid: !submitting && !( (impact === 'OUT' || (impact === 'TRANSFER' && transferDirection === 'OUT')) && maxOutboundAmount !== undefined && parseFloat(amount) > maxOutboundAmount)
             }
         ]
-        return list
-    }, [impact, moveType, contactId, contactName, transferDirection, transferTargetId, fromAccountId, toAccountId, fromAccountName, toAccountName, amount, notes, submitting, partnerCapitalInfo, variant, context, fixedAccountId, fixedAccountName, maxOutboundAmount])
+        return list.filter((s): s is WizardStep => s !== null)
+    }, [impact, moveType, contactId, contactName, transferDirection, transferTargetId, fromAccountId, toAccountId, fromAccountName, toAccountName, amount, notes, submitting, partnerCapitalInfo, variant, context, fixedAccountId, fixedAccountName, maxOutboundAmount, showReasonStep, fromAccountBalance, toAccountBalance])
+
+    const findStepIndex = (id: string) => {
+        const idx = steps.findIndex(s => s.id === id)
+        return idx !== -1 ? idx : 0
+    }
+
+    useEffect(() => {
+        if (fixedMoveType && open) {
+            requestAnimationFrame(() => {
+                setStepIndex(findStepIndex('amount'))
+            })
+        }
+    }, [fixedMoveType, open, steps.length])
+
+    useEffect(() => {
+        if (contactId && moveType === 'CAPITAL_CONTRIBUTION') {
+            api.get(`/contacts/${contactId}/`).then(res => {
+                const p = res.data
+                const subscribed = parseFloat(p.partner_total_contributions) || 0
+                const balance = parseFloat(p.partner_balance) || 0
+                const pending = Math.max(0, subscribed - balance)
+                requestAnimationFrame(() => setPartnerCapitalInfo({ subscribed, balance, pending }))
+            }).catch(() => requestAnimationFrame(() => setPartnerCapitalInfo(null)))
+        } else {
+            requestAnimationFrame(() => setPartnerCapitalInfo(null))
+        }
+    }, [contactId, moveType])
+
+    const handleFinalComplete = async () => {
+        setSubmitting(true)
+        try {
+            const today = new Date().toISOString().split('T')[0]
+            const periodStatus = await validateAccountingPeriod(today)
+            if (periodStatus.is_closed) {
+                toast.error("No se puede registrar el movimiento: El periodo contable actual está cerrado.", {
+                    icon: <ShieldAlert className="h-4 w-4 text-destructive" />,
+                    duration: 5000
+                })
+                return
+            }
+
+            const numAmount = parseFloat(amount) || 0
+            const data: MovementData = {
+                impact,
+                moveType: impact === 'TRANSFER' ? 'TRANSFER' : moveType,
+                amount: numAmount,
+                notes,
+                contactId,
+            }
+
+            if (impact === 'TRANSFER') {
+                if (context === 'pos') {
+                    data.targetAccountId = parseInt(transferTargetId)
+                    data.isInflowForce = transferDirection === 'IN'
+                } else {
+                    if (fromAccountId) data.fromAccountId = parseInt(fromAccountId)
+                    if (toAccountId) data.toAccountId = parseInt(toAccountId)
+                }
+            } else {
+                if (context === 'pos') {
+                    if (impact === 'IN') data.toAccountId = fixedAccountId
+                    else data.fromAccountId = fixedAccountId
+                } else {
+                    if (impact === 'IN') {
+                        if (toAccountId) data.toAccountId = parseInt(toAccountId)
+                    } else {
+                        if (fromAccountId) data.fromAccountId = parseInt(fromAccountId)
+                    }
+                }
+            }
+
+            await onComplete(data)
+            onOpenChange(false)
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setSubmitting(false)
+        }
+    }
 
     return (
         <GenericWizard

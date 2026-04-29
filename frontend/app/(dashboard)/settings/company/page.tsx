@@ -1,7 +1,5 @@
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { PageTabs } from "@/components/shared/PageTabs"
+import { FormSkeleton, PageHeader, PageTabs } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { Metadata } from "next"
 
@@ -61,7 +59,7 @@ export default async function CompanySettingsPage({ searchParams }: PageProps) {
             </div>
 
             <div className="mt-4">
-                <Suspense fallback={<LoadingFallback message="Cargando configuración..." />}>
+                <Suspense fallback={<FormSkeleton fields={6} />}>
                     <CompanySettingsView activeTab={activeTab} />
                 </Suspense>
             </div>

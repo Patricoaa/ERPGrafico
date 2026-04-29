@@ -1,41 +1,27 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { PricingRuleInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
-
-// ... other imports same
 import {
     Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+    FormField
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+import { CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, LabeledContainer, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
+
 import { Checkbox } from "@/components/ui/checkbox"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { Plus, Tags } from "lucide-react"
-import { PricingUtils } from "@/lib/pricing"
+import { Tags, Layers, Zap, DollarSign, Calendar } from "lucide-react"
+import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
-// schemas and types remain the same
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
     product: z.number().nullable().optional(),
@@ -56,6 +42,8 @@ const formSchema = z.object({
 interface UoM {
     id: number
     name: string
+    category: number
+    ratio: number
 }
 
 type FormValues = z.infer<typeof formSchema>
@@ -70,8 +58,9 @@ interface PricingRuleFormProps {
     productName?: string
 }
 
-export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, onOpenChange, productId, productName }: PricingRuleFormProps) {
+export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, onOpenChange, productId, productName }: PricingRuleFormProps) {
     const [uoms, setUoms] = useState<UoM[]>([])
+    const [selectedProductObj, setSelectedProductObj] = useState<any>(null)
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -95,14 +84,27 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
     const ruleType = form.watch("rule_type")
     const operator = form.watch("operator")
 
+    const lastResetId = useRef<number | undefined>(undefined)
+    const wasOpen = useRef(false)
+
+
+
     useEffect(() => {
-        if (open) {
-            // Reset form when dialog opens
+        if (!open) {
+            wasOpen.current = false
+            return
+        }
+
+        const currentId = initialData?.id
+        const isNewOpen = !wasOpen.current
+        const isNewData = currentId !== lastResetId.current
+
+        if (isNewOpen || isNewData) {
             if (initialData) {
                 const getProductId = (p: unknown): number | null => {
                     if (typeof p === 'number') return p
                     if (typeof p === 'string') return parseInt(p) || null
-                    if (p && typeof p === 'object' && 'id' in p) return (p as {id: number}).id || null
+                    if (p && typeof p === 'object' && 'id' in p) return (p as { id: number }).id || null
                     return null
                 }
 
@@ -140,6 +142,8 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
                     end_date: null,
                 })
             }
+            lastResetId.current = currentId
+            wasOpen.current = true
         }
     }, [open, initialData, productId, form])
 
@@ -152,18 +156,15 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
                 console.error("Error fetching data", error)
             }
         }
-        if (open) {
-            fetchData()
-        }
+        if (open) fetchData()
     }, [open])
 
     async function onSubmit(values: FormValues) {
         try {
-            // Clean up null values or strings that should be null
             const payload = { ...values }
-            if (payload.product === null) delete payload.product
-            if (payload.uom === null) delete payload.uom
-            if (payload.operator !== "BT") delete payload.max_quantity
+            if (payload.product === null) delete (payload as any).product
+            if (payload.uom === null) delete (payload as any).uom
+            if (payload.operator !== "BT") delete (payload as any).max_quantity
 
             if (initialData) {
                 await api.put(`/inventory/pricing-rules/${initialData.id}/`, payload)
@@ -174,17 +175,276 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
             }
             onSuccess?.()
             onOpenChange?.(false)
-        } catch (error: unknown) {
+        } catch (error) {
             console.error(error)
             toast.error("Error al guardar la regla")
         }
     }
+
+    const renderGeneralTab = () => (
+        <div className="space-y-6">
+            <FormSection title="Alcance y Referencia" icon={Layers} />
+            <div className="grid grid-cols-4 gap-4">
+                <div className="col-span-3">
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                            <LabeledInput label="Nombre de la Regla" placeholder="Ej: Descuento Mayorista" {...field} />
+                        )}
+                    />
+                </div>
+                <div className="col-span-1">
+                    <FormField
+                        control={form.control}
+                        name="priority"
+                        render={({ field }) => (
+                            <LabeledInput label="Prioridad" type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                        )}
+                    />
+                </div>
+            </div>
+
+            <div className="grid grid-cols-4 gap-4">
+                <div className="col-span-3">
+                    <FormField
+                        control={form.control}
+                        name="product"
+                        render={({ field }) => (
+                            <ProductSelector
+                                label="Producto Específico (Opcional)"
+                                value={field.value?.toString() || null}
+                                onChange={(val) => {
+                                    field.onChange(val ? parseInt(val) : null)
+                                    if (!val) setSelectedProductObj(null)
+                                }}
+                                onSelect={(p) => setSelectedProductObj(p)}
+                                disabled={!!productId}
+                                placeholder="Si no se selecciona, aplica a todos"
+                            />
+                        )}
+                    />
+                </div>
+                <div className="col-span-1">
+                    <FormField
+                        control={form.control}
+                        name="uom"
+                        render={({ field }) => (
+                            <UoMSelector
+                                label="Unidad (Filtro)"
+                                variant="standalone"
+                                product={selectedProductObj}
+                                context="sale"
+                                uoms={uoms}
+                                value={field.value?.toString() || ""}
+                                onChange={(val) => field.onChange(val ? parseInt(val) : null)}
+                            />
+                        )}
+                    />
+                </div>
+            </div>
+        </div>
+    )
+
+    const renderConditionsTab = () => (
+        <div className="space-y-6">
+            <FormSection title="Condición de Activación" icon={Zap} />
+            <div className={cn("grid gap-4", operator === "BT" ? "grid-cols-3" : "grid-cols-2")}>
+                <FormField
+                    control={form.control}
+                    name="operator"
+                    render={({ field }) => (
+                        <LabeledSelect
+                            label="Cuando la Cantidad es..."
+                            onChange={field.onChange}
+                            value={field.value}
+                            options={[
+                                { value: "GE", label: "Mayor o Igual ( >= )" },
+                                { value: "GT", label: "Mayor que ( > )" },
+                                { value: "LE", label: "Menor o Igual ( <= )" },
+                                { value: "LT", label: "Menor que ( < )" },
+                                { value: "EQ", label: "Igual a ( = )" },
+                                { value: "BT", label: "En el Rango (Entre)" }
+                            ]}
+                        />
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="min_quantity"
+                    render={({ field }) => (
+                        <LabeledInput label={operator === "BT" ? "Desde" : "Cantidad"} type="number" {...field} />
+                    )}
+                />
+                {operator === "BT" && (
+                    <FormField
+                        control={form.control}
+                        name="max_quantity"
+                        render={({ field }) => (
+                            <LabeledInput label="Hasta" type="number" {...field} value={field.value || ""} />
+                        )}
+                    />
+                )}
+            </div>
+        </div>
+    )
+
+    const renderActionsTab = () => (
+        <div className="space-y-6">
+            <FormSection title="Efecto / Precio Final" icon={DollarSign} />
+            <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="rule_type"
+                    render={({ field }) => (
+                        <LabeledSelect
+                            label="Tipo de Ajuste"
+                            onChange={field.onChange}
+                            value={field.value}
+                            options={[
+                                { value: "FIXED", label: "Precio Unitario Fijo" },
+                                { value: "PACKAGE_FIXED", label: "Precio de Paquete (Total)" },
+                                { value: "DISCOUNT_PERCENTAGE", label: "Porcentaje Descuento" }
+                            ]}
+                        />
+                    )}
+                />
+
+                {ruleType === "DISCOUNT_PERCENTAGE" ? (
+                    <FormField
+                        control={form.control}
+                        name="discount_percentage"
+                        render={({ field }) => (
+                            <LabeledInput label="Descuento (%)" type="number" {...field} value={field.value || ""} />
+                        )}
+                    />
+                ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                        <FormField
+                            control={form.control}
+                            name="fixed_price"
+                            render={({ field }) => (
+                                <LabeledInput
+                                    label="Precio (Neto)"
+                                    type="number"
+                                    {...field}
+                                    value={field.value || ""}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        field.onChange(val);
+                                        if (val) {
+                                            const gross = PricingUtils.netToGross(parseFloat(val));
+                                            form.setValue("fixed_price_gross", String(gross));
+                                        } else {
+                                            form.setValue("fixed_price_gross", "");
+                                        }
+                                    }}
+                                />
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="fixed_price_gross"
+                            render={({ field }) => (
+                                <LabeledInput
+                                    label="Precio (Bruto)"
+                                    type="number"
+                                    {...field}
+                                    value={field.value || ""}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        field.onChange(val);
+                                        if (val) {
+                                            const net = PricingUtils.grossToNet(parseFloat(val));
+                                            form.setValue("fixed_price", String(net));
+                                        } else {
+                                            form.setValue("fixed_price", "");
+                                        }
+                                    }}
+                                />
+                            )}
+                        />
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+
+    const renderValidityTab = () => (
+        <div className="space-y-6">
+            <FormSection title="Vigencia y Estado" icon={Calendar} />
+            <div className="grid grid-cols-4 gap-4">
+                <div className="col-span-4">
+                    <FormField
+                        control={form.control}
+                        name="active"
+                        render={({ field }) => (
+                            <LabeledSwitch
+                                label="Estado de la Regla"
+                                description={field.value ? "Regla activa" : "Regla inactiva"}
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                icon={<Zap className={cn("h-4 w-4 transition-colors", field.value ? "text-success" : "text-muted-foreground/30")} />}
+                                className={cn(field.value ? "bg-success/5 border-success/20 shadow-sm" : "border-dashed")}
+                            />
+                        )}
+                    />
+                </div>
+                <div className="col-span-2">
+                    <FormField
+                        control={form.control}
+                        name="start_date"
+                        render={({ field }) => (
+                            <PeriodValidationDateInput
+                                date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                onDateChange={(date) => {
+                                    if (!date) {
+                                        field.onChange(null)
+                                        return
+                                    }
+                                    field.onChange(date.toISOString().split('T')[0])
+                                }}
+                                label="Válida Desde"
+                                validationType="tax"
+                                required
+                            />
+                        )}
+                    />
+
+                </div>
+                <div className="col-span-2">
+                    <FormField
+                        control={form.control}
+                        name="end_date"
+                        render={({ field }) => (
+                            <PeriodValidationDateInput
+                                date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                onDateChange={(date) => {
+                                    if (!date) {
+                                        field.onChange(null)
+                                        return
+                                    }
+                                    field.onChange(date.toISOString().split('T')[0])
+                                }}
+                                label="Válida Hasta (Opcional)"
+                                validationType="tax"
+                            />
+                        )}
+                    />
+                </div>
+            </div>
+
+
+        </div>
+    )
 
     return (
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
             size={initialData ? "xl" : "lg"}
+            hideScrollArea={true}
+            contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">
                     <Tags className="h-5 w-5 text-muted-foreground" />
@@ -203,343 +463,36 @@ export function PricingRuleForm({ auditSidebar,  initialData, onSuccess, open, o
                 </div>
             }
             footer={
-                <div className="flex justify-end space-x-2 w-full">
-                    <ActionSlideButton type="submit" form="pricing-rule-form">
-                        {initialData ? "Actualizar" : "Crear"} Regla
-                    </ActionSlideButton>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <ActionSlideButton type="submit" form="pricing-rule-form">
+                                {initialData ? "Actualizar" : "Crear"} Regla
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
             }
         >
-            <div className="flex-1 flex overflow-hidden">
-                <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
-                    <Form {...form}>
-                        <form id="pricing-rule-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pr-6 pl-1 pb-4">
-                            {/* Section 1: Scope & Basic Info */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2 pt-2">
-                                    <div className="flex-1 h-px bg-border" />
-                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Alcance y Referencia</span>
-                                    <div className="flex-1 h-px bg-border" />
-                                </div>
-                                <div className="grid grid-cols-4 gap-4">
-                                    <div className="col-span-3">
-                                        <FormField
-                                            control={form.control}
-                                            name="name"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className={FORM_STYLES.label}>Nombre de la Regla</FormLabel>
-                                                    <FormControl>
-                                                        <Input placeholder="Ej: Descuento Mayorista" className={FORM_STYLES.input} {...field} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                    <div className="col-span-1">
-                                        <FormField
-                                            control={form.control}
-                                            name="priority"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className={FORM_STYLES.label}>Prioridad</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="number" className={FORM_STYLES.input} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                </div>
+            <FormSplitLayout
+                showSidebar={!!initialData?.id}
+                sidebar={auditSidebar}
+                className="px-4 pb-4 pt-0"
+            >
+                <Form {...form}>
+                    <form id="pricing-rule-form" onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
+                        <div className="space-y-6">
+                            {renderValidityTab()}
+                            {renderGeneralTab()}
+                            {renderConditionsTab()}
+                            {renderActionsTab()}
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="product"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className={FORM_STYLES.label}>Producto Específico (Opcional)</FormLabel>
-                                                <FormControl>
-                                                    <ProductSelector
-                                                        value={field.value?.toString() || null}
-                                                        onChange={(val) => field.onChange(val ? parseInt(val) : null)}
-                                                        disabled={!!productId}
-                                                        placeholder="Si no se selecciona, aplica a todos"
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="uom"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className={FORM_STYLES.label}>Unidad de Medida (Filtro)</FormLabel>
-                                                <Select
-                                                    onValueChange={(val) => field.onChange(val === "none" ? null : parseInt(val))}
-                                                    value={field.value?.toString() || "none"}
-                                                >
-                                                    <FormControl>
-                                                        <SelectTrigger className={FORM_STYLES.input}>
-                                                            <SelectValue placeholder="Base del producto" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="none">Base del producto</SelectItem>
-                                                        {uoms.map((u) => (
-                                                            <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                            </div>
 
-                            {/* Section 2: Trigger Condition */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2 pt-2">
-                                    <div className="flex-1 h-px bg-border" />
-                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Condición de Activación</span>
-                                    <div className="flex-1 h-px bg-border" />
-                                </div>
-                                <div className={cn("grid gap-4", operator === "BT" ? "grid-cols-3" : "grid-cols-2")}>
-                                    <FormField
-                                        control={form.control}
-                                        name="operator"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className={FORM_STYLES.label}>Cuando la Cantidad es...</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger className={FORM_STYLES.input}>
-                                                            <SelectValue placeholder="Operador" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="GE">Mayor o Igual ( {">="} )</SelectItem>
-                                                        <SelectItem value="GT">Mayor que ( {">"} )</SelectItem>
-                                                        <SelectItem value="LE">Menor o Igual ( {"<="} )</SelectItem>
-                                                        <SelectItem value="LT">Menor que ( {"<"} )</SelectItem>
-                                                        <SelectItem value="EQ">Igual a ( = )</SelectItem>
-                                                        <SelectItem value="BT">En el Rango (Entre)</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="min_quantity"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className={FORM_STYLES.label}>{operator === "BT" ? "Desde" : "Cantidad"}</FormLabel>
-                                                <FormControl>
-                                                    <Input type="number" className={FORM_STYLES.input} {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    {operator === "BT" && (
-                                        <FormField
-                                            control={form.control}
-                                            name="max_quantity"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className={FORM_STYLES.label}>Hasta</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="number" className={FORM_STYLES.input} {...field} value={field.value || ""} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Section 3: Result Action */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2 pt-2">
-                                    <div className="flex-1 h-px bg-border" />
-                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Efecto / Precio Final</span>
-                                    <div className="flex-1 h-px bg-border" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="rule_type"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className={FORM_STYLES.label}>Tipo de Ajuste</FormLabel>
-                                                <Select onValueChange={field.onChange} value={field.value}>
-                                                    <FormControl>
-                                                        <SelectTrigger className={FORM_STYLES.input}>
-                                                            <SelectValue placeholder="Seleccione tipo" />
-                                                        </SelectTrigger>
-                                                    </FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="FIXED">Precio Unitario Fijo</SelectItem>
-                                                        <SelectItem value="PACKAGE_FIXED">Precio de Paquete (Total)</SelectItem>
-                                                        <SelectItem value="DISCOUNT_PERCENTAGE">Porcentaje Descuento</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    {ruleType === "DISCOUNT_PERCENTAGE" ? (
-                                        <FormField
-                                            control={form.control}
-                                            name="discount_percentage"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className={FORM_STYLES.label}>Descuento (%)</FormLabel>
-                                                    <FormControl>
-                                                        <Input type="number" className={FORM_STYLES.input} {...field} value={field.value || ""} />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    ) : (
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <FormField
-                                                control={form.control}
-                                                name="fixed_price"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className={FORM_STYLES.label}>Precio (Neto)</FormLabel>
-                                                        <FormControl>
-                                                            <Input
-                                                                type="number"
-                                                                className={FORM_STYLES.input}
-                                                                {...field}
-                                                                value={field.value || ""}
-                                                                onChange={(e) => {
-                                                                    const val = e.target.value;
-                                                                    field.onChange(val);
-                                                                    if (val) {
-                                                                        const gross = PricingUtils.netToGross(parseFloat(val));
-                                                                        form.setValue("fixed_price_gross", String(gross));
-                                                                    } else {
-                                                                        form.setValue("fixed_price_gross", "");
-                                                                    }
-                                                                }}
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control}
-                                                name="fixed_price_gross"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className={FORM_STYLES.label}>Precio (Bruto)</FormLabel>
-                                                        <FormControl>
-                                                            <Input
-                                                                type="number"
-                                                                className={FORM_STYLES.input}
-                                                                {...field}
-                                                                value={field.value || ""}
-                                                                onChange={(e) => {
-                                                                    const val = e.target.value;
-                                                                    field.onChange(val);
-                                                                    if (val) {
-                                                                        const net = PricingUtils.grossToNet(parseFloat(val));
-                                                                        form.setValue("fixed_price", String(net));
-                                                                    } else {
-                                                                        form.setValue("fixed_price", "");
-                                                                    }
-                                                                }}
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Section 4: Period & Status */}
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2 pt-2">
-                                    <div className="flex-1 h-px bg-border" />
-                                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Vigencia y Estado</span>
-                                    <div className="flex-1 h-px bg-border" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="start_date"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className={FORM_STYLES.label}>Válida Desde</FormLabel>
-                                                <FormControl>
-                                                    <Input type="date" className={FORM_STYLES.input} {...field} value={field.value || ""} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                <FormField
-                                    control={form.control}
-                                    name="end_date"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className={FORM_STYLES.label}>Válida Hasta (Opcional)</FormLabel>
-                                            <FormControl>
-                                                <Input type="date" className={FORM_STYLES.input} {...field} value={field.value || ""} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-
-                            <FormField
-                                control={form.control}
-                                name="active"
-                                render={({ field }) => (
-                                    <FormItem className={cn("flex flex-row items-center space-x-3 space-y-0 p-4 border rounded-lg bg-muted/5")}>
-                                        <FormControl>
-                                            <Checkbox
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                            />
-                                        </FormControl>
-                                        <div className="space-y-1 leading-none">
-                                            <FormLabel className="text-sm font-bold">La regla se encuentra activa</FormLabel>
-                                            <p className="text-xs text-muted-foreground">Si está desactivada, el sistema la omitirá incluso si se cumplen las condiciones.</p>
-                                        </div>
-                                    </FormItem>
-                                )}
-                            />
                         </div>
                     </form>
                 </Form>
-            </div>
-
-                {initialData?.id && (
-                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                        {auditSidebar}
-                    </div>
-                )}
-            </div>
+            </FormSplitLayout>
         </BaseModal>
     )
 }
-

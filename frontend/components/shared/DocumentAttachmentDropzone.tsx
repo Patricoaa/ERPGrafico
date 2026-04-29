@@ -14,6 +14,7 @@ interface DocumentAttachmentDropzoneProps {
     label?: string
     requiredOverride?: boolean
     accept?: string
+    hideLabel?: boolean
 }
 
 export function DocumentAttachmentDropzone({
@@ -24,7 +25,8 @@ export function DocumentAttachmentDropzone({
     disabled = false,
     label = "Archivo Adjunto",
     requiredOverride,
-    accept = ".pdf,.xml,image/*"
+    accept = ".pdf,.xml,image/*",
+    hideLabel = false
 }: DocumentAttachmentDropzoneProps) {
     // If requiredOverride is provided, use it.
     // Otherwise, if dteType is provided, it's required for all types except BOLETA and NONE, unless isPending is true.
@@ -33,15 +35,17 @@ export function DocumentAttachmentDropzone({
         : (dteType && dteType !== 'BOLETA' && dteType !== 'NONE' && !isPending);
 
     return (
-        <div className={`space-y-2 ${disabled ? 'opacity-50' : ''}`}>
-            <Label className="text-xs font-bold uppercase flex items-center gap-2">
-                <Upload className="h-3 w-3" />
-                {label}
-                {isRequired && <span className="text-destructive font-black ml-1">*</span>}
-            </Label>
+        <div className={`w-full ${!hideLabel ? 'space-y-2' : 'py-2'} ${disabled ? 'opacity-50' : ''}`}>
+            {!hideLabel && (
+                <Label className="text-xs font-bold uppercase flex items-center gap-2">
+                    <Upload className="h-3 w-3" />
+                    {label}
+                    {isRequired && <span className="text-destructive font-black ml-1">*</span>}
+                </Label>
+            )}
 
             {!file ? (
-                <div className="relative group min-h-[80px]">
+                <div className="relative group min-h-[80px] w-full">
                     <Input
                         type="file"
                         accept={accept}
@@ -49,7 +53,7 @@ export function DocumentAttachmentDropzone({
                         onChange={(e) => onFileChange(e.target.files?.[0] || null)}
                         disabled={disabled}
                     />
-                    <div className="h-20 border-2 border-dashed rounded-lg flex flex-col items-center justify-center bg-background/50 transition-all group-hover:bg-primary/5 group-hover:border-primary/30">
+                    <div className="h-20 w-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center bg-background/50 transition-all group-hover:bg-primary/5 group-hover:border-primary/30">
                         <Upload className="h-4 w-4 text-muted-foreground mb-1 group-hover:text-primary" />
                         <p className="text-[10px] font-bold text-muted-foreground uppercase text-center px-4">
                             Seleccionar o arrastrar archivo al recuadro
@@ -57,7 +61,7 @@ export function DocumentAttachmentDropzone({
                     </div>
                 </div>
             ) : (
-                <div className="flex items-center justify-between p-3 bg-success/5 border rounded-lg animate-in zoom-in duration-300">
+                <div className="flex items-center justify-between p-3 w-full bg-success/5 border rounded-lg animate-in zoom-in duration-300">
                     <div className="flex items-center gap-3">
                         <div className="p-1.5 bg-success/10 rounded text-success">
                             <FileText className="h-4 w-4" />

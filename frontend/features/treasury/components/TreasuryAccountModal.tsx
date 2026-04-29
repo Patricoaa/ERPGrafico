@@ -1,24 +1,30 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useTreasuryAccounts, type TreasuryAccount, treasuryApi } from "@/features/treasury"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { BaseModal } from "@/components/shared/BaseModal"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { toast } from "sonner"
+import { showApiError } from "@/lib/errors"
+
 import { Loader2, Landmark, CreditCard, Lock } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import { FORM_STYLES } from "@/lib/styles"
-import { cn } from "@/lib/utils"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { useTreasuryAccounts, treasuryApi } from "@/features/treasury"
+
+import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, BaseModal } from "@/components/shared"
+import { Form, FormField } from "@/components/ui/form"
+
+const treasuryAccountSchema = z.object({
+    name: z.string().min(1, "El nombre es requerido"),
+    account_type: z.string().min(1, "El tipo es requerido"),
+    currency: z.string().min(1, "La moneda es requerida"),
+    account: z.string().nullable().optional(), // Accounting account ID
+    bank: z.string().nullable().optional(),
+    account_number: z.string().optional(),
+})
+
+type TreasuryAccountFormValues = z.infer<typeof treasuryAccountSchema>
 
 interface TreasuryAccountModalProps {
     open: boolean
@@ -31,17 +37,22 @@ const SYSTEM_MANAGED_TYPES = new Set(['BRIDGE', 'MERCHANT'])
 
 export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess }: TreasuryAccountModalProps) {
     const { createAccount, updateAccount, isCreating, isUpdating } = useTreasuryAccounts()
-    const [account, setAccount] = useState<TreasuryAccount | null>(null)
     const [loading, setLoading] = useState(false)
-
-    const [name, setName] = useState("")
-    const [type, setType] = useState<string>("CASH")
-    const [currency, setCurrency] = useState("CLP")
-    const [accountingAccount, setAccountingAccount] = useState<number | null>(null)
-    const [bank, setBank] = useState<number | null>(null)
-    const [accountNumber, setAccountNumber] = useState("")
     const [banks, setBanks] = useState<any[]>([])
 
+    const form = useForm<TreasuryAccountFormValues>({
+        resolver: zodResolver(treasuryAccountSchema),
+        defaultValues: {
+            name: "",
+            account_type: "CASH",
+            currency: "CLP",
+            account: null,
+            bank: null,
+            account_number: "",
+        },
+    })
+
+    const type = form.watch("account_type")
     const isSubmitting = isCreating || isUpdating
     const isSystemManaged = SYSTEM_MANAGED_TYPES.has(type)
 
@@ -54,27 +65,27 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                     treasuryApi.getBanks(),
                     accountId ? treasuryApi.getAccount(accountId) : Promise.resolve(null)
                 ])
-                
-                requestAnimationFrame(() => {
-                    setBanks(banksData)
-                    if (accountData) {
-                        setAccount(accountData)
-                        setName(accountData.name)
-                        setType(accountData.account_type)
-                        setCurrency(accountData.currency)
-                        setAccountingAccount(accountData.account ? Number(accountData.account) : null)
-                        setBank(accountData.bank ? Number(accountData.bank) : null)
-                        setAccountNumber(accountData.account_number || "")
-                    } else {
-                        setAccount(null)
-                        setName("")
-                        setType("CASH")
-                        setCurrency("CLP")
-                        setAccountingAccount(null)
-                        setBank(null)
-                        setAccountNumber("")
-                    }
-                })
+
+                setBanks(banksData)
+                if (accountData) {
+                    form.reset({
+                        name: accountData.name,
+                        account_type: accountData.account_type,
+                        currency: accountData.currency,
+                        account: accountData.account ? accountData.account.toString() : null,
+                        bank: accountData.bank ? accountData.bank.toString() : null,
+                        account_number: accountData.account_number || "",
+                    })
+                } else {
+                    form.reset({
+                        name: "",
+                        account_type: "CASH",
+                        currency: "CLP",
+                        account: null,
+                        bank: null,
+                        account_number: "",
+                    })
+                }
             } catch (err) {
                 console.error("Error fetching account data", err)
             } finally {
@@ -82,42 +93,41 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
             }
         }
         fetchData()
-    }, [open, accountId])
+    }, [open, accountId, form])
 
     const requiresBank = (accountType: string) => {
         return ['CHECKING', 'CREDIT_CARD', 'DEBIT_CARD'].includes(accountType)
     }
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const onSubmit = async (data: TreasuryAccountFormValues) => {
         if (isSystemManaged) return
         try {
-            const allowsCash = type === 'CASH'
-            const allowsCard = ['CHECKING', 'CREDIT_CARD', 'DEBIT_CARD'].includes(type)
-            const allowsTransfer = ['CHECKING'].includes(type)
+            const allowsCash = data.account_type === 'CASH'
+            const allowsCard = ['CHECKING', 'CREDIT_CARD', 'DEBIT_CARD'].includes(data.account_type)
+            const allowsTransfer = ['CHECKING'].includes(data.account_type)
 
             const payload = {
-                name,
-                account_type: type,
-                currency,
-                account: accountingAccount,
+                ...data,
+                account: data.account ? parseInt(data.account) : null,
+                bank: requiresBank(data.account_type) ? (data.bank ? parseInt(data.bank) : null) : null,
+                account_number: requiresBank(data.account_type) ? data.account_number : null,
                 allows_cash: allowsCash,
                 allows_card: allowsCard,
                 allows_transfer: allowsTransfer,
-                bank: requiresBank(type) ? bank : null,
-                account_number: requiresBank(type) ? accountNumber : null
             }
 
             if (accountId) {
                 await updateAccount({ id: accountId, payload })
+                toast.success("Cuenta actualizada")
             } else {
                 await createAccount(payload)
+                toast.success("Cuenta creada")
             }
 
             if (onSuccess) onSuccess()
             onOpenChange(false)
         } catch (error: unknown) {
-            // Error handled by hook
+            showApiError(error, "Error al guardar cuenta")
         }
     }
 
@@ -125,7 +135,9 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            size={accountId ? "xl" : "lg"}
+            size={accountId ? "xl" : "md"}
+            hideScrollArea={true}
+            contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">
                     <Landmark className="h-5 w-5 text-muted-foreground" />
@@ -144,147 +156,191 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                         ? "Modifique los detalles de la cuenta y revise su historial."
                         : "Complete la información para registrar una nueva cuenta."
             }
-            hideScrollArea={true}
-            className="h-[85vh]"
             footer={
-                <>
-                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                        {isSystemManaged ? "Cerrar" : "Cancelar"}
-                    </Button>
-                    {!isSystemManaged && (
-                        <ActionSlideButton type="submit" form="account-form" disabled={isSubmitting || loading}>
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {accountId ? "Guardar Cambios" : "Crear Cuenta"}
-                        </ActionSlideButton>
-                    )}
-                </>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)}>
+                                {isSystemManaged ? "Cerrar" : "Cancelar"}
+                            </CancelButton>
+                            {!isSystemManaged && (
+                                <ActionSlideButton
+                                    loading={isSubmitting || loading}
+                                    disabled={isSubmitting || loading}
+                                    onClick={form.handleSubmit(onSubmit)}
+                                >
+                                    {accountId ? "Guardar Cambios" : "Crear Cuenta"}
+                                </ActionSlideButton>
+                            )}
+                        </>
+                    }
+                />
             }
         >
-            <div className="flex-1 flex overflow-hidden h-full">
-                <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2">
-                    {loading ? (
-                        <div className="flex items-center justify-center p-12">
-                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        </div>
-                    ) : (
-                        <form id="account-form" onSubmit={handleSubmit} className="space-y-6">
+            <FormSplitLayout
+                showSidebar={!!accountId}
+                sidebar={
+                    accountId && (
+                        <ActivitySidebar
+                            entityType="treasuryaccount"
+                            entityId={accountId}
+                            title="Historial de Cambios"
+                        />
+                    )
+                }
+            >
+                {loading ? (
+                    <div className="flex items-center justify-center p-12">
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                ) : (
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
                             {isSystemManaged && (
-                                <div className="flex items-start gap-3 p-3 rounded-lg border border-muted bg-muted/30 text-sm text-muted-foreground">
+                                <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5 text-xs text-amber-600">
                                     <Lock className="h-4 w-4 mt-0.5 shrink-0" />
-                                    <p>Esta cuenta es creada y gestionada automáticamente cuando se configura un proveedor de terminal de cobro. Para modificarla, actualice la cuenta puente en el <strong>Proveedor de Terminal</strong> correspondiente.</p>
+                                    <p>Esta cuenta es gestionada automáticamente por el sistema. Para modificarla, actualice el Proveedor de Terminal correspondiente.</p>
                                 </div>
                             )}
-                            <div className="grid grid-cols-2 gap-6">
-                                <div className="space-y-4">
-                                    <div className="grid gap-2">
-                                        <Label className={FORM_STYLES.label}>Nombre de la Cuenta</Label>
-                                        <Input
-                                            value={name}
-                                            onChange={e => setName(e.target.value)}
-                                            placeholder="Ej: Caja Principal"
-                                            className={FORM_STYLES.input}
-                                            required
-                                            disabled={isSystemManaged}
+
+                            {/* Section 1: General Info */}
+                            <div className="space-y-4">
+                                <FormSection title="Datos Generales" icon={Landmark} />
+                                <div className="grid grid-cols-4 gap-4">
+                                    <div className="col-span-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="name"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Nombre de la Cuenta"
+                                                    placeholder="Ej: Caja Principal"
+                                                    required
+                                                    disabled={isSystemManaged}
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )}
                                         />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="grid gap-2">
-                                            <Label className={FORM_STYLES.label}>Tipo</Label>
-                                            <Select value={type} onValueChange={(v: string) => setType(v)} disabled={isSystemManaged || !!accountId}>
-                                                <SelectTrigger className={FORM_STYLES.input}>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="CHECKING">Cuenta Corriente</SelectItem>
-                                                    <SelectItem value="CREDIT_CARD">Tarjeta de Crédito</SelectItem>
-                                                    <SelectItem value="DEBIT_CARD">Tarjeta de Débito</SelectItem>
-                                                    <SelectItem value="CHECKBOOK">Chequera</SelectItem>
-                                                    <SelectItem value="CASH">Efectivo</SelectItem>
-                                                    <SelectItem value="BRIDGE">Cuenta Puente (Clearing)</SelectItem>
-                                                    <SelectItem value="MERCHANT">Cuenta Recaudadora</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label className={FORM_STYLES.label}>Moneda</Label>
-                                            <Select value={currency} onValueChange={setCurrency} disabled={isSystemManaged}>
-                                                <SelectTrigger className={FORM_STYLES.input}>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="CLP">Pesos (CLP)</SelectItem>
-                                                    <SelectItem value="USD">Dólar (USD)</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
+                                    <div className="col-span-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="account_type"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Tipo de Cuenta"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    disabled={isSystemManaged || !!accountId}
+                                                    error={fieldState.error?.message}
+                                                    options={[
+                                                        { value: "CASH", label: "Caja Física (Efectivo)" },
+                                                        { value: "CHECKING", label: "Cuenta Bancaria (Corriente/Vista)" },
+                                                        { value: "DEBIT_CARD", label: "Tarjeta de Débito (Cta. Propia)" },
+                                                        { value: "CREDIT_CARD", label: "Tarjeta de Crédito (Cta. Propia)" },
+                                                        { value: "CHECKBOOK", label: "Chequera / Instrumentos" },
+                                                        { value: "BRIDGE", label: "Cuenta Puente (Liquidación/Clearing)" },
+                                                        { value: "MERCHANT", label: "Cuenta Recaudadora (Pasarela/Wallet)" }
+                                                    ]}
+                                                />
+                                            )}
+                                        />
                                     </div>
+                                    <div className="col-span-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="currency"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Moneda"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    disabled={isSystemManaged}
+                                                    error={fieldState.error?.message}
+                                                    options={[
+                                                        { value: "CLP", label: "Pesos (CLP)" },
+                                                        { value: "USD", label: "Dólar (USD)" }
+                                                    ]}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
 
-                                    {requiresBank(type) && (
-                                        <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
-                                            <Label className={cn(FORM_STYLES.label, "text-info flex items-center gap-1")}>
-                                                <Landmark className="h-3.5 w-3.5" /> Entidad Bancaria
-                                            </Label>
-                                            <Select
-                                                value={bank?.toString() || ""}
-                                                onValueChange={(v) => setBank(v ? Number(v) : null)}
-                                                disabled={isSystemManaged}
-                                            >
-                                                <SelectTrigger className={cn(FORM_STYLES.input, "border-info/20 bg-info/5")}>
-                                                    <SelectValue placeholder="Seleccione banco..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {banks.map((b: any) => (
-                                                        <SelectItem key={b.id} value={b.id.toString()}>{b.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    )}
-
-                                    {requiresBank(type) && (
-                                        <div className="grid gap-2 animate-in slide-in-from-left-2 duration-300">
-                                            <Label className={cn(FORM_STYLES.label, "text-info flex items-center gap-1")}>
-                                                <CreditCard className="h-3.5 w-3.5" /> N° de Cuenta Bancaria
-                                            </Label>
-                                            <Input
-                                                value={accountNumber}
-                                                onChange={e => setAccountNumber(e.target.value)}
-                                                placeholder="Ej: 0123456789"
-                                                className={cn(FORM_STYLES.input, "border-info/20 bg-info/5")}
-                                                disabled={isSystemManaged}
+                            {/* Section 2: Bank Info (Conditional) */}
+                            {requiresBank(type) && (
+                                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <FormSection title="Configuración Bancaria" icon={CreditCard} />
+                                    <div className="grid grid-cols-4 gap-4">
+                                        <div className="col-span-2">
+                                            <FormField
+                                                control={form.control}
+                                                name="bank"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledSelect
+                                                        label="Entidad Bancaria"
+                                                        placeholder="Seleccione banco..."
+                                                        value={field.value || ""}
+                                                        onChange={field.onChange}
+                                                        disabled={isSystemManaged}
+                                                        error={fieldState.error?.message}
+                                                        options={banks.map((b: any) => ({
+                                                            value: b.id.toString(),
+                                                            label: b.name
+                                                        }))}
+                                                    />
+                                                )}
                                             />
                                         </div>
-                                    )}
+                                        <div className="col-span-2">
+                                            <FormField
+                                                control={form.control}
+                                                name="account_number"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="N° de Cuenta Bancaria"
+                                                        placeholder="Ej: 0123456789"
+                                                        disabled={isSystemManaged}
+                                                        error={fieldState.error?.message}
+                                                        {...field}
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
-                                    <div className="grid gap-2">
-                                        <Label className={FORM_STYLES.label}>Cuenta Contable</Label>
-                                        <AccountSelector
-                                            value={accountingAccount?.toString() || null}
-                                            onChange={(v) => setAccountingAccount(v ? Number(v) : null)}
-                                            accountType="ASSET"
-                                            isReconcilable={true}
-                                            placeholder="Seleccione cuenta..."
-                                            disabled={isSystemManaged}
+                            {/* Section 3: Accounting */}
+                            <div className="space-y-4">
+                                <FormSection title="Integración Contable" icon={Lock} />
+                                <div className="grid grid-cols-4 gap-4">
+                                    <div className="col-span-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="account"
+                                            render={({ field, fieldState }) => (
+                                                <AccountSelector
+                                                    label="Cuenta del Plan de Cuentas"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    accountType="ASSET"
+                                                    isReconcilable={true}
+                                                    placeholder="Seleccione cuenta..."
+                                                    disabled={isSystemManaged}
+                                                    error={fieldState.error?.message}
+                                                />
+                                            )}
                                         />
-                                        <p className="text-[10px] text-muted-foreground italic">
-                                            Vínculo con el plan de cuentas.
-                                        </p>
                                     </div>
                                 </div>
                             </div>
                         </form>
-                    )}
-                </div>
-
-                {accountId && (
-                    <ActivitySidebar
-                        entityType="treasuryaccount"
-                        entityId={accountId}
-                        className="h-full border-none"
-                        title="Historial de Cambios"
-                    />
+                    </Form>
                 )}
-            </div>
+            </FormSplitLayout>
         </BaseModal>
     )
 }

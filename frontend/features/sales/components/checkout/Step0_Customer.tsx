@@ -1,8 +1,8 @@
 "use client"
 
-import { Label } from "@/components/ui/label"
-import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { User, Info } from "lucide-react"
+import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+import { LabeledContainer } from "@/components/shared/LabeledContainer"
 
 interface Step0_CustomerProps {
     selectedCustomerId: string | null
@@ -26,16 +26,16 @@ export function Step0_Customer({
                 </p>
             </div>
 
-            <div className="w-full space-y-4">
-                <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground">Cliente</Label>
-                    <AdvancedContactSelector
-                        value={selectedCustomerId}
-                        onChange={setSelectedCustomerId}
-                        onSelectContact={(contact) => setSelectedCustomerName(contact.name)}
-                        placeholder="Buscar por Nombre, RUT o Email..."
-                    />
-                </div>
+            <div className="w-full max-w-md">
+                <AdvancedContactSelector
+                    label="Buscar Cliente"
+                    icon={<User className="h-4 w-4" />}
+                    value={selectedCustomerId}
+                    onChange={setSelectedCustomerId}
+                    onSelectContact={(contact) => setSelectedCustomerName(contact.name)}
+                    placeholder="Nombre, RUT o Email..."
+                    className="h-9"
+                />
             </div>
         </div>
     )

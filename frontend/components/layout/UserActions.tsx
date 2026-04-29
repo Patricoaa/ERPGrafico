@@ -15,7 +15,7 @@ import {
     markAllNotificationsRead, 
     Notification,
     getTasks
-} from "@/lib/workflow/api"
+} from '@/features/workflow/api/workflowApi'
 import { PermissionGuard } from "@/components/auth/PermissionGuard"
 import {
     Tooltip,

@@ -1,8 +1,5 @@
 import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import { PageTabs } from "@/components/shared/PageTabs"
+import { LoadingFallback, PageHeader, PageTabs, ToolbarCreateButton, TableSkeleton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 const TreasuryAccountsView = lazy(() =>
@@ -75,7 +72,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
             <PageTabs tabs={tabs} activeValue={activeTab} />
 
             <div className="pt-4">
-                <Suspense fallback={<LoadingFallback message="Cargando..." />}>
+                <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                     <TreasuryAccountsView activeTab={activeTab} externalOpen={modalOpen} createAction={createAction} />
                 </Suspense>
             </div>

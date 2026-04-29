@@ -1,8 +1,8 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect } from "react"
 import { useServerDate } from "@/hooks/useServerDate"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { BaseDrawer } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Book, Calendar, ArrowUpRight, ArrowDownRight, Scale, Calculator, Eye, Trash2 } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
@@ -13,34 +13,15 @@ import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import api from "@/lib/api"
-import { toast } from "sonner"
 import { format } from "date-fns"
+import { useLedger } from "@/features/accounting/hooks/useLedger"
+import { useDeleteJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
 import { es } from "date-fns/locale"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { Skeleton } from "@/components/ui/skeleton"
+import { CardSkeleton } from "@/components/shared"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
-interface LedgerMovement {
-    id: number
-    date: string
-    description: string
-    label?: string
-    debit: string | number
-    credit: string | number
-    balance: string | number
-    entry_id: number
-    partner?: string
-    reference?: string
-}
-
-interface LedgerData {
-    movements: LedgerMovement[]
-    opening_balance: number
-    closing_balance: number
-    period_debit: number
-    period_credit: number
-}
+import type { LedgerMovement } from "@/features/accounting/types"
 
 interface LedgerModalProps {
     accountId: number
@@ -52,12 +33,9 @@ interface LedgerModalProps {
 export function LedgerModal({ accountId, accountName, accountCode, trigger }: LedgerModalProps) {
     const { serverDate } = useServerDate()
     const [open, setOpen] = useState(false)
-    const [loading, setLoading] = useState(false)
-    const [data, setData] = useState<LedgerData | null>(null)
     const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>(undefined)
     const [viewingEntry, setViewingEntry] = useState<{ id: number | string } | null>(null)
 
-    // Initialize date range with server date
     useEffect(() => {
         if (serverDate && !dateRange) {
             setDateRange({
@@ -67,38 +45,12 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
         }
     }, [serverDate])
 
-    const fetchLedger = useCallback(async () => {
-        setLoading(true)
-        try {
-            if (!dateRange) return
-            const startStr = format(dateRange.from, 'yyyy-MM-dd')
-            const endStr = format(dateRange.to, 'yyyy-MM-dd')
-            const res = await api.get(`/accounting/accounts/${accountId}/ledger/?start_date=${startStr}&end_date=${endStr}`)
-            setData(res.data)
-        } catch (error) {
-            toast.error("Error al cargar el libro mayor")
-            console.error(error)
-        } finally {
-            setLoading(false)
-        }
-    }, [accountId, dateRange])
+    const startStr = dateRange ? format(dateRange.from, 'yyyy-MM-dd') : ''
+    const endStr = dateRange ? format(dateRange.to, 'yyyy-MM-dd') : ''
+    const { data, isFetching: loading, refetch } = useLedger(accountId, startStr, endStr, { enabled: open })
 
-    useEffect(() => {
-        if (open && dateRange) {
-            fetchLedger()
-        }
-    }, [open, fetchLedger, dateRange])
-
-    const deleteConfirm = useConfirmAction<number>(async (entryId) => {
-        try {
-            await api.delete(`/accounting/entries/${entryId}/`)
-            toast.success("Asiento eliminado correctamente")
-            fetchLedger()
-        } catch (error) {
-            console.error("Error deleting entry:", error)
-            toast.error("Error al eliminar el asiento")
-        }
-    })
+    const deleteMutation = useDeleteJournalEntry({ onSuccess: refetch })
+    const deleteConfirm = useConfirmAction<number>((entryId) => deleteMutation.mutateAsync(entryId))
 
     const handleDeleteEntry = (entryId: number) => deleteConfirm.requestConfirm(entryId)
 
@@ -222,123 +174,110 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                     <Book className="h-4 w-4 text-primary" />
                 </Button>
             )}
-            <BaseModal
+            <BaseDrawer
                 open={open}
                 onOpenChange={setOpen}
-                size="2xl"
-                title={
-                    <>
-                        <Book className="h-6 w-6 text-primary" />
-                        Libro Mayor
-                    </>
-                }
-                description={
-                    <span className="text-sm text-muted-foreground font-mono">
-                        {accountCode} | <span className="text-foreground font-sans font-semibold">{accountName}</span>
-                    </span>
-                }
-                footer={
-                    <div className="w-full flex justify-between items-center text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
-                        <span>Libro Mayor • {accountName}</span>
-                        <span>{data?.movements?.length || 0} Registros</span>
-                    </div>
-                }
-                headerActions={
-                    <DateRangeFilter
-                        onRangeChange={(range) => {
-                            if (range?.from && range?.to) {
-                                setDateRange({ from: range.from, to: range.to })
-                            }
-                        }}
-                        defaultRange={dateRange || undefined}
-                    />
-                }
+                title="Libro Mayor"
+                subtitle={`${accountCode} | ${accountName}`}
+                icon={Book}
+                height="full"
             >
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-6 pt-4">
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <Card className="bg-muted/30 border-none shadow-none">
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-xs font-medium text-muted-foreground uppercase">Saldo Inicial</p>
-                                    <Calculator className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                                {loading ? (
-                                    <Skeleton className="h-7 w-24 mt-2" />
-                                ) : (
+                    {loading ? (
+                        <CardSkeleton count={4} variant="grid" />
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <Card className="bg-muted/30 border-none shadow-none">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-medium text-muted-foreground uppercase">Saldo Inicial</p>
+                                        <Calculator className="h-4 w-4 text-muted-foreground" />
+                                    </div>
                                     <div className={`text-xl font-bold mt-1 ${data?.opening_balance && data.opening_balance < 0 ? 'text-destructive' : ''}`}>
                                         ${data?.opening_balance?.toLocaleString() || '0'}
                                     </div>
-                                )}
-                                <p className="text-[10px] text-muted-foreground mt-1">
-                                    Al {dateRange?.from ? format(dateRange.from, "PPP", { locale: es }) : '-'}
-                                </p>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-success/5 border-none shadow-none">
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-xs font-medium text-success uppercase">Cargos (Debe)</p>
-                                    <ArrowUpRight className="h-4 w-4 text-success" />
-                                </div>
-                                {loading ? (
-                                    <Skeleton className="h-7 w-24 mt-2" />
-                                ) : (
+                                    <p className="text-[10px] text-muted-foreground mt-1">
+                                        Al {dateRange?.from ? format(dateRange.from, "PPP", { locale: es }) : '-'}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-success/5 border-none shadow-none">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-medium text-success uppercase">Cargos (Debe)</p>
+                                        <ArrowUpRight className="h-4 w-4 text-success" />
+                                    </div>
                                     <div className="text-xl font-bold mt-1 text-success">
                                         ${data?.period_debit?.toLocaleString() || '0'}
                                     </div>
-                                )}
-                                <p className="text-[10px] text-success/70 mt-1">Total del periodo</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-destructive/5 border-none shadow-none">
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-xs font-medium text-destructive uppercase">Abonos (Haber)</p>
-                                    <ArrowDownRight className="h-4 w-4 text-destructive" />
-                                </div>
-                                {loading ? (
-                                    <Skeleton className="h-7 w-24 mt-2" />
-                                ) : (
+                                    <p className="text-[10px] text-success/70 mt-1">Total del periodo</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-destructive/5 border-none shadow-none">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-medium text-destructive uppercase">Abonos (Haber)</p>
+                                        <ArrowDownRight className="h-4 w-4 text-destructive" />
+                                    </div>
                                     <div className="text-xl font-bold mt-1 text-destructive">
                                         ${data?.period_credit?.toLocaleString() || '0'}
                                     </div>
-                                )}
-                                <p className="text-[10px] text-destructive/70 mt-1">Total del periodo</p>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-primary/5 border-none shadow-none">
-                            <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-xs font-medium text-primary uppercase">Saldo Final</p>
-                                    <Scale className="h-4 w-4 text-primary" />
-                                </div>
-                                {loading ? (
-                                    <Skeleton className="h-7 w-24 mt-2" />
-                                ) : (
+                                    <p className="text-[10px] text-destructive/70 mt-1">Total del periodo</p>
+                                </CardContent>
+                            </Card>
+                            <Card className="bg-primary/5 border-none shadow-none">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-medium text-primary uppercase">Saldo Final</p>
+                                        <Scale className="h-4 w-4 text-primary" />
+                                    </div>
                                     <div className={`text-xl font-bold mt-1 ${data?.closing_balance && data.closing_balance < 0 ? 'text-destructive' : 'text-primary'}`}>
                                         ${data?.closing_balance?.toLocaleString() || '0'}
                                     </div>
-                                )}
-                                <p className="text-[10px] text-muted-foreground mt-1">
-                                    Al {dateRange?.to ? format(dateRange.to, "PPP", { locale: es }) : '-'}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
+                                    <p className="text-[10px] text-muted-foreground mt-1">
+                                        Al {dateRange?.to ? format(dateRange.to, "PPP", { locale: es }) : '-'}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
 
                     <DataTable
                         columns={columns}
                         data={data?.movements || []}
                         cardMode
                         isLoading={loading}
-                        useAdvancedFilter={false}
+                        useAdvancedFilter={true}
                         globalFilterFields={["description", "partner", "reference"]}
                         searchPlaceholder="Filtrar movimientos..."
                         defaultPageSize={100}
+                        customFilters={
+                            <div className="px-1 py-1">
+                                <DateRangeFilter
+                                    onDateChange={(range) => {
+                                        if (range?.from && range?.to) {
+                                            setDateRange({ from: range.from, to: range.to })
+                                        }
+                                    }}
+                                    defaultRange={dateRange || undefined}
+                                />
+                            </div>
+                        }
+                        isCustomFiltered={!!dateRange}
+                        onReset={() => {
+                            if (serverDate) {
+                                setDateRange({
+                                    from: new Date(serverDate.getFullYear(), serverDate.getMonth(), 1),
+                                    to: serverDate
+                                })
+                            } else {
+                                setDateRange(undefined)
+                            }
+                        }}
                     />
                 </div>
-            </BaseModal>
+            </BaseDrawer>
 
             {viewingEntry && (
                 <TransactionViewModal

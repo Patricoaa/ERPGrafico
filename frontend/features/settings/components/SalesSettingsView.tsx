@@ -5,37 +5,21 @@ import React, { useEffect, useCallback, useState } from "react"
 
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { toast } from "sonner"
 import { useSalesSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
-import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
 import {
-    Save,
-    TrendingUp,
-    CreditCard,
-    Loader2,
-    Check,
-    CloudUpload,
-    Scale,
+
     Percent,
     User as UserIcon,
     Users as UsersIcon,
-    Settings,
-    Wallet,
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { UserSelector } from "@/components/selectors/UserSelector"
 import { GroupSelector } from "@/components/selectors/GroupSelector"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { Button } from "@/components/ui/button"
-import { SalesSettings, SalesSettingsUpdatePayload } from "@/features/settings/types"
+import { LabeledInput, LabeledSwitch, LabeledContainer } from "@/components/shared"
+import { SalesSettingsUpdatePayload } from "@/features/settings/types"
 import { cn } from "@/lib/utils"
 
 import { salesSchema, type SalesFormValues } from "./SalesSettingsView.schema"
@@ -44,18 +28,14 @@ const AccountField = ({ form, name, label, accountType }: { form: UseFormReturn<
     <FormField
         control={form.control}
         name={name}
-        render={({ field }) => (
-            <FormItem>
-                <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">{label}</FormLabel>
-                <FormControl>
-                    <AccountSelector
-                        value={field.value as string}
-                        onChange={field.onChange}
-                        accountType={accountType}
-                    />
-                </FormControl>
-                <FormMessage />
-            </FormItem>
+        render={({ field, fieldState }) => (
+            <AccountSelector
+                label={label}
+                value={field.value as string}
+                onChange={field.onChange}
+                accountType={accountType}
+                error={fieldState.error?.message}
+            />
         )}
     />
 )
@@ -104,6 +84,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
                         name={userField}
                         render={({ field }) => (
                             <UserSelector
+                                label="Usuario Autorizado"
                                 value={field.value as number | null}
                                 onChange={field.onChange}
                                 placeholder="Sel. usuario con permiso..."
@@ -116,6 +97,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
                         name={groupField}
                         render={({ field }) => (
                             <GroupSelector
+                                label="Grupo Autorizado"
                                 value={field.value as string}
                                 onChange={field.onChange}
                                 placeholder="Sel. grupo con permiso..."
@@ -129,7 +111,7 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
 }
 
 
-export function SalesSettingsView({ activeTab = "income", onSavingChange }: { 
+export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
     activeTab?: string,
     onSavingChange?: (saving: boolean) => void
 }) {
@@ -206,30 +188,10 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
-            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-4 h-12 p-1 bg-muted/50 rounded-md border-2">
-                    <TabsTrigger value="income" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <TrendingUp className="h-3.5 w-3.5" />
-                        Ingresos
-                    </TabsTrigger>
-                    <TabsTrigger value="credit" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <CreditCard className="h-3.5 w-3.5" />
-                        Crédito
-                    </TabsTrigger>
-                    <TabsTrigger value="config_pos" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <Settings className="h-3.5 w-3.5" />
-                        POS
-                    </TabsTrigger>
-                    <TabsTrigger value="terminals" className="text-[10px] uppercase font-black tracking-widest gap-2">
-                        <Wallet className="h-3.5 w-3.5" />
-                        Terminales
-                    </TabsTrigger>
-                </TabsList>
-
-                <Form {...form}>
-
-                    <form className="mt-6 space-y-6">
-                        <TabsContent value="income" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+            <Form {...form}>
+                <form className="mt-6 space-y-6">
+                    {activeTab === "income" && (
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Cuentas de Ingresos Naturales</CardTitle>
@@ -243,9 +205,11 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                     </div>
                                 </CardContent>
                             </Card>
-                        </TabsContent>
+                        </div>
+                    )}
 
-                        <TabsContent value="credit" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                    {activeTab === "credit" && (
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Crédito y Cartera</CardTitle>
@@ -259,25 +223,19 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                                     <FormField
                                                         control={form.control}
                                                         name="pos_default_credit_percentage"
-                                                        render={({ field }) => (
+                                                        render={({ field, fieldState }) => (
                                                             <div className="space-y-2">
-                                                                <FormLabel className="text-xs font-bold">Crédito Preaprobado POS (%)</FormLabel>
-                                                                <p className="text-[10px] text-muted-foreground leading-tight">
-                                                                    % asignado por defecto si el cliente no tiene línea de crédito.
-                                                                </p>
-                                                                <FormControl>
-                                                                    <div className="relative max-w-[120px]">
-                                                                        <Input
-                                                                            type="number"
-                                                                            {...field}
-                                                                            className="pr-8 h-9 font-bold text-center"
-                                                                            min={0}
-                                                                            max={100}
-                                                                        />
-                                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-bold font-mono">%</span>
-                                                                    </div>
-                                                                </FormControl>
-                                                                <FormMessage className="text-[10px]" />
+                                                                <LabeledInput
+                                                                    label="Crédito Preaprobado POS (%)"
+                                                                    hint="% asignado por defecto si el cliente no tiene línea de crédito."
+                                                                    suffix={<span className="text-[10px] text-muted-foreground font-bold font-mono">%</span>}
+                                                                    type="number"
+                                                                    {...field}
+                                                                    className="font-bold text-center max-w-[150px]"
+                                                                    min={0}
+                                                                    max={100}
+                                                                    error={fieldState.error?.message}
+                                                                />
                                                             </div>
                                                         )}
                                                     />
@@ -289,26 +247,20 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                                     <FormField
                                                         control={form.control}
                                                         name="credit_auto_block_days"
-                                                        render={({ field }) => (
+                                                        render={({ field, fieldState }) => (
                                                             <div className="space-y-2">
-                                                                <FormLabel className="text-xs font-bold">Días de Mora para Auto-Bloqueo</FormLabel>
-                                                                <p className="text-[10px] text-muted-foreground leading-tight">
-                                                                    Días máximos permitidos antes de restringir el crédito automáticamente.
-                                                                </p>
-                                                                <FormControl>
-                                                                    <div className="relative max-w-[120px]">
-                                                                        <Input
-                                                                            type="number"
-                                                                            {...field}
-                                                                            value={field.value ?? ""}
-                                                                            onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
-                                                                            className="pr-8 h-9 font-bold text-center"
-                                                                            placeholder="Desact."
-                                                                        />
-                                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-bold font-mono">D</span>
-                                                                    </div>
-                                                                </FormControl>
-                                                                <FormMessage className="text-[10px]" />
+                                                                <LabeledInput
+                                                                    label="Días de Mora para Auto-Bloqueo"
+                                                                    hint="Días máximos permitidos antes de restringir el crédito automáticamente."
+                                                                    suffix={<span className="text-[10px] text-muted-foreground font-bold font-mono">D</span>}
+                                                                    type="number"
+                                                                    {...field}
+                                                                    value={field.value ?? ""}
+                                                                    onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : null)}
+                                                                    className="font-bold text-center max-w-[150px]"
+                                                                    placeholder="Desact."
+                                                                    error={fieldState.error?.message}
+                                                                />
                                                             </div>
                                                         )}
                                                     />
@@ -332,9 +284,11 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                     </div>
                                 </CardContent>
                             </Card>
-                        </TabsContent>
+                        </div>
+                    )}
 
-                        <TabsContent value="config_pos" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                    {activeTab === "config_pos" && (
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Parámetros Operativos POS</CardTitle>
@@ -354,16 +308,14 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                                         control={form.control}
                                                         name="pos_enable_line_discounts"
                                                         render={({ field }) => (
-                                                            <div className="flex items-center justify-between">
-                                                                <div className="space-y-0.5">
-                                                                    <FormLabel className="text-xs font-bold">Descuentos por Línea</FormLabel>
-                                                                    <p className="text-[10px] text-muted-foreground">Habilitar en el carrito</p>
-                                                                </div>
-                                                                <FormControl>
-                                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </div>
+                                                            <LabeledSwitch
+                                                                label="Descuentos por Línea"
+                                                                description={field.value ? "Habilitado en carrito" : "Deshabilitado"}
+                                                                checked={field.value}
+                                                                onCheckedChange={field.onChange}
+                                                                icon={<Percent className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
+                                                                className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                                            />
                                                         )}
                                                     />
 
@@ -386,16 +338,14 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                                         control={form.control}
                                                         name="pos_enable_total_discounts"
                                                         render={({ field }) => (
-                                                            <div className="flex items-center justify-between">
-                                                                <div className="space-y-0.5">
-                                                                    <FormLabel className="text-xs font-bold">Descuentos Globales</FormLabel>
-                                                                    <p className="text-[10px] text-muted-foreground">Habilitar al total</p>
-                                                                </div>
-                                                                <FormControl>
-                                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </div>
+                                                            <LabeledSwitch
+                                                                label="Descuentos Globales"
+                                                                description={field.value ? "Habilitado al total" : "Deshabilitado"}
+                                                                checked={field.value}
+                                                                onCheckedChange={field.onChange}
+                                                                icon={<Percent className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
+                                                                className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                                            />
                                                         )}
                                                     />
 
@@ -415,9 +365,11 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                     </div>
                                 </CardContent>
                             </Card>
-                        </TabsContent>
+                        </div>
+                    )}
 
-                        <TabsContent value="terminals" className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                    {activeTab === "terminals" && (
+                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Cuentas Puente de Terminales</CardTitle>
@@ -428,10 +380,10 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
                                     <AccountField form={form} name="terminal_iva_bridge_account" label="Puente IVA Comisión" accountType="ASSET" />
                                 </CardContent>
                             </Card>
-                        </TabsContent>
-                    </form>
-                </Form>
-            </Tabs>
+                        </div>
+                    )}
+                </form>
+            </Form>
         </div>
     )
 }

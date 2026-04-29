@@ -79,6 +79,22 @@ const eslintConfig = defineConfig([
   // Cross-feature internal import guard via no-restricted-imports
   // boundaries/dependencies can't do per-feature captures in v6 without complex setup.
   // This blocks features/A from importing features/B internals (components, hooks, api, types).
+
+  // Barrel import enforcement for shared components
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": ["warn", {
+        patterns: [
+          {
+            group: ["@/components/shared/*", "!@/components/shared"],
+            message: "Import from the barrel (@/components/shared), not internal files.",
+          }
+        ]
+      }]
+    }
+  },
+
   {
     files: ["features/**/*.ts", "features/**/*.tsx"],
     rules: {
@@ -104,6 +120,34 @@ const eslintConfig = defineConfig([
       }],
     },
   },
+
+  // UI component data fetching and formatting restrictions
+  {
+    files: ["components/**/*.tsx", "features/*/components/**/*.tsx"],
+    rules: {
+      "no-restricted-imports": ["error", {
+        paths: [{
+          name: "@tanstack/react-query",
+          importNames: ["useQuery", "useMutation", "useSuspenseQuery"],
+          message: "React Query hooks must only be used within feature hooks (features/*/hooks/). Do not import them directly in components."
+        }]
+      }],
+      "no-restricted-syntax": ["warn", 
+        {
+          selector: "CallExpression[callee.property.name='toLocaleString']",
+          message: "Do not use .toLocaleString() for currency or quantities. Use <MoneyDisplay> or <QuantityDisplay> instead to ensure consistent UI across the app."
+        },
+        {
+          selector: "JSXElement > JSXOpeningElement[name.name='button']",
+          message: "Do not use native <button> elements. Use Shadcn <Button> or the <ActionButtons> primitives (SubmitButton, CancelButton, etc.) from @/components/shared instead."
+        },
+        {
+          selector: "JSXElement[openingElement.name.name='Button'] JSXElement[openingElement.name.name='Loader2']",
+          message: "Violación de Diseño Industrial: No inyecte Loader2 manualmente en Button. Utilice <SubmitButton loading={...}> o <ActionSlideButton loading={...}>."
+        }
+      ]
+    }
+  }
 ]);
 
 export default eslintConfig;

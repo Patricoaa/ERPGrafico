@@ -19,7 +19,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 
 import { RowSelectionState } from "@tanstack/react-table"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 
 interface MappingConfigSheetProps {

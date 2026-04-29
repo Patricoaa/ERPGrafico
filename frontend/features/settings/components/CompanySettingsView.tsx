@@ -3,56 +3,40 @@
 import React, { useEffect, useCallback, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
 import { toast } from "sonner"
 import { useCompanySettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
+import { Form, FormField } from "@/components/ui/form"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import {
-    Loader2,
-    Check,
-    CloudUpload,
-    Building2,
-    RefreshCw,
-    Palette,
-    Mail,
-    Phone,
-    MapPin,
-    Globe,
-    Upload,
-    Pencil,
-    Trash2
-} from "lucide-react"
+
+import { Loader2, Check, CloudUpload, Building2, RefreshCw, Palette, Mail, Phone, MapPin, Globe, Upload, Pencil, Trash2 } from "lucide-react"
 import ContactModal from "@/features/contacts/components/ContactModal"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { PageTabs } from "@/components/shared/PageTabs"
+import { BaseModal } from "@/components/shared/BaseModal"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
+import { FormSkeleton, LabeledInput, LabeledSelect } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { cn } from "@/lib/utils"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+
 import api, { resolveMediaUrl } from "@/lib/api"
 import { CompanySettings } from "@/features/settings/types"
 import { contactsApi } from "@/features/contacts/api/contactsApi"
-import { PartnerSettingsTab } from "./PartnerSettingsTab"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+
 
 import { companySchema, type CompanyFormValues } from "./CompanySettingsView.schema"
 import { Contact } from "@/features/contacts/types"
 
-export function CompanySettingsView({ 
-    activeTab, 
-    onSavingChange 
-}: { 
+export function CompanySettingsView({
+    activeTab,
+    onSavingChange
+}: {
     activeTab: string,
     onSavingChange?: (saving: boolean) => void
 }) {
     const { settings, isLoading, saving, updateSettings } = useCompanySettings()
-    
+
     // Propage saving status to parent
     useEffect(() => {
         onSavingChange?.(saving)
@@ -139,13 +123,13 @@ export function CompanySettingsView({
         try {
             const res = await api.get(`/contacts/${idToSync}/`)
             const contact = res.data
-            
+
             form.setValue("name", contact.name || "", { shouldDirty: true, shouldValidate: true })
             form.setValue("tax_id", contact.tax_id || "", { shouldDirty: true, shouldValidate: true })
             form.setValue("email", contact.email || "", { shouldDirty: true, shouldValidate: true })
             form.setValue("phone", contact.phone || "", { shouldDirty: true, shouldValidate: true })
             form.setValue("address", contact.address || "", { shouldDirty: true, shouldValidate: true })
-            
+
             if (customId === undefined) { // Only show toast if triggered manually, not on select change
                 toast.success("Datos sincronizados desde el contacto")
             }
@@ -187,28 +171,7 @@ export function CompanySettingsView({
     }
 
     if (isLoading) {
-        return (
-            <div className="space-y-6">
-                <Card>
-                    <CardHeader>
-                        <Skeleton className="h-6 w-48 mb-2" />
-                        <Skeleton className="h-4 w-64" />
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <Skeleton className="h-20 w-full" />
-                        <div className="grid grid-cols-2 gap-6">
-                            <Skeleton className="h-10 w-full" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                        <div className="grid grid-cols-2 gap-6">
-                            <Skeleton className="h-10 w-full" />
-                            <Skeleton className="h-10 w-full" />
-                        </div>
-                        <Skeleton className="h-32 w-full" />
-                    </CardContent>
-                </Card>
-            </div>
-        )
+        return <FormSkeleton fields={5} className="mt-6" />
     }
 
     return (
@@ -228,16 +191,17 @@ export function CompanySettingsView({
                                 <FormField
                                     control={form.control as any}
                                     name="contact"
-                                    render={({ field }) => (
-                                        <FormItem className="col-span-2">
-                                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Sincronizar con Contacto</FormLabel>
+                                    render={({ field, fieldState }) => (
+                                        <div className="col-span-2 space-y-2">
                                             <div className="flex gap-2 items-center">
                                                 <div className="flex-1">
-                                                    <Select 
-                                                        onValueChange={(v) => {
+                                                    <LabeledSelect
+                                                        label="Sincronizar con Contacto"
+                                                        value={field.value?.toString() || "none"}
+                                                        onChange={(v: string) => {
                                                             const val = v === "none" ? null : parseInt(v)
                                                             field.onChange(val)
-                                                            
+
                                                             if (val) {
                                                                 // Automatically sync when contact is selected
                                                                 syncFromContact(val)
@@ -249,57 +213,49 @@ export function CompanySettingsView({
                                                                 form.setValue("phone", "", { shouldDirty: true })
                                                                 form.setValue("address", "", { shouldDirty: true })
                                                             }
-                                                        }} 
-                                                        value={field.value?.toString() || "none"}
-                                                    >
-                                                        <FormControl>
-                                                            <SelectTrigger className="h-9">
-                                                                <SelectValue placeholder="Sin contacto vinculado" />
-                                                            </SelectTrigger>
-                                                        </FormControl>
-                                                        <SelectContent>
-                                                            <SelectItem value="none">Sin contacto vinculado</SelectItem>
-                                                            {contacts.map((c) => (
-                                                                <SelectItem key={c.id} value={c.id.toString()}>
-                                                                    {c.name} ({c.tax_id})
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
+                                                        }}
+                                                        error={fieldState.error?.message}
+                                                        options={[
+                                                            { value: "none", label: "Sin contacto vinculado" },
+                                                            ...contacts.map((c) => ({
+                                                                value: c.id.toString(),
+                                                                label: `${c.name} (${c.tax_id})`
+                                                            }))
+                                                        ]}
+                                                    />
                                                 </div>
-                                                
+
                                                 {isLinked && (
-                                                    <Button 
-                                                        type="button" 
-                                                        variant="outline" 
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
                                                         size="icon"
-                                                        className="h-9 w-9 text-primary border-primary/20 hover:bg-primary/10 shadow-sm"
+                                                        className="h-[52px] w-[52px] text-primary border-primary/20 hover:bg-primary/10 shadow-sm"
                                                         onClick={() => setIsEditContactOpen(true)}
                                                         title="Editar ficha de contacto"
                                                     >
-                                                        <Pencil className="h-4 w-4" />
+                                                        <Pencil className="h-5 w-5" />
                                                     </Button>
                                                 )}
 
-                                                <Button 
-                                                    type="button" 
-                                                    variant="outline" 
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
                                                     size="icon"
-                                                    className="h-9 w-9 shadow-sm"
+                                                    className="h-[52px] w-[52px] shadow-sm"
                                                     onClick={() => syncFromContact()}
                                                     disabled={syncing || !isLinked}
                                                     title="Sincronizar datos"
                                                 >
-                                                    <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+                                                    <RefreshCw className={`h-5 w-5 ${syncing ? 'animate-spin' : ''}`} />
                                                 </Button>
                                             </div>
-                                            <FormDescription className="text-[10px]">
-                                                {isLinked 
-                                                    ? "Los datos legales están sincronizados desde el contacto vinculado." 
+                                            <p className="text-[10px] text-muted-foreground pl-1">
+                                                {isLinked
+                                                    ? "Los datos legales están sincronizados desde el contacto vinculado."
                                                     : "Vincule un contacto para sincronizar razón social, RUT y dirección."}
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
+                                            </p>
+                                        </div>
                                     )}
                                 />
                             </div>
@@ -309,26 +265,22 @@ export function CompanySettingsView({
                                     control={form.control as any}
                                     name="trade_name"
                                     render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Nombre de Fantasía</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} className="h-9" placeholder="Ej: Mi Tienda" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                        <LabeledInput
+                                            label="Nombre de Fantasía"
+                                            placeholder="Ej: Mi Tienda"
+                                            {...field}
+                                        />
                                     )}
                                 />
                                 <FormField
                                     control={form.control as any}
                                     name="business_activity"
                                     render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Giro / Actividad</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} className="h-9" placeholder="Ej: Venta de repuestos" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                        <LabeledInput
+                                            label="Giro / Actividad"
+                                            placeholder="Ej: Venta de repuestos"
+                                            {...field}
+                                        />
                                     )}
                                 />
                             </div>
@@ -338,31 +290,24 @@ export function CompanySettingsView({
                                     control={form.control as any}
                                     name="name"
                                     render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Razón Social</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} className="h-9 font-medium" placeholder="Ej: Mi Empresa S.A." />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                        <LabeledInput
+                                            label="Razón Social"
+                                            placeholder="Ej: Mi Empresa S.A."
+                                            {...field}
+                                        />
                                     )}
                                 />
                                 <FormField
                                     control={form.control as any}
                                     name="tax_id"
                                     render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">RUT / Tax ID</FormLabel>
-                                            <FormControl>
-                                                <Input 
-                                                    {...field} 
-                                                    className="h-9 font-mono" 
-                                                    placeholder="12.345.678-9" 
-                                                    onChange={(e) => field.onChange(formatRUT(e.target.value))}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                        <LabeledInput
+                                            label="RUT / Tax ID"
+                                            placeholder="12.345.678-9"
+                                            className="font-mono"
+                                            onChange={(e) => field.onChange(formatRUT(e.target.value))}
+                                            value={field.value}
+                                        />
                                     )}
                                 />
                             </div>
@@ -372,30 +317,29 @@ export function CompanySettingsView({
                                     control={form.control as any}
                                     name="email"
                                     render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1">
-                                                <Mail className="h-3 w-3" /> Email de Contacto
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input {...field} type="email" className="h-9" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                        <LabeledInput
+                                            label={
+                                                <span className="flex items-center gap-1">
+                                                    <Mail className="h-3 w-3" /> Email de Contacto
+                                                </span>
+                                            }
+                                            type="email"
+                                            {...field}
+                                        />
                                     )}
                                 />
                                 <FormField
                                     control={form.control as any}
                                     name="phone"
                                     render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1">
-                                                <Phone className="h-3 w-3" /> Teléfono
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input {...field} className="h-9" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                        <LabeledInput
+                                            label={
+                                                <span className="flex items-center gap-1">
+                                                    <Phone className="h-3 w-3" /> Teléfono
+                                                </span>
+                                            }
+                                            {...field}
+                                        />
                                     )}
                                 />
                             </div>
@@ -405,15 +349,16 @@ export function CompanySettingsView({
                                     control={form.control as any}
                                     name="address"
                                     render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1">
-                                                <MapPin className="h-3 w-3" /> Dirección
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Textarea {...field} className="min-h-[80px]" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
+                                        <LabeledInput
+                                            as="textarea"
+                                            label={
+                                                <span className="flex items-center gap-1">
+                                                    <MapPin className="h-3 w-3" /> Dirección
+                                                </span>
+                                            }
+                                            rows={3}
+                                            {...field}
+                                        />
                                     )}
                                 />
                             </div>
@@ -422,15 +367,15 @@ export function CompanySettingsView({
                                 control={form.control as any}
                                 name="website"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1">
-                                            <Globe className="h-3 w-3" /> Sitio Web
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input {...field} className="h-9" placeholder="https://..." />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
+                                    <LabeledInput
+                                        label={
+                                            <span className="flex items-center gap-1">
+                                                <Globe className="h-3 w-3" /> Sitio Web
+                                            </span>
+                                        }
+                                        placeholder="https://..."
+                                        {...field}
+                                    />
                                 )}
                             />
                         </CardContent>
@@ -448,9 +393,9 @@ export function CompanySettingsView({
                         </CardHeader>
                         <CardContent className="space-y-8">
                             <div className="space-y-4">
-                                <FormLabel className="text-[10px] font-bold uppercase text-muted-foreground">Logo de la Empresa</FormLabel>
+                                <p className="text-[10px] font-bold uppercase text-muted-foreground">Logo de la Empresa</p>
                                 <div className="flex flex-col md:flex-row gap-6 items-start">
-                                    <div 
+                                    <div
                                         className="h-32 w-32 rounded-lg border-2 border-dashed flex items-center justify-center bg-muted/30 overflow-hidden relative group shadow-inner cursor-pointer hover:bg-muted/50 transition-colors"
                                         onClick={() => !settings?.logo && fileInputRef.current?.click()}
                                     >
@@ -458,10 +403,10 @@ export function CompanySettingsView({
                                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                         ) : settings?.logo ? (
                                             <div className="relative w-full h-full">
-                                                <img 
-                                                    src={resolveMediaUrl(settings.logo) || undefined} 
-                                                    alt="Logo" 
-                                                    className="max-h-full max-w-full object-contain p-2 w-full h-full" 
+                                                <img
+                                                    src={resolveMediaUrl(settings.logo) || undefined}
+                                                    alt="Logo"
+                                                    className="max-h-full max-w-full object-contain p-2 w-full h-full"
                                                 />
                                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                                     <Button
@@ -497,8 +442,8 @@ export function CompanySettingsView({
                                                 <span className="text-[10px] font-bold uppercase tracking-tight">Subir Logo</span>
                                             </div>
                                         )}
-                                        <input 
-                                            type="file" 
+                                        <input
+                                            type="file"
                                             ref={fileInputRef}
                                             className="hidden"
                                             accept="image/*"
@@ -511,17 +456,15 @@ export function CompanySettingsView({
                                             control={form.control as any}
                                             name="logo_url"
                                             render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-[11px] font-semibold">O utilizar URL externa</FormLabel>
-                                                    <FormControl>
-                                                        <Input {...field} placeholder="https://..." className="h-9" />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
+                                                <LabeledInput
+                                                    label="O utilizar URL externa"
+                                                    placeholder="https://..."
+                                                    {...field}
+                                                />
                                             )}
                                         />
                                         <p className="text-[11px] text-muted-foreground italic">
-                                            Se recomienda usar una imagen con fondo transparente (PNG) 
+                                            Se recomienda usar una imagen con fondo transparente (PNG)
                                             y dimensiones equilibradas.
                                         </p>
                                     </div>
@@ -534,7 +477,7 @@ export function CompanySettingsView({
                 </TabsContent>
             </Tabs>
 
-            <ContactModal 
+            <ContactModal
                 open={isEditContactOpen}
                 onOpenChange={setIsEditContactOpen}
                 contact={selectedContact}

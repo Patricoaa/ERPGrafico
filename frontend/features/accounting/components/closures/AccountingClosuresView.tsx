@@ -7,7 +7,7 @@ import { FiscalYearCard } from './FiscalYearCard';
 import { FiscalYearClosingWizard } from './FiscalYearClosingWizard';
 import { NewFiscalYearModal } from './NewFiscalYearModal';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { LoadingFallback } from '@/components/shared/LoadingFallback';
+import { CardSkeleton } from '@/components/shared';
 import { AccountingPeriod, FiscalYearPreviewResult } from '../../types';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
@@ -135,7 +135,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
     };
 
     if (isLoadingYrs || isLoadingPeriods) {
-        return <LoadingFallback variant="card" message="Cargando cierres contables..." />;
+        return <CardSkeleton variant="grid" count={3} />;
     }
 
     if (groupedData.length === 0) {

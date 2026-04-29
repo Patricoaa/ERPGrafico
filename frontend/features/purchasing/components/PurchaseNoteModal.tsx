@@ -1,4 +1,5 @@
 "use client"
+import { toast } from "sonner"
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
@@ -14,10 +15,10 @@ import {
     X
 } from "lucide-react"
 import api from "@/lib/api"
-import { validateTaxPeriod } from "@/lib/actions/tax-actions"
+import { validateTaxPeriod } from '@/features/tax/actions'
 import { PurchaseOrderAPI, PurchaseNoteLine } from "../types"
-import { PricingUtils } from "@/lib/pricing"
-import { toast } from "sonner"
+import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { DocumentAttachmentDropzone, PeriodValidationDateInput, LoadingFallback } from "@/components/shared"
 
 import { ShieldAlert } from "lucide-react"
 
@@ -344,9 +345,8 @@ export function PurchaseNoteModal({
                     <div className="flex-1 p-8 overflow-y-auto">
                         <div className="max-w-5xl mx-auto">
                             {loading ? (
-                                <div className="h-64 flex flex-col items-center justify-center gap-4 text-muted-foreground">
-                                    <Loader2 className="h-8 w-8 animate-spin" />
-                                    <p>Cargando información de la orden...</p>
+                                <div className="h-64 flex items-center justify-center">
+                                    <LoadingFallback message="Cargando información del documento..." />
                                 </div>
                             ) : (
                                 <>

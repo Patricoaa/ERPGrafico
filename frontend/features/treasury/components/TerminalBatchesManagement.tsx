@@ -17,12 +17,12 @@ import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { FormSkeleton } from "@/components/shared"
 import type { DateRange } from "react-day-picker"
 
 // Lazy load feature components
-const TerminalBatchForm = lazy(() => import("./TerminalBatchForm"))
-const MonthlyInvoiceDialog = lazy(() => import("./MonthlyInvoiceDialog"))
+const LazyTerminalBatchForm = lazy(() => import("./TerminalBatchForm"))
+const MonthlyInvoiceModal = lazy(() => import("./MonthlyInvoiceModal"))
 
 interface TerminalBatchesManagementProps {
     showTitle?: boolean
@@ -151,7 +151,7 @@ export function TerminalBatchesManagement({
                     }
                 ]}
                 customFilters={
-                    <DateRangeFilter onRangeChange={setDateRange} label="Fecha de Ventas" className="bg-transparent border-none w-full" />
+                    <DateRangeFilter onDateChange={setDateRange} label="Fecha de Ventas" className="bg-transparent border-none w-full" />
                 }
                 isCustomFiltered={!!dateRange}
                 customFilterCount={dateRange ? 1 : 0}
@@ -159,8 +159,8 @@ export function TerminalBatchesManagement({
                 createAction={createAction}
             />
 
-            <Suspense fallback={<LoadingFallback />}>
-                <TerminalBatchDialog
+            <Suspense fallback={<FormSkeleton />}>
+                <TerminalBatchModal
                     open={openCreate}
                     onOpenChange={(open: boolean) => {
                         setOpenCreate(open)
@@ -174,8 +174,8 @@ export function TerminalBatchesManagement({
                 />
             </Suspense>
 
-            <Suspense fallback={<LoadingFallback />}>
-                <MonthlyInvoiceDialog
+            <Suspense fallback={<FormSkeleton />}>
+                <MonthlyInvoiceModal
                     open={openInvoice}
                     onOpenChange={(open: boolean) => {
                         setOpenInvoice(open)
@@ -187,7 +187,7 @@ export function TerminalBatchesManagement({
     )
 }
 
-function TerminalBatchDialog({ open, onOpenChange, onSuccess }: { open: boolean, onOpenChange: (open: boolean) => void, onSuccess: () => void }) {
+function TerminalBatchModal({ open, onOpenChange, onSuccess }: { open: boolean, onOpenChange: (open: boolean) => void, onSuccess: () => void }) {
     return (
         <BaseModal
             open={open}
@@ -201,7 +201,9 @@ function TerminalBatchDialog({ open, onOpenChange, onSuccess }: { open: boolean,
             }
             description="Ingrese los datos de la liquidación diaria informada por el proveedor del terminal."
         >
-            <TerminalBatchForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} />
+            <Suspense fallback={<FormSkeleton />}>
+                <LazyTerminalBatchForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} />
+            </Suspense>
         </BaseModal>
     )
 }

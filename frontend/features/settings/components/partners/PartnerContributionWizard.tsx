@@ -16,22 +16,13 @@ import { Partner } from "@/features/contacts/types/partner"
 import { TreasuryAccount } from "@/features/treasury/types"
 import { Product } from "@/features/inventory/types"
 import api from "@/lib/api"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { 
-    Select, 
-    SelectContent, 
-    SelectItem, 
-    SelectTrigger, 
-    SelectValue 
-} from "@/components/ui/select"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { formatCurrency, cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
-import { FORM_STYLES } from "@/lib/styles"
 
 interface PartnerContributionWizardProps {
     open: boolean
@@ -202,25 +193,22 @@ export function PartnerContributionWizard({
             isValid: !!partnerId,
             component: (
                 <div className="space-y-4 py-4">
-                    <div className="space-y-1.5">
-                        <Label className={FORM_STYLES.label}>
-                            <Users className="inline h-3.5 w-3.5 mr-1 opacity-50" />
-                            Socio Aportante
-                        </Label>
-                        <Select value={partnerId} onValueChange={setPartnerId} disabled={!!initialPartnerId}>
-                            <SelectTrigger className={cn(FORM_STYLES.input, "border-primary/20 bg-primary/5")}>
-                                <SelectValue placeholder="Seleccione un socio" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {partners.map(p => (
-                                    <SelectItem key={p.id} value={p.id.toString()}>
-                                        {p.name}
-                                        {p.tax_id && <span className="text-muted-foreground ml-2 font-mono text-[10px]">{p.tax_id}</span>}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <LabeledSelect
+                        label={<div className="flex items-center"><Users className="h-3.5 w-3.5 mr-1 opacity-50" /> Socio Aportante</div>}
+                        value={partnerId}
+                        onChange={setPartnerId}
+                        disabled={!!initialPartnerId}
+                        placeholder="Seleccione un socio"
+                        options={partners.map(p => ({
+                            value: p.id.toString(),
+                            label: (
+                                <span>
+                                    {p.name}
+                                    {p.tax_id && <span className="text-muted-foreground ml-2 font-mono text-[10px]">{p.tax_id}</span>}
+                                </span>
+                            ),
+                        }))}
+                    />
                     {selectedPartner && (
                         <div className="p-3 bg-muted/30 border-2 border-dashed rounded-lg space-y-2 animate-in fade-in zoom-in-95 duration-300">
                             <div className="flex justify-between items-center text-[10px] text-muted-foreground uppercase font-black">
@@ -303,124 +291,88 @@ export function PartnerContributionWizard({
             component: method === "CASH" ? (
                 <div className="space-y-4 py-4 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Importe en Efectivo</Label>
-                            <div className="relative">
-                                <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input 
-                                    type="number"
-                                    value={cashData.amount}
-                                    onChange={(e) => setCashData(prev => ({ ...prev, amount: e.target.value }))}
-                                    className={cn(FORM_STYLES.input, "pl-10 font-mono text-lg font-black")}
-                                    placeholder="0"
-                                />
-                            </div>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Cuenta de Destino</Label>
-                            <Select 
-                                value={cashData.treasuryAccountId} 
-                                onValueChange={(v) => setCashData(prev => ({ ...prev, treasuryAccountId: v }))}
-                            >
-                                <SelectTrigger className={FORM_STYLES.input}>
-                                    <SelectValue placeholder="Seleccione cuenta" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {treasuryAccounts.map(a => (
-                                        <SelectItem key={a.id} value={a.id.toString()}>{a.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        <LabeledInput
+                            label="Importe en Efectivo"
+                            type="number"
+                            value={cashData.amount}
+                            onChange={(e) => setCashData(prev => ({ ...prev, amount: e.target.value }))}
+                            className="font-mono text-lg font-black"
+                            placeholder="0"
+                            icon={<Banknote className="h-4 w-4 opacity-50" />}
+                        />
+                        <LabeledSelect
+                            label="Cuenta de Destino"
+                            value={cashData.treasuryAccountId}
+                            onChange={(v) => setCashData(prev => ({ ...prev, treasuryAccountId: v }))}
+                            options={treasuryAccounts.map(a => ({ label: a.name, value: a.id.toString() }))}
+                            placeholder="Seleccione cuenta"
+                        />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Fecha</Label>
-                            <Input 
-                                type="date"
-                                value={cashData.date}
-                                onChange={(e) => setCashData(prev => ({ ...prev, date: e.target.value }))}
-                                className={FORM_STYLES.input}
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Referencia (Opcional)</Label>
-                            <Input 
-                                value={cashData.description}
-                                onChange={(e) => setCashData(prev => ({ ...prev, description: e.target.value }))}
-                                className={FORM_STYLES.input}
-                                placeholder="Ej: Aporte inicial"
-                            />
-                        </div>
+                        <PeriodValidationDateInput
+                            label="Fecha"
+                            date={cashData.date ? new Date(cashData.date + 'T12:00:00') : undefined}
+                            onDateChange={(d) => {
+                                if (!d) {
+                                    setCashData(prev => ({ ...prev, date: "" }))
+                                    return
+                                }
+                                setCashData(prev => ({ ...prev, date: d.toISOString().split('T')[0] }))
+                            }}
+                            validationType="accounting"
+                        />
+                        <LabeledInput
+                            label="Referencia (Opcional)"
+                            value={cashData.description}
+                            onChange={(e) => setCashData(prev => ({ ...prev, description: e.target.value }))}
+                            placeholder="Ej: Aporte inicial"
+                        />
                     </div>
                 </div>
             ) : (
                 <div className="space-y-4 py-4 animate-in fade-in slide-in-from-right-4 duration-300">
                     <div className="grid grid-cols-[1.5fr_2fr] gap-4">
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Almacén de Entrada</Label>
-                            <Select 
-                                value={assetData.warehouseId} 
-                                onValueChange={(v) => setAssetData(prev => ({ ...prev, warehouseId: v }))}
-                            >
-                                <SelectTrigger className={FORM_STYLES.input}>
-                                    <SelectValue placeholder="Almacén" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {warehouses.map(w => (
-                                        <SelectItem key={w.id} value={w.id.toString()}>{w.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Producto / Recurso</Label>
+                        <LabeledSelect
+                            label="Almacén de Entrada"
+                            value={assetData.warehouseId}
+                            onChange={(v) => setAssetData(prev => ({ ...prev, warehouseId: v }))}
+                            options={warehouses.map(w => ({ label: w.name, value: w.id.toString() }))}
+                            placeholder="Almacén"
+                        />
+                        <LabeledContainer label="Producto / Recurso">
                             <ProductSelector 
                                 value={assetData.productId}
                                 onChange={(val) => setAssetData(prev => ({ ...prev, productId: val || "" }))}
                                 allowedTypes={["STORABLE", "MANUFACTURABLE"]}
                                 simpleOnly={true}
                             />
-                        </div>
+                        </LabeledContainer>
                     </div>
                     
                     <div className="grid grid-cols-3 gap-4">
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Cantidad</Label>
-                            <Input 
-                                type="number"
-                                value={assetData.quantity}
-                                onChange={(e) => setAssetData(prev => ({ ...prev, quantity: e.target.value }))}
-                                className={cn(FORM_STYLES.input, "font-mono font-bold text-right")}
-                                placeholder="0.00"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Unidad</Label>
-                            <Select 
-                                value={assetData.uomId} 
-                                onValueChange={(v) => setAssetData(prev => ({ ...prev, uomId: v }))}
-                                disabled={productUoMs.length === 0}
-                            >
-                                <SelectTrigger className={FORM_STYLES.input}>
-                                    <SelectValue placeholder="UoM" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {productUoMs.map(u => (
-                                        <SelectItem key={u.id} value={u.id.toString()}>{u.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className={FORM_STYLES.label}>Costo Unitario</Label>
-                            <Input 
-                                type="number"
-                                value={assetData.unitCost}
-                                onChange={(e) => setAssetData(prev => ({ ...prev, unitCost: e.target.value }))}
-                                className={cn(FORM_STYLES.input, "font-mono font-bold text-right border-warning/30 bg-warning/5")}
-                            />
-                        </div>
+                        <LabeledInput
+                            label="Cantidad"
+                            type="number"
+                            value={assetData.quantity}
+                            onChange={(e) => setAssetData(prev => ({ ...prev, quantity: e.target.value }))}
+                            className="font-mono font-bold text-right"
+                            placeholder="0.00"
+                        />
+                        <LabeledSelect
+                            label="Unidad"
+                            value={assetData.uomId}
+                            onChange={(v) => setAssetData(prev => ({ ...prev, uomId: v }))}
+                            disabled={productUoMs.length === 0}
+                            options={productUoMs.map(u => ({ label: u.name, value: u.id.toString() }))}
+                            placeholder="UoM"
+                        />
+                        <LabeledInput
+                            label="Costo Unitario"
+                            type="number"
+                            value={assetData.unitCost}
+                            onChange={(e) => setAssetData(prev => ({ ...prev, unitCost: e.target.value }))}
+                            className="font-mono font-bold text-right border-warning/30 bg-warning/5"
+                        />
                     </div>
 
                     {assetTotalValue > 0 && (

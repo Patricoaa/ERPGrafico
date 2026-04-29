@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { FileIcon, Paintbrush, Printer, FileText, Upload, Plus, X } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { FormSection, LabeledContainer, LabeledInput } from "@/components/shared"
 
 interface WorkOrderMaterialsProps {
     // Phases Enablers
@@ -71,124 +72,188 @@ export function WorkOrderMaterials({
     }
 
     return (
-        <div className="space-y-4">
-            <Label className="uppercase text-xs font-bold text-muted-foreground">Detalles de Producción</Label>
+        <div className="space-y-6">
+            <FormSection title="Especificaciones Técnicas" icon={Paintbrush} />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 
                 {/* Pre-Impresión */}
-                <div className={cn("space-y-3 p-4 rounded-lg border transition-colors", enablePrepress ? "bg-muted/20 border-primary/20" : "bg-muted/5 opacity-70")}>
-                    <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-bold flex items-center gap-2">
-                            <Paintbrush className="h-4 w-4 text-muted-foreground" /> Pre-Impresión
-                        </h4>
-                        <Switch checked={enablePrepress} onCheckedChange={setEnablePrepress} className="scale-75" />
+                <div className={cn(
+                    "relative group p-6 rounded-xl border transition-all duration-300",
+                    enablePrepress 
+                        ? "bg-white shadow-sm border-primary/30 ring-1 ring-primary/5" 
+                        : "bg-muted/30 border-border/40 opacity-60 grayscale-[0.5]"
+                )}>
+                    <FormSection title="Pre-Impresión" icon={Paintbrush} className="pt-0 pb-4" />
+                    
+                    <div className="flex items-center justify-between mb-4 mt-1">
+                        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight">Habilitar Fase</span>
+                        <Switch checked={enablePrepress} onCheckedChange={setEnablePrepress} className="scale-75 data-[state=checked]:bg-primary" />
                     </div>
+
                     {enablePrepress && (
-                        <div className="space-y-3">
-                            <div className="space-y-1">
-                                <Label className="text-xs">Especificaciones</Label>
-                                <Textarea value={prepressSpecs} onChange={e => setPrepressSpecs(e.target.value)} className="min-h-[60px] text-xs" />
+                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="relative group/field">
+                                <label className="absolute -top-2 left-2 px-1 bg-background text-[9px] font-bold uppercase tracking-wider text-muted-foreground transition-colors group-focus-within/field:text-primary z-10">
+                                    Especificaciones
+                                </label>
+                                <Textarea 
+                                    value={prepressSpecs} 
+                                    onChange={e => setPrepressSpecs(e.target.value)} 
+                                    placeholder="Instrucciones de diseño..."
+                                    className="min-h-[80px] text-xs bg-transparent border-border/40 focus:border-primary/40 transition-all resize-none" 
+                                />
                             </div>
-                            <div className="flex items-center justify-between p-2 rounded bg-background border">
-                                <Label className="text-xs">Diseño Requerido</Label>
-                                <Switch checked={designNeeded} onCheckedChange={setDesignNeeded} className="scale-75" />
+
+                            <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/20 border border-border/40">
+                                <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">Diseño Requerido</span>
+                                <Switch checked={designNeeded} onCheckedChange={setDesignNeeded} className="scale-75 data-[state=checked]:bg-primary" />
                             </div>
+
                             {(designNeeded || existingDesignFiles.length > 0) && (
-                                <div className="space-y-3 pt-2 border-t">
-                                    <div className="space-y-2">
-                                        {existingDesignFiles.length > 0 && (
+                                <div className="space-y-3 pt-2 border-t border-dashed">
+                                    {existingDesignFiles.length > 0 && (
+                                        <div className="space-y-1.5">
+                                            <Label className="text-[9px] uppercase text-muted-foreground/80 font-black tracking-widest pl-1">Archivos Originales</Label>
                                             <div className="space-y-1">
-                                                <Label className="text-[10px] uppercase text-muted-foreground font-bold">Archivos del Checkout</Label>
                                                 {existingDesignFiles.map((file, idx) => (
-                                                    <div key={`existing-${idx}`} className="flex items-center justify-between p-1.5 bg-primary/5 rounded text-xs border border-primary/10">
+                                                    <div key={`existing-${idx}`} className="flex items-center justify-between px-2 py-1.5 bg-primary/5 rounded-md text-[11px] border border-primary/20 group/file">
                                                         <div className="flex items-center gap-2 truncate">
                                                             <FileIcon className="h-3 w-3 shrink-0 text-primary" />
-                                                            <span className="truncate font-medium">{file}</span>
+                                                            <span className="truncate font-bold">{file}</span>
                                                         </div>
-                                                        <Button type="button" variant="ghost" size="icon" className="h-5 w-5 hover:text-destructive" onClick={() => removeExistingFile(idx)}>
+                                                        <Button type="button" variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-destructive transition-colors" onClick={() => removeExistingFile(idx)}>
                                                             <X className="h-3 w-3" />
                                                         </Button>
                                                     </div>
                                                 ))}
                                             </div>
-                                        )}
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-1.5">
+                                        {designFiles.length > 0 && <Label className="text-[9px] uppercase text-muted-foreground/80 font-black tracking-widest pl-1">Nuevos Archivos</Label>}
                                         <div className="space-y-1">
-                                            {designFiles.length > 0 && <Label className="text-[10px] uppercase text-muted-foreground font-bold">Nuevos Archivos</Label>}
                                             {designFiles.map((file, idx) => (
-                                                <div key={`new-${idx}`} className="flex items-center justify-between p-1.5 bg-background rounded text-xs border">
+                                                <div key={`new-${idx}`} className="flex items-center justify-between px-2 py-1.5 bg-muted/40 rounded-md text-[11px] border border-border/40">
                                                     <div className="flex items-center gap-2 truncate">
-                                                        <Upload className="h-3 w-3 shrink-0" />
+                                                        <Upload className="h-3 w-3 shrink-0 text-muted-foreground" />
                                                         <span className="truncate">{file.name}</span>
                                                     </div>
-                                                    <Button type="button" variant="ghost" size="icon" className="h-5 w-5" onClick={() => removeNewFile(idx)}>
+                                                    <Button type="button" variant="ghost" size="icon" className="h-5 w-5 hover:text-destructive" onClick={() => removeNewFile(idx)}>
                                                         <X className="h-3 w-3" />
                                                     </Button>
                                                 </div>
                                             ))}
                                         </div>
-                                        <label className="flex items-center gap-2 text-xs text-primary cursor-pointer hover:underline p-1 w-fit">
-                                            <Plus className="h-3 w-3" /> Agregar archivo
+                                        <label className="flex items-center justify-center gap-2 py-2 border border-dashed border-primary/30 rounded-lg text-[10px] text-primary font-black uppercase tracking-widest cursor-pointer hover:bg-primary/5 transition-all">
+                                            <Plus className="h-3 w-3" /> Adjuntar Diseño
                                             <input type="file" multiple className="hidden" onChange={handleFileChange} />
                                         </label>
                                     </div>
                                 </div>
                             )}
-                            <div className="flex items-center justify-between p-2 rounded bg-background border">
-                                <Label className="text-xs">Folio</Label>
-                                <Switch checked={folioEnabled} onCheckedChange={setFolioEnabled} className="scale-75" />
+
+                            <div className="space-y-3 pt-2 border-t border-dashed">
+                                <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/20 border border-border/40">
+                                    <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">Numeración (Folio)</span>
+                                    <Switch checked={folioEnabled} onCheckedChange={setFolioEnabled} className="scale-75 data-[state=checked]:bg-primary" />
+                                </div>
+                                {folioEnabled && (
+                                    <div className="relative group/folio animate-in zoom-in-95 duration-200">
+                                        <label className="absolute -top-2 left-2 px-1 bg-background text-[9px] font-bold uppercase tracking-wider text-muted-foreground z-10">
+                                            N° Inicial
+                                        </label>
+                                        <Input 
+                                            placeholder="Ej: 0001" 
+                                            value={folioStart} 
+                                            onChange={e => setFolioStart(e.target.value)} 
+                                            className="h-9 text-xs bg-transparent border-border/40 focus:border-primary/40 font-mono font-bold" 
+                                        />
+                                    </div>
+                                )}
                             </div>
-                            {folioEnabled && (
-                                <Input placeholder="N° Inicial" value={folioStart} onChange={e => setFolioStart(e.target.value)} className="h-8 text-xs" />
-                            )}
                         </div>
                     )}
                 </div>
 
                 {/* Impresión */}
-                <div className={cn("space-y-3 p-4 rounded-lg border transition-colors", enablePress ? "bg-muted/20 border-primary/20" : "bg-muted/5 opacity-70")}>
-                    <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-bold flex items-center gap-2">
-                            <Printer className="h-4 w-4 text-muted-foreground" /> Impresión
-                        </h4>
-                        <Switch checked={enablePress} onCheckedChange={setEnablePress} className="scale-75" />
+                <div className={cn(
+                    "relative group p-6 rounded-xl border transition-all duration-300",
+                    enablePress 
+                        ? "bg-white shadow-sm border-primary/30 ring-1 ring-primary/5" 
+                        : "bg-muted/30 border-border/40 opacity-60 grayscale-[0.5]"
+                )}>
+                    <FormSection title="Impresión" icon={Printer} className="pt-0 pb-4" />
+
+                    <div className="flex items-center justify-between mb-4 mt-1">
+                        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight">Habilitar Fase</span>
+                        <Switch checked={enablePress} onCheckedChange={setEnablePress} className="scale-75 data-[state=checked]:bg-primary" />
                     </div>
+
                     {enablePress && (
-                        <div className="space-y-3">
-                            <div className="space-y-1">
-                                <Label className="text-xs">Especificaciones</Label>
-                                <Textarea value={pressSpecs} onChange={e => setPressSpecs(e.target.value)} className="min-h-[60px] text-xs" />
+                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="relative group/field">
+                                <label className="absolute -top-2 left-2 px-1 bg-background text-[9px] font-bold uppercase tracking-wider text-muted-foreground transition-colors group-focus-within/field:text-primary z-10">
+                                    Especificaciones
+                                </label>
+                                <Textarea 
+                                    value={pressSpecs} 
+                                    onChange={e => setPressSpecs(e.target.value)} 
+                                    placeholder="Tintas, papel, terminaciones..."
+                                    className="min-h-[80px] text-xs bg-transparent border-border/40 focus:border-primary/40 transition-all resize-none" 
+                                />
                             </div>
-                            <div className="grid grid-cols-3 gap-1">
-                                {['offset', 'digital', 'especial'].map(type => (
-                                    <Button
-                                        key={type}
-                                        type="button"
-                                        variant={printType === type ? "default" : "outline"}
-                                        size="sm"
-                                        className="h-7 text-[10px] capitalize"
-                                        onClick={() => setPrintType(type)}
-                                    >
-                                        {type}
-                                    </Button>
-                                ))}
+
+                            <div className="space-y-2">
+                                <span className="text-[9px] uppercase text-muted-foreground font-black tracking-widest pl-1">Tecnología</span>
+                                <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/30 rounded-lg border border-border/40">
+                                    {['offset', 'digital', 'especial'].map(type => (
+                                        <Button
+                                            key={type}
+                                            type="button"
+                                            variant={printType === type ? "default" : "ghost"}
+                                            size="sm"
+                                            className={cn(
+                                                "h-7 text-[10px] uppercase font-black tracking-tight transition-all",
+                                                printType === type ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-primary/5 hover:text-primary"
+                                            )}
+                                            onClick={() => setPrintType(type)}
+                                        >
+                                            {type}
+                                        </Button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     )}
                 </div>
 
                 {/* Post-Impresión */}
-                <div className={cn("space-y-3 p-4 rounded-lg border transition-colors", enablePostpress ? "bg-muted/20 border-primary/20" : "bg-muted/5 opacity-70")}>
-                    <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-bold flex items-center gap-2">
-                            <FileText className="h-4 w-4 text-muted-foreground" /> Post-Impresión
-                        </h4>
-                        <Switch checked={enablePostpress} onCheckedChange={setEnablePostpress} className="scale-75" />
+                <div className={cn(
+                    "relative group p-6 rounded-xl border transition-all duration-300",
+                    enablePostpress 
+                        ? "bg-white shadow-sm border-primary/30 ring-1 ring-primary/5" 
+                        : "bg-muted/30 border-border/40 opacity-60 grayscale-[0.5]"
+                )}>
+                    <FormSection title="Post-Impresión" icon={FileText} className="pt-0 pb-4" />
+
+                    <div className="flex items-center justify-between mb-4 mt-1">
+                        <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight">Habilitar Fase</span>
+                        <Switch checked={enablePostpress} onCheckedChange={setEnablePostpress} className="scale-75 data-[state=checked]:bg-primary" />
                     </div>
+
                     {enablePostpress && (
-                        <div className="space-y-3">
-                            <div className="space-y-1">
-                                <Label className="text-xs">Especificaciones</Label>
-                                <Textarea value={postpressSpecs} onChange={e => setPostpressSpecs(e.target.value)} placeholder="Acabados, laminado, troquel, etc." className="min-h-[60px] text-xs" />
+                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <div className="relative group/field">
+                                <label className="absolute -top-2 left-2 px-1 bg-background text-[9px] font-bold uppercase tracking-wider text-muted-foreground transition-colors group-focus-within/field:text-primary z-10">
+                                    Especificaciones
+                                </label>
+                                <Textarea 
+                                    value={postpressSpecs} 
+                                    onChange={e => setPostpressSpecs(e.target.value)} 
+                                    placeholder="Acabados, laminado, troquel, etc."
+                                    className="min-h-[80px] text-xs bg-transparent border-border/40 focus:border-primary/40 transition-all resize-none" 
+                                />
                             </div>
                         </div>
                     )}

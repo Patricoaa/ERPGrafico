@@ -6,22 +6,20 @@ import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { getMyProfile, changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollPdfs } from "@/lib/profile/api"
+import { getMyProfile, changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollPdfs } from '@/features/profile/api/profileApi'
 import type { MyProfile } from "@/types/profile"
 import type { Payroll, SalaryAdvance, PayrollPayment } from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ColumnDef } from "@tanstack/react-table"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { FORM_STYLES } from "@/lib/styles"
+import { Form, FormField } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import {
@@ -30,11 +28,11 @@ import {
     FileDown, Download, Eye, Clock, CheckCircle2, FileText,
     ChevronDown, ChevronRight
 } from "lucide-react"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { EmptyState, LabeledInput } from "@/components/shared"
 import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
 import { PartnerProfileTab } from "./PartnerProfileTab"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { Skeleton } from "@/components/ui/skeleton"
+import { CardSkeleton } from "@/components/shared"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 // --- Schemas ---
@@ -96,28 +94,9 @@ export function ProfileView({ activeTab, initialProfile }: ProfileViewProps) {
     if (loading) {
         return (
             <div className="space-y-6">
-                <Card className="border shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b bg-muted/30 flex items-center gap-3">
-                        <Skeleton className="h-10 w-10 rounded-lg" />
-                        <div className="space-y-2">
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-2 w-24" />
-                        </div>
-                    </div>
-                    <CardContent className="p-6 space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {[1, 2, 3, 4].map(i => (
-                                <div key={i} className="space-y-2">
-                                    <Skeleton className="h-3 w-16" />
-                                    <Skeleton className="h-10 w-full rounded-lg" />
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+                <CardSkeleton count={1} variant="grid" className="h-[300px]" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Skeleton className="h-[200px] w-full rounded-lg" />
-                    <Skeleton className="h-[200px] w-full rounded-lg" />
+                    <CardSkeleton count={2} variant="grid" className="h-[200px]" />
                 </div>
             </div>
         )
@@ -202,7 +181,7 @@ function AccountTab({ user }: { user: MyProfile['user'] }) {
                             <InfoField icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={user.email || "Sin email"} />
                             <InfoField icon={<BadgeCheck className="h-3.5 w-3.5" />} label="Nombre Completo" value={`${user.first_name || ''} ${user.last_name || ''}`.trim() || "Sin nombre"} />
                             <div className="space-y-1.5">
-                                <span className={FORM_STYLES.label}>Estado</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Estado</span>
                                 <div>
                                     <Badge variant="outline" className={cn(
                                         "text-[9px] uppercase font-bold",
@@ -227,13 +206,13 @@ function AccountTab({ user }: { user: MyProfile['user'] }) {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-1.5">
-                                <span className={FORM_STYLES.label}>Rol del Sistema</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Rol del Sistema</span>
                                 <div>
                                     <Badge className="text-[9px] uppercase font-bold">{primaryRole}</Badge>
                                 </div>
                             </div>
                             <div className="space-y-1.5">
-                                <span className={FORM_STYLES.label}>Equipos Funcionales</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Equipos Funcionales</span>
                                 <div className="flex flex-wrap gap-1.5">
                                     {functionalGroups.length > 0 ? functionalGroups.map(g => (
                                         <Badge key={g} variant="outline" className="text-[9px]">{g}</Badge>
@@ -271,7 +250,7 @@ function AccountTab({ user }: { user: MyProfile['user'] }) {
 function InfoField({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
     return (
         <div className="space-y-1.5">
-            <span className={FORM_STYLES.label}>{label}</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
             <div className="flex items-center gap-2 h-10 px-3 rounded-lg border bg-muted/20 text-sm font-medium text-foreground">
                 <span className="text-muted-foreground">{icon}</span>
                 {value}
@@ -318,35 +297,35 @@ function PasswordChangeCard() {
             <CardContent className="p-6">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                        <FormField control={form.control} name="current_password" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Contraseña Actual</FormLabel>
-                                <FormControl>
-                                    <Input {...field} type="password" placeholder="••••••••" className={FORM_STYLES.input} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                        <FormField control={form.control} name="current_password" render={({ field, fieldState }) => (
+                            <LabeledInput
+                                {...field}
+                                label="Contraseña Actual"
+                                type="password"
+                                placeholder="••••••••"
+                                error={fieldState.error?.message}
+                            />
                         )} />
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={form.control} name="new_password" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Nueva Contraseña</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} type="password" placeholder="••••••••" className={FORM_STYLES.input} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            <FormField control={form.control} name="new_password" render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    {...field}
+                                    label="Nueva Contraseña"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    error={fieldState.error?.message}
+                                />
                             )} />
 
-                            <FormField control={form.control} name="confirm_password" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Confirmar Contraseña</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} type="password" placeholder="••••••••" className={FORM_STYLES.input} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            <FormField control={form.control} name="confirm_password" render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    {...field}
+                                    label="Confirmar Contraseña"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    error={fieldState.error?.message}
+                                />
                             )} />
                         </div>
 
@@ -651,7 +630,7 @@ function PersonalTab({
                                         <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="AFP" value={employee.afp_detail?.name || "—"} />
                                         <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Sistema Salud" value={employee.salud_type_display || "—"} />
                                         <div className="space-y-1.5">
-                                            <span className={FORM_STYLES.label}>Sueldo Base</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Sueldo Base</span>
                                             <div className="flex items-center gap-2 h-10 px-3 rounded-lg border bg-muted/20 text-sm font-bold text-foreground">
                                                 <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
                                                 <MoneyDisplay amount={parseFloat(employee.base_salary || "0")} />
@@ -794,51 +773,41 @@ function PinChangeCard() {
             <CardContent className="p-6">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                        <FormField control={form.control} name="current_password" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Contraseña Actual</FormLabel>
-                                <FormControl>
-                                    <Input {...field} type="password" placeholder="••••••••" className={FORM_STYLES.input} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                        <FormField control={form.control} name="current_password" render={({ field, fieldState }) => (
+                            <LabeledInput
+                                {...field}
+                                label="Contraseña Actual"
+                                type="password"
+                                placeholder="••••••••"
+                                error={fieldState.error?.message}
+                            />
                         )} />
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={form.control} name="new_pin" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Nuevo PIN (máx 4 dígitos)</FormLabel>
-                                    <FormControl>
-                                        <Input 
-                                            {...field} 
-                                            type="password" 
-                                            pattern="\d*" 
-                                            inputMode="numeric" 
-                                            placeholder="••••" 
-                                            className={FORM_STYLES.input} 
-                                            maxLength={4}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            <FormField control={form.control} name="new_pin" render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    {...field}
+                                    label="Nuevo PIN (máx 4 dígitos)"
+                                    type="password"
+                                    pattern="\d*"
+                                    inputMode="numeric"
+                                    placeholder="••••"
+                                    maxLength={4}
+                                    error={fieldState.error?.message}
+                                />
                             )} />
 
-                            <FormField control={form.control} name="confirm_pin" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Confirmar PIN</FormLabel>
-                                    <FormControl>
-                                        <Input 
-                                            {...field} 
-                                            type="password" 
-                                            pattern="\d*" 
-                                            inputMode="numeric" 
-                                            placeholder="••••" 
-                                            className={FORM_STYLES.input} 
-                                            maxLength={4}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            <FormField control={form.control} name="confirm_pin" render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    {...field}
+                                    label="Confirmar PIN"
+                                    type="password"
+                                    pattern="\d*"
+                                    inputMode="numeric"
+                                    placeholder="••••"
+                                    maxLength={4}
+                                    error={fieldState.error?.message}
+                                />
                             )} />
                         </div>
 

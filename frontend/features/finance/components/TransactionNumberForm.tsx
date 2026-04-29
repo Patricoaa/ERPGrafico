@@ -10,14 +10,10 @@ import {
     FormControl,
     FormField,
     FormItem,
-    FormLabel,
-    FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { FORM_STYLES } from "@/lib/styles"
+import { LabeledInput, FormFooter, CancelButton } from "@/components/shared"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 const schema = z.object({
@@ -81,18 +77,16 @@ export function TransactionNumberForm({
             title="Registrar N° de Transacción"
             description="Ingrese el número de comprobante o transacción bancaria."
             footer={
-                <>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                    >
-                        Cancelar
-                    </Button>
-                    <ActionSlideButton type="submit" form="transaction-number-form" disabled={loading}>
-                        {loading ? "Guardando..." : "Guardar"}
-                    </ActionSlideButton>
-                </>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <ActionSlideButton type="submit" form="transaction-number-form" loading={loading}>
+                                Guardar
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
             }
         >
             <Form {...form}>
@@ -100,18 +94,17 @@ export function TransactionNumberForm({
                     <FormField
                         control={form.control}
                         name="transaction_number"
-                        render={({ field }) => (
+                        render={({ field, fieldState }) => (
                             <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>N° de Transacción</FormLabel>
                                 <FormControl>
-                                    <Input
+                                    <LabeledInput
+                                        label="N° de Transacción"
                                         placeholder="Ex: 543210"
-                                        className={FORM_STYLES.input}
-                                        {...field}
+                                        error={fieldState.error?.message}
                                         autoFocus
+                                        {...field}
                                     />
                                 </FormControl>
-                                <FormMessage />
                             </FormItem>
                         )}
                     />

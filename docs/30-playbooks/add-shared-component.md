@@ -73,7 +73,7 @@ if (!items.length) return <EmptyState... />
 
 ### 6. Write contract entry
 
-Edit `20-contracts/component-contracts.md`:
+Edit `20-contracts/component-contracts.md` (o un archivo dedicado `component-*.md` si es una familia grande):
 - Add section under 🟢 Stable (or 🟡 Beta).
 - Full prop table.
 - Usage example.
@@ -111,7 +111,7 @@ npm run test components/shared/[Name]
 
 ## Definition of done
 
-- [ ] Documented in component-contracts.md.
+- [ ] Documented in component-contracts.md (or dedicated file).
 - [ ] Three states handled.
 - [ ] Tests cover all variants.
 - [ ] All known consumers migrated.

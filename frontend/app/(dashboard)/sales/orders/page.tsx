@@ -1,10 +1,8 @@
 "use client"
 
 import { use, lazy, Suspense, useState } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageTabs } from "@/components/shared/PageTabs"
+import { PageTabs, TableSkeleton, PageHeader } from "@/components/shared"
 import { Tabs } from "@/components/ui/tabs"
-import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 const SalesOrdersClientView = lazy(() =>
@@ -56,7 +54,7 @@ export default function SalesOrdersPage({ searchParams }: PageProps) {
                     <PageTabs tabs={tabs} activeValue={viewMode} />
                 </div>
                 
-                <Suspense fallback={<LoadingFallback />}>
+                <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                     <SalesOrdersClientView 
                         viewMode={viewMode} 
                         isCreateModalOpen={isCreateModalOpen}

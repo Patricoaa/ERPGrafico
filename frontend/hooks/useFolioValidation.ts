@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import api from '@/lib/api'
 
 export interface FolioValidationResult {
@@ -15,42 +15,38 @@ export interface FolioValidationResult {
     }
 }
 
+interface FolioValidationOptions {
+    excludeId?: number
+    contactId?: number
+    isPurchase?: boolean
+}
+
 export function useFolioValidation() {
     const [isValidating, setIsValidating] = useState(false)
     const [validationResult, setValidationResult] = useState<FolioValidationResult | null>(null)
 
-    // Debounce helper
-    const debounce = <T extends (...args: any[]) => any>(
-        func: T,
-        wait: number
-    ): ((...args: Parameters<T>) => void) => {
-        let timeout: NodeJS.Timeout | null = null
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const reqIdRef = useRef(0)
 
-        return (...args: Parameters<T>) => {
-            if (timeout) clearTimeout(timeout)
-            timeout = setTimeout(() => func(...args), wait)
-        }
-    }
+    useEffect(() => () => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }, [])
 
-    const validateFolioImmediate = async (
+    const validateFolioImmediate = useCallback(async (
         number: string,
         dteType: string,
-        options: {
-            excludeId?: number,
-            contactId?: number,
-            isPurchase?: boolean
-        } = {}
+        options: FolioValidationOptions = {}
     ) => {
-        // Skip validation for empty or draft numbers
         if (!number || number.trim() === '' || number === 'Draft') {
             setValidationResult(null)
             return
         }
 
+        const myReqId = ++reqIdRef.current
         setIsValidating(true)
         try {
-            const params: any = { 
-                number, 
+            const params: Record<string, unknown> = {
+                number,
                 dte_type: dteType,
                 is_purchase: options.isPurchase ? 'true' : 'false'
             }
@@ -58,25 +54,36 @@ export function useFolioValidation() {
             if (options.contactId) params.contact_id = options.contactId
 
             const response = await api.get('/billing/invoices/check_folio/', { params })
+            if (myReqId !== reqIdRef.current) return
             setValidationResult(response.data)
         } catch (error) {
+            if (myReqId !== reqIdRef.current) return
             console.error('Error validating folio:', error)
             setValidationResult({
                 is_unique: false,
                 message: 'Error al validar el folio. Por favor, intente nuevamente.'
             })
         } finally {
-            setIsValidating(false)
+            if (myReqId === reqIdRef.current) {
+                setIsValidating(false)
+            }
         }
-    }
+    }, [])
 
-    // Memoized debounced version
-    const validateFolio = useMemo(
-        () => debounce(validateFolioImmediate, 500),
-        []
-    )
+    const validateFolio = useCallback((
+        number: string,
+        dteType: string,
+        options: FolioValidationOptions = {}
+    ) => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current)
+        timeoutRef.current = setTimeout(() => {
+            validateFolioImmediate(number, dteType, options)
+        }, 500)
+    }, [validateFolioImmediate])
 
     const clearValidation = useCallback(() => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current)
+        reqIdRef.current++
         setValidationResult(null)
         setIsValidating(false)
     }, [])

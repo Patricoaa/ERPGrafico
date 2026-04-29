@@ -2,21 +2,21 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from "react"
 import dynamic from "next/dynamic"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { FormSkeleton } from "@/components/shared"
 
 const WorkOrderWizard = dynamic(() => import("@/features/production/components/WorkOrderWizard").then(mod => mod.WorkOrderWizard), {
     ssr: false,
-    loading: () => <LoadingFallback message="Cargando Gestor de OT..." />
+    loading: () => <FormSkeleton />
 })
 
 const ContactModal = dynamic(() => import("@/features/contacts/components/ContactModal"), {
     ssr: false,
-    loading: () => <LoadingFallback message="Cargando Ficha..." />
+    loading: () => <FormSkeleton />
 })
 
 const TreasuryAccountModal = dynamic(() => import("@/features/treasury/components/TreasuryAccountModal").then(mod => mod.TreasuryAccountModal), {
     ssr: false,
-    loading: () => <LoadingFallback message="Cargando Cuenta..." />
+    loading: () => <FormSkeleton />
 })
 
 interface GlobalModalActionsContextType {

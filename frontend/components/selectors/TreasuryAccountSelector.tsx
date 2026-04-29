@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronsUpDown, Loader2, Search, Banknote, CreditCard, Wallet, Landmark } from "lucide-react"
+import { Check, ChevronDown, Loader2, Search, Banknote, CreditCard, Wallet, Landmark } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -26,13 +26,15 @@ interface TreasuryAccountSelectorProps {
     paymentMethod?: 'CASH' | 'CARD' | 'TRANSFER'
 
     // Legacy filter (optional)
-    type?: 'BANK' | 'CASH'
+    type?: 'BANK' | 'CASH' | 'CHECKING' | 'CREDIT_CARD'
 
     // Exclude specific account
     excludeId?: number
 
     // Optional: Return full account object on select
     onSelect?: (account: any) => void
+    label?: string
+    error?: string
 }
 
 export function TreasuryAccountSelector({
@@ -45,7 +47,9 @@ export function TreasuryAccountSelector({
     paymentMethod,
     type,
     excludeId,
-    onSelect
+    onSelect,
+    label,
+    error
 }: TreasuryAccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [search, setSearch] = useState("")
@@ -72,11 +76,24 @@ export function TreasuryAccountSelector({
 
     const getIcon = (accountType: string) => {
         switch (accountType) {
-            case 'BANK': return <Landmark className="h-4 w-4" />
+            case 'CHECKING': return <Landmark className="h-4 w-4" />
             case 'CASH': return <Wallet className="h-4 w-4" />
-            case 'CARD': return <CreditCard className="h-4 w-4" />
+            case 'CREDIT_CARD':
+            case 'DEBIT_CARD': return <CreditCard className="h-4 w-4" />
+            case 'BRIDGE':
+            case 'MERCHANT': return <Loader2 className="h-4 w-4" />
             default: return <Banknote className="h-4 w-4" />
         }
+    }
+
+    const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+        'CASH': 'Caja Física',
+        'CHECKING': 'Banco',
+        'DEBIT_CARD': 'Débito Empresa',
+        'CREDIT_CARD': 'Crédito Empresa',
+        'CHECKBOOK': 'Chequera',
+        'BRIDGE': 'Clearing',
+        'MERCHANT': 'Recaudadora',
     }
 
     const handleSelect = (account: any) => {
@@ -86,31 +103,41 @@ export function TreasuryAccountSelector({
     }
 
     return (
+        <div className="relative w-full flex flex-col group">
+            <fieldset 
+                className={cn(
+                    "notched-field w-full group transition-all",
+                    open && "focused",
+                    error && "error",
+                    disabled && "opacity-50 cursor-not-allowed bg-muted/10"
+                )}
+            >
+                {label && (
+                    <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
+                        {label}
+                    </legend>
+                )}
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
-                    variant="outline"
+                    variant="ghost"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full justify-between h-auto py-2 px-3"
+                    className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                     disabled={disabled}
                 >
                     {selectedAccount ? (
-                        <div className="flex items-center gap-2 truncate">
-                            <div className="p-1.5 rounded-md bg-primary/10 text-primary">
-                                {getIcon(selectedAccount.account_type)}
-                            </div>
-                            <div className="flex flex-col items-start truncate">
-                                <span className="font-medium text-sm leading-tight">{selectedAccount.name}</span>
-                                <span className="text-[10px] text-muted-foreground leading-tight">
-                                    {selectedAccount.account_type} • {formatCurrency(selectedAccount.current_balance || 0)}
-                                </span>
-                            </div>
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <span className="text-primary shrink-0">{getIcon(selectedAccount.account_type)}</span>
+                            <span className="font-medium text-sm truncate">{selectedAccount.name}</span>
+                            <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
+                                • {formatCurrency(selectedAccount.current_balance || 0)}
+                            </span>
                         </div>
                     ) : (
-                        <span className="text-muted-foreground">{placeholder}</span>
+                        <span className="text-muted-foreground truncate">{placeholder}</span>
                     )}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
@@ -149,7 +176,9 @@ export function TreasuryAccountSelector({
                                 <div className="flex flex-col flex-1">
                                     <div className="flex items-center justify-between">
                                         <span className="font-medium">{account.name}</span>
-                                        <span className="text-xs text-muted-foreground ml-2">{account.account_type}</span>
+                                        <span className="text-xs text-muted-foreground ml-2">
+                                            {ACCOUNT_TYPE_LABELS[account.account_type] || account.account_type}
+                                        </span>
                                     </div>
                                     {account.current_balance !== undefined && account.current_balance !== null && (
                                         <span className="text-xs text-muted-foreground">
@@ -163,6 +192,13 @@ export function TreasuryAccountSelector({
                 </div>
             </PopoverContent>
         </Popover>
+        </fieldset>
+            {error && (
+                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
+                    {error}
+                </p>
+            )}
+        </div>
     )
 }
 

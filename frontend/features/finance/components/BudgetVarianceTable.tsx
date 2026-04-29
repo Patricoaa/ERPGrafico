@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TableSkeleton } from "@/components/shared";
 
 export interface BudgetVarianceNode {
     id: number;
@@ -134,10 +134,8 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
 export const BudgetVarianceTable: React.FC<BudgetVarianceTableProps> = ({ data, loading }) => {
     if (loading) {
         return (
-            <div className="space-y-2 p-4">
-                {Array.from({ length: 8 }).map((_, i) => (
-                    <Skeleton key={i} className="h-10 w-full rounded" />
-                ))}
+            <div className="p-4">
+                <TableSkeleton rows={8} columns={7} />
             </div>
         );
     }

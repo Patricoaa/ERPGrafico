@@ -1,10 +1,7 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
 import Link from "next/link"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { PageTabs, TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { FileText } from "lucide-react"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -34,7 +31,17 @@ export default async function HRPage({ searchParams }: PageProps) {
         { value: "absences", label: "Inasistencias", iconName: "calendar-off", href: "/hr?view=absences" },
         { value: "advances", label: "Anticipos", iconName: "hand-coins", href: "/hr?view=advances" },
         { value: "payrolls", label: "Liquidaciones", iconName: "file-spreadsheet", href: "/hr?view=payrolls" },
-        { value: "config", label: "Config", iconName: "settings", href: "/hr?view=config" },
+        { 
+            value: "config", 
+            label: "Config", 
+            iconName: "settings", 
+            href: "/hr?view=config",
+            subTabs: [
+                { value: "global", label: "Globales", href: "/hr?view=config&tab=global", iconName: "settings-2" },
+                { value: "concepts", label: "Conceptos", href: "/hr?view=config&tab=concepts", iconName: "alert-circle" },
+                { value: "previsional", label: "Previsión", href: "/hr?view=config&tab=previsional", iconName: "loader-2" }
+            ]
+        },
     ]
 
     const getHeaderConfig = () => {
@@ -87,10 +94,10 @@ export default async function HRPage({ searchParams }: PageProps) {
                 {headerChildren}
             </PageHeader>
 
-            <PageTabs tabs={tabs} activeValue={viewMode} />
+            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={viewMode === 'config' ? configTab : undefined} />
 
             <div className="pt-2">
-                <Suspense fallback={<LoadingFallback />}>
+                <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                     {viewMode === 'employees' && <EmployeesView createAction={createAction} />}
                     {viewMode === 'absences' && <AbsencesView createAction={createAction} />}
                     {viewMode === 'advances' && <AdvancesView createAction={createAction} />}

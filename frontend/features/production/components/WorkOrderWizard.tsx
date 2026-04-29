@@ -51,14 +51,7 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import dynamic from "next/dynamic"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { EmptyState } from "@/components/shared/EmptyState"
-
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { useAuth } from "@/contexts/AuthContext"
-import { TaskActionCard } from "@/features/workflow/components/TaskActionCard"
-import { MaterialAssignmentTabs } from "./MaterialAssignmentTabs"
+import { FormSkeleton, Skeleton, LabeledSelect } from "@/components/shared"
 import {
     Select,
     SelectContent,
@@ -66,17 +59,24 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { EmptyState } from "@/components/shared/EmptyState"
+
+import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { useAuth } from "@/contexts/AuthContext"
+import { TaskActionCard } from "@/features/workflow/components/TaskActionCard"
+import { MaterialAssignmentTabs } from "./MaterialAssignmentTabs"
 import { WizardProcessSidebar } from "./WizardProcessSidebar"
-import { completeTask } from "@/lib/workflow/api"
+import { completeTask } from '@/features/workflow/api/workflowApi'
 import { motion, AnimatePresence } from "framer-motion"
 import { WizardHeader } from "./WizardHeader"
 import { WizardStickyFooter } from "./WizardStickyFooter"
 import { WizardRightSidebar } from "./WizardRightSidebar"
 import { RectificationStep } from "./steps/RectificationStep"
-import type { 
-    WorkOrder, 
-    WorkOrderMaterial, 
-    WorkOrderTask, 
+import type {
+    WorkOrder,
+    WorkOrderMaterial,
+    WorkOrderTask,
     WorkOrderStage,
     ProductMinimal,
     UoM,
@@ -87,7 +87,7 @@ import type {
 
 const WorkOrderForm = dynamic(() => import("@/features/production/components/forms/WorkOrderForm").then(mod => mod.WorkOrderForm), {
     ssr: false,
-    loading: () => <LoadingFallback message="Cargando formulario..." />
+    loading: () => <FormSkeleton />
 })
 
 // File validation constants
@@ -353,7 +353,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [open, viewingStepIndex, isViewingCurrentStage, order, actualStepIndex, transitioning, pendingTasks, canApproveAll])
 
-    const handleTransition = async (nextStageId: string, data: Record<string, unknown> = {}) => { 
+    const handleTransition = async (nextStageId: string, data: Record<string, unknown> = {}) => {
         const currentOrder = order;
         if (!currentOrder) return;
 
@@ -698,32 +698,29 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         <div className="flex-1 overflow-y-auto min-h-0 relative">
                             {/* Mobile Navigation Dropdown */}
                             <div className="md:hidden sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-3 mb-4">
-                                <Select
+                                <LabeledSelect
                                     value={STAGES[viewingStepIndex]?.id}
-                                    onValueChange={(val) => {
+                                    onChange={(val) => {
                                         const idx = STAGES.findIndex(s => s.id === val)
                                         if (idx !== -1) setViewingStepIndex(idx)
                                     }}
-                                >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Seleccionar etapa" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {STAGES.map((s, i) => {
-                                            const isPast = actualStepIndex > i
-                                            const isCurrent = actualStepIndex === i
-                                            return (
-                                                <SelectItem key={s.id} value={s.id} disabled={!isPast && !isCurrent}>
-                                                    <div className="flex items-center gap-2">
-                                                        <s.icon className="h-4 w-4" />
-                                                        <span>{s.label}</span>
-                                                        {isPast && <CheckCircle2 className="h-3 w-3 ml-2 text-success" />}
-                                                    </div>
-                                                </SelectItem>
+                                    placeholder="Seleccionar etapa"
+                                    options={STAGES.map((s, i) => {
+                                        const isPast = actualStepIndex > i
+                                        const isCurrent = actualStepIndex === i
+                                        return {
+                                            value: s.id,
+                                            disabled: !isPast && !isCurrent,
+                                            label: (
+                                                <div className="flex items-center gap-2">
+                                                    <s.icon className="h-4 w-4" />
+                                                    <span>{s.label}</span>
+                                                    {isPast && <CheckCircle2 className="h-3 w-3 ml-2 text-success" />}
+                                                </div>
                                             )
-                                        })}
-                                    </SelectContent>
-                                </Select>
+                                        }
+                                    }) as any}
+                                />
                             </div>
 
                             <AnimatePresence mode="wait">
@@ -751,7 +748,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                     <thead className="bg-muted/50">
                                                                         <tr>
                                                                             <th className="p-2 text-left">Componente</th>
-                                                                            <th className="p-2 text-right">Cant. Planificada</th>
+                                                                            <th className="p-2 text-right">Cantidad Planificada</th>
                                                                             <th className="p-2 text-left">UoM</th>
                                                                             <th className="p-2 text-right">Costo Total</th>
                                                                             <th className="p-2 text-left">Origen</th>
@@ -780,8 +777,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                 <td className="p-2 text-right font-bold">{formatCurrency(m.total_cost)}</td>
                                                                                 <td className="p-2">
                                                                                     <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                                                        {m.source}
-                                                    </span>
+                                                                                        {m.source}
+                                                                                    </span>
                                                                                 </td>
                                                                                 <td className="p-2">
                                                                                     {m.source === 'MANUAL' && isViewingCurrentStage && (
@@ -852,9 +849,14 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                                                 {v.variant_display_name || v.name}
                                                                                                             </SelectItem>
                                                                                                         ))
+                                                                                                    ) : loadingVariants ? (
+                                                                                                        <div className="p-2 space-y-2">
+                                                                                                            <Skeleton className="h-6 w-full" />
+                                                                                                            <Skeleton className="h-6 w-full" />
+                                                                                                        </div>
                                                                                                     ) : (
                                                                                                         <div className="p-2 text-xs text-center italic">
-                                                                                                            {loadingVariants ? "Cargando variantes..." : "Sin variantes disponibles"}
+                                                                                                            Sin variantes disponibles
                                                                                                         </div>
                                                                                                     )}
                                                                                                 </SelectContent>
@@ -1148,14 +1150,14 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                         </Button>
                                                                     </div>
                                                                 )}
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                                                                            OC-{m.purchase_order_number}
-                                                                        </span>
-                                                                        <span className="text-[10px] font-medium text-muted-foreground">
-                                                                            ({m.supplier_name})
-                                                                        </span>
-                                                                    </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
+                                                                        OC-{m.purchase_order_number}
+                                                                    </span>
+                                                                    <span className="text-[10px] font-medium text-muted-foreground">
+                                                                        ({m.supplier_name})
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     ))}
@@ -1526,7 +1528,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             }}
                             isMaterialApprovalIncomplete={
                                 !!(STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' &&
-                                order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))
+                                    order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))
                             }
                             hasMaterials={orderHasMaterials}
                             isRectificationStep={STAGES[viewingStepIndex]?.id === 'RECTIFICATION'}
@@ -1598,7 +1600,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                 <tr>
                                     <th className="p-2 text-left">Proveedor</th>
                                     <th className="p-2 text-left">Servicio</th>
-                                    <th className="p-2 text-right">Cant.</th>
+                                    <th className="p-2 text-right">Cantidad</th>
                                     <th className="p-2 text-right">P. Bruto</th>
                                     <th className="p-2 text-right">Total Bruto</th>
                                 </tr>

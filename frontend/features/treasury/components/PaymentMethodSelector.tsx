@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Banknote, CreditCard, Building2, ClipboardList } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { CardSkeleton, LabeledContainer } from "@/components/shared"
 
 export interface PaymentMethodValue {
     methodType: 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK' | null
@@ -155,7 +156,13 @@ export function PaymentMethodSelector({
     }
 
     if (loading && availableTypes.length === 0) {
-        return <div className="h-24 w-full animate-pulse bg-muted rounded-lg" />
+        return (
+            <CardSkeleton
+                count={4}
+                gridClassName="grid grid-cols-2 md:grid-cols-4 gap-4"
+                className="h-[100px]"
+            />
+        )
     }
 
     if (availableTypes.length === 0) {
@@ -210,34 +217,33 @@ export function PaymentMethodSelector({
             {/* Sub-selector for specific Method/Account if multiple exist */}
             {value.methodType && currentTypeMethods.length > 1 && (
                 <div className="animate-in fade-in slide-in-from-top-1">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground mb-1.5 block">
-                        Seleccionar {value.methodType === 'TRANSFER' ? 'Cuenta Bancaria' : 'Cuenta / Opción'}
-                    </Label>
-                    <Select
-                        value={value.paymentMethodId || ""}
-                        onValueChange={(val) => {
-                            const selected = currentTypeMethods.find(m => m.id.toString() === val)
-                            if (selected) {
-                                onChange({
-                                    ...value,
-                                    paymentMethodId: selected.id.toString(),
-                                    treasuryAccountId: selected.treasury_account.toString()
-                                })
-                            }
-                        }}
-                    >
-                        <SelectTrigger className="h-10 bg-background">
-                            <SelectValue placeholder="Seleccione opción..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {currentTypeMethods.map(m => (
-                                <SelectItem key={m.id} value={m.id.toString()}>
-                                    {m.name === 'Transferencia Scotiabank' ? 'Scotiabank' : m.name}
-                                    <span className="text-muted-foreground text-xs ml-2">({m.treasury_account_name})</span>
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <LabeledContainer label={`Seleccionar ${value.methodType === 'TRANSFER' ? 'Cuenta Bancaria' : 'Cuenta / Opción'}`}>
+                        <Select
+                            value={value.paymentMethodId || ""}
+                            onValueChange={(val) => {
+                                const selected = currentTypeMethods.find(m => m.id.toString() === val)
+                                if (selected) {
+                                    onChange({
+                                        ...value,
+                                        paymentMethodId: selected.id.toString(),
+                                        treasuryAccountId: selected.treasury_account.toString()
+                                    })
+                                }
+                            }}
+                        >
+                            <SelectTrigger className="h-8 border-0 focus:ring-0 bg-transparent shadow-none px-2">
+                                <SelectValue placeholder="Seleccione opción..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {currentTypeMethods.map(m => (
+                                    <SelectItem key={m.id} value={m.id.toString()}>
+                                        {m.name === 'Transferencia Scotiabank' ? 'Scotiabank' : m.name}
+                                        <span className="text-muted-foreground text-xs ml-2">({m.treasury_account_name})</span>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </LabeledContainer>
                 </div>
             )}
 

@@ -17,10 +17,10 @@ import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn, translateProductType, formatCurrency } from "@/lib/utils"
 import { resolveMediaUrl } from "@/lib/api"
-import { PricingUtils } from "@/lib/pricing"
+import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Checkbox } from "@/components/ui/checkbox"
 import { LayoutGrid, List, Download, Trash2, Archive as ArchiveIcon } from "lucide-react"
-import { ArchivingRestrictionsDialog } from "./ArchivingRestrictionsDialog"
+import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
@@ -507,7 +507,7 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                 onSuccess={refetch}
             />
 
-            <ArchivingRestrictionsDialog
+            <ArchivingRestrictionsModal
                 open={isRestrictionsDialogOpen}
                 onOpenChange={setIsRestrictionsDialogOpen}
                 productName={targetProductName}

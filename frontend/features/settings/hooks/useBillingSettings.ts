@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import type { BillingSettings, BillingSettingsUpdatePayload } from '../types'
@@ -10,6 +10,16 @@ interface UseBillingSettingsReturn {
     saving: boolean
     updateSettings: (payload: BillingSettingsUpdatePayload) => Promise<void>
     refetch: () => Promise<unknown>
+}
+
+export function useBillingSettingsQuery() {
+    const { data: settings, isLoading, refetch } = useQuery({
+        queryKey: BILLING_SETTINGS_QUERY_KEY,
+        queryFn: settingsApi.getBillingSettings,
+        staleTime: 1000 * 60 * 5,
+    })
+
+    return { settings, isLoading, refetch }
 }
 
 /**

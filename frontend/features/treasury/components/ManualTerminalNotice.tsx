@@ -145,7 +145,7 @@ export function ManualTerminalNotice({
     return (
         <div className="flex flex-col items-center gap-8 py-2">
             <div className="flex flex-col items-center gap-4 text-center">
-                <div className="flex h-20 w-20 items-center justify-center rounded-none border-2 border-warning/30 bg-warning/5 shadow-inner">
+                <div className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-warning/30 bg-warning/5 shadow-inner">
                     {config.icon}
                 </div>
                 <div className="space-y-1">
@@ -154,14 +154,14 @@ export function ManualTerminalNotice({
                     </h4>
                     {paymentMethodName && (
                         <div className="flex justify-center">
-                            <span className="rounded-none border border-warning/20 bg-warning/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-warning-foreground">
+                            <span className="rounded-md border border-warning/20 bg-warning/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-warning-foreground"> {/* intentional: badge density */}
                                 {paymentMethodName}
                             </span>
                         </div>
                     )}
                     {reason === "TERMINAL_BYPASS" && failureReason && (
                         <div className="flex justify-center pt-1">
-                            <span className="font-mono text-[10px] text-muted-foreground bg-muted/40 border border-border px-2 py-0.5 rounded-none">
+                            <span className="font-mono text-[10px] text-muted-foreground bg-muted/40 border border-border px-2 py-0.5 rounded-md"> {/* intentional: badge density */}
                                 REF: {failureReason}
                             </span>
                         </div>
@@ -178,7 +178,7 @@ export function ManualTerminalNotice({
                             dangerouslySetInnerHTML={{
                                 __html: line.replace(
                                     "{amount}",
-                                    `<span class="font-mono font-bold text-foreground bg-muted/50 px-1.5 py-0.5 rounded-none border-b-2 border-warning/30">${formattedAmount}</span>`
+                                    `<span class="font-mono font-bold text-foreground bg-muted/50 px-1.5 py-0.5 rounded-md border-b-2 border-warning/30">${formattedAmount}</span>`
                                 ),
                             }}
                         />
@@ -200,7 +200,7 @@ export function ManualTerminalNotice({
                 <div className="flex w-full gap-3">
                     <Button
                         variant="outline"
-                        className="flex-1 rounded-none h-12 border-muted-foreground/20 hover:bg-muted/5 font-bold uppercase tracking-widest text-xs"
+                        className="flex-1 rounded-md h-12 border-muted-foreground/20 hover:bg-muted/5 font-bold uppercase tracking-widest text-xs"
                         onClick={onCancel}
                         disabled={isLoading}
                     >
@@ -229,7 +229,7 @@ export function ManualTerminalNotice({
                 )}
             </div>
 
-            <p className="text-[9px] text-center text-muted-foreground uppercase tracking-[0.2em] font-medium opacity-50">
+            <p className="text-[10px] text-center text-muted-foreground uppercase tracking-[0.2em] font-medium opacity-50"> {/* intentional: badge density */}
                 Operación requiere verificación física del cajero
             </p>
         </div>

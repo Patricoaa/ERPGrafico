@@ -18,7 +18,7 @@ forbidden:
   - skipping permission class
 status: active
 owner: backend-team
-last_review: 2026-04-21
+last_review: 2026-04-23
 ---
 
 # Playbook — Add REST endpoint
@@ -58,7 +58,7 @@ Then migration — see [add-migration.md](add-migration.md).
 ### 4. Service (business logic)
 
 ```python
-# apps/[app]/services/foo_service.py
+# apps/[app]/services.py
 from django.db import transaction
 
 @transaction.atomic

@@ -3,9 +3,9 @@
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { StatusBadge } from "@/components/shared/StatusBadge"
+import { LabeledContainer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormSection, FormFooter, SubmitButton, CancelButton } from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
     Table,
     TableBody,
@@ -14,20 +14,12 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn, formatPlainDate } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
+
 import { useServerDate } from "@/hooks/useServerDate"
 
 interface SaleOrderLine {
@@ -332,28 +324,29 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
             title={`Despachar Orden NV-${order?.number}`}
             description={`Cliente: ${order?.customer_name}`}
             footer={
-                <>
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={handleDispatch}
-                        disabled={
-                            loading ||
-                            submitting ||
-                            !selectedWarehouse ||
-                            order?.lines.some(line => {
-                                const qty = deliveryQuantities[line.id] || 0
-                                if (qty <= 0) return false
-                                const status = getStockStatus(line)
-                                return status?.type === 'error'
-                            })
-                        }
-                    >
-                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Confirmar Despacho
-                    </Button>
-                </>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
+                            <SubmitButton
+                                onClick={handleDispatch}
+                                loading={submitting}
+                                disabled={
+                                    loading ||
+                                    !selectedWarehouse ||
+                                    order?.lines.some(line => {
+                                        const qty = deliveryQuantities[line.id] || 0
+                                        if (qty <= 0) return false
+                                        const status = getStockStatus(line)
+                                        return status?.type === 'error'
+                                    })
+                                }
+                            >
+                                Confirmar Despacho
+                            </SubmitButton>
+                        </>
+                    }
+                />
             }
         >
             {loading ? (
@@ -362,36 +355,33 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                 </div>
             ) : (
                 <div className="space-y-4">
+                    <FormSection title="Configuración de Entrega" icon={Package} />
                     {/* Warehouse and Date Selection */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="warehouse" className={FORM_STYLES.label}>Bodega de Despacho</Label>
-                            <Select
-                                value={selectedWarehouse?.toString() || ''}
-                                onValueChange={(val) => setSelectedWarehouse(Number(val))}
-                            >
-                                <SelectTrigger className={FORM_STYLES.input}>
-                                    <SelectValue placeholder="Seleccione bodega" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {warehouses.map(warehouse => (
-                                        <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
-                                            {warehouse.name} ({warehouse.code})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="delivery-date" className={FORM_STYLES.label}>Fecha de Despacho</Label>
-                            <Input
-                                id="delivery-date"
-                                type="date"
-                                className={FORM_STYLES.input}
-                                value={deliveryDate}
-                                onChange={(e) => setDeliveryDate(e.target.value)}
-                            />
-                        </div>
+                        <LabeledSelect
+                            label="Bodega de Despacho"
+                            value={selectedWarehouse?.toString() || ''}
+                            onChange={(val) => setSelectedWarehouse(Number(val))}
+                            placeholder="Seleccione bodega"
+                            options={warehouses.map(warehouse => ({
+                                value: warehouse.id.toString(),
+                                label: `${warehouse.name} (${warehouse.code})`,
+                            }))}
+                        />
+
+                        <PeriodValidationDateInput
+                            label="Fecha de Despacho"
+                            date={deliveryDate ? new Date(deliveryDate + 'T12:00:00') : undefined}
+                            onDateChange={(d) => {
+                                if (!d) {
+                                    setDeliveryDate("")
+                                    return
+                                }
+                                setDeliveryDate(d.toISOString().split('T')[0])
+                            }}
+                            validationType="accounting"
+                            required
+                        />
                     </div>
 
                     {/* Delivery Status */}
@@ -406,6 +396,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                         />
                     </div>
 
+                    <FormSection title="Detalle de Productos" icon={Package} />
                     {/* Products Table */}
                     <div className="rounded-md border overflow-hidden">
                         <Table>
@@ -429,7 +420,7 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                             <TableCell>
                                                 <div>
                                                     <div className="font-medium">{line.product_name}</div>
-                                                    <div className={cn(FORM_STYLES.input, "cursor-pointer h-10")}>{line.description}</div>
+                                                    <div className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{line.description}</div>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center">
@@ -487,14 +478,14 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <Input
+                                                <LabeledInput
                                                     type="number"
                                                     min="0"
                                                     max={line.quantity_pending}
                                                     step="0.01"
                                                     value={deliveryQuantities[line.id] || 0}
                                                     onChange={(e) => handleQuantityChange(line.id, e.target.value)}
-                                                    className={cn(FORM_STYLES.input, "w-24 text-center mx-auto h-8 font-bold")}
+                                                    className="w-24 text-center mx-auto h-8 font-bold"
                                                 />
                                             </TableCell>
                                             <TableCell>

@@ -8,19 +8,14 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import { Loader2, ArrowRight } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
+import api from "@/lib/api"
+import { SubmitButton } from "@/components/shared/ActionButtons"
 import {
     Form,
-    FormControl,
     FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { FORM_STYLES } from "@/lib/styles"
-import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/AuthContext"
+import { LabeledInput } from "@/components/shared"
 
 const formSchema = z.object({
     username: z.string().min(2, {
@@ -35,7 +30,6 @@ export function LoginForm() {
     const router = useRouter()
     const { login } = useAuth()
     const [error, setError] = useState("")
-    const [isLoading, setIsLoading] = useState(false)
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -47,16 +41,11 @@ export function LoginForm() {
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setError("")
-        setIsLoading(true)
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/token/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(values)
-            })
+            const response = await api.post('token/', values)
 
-            if (response.ok) {
-                const data = (await response.json()) as { access: string; refresh?: string }
+            if (response.status === 200) {
+                const data = response.data as { access: string; refresh?: string }
                 await login(data.access)
                 if (data.refresh) {
                     localStorage.setItem('refresh_token', data.refresh)
@@ -65,10 +54,12 @@ export function LoginForm() {
             } else {
                 setError("Credenciales inválidas")
             }
-        } catch (err) {
-            setError("No se pudo conectar con el servidor. Intente nuevamente.")
-        } finally {
-            setIsLoading(false)
+        } catch (err: any) {
+            if (err.response?.status === 401) {
+                setError("Usuario o contraseña incorrectos")
+            } else {
+                setError("No se pudo conectar con el servidor. Intente nuevamente.")
+            }
         }
     }
 
@@ -107,39 +98,29 @@ export function LoginForm() {
                     <FormField
                         control={form.control}
                         name="username"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Usuario</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        placeholder="nombre de usuario"
-                                        className={cn(FORM_STYLES.input, "h-10")}
-                                        autoComplete="username"
-                                        autoFocus
-                                        {...field}
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                label="Usuario"
+                                placeholder="nombre de usuario"
+                                autoComplete="username"
+                                autoFocus
+                                error={fieldState.error?.message}
+                                {...field}
+                            />
                         )}
                     />
                     <FormField
                         control={form.control}
                         name="password"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>Contraseña</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        type="password"
-                                        placeholder="••••••••"
-                                        className={cn(FORM_STYLES.input, "h-10")}
-                                        autoComplete="current-password"
-                                        {...field}
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                type="password"
+                                label="Contraseña"
+                                placeholder="••••••••"
+                                autoComplete="current-password"
+                                error={fieldState.error?.message}
+                                {...field}
+                            />
                         )}
                     />
 
@@ -156,25 +137,15 @@ export function LoginForm() {
                     )}
 
                     {/* Submit */}
-                    <Button
-                        type="submit"
-                        disabled={isLoading}
-                        className={cn(
-                            "w-full h-10 font-heading font-black uppercase tracking-widest text-xs rounded-sm",
-                            "transition-all duration-300",
-                            "hover:shadow-md hover:shadow-primary/20 hover:scale-[1.01]",
-                            "active:scale-[0.99]"
-                        )}
+                    <SubmitButton
+                        loading={form.formState.isSubmitting}
+
+                        className="w-full"
+                        icon={false}
                     >
-                        {isLoading ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                            <>
-                                Ingresar
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                            </>
-                        )}
-                    </Button>
+                        Ingresar
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                    </SubmitButton>
                 </form>
             </Form>
 

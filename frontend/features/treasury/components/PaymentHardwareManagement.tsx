@@ -3,23 +3,15 @@
 import React, { useState, useEffect } from "react"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { BaseModal, EmptyState, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput } from "@/components/shared"
 import { toast } from "sonner"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import {
-    Plus,
     Settings,
     Trash2,
     Loader2,
-    Cpu,
     Building2,
-    ShieldCheck,
-    Activity,
+
     Smartphone,
     CreditCard,
     Link as LinkIcon,
@@ -27,7 +19,6 @@ import {
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -179,7 +170,7 @@ export function PaymentHardwareManagement({
             )}
 
             {/* Dialogs */}
-            <ProviderDialog
+            <ProviderModal
                 open={providerDialogOpen}
                 onOpenChange={(v) => {
                     setProviderDialogOpen(v)
@@ -189,7 +180,7 @@ export function PaymentHardwareManagement({
                 onSuccess={refetchProviders}
             />
 
-            <DeviceDialog
+            <DeviceModal
                 open={deviceDialogOpen}
                 onOpenChange={(v) => {
                     setDeviceDialogOpen(v)
@@ -235,22 +226,22 @@ function ProviderCard({ provider, onEdit, onDelete }: { provider: PaymentTermina
                         <div className="flex flex-col gap-1.5 p-3 rounded-sm bg-muted/30 border border-muted/50">
                             <div className="flex items-center gap-2">
                                 <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
-                                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">Recaudación:</span>
-                                <span className="text-[11px] font-medium ml-auto">{provider.receivable_account_name}</span>
+                                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight"> {/* intentional: badge density */} Recaudación:</span>
+                                <span className="text-[11px] font-medium ml-auto"> {/* intentional: badge density */} {provider.receivable_account_name}</span>
                             </div>
                             {provider.supplier_name && (
                                 <div className="flex items-center gap-2 pt-1.5 border-t border-muted/30">
                                     <UserIcon className="w-3.5 h-3.5 text-primary/60" />
-                                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight">Contacto:</span>
-                                    <span className="text-[11px] font-medium ml-auto text-primary/80">{provider.supplier_name}</span>
+                                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight"> {/* intentional: badge density */} Contacto:</span>
+                                    <span className="text-[11px] font-medium ml-auto text-primary/80"> {/* intentional: badge density */} {provider.supplier_name}</span>
                                 </div>
                             )}
                         </div>
                         <StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />
                     </div>
                     <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={onEdit} className="h-7 w-7"><Settings className="h-3.5 w-3.5" /></Button>
-                        <Button variant="ghost" size="icon" onClick={onDelete} className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+                        <IconButton onClick={onEdit} className="h-7 w-7"><Settings className="h-3.5 w-3.5" /></IconButton>
+                        <IconButton onClick={onDelete} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></IconButton>
                     </div>
                 </div>
             </CardHeader>
@@ -271,13 +262,13 @@ function DeviceCard({ device, onEdit, onDelete }: { device: PaymentTerminalDevic
                         <StatusBadge status={device.is_active ? "active" : "inactive"} size="sm" />
                     </div>
                     <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" onClick={onEdit} className="h-7 w-7"><Settings className="h-3.5 w-3.5" /></Button>
-                        <Button variant="ghost" size="icon" onClick={onDelete} className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button>
+                        <IconButton onClick={onEdit} className="h-7 w-7"><Settings className="h-3.5 w-3.5" /></IconButton>
+                        <IconButton onClick={onDelete} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></IconButton>
                     </div>
                 </div>
             </CardHeader>
             <CardContent className="p-4 pt-2 space-y-3">
-                <div className="grid grid-cols-1 gap-2 text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                <div className="grid grid-cols-1 gap-2 text-[10px] uppercase font-bold text-muted-foreground tracking-wider"> {/* intentional: badge density */}
                     <div className="flex justify-between">
                         <span>Proveedor:</span>
                         <span className="text-foreground">{device.provider_name}</span>
@@ -290,13 +281,13 @@ function DeviceCard({ device, onEdit, onDelete }: { device: PaymentTerminalDevic
                         <span>Soporta:</span>
                         <div className="flex gap-1">
                             {device.supported_payment_methods?.includes(2) && (
-                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-none">DÉBITO</span>
+                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-sm">DÉBITO</span>
                             )}
                             {device.supported_payment_methods?.includes(1) && (
-                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-none">CRÉDITO</span>
+                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-sm">CRÉDITO</span>
                             )}
                             {(!device.supported_payment_methods || device.supported_payment_methods.length === 0) && (
-                                <span className="text-[8px] italic opacity-50">SIN CONFIG</span>
+                                <span className="text-[10px] italic opacity-50"> {/* intentional: badge density */} SIN CONFIG</span>
                             )}
                         </div>
                     </div>
@@ -307,9 +298,9 @@ function DeviceCard({ device, onEdit, onDelete }: { device: PaymentTerminalDevic
 }
 
 /**
- * Dialog for creating/editing Providers
+ * Modal for creating/editing Providers
  */
-function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
+function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
     open: boolean,
     onOpenChange: (v: boolean) => void,
     provider: PaymentTerminalProvider | null,
@@ -364,7 +355,7 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
             // Fallback: If name is still empty, we use the contact name
             // But we don't have the contact object here unless we store it.
             // Actually, we can just ensure the form doesn't submit without a name, or auto-fill it.
-            
+
             if (!data.name) {
                 toast.error("Por favor, asigne un nombre o seleccione un contacto.")
                 setLoading(false)
@@ -392,65 +383,65 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
             description="Configure las cuentas contables para recaudación y comisiones."
             footer={
                 <div className="flex justify-end gap-2">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSubmit} disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} />
+                    <SubmitButton loading={loading} onClick={handleSubmit}>
                         {provider ? "Guardar Cambios" : "Crear Proveedor"}
-                    </Button>
+                    </SubmitButton>
                 </div>
             }
         >
             <form className="space-y-4 py-2">
+                <FormSection title="Información General" icon={Building2} />
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Contacto / Entidad (Proveedor)</Label>
                         <AdvancedContactSelector
                             value={supplierId?.toString() || null}
                             onChange={(val) => setSupplierId(val ? parseInt(val) : null)}
                             onSelectContact={(contact) => {
                                 if (!name) setName(contact.name)
                             }}
+                            label="Contacto / Entidad (Proveedor)"
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Nombre / Alias</Label>
-                        <Input 
-                            value={name} 
-                            onChange={e => setName(e.target.value)} 
-                            placeholder="Ej: Transbank Local Primary" 
+                        <LabeledInput
+                            label="Nombre / Alias"
+                            required
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            placeholder="Ej: Transbank Local Primary"
+
                         />
-                        <p className="text-[10px] text-muted-foreground italic">Identificador visual para reportes y POS.</p>
                     </div>
                 </div>
 
-                <Separator className="my-4" />
-                <h4 className="text-[10px] font-black uppercase text-primary tracking-widest">Configuración Contable</h4>
+                <FormSection title="Configuración Contable" icon={Settings} className="my-4" />
 
                 <div className="space-y-4">
                     <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Cuenta Puente Recaudación (Activo)</Label>
                         <AccountSelector
                             value={receivableAccount?.toString() || null}
                             onChange={(v) => setReceivableAccount(v ? parseInt(v) : null)}
                             accountType="ASSET"
+                            label="Cuenta Puente Recaudación (Activo)"
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Cuenta Gasto Comisiones</Label>
                             <AccountSelector
                                 value={expenseAccount?.toString() || null}
                                 onChange={(v) => setExpenseAccount(v ? parseInt(v) : null)}
                                 accountType="EXPENSE"
+                                label="Cuenta Gasto Comisiones"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Cuenta IVA Comisiones (Activo)</Label>
                             <AccountSelector
                                 value={ivaAccount?.toString() || null}
                                 onChange={(v) => setIvaAccount(v ? parseInt(v) : null)}
                                 accountType="ASSET"
+                                label="Cuenta IVA Comisiones (Activo)"
                             />
                         </div>
                     </div>
@@ -461,9 +452,9 @@ function ProviderDialog({ open, onOpenChange, provider, onSuccess }: {
 }
 
 /**
- * Dialog for creating/editing Devices
+ * Modal for creating/editing Devices
  */
-function DeviceDialog({ open, onOpenChange, device, providers, onSuccess }: {
+function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
     open: boolean,
     onOpenChange: (v: boolean) => void,
     device: PaymentTerminalDevice | null,
@@ -498,14 +489,6 @@ function DeviceDialog({ open, onOpenChange, device, providers, onSuccess }: {
         }
     }, [open, device])
 
-    const toggleMethod = (code: number) => {
-        setSupportedMethods(prev => 
-            prev.includes(code) 
-                ? prev.filter(c => c !== code) 
-                : [...prev, code]
-        )
-    }
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!providerId) {
@@ -514,14 +497,14 @@ function DeviceDialog({ open, onOpenChange, device, providers, onSuccess }: {
         }
         setLoading(true)
         try {
-                const data = {
-                    name,
-                    provider: parseInt(providerId),
-                    serial_number: serialNumber,
-                    model: model || undefined,
-                    supported_payment_methods: supportedMethods,
-                    is_active: true
-                }
+            const data = {
+                name,
+                provider: parseInt(providerId),
+                serial_number: serialNumber,
+                model: model || undefined,
+                supported_payment_methods: supportedMethods,
+                is_active: true
+            }
 
             if (device) {
                 await updateDevice.mutateAsync({ id: device.id, data })
@@ -544,90 +527,68 @@ function DeviceDialog({ open, onOpenChange, device, providers, onSuccess }: {
             description="Vincule una terminal física con un proveedor de servicios."
             footer={
                 <div className="flex justify-end gap-2">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSubmit} disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} />
+                    <SubmitButton loading={loading} onClick={handleSubmit}>
                         {device ? "Guardar Cambios" : "Registrar"}
-                    </Button>
+                    </SubmitButton>
                 </div>
             }
         >
             <form className="space-y-4 py-2">
-                <div className="space-y-2">
-                    <Label className={FORM_STYLES.label}>Nombre descriptivo</Label>
-                    <Input value={name} onChange={e => setName(e.target.value)} required placeholder="Ej: Maquinita TUU 01" />
-                </div>
+                <FormSection title="Información General" icon={Smartphone} />
+                <LabeledInput
+                    label="Nombre descriptivo"
+                    required
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Ej: Maquinita TUU 01"
+                />
 
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Proveedor</Label>
-                        <select
-                            className={cn(FORM_STYLES.input, "appearance-none")}
-                            value={providerId}
-                            onChange={e => setProviderId(e.target.value)}
+                    <LabeledSelect
+                        label="Proveedor"
+                        required
+                        value={providerId}
+                        onChange={setProviderId}
+                        placeholder="Seleccione..."
+                        options={providers.map(p => ({ value: p.id.toString(), label: p.name }))}
+                    />
+                    <div>
+                        <LabeledInput
+                            label="Número de Serie / TID"
                             required
-                        >
-                            <option value="">Seleccione...</option>
-                            {providers.map(p => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Número de Serie / TID</Label>
-                        <Input value={serialNumber} onChange={e => setSerialNumber(e.target.value)} required placeholder="Número serie físico" />
+                            value={serialNumber}
+                            onChange={e => setSerialNumber(e.target.value)}
+                            placeholder="Número serie físico"
+                        />
                     </div>
                 </div>
 
-                <div className="space-y-2">
-                    <Label className={FORM_STYLES.label}>Modelo (Opcional)</Label>
-                    <Input value={model} onChange={e => setModel(e.target.value)} placeholder="Ej: Pax A920" />
-                </div>
+                <LabeledInput
+                    label="Modelo (Opcional)"
+                    value={model}
+                    onChange={e => setModel(e.target.value)}
+                    placeholder="Ej: Pax A920"
+                />
 
                 <div className="space-y-3 pt-2">
-                    <Label className={cn(FORM_STYLES.label, "flex items-center gap-2")}>
-                        <CreditCard className="h-4 w-4 text-primary" />
-                        Capacidades del Hardware
-                    </Label>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div 
-                            className={cn(
-                                "flex items-center space-x-3 p-3 border rounded-none cursor-pointer transition-colors",
-                                supportedMethods.includes(2) ? "bg-primary/5 border-primary/30" : "bg-background border-border"
-                            )}
-                            onClick={() => toggleMethod(2)}
-                        >
-                            <Checkbox checked={supportedMethods.includes(2)} onCheckedChange={() => toggleMethod(2)} />
-                            <div className="space-y-0.5">
-                                <span className="text-xs font-black uppercase tracking-tight">Débito</span>
-                                <p className="text-[9px] text-muted-foreground leading-none">Ventas directas</p>
-                            </div>
-                        </div>
-                        <div 
-                            className={cn(
-                                "flex items-center space-x-3 p-3 border rounded-none cursor-pointer transition-colors",
-                                supportedMethods.includes(1) ? "bg-primary/5 border-primary/30" : "bg-background border-border"
-                            )}
-                            onClick={() => toggleMethod(1)}
-                        >
-                            <Checkbox checked={supportedMethods.includes(1)} onCheckedChange={() => toggleMethod(1)} />
-                            <div className="space-y-0.5">
-                                <span className="text-xs font-black uppercase tracking-tight">Crédito</span>
-                                <p className="text-[9px] text-muted-foreground leading-none">Cuotas / Otros</p>
-                            </div>
-                        </div>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground italic">
-                        Marque solo los métodos que su terminal física permite procesar.
-                    </p>
+                    <MultiSelectTagInput
+                        label="Capacidades del Hardware"
+                        options={[
+                            { label: "DÉBITO", value: "2" },
+                            { label: "CRÉDITO", value: "1" }
+                        ]}
+                        value={supportedMethods.map(m => m.toString())}
+                        onChange={(vals) => setSupportedMethods(vals.map(v => parseInt(v)))}
+                        placeholder="Seleccione capacidades..."
+                        hint="Marque solo los métodos que su terminal física permite procesar."
+                    />
                 </div>
             </form>
         </BaseModal>
     )
 }
 
-function Separator({ className }: { className?: string }) {
-    return <div className={cn("h-px bg-border", className)} />
-}
+
 
 export default PaymentHardwareManagement

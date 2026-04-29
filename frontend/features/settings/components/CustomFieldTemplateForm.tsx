@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Plus, Trash2, Save, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { CancelButton, IconButton } from "@/components/shared"
 import { EmptyState } from "@/components/shared/EmptyState"
 import {
     Form,
@@ -17,20 +18,12 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
 import { BaseModal } from "@/components/shared/BaseModal"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { LabeledInput, LabeledSelect, FormSection, FormFooter } from "@/components/shared"
 
 const templateSchema = z.object({
     name: z.string().min(1, "Nombre requerido"),
@@ -104,136 +97,151 @@ export function CustomFieldTemplateForm({ open, onOpenChange, onSuccess }: Custo
             size="sm"
             title="Nueva Plantilla de Campo Personalizado"
             footer={
-                <div className="flex justify-end gap-3 w-full">
-                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                        Cancelar
-                    </Button>
-                    <ActionSlideButton type="submit" form="custom-field-template-form" disabled={loading}>
-                        {loading ? "Guardando..." : "Crear Plantilla"}
-                        {!loading && <Save className="ml-2 h-4 w-4" />}
-                    </ActionSlideButton>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                            <ActionSlideButton type="submit" form="custom-field-template-form" loading={loading}>
+                                Crear Plantilla
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
             }
         >
             <Form {...form}>
-                <form id="custom-field-template-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                    <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Nombre del Campo</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Ej: Color de Tintas, Tamaño, etc." {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    <FormField
-                        control={form.control}
-                        name="field_type"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Tipo de Campo</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Seleccione tipo" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="TEXT">Texto (Línea simple)</SelectItem>
-                                        <SelectItem value="SELECT_SINGLE">Selección Única</SelectItem>
-                                        <SelectItem value="SELECT_MULTIPLE">Selección Múltiple</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    <FormField
-                        control={form.control}
-                        name="description"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Descripción / Ayuda</FormLabel>
-                                <FormControl>
-                                    <Textarea
-                                        placeholder="Instrucciones para el usuario..."
-                                        className="resize-none"
-                                        {...field}
+                    <form id="custom-field-template-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                        {/* Section 1: Definition */}
+                        <div className="space-y-4">
+                            <FormSection title="Definición del Atributo" icon={Plus} />
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="col-span-3">
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Nombre del Atributo"
+                                                placeholder="Ej: Color de Tintas, Tamaño, etc."
+                                                error={fieldState.error?.message}
+                                                required
+                                                {...field}
+                                            />
+                                        )}
                                     />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    <FormField
-                        control={form.control}
-                        name="is_required"
-                        render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                                <div className="space-y-0.5">
-                                    <FormLabel>¿Es obligatorio?</FormLabel>
-                                    <FormDescription>
-                                        El usuario deberá completar este campo al vender.
-                                    </FormDescription>
                                 </div>
-                                <FormControl>
-                                    <Switch
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
+                                <div className="col-span-1">
+                                    <FormField
+                                        control={form.control}
+                                        name="field_type"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Tipo"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                                options={[
+                                                    { value: "TEXT", label: "Texto" },
+                                                    { value: "SELECT_SINGLE", label: "Lista" },
+                                                    { value: "SELECT_MULTIPLE", label: "Multi" },
+                                                ]}
+                                            />
+                                        )}
                                     />
-                                </FormControl>
-                            </FormItem>
-                        )}
-                    />
+                                </div>
+                                <div className="col-span-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="description"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                as="textarea"
+                                                label="Instrucciones / Ayuda para el usuario"
+                                                placeholder="Describa cómo completar este campo..."
+                                                rows={2}
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+                                </div>
 
-                    {(fieldType === "SELECT_SINGLE" || fieldType === "SELECT_MULTIPLE") && (
-                        <div className="space-y-3 pt-2">
-                            <FormLabel>Opciones de Selección</FormLabel>
-                            <div className="flex gap-2">
-                                <Input
-                                    value={newOption}
-                                    onChange={(e) => setNewOption(e.target.value)}
-                                    placeholder="Nueva opción"
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault()
-                                            addOption()
-                                        }
-                                    }}
-                                />
-                                <Button type="button" variant="outline" size="icon" onClick={addOption}>
-                                    <Plus className="h-4 w-4" />
-                                </Button>
-                            </div>
-                            <div className="max-h-[150px] overflow-y-auto space-y-2">
-                                {options.map((option, index) => (
-                                    <div key={index} className="flex items-center justify-between bg-muted p-2 rounded-md">
-                                        <span className="text-sm">{option}</span>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-7 w-7 text-destructive"
-                                            onClick={() => removeOption(index)}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                ))}
-                                {options.length === 0 && (
-                                    <EmptyState context="generic" variant="minimal" description="No hay opciones añadidas" />
-                                )}
+                                <div className="col-span-4 pt-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="is_required"
+                                        render={({ field }) => (
+                                            <div className="flex items-center justify-between p-4 rounded-xl border bg-muted/20 hover:bg-muted/30 transition-colors border-dashed">
+                                                <div className="space-y-1">
+                                                    <p className="text-sm font-black leading-none uppercase tracking-wider">Campo Obligatorio</p>
+                                                    <p className="text-xs text-muted-foreground">El usuario no podrá guardar el documento sin completar este atributo.</p>
+                                                </div>
+                                                <Switch
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </div>
+                                        )}
+                                    />
+                                </div>
                             </div>
                         </div>
-                    )}
-                </form>
+
+                        {/* Section 2: Options (Conditional) */}
+                        {(fieldType === "SELECT_SINGLE" || fieldType === "SELECT_MULTIPLE") && (
+                            <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                                <FormSection title="Opciones de la Lista" icon={Plus} />
+                                <div className="space-y-4">
+                                    <div className="flex gap-2">
+                                        <div className="flex-1">
+                                            <LabeledInput
+                                                label="Nueva Opción"
+                                                value={newOption}
+                                                onChange={(e) => setNewOption(e.target.value)}
+                                                placeholder="Escriba y presione Enter..."
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault()
+                                                        addOption()
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                        <Button 
+                                            type="button" 
+                                            variant="secondary" 
+                                            onClick={addOption} 
+                                            className="self-end !h-[1.5rem] px-3 font-bold"
+                                        >
+                                            Añadir
+                                        </Button>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-2 max-h-[200px] overflow-y-auto scrollbar-thin pr-1">
+                                        {options.map((option, index) => (
+                                            <div key={index} className="flex items-center justify-between bg-muted/50 border rounded-lg pl-3 pr-1 py-1 group hover:border-primary/30 transition-all">
+                                                <span className="text-xs font-medium truncate">{option}</span>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-6 w-6 text-destructive/50 hover:text-destructive hover:bg-destructive/10"
+                                                    onClick={() => removeOption(index)}
+                                                >
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                        {options.length === 0 && (
+                                            <div className="col-span-2">
+                                                <EmptyState context="generic" variant="minimal" description="Defina al menos una opción" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </form>
             </Form>
         </BaseModal>
     )

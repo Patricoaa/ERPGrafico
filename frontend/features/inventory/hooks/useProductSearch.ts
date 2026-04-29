@@ -33,7 +33,9 @@ export function useProductSearch(): UseProductSearchReturn {
         const itemsToResolve = limit ? resolved.slice(0, limit) : resolved
 
         await Promise.all(itemsToResolve.map(async (p, idx) => {
-            if (p.has_variants && p.product_type === 'MANUFACTURABLE') {
+            // Only fetch if they have variants flag but the list is missing/empty
+            // AND the endpoint is really needed (usually the serializer already provides them)
+            if (p.has_variants && (!p.variants || p.variants.length === 0)) {
                 try {
                     const res = await api.get(`/inventory/products/${p.id}/variants/`)
                     resolved[idx] = { ...p, variants: res.data }

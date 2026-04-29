@@ -4,25 +4,16 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
+
 import { FileBadge, Loader2, CheckCircle2, AlertCircle, ShieldAlert } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/currency"
-import { PricingUtils } from "@/lib/pricing"
-import { cn } from "@/lib/utils"
-import { FORM_STYLES } from "@/lib/styles"
+import { PricingUtils } from '@/features/inventory/utils/pricing'
+import { Card } from "@/components/ui/card"
+
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
+import { EmptyState, PeriodValidationDateInput, TableSkeleton, LabeledContainer, LabeledInput, LabeledSelect, CancelButton, SubmitButton, FormFooter, FormSection } from "@/components/shared"
 
 import { SaleOrderLine, SaleNoteLine } from "../types"
 
@@ -196,65 +187,62 @@ export function SaleNoteModal({
                 </span>
             }
             footer={
-                <div className="w-full flex justify-end gap-2 border-t pt-4">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={submitting}>
-                        Cancelar
-                    </Button>
-                    <Button
-                        onClick={handleSubmit}
-                        disabled={submitting || !documentNumber || amountNet <= 0 || !isPeriodValid}
-                        className="font-bold h-11 px-8"
-                    >
-                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Confirmar Registro de Nota
-                    </Button>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
+                            <SubmitButton
+                                onClick={handleSubmit}
+                                disabled={!documentNumber || amountNet <= 0 || !isPeriodValid}
+                                loading={submitting}
+                                className="h-11 px-8"
+                            >
+                                Confirmar Registro de Nota
+                            </SubmitButton>
+                        </>
+                    }
+                />
             }
         >
             <div className="space-y-6 py-2">
+                <FormSection title="Datos del Documento" icon={FileBadge} />
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Tipo de Nota</Label>
-                        <Select value={noteType} onValueChange={(val: "NOTA_CREDITO" | "NOTA_DEBITO") => setNoteType(val)}>
-                            <SelectTrigger className={FORM_STYLES.input}>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="NOTA_CREDITO">Nota de Crédito (Devolución/Resciliación)</SelectItem>
-                                <SelectItem value="NOTA_DEBITO">Nota de Débito (Cargo Adicional)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <LabeledSelect
+                        label="Tipo de Nota"
+                        value={noteType}
+                        onChange={(val) => setNoteType(val as "NOTA_CREDITO" | "NOTA_DEBITO")}
+                        options={[
+                            { value: "NOTA_CREDITO", label: "Nota de Crédito (Devolución/Resciliación)" },
+                            { value: "NOTA_DEBITO", label: "Nota de Débito (Cargo Adicional)" },
+                        ]}
+                    />
 
-                    <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Número Documento</Label>
-                        <Input
-                            placeholder="Ej: NC-12345"
-                            className={FORM_STYLES.input}
-                            value={documentNumber}
-                            onChange={(e) => setDocumentNumber(e.target.value)}
-                        />
-                    </div>
+                    <LabeledInput
+                        label="Número Documento"
+                        placeholder="Ej: NC-12345"
+                        value={documentNumber}
+                        onChange={(e) => setDocumentNumber(e.target.value)}
+                    />
 
-                    <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Fecha Emisión</Label>
+                    <LabeledContainer label="Fecha Emisión">
                         <PeriodValidationDateInput
                             date={documentDate}
                             onDateChange={setDocumentDate}
                             validationType="both"
                             onValidityChange={setIsPeriodValid}
                         />
-                    </div>
+                    </LabeledContainer>
                 </div>
 
+                <FormSection title="Detalle de Productos" icon={FileBadge} />
                 <div className="rounded-md border overflow-hidden">
                     <table className="w-full text-sm">
                         <thead className="bg-muted/50 border-b">
                             <tr>
                                 <th className="px-3 py-2 text-left font-black text-[10px] uppercase tracking-widest text-muted-foreground">Producto</th>
                                 <th className="px-3 py-2 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-20">Unidad</th>
-                                <th className="px-3 py-2 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-20">Cant. Orig.</th>
-                                <th className="px-3 py-2 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-24">Cant. Nota</th>
+                                <th className="px-3 py-2 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-20">Cantidad Orig.</th>
+                                <th className="px-3 py-2 text-center font-black text-[10px] uppercase tracking-widest text-muted-foreground w-24">Cantidad Nota</th>
                                 <th className="px-3 py-2 text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground w-32">Precio Unit.</th>
                                 <th className="px-3 py-2 text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground w-32">Subtotal</th>
                             </tr>
@@ -262,7 +250,9 @@ export function SaleNoteModal({
                         <tbody className="divide-y">
                             {loadingOrder ? (
                                 <tr>
-                                    <td colSpan={5} className="py-4 text-center text-muted-foreground italic">Cargando productos...</td>
+                                    <td colSpan={6} className="p-4">
+                                        <TableSkeleton rows={3} columns={6} />
+                                    </td>
                                 </tr>
                             ) : lines.length === 0 ? (
                                 <tr>
@@ -281,7 +271,7 @@ export function SaleNoteModal({
                                     <td className="px-3 py-2 text-center text-xs text-muted-foreground">{line.uom_name || '-'}</td>
                                     <td className="px-3 py-2 text-center text-muted-foreground font-bold">{line.quantity}</td>
                                     <td className="px-3 py-2">
-                                        <Input
+                                        <LabeledInput
                                             type="number"
                                             className="h-8 text-center font-bold"
                                             value={line.note_quantity}
@@ -298,7 +288,7 @@ export function SaleNoteModal({
                                     <td className="px-3 py-2">
                                         <div className="relative">
                                             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px]">$</span>
-                                            <Input
+                                            <LabeledInput
                                                 type="number"
                                                 className={`h-8 pl-5 text-right font-bold ${noteType === 'NOTA_CREDITO' ? 'bg-muted text-muted-foreground' : ''}`}
                                                 value={line.note_unit_price}
@@ -317,6 +307,7 @@ export function SaleNoteModal({
                     </table>
                 </div>
 
+                <FormSection title="Resumen y Respaldo" icon={FileBadge} />
                 <div className="flex justify-between items-start gap-8">
                     <div className="flex-1">
                         <DocumentAttachmentDropzone
@@ -326,7 +317,7 @@ export function SaleNoteModal({
                         />
                     </div>
 
-                    <div className={FORM_STYLES.card + " w-64 space-y-2"}>
+                    <Card variant="dashed" className="w-64 space-y-2">
                         <div className="flex justify-between text-xs text-muted-foreground uppercase font-bold">
                             <span>Neto:</span>
                             <span>{formatCurrency(amountNet)}</span>
@@ -339,7 +330,7 @@ export function SaleNoteModal({
                             <span className="text-sm">TOTAL:</span>
                             <span className="text-xl text-primary">{formatCurrency(total)}</span>
                         </div>
-                    </div>
+                    </Card>
                 </div>
 
                 {noteType === 'NOTA_CREDITO' && (

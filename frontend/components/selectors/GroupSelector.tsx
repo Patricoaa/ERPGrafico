@@ -2,7 +2,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronsUpDown, Search, Loader2, Users } from "lucide-react"
+import { Check, ChevronDown, Search, Loader2, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,9 +20,11 @@ interface GroupSelectorProps {
     onChange: (value: string | null) => void
     placeholder?: string
     disabled?: boolean
+    label?: string
+    error?: string
 }
 
-export function GroupSelector({ value, onChange, placeholder = "Seleccionar grupo...", disabled = false }: GroupSelectorProps) {
+export function GroupSelector({ value, onChange, placeholder = "Seleccionar grupo...", disabled = false, label, error }: GroupSelectorProps) {
     const { groups, loading: searchLoading, fetchGroups } = useGroupSearch()
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
@@ -64,39 +66,43 @@ export function GroupSelector({ value, onChange, placeholder = "Seleccionar grup
     }
 
     return (
+        <div className="relative w-full flex flex-col group">
+            <fieldset 
+                className={cn(
+                    "notched-field w-full group transition-all",
+                    open && "focused",
+                    error && "error",
+                    disabled && "opacity-50 cursor-not-allowed bg-muted/10"
+                )}
+            >
+                {label && (
+                    <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
+                        {label}
+                    </legend>
+                )}
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
-                    variant="outline"
+                    variant="ghost"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-full justify-between h-auto py-2 px-3"
+                    className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                     disabled={disabled}
                 >
                     {selectedGroup ? (
-                        <div className="flex items-center gap-2 truncate text-left">
-                            <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
-                                <Users className="h-4 w-4" />
-                            </div>
-                            <div className="flex flex-col items-start truncate leading-tight">
-                                <span className="font-medium text-sm truncate w-full">{selectedGroup.name}</span>
-                                <span className="text-[10px] text-muted-foreground truncate w-full">Grupo de Trabajo</span>
-                            </div>
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <Users className="h-3.5 w-3.5 shrink-0 text-primary" />
+                            <span className="font-medium text-sm truncate">{selectedGroup.name}</span>
                         </div>
                     ) : value ? (
-                        <div className="flex items-center gap-2 truncate text-left">
-                            <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
-                                <Users className="h-4 w-4" />
-                            </div>
-                            <div className="flex flex-col items-start truncate leading-tight">
-                                <span className="font-medium text-sm truncate w-full">{value}</span>
-                                <span className="text-[10px] text-muted-foreground truncate w-full">Grupo de Trabajo</span>
-                            </div>
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <Users className="h-3.5 w-3.5 shrink-0 text-primary" />
+                            <span className="font-medium text-sm truncate">{value}</span>
                         </div>
                     ) : (
-                        <span className="text-muted-foreground">{placeholder}</span>
+                        <span className="text-muted-foreground truncate">{placeholder}</span>
                     )}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
@@ -139,5 +145,12 @@ export function GroupSelector({ value, onChange, placeholder = "Seleccionar grup
                 </div>
             </PopoverContent>
         </Popover>
+        </fieldset>
+            {error && (
+                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
+                    {error}
+                </p>
+            )}
+        </div>
     )
 }

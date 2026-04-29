@@ -1,4 +1,9 @@
 from rest_framework import serializers
+from rest_framework.fields import empty
+import logging
+
+logger = logging.getLogger(__name__)
+
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
     CustomFieldTemplate, ProductCustomField,
@@ -196,7 +201,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'mfg_enable_postpress', 'mfg_prepress_design', 'mfg_prepress_specs',
             'mfg_prepress_folio', 'mfg_press_offset', 'mfg_press_digital',
             'mfg_press_special', 'mfg_postpress_finishing', 'mfg_postpress_binding',
-            'mfg_default_delivery_days', 'recurrence_period', 'renewal_notice_days',
+            'recurrence_period', 'renewal_notice_days',
             'is_variable_amount', 'is_dynamic_pricing', 'track_inventory', 'can_be_sold', 'can_be_purchased',
             'uom', 'sale_uom', 'purchase_uom', 'allowed_sale_uoms', 'receiving_warehouse',
             'sale_price', 'sale_price_gross', 'cost_price', 'is_favorite', 'active', 'income_account', 'expense_account',
@@ -218,10 +223,12 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
 
     def get_variants(self, obj):
-        # We need to ensure variants also have the is_favorite annotation if accessed this way
-        # However, usually variants of a favorite parent aren't automatically favorite unless marked.
-        # For now, we just filter them.
-        variants = obj.variants.filter(active=True)
+        # Use prefetched variants if available to avoid N+1 queries
+        if hasattr(obj, '_prefetched_objects_cache') and 'variants' in obj._prefetched_objects_cache:
+            variants = [v for v in obj.variants.all() if v.active]
+        else:
+            variants = obj.variants.filter(active=True)
+        
         return ProductSimpleSerializer(variants, many=True).data
 
     def get_uom_category(self, obj):
@@ -273,7 +280,16 @@ class ProductSerializer(serializers.ModelSerializer):
                     except (ValueError, TypeError):
                         if (field == 'allowed_sale_uoms' or field == 'attribute_values') and raw_value.isdigit():
                             ret[field] = [int(raw_value)]
+                elif raw_value == '':
+                    ret[field] = None
+            elif field in ret and ret[field] == '':
+                ret[field] = None
                         
+        # General cleanup of empty strings for any other field
+        for key in list(ret.keys()):
+            if ret[key] == '':
+                ret[key] = None
+
         return super().to_internal_value(ret)
 
     def get_current_stock(self, obj):
@@ -365,6 +381,13 @@ class ProductSerializer(serializers.ModelSerializer):
                         })
         
         return data
+
+    def run_validation(self, data=empty):
+        try:
+            return super().run_validation(data)
+        except serializers.ValidationError as e:
+            logger.error(f"Validation error in ProductSerializer: {e.detail}. Data: {data}")
+            raise e
 
     def create(self, validated_data):
         boms_data = validated_data.pop('boms', [])

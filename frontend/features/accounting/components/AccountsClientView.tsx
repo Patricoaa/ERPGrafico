@@ -7,7 +7,7 @@ import {
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Book, Trash2, Pencil, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { IconButton } from "@/components/shared"
 
 import { AccountForm } from "@/features/finance/components/AccountForm"
 import { LedgerModal } from "@/features/accounting/components/LedgerModal"
@@ -19,6 +19,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ChevronRight, ChevronDown } from "lucide-react"
 import { buildAccountTree } from "../utils/accountTree"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { ActivitySidebar } from "@/features/audit/components"
 
 interface AccountsClientViewProps {
     externalOpen?: boolean
@@ -117,9 +118,8 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                     >
                         <div className="flex items-center gap-2 flex-1 justify-center relative translate-x-[0.75rem]">
                             {canExpand ? (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
+                                <IconButton
+                                    circular
                                     className="h-4 w-4 p-0 hover:bg-transparent absolute -left-6"
                                     onClick={(e) => {
                                         e.stopPropagation()
@@ -131,7 +131,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                                     ) : (
                                         <ChevronRight className="h-3 w-3 text-muted-foreground" />
                                     )}
-                                </Button>
+                                </IconButton>
                             ) : (
                                 <div className="w-4 h-4 absolute -left-6" />
                             )}
@@ -272,6 +272,11 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 accounts={flatAccounts as any}
                 initialData={editingAccount as any}
                 parentId={formParentId || undefined}
+                auditSidebar={
+                    editingAccount ? (
+                        <ActivitySidebar entityId={editingAccount.id} entityType="account" />
+                    ) : undefined
+                }
                 onSuccess={() => {
                     refetch()
                     handleCloseModal()

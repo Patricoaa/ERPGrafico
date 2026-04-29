@@ -1,10 +1,10 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { BaseModal } from "@/components/shared/BaseModal";
+import { BaseModal, LoadingFallback } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     DropdownMenu,
@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/tooltip";
 import { Info, History, Share2, BarChart2 } from "lucide-react";
 import api from '@/lib/api';
-import { FORM_STYLES } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 
 interface BudgetEditorProps {
@@ -66,7 +65,7 @@ const BudgetAccountRow = React.memo(({
                     <div className="font-semibold text-sm truncate" title={`${account.code} - ${account.name}`}>
                         {account.code} - {account.name}
                     </div>
-                    <div className={FORM_STYLES.label}>{account.account_type_display}</div>
+                    <div className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">{account.account_type_display}</div>
                 </div>
 
                 <DropdownMenu>
@@ -269,7 +268,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                             placeholder="Buscar cuenta por nombre o código..."
                             value={filter}
                             onChange={e => setFilter(e.target.value)}
-                            className={cn(FORM_STYLES.input, "bg-background")}
+                            className={cn("h-9 text-sm bg-background border border-border rounded-md px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", "bg-background")}
                         />
                         <TooltipProvider>
                             <Tooltip>
@@ -317,9 +316,8 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
                             </div>
 
                             {loading && (
-                                <div className="flex flex-col items-center justify-center p-12 space-y-4">
-                                    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                                    <p className="text-sm text-muted-foreground">Cargando cuentas...</p>
+                                <div className="py-12">
+                                    <LoadingFallback message="Cargando cuentas..." />
                                 </div>
                             )}
 

@@ -7,7 +7,9 @@ import { cn } from "@/lib/utils"
 interface CardSkeletonProps {
     count?: number
     className?: string
-    variant?: 'grid' | 'list'
+    variant?: 'grid' | 'list' | 'product' | 'compact'
+    /** Optional grid configuration for 'grid' and 'product' variants */
+    gridClassName?: string
 }
 
 /**
@@ -16,8 +18,29 @@ interface CardSkeletonProps {
 export function CardSkeleton({ 
     count = 3, 
     className,
-    variant = 'grid'
+    variant = 'grid',
+    gridClassName
 }: CardSkeletonProps) {
+    // ─── Compact List Variant (Slimmer than standard list) ───────────────
+    if (variant === 'compact') {
+        return (
+            <div className={cn("flex flex-col gap-2 animate-in fade-in duration-500", className)}>
+                {Array.from({ length: count }).map((_, i) => (
+                    <div 
+                        key={`compact-item-${i}`} 
+                        className="flex items-center p-3 rounded-md border border-border/40 bg-card/5 gap-3"
+                    >
+                        <Skeleton className="h-10 w-10 rounded-md shrink-0" />
+                        <div className="flex-1 space-y-1.5">
+                            <Skeleton className="h-3 w-3/4" />
+                            <Skeleton className="h-2 w-1/2 opacity-60" />
+                        </div>
+                        <Skeleton className="h-4 w-12 ml-auto" />
+                    </div>
+                ))}
+            </div>
+        )
+    }
     if (variant === 'list') {
         return (
             <div className={cn("flex flex-col gap-3 animate-in fade-in duration-500", className)}>
@@ -60,8 +83,39 @@ export function CardSkeleton({
         )
     }
 
+    // ─── Product/Media Variant (Image on top) ─────────────────────────────
+    if (variant === 'product') {
+        return (
+            <div className={cn(
+                "grid grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-500", 
+                gridClassName,
+                className
+            )}>
+                {Array.from({ length: count }).map((_, i) => (
+                    <div key={`product-${i}`} className="flex flex-col overflow-hidden rounded-md border border-border/40 bg-card/5">
+                        <Skeleton className="aspect-square w-full rounded-none" />
+                        <div className="p-3 flex flex-col gap-2">
+                            <div className="flex justify-center gap-1">
+                                <Skeleton className="h-3 w-10" />
+                                <Skeleton className="h-3 w-10" />
+                            </div>
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-2/3 mx-auto" />
+                            <Skeleton className="h-5 w-16 mx-auto mt-1" />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )
+    }
+
+    // ─── Grid Variant (Standard Dashboard Card) ──────────────────────────
     return (
-        <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500", className)}>
+        <div className={cn(
+            "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500", 
+            gridClassName,
+            className
+        )}>
             {Array.from({ length: count }).map((_, i) => (
                 <div 
                     key={`card-${i}`} 

@@ -25,7 +25,7 @@ const SCALES = [100, 75, 50, 25, 10, 5, 0]
  * ColorBar — CMYK Printing Process Control Strip
  *
  * Renders a color control strip used in the printing industry to verify ink density
- * and color consistency. This component reinforces the "Industrial Premium" aesthetic
+ * and color consistency. This component reinforces the design aesthetic
  * by bringing real-world printing tools into the digital interface.
  *
  * @contract component-contracts.md §10

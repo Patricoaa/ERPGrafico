@@ -1,257 +1,199 @@
 "use client"
 
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FormField } from "@/components/ui/form"
+import { EmptyState, LabeledInput, LabeledContainer, FormSection, LabeledSwitch } from "@/components/shared"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
-import { Plus, ShoppingCart, Truck, Search, ChevronsUpDown, Check, Barcode } from "lucide-react"
+import { ShoppingCart, Truck, Barcode, Fingerprint, Globe, Tag } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { Switch } from "@/components/ui/switch"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
-import { BarcodeDialog } from "@/features/inventory/components/BarcodeDialog"
+import { BarcodeModal } from "@/features/inventory/components/BarcodeModal"
 
 import { useState } from "react"
-import { ProductCategory } from "@/types/entities"
+import { CategorySelector, ProductTypeSelector } from "@/components/selectors"
 
 export interface ProductBasicInfoProps {
     form: UseFormReturn<ProductFormValues>
-    categories: ProductCategory[]
     isEditing: boolean
-    onAddCategory: () => void
+    imagePreview: string | null
+    setImagePreview: (value: string | null) => void
+    lockedType?: string
 }
 
-export function ProductBasicInfo({ form, categories, isEditing, onAddCategory }: ProductBasicInfoProps) {
-    const [isBarcodeDialogOpen, setIsBarcodeDialogOpen] = useState(false)
+import { Label } from "@/components/ui/label"
+import { ProductImageUpload } from "./ProductImageUpload"
+
+export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePreview, lockedType }: ProductBasicInfoProps) {
+    const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false)
+    const productType = form.watch("product_type")
 
     return (
-        <div className="space-y-6">
-            {/* Información Principal */}
+        <div className="space-y-8">
+            {/* Identification and Classification Section - 4-Column Refined Layout */}
             <div className="space-y-4">
-                <div className="flex items-center gap-2 pt-2 pb-2">
-                    <div className="flex-1 h-px bg-border" />
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Información Principal</span>
-                    <div className="flex-1 h-px bg-border" />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                    <div className="md:col-span-2">
-                        {isEditing ? (
-                            <FormField<ProductFormValues>
-                                control={form.control}
-                                name="internal_code"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className={FORM_STYLES.label}>ID Interno</FormLabel>
-                                        <FormControl>
-                                            <div className="flex items-center gap-2 py-2">
-                                                <span className="text-muted-foreground text-xs">#</span>
-                                                <Input {...field} readOnly className="bg-transparent border-none p-0 h-auto font-mono font-black text-primary shadow-none focus-visible:ring-0" />
-                                            </div>
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                        ) : (
-                            <FormItem>
-                                <FormLabel className={FORM_STYLES.label}>ID Interno</FormLabel>
-                                <div className="py-2">
-                                    <span className="text-[10px] font-bold text-primary/40 uppercase tracking-tighter italic">ID Automático</span>
-                                </div>
-                            </FormItem>
-                        )}
-                    </div>
-
-                    <div className="md:col-span-7">
+                <FormSection title="Identificación y Clasificación" icon={Fingerprint} />
+                <div className="grid grid-cols-4 gap-4 items-start">
+                    {/* Fila 1: Nombre (3) / Imagen (1) */}
+                    <div className="col-span-3">
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Nombre del Producto</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder="Ej: Camiseta de Algodón Premium"
-                                            {...field}
-                                            className={cn(FORM_STYLES.input, "text-base font-bold")}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    label="Nombre Comercial del Producto"
+                                    required
+                                    placeholder="Ej: Camiseta de Algodón Premium"
+                                    error={fieldState.error?.message}
+                                    className="font-bold text-xs h-[1.5rem]"
+                                    {...field}
+                                />
                             )}
                         />
                     </div>
-
-                    <div className="md:col-span-3">
-                        <FormField<ProductFormValues>
-                            control={form.control}
-                            name="code"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>SKU / Código EAN</FormLabel>
-                                    <FormControl>
-                                        <div className="flex gap-2">
-                                            <Input placeholder="Ej: 100000001" {...field} className={cn(FORM_STYLES.input, "font-mono font-bold")} />
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="icon"
-                                                className="shrink-0 h-10 w-10 rounded-md"
-                                                onClick={() => setIsBarcodeDialogOpen(true)}
-                                                title="Gestionar Código de Barras"
-                                            >
-                                                <Barcode className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </FormControl>
-                                    <FormMessage />
-                                    <BarcodeDialog
-                                        open={isBarcodeDialogOpen}
-                                        onOpenChange={setIsBarcodeDialogOpen}
-                                        initialValue={field.value}
-                                        onApply={(val) => form.setValue("code", val, { shouldDirty: true, shouldValidate: true })}
-                                    />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
-                    <div className="md:col-span-6">
-                        <FormField<ProductFormValues>
-                            control={form.control}
-                            name="category"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className={FORM_STYLES.label}>Categoría del Producto</FormLabel>
-                                    <div className="flex gap-2">
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button
-                                                        variant="outline"
-                                                        role="combobox"
-                                                        disabled={isEditing}
-                                                        className={cn("w-full justify-between font-normal h-10 rounded-md", !field.value && "text-muted-foreground", FORM_STYLES.input)}
-                                                    >
-                                                        {field.value
-                                                            ? categories.find((cat) => cat.id.toString() === field.value.toString())?.name
-                                                            : "Seleccionar categoría"}
-                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                                <div className="p-2">
-                                                    <div className="flex items-center px-3 border rounded-md mb-2 bg-background">
-                                                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                        <input
-                                                            className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                                                            placeholder="Buscar categoría..."
-                                                            onChange={(e) => {
-                                                                const val = e.target.value.toLowerCase()
-                                                                const inputs = document.querySelectorAll('.category-item')
-                                                                inputs.forEach((el) => {
-                                                                    if (el.textContent?.toLowerCase().includes(val)) {
-                                                                        (el as HTMLElement).style.display = 'flex'
-                                                                    } else {
-                                                                        (el as HTMLElement).style.display = 'none'
-                                                                    }
-                                                                })
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                        {categories.map((cat) => (
-                                                            <div
-                                                                key={cat.id}
-                                                                className={cn(
-                                                                    "category-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                    field.value === cat.id.toString() && "bg-accent"
-                                                                )}
-                                                                onClick={() => {
-                                                                    field.onChange(cat.id.toString())
-                                                                    document.body.click()
-                                                                }}
-                                                            >
-                                                                <span>{cat.name}</span>
-                                                                {field.value === cat.id.toString() && (
-                                                                    <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                        {categories.length === 0 && (
-                                                            <EmptyState context="inventory" variant="compact" title="Sin categorías" />
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </PopoverContent>
-                                        </Popover>
-                                        {!isEditing && (
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="icon"
-                                                className="shrink-0 h-10 w-10 rounded-md"
-                                                onClick={onAddCategory}
-                                                title="Nueva Categoría"
-                                            >
-                                                <Plus className="h-4 w-4" />
-                                            </Button>
-                                        )}
-                                    </div>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
+                    <div className="col-span-1 row-span-3">
+                        <ProductImageUpload
+                            form={form}
+                            imagePreview={imagePreview}
+                            setImagePreview={setImagePreview}
                         />
                     </div>
 
-                    <div className="md:col-span-6 flex items-center gap-6 pb-2">
+                    <div className="col-span-1">
+                        <LabeledContainer
+                            label="ID Sistema"
+                            disabled
+                            className="w-full opacity-80 bg-muted/30 border-dashed"
+                        >
+                            <div className="flex items-center gap-2 h-full px-3">
+                                <span className="text-muted-foreground text-[10px] font-mono">#</span>
+                                {isEditing ? (
+                                    <span className="font-mono font-black text-primary text-xs">
+                                        {form.getValues("internal_code")}
+                                    </span>
+                                ) : (
+                                    <span className="text-[10px] font-bold text-primary/40 uppercase tracking-tighter italic">Auto</span>
+                                )}
+                            </div>
+                        </LabeledContainer>
+                    </div>
+
+                    <div className="col-span-1">
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="can_be_sold"
                             render={({ field }) => (
-                                <FormItem className="flex flex-row items-center gap-3 space-y-0">
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                            disabled={['CONSUMABLE', 'SUBSCRIPTION'].includes(form.watch("product_type"))}
-                                        />
-                                    </FormControl>
-                                    <div className="space-y-0.5">
-                                        <FormLabel className={cn(FORM_STYLES.label, "flex items-center gap-2 cursor-pointer")}>
-                                            <ShoppingCart className="h-3.5 w-3.5 text-success" />
-                                            Habilitar para Venta
-                                        </FormLabel>
-                                    </div>
-                                </FormItem>
+                                <LabeledSwitch
+                                    label="Venta"
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    disabled={['CONSUMABLE', 'SUBSCRIPTION'].includes(productType)}
+                                    icon={<ShoppingCart className={cn("h-3.5 w-3.5", field.value ? "text-emerald-500" : "text-muted-foreground/30")} />}
+                                    className={cn("h-full", field.value ? "bg-emerald-500/5 border-emerald-500/20 shadow-sm" : "border-dashed")}
+                                />
                             )}
                         />
+                    </div>
 
+                    <div className="col-span-1">
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="can_be_purchased"
                             render={({ field }) => (
-                                <FormItem className="flex flex-row items-center gap-3 space-y-0">
-                                    <FormControl>
-                                        <Switch
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                            disabled={form.watch("product_type") === 'MANUFACTURABLE'}
-                                        />
-                                    </FormControl>
-                                    <div className="space-y-0.5">
-                                        <FormLabel className={cn(FORM_STYLES.label, "flex items-center gap-2 cursor-pointer")}>
-                                            <Truck className="h-3.5 w-3.5 text-warning" />
-                                            Habilitar para Compra
-                                        </FormLabel>
-                                    </div>
-                                </FormItem>
+                                <LabeledSwitch
+                                    label="Compra"
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    disabled={productType === 'MANUFACTURABLE'}
+                                    icon={<Truck className={cn("h-3.5 w-3.5", field.value ? "text-amber-500" : "text-muted-foreground/30")} />}
+                                    className={cn("h-full", field.value ? "bg-amber-500/5 border-amber-500/20 shadow-sm" : "border-dashed")}
+                                />
+                            )}
+                        />
+                    </div>
+
+                    {/* Fila 3: Tipo (1) / Categoría (2) / Empty (1) */}
+                    <div className="col-span-1">
+                        <FormField<ProductFormValues>
+                            control={form.control}
+                            name="product_type"
+                            render={({ field, fieldState }) => (
+                                <ProductTypeSelector
+                                    value={field.value}
+                                    onChange={(val) => {
+                                        field.onChange(val);
+                                        if (val === 'STORABLE') {
+                                            form.setValue('track_inventory', true);
+                                            form.setValue('can_be_purchased', true);
+                                        } else if (val === 'MANUFACTURABLE') {
+                                            form.setValue('track_inventory', true);
+                                            form.setValue('can_be_purchased', false);
+                                            form.setValue('is_dynamic_pricing', false);
+                                        } else {
+                                            form.setValue('track_inventory', false);
+                                            form.setValue('is_dynamic_pricing', false);
+                                        }
+                                    }}
+                                    disabled={isEditing} 
+                                    lockedType={lockedType} 
+                                    error={fieldState.error?.message}
+                                    required 
+                                />
+                            )}
+                        />
+                    </div>
+                    <div className="col-span-2">
+                        <FormField<ProductFormValues>
+                            control={form.control}
+                            name="category"
+                            render={({ field, fieldState }) => (
+                                <CategorySelector
+                                    label="Categoría del Producto"
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    error={fieldState.error?.message}
+                                    disabled={false}
+                                    required
+                                />
+                            )}
+                        />
+                    </div>
+                    <div className="col-span-1" />
+
+                    {/* Fila 4: SKU (Propietary Row) */}
+                    <div className="col-span-4">
+                        <FormField<ProductFormValues>
+                            control={form.control}
+                            name="code"
+                            render={({ field, fieldState }) => (
+                                <div className="flex gap-2 items-start">
+                                    <LabeledInput
+                                        label="Código SKU / EAN / Barras"
+                                        placeholder="Código"
+                                        error={fieldState.error?.message}
+                                        className="font-mono font-bold text-xs h-[1.5rem]"
+                                        containerClassName="flex-1"
+                                        {...field}
+                                        value={field.value || ""}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        className="shrink-0 h-[1.5rem] w-8 rounded-md border-primary/10 hover:bg-primary/5 shadow-sm transition-all self-end mb-1"
+                                        onClick={() => setIsBarcodeModalOpen(true)}
+                                        title="Generador de Barras"
+                                    >
+                                        <Barcode className="h-3.5 w-3.5 text-primary" />
+                                    </Button>
+                                    <BarcodeModal
+                                        open={isBarcodeModalOpen}
+                                        onOpenChange={setIsBarcodeModalOpen}
+                                        initialValue={field.value}
+                                        onApply={(val) => form.setValue("code", val, { shouldDirty: true, shouldValidate: true })}
+                                    />
+                                </div>
                             )}
                         />
                     </div>

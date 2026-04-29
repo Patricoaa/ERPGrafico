@@ -2,7 +2,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .serializers import (
-    ProductSerializer, ProductCategorySerializer, WarehouseSerializer, 
+    ProductSerializer, ProductSimpleSerializer, ProductCategorySerializer, WarehouseSerializer,
     StockMoveSerializer, UoMSerializer, UoMCategorySerializer, PricingRuleSerializer,
     CustomFieldTemplateSerializer, ProductCustomFieldSerializer, SubscriptionSerializer,
     ProductAttributeSerializer, ProductAttributeValueSerializer
@@ -12,10 +12,9 @@ from .models import (
     CustomFieldTemplate, ProductCustomField, Subscription,
     ProductAttribute, ProductAttributeValue, ProductFavorite
 )
-from django.db.models import Exists, OuterRef, Value, BooleanField, Subquery, IntegerField
-from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
 from .services import StockService, UoMService
+from .selectors import list_products, get_product_base_queryset, get_stock_report_data
 from django_filters.rest_framework import DjangoFilterBackend
 from decimal import Decimal
 
@@ -31,108 +30,10 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     search_fields = ['name', 'internal_code', 'code']
 
     def get_queryset(self):
-        from django.db.models import Sum, Count
-        queryset = Product.objects.select_related(
-            'category', 'uom', 'sale_uom', 'purchase_uom', 
-            'receiving_warehouse', 'preferred_supplier', 'subscription_supplier'
-        ).prefetch_related(
-            'attribute_values', 
-            'attribute_values__attribute',
-            'allowed_sale_uoms',
-            'product_custom_fields',
-            'attachments'
-        ).annotate(
-            annotated_current_stock=Sum('stock_moves__quantity'),
-            variants_count=Count('variants')
-        )
-
-        # Handle User Favorites (Always annotate to avoid errors in retrieve/serializer)
         user = self.request.user
-        if user and user.is_authenticated:
-            queryset = queryset.annotate(
-                is_favorite=Exists(
-                    ProductFavorite.objects.filter(user=user, product=OuterRef('id'))
-                )
-            )
-        else:
-            queryset = queryset.annotate(is_favorite=Value(False, output_field=BooleanField()))
-        
-        # If it's a detail request (requesting a single object by ID), 
-        # we MUST return the full queryset to avoid 404s on archived products.
         if self.kwargs.get('pk') or self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
-            return queryset
-
-        active_param = self.request.query_params.get('active')
-        
-        # Filter by active status
-        if active_param == 'all':
-            pass # Show all
-        elif active_param == 'false':
-            queryset = queryset.filter(active=False)
-        else:
-            # Default behavior: Show only active products (active=true or active is None)
-            queryset = queryset.filter(active=True)
-
-        # Variant filtering logic
-        # 1. If we are explicitly filtering by parent_template or parent_template__isnull, 
-        #    we do not apply the default hide_technical_variants filter.
-        if 'parent_template__isnull' not in self.request.query_params and 'parent_template' not in self.request.query_params:
-            show_technical_variants = self.request.query_params.get('show_technical_variants', 'false') == 'true'
-            if not show_technical_variants:
-                queryset = queryset.filter(parent_template__isnull=True)
-
-        # Option to exclude variant templates (products with has_variants=True)
-        exclude_variant_templates = self.request.query_params.get('exclude_variant_templates', 'false') == 'true'
-        if exclude_variant_templates:
-            queryset = queryset.filter(has_variants=False)
-
-        from django.db.models import Prefetch, Sum
-        from production.models import BillOfMaterials, BillOfMaterialsLine
-        
-        
-        bom_queryset = BillOfMaterials.objects.filter(active=True).prefetch_related(
-            Prefetch(
-                'lines',
-                queryset=BillOfMaterialsLine.objects.select_related('uom').prefetch_related(
-                    Prefetch(
-                        'component',
-                        queryset=Product.objects.annotate(
-                            annotated_current_stock=Sum('stock_moves__quantity')
-                        ).select_related('uom')
-                    )
-                )
-            )
-        )
-
-        queryset = queryset.prefetch_related(
-            Prefetch('boms', queryset=bom_queryset)
-        )
-
-
-        # Handle special sorting for POS (Popularity)
-        sort_param = self.request.query_params.get('sort')
-        if sort_param == 'popular':
-            from django.db.models import Q
-            from sales.models import SaleOrder, SaleLine
-            
-            # Subquery to count sales for each product separately without affecting groupings
-            sales_subquery = SaleLine.objects.filter(
-                product=OuterRef('id'),
-                order__status__in=[
-                    SaleOrder.Status.CONFIRMED,
-                    SaleOrder.Status.INVOICED,
-                    SaleOrder.Status.PAID
-                ]
-            ).values('product').annotate(count=Count('id')).values('count')
-
-            queryset = queryset.annotate(
-                sales_count=Coalesce(Subquery(sales_subquery), Value(0), output_field=IntegerField())
-            ).order_by('-is_favorite', '-sales_count', 'name')
-        else:
-            # Default sort prioritizing favorites
-            queryset = queryset.order_by('-is_favorite', '-id')
-
-        return queryset
+            return get_product_base_queryset(user=user)
+        return list_products(user=user, params=self.request.query_params)
 
     @action(detail=True, methods=['post'])
     def toggle_favorite(self, request, pk=None):
@@ -182,40 +83,7 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
             raise Throttled(detail="Demasiadas solicitudes al reporte de stock. Intente en un momento.")
 
         def _generate():
-            from django.db.models import Sum, Q
-        
-            products = Product.objects.filter(
-                Q(product_type__in=[Product.Type.STORABLE, Product.Type.CONSUMABLE]) |
-                Q(product_type=Product.Type.MANUFACTURABLE, track_inventory=True) |
-                Q(product_type=Product.Type.MANUFACTURABLE, requires_advanced_manufacturing=False, mfg_auto_finalize=False)
-            ).select_related('category')
-            report = []
-            
-            for p in products:
-                stock_qty = p.stock_moves.aggregate(total=Sum('quantity'))['total'] or 0
-                moves_in = p.stock_moves.filter(quantity__gt=0).aggregate(total=Sum('quantity'))['total'] or 0
-                moves_out = abs(p.stock_moves.filter(quantity__lt=0).aggregate(total=Sum('quantity'))['total'] or 0)
-                unit_cost = float(p.cost_price) if stock_qty > 0 else 0.0
-                total_value = float(stock_qty * Decimal(str(unit_cost)))
-
-                report.append({
-                    'id': p.id,
-                    'code': p.code,
-                    'internal_code': p.internal_code,
-                    'name': p.name,
-                    'category_name': p.category.name,
-                    'uom_id': p.uom.id if p.uom else None,
-                    'uom_category_id': p.uom.category_id if p.uom else None,
-                    'uom_name': p.uom.name if p.uom else '',
-                    'stock_qty': float(stock_qty),
-                    'unit_cost': unit_cost,
-                    'total_value': total_value,
-                    'moves_in': float(moves_in),
-                    'moves_out': float(moves_out),
-                    'qty_reserved': float(p.qty_reserved),
-                    'qty_available': float(p.qty_available)
-                })
-            return report
+            return get_stock_report_data()
 
         data = cache_report(
             module='inventory',
@@ -483,7 +351,6 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
                     mfg_press_digital=template.mfg_press_digital,
                     mfg_postpress_finishing=template.mfg_postpress_finishing,
                     mfg_postpress_binding=template.mfg_postpress_binding,
-                    mfg_default_delivery_days=template.mfg_default_delivery_days,
                 )
                 variant.attribute_values.set(combo)
                 variant.save()  # Triggers display name generation
@@ -494,6 +361,13 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
             "created": created_count,
             "skipped": skipped_count
         })
+
+    @action(detail=True, methods=['get'])
+    def variants(self, request, pk=None):
+        template = self.get_object()
+        variants = template.variants.filter(active=True)
+        serializer = ProductSimpleSerializer(variants, many=True, context={'request': request})
+        return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
     def effective_price(self, request, pk=None):

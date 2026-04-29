@@ -3,14 +3,12 @@
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
 import { FileText, Receipt, AlertCircle, Loader2, CheckCircle, ShieldAlert } from "lucide-react"
 import { useFolioValidation } from "@/hooks/useFolioValidation"
 import { useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useQuery } from '@tanstack/react-query'
-import { settingsApi } from "@/features/settings/api/settingsApi"
+import { useBillingSettingsQuery } from "@/features/settings"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
@@ -43,11 +41,7 @@ export function Step1_DTE({
     const { dateString } = useServerDate()
 
     // Fetch billing settings to get allowed DTE types
-    const { data: settings } = useQuery({
-        queryKey: ['settings-billing'],
-        queryFn: settingsApi.getBillingSettings,
-        staleTime: 1000 * 60 * 5, // 5 minutes
-    })
+    const { settings } = useBillingSettingsQuery()
 
     const allowedDteTypes = useMemo(() => {
         if (!settings) return ['BOLETA', 'FACTURA', 'BOLETA_EXENTA', 'FACTURA_EXENTA'];

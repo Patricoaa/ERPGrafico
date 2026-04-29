@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { LucideIcon } from "lucide-react"
@@ -20,6 +20,7 @@ interface CollapsibleSheetProps {
     hideOverlay?: boolean
     pushOffset?: number
     size?: "sm" | "md" | "lg" | "xl" | "full"
+    allowOverflow?: boolean
 }
 
 export function CollapsibleSheet({
@@ -35,7 +36,8 @@ export function CollapsibleSheet({
     fullWidth = 500,
     hideOverlay = true,
     pushOffset = 0,
-    size
+    size,
+    allowOverflow = false
 }: CollapsibleSheetProps) {
     const { registerSheet, unregisterSheet, getSheetOffset, isSheetCollapsed, getSheetIndex } = useGlobalModals()
     const [isMounted, setIsMounted] = useState(false)
@@ -136,6 +138,9 @@ export function CollapsibleSheet({
                 transition: (!open && !isCollapsed) ? 'none' : 'transform 500ms cubic-bezier(0.16, 1, 0.3, 1), margin-right 500ms cubic-bezier(0.16, 1, 0.3, 1), width 500ms cubic-bezier(0.16, 1, 0.3, 1)'
             }}
         >
+            <SheetTitle className="sr-only">{tabLabel}</SheetTitle>
+            <SheetDescription className="sr-only">Panel lateral para {tabLabel}</SheetDescription>
+
             {/* Vertical Tab (Solapa) - Only visible when collapsed AND open */}
             <div
                 onClick={() => isCollapsed && onOpenChange(true)}
@@ -165,6 +170,7 @@ export function CollapsibleSheet({
             {/* Standard Wrapper for Content to handle opacity/grayscale */}
             <div className={cn(
                 "flex flex-col h-full bg-background transition-opacity duration-300",
+                allowOverflow ? "overflow-visible" : "overflow-hidden",
                 ((!open || isCollapsed) && !forceCollapse) ? "opacity-0 pointer-events-none" : "opacity-100",
                 (isHidden && !forceCollapse) && "hidden" // Only prune from DOM after 500ms exit transition finishes
             )}>

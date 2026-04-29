@@ -49,6 +49,14 @@ class ReconciliationMatch(models.Model):
     
     notes = models.TextField(_("Notas"), blank=True)
     
+    # Tracking for transfers generated during reconciliation (e.g. cross-account match)
+    transfer_journal_entries = models.ManyToManyField(
+        'accounting.JournalEntry',
+        related_name='reconciliation_matches_transfers',
+        blank=True,
+        verbose_name=_("Asientos de Transferencia")
+    )
+    
     history = HistoricalRecords()
     
     class Meta:
@@ -271,6 +279,9 @@ class TreasuryMovement(models.Model):
             models.Index(fields=['is_reconciled']),
             models.Index(fields=['transaction_number']),
             models.Index(fields=['reference']),
+            # S2.4: Índices compuestos para queries de matching batch (B10)
+            models.Index(fields=['from_account', 'date', 'is_reconciled'], name='idx_movement_from_date_recon'),
+            models.Index(fields=['to_account', 'date', 'is_reconciled'], name='idx_movement_to_date_recon'),
         ]
 
     def __str__(self):
@@ -383,13 +394,13 @@ class TreasuryAccountManager(models.Manager):
 
 class TreasuryAccount(models.Model):
     class Type(models.TextChoices):
-        CHECKING = 'CHECKING', _('Cuenta Corriente')
-        CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito')
-        DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito')
-        CHECKBOOK = 'CHECKBOOK', _('Chequera')
-        CASH = 'CASH', _('Efectivo')
-        BRIDGE = 'BRIDGE', _('Cuenta Puente (Clearing)')
-        MERCHANT = 'MERCHANT', _('Cuenta Recaudadora Pasarela')
+        CHECKING = 'CHECKING', _('Cuenta Bancaria (Corriente/Vista)')
+        CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito (Cta. Propia)')
+        DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito (Cta. Propia)')
+        CHECKBOOK = 'CHECKBOOK', _('Chequera / Instrumentos')
+        CASH = 'CASH', _('Caja Física (Efectivo)')
+        BRIDGE = 'BRIDGE', _('Cuenta Puente (Liquidación/Clearing)')
+        MERCHANT = 'MERCHANT', _('Cuenta Recaudadora (Pasarela/Wallet)')
 
     # Types que NO son efectivo/banco directo — usan prefijos contables distintos.
     _NON_CASH_EQUIVALENT_TYPES = frozenset({'BRIDGE', 'MERCHANT'})
@@ -674,6 +685,16 @@ class BankStatement(models.Model):
         verbose_name=_("Cuenta de Tesorería")
     )
     statement_date = models.DateField(_("Fecha de la Cartola"))
+    period_start = models.DateField(
+        _("Inicio del Periodo"),
+        null=True,
+        help_text=_("Fecha de la transacción más antigua incluida")
+    )
+    period_end = models.DateField(
+        _("Fin del Periodo"),
+        null=True,
+        help_text=_("Fecha de la transacción más reciente incluida")
+    )
     opening_balance = models.DecimalField(
         _("Balance de Apertura"), 
         max_digits=20, 
@@ -719,6 +740,15 @@ class BankStatement(models.Model):
     )
     total_lines = models.IntegerField(_("Total de Líneas"), default=0)
     reconciled_lines = models.IntegerField(_("Líneas Reconciliadas"), default=0)
+    
+    file_hash = models.CharField(
+        _("Hash del Archivo"), 
+        max_length=64, 
+        unique=True, 
+        null=True, 
+        blank=True,
+        help_text=_("Hash SHA-256 para evitar duplicidad de archivos")
+    )
     
     notes = models.TextField(_("Notas"), blank=True)
     
@@ -854,8 +884,33 @@ class BankStatementLine(models.Model):
         verbose_name=_("Asiento de Ajuste")
     )
     
+    # Advertencias de importación
+    has_warning = models.BooleanField(_("Tiene Advertencia"), default=False)
+    warning_message = models.TextField(_("Mensaje de Advertencia"), blank=True, null=True)
+    
     # Notas
     notes = models.TextField(_("Notas"), blank=True)
+    
+    # Exclusión
+    class ExclusionReason(models.TextChoices):
+        DUPLICATE = 'DUPLICATE', _('Transacción Duplicada')
+        INTERNAL = 'INTERNAL', _('Traspaso Interno no Conciliable')
+        ADJUSTMENT = 'ADJUSTMENT', _('Ajuste de Saldo')
+        ERROR = 'ERROR', _('Error de Importación / Datos Corruptos')
+        OTHER = 'OTHER', _('Otro (Especificar en notas)')
+
+    exclusion_reason = models.CharField(
+        _("Razón de Exclusión"),
+        max_length=50,
+        choices=ExclusionReason.choices,
+        blank=True,
+        null=True
+    )
+    exclusion_notes = models.TextField(
+        _("Notas de Exclusión"),
+        blank=True,
+        null=True
+    )
     
     history = HistoricalRecords()
     
@@ -870,17 +925,14 @@ class BankStatementLine(models.Model):
             models.Index(fields=['statement', 'reconciliation_status']),
             models.Index(fields=['transaction_id']),
         ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['statement', 'transaction_id'],
+                condition=~models.Q(transaction_id=''),
+                name='uniq_stmt_txnid'
+            )
+        ]
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('treasury')
-
-    def delete(self, *args, **kwargs):
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('treasury')
-        super().delete(*args, **kwargs)
-    
     def __str__(self):
         return f"{self.statement.display_id} - Línea {self.line_number}"
     
@@ -948,13 +1000,21 @@ class ReconciliationRule(models.Model):
         default=0,
         help_text=_("Contador de veces que esta regla ha generado un match")
     )
-    success_rate = models.DecimalField(
-        _("Tasa de Éxito"),
-        max_digits=5,
-        decimal_places=2,
+    times_succeeded = models.IntegerField(
+        _("Veces Confirmada"),
         default=0,
-        help_text=_("Porcentaje de matches confirmados vs sugeridos")
+        help_text=_("Contador de veces que un match sugerido por esta regla fue confirmado")
     )
+
+    @property
+    def success_rate(self) -> float:
+        """
+        Tasa de éxito derivada: (times_succeeded / times_applied) * 100.
+        Retorna 0.0 si no se ha aplicado nunca para evitar ZeroDivisionError.
+        """
+        if self.times_applied == 0:
+            return 0.0
+        return round((self.times_succeeded / self.times_applied) * 100, 2)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -1153,12 +1213,12 @@ class PaymentTerminalDevice(models.Model):
 class PaymentMethod(models.Model):
     """Métodos de pago específicos asociados a una cuenta de tesorería"""
     class Type(models.TextChoices):
-        CASH = 'CASH', _('Efectivo')
-        CARD = 'CARD', _('Tarjeta')
-        DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito')
-        CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito')
-        CARD_TERMINAL = 'CARD_TERMINAL', _('Tarjeta (Terminal Integrado)')
-        TRANSFER = 'TRANSFER', _('Transferencia')
+        CASH = 'CASH', _('Efectivo Directo')
+        CARD = 'CARD', _('Tarjeta (Manual)')
+        DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta Débito Empresa')
+        CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta Crédito Empresa')
+        CARD_TERMINAL = 'CARD_TERMINAL', _('Tarjeta (Terminal POS Integrado)')
+        TRANSFER = 'TRANSFER', _('Transferencia Bancaria')
         CHECK = 'CHECK', _('Cheque')
 
     name = models.CharField(_("Nombre"), max_length=100)

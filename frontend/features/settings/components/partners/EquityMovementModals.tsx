@@ -14,15 +14,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from "@/components/ui/select"
+import { CancelButton, SubmitButton, LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner } from "@/features/contacts/types/partner"
@@ -143,33 +135,21 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
                 description="Registre un cambio formal en la participación societaria. Esto afecta el capital suscrito y el saldo por enterar del socio."
                 footer={
                     <div className="flex w-full gap-3 justify-end">
-                        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                            Cancelar
-                        </Button>
-                        <Button onClick={handleSubmit} disabled={loading || exceedsCapital}>
-                            {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                        <SubmitButton onClick={handleSubmit} disabled={exceedsCapital} loading={loading}>
                             Confirmar Movimiento
-                        </Button>
+                        </SubmitButton>
                     </div>
                 }
             >
                 <div className="grid gap-4">
-                    <div className="grid gap-2">
-                        <Label htmlFor="partner">Socio</Label>
-                        <Select
-                            value={formData.contact_id}
-                            onValueChange={(v) => setFormData(prev => ({ ...prev, contact_id: v }))}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Seleccione un socio" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {partners.map(p => (
-                                    <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <LabeledSelect
+                        label="Socio"
+                        value={formData.contact_id}
+                        onChange={(v) => setFormData(prev => ({ ...prev, contact_id: v }))}
+                        placeholder="Seleccione un socio"
+                        options={partners.map(p => ({ value: p.id.toString(), label: p.name }))}
+                    />
 
                     {/* Show selected partner's current capital */}
                     {selectedPartner && (
@@ -185,24 +165,18 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
                         </div>
                     )}
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="type">Tipo de Movimiento</Label>
-                        <Select
-                            value={formData.type}
-                            onValueChange={(v: "SUBSCRIPTION" | "REDUCTION") => setFormData(prev => ({ ...prev, type: v }))}
-                        >
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="SUBSCRIPTION">Aumento de Capital (Suscripción)</SelectItem>
-                                <SelectItem value="REDUCTION">Reducción de Capital</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="amount">Monto ($)</Label>
-                        <Input
+                    <LabeledSelect
+                        label="Tipo de Movimiento"
+                        value={formData.type}
+                        onChange={(v) => setFormData(prev => ({ ...prev, type: v as "SUBSCRIPTION" | "REDUCTION" }))}
+                        options={[
+                            { value: "SUBSCRIPTION", label: "Aumento de Capital (Suscripción)" },
+                            { value: "REDUCTION", label: "Reducción de Capital" },
+                        ]}
+                    />
+                    <div>
+                        <LabeledInput
+                            label="Monto ($)"
                             id="amount"
                             type="number"
                             value={formData.amount}
@@ -210,7 +184,7 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
                             placeholder="0"
                         />
                         {isReduction && selectedPartner && amountNum > 0 && (
-                            <p className={`text-[10px] font-medium ${exceedsCapital ? 'text-destructive' : 'text-muted-foreground'}`}>
+                            <p className={`text-[10px] font-medium mt-1 ${exceedsCapital ? 'text-destructive' : 'text-muted-foreground'}`}>
                                 {exceedsCapital
                                     ? `⚠ Excede el capital suscrito (${formatCurrency(subscribedCapital)})`
                                     : `Capital resultante: ${formatCurrency(subscribedCapital - amountNum)}`
@@ -218,24 +192,25 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
                             </p>
                         )}
                     </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="date">Fecha</Label>
-                        <Input
-                            id="date"
-                            type="date"
-                            value={formData.date}
-                            onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                        />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="description">Descripción / Motivo</Label>
-                        <Input
-                            id="description"
-                            value={formData.description}
-                            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                            placeholder="Ej: Aporte por expansión 2026"
-                        />
-                    </div>
+                    <PeriodValidationDateInput
+                        label="Fecha"
+                        date={formData.date ? new Date(formData.date + 'T12:00:00') : undefined}
+                        onDateChange={(d) => {
+                            if (!d) {
+                                setFormData(prev => ({ ...prev, date: "" }))
+                                return
+                            }
+                            setFormData(prev => ({ ...prev, date: d.toISOString().split('T')[0] }))
+                        }}
+                        validationType="accounting"
+                    />
+                    <LabeledInput
+                        label="Descripción / Motivo"
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Ej: Aporte por expansión 2026"
+                    />
                 </div>
             </BaseModal>
 
@@ -359,34 +334,24 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
                 description="Mueva capital suscrito de un socio existente a otro nuevo o actual."
                 footer={
                     <div className="flex w-full gap-3 justify-end">
-                        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                            Cancelar
-                        </Button>
-                        <Button onClick={handleSubmit} disabled={loading || exceedsCapital}>
-                            {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                        <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                        <SubmitButton onClick={handleSubmit} disabled={exceedsCapital} loading={loading}>
                             Registrar Transferencia
-                        </Button>
+                        </SubmitButton>
                     </div>
                 }
             >
                 <div className="grid gap-4">
-                    <div className="grid gap-2">
-                        <Label>Socio que Transfiere (Vende)</Label>
-                        <Select
+                    <div>
+                        <LabeledSelect
+                            label="Socio que Transfiere (Vende)"
                             value={formData.from_contact_id}
-                            onValueChange={(v) => setFormData(prev => ({ ...prev, from_contact_id: v }))}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Socio de origen" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {partners.map(p => (
-                                    <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                            onChange={(v) => setFormData(prev => ({ ...prev, from_contact_id: v }))}
+                            placeholder="Socio de origen"
+                            options={partners.map(p => ({ value: p.id.toString(), label: p.name }))}
+                        />
                         {seller && (
-                            <p className="text-[10px] text-muted-foreground font-medium">
+                            <p className="text-[10px] text-muted-foreground font-medium mt-1">
                                 Capital suscrito: <span className="font-mono font-bold text-primary">{formatCurrency(sellerCapital)}</span> — Participación: <span className="font-bold">{seller.partner_equity_percentage}%</span>
                             </p>
                         )}
@@ -394,30 +359,23 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
                     <div className="grid gap-2 font-bold text-center text-muted-foreground">
                         <ArrowRightLeft className="mx-auto h-4 w-4" />
                     </div>
-                    <div className="grid gap-2">
-                        <Label>Socio que Recibe (Compra)</Label>
-                        <Select
+                    <div>
+                        <LabeledSelect
+                            label="Socio que Recibe (Compra)"
                             value={formData.to_contact_id}
-                            onValueChange={(v) => setFormData(prev => ({ ...prev, to_contact_id: v }))}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Socio de destino" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {partners.map(p => (
-                                    <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                            onChange={(v) => setFormData(prev => ({ ...prev, to_contact_id: v }))}
+                            placeholder="Socio de destino"
+                            options={partners.map(p => ({ value: p.id.toString(), label: p.name }))}
+                        />
                         {buyer && (
-                            <p className="text-[10px] text-muted-foreground font-medium">
+                            <p className="text-[10px] text-muted-foreground font-medium mt-1">
                                 Capital actual: <span className="font-mono font-bold">{formatCurrency(buyer.partner_total_contributions || 0)}</span> — Participación: <span className="font-bold">{buyer.partner_equity_percentage}%</span>
                             </p>
                         )}
                     </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="amount">Monto Capital Transferido ($)</Label>
-                        <Input
+                    <div>
+                        <LabeledInput
+                            label="Monto Capital Transferido ($)"
                             id="amount"
                             type="number"
                             value={formData.amount}
@@ -425,7 +383,7 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
                             placeholder="0"
                         />
                         {seller && amountNum > 0 && (
-                            <p className={`text-[10px] font-medium ${exceedsCapital ? 'text-destructive' : 'text-muted-foreground'}`}>
+                            <p className={`text-[10px] font-medium mt-1 ${exceedsCapital ? 'text-destructive' : 'text-muted-foreground'}`}>
                                 {exceedsCapital
                                     ? `⚠ Excede el capital suscrito del vendedor (${formatCurrency(sellerCapital)})`
                                     : `Capital restante del vendedor: ${formatCurrency(sellerCapital - amountNum)}`
@@ -433,24 +391,25 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
                             </p>
                         )}
                     </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="date">Fecha de la Transacción</Label>
-                        <Input
-                            id="date"
-                            type="date"
-                            value={formData.date}
-                            onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                        />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="description">Descripción / Motivo</Label>
-                        <Input
-                            id="description"
-                            value={formData.description}
-                            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                            placeholder="Ej: Venta de acciones según acta Nº 45"
-                        />
-                    </div>
+                    <PeriodValidationDateInput
+                        label="Fecha de la Transacción"
+                        date={formData.date ? new Date(formData.date + 'T12:00:00') : undefined}
+                        onDateChange={(d) => {
+                            if (!d) {
+                                setFormData(prev => ({ ...prev, date: "" }))
+                                return
+                            }
+                            setFormData(prev => ({ ...prev, date: d.toISOString().split('T')[0] }))
+                        }}
+                        validationType="accounting"
+                    />
+                    <LabeledInput
+                        label="Descripción / Motivo"
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Ej: Venta de acciones según acta Nº 45"
+                    />
                 </div>
             </BaseModal>
 
@@ -577,73 +536,60 @@ export function CapitalContributionModal({ open, onOpenChange, onSuccess }: Moda
             description="Ingrese el capital en efectivo o transferencia a una cuenta de tesorería."
             footer={
                 <div className="flex w-full gap-3 justify-end">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                        Cancelar
-                    </Button>
-                    <Button onClick={handleSubmit} disabled={loading}>
-                        {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                    <SubmitButton onClick={handleSubmit} loading={loading}>
                         Registrar Aporte
-                    </Button>
+                    </SubmitButton>
                 </div>
             }
         >
             <div className="grid gap-4">
-                <div className="grid gap-2">
-                    <Label>Socio Aportante</Label>
-                    <Select value={formData.contact_id} onValueChange={(v) => setFormData(prev => ({ ...prev, contact_id: v }))}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Seleccione un socio" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {partners.map(p => (
-                                <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                <div>
+                    <LabeledSelect
+                        label="Socio Aportante"
+                        value={formData.contact_id}
+                        onChange={(v) => setFormData(prev => ({ ...prev, contact_id: v }))}
+                        placeholder="Seleccione un socio"
+                        options={partners.map(p => ({ value: p.id.toString(), label: p.name }))}
+                    />
                     {selectedPartner && (
-                        <p className="text-[10px] text-muted-foreground font-medium">
+                        <p className="text-[10px] text-muted-foreground font-medium mt-1">
                             Capital Pendiente (por cobrar): <span className="font-mono font-bold text-success">{formatCurrency(pendingCapital)}</span>
                         </p>
                     )}
                 </div>
-                <div className="grid gap-2">
-                    <Label>Cuenta de Tesorería (Destino)</Label>
-                    <Select value={formData.treasury_account_id} onValueChange={(v) => setFormData(prev => ({ ...prev, treasury_account_id: v }))}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Cuenta bancaria o caja" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {treasuryAccounts.map(a => (
-                                <SelectItem key={a.id} value={a.id.toString()}>{a.name} ({a.identifier})</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="grid gap-2">
-                    <Label>Monto Ingresado ($)</Label>
-                    <Input
-                        type="number"
-                        value={formData.amount}
-                        onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                        placeholder="0"
-                    />
-                </div>
-                <div className="grid gap-2">
-                    <Label>Fecha del Aporte</Label>
-                    <Input
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                    />
-                </div>
-                <div className="grid gap-2">
-                    <Label>Descripción / Motivo</Label>
-                    <Input
-                        value={formData.description}
-                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="Ej: Aporte inicial o expansión"
-                    />
-                </div>
+                <LabeledSelect
+                    label="Cuenta de Tesorería (Destino)"
+                    value={formData.treasury_account_id}
+                    onChange={(v) => setFormData(prev => ({ ...prev, treasury_account_id: v }))}
+                    placeholder="Cuenta bancaria o caja"
+                    options={treasuryAccounts.map(a => ({ value: a.id.toString(), label: `${a.name} (${a.identifier})` }))}
+                />
+                <LabeledInput
+                    label="Monto Ingresado ($)"
+                    type="number"
+                    value={formData.amount}
+                    onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                    placeholder="0"
+                />
+                <PeriodValidationDateInput
+                    label="Fecha del Aporte"
+                    date={formData.date ? new Date(formData.date + 'T12:00:00') : undefined}
+                    onDateChange={(d) => {
+                        if (!d) {
+                            setFormData(prev => ({ ...prev, date: "" }))
+                            return
+                        }
+                        setFormData(prev => ({ ...prev, date: d.toISOString().split('T')[0] }))
+                    }}
+                    validationType="accounting"
+                />
+                <LabeledInput
+                    label="Descripción / Motivo"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Ej: Aporte inicial o expansión"
+                />
             </div>
         </BaseModal>
     )
@@ -721,73 +667,60 @@ export function ProvisionalWithdrawalModal({ open, onOpenChange, onSuccess }: Mo
             description="Adelanto a cuenta de utilidades. Este retiro descontará caja y quedará pendiente de liquidar en el cierre anual."
             footer={
                 <div className="flex w-full gap-3 justify-end">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                        Cancelar
-                    </Button>
-                    <Button variant="destructive" onClick={handleSubmit} disabled={loading}>
-                        {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                    <SubmitButton variant="destructive" onClick={handleSubmit} loading={loading}>
                         Confirmar Egreso
-                    </Button>
+                    </SubmitButton>
                 </div>
             }
         >
             <div className="grid gap-4">
-                <div className="grid gap-2">
-                    <Label>Socio que Retira</Label>
-                    <Select value={formData.contact_id} onValueChange={(v) => setFormData(prev => ({ ...prev, contact_id: v }))}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Seleccione un socio" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {partners.map(p => (
-                                <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                <div>
+                    <LabeledSelect
+                        label="Socio que Retira"
+                        value={formData.contact_id}
+                        onChange={(v) => setFormData(prev => ({ ...prev, contact_id: v }))}
+                        placeholder="Seleccione un socio"
+                        options={partners.map(p => ({ value: p.id.toString(), label: p.name }))}
+                    />
                     {selectedPartner && (
-                        <p className="text-[10px] text-muted-foreground font-medium">
+                        <p className="text-[10px] text-muted-foreground font-medium mt-1">
                             Acumulado en Retiros Provisorios (Deuda del Socio): <span className="font-mono font-bold text-destructive">{formatCurrency(withdrawalsBalance)}</span>
                         </p>
                     )}
                 </div>
-                <div className="grid gap-2">
-                    <Label>Cuenta de Tesorería (Origen)</Label>
-                    <Select value={formData.treasury_account_id} onValueChange={(v) => setFormData(prev => ({ ...prev, treasury_account_id: v }))}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Cuenta bancaria o caja" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {treasuryAccounts.map(a => (
-                                <SelectItem key={a.id} value={a.id.toString()}>{a.name} ({a.identifier})</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="grid gap-2">
-                    <Label>Monto a Retirar ($)</Label>
-                    <Input
-                        type="number"
-                        value={formData.amount}
-                        onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                        placeholder="0"
-                    />
-                </div>
-                <div className="grid gap-2">
-                    <Label>Fecha del Retiro</Label>
-                    <Input
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                    />
-                </div>
-                <div className="grid gap-2">
-                    <Label>Descripción / Motivo</Label>
-                    <Input
-                        value={formData.description}
-                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="Ej: Adelanto utilidades Octubre"
-                    />
-                </div>
+                <LabeledSelect
+                    label="Cuenta de Tesorería (Origen)"
+                    value={formData.treasury_account_id}
+                    onChange={(v) => setFormData(prev => ({ ...prev, treasury_account_id: v }))}
+                    placeholder="Cuenta bancaria o caja"
+                    options={treasuryAccounts.map(a => ({ value: a.id.toString(), label: `${a.name} (${a.identifier})` }))}
+                />
+                <LabeledInput
+                    label="Monto a Retirar ($)"
+                    type="number"
+                    value={formData.amount}
+                    onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
+                    placeholder="0"
+                />
+                <PeriodValidationDateInput
+                    label="Fecha del Retiro"
+                    date={formData.date ? new Date(formData.date + 'T12:00:00') : undefined}
+                    onDateChange={(d) => {
+                        if (!d) {
+                            setFormData(prev => ({ ...prev, date: "" }))
+                            return
+                        }
+                        setFormData(prev => ({ ...prev, date: d.toISOString().split('T')[0] }))
+                    }}
+                    validationType="accounting"
+                />
+                <LabeledInput
+                    label="Descripción / Motivo"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Ej: Adelanto utilidades Octubre"
+                />
             </div>
         </BaseModal>
     )
@@ -871,58 +804,45 @@ export function DividendPaymentModal({ open, onOpenChange, onSuccess, initialPar
             description="Registre la salida de fondos para el pago de utilidades decretadas."
             footer={
                 <div className="flex w-full gap-3 justify-end">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
-                        Cancelar
-                    </Button>
-                    <Button onClick={handleSubmit} disabled={loading || !formData.amount}>
-                        {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                    <SubmitButton onClick={handleSubmit} disabled={!formData.amount} loading={loading}>
                         Confirmar Pago
-                    </Button>
+                    </SubmitButton>
                 </div>
             }
         >
             <div className="grid gap-4">
-                <div className="grid gap-2">
-                    <Label>Socio Receptor</Label>
-                    <Select value={formData.contact_id} onValueChange={(v) => setFormData(prev => ({ ...prev, contact_id: v }))}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Seleccione un socio" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {partners.map(p => (
-                                <SelectItem key={p.id} value={p.id.toString()}>{p.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                <div>
+                    <LabeledSelect
+                        label="Socio Receptor"
+                        value={formData.contact_id}
+                        onChange={(v) => setFormData(prev => ({ ...prev, contact_id: v }))}
+                        placeholder="Seleccione un socio"
+                        options={partners.map(p => ({ value: p.id.toString(), label: p.name }))}
+                    />
                     {selectedPartner && (
-                        <p className="text-[10px] text-muted-foreground font-medium">
+                        <p className="text-[10px] text-muted-foreground font-medium mt-1">
                             Saldo de Dividendos por Pagar: <span className="font-mono font-bold text-primary">{formatCurrency(dividendBalance)}</span>
                         </p>
                     )}
                 </div>
-                <div className="grid gap-2">
-                    <Label>Cuenta de Tesorería (Origen)</Label>
-                    <Select value={formData.treasury_account_id} onValueChange={(v) => setFormData(prev => ({ ...prev, treasury_account_id: v }))}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Cuenta bancaria o caja" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {treasuryAccounts.map(a => (
-                                <SelectItem key={a.id} value={a.id.toString()}>{a.name} ({a.identifier})</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="grid gap-2">
-                    <Label>Monto a Pagar ($)</Label>
-                    <Input
+                <LabeledSelect
+                    label="Cuenta de Tesorería (Origen)"
+                    value={formData.treasury_account_id}
+                    onChange={(v) => setFormData(prev => ({ ...prev, treasury_account_id: v }))}
+                    placeholder="Cuenta bancaria o caja"
+                    options={treasuryAccounts.map(a => ({ value: a.id.toString(), label: `${a.name} (${a.identifier})` }))}
+                />
+                <div>
+                    <LabeledInput
+                        label="Monto a Pagar ($)"
                         type="number"
                         value={formData.amount}
                         onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                         placeholder="0"
                     />
                     {isOverflow && (
-                        <Alert className="py-2 px-3 bg-warning/10 border-warning/20">
+                        <Alert className="py-2 px-3 mt-1 bg-warning/10 border-warning/20">
                             <AlertTriangle className="h-4 w-4 text-warning" />
                             <AlertDescription className="text-[9px] text-warning leading-tight">
                                 El monto excede el saldo de dividendos. El excedente de <strong>{formatCurrency(amountNum - dividendBalance)}</strong> se registrará como un <strong>Retiro Provisorio</strong>.
@@ -930,22 +850,24 @@ export function DividendPaymentModal({ open, onOpenChange, onSuccess, initialPar
                         </Alert>
                     )}
                 </div>
-                <div className="grid gap-2">
-                    <Label>Fecha del Pago</Label>
-                    <Input
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                    />
-                </div>
-                <div className="grid gap-2">
-                    <Label>Descripción / Notas</Label>
-                    <Input
-                        value={formData.description}
-                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="Ej: Pago dividendos ejercicio 2025"
-                    />
-                </div>
+                <PeriodValidationDateInput
+                    label="Fecha del Pago"
+                    date={formData.date ? new Date(formData.date + 'T12:00:00') : undefined}
+                    onDateChange={(d) => {
+                        if (!d) {
+                            setFormData(prev => ({ ...prev, date: "" }))
+                            return
+                        }
+                        setFormData(prev => ({ ...prev, date: d.toISOString().split('T')[0] }))
+                    }}
+                    validationType="accounting"
+                />
+                <LabeledInput
+                    label="Descripción / Notas"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Ej: Pago dividendos ejercicio 2025"
+                />
             </div>
         </BaseModal>
     )

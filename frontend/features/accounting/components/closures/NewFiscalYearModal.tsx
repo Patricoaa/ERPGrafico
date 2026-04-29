@@ -5,7 +5,7 @@ import { BaseModal } from '@/components/shared/BaseModal';
 import { Button } from '@/components/ui/button';
 import { Calendar, CheckCircle2, AlertCircle, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Label } from '@/components/ui/label';
+import { LabeledContainer, CancelButton, SubmitButton, FormFooter } from '@/components/shared';
 
 interface NewFiscalYearModalProps {
     isOpen: boolean;
@@ -55,39 +55,37 @@ export function NewFiscalYearModal({
         <BaseModal
             open={isOpen}
             onOpenChange={(open) => !open && onClose()}
+            hideScrollArea={true}
+            contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5" />
-                    <div>
-                        <h2 className="text-xl font-black tracking-tight uppercase">Inicializar Año Fiscal</h2>
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-70">
-                            Apertura de nuevos periodos contables
-                        </p>
-                    </div>
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                    <span>Inicializar Año Fiscal</span>
                 </div>
             }
+            description="Apertura de nuevos periodos contables"
             footer={
-                <div className="flex justify-end gap-3 w-full">
-                    <Button 
-                        variant="ghost" 
-                        onClick={onClose}
-                        disabled={isLoading}
-                        className="font-bold uppercase tracking-widest text-[10px]"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button 
-                        onClick={handleConfirm}
-                        disabled={isLoading || existingYears.includes(selectedYear) || hasOpenPeriods}
-                        className="bg-primary hover:bg-primary/90 font-black uppercase tracking-widest text-[10px] px-8"
-                    >
-                        {isLoading ? "Inicializando..." : "Crear Periodo Enero"}
-                        {!isLoading && <CheckCircle2 className="ml-2 h-3.5 w-3.5" />}
-                    </Button>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton 
+                                onClick={onClose}
+                                disabled={isLoading}
+                            />
+                            <SubmitButton 
+                                onClick={handleConfirm}
+                                loading={isLoading}
+                                disabled={existingYears.includes(selectedYear) || hasOpenPeriods}
+                                icon={<CheckCircle2 className="h-3.5 w-3.5" />}
+                            >
+                                Crear Periodo Enero
+                            </SubmitButton>
+                        </>
+                    }
+                />
             }
         >
-            <div className="p-4 space-y-6">
+            <div className="px-4 pb-4 pt-2 space-y-6">
                 {hasOpenPeriods && (
                     <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex gap-4 items-start animate-in fade-in slide-in-from-top-4">
                         <ShieldAlert className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
@@ -101,11 +99,11 @@ export function NewFiscalYearModal({
                     </div>
                 )}
 
-                <div className="space-y-4">
-                    <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">
-                        Seleccione el Año Fiscal
-                    </Label>
-                    <div className="grid grid-cols-4 gap-3">
+                <LabeledContainer 
+                    label="Seleccione el Año Fiscal"
+                    labelClassName="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1"
+                >
+                    <div className="grid grid-cols-4 gap-3 p-1">
                         {years.map(y => {
                             const isExisting = existingYears.includes(y);
                             return (
@@ -137,7 +135,7 @@ export function NewFiscalYearModal({
                             );
                         })}
                     </div>
-                </div>
+                </LabeledContainer>
 
                 <div className="p-4 rounded-xl bg-info/5 border border-info/10 flex gap-4 items-start">
                     <AlertCircle className="h-5 w-5 text-info shrink-0 mt-0.5" />

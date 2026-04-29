@@ -6,8 +6,8 @@ import {
     getContactCreditLedger, 
     unblockContact, 
     recoverDebt 
-} from "@/lib/credits/api"
-import { CreditContact, CreditLedgerEntry } from "@/lib/credits/api"
+} from '@/features/credits/api/creditsApi'
+import { CreditContact, CreditLedgerEntry } from '@/features/credits/api/creditsApi'
 import { formatCurrency } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, ColumnDef, flexRender } from "@tanstack/react-table"
@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/tooltip"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
-import { Skeleton } from "@/components/ui/skeleton"
+import { TableSkeleton } from "@/components/shared"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -47,7 +47,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { TableCell, TableRow } from "@/components/ui/table"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 
@@ -183,9 +182,7 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, o
                                     </div>
 
                                     {loadingLedger ? (
-                                        <div className="space-y-2">
-                                            {[1, 2].map(i => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
-                                        </div>
+                                        <TableSkeleton rows={2} />
                                     ) : ledger && ledger.length > 0 ? (
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-left">

@@ -2,7 +2,7 @@
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
-import { PricingUtils } from "@/lib/pricing"
+import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Button } from "@/components/ui/button"
 import { Step1_CustomerDTE } from "./Step1_CustomerDTE"
 import { Step2_Payment } from "./Step2_Payment"
@@ -16,7 +16,11 @@ import { ProcessSummarySidebar } from "./ProcessSummarySidebar"
 import { toast } from "sonner"
 import api from "@/lib/api"
 
-import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, AlertTriangle, ShieldAlert, CheckCircle2, FileWarning, Printer } from "lucide-react"
+import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, AlertTriangle, ShieldAlert, CheckCircle2, FileWarning, Printer, Truck } from "lucide-react"
+import { User, Info } from "lucide-react"
+import { LabeledContainer, FormSection } from "@/components/shared"
+import { cn } from "@/lib/utils"
+import { SubmitButton } from "@/components/shared/ActionButtons"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useAuth } from "@/contexts/AuthContext"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -314,30 +318,46 @@ export function SalesCheckoutWizardContent({
         switch (currentStepDef.id) {
             case 'customer_dte':
                 return (
-                    <Step1_CustomerDTE
-                        selectedCustomerId={selectedCustomerId}
-                        setSelectedCustomerId={(id) => setSelectedCustomerId(id || "")}
-                        setSelectedCustomerName={setSelectedCustomerName}
-                        dteData={dteData}
-                        setDteData={setDteData}
-                        isDefaultCustomer={!!selectedCustomer?.is_default_customer}
-                        onValidityChange={(isValid) => setIsFolioValid(isValid)}
-                        onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
-                        pendingDebts={pendingDebts}
-                        onDebtClick={(debt) => openHub({ orderId: debt.id, type: 'sale', onActionSuccess: refreshDebts })}
-                    />
+                    <div className="space-y-6">
+                        <FormSection title="Identificación y Documentación" icon={User} />
+                        <Step1_CustomerDTE
+                            selectedCustomerId={selectedCustomerId}
+                            setSelectedCustomerId={(id) => setSelectedCustomerId(id || "")}
+                            setSelectedCustomerName={setSelectedCustomerName}
+                            dteData={dteData}
+                            setDteData={setDteData}
+                            isDefaultCustomer={!!selectedCustomer?.is_default_customer}
+                            onValidityChange={(isValid) => setIsFolioValid(isValid)}
+                            onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
+                            pendingDebts={pendingDebts}
+                            onDebtClick={(debt) => openHub({ orderId: debt.id, type: 'sale', onActionSuccess: refreshDebts })}
+                        />
+                    </div>
                 )
             case 'manufacturing':
                 return (
-                    <Step2_ManufacturingDetails
-                        orderLines={currentOrderLines}
-                        setOrderLines={setCurrentOrderLines}
-                    />
+                    <div className="space-y-6">
+                        <FormSection title="Detalles de Fabricación" icon={ShoppingCart} />
+                        <Step2_ManufacturingDetails
+                            orderLines={currentOrderLines}
+                            setOrderLines={setCurrentOrderLines}
+                        />
+                    </div>
                 )
             case 'delivery':
-                return <Step3_Delivery deliveryData={deliveryData} setDeliveryData={setDeliveryData} orderLines={currentOrderLines} />
+                return (
+                    <div className="space-y-6">
+                        <FormSection title="Logística y Entrega" icon={Truck} />
+                        <Step3_Delivery deliveryData={deliveryData} setDeliveryData={setDeliveryData} orderLines={currentOrderLines} />
+                    </div>
+                )
             case 'payment':
-                return <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} customerCreditBalance={Number((selectedCustomer as any)?.credit_balance || 0)} />
+                return (
+                    <div className="space-y-6">
+                        <FormSection title="Cierre y Pago" icon={ShoppingCart} />
+                        <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} customerCreditBalance={Number((selectedCustomer as any)?.credit_balance || 0)} />
+                    </div>
+                )
             default:
                 return null;
         }
@@ -773,80 +793,106 @@ export function SalesCheckoutWizardContent({
 
                         {/* Credit Approval Alert */}
                         {creditApprovalRequired && (
-                            <Alert className={`mb-4 border ${isApproved ? 'border-success/50 bg-success/5' : 'border-warning/50 bg-warning/5'}`}>
-                                {isWaitingApproval ? (
-                                    <Loader2 className="h-4 w-4 text-warning animate-spin" />
-                                ) : isApproved ? (
-                                    <CheckCircle2 className="h-4 w-4 text-success" />
-                                ) : (
-                                    <AlertCircle className="h-4 w-4 text-warning" />
-                                )}
-                                <AlertTitle className={`font-bold ${isApproved ? 'text-success-foreground' : 'text-warning-foreground'}`}>
-                                    {isWaitingApproval ? "Esperando Autorización..." : isApproved ? "Crédito Aprobado" : "Autorización Requerida"}
-                                </AlertTitle>
-                                <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
-                                    <span className={`text-sm ${isApproved ? 'text-success-foreground/80' : 'text-warning-foreground/80'}`}>
-                                        {isWaitingApproval 
-                                            ? "La solicitud ha sido enviada. Consumiendo en tiempo real el estado de la verificación..." 
-                                            : isApproved 
-                                                ? "El supervisor ha verificado y autorizado la línea de crédito. Puede continuar y finalizar la venta." 
-                                                : creditApprovalReason}
-                                    </span>
-                                    {!isApproved && (
-                                        <div className="flex gap-2">
-                                            {isWaitingApproval ? (
-                                                <>
-                                                    <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="border-warning/30 text-warning hover:bg-warning/10">
-                                                        Cancelar
-                                                    </Button>
-                                                    {approvalTaskId && (
-                                                        <Button size="sm" onClick={() => checkApprovalStatus(approvalTaskId, false)} className="bg-warning hover:bg-warning text-white border-none shadow-sm">
-                                                            Verificar Estado
-                                                        </Button>
+                            <Alert className={cn(
+                                "mb-4 border-l-4 rounded-none",
+                                isApproved 
+                                    ? "border-success bg-success/5 shadow-sm" 
+                                    : "border-warning bg-warning/5 shadow-sm"
+                            )}>
+                                <div className="flex items-start gap-4">
+                                    <div className={cn(
+                                        "p-2 rounded-sm",
+                                        isApproved ? "bg-success/10" : "bg-warning/10"
+                                    )}>
+                                        {isWaitingApproval ? (
+                                            <Loader2 className="h-4 w-4 text-warning animate-spin" />
+                                        ) : isApproved ? (
+                                            <CheckCircle2 className="h-4 w-4 text-success" />
+                                        ) : (
+                                            <AlertCircle className="h-4 w-4 text-warning" />
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <AlertTitle className={cn(
+                                            "font-black uppercase tracking-tight text-xs mb-1",
+                                            isApproved ? "text-success" : "text-warning"
+                                        )}>
+                                            {isWaitingApproval ? "Esperando Autorización..." : isApproved ? "Crédito Aprobado" : "Autorización Requerida"}
+                                        </AlertTitle>
+                                        <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                            <span className={cn(
+                                                "text-sm leading-relaxed",
+                                                isApproved ? "text-success-foreground/80" : "text-warning-foreground/80"
+                                            )}>
+                                                {isWaitingApproval 
+                                                    ? "La solicitud ha sido enviada. Consumiendo en tiempo real el estado de la verificación..." 
+                                                    : isApproved 
+                                                        ? "El supervisor ha verificado y autorizado la línea de crédito. Puede continuar y finalizar la venta." 
+                                                        : creditApprovalReason}
+                                            </span>
+                                            {!isApproved && (
+                                                <div className="flex gap-2 shrink-0">
+                                                    {isWaitingApproval ? (
+                                                        <>
+                                                            <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="h-8 border-warning/30 text-warning hover:bg-warning/10 uppercase font-bold text-[10px]">
+                                                                Cancelar
+                                                            </Button>
+                                                            {approvalTaskId && (
+                                                                <Button size="sm" onClick={() => checkApprovalStatus(approvalTaskId, false)} className="h-8 bg-warning hover:bg-warning/90 text-white border-none shadow-sm uppercase font-bold text-[10px]">
+                                                                    Verificar
+                                                                </Button>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="h-8 border-warning/30 text-warning hover:bg-warning/10 uppercase font-bold text-[10px]">
+                                                                Ajustar
+                                                            </Button>
+                                                            {canDirectApprove && (
+                                                                <Button size="sm" variant="secondary" onClick={handleDirectApproval} className="h-8 bg-warning/20 hover:bg-warning/30 text-warning border-none shadow-sm uppercase font-bold text-[10px]">
+                                                                    Aprobar
+                                                                </Button>
+                                                            )}
+                                                            <Button size="sm" onClick={handleRequestApproval} className="h-8 bg-primary hover:bg-primary/90 text-white shadow-sm uppercase font-bold text-[10px]">
+                                                                Solicitar
+                                                            </Button>
+                                                        </>
                                                     )}
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Button size="sm" variant="outline" onClick={cancelApprovalRequest} className="border-warning/30 text-warning hover:bg-warning/10">
-                                                        Ajustar
-                                                    </Button>
-                                                    {canDirectApprove && (
-                                                        <Button size="sm" variant="secondary" onClick={handleDirectApproval} className="bg-warning hover:bg-warning text-white border-none shadow-sm">
-                                                            Aprobar
-                                                        </Button>
-                                                    )}
-                                                    <Button size="sm" onClick={handleRequestApproval} className="bg-primary hover:bg-primary/90 text-white shadow-sm">
-                                                        Solicitar
-                                                    </Button>
-                                                </>
+                                                </div>
                                             )}
-                                        </div>
-                                    )}
-                                </AlertDescription>
+                                        </AlertDescription>
+                                    </div>
+                                </div>
                             </Alert>
                         )}
 
                         {securityErrorMessage && (
-                            <Alert className="mb-4 border border-destructive/50 bg-destructive/5">
-                                <ShieldAlert className="h-4 w-4 text-destructive" />
-                                <AlertTitle className="font-bold text-destructive">Alerta de Seguridad</AlertTitle>
-                                <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2">
-                                    <span className="text-sm text-destructive/80">{securityErrorMessage}</span>
-                                    <Button 
-                                        size="sm" 
-                                        variant="outline" 
-                                        onClick={() => {
-                                            setSecurityErrorMessage(null)
-                                            setApprovalTaskId(null)
-                                            setIsApproved(false)
-                                            setIsWaitingApproval(false)
-                                            setCreditApprovalRequired(false)
-                                        }} 
-                                        className="border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0"
-                                    >
-                                        Entendido
-                                    </Button>
-                                </AlertDescription>
+                            <Alert className="mb-4 border-l-4 border-destructive rounded-none bg-destructive/5 shadow-sm">
+                                <div className="flex items-start gap-4">
+                                    <div className="p-2 rounded-sm bg-destructive/10">
+                                        <ShieldAlert className="h-4 w-4 text-destructive" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <AlertTitle className="font-black uppercase tracking-tight text-xs mb-1 text-destructive">Alerta de Seguridad</AlertTitle>
+                                        <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                            <span className="text-sm text-destructive/80 leading-relaxed">{securityErrorMessage}</span>
+                                            <Button 
+                                                size="sm" 
+                                                variant="outline" 
+                                                onClick={() => {
+                                                    setSecurityErrorMessage(null)
+                                                    setApprovalTaskId(null)
+                                                    setIsApproved(false)
+                                                    setIsWaitingApproval(false)
+                                                    setCreditApprovalRequired(false)
+                                                }} 
+                                                className="h-8 border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0 uppercase font-bold text-[10px]"
+                                            >
+                                                Entendido
+                                            </Button>
+                                        </AlertDescription>
+                                    </div>
+                                </div>
                             </Alert>
                         )}
                         
@@ -902,14 +948,15 @@ export function SalesCheckoutWizardContent({
                                     >
                                         Pagar en otro terminal
                                     </Button>
-                                    <Button
+                                    <SubmitButton
                                         onClick={handleFinish}
+                                        loading={loading}
                                         disabled={loading || isWaitingApproval}
-                                        className="w-48 bg-success font-bold"
+                                        icon={<Check className="mr-2 h-4 w-4" />}
+                                        className="w-48 bg-success hover:bg-success/90 font-black uppercase tracking-widest text-[10px] text-white shadow-lg shadow-success/20"
                                     >
-                                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
                                         Finalizar Venta
-                                    </Button>
+                                    </SubmitButton>
                                 </>
                             )}
                         </div>

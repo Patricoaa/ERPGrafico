@@ -1,33 +1,21 @@
 "use client"
 
-import { ProductCategory, UoM, Warehouse, PricingRule, Product, ProductBOM, ProductBOMLine, ProductCustomField } from "@/types/entities"
+import { UoM, Warehouse, Product } from "@/types/entities"
 
-import { useState, useEffect } from "react"
-import { useWindowWidth } from "@/hooks/useWindowWidth"
-import { 
-    Sheet, 
-    SheetHeader, 
-    SheetTitle,
-    SheetDescription,
-} from "@/components/ui/sheet"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { CollapsibleSheet } from "@/components/shared/CollapsibleSheet"
-import { useForm, useFieldArray, useWatch, Control, FieldErrors, SubmitHandler, UseFormReturn } from "react-hook-form"
-import { ProductInitialData } from "@/types/forms"
+import { useState, useEffect, useMemo } from "react"
+import { BaseModal } from "@/components/shared/BaseModal"
+import { useForm, FieldErrors, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import api, { resolveMediaUrl } from "@/lib/api"
-import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, Layers, Factory, AlertCircle, Loader2 } from "lucide-react"
+import { ShoppingCart, Package, Scale, Truck, Layers, Factory, Loader2, History, DollarSign, Fingerprint } from "lucide-react"
 import { showApiError } from "@/lib/errors"
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Form } from "@/components/ui/form"
+
+import { FormSkeleton, FormSection, FormFooter, FormSplitLayout, FormTabs, FormTabsContent, type FormTabItem } from "@/components/shared"
 
 // Import modular components
 import { productSchema, type ProductFormValues } from "./product/schema"
-import { ProductTypeSelector } from "./product/ProductTypeSelector"
 import { ProductImageUpload } from "./product/ProductImageUpload"
 import { ProductBasicInfo } from "./product/ProductBasicInfo"
 import { ProductPricingSection } from "./product/ProductPricingSection"
@@ -36,17 +24,16 @@ import { ProductManufacturingTab } from "./product/ProductManufacturingTab"
 import { ProductPricingTab } from "./product/ProductPricingTab"
 import { ProductSubscriptionTab } from "./product/ProductSubscriptionTab"
 import { ProductVariantsTab } from "./product/ProductVariantsTab"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 // Removed Badge import for governance compliance
 
 // Import dialogs
 import { PricingRuleForm } from "@/features/sales/components/PricingRuleForm"
-import { CategoryForm } from "./CategoryForm"
+import { CancelButton, SubmitButton } from "@/components/shared"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
 interface ProductFormProps {
-    auditSidebar?: React.ReactNode
+    sidebar?: React.ReactNode
     open: boolean
     onOpenChange: (open: boolean) => void
     initialData?: any // Bridging discrepancies between local/global Product and ProductInitialData
@@ -55,15 +42,13 @@ interface ProductFormProps {
     variantMode?: boolean
 }
 
-export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false }: ProductFormProps) {
+export function ProductForm({ sidebar, open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false }: ProductFormProps) {
     const [loading, setLoading] = useState(false)
-    const [categories, setCategories] = useState<ProductCategory[]>([] )
-    const [uoms, setUoms] = useState<UoM[]>([] )
-    const [warehouses, setWarehouses] = useState<Warehouse[]>([] )
+    const [uoms, setUoms] = useState<UoM[]>([])
+    const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [imagePreview, setImagePreview] = useState<string | null>(null)
-    const [isCategoryFormOpen, setIsCategoryFormOpen] = useState(false)
-    const [products, setProducts] = useState<Product[]>([] )
-    const [pricingRules, setPricingRules] = useState<any[]>([] )
+    const [products, setProducts] = useState<Product[]>([])
+    const [pricingRules, setPricingRules] = useState<any[]>([])
     const [selectedPricingRule, setSelectedPricingRule] = useState<any | null>(null)
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
     const [variantsRefreshKey, setVariantsRefreshKey] = useState(0)
@@ -73,29 +58,6 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
     const [isFetchingInitialData, setIsFetchingInitialData] = useState(false)
 
     const [activeTab, setActiveTab] = useState("general")
-
-    const { isSheetCollapsed } = useGlobalModals()
-
-
-    const windowWidth = useWindowWidth(150, open)
-
-    const handleOpenChangeProxy = (newOpen: boolean) => {
-        if (!newOpen && Object.keys(form.formState.dirtyFields).length > 0) {
-            setConfirmCloseOpen(true)
-            return
-        }
-        if (newOpen && isSheetCollapsed("PRODUCT_DETAIL")) {
-            // Jump behavior: Hub was closed here previously
-        }
-        onOpenChange(newOpen)
-    }
-
-    const handleConfirmClose = () => {
-        setConfirmCloseOpen(false)
-        onOpenChange(false)
-    }
-
-    const fullWidth = Math.min(windowWidth * 0.95, 1800) // Match the 95vw logic
 
     const form: UseFormReturn<ProductFormValues> = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema) as any,
@@ -129,7 +91,6 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
             mfg_press_digital: false,
             mfg_postpress_finishing: false,
             mfg_postpress_binding: false,
-            mfg_default_delivery_days: 3,
             mfg_auto_finalize: false,
             boms: [],
             product_custom_fields: [],
@@ -184,48 +145,46 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
         return tabErrors
     }
 
-    const tabErrors = getTabsWithErrors()
+    // Memoize tab errors to prevent redundant re-renders of the entire form
+    const tabErrors = useMemo(() => getTabsWithErrors(), [form.formState.errors])
 
     const productType = form.watch("product_type")
-
-    // Logic for inventory tracking defaults and locking
-    useEffect(() => {
-        if (productType === "STORABLE") {
-            if (!form.getValues("track_inventory")) form.setValue("track_inventory", true)
-        } else if (productType === "CONSUMABLE") {
-            if (form.getValues("track_inventory")) form.setValue("track_inventory", false)
-            if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false)
-        } else if (productType === "SERVICE") {
-            if (form.getValues("track_inventory")) form.setValue("track_inventory", false)
-        } else if (productType === "SUBSCRIPTION") {
-            if (form.getValues("track_inventory")) form.setValue("track_inventory", false)
-            if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false)
-        }
-
-        // Reset dynamic pricing if not manufacturable
-        const isManufacturable = productType === 'MANUFACTURABLE' || form.getValues("requires_advanced_manufacturing");
-        if (!isManufacturable && form.getValues("is_dynamic_pricing")) {
-            form.setValue("is_dynamic_pricing", false);
-        }
-
-        // Manufacturable products cannot be purchased (business rule)
-        if (productType === "MANUFACTURABLE") {
-            if (form.getValues("can_be_purchased")) {
-                form.setValue("can_be_purchased", false);
-            }
-        }
-    }, [productType, form])
-
-    // Validate activeTab when relevant product settings change
+    const watchedAdvancedMfg = form.watch("requires_advanced_manufacturing")
     const hasBom = form.watch("has_bom")
     const canBeSold = form.watch("can_be_sold")
     const hasVariants = form.watch("has_variants")
 
+    // Effect 1: Product-type-driven business rules.
+    // Fires only when product_type changes. Each branch is idempotent — setValue
+    // is guarded by getValues comparison to avoid spurious notifications.
+    // Production-mode rules (advanced/express/simple) live in ProductManufacturingTab's
+    // Tabs onValueChange handler — not here — to avoid cross-component cascade.
+    useEffect(() => {
+        const opts = { shouldDirty: false, shouldValidate: false, shouldTouch: false }
+
+        if (productType === "STORABLE") {
+            if (!form.getValues("track_inventory") && !form.getValues("requires_advanced_manufacturing") && !form.getValues("mfg_auto_finalize")) {
+                form.setValue("track_inventory", true, opts)
+            }
+        } else if (productType === "CONSUMABLE") {
+            if (form.getValues("track_inventory")) form.setValue("track_inventory", false, opts)
+            if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false, opts)
+        } else if (productType === "SERVICE") {
+            if (form.getValues("track_inventory")) form.setValue("track_inventory", false, opts)
+        } else if (productType === "SUBSCRIPTION") {
+            if (form.getValues("track_inventory")) form.setValue("track_inventory", false, opts)
+            if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false, opts)
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [productType])
+
+    // Effect 2: Tab redirect when active tab becomes invalid.
+    // Pure read of derived state — never mutates form fields.
     useEffect(() => {
         const isTabValid = (tab: string): boolean => {
             switch (tab) {
                 case "general": return true
-                case "manufacturing": return productType === 'MANUFACTURABLE' || hasBom
+                case "manufacturing": return productType === 'MANUFACTURABLE' || hasBom || watchedAdvancedMfg
                 case "logistics": return ['STORABLE', 'MANUFACTURABLE'].includes(productType)
                 case "commercial": return productType === 'SUBSCRIPTION'
                 case "pricing": return canBeSold && productType !== 'SUBSCRIPTION'
@@ -234,10 +193,10 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
             }
         }
 
-        if (!isTabValid(activeTab)) {
+        if (!isTabValid(activeTab) && activeTab !== "general") {
             setActiveTab("general")
         }
-    }, [productType, hasBom, canBeSold, hasVariants, activeTab, variantMode])
+    }, [productType, watchedAdvancedMfg, hasBom, canBeSold, hasVariants, activeTab, variantMode])
 
     // Synchronize allowed_sale_uoms with base UoM and filter incompatible units
     const stockUomId = form.watch("uom")
@@ -270,23 +229,16 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
         if (!currentSaleUom || !filteredAllowed.includes(currentSaleUom.toString())) {
             form.setValue("sale_uom", stockUomId.toString())
         }
-    }, [stockUomId, uoms, form])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [stockUomId, uoms])
 
-    const fetchCategories = async () => {
-        try {
-            const res = await api.get('/inventory/categories/')
-            setCategories(res.data.results || res.data)
-        } catch (error) {
-            console.error("Error fetching categories", error)
-        }
-    }
 
     const fetchUoMs = async () => {
         try {
-            const res = await api.get('/inventory/uoms/')
+            const res = await api.get("/inventory/uoms/")
             setUoms(res.data.results || res.data)
         } catch (error) {
-            console.error("Error fetching UoMs", error)
+            console.error("Error fetching UoMs:", error)
         }
     }
 
@@ -323,14 +275,13 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
     useEffect(() => {
         if (open) {
             setIsFetchingInitialData(true)
-            
+
             const initOperations = [
-                fetchCategories(),
                 fetchUoMs(),
                 fetchProducts(),
                 fetchWarehouses()
             ];
-            
+
             if (initialData?.id) {
                 initOperations.push(fetchPricingRules())
             }
@@ -377,7 +328,6 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     mfg_press_digital: initialData.mfg_press_digital ?? false,
                     mfg_postpress_finishing: initialData.mfg_postpress_finishing ?? false,
                     mfg_postpress_binding: initialData.mfg_postpress_binding ?? false,
-                    mfg_default_delivery_days: initialData.mfg_default_delivery_days ?? 3,
                     mfg_auto_finalize: initialData.mfg_auto_finalize ?? false,
                     has_variants: initialData.has_variants ?? false,
                     parent_template: initialData.parent_template?.toString() || null,
@@ -446,7 +396,6 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                     mfg_press_digital: false,
                     mfg_postpress_finishing: false,
                     mfg_postpress_binding: false,
-                    mfg_default_delivery_days: 3,
                     mfg_auto_finalize: false,
                     boms: [],
                     product_custom_fields: [],
@@ -522,14 +471,23 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
             formData.append('category', data.category)
             formData.append('product_type', data.product_type)
             formData.append('sale_price', data.sale_price.toString())
+            formData.append('sale_price_gross', (data.sale_price_gross || 0).toString())
             formData.append('is_dynamic_pricing', data.is_dynamic_pricing ? 'true' : 'false')
-            formData.append('uom', data.uom || '')
-            formData.append('sale_uom', data.sale_uom || '')
+            
+            // Related IDs - Sanitization (Avoid sending empty strings which can cause 400 errors)
+            if (data.category) formData.append('category', data.category)
+            if (data.uom) formData.append('uom', data.uom)
+            if (data.sale_uom) formData.append('sale_uom', data.sale_uom)
             if (data.purchase_uom) formData.append('purchase_uom', data.purchase_uom)
             if (data.receiving_warehouse) formData.append('receiving_warehouse', data.receiving_warehouse)
+            
             if (data.income_account) formData.append('income_account', data.income_account)
             if (data.expense_account) formData.append('expense_account', data.expense_account)
-            if (data.preferred_supplier) formData.append('preferred_supplier', data.preferred_supplier)
+            if (data.preferred_supplier) {
+                formData.append('preferred_supplier', data.preferred_supplier)
+            } else {
+                formData.append('preferred_supplier', '') // Clear preferred supplier
+            }
 
             if (data.allowed_sale_uoms && data.allowed_sale_uoms.length > 0) {
                 data.allowed_sale_uoms.forEach(id => formData.append('allowed_sale_uoms', id))
@@ -550,7 +508,6 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
             formData.append('mfg_press_digital', data.mfg_press_digital ? 'true' : 'false')
             formData.append('mfg_postpress_finishing', data.mfg_postpress_finishing ? 'true' : 'false')
             formData.append('mfg_postpress_binding', data.mfg_postpress_binding ? 'true' : 'false')
-            formData.append('mfg_default_delivery_days', data.mfg_default_delivery_days.toString())
             formData.append('mfg_auto_finalize', data.mfg_auto_finalize ? 'true' : 'false')
             formData.append('has_variants', data.has_variants ? 'true' : 'false')
             if (data.parent_template) formData.append('parent_template', data.parent_template)
@@ -559,7 +516,8 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                 data.attribute_values.forEach(v => formData.append('attribute_values', v))
             }
 
-            if (!initialData && data.boms && data.boms.length > 0) {
+            // BOMs - Always send if present (fixes persistence bug on PUT)
+            if (data.boms && data.boms.length > 0) {
                 formData.append('boms', JSON.stringify(data.boms))
             }
             if (data.product_custom_fields && data.product_custom_fields.length > 0) {
@@ -638,200 +596,191 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
         }
     }
 
-    const formContent = (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <div className="px-6 border-b bg-muted/5">
-                <TabsList className="h-12 w-full justify-start gap-4 bg-transparent p-0">
-                    <TabsTrigger
-                        value="general"
-                        className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2 h-12 text-[11px] uppercase tracking-wider"
-                    >
-                        <Package className="h-4 w-4" />
-                        Información General
-                        {tabErrors['general'] && (
-                            <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[9px] font-black">!</span>
-                        )}
-                    </TabsTrigger>
+    const tabItems: FormTabItem[] = [
+        {
+            value: "general",
+            label: "General",
+            icon: Package,
+            hasErrors: !!tabErrors['general'],
+        },
+        {
+            value: "manufacturing",
+            label: "Fabricación",
+            icon: Factory,
+            hidden: !(productType === 'MANUFACTURABLE' || hasBom),
+            hasErrors: !!tabErrors['manufacturing'],
+        },
+        {
+            value: "logistics",
+            label: "Logística",
+            icon: Truck,
+            hidden: !['STORABLE', 'MANUFACTURABLE'].includes(productType),
+            hasErrors: !!tabErrors['logistics'],
+        },
+        {
+            value: "commercial",
+            label: "Comercial",
+            icon: ShoppingCart,
+            hidden: productType !== 'SUBSCRIPTION',
+            hasErrors: !!tabErrors['commercial'],
+        },
+        {
+            value: "pricing",
+            label: "Reglas",
+            icon: Scale,
+            hidden: !canBeSold || productType === 'SUBSCRIPTION',
+            hasErrors: !!tabErrors['pricing'],
+        },
+        {
+            value: "variants",
+            label: "Variantes",
+            icon: Layers,
+            hidden: !hasVariants || variantMode,
+            hasErrors: !!tabErrors['variants'],
+        },
+    ]
 
-                    {(form.watch("product_type") === 'MANUFACTURABLE' || form.watch("has_bom")) && (
-                        <TabsTrigger
-                            value="manufacturing"
-                            className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2 h-12 text-[11px] uppercase tracking-wider"
-                        >
-                            <Factory className="h-4 w-4" />
-                            Fabricación
-                        </TabsTrigger>
-                    )}
-
-                    {['STORABLE', 'MANUFACTURABLE'].includes(form.watch("product_type")) && (
-                        <TabsTrigger
-                            value="logistics"
-                            className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2 h-12 text-[11px] uppercase tracking-wider"
-                        >
-                            <Truck className="h-4 w-4" />
-                            Logística
-                        </TabsTrigger>
-                    )}
-
-                    {form.watch("product_type") === 'SUBSCRIPTION' && (
-                        <TabsTrigger
-                            value="commercial"
-                            className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2 h-12 text-[11px] uppercase tracking-wider"
-                        >
-                            <ShoppingCart className="h-4 w-4" />
-                            Comercial
-                        </TabsTrigger>
-                    )}
-
-                    {form.watch("can_be_sold") && form.watch("product_type") !== 'SUBSCRIPTION' && (
-                        <TabsTrigger
-                            value="pricing"
-                            className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2 h-12 text-[11px] uppercase tracking-wider"
-                        >
-                            <Scale className="h-4 w-4" />
-                            Reglas
-                        </TabsTrigger>
-                    )}
-
-                    {form.watch("has_variants") && !variantMode && (
-                        <TabsTrigger
-                            value="variants"
-                            className="rounded-none border-b-2 border-transparent px-4 py-3 data-[state=active]:border-primary data-[state=active]:bg-transparent font-bold flex items-center gap-2 h-12 text-[11px] uppercase tracking-wider"
-                        >
-                            <Layers className="h-4 w-4" />
-                            Variantes
-                        </TabsTrigger>
-                    )}
-                </TabsList>
+    const tabHeader = (
+        <div className="flex flex-col p-6 pb-2">
+            <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-3">
+                <Package className="h-6 w-6 text-primary" />
+                {initialData ? "Editar Producto" : "Nuevo Producto"}
+            </h1>
+            <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest mt-1">
+                Ficha Maestra <span className="opacity-30">|</span> Gestión de Inventario
             </div>
+        </div>
+    )
 
-            <div className="flex-1 flex overflow-hidden">
-                <div className="flex-1 overflow-y-auto scrollbar-thin">
-                    {isFetchingInitialData ? (
-                        <div className="p-6 space-y-8 animate-in fade-in duration-500">
-                            <div className="flex items-center gap-4">
-                                <Skeleton className="h-10 w-48 rounded-[0.25rem]" />
-                                <Skeleton className="h-10 w-32 rounded-[0.25rem]" />
-                                <Skeleton className="h-10 w-32 rounded-[0.25rem]" />
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                                <div className="md:col-span-3 space-y-4">
-                                    <Skeleton className="h-[250px] w-full rounded-[0.25rem]" />
-                                    <Skeleton className="h-32 w-full rounded-[0.25rem]" />
-                                </div>
-                                <div className="md:col-span-9 space-y-4">
-                                    <Skeleton className="h-16 w-full rounded-[0.25rem]" />
-                                    <Skeleton className="h-40 w-full rounded-[0.25rem]" />
-                                    <Skeleton className="h-64 w-full rounded-[0.25rem]" />
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <Form {...form}>
-                            <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="space-y-4 pt-6 px-4 mx-auto pb-32">
-                                <fieldset disabled={loading} className="group min-w-0 transition-opacity group-disabled:opacity-75">
-                                    <TabsContent value="general" className="mt-0 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-                                    <div className="md:col-span-3 space-y-8">
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-2 pt-2 pb-2">
-                                                <div className="flex-1 h-px bg-border" />
-                                                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">Imagen</span>
-                                                <div className="flex-1 h-px bg-border" />
-                                            </div>
-                                            <ProductImageUpload
+    const footerSlot = (
+        <FormFooter
+            actions={
+                <>
+                    <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
+                    <SubmitButton form="product-form" loading={form.formState.isSubmitting}>
+                        {initialData ? "Guardar Cambios" : "Crear Producto"}
+                    </SubmitButton>
+                </>
+            }
+        />
+    )
+
+    const formContent = (
+        <>
+            <Form {...form}>
+                <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
+                {isFetchingInitialData ? (
+                    <div className="p-6 flex-1">
+                        <FormSkeleton hasTabs tabs={6} cards={2} fields={5} />
+                    </div>
+                ) : (
+                    <FormTabs
+                        items={tabItems}
+                        value={activeTab}
+                        onValueChange={setActiveTab}
+                        orientation="vertical"
+                        header={tabHeader}
+                        className="flex-1"
+                        contentClassName="bg-transparent"
+                    >
+                        <fieldset disabled={loading} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full min-h-0">
+                                <FormTabsContent value="general" className="h-full w-full flex-1 flex flex-col m-0 p-0 border-0 outline-none overflow-hidden">
+                                    <FormSplitLayout
+                                        sidebar={
+                                            initialData?.id ? (
+                                                <ActivitySidebar entityId={initialData.id.toString()} entityType="product" />
+                                            ) : (
+                                                <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-xl bg-muted/5 m-4">
+                                                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                                                        <History className="h-6 w-6 text-primary" />
+                                                    </div>
+                                                    <h3 className="text-sm font-bold text-foreground">Historial de Actividad</h3>
+                                                    <p className="text-xs text-muted-foreground mt-2 max-w-[200px]">
+                                                        El registro de cambios estará disponible una vez que el producto sea creado.
+                                                    </p>
+                                                </div>
+                                            )
+                                        }
+                                        showSidebar={true}
+                                    >
+                                        <div className="space-y-8 pr-2 pb-8">
+                                            <ProductBasicInfo
                                                 form={form}
+                                                isEditing={!!initialData}
                                                 imagePreview={imagePreview}
                                                 setImagePreview={setImagePreview}
+                                                lockedType={lockedType}
+                                            />
+
+                                            <ProductPricingSection
+                                                form={form}
+                                                initialData={initialData}
+                                                canBeSold={canBeSold}
+                                                uoms={uoms}
                                             />
                                         </div>
+                                    </FormSplitLayout>
+                                </FormTabsContent>
 
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-2 pt-2 pb-2">
-                                                <div className="flex-1 h-px bg-border" />
-                                                <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground flex items-center gap-1">Tipo de producto</span>
-                                                <div className="flex-1 h-px bg-border" />
-                                            </div>
-                                            <ProductTypeSelector form={form} disabled={!!initialData} lockedType={lockedType} />
-                                        </div>
-                                    </div>
-
-                                    <div className="md:col-span-9 space-y-4">
-                                        <ProductBasicInfo
-                                            form={form}
-                                            categories={categories}
-                                            isEditing={!!initialData}
-                                            onAddCategory={() => setIsCategoryFormOpen(true)}
-                                        />
-
-                                        <ProductPricingSection
+                                {(productType === 'MANUFACTURABLE' || hasBom) && (
+                                    <FormTabsContent value="manufacturing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                        <ProductManufacturingTab
                                             form={form}
                                             initialData={initialData}
-                                            canBeSold={form.watch("can_be_sold")}
+                                            products={products}
                                             uoms={uoms}
+                                            variantMode={variantMode}
                                         />
-                                    </div>
-                                </div>
-                            </TabsContent>
-
-                            { (form.watch("product_type") === 'MANUFACTURABLE' || form.watch("has_bom")) && (
-                                <ProductManufacturingTab
-                                    form={form}
-                                    initialData={initialData}
-                                    products={products}
-                                    uoms={uoms}
-                                    variantMode={variantMode}
-                                />
-                            )}
-
-                            { form.watch("has_variants") && !variantMode && (
-                                <ProductVariantsTab
-                                    key={variantsRefreshKey}
-                                    form={form}
-                                    initialData={initialData}
-                                    onTabChange={(tab: string) => setActiveTab(tab)}
-                                />
-                            )}
-
-                            { ['STORABLE', 'MANUFACTURABLE'].includes(form.watch("product_type")) && (
-                                <ProductInventoryTab
-                                    form={form}
-                                    initialData={initialData}
-                                    warehouses={warehouses}
-                                    uoms={uoms}
-                                />
-                            )}
-
-                            { form.watch("product_type") === 'SUBSCRIPTION' && (
-                                <TabsContent value="commercial" className="mt-0 animate-in fade-in duration-300">
-                                    <ProductSubscriptionTab form={form} isEditing={!!initialData} />
-                                </TabsContent>
-                            )}
-
-                                { form.watch("can_be_sold") && form.watch("product_type") !== 'SUBSCRIPTION' && (
-                                    <ProductPricingTab
-                                        initialData={initialData}
-                                        pricingRules={pricingRules}
-                                        fetchPricingRules={fetchPricingRules}
-                                        onOpenRuleDialog={(rule) => {
-                                            setSelectedPricingRule(rule || null)
-                                            setPricingRuleDialogOpen(true)
-                                        }}
-                                    />
+                                    </FormTabsContent>
                                 )}
-                                </fieldset>
-                            </form>
-                        </Form>
-                    )}
-                </div>
 
-                {/* Activity Sidebar */}
-                {initialData?.id && (
-                    <div className="w-72 border-l bg-muted/5 h-full flex flex-col overflow-hidden hidden lg:flex">
-                        {auditSidebar}
-                    </div>
-                )}
-            </div>
+                                {hasVariants && !variantMode && (
+                                    <FormTabsContent value="variants" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                        <ProductVariantsTab
+                                            key={variantsRefreshKey}
+                                            form={form}
+                                            initialData={initialData}
+                                            onTabChange={(tab: string) => setActiveTab(tab)}
+                                        />
+                                    </FormTabsContent>
+                                )}
+
+                                {['STORABLE', 'MANUFACTURABLE'].includes(productType) && (
+                                    <FormTabsContent value="logistics" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                        <ProductInventoryTab
+                                            form={form}
+                                            initialData={initialData}
+                                            warehouses={warehouses}
+                                            uoms={uoms}
+                                            isEditing={!!initialData}
+                                        />
+                                    </FormTabsContent>
+                                )}
+
+                                {productType === 'SUBSCRIPTION' && (
+                                    <FormTabsContent value="commercial" className="mt-0 animate-in fade-in duration-300 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                        <ProductSubscriptionTab form={form} isEditing={!!initialData} />
+                                    </FormTabsContent>
+                                )}
+
+                                {canBeSold && productType !== 'SUBSCRIPTION' && (
+                                    <FormTabsContent value="pricing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                        <ProductPricingTab
+                                            initialData={initialData}
+                                            pricingRules={pricingRules}
+                                            fetchPricingRules={fetchPricingRules}
+                                            onOpenRuleDialog={(rule) => {
+                                                setSelectedPricingRule(rule || null)
+                                                setPricingRuleDialogOpen(true)
+                                            }}
+                                        />
+                                    </FormTabsContent>
+                                )}
+                            </fieldset>
+                        </FormTabs>
+                    )}
+                </form>
+            </Form>
 
             {/* Nested Modals */}
             <PricingRuleForm
@@ -845,74 +794,42 @@ export function ProductForm({ auditSidebar,  open, onOpenChange, initialData, on
                 productId={initialData?.id}
                 productName={initialData?.name}
             />
-
-            <CategoryForm
-                open={isCategoryFormOpen}
-                onOpenChange={setIsCategoryFormOpen}
-                onSuccess={(newCategory) => {
-                    setCategories(prev => [...prev, newCategory])
-                    form.setValue("category", newCategory.id.toString())
-                }}
-            />
-        </Tabs>
+        </>
     )
 
     return (
-        <CollapsibleSheet
-            sheetId="PRODUCT_DETAIL"
+        <BaseModal
             open={open}
-            onOpenChange={handleOpenChangeProxy}
-            tabLabel="FICHA PRODUCTO"
-            tabIcon={Package}
-            size="xl"
-            className="max-w-[95vw] w-[95vw]"
+            headerClassName="sr-only"
+            onOpenChange={(newOpen) => {
+                if (!newOpen && Object.keys(form.formState.dirtyFields).length > 0) {
+                    setConfirmCloseOpen(true)
+                    return
+                }
+                onOpenChange(newOpen)
+            }}
+            size="2xl"
+            className="h-[90vh]"
+            hideScrollArea={true}
+            allowOverflow={true}
+            contentClassName="p-0"
+            footer={footerSlot}
         >
-                <SheetHeader className="p-6 pb-4 border-b bg-background sticky top-0 z-50 shrink-0">
-                    <div className="flex items-center justify-between w-full pr-12 text-left">
-                        <div className="flex items-center gap-4">
-                            <Package className="h-6 w-6" />
-                            <div className="flex flex-col">
-                                <div className="flex items-center gap-3">
-                                    <SheetTitle className="text-xl font-bold tracking-tight text-foreground">
-                                        Ficha de Producto
-                                    </SheetTitle>
-                                    <span className="bg-muted/10 text-muted-foreground border border-muted-foreground/20 px-2 py-0.5 text-[9px] font-bold rounded-sm uppercase tracking-wider h-5 flex items-center">
-                                        {initialData?.internal_code || "Nuevo"}
-                                    </span>
-                                </div>
-                                <SheetDescription className="text-xs font-medium text-muted-foreground mt-0.5">
-                                    {initialData?.name || form.watch("name") || 'Nuevo Producto'} • {variantMode ? "Edición de Variante" : "Configuración Maestra"}
-                                </SheetDescription>
-                            </div>
-                        </div>
-                    </div>
-                </SheetHeader>
+            {formContent}
 
-                {/* Standardized Close Button */}
-                <SheetCloseButton onClick={() => onOpenChange(false)} />
-
-                <div className="flex-1 overflow-hidden flex flex-col">
-                    {formContent}
-                </div>
-
-                <div className="flex justify-end gap-3 w-full px-6 py-4 border-t border-border/40 bg-background/80 backdrop-blur-md sticky bottom-0 z-50 mt-auto shrink-0">
-                    <Button
-                        variant="outline"
-                        onClick={() => onOpenChange(false)}
-                        className="rounded-md text-xs font-bold border-primary/20 hover:bg-primary/5"
-                    >
-                        Cancelar
-                    </Button>
-                    <ActionSlideButton
-                        form="product-form"
-                        type="submit"
-                        disabled={loading}
-                        className="rounded-md text-xs font-bold"
-                    >
-                        {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
-                        {initialData ? 'Guardar Cambios' : 'Crear Producto'}
-                    </ActionSlideButton>
-                </div>
-        </CollapsibleSheet>
+            {/* ActionConfirmModal for closing with unsaved changes */}
+            <ActionConfirmModal
+                open={confirmCloseOpen}
+                onOpenChange={setConfirmCloseOpen}
+                title="Descartar cambios"
+                description="Hay cambios sin guardar. ¿Está seguro que desea cerrar y perder los cambios?"
+                variant="destructive"
+                confirmText="Descartar y Cerrar"
+                onConfirm={() => {
+                    setConfirmCloseOpen(false)
+                    onOpenChange(false)
+                }}
+            />
+        </BaseModal>
     )
 }

@@ -14,6 +14,7 @@ import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
+import { toast } from "sonner"
 
 interface BankStatement {
     id: number
@@ -62,7 +63,7 @@ export default function ReconciliationProcessPage({ params }: { params: Promise<
         try {
             setConfirming(true)
             await api.post(`/treasury/statements/${statementId}/confirm/`)
-            alert('✅ Cartola confirmada exitosamente')
+            toast.success('Cartola confirmada exitosamente')
             router.push('/treasury/reconciliation')
         } catch (error: unknown) {
             console.error('Error confirming statement:', error)

@@ -1,22 +1,20 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Loader2, Plus, Edit, Trash2, User, Clock } from "lucide-react"
-import api from "@/lib/api"
 import { HistoricalRecord } from "@/types/audit"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
-import { 
-    translateFieldName, 
-    translateStatus, 
-    translateProductionStage, 
-    translateSalesChannel, 
-    translateReceivingStatus, 
-    translateProductType, 
-    translatePaymentMethod 
+import {
+    translateFieldName,
+    translateStatus,
+    translateProductionStage,
+    translateSalesChannel,
+    translateReceivingStatus,
+    translateProductType,
+    translatePaymentMethod
 } from "@/lib/utils"
-import { getErrorMessage } from "@/lib/errors"
+import { useEntityHistory } from "@/features/audit/hooks/useEntityHistory"
 
 interface ActivitySidebarProps {
     entityId: number | string
@@ -25,66 +23,10 @@ interface ActivitySidebarProps {
     title?: string
 }
 
-const ENDPOINT_MAP: Record<string, string> = {
-    'product': '/inventory/products',
-    'contact': '/contacts',
-    'sale_order': '/sales/orders',
-    'purchase_order': '/purchasing/orders',
-    'invoice': '/billing/invoices',
-    'payment': '/treasury/payments',
-    'sale_delivery': '/sales/deliveries',
-    'purchase_receipt': '/purchasing/receipts',
-    'user': '/core/users',
-    'company_settings': '/core/company',
-    'work_order': '/production/orders',
-    'journal_entry': '/accounting/entries',
-    'stock_move': '/inventory/moves',
-    'pricing_rule': '/inventory/pricing-rules',
-    'reordering_rule': '/inventory/reordering-rules',
-    'treasuryaccount': '/treasury/accounts',
-    'bank': '/treasury/banks',
-    'paymentmethod': '/treasury/payment-methods',
-    'terminal': '/treasury/pos-terminals',
-    'category': '/inventory/categories',
-    'warehouse': '/inventory/warehouses',
-    'uom': '/inventory/uoms',
-    'uom_category': '/inventory/uom-categories',
-    'attribute': '/inventory/attributes',
-    'account': '/accounting/accounts',
-    'bank_journal': '/accounting/journals',
-    'employee': '/hr/employees',
-    'salaryadvance': '/hr/salary-advances'
-}
-
 const IGNORED_FIELDS = ['id', 'created_at', 'updated_at', 'history_id', 'history_date', 'history_type', 'history_user_id', 'history_user_username', 'history_change_reason']
 
 export function ActivitySidebar({ entityId, entityType, className = "", title = "Actividad" }: ActivitySidebarProps) {
-    const [history, setHistory] = useState<HistoricalRecord[]>([])
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
-
-    useEffect(() => {
-        const fetchHistoryInternal = async () => {
-            setLoading(true)
-            setError(null)
-            try {
-                const endpoint = ENDPOINT_MAP[entityType]
-                if (!endpoint) {
-                    throw new Error(`Unknown entity type: ${entityType}`)
-                }
-                const res = await api.get(`${endpoint}/${entityId}/history/`)
-                setHistory(res.data)
-            } catch (error: unknown) {
-                setError(getErrorMessage(error))
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        if (entityId) {
-            fetchHistoryInternal()
-        }
-    }, [entityId, entityType])
+    const { history, loading, error } = useEntityHistory(entityType, entityId)
 
     const getChangeIcon = (type: string) => {
         switch (type) {

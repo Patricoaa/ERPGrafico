@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-contracts
 status: active
 owner: frontend-team
-last_review: 2026-04-22
+last_review: 2026-04-23
 stability: contract-changes-require-ADR
 ---
 
@@ -17,6 +17,40 @@ Public API of every shared component in `components/shared/`. Consumers import o
 - 🟡 Beta — API may still change
 - 🔴 Pendiente de contrato — read source before use
 - Columns: `prop` | `type` | `required` | `default` | `notes`
+
+---
+
+## Selector components
+
+> See **[component-selectors.md](./component-selectors.md)** for AccountSelector, ProductSelector, AdvancedWorkOrderSelector, and 7 more.
+
+---
+
+## BaseModal / ActionConfirmModal / GenericWizard
+
+> 📄 Documentación completa en **[component-modal.md](./component-modal.md)**.
+
+Jerarquía: `BaseModal` (primitiva) → `ActionConfirmModal` | `GenericWizard` | `DocumentCompletionModal`.
+Nunca usar `Dialog` de shadcn directamente en features.
+
+
+
+---
+
+## Dropdown & Popover Layout Invariants
+
+Global rules for positioning and width of floating UI elements to ensure consistency across the Industrial Premium design system.
+
+### 1. Width Invariant (Match Trigger)
+Every dropdown or popover used within a form field (Select, Selector, Combobox) MUST match the width of its trigger by default.
+- **CSS Rule**: Use `w-[var(--radix-select-trigger-width)]` or `w-[var(--radix-popover-trigger-width)]`.
+- **Reasoning**: Maintains the "solid block" aesthetic of the form layout.
+- **Exception**: Filters in toolbars or specialized components like `DateRangeFilter` (see [component-datepicker.md](./component-datepicker.md)).
+
+### 2. Positioning vs. Notched Fields
+The positioning relative to a `notched-field` (fieldset + legend) depends on the component type:
+- **Covering (Default Selects)**: Standard `LabeledSelect` uses `item-aligned` positioning. The dropdown aligns with the top legend/border, covering the trigger.
+- **Floating (Entity Selectors)**: Feature-rich selectors (`AccountSelector`, `ProductSelector`) use `popper` positioning. The dropdown aligns with the bottom border of the fieldset to avoid obscuring search inputs or rich triggers.
 
 ---
 
@@ -39,16 +73,12 @@ States handled: — (pure presentational, no async).
 
 ---
 
-## Skeleton family 🟢
+## Skeleton family
 
-| Component | Use for |
-|-----------|---------|
-| `CardSkeleton` | Card/tile loading |
-| `TableSkeleton` | Tabular data loading |
-| `FormSkeleton` | Form loading after edit-mode entry |
-| `SkeletonShell` | Full-page shell (layout + inner skeletons) |
+> 📄 Documentación completa en **[component-skeleton.md](./component-skeleton.md)**.
 
-Common props: `rows?`, `columns?`, `className?`.
+Catálogo: `CardSkeleton` · `TableSkeleton` · `FormSkeleton` · `SkeletonShell` · `PageLayoutSkeleton` · `LoadingFallback`.
+Regla clave: usar wrappers estáticos para first-load, `SkeletonShell` para refetching.
 
 ---
 
@@ -60,15 +90,22 @@ Common props: `rows?`, `columns?`, `className?`.
   title="Sin órdenes"
   description="Crea la primera para empezar"
   action={<Button>Crear</Button>}
+  variant="full"
+  context="inventory"
 />
 ```
 
-| prop | type | required |
-|------|------|----------|
-| `icon` | `ReactNode` | ❌ |
-| `title` | `string` | ✅ |
-| `description` | `string` | ❌ |
-| `action` | `ReactNode` | ❌ |
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `icon` | `ReactNode` | ❌ | — | Sobrescribe el icono del contexto |
+| `title` | `string` | ❌ | — | Título principal. Si se omite, se usa el por defecto del `context` |
+| `description` | `string` | ❌ | — | Descripción detallada debajo del título |
+| `context` | `EmptyStateContext` | ❌ | `'generic'` | Define icono y título por defecto. Valores: `'search' \| 'inventory' \| 'finance' \| 'users' \| 'generic' \| 'database' \| 'production' \| 'pos' \| 'bom' \| 'treasury' \| 'sale' \| 'purchase'` |
+| `variant` | `'full' \| 'compact' \| 'minimal'` | ❌ | `'full'` | `full`: icono grande con bordes. `compact`: padding reducido. `minimal`: inline flex. |
+| `entityName` | `string` | ❌ | — | Personaliza el título auto-generado (ej. "No hay órdenes para {entityName}") |
+| `action` | `ReactNode` | ❌ | — | Acción principal (derecha/abajo) |
+| `secondaryAction` | `ReactNode` | ❌ | — | Acción secundaria (izquierda/arriba) |
+| `className` | `string` | ❌ | — | Clases adicionales para el contenedor |
 
 ---
 
@@ -85,34 +122,9 @@ Common props: `rows?`, `columns?`, `className?`.
 
 ---
 
-## ActionConfirmModal 🟢
+## ActionConfirmModal
 
-Reusable confirmation dialog with variant styling and async confirmation support.
-
-```tsx
-<ActionConfirmModal
-  open={open}
-  onOpenChange={setOpen}
-  onConfirm={handleDelete}
-  title="Eliminar orden"
-  description="Esta acción no se puede deshacer."
-  variant="destructive"
-/>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `open` | `boolean` | ✅ | — | |
-| `onOpenChange` | `(open: boolean) => void` | ✅ | — | |
-| `onConfirm` | `() => Promise<void> \| void` | ✅ | — | Shows spinner during async |
-| `title` | `string` | ✅ | — | |
-| `description` | `ReactNode` | ✅ | — | Accepts JSX |
-| `confirmText` | `string` | ❌ | `'Confirmar'` | |
-| `cancelText` | `string` | ❌ | `'Cancelar'` | |
-| `variant` | `'default' \| 'destructive' \| 'warning' \| 'info' \| 'success'` | ❌ | `'default'` | Controls icon + button color |
-| `icon` | `LucideIcon` | ❌ | — | Overrides default variant icon |
-
-States handled: loading (during `onConfirm`), error (console only — caller manages toast).
+> 📄 Ver **[component-modal.md](./component-modal.md)**.
 
 ---
 
@@ -154,7 +166,7 @@ Single date selector. Spanish locale (es-CL).
 |------|------|----------|---------|-------|
 | `date` | `Date \| undefined` | ❌ | — | Controlled |
 | `onDateChange` | `(date?: Date) => void` | ✅ | — | Returns `undefined` on clear |
-| `placeholder` | `string` | ❌ | `'Selecciona fecha'` | |
+| `placeholder` | `string` | ❌ | `'Seleccionar fecha'` | |
 | `className` | `string` | ❌ | — | |
 | `disabled` | `boolean` | ❌ | `false` | |
 
@@ -173,7 +185,7 @@ Two-month range picker for table filters.
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
 | `onRangeChange` | `(range: DateRange \| undefined) => void` | ✅ | — | `DateRange` from `react-day-picker` |
-| `label` | `string` | ❌ | `'Rango de fechas'` | Shown when no range selected |
+| `label` | `string` | ❌ | `'Filtrar por fecha'` | Shown when no range selected |
 | `defaultRange` | `DateRange` | ❌ | — | Initial range |
 | `className` | `string` | ❌ | — | |
 
@@ -263,6 +275,56 @@ States handled: — (pure controlled). Shows count badge when >2 selected; shows
 
 ---
 
+## LabeledInput 🟡
+
+> 📄 Documentación completa en **[component-input.md](./component-input.md)**.
+
+Primitivo único para el par label + campo de texto. Reemplaza el patrón deprecated `FORM_STYLES.label + FORM_STYLES.input`.
+
+```tsx
+<LabeledInput label="Nombre" required error={fieldState.error?.message} {...field} />
+<LabeledInput label="Observaciones" as="textarea" rows={4} {...field} />
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `label` | `string` | ✅ | — | Texto del legend (notched border) |
+| `as` | `'input' \| 'textarea'` | ❌ | `'input'` | |
+| `required` | `boolean` | ❌ | `false` | Muestra `*` automáticamente |
+| `error` | `string` | ❌ | — | Activa estado rojo + `role="alert"` |
+| `hint` | `string` | ❌ | — | Texto de ayuda (oculto si hay error) |
+| `disabled` | `boolean` | ❌ | `false` | |
+| `rows` | `number` | ❌ | `3` | Solo `as="textarea"` |
+| `containerClassName` | `string` | ❌ | — | Clases del wrapper `<div>` |
+
+`forwardRef`-compatible. Pasar `{...field}` de react-hook-form directamente. **No usar `<FormLabel>` ni `<FormMessage>`** junto a este componente.
+
+---
+
+## MultiTagInput 🟡
+
+> 📄 Ver **[component-input.md](./component-input.md#multitaginput)**.
+
+Componente para entrada de múltiples etiquetas (tags) con procesamiento mediante la tecla `Enter`.
+
+```tsx
+<MultiTagInput label="Valores" values={tags} onAdd={add} onRemove={remove} />
+```
+
+---
+
+## MultiSelectTagInput 🟡
+
+> 📄 Ver **[component-input.md](./component-input.md#multiselecttaginput)**.
+
+Selector múltiple con dropdown y etiquetas para opciones predefinidas.
+
+```tsx
+<MultiSelectTagInput label="Categorías" options={opts} value={val} onChange={set} />
+```
+
+---
+
 ## FolioValidationInput 🟢
 
 Text input with real-time DTE folio uniqueness validation.
@@ -321,12 +383,12 @@ DatePicker wrapper that validates tax/accounting period closure before accepting
 | `date` | `Date \| undefined` | ✅ | — | Controlled |
 | `onDateChange` | `(date: Date \| undefined) => void` | ✅ | — | |
 | `onValidityChange` | `(isValid: boolean) => void` | ❌ | — | Fires after each validation |
-| `validationType` | `'tax' \| 'accounting' \| 'both'` | ❌ | `'both'` | Which periods to check |
-| `label` | `string` | ❌ | `'Fecha'` | |
+| `validationType` | `'tax' \| 'accounting' \| 'both'` | ❌ | `'tax'` | Which periods to check |
+| `label` | `string` | ❌ | `'Fecha Emisión'` | |
 | `placeholder` | `string` | ❌ | — | |
 | `className` | `string` | ❌ | — | |
 | `disabled` | `boolean` | ❌ | `false` | |
-| `required` | `boolean` | ❌ | `false` | |
+| `required` | `boolean` | ❌ | `true` | |
 
 States handled: validating (spinner), period closed (warning alert, isValid=false).
 
@@ -355,53 +417,30 @@ Font: always `font-mono font-bold tabular-nums`. Do NOT render currency with raw
 
 ---
 
-## GenericWizard 🟢
+## QuantityDisplay 🟢
 
-Multi-step wizard modal. Handles step navigation, validation, and success screen.
+Componente hermano de `MoneyDisplay` exclusivo para cantidades de producción, inventario y medidas físicas (kg, metros, unidades).
 
 ```tsx
-<GenericWizard
-  open={open}
-  onOpenChange={setOpen}
-  title="Crear Orden"
-  steps={[
-    { id: 1, title: 'Datos', component: <Step1 />, isValid: step1Valid },
-    { id: 2, title: 'Líneas', component: <Step2 />, onNext: validateStep2 },
-  ]}
-  onComplete={handleComplete}
-  completeButtonLabel="Crear"
-  isCompleting={isPending}
-/>
-```
-
-```typescript
-interface WizardStep {
-  id: string | number
-  title: string
-  description?: string
-  component: ReactNode
-  isValid?: boolean               // disables Next when false
-  onNext?: () => Promise<boolean | void>  // return false to block advance
-}
+<QuantityDisplay value={150.5} uom="kg" decimals={2} />
+<QuantityDisplay value={diff} showSign />
 ```
 
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
-| `title` | `string \| ReactNode` | ✅ | — | Modal title |
-| `steps` | `WizardStep[]` | ✅ | — | Min 1 step |
-| `onComplete` | `() => Promise<void>` | ✅ | — | Called on last step confirm |
-| `onClose` | `() => void` | ❌ | — | Called on cancel/close |
-| `initialStep` | `number` | ❌ | `0` | Zero-indexed |
-| `completeButtonLabel` | `string` | ❌ | `'Completar'` | |
-| `completeButtonIcon` | `ReactNode` | ❌ | — | |
-| `isCompleting` | `boolean` | ❌ | `false` | Spinner on complete button |
-| `isLoading` | `boolean` | ❌ | `false` | Full wizard loading state |
-| `successContent` | `ReactNode` | ❌ | — | Shown after `onComplete` resolves |
-| `footerLeft` | `ReactNode` | ❌ | — | Left slot in footer |
+| `value` | `number \| string \| null \| undefined` | ✅ | — | null/undefined/NaN → dash |
+| `uom` | `string` | ❌ | — | Suffix for Unit of Measure (e.g. 'kg') |
+| `decimals` | `number` | ❌ | `4` | Maximum fraction digits. Standardized to 4 for production precision. |
+| `showSign` | `boolean` | ❌ | `false` | Adds `+` prefix for positive values |
+| `className` | `string` | ❌ | — | Merged via `cn()` |
 
-Inherits `BaseModal` props except `children`, `title`, `description`, `footer`.
+Font: always `font-mono tabular-nums`. Do NOT render quantities with raw JS `.toLocaleString()` outside this component if they need to be aligned in tables or forms.
 
-States handled: loading (isLoading), step blocked (isValid=false or onNext returns false), completing (isCompleting), success (successContent).
+---
+
+## GenericWizard
+
+> 📄 Ver **[component-modal.md](./component-modal.md)**.
 
 ---
 
@@ -452,6 +491,26 @@ interface ReportNode {
 Also exports `ReportTableSkeleton` for suspense boundaries.
 
 States handled: loading (isLoading → ReportTableSkeleton), empty (EmptyState), populated.
+
+---
+
+## AccountingLinesTable 🟢
+
+Tabla estándar para ingreso de líneas de asiento doble (Debe/Haber). Contiene internamente la selección de cuenta contable, glosa, cálculos de balance e interfaz de inserción/borrado de filas. 
+Usa `useFieldArray` internamente conectándose a un react-hook-form superior.
+
+```tsx
+<AccountingLinesTable control={form.control} name="items" />
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `control` | `Control<any>` | ✅ | — | Form control de `react-hook-form` |
+| `name` | `string` | ✅ | — | Nombre del field array en el schema |
+
+La estructura esperada en el array de form values (zod schema) es un array de objetos con `account`, `label`, `debit`, y `credit`.
+
+States handled: Validaciones de input, cálculo en tiempo real de saldos totales.
 
 ---
 
@@ -565,23 +624,11 @@ States handled: empty (EmptyState), deleting per-item spinner.
 
 ---
 
-## ToolbarCreateButton 🟢
+## Button family (ToolbarCreateButton / ActionButtons)
 
-Primary toolbar action button. Renders as link when `href` provided.
+> 📄 Documentación completa en **[component-button.md](./component-button.md)**.
 
-```tsx
-<ToolbarCreateButton label="Nueva Orden" icon={PlusCircleIcon} onClick={handleOpen} />
-<ToolbarCreateButton label="Nuevo Producto" href="/inventory/products/new" />
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `label` | `string` | ✅ | — | Uppercase bold text |
-| `icon` | `LucideIcon` | ❌ | `Plus` | Direct icon component |
-| `iconName` | `string` | ❌ | — | Dynamic icon by string name; `icon` takes precedence |
-| `href` | `string` | ❌ | — | Renders as Next.js `<Link>` instead of `<button>` |
-
-Inherits all `Button` props except `children`. Variant defaults to `default` (primary). Height 9 (36px).
+Catálogo: `SubmitButton` · `CancelButton` · `DangerButton` · `IconButton` · `ToolbarCreateButton`.
 
 ---
 
@@ -631,6 +678,53 @@ Tabs scroll horizontally on small screens (no scrollbar).
 
 ---
 
+## FormTabs 🟢
+
+Componente de pestañas estandarizado con estética "industrial gráfica" (carpetas troqueladas) para formularios complejos y modales con múltiples secciones. Reemplaza el uso directo de `Tabs` de shadcn/ui.
+
+```tsx
+<FormTabs
+  items={[
+    { value: 'general', label: 'General', icon: InfoIcon, hasErrors: !!errors.name },
+    { value: 'pricing', label: 'Precios', icon: DollarSignIcon, disabled: !productId },
+  ]}
+  value={activeTab}
+  onValueChange={setActiveTab}
+  orientation="vertical"
+  header={<headerSlot />}
+>
+  <FormTabsContent value="general">...</FormTabsContent>
+</FormTabs>
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `items` | `FormTabItem[]` | ✅ | — | `{ value, label, icon?, badge?, hasErrors?, hidden?, disabled? }` |
+| `value` | `string` | ✅ | — | Controlled state |
+| `onValueChange` | `(value: string) => void` | ✅ | — | |
+| `orientation` | `'vertical' \| 'horizontal'` | ❌ | `'vertical'` | |
+| `variant` | `'folder' \| 'underline'` | ❌ | `'folder'` | `folder`: corte industrial. `underline`: minimalista. |
+| `header` | `ReactNode` | ❌ | — | Renderiza sobre el contenido (obligatorio para sticky titles en modales verticales) |
+| `footer` | `ReactNode` | ❌ | — | Renderiza debajo del contenido |
+| `listClassName` | `string` | ❌ | — | Clases adicionales para el contenedor de pestañas |
+
+### Patrones de Uso
+
+#### 1. Vertical Rail ("Sawtooth")
+Estética de riel lateral con efecto de sierra que sobresale del contenedor.
+- **Cuándo usar:** Fichas maestras (Producto, Usuario, Contacto), alta densidad de datos (4+ pestañas), modales de gran tamaño (`xl` o superior).
+- **Requisito Técnico:** El modal padre DEBE tener `allowOverflow={true}` y `hideScrollArea={true}` para permitir que el riel sobresalga del marco.
+- **Navegación:** El título del modal debe moverse al `header` prop de `FormTabs` para alinear el riel con el contenido.
+
+#### 2. Horizontal Group ("Pills")
+Estética de mando unificado con doble redondeo superior y base recta.
+- **Cuándo usar:** Selectores de vista (Ventas vs Notas C/D), formularios simples o rápidos (2-3 pestañas), componentes inline.
+- **Comportamiento:** Se centran automáticamente en su contenedor y actúan como un grupo de botones ("button group") integrado.
+
+---
+
+---
+
 ## TransactionViewModal 🟢
 
 Large detail modal for any transaction type. Two-column layout: content (75%) + metadata sidebar (25%).
@@ -653,11 +747,110 @@ Large detail modal for any transaction type. Two-column layout: content (75%) + 
 | `id` | `number \| string` | ✅ | — | Entity ID |
 | `view` | `'details' \| 'history' \| 'all'` | ❌ | `'all'` | Which panels to render |
 
-`TransactionType` union: covers sale orders, purchase orders, invoices, payments, work orders — see source for full union. Uses `useTransactionData(type, id)` internally.
+```typescript
+// frontend/types/transactions.ts
+type TransactionType =
+  | 'product'
+  | 'contact'
+  | 'sale_order'
+  | 'purchase_order'
+  | 'invoice'
+  | 'payment'
+  | 'sale_delivery'
+  | 'purchase_receipt'
+  | 'user'
+  | 'company_settings'
+  | 'work_order'
+  | 'journal_entry'
+  | 'stock_move'
+  | 'cash_movement'
+  | 'sale_return'
+  | 'purchase_return'
+  | 'inventory'
+  | 'profit_distribution'
+```
+
+Uses `useTransactionData(type, id)` internally.
 
 Features: print (react-to-print), navigation history between related transactions (`useNavigationHistory`), inline payment editing, delete payment confirmation.
 
 States handled: loading (dual spinner), error, populated.
+
+---
+
+## PageHeaderButton 🟡
+
+Botón estandarizado para usar dentro de las acciones de un `PageHeader`.
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `label` | `string` | ✅ | — | |
+| `icon` | `LucideIcon` | ❌ | — | |
+| `onClick` | `() => void` | ❌ | — | |
+| `href` | `string` | ❌ | — | Si se provee, renderiza como `<Link>` |
+| `disabled` | `boolean` | ❌ | `false` | |
+| `variant` | `'default' \| 'outline' \| 'secondary' \| 'ghost'` | ❌ | `'default'` | Variante de Shadcn Button |
+
+---
+
+## ActionFoldButton 🟡
+
+Botón expansible para acciones secundarias.
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `label` | `string` | ✅ | — | |
+| `icon` | `LucideIcon` | ✅ | — | |
+| `onClick` | `() => void` | ✅ | — | |
+| `variant` | `'default' \| 'destructive' \| 'outline' \| 'secondary' \| 'ghost'` | ❌ | `'default'` | |
+
+---
+
+## ActionSlideButton 🟢
+
+Botón con animación de deslizamiento para revelar acciones adicionales. Ideal para procesos primarios con alta carga kinética.
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `children` | `ReactNode` | ✅ | — | Texto del botón |
+| `icon` | `LucideIcon` | ❌ | — | Icono opcional a la izquierda |
+| `variant` | `'primary' \| 'destructive' \| 'success'` | ❌ | `'primary'` | |
+| `loading` | `boolean` | ❌ | `false` | Muestra spinner y deshabilita |
+
+---
+
+## LoadingFallback
+
+> 📄 Ver **[component-skeleton.md](./component-skeleton.md)**.
+
+---
+
+## SheetCloseButton 🟢
+
+Universal close primitive for Modals, Sheets, and Panels. Standardizes the 32px circular ghost button pattern.
+
+```tsx
+<SheetCloseButton onClick={close} showTooltip tooltipText="Cerrar Panel" />
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `onClick` | `() => void` | ✅ | — | |
+| `className` | `string` | ❌ | — | Merged via `cn()` |
+| `label` | `string` | ❌ | `'Cerrar'` | Accessibility label |
+| `showTooltip` | `boolean` | ❌ | `false` | |
+| `tooltipText` | `string` | ❌ | — | Defaults to `label` |
+
+
+---
+
+## Componentes Internos 🔴
+
+Componentes de uso estrictamente interno, no consumir directamente en features:
+
+- `ColorBar`: Componente decorativo
+- `CropFrame`: Utilidad visual para recorte de imágenes
+- `IndustryMark`: Marca de agua de la aplicación
 
 ---
 

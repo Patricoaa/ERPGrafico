@@ -12,6 +12,7 @@ from typing import Dict, Any, Optional
 from .models import BankStatement, BankStatementLine, TreasuryAccount
 from .parsers import GenericCSVParser
 from .parsers.formats import get_parser_config, get_available_formats
+import hashlib
 
 
 class ReconciliationService:
@@ -64,6 +65,15 @@ class ReconciliationService:
         except ValueError as e:
             raise ValueError(f"Formato inválido: {e}")
         
+        # Calcular hash del archivo para evitar duplicados
+        file.seek(0)
+        file_content = file.read()
+        file_hash = hashlib.sha256(file_content).hexdigest()
+        file.seek(0) # Reset para que el parser pueda leerlo
+        
+        if BankStatement.objects.filter(file_hash=file_hash).exists():
+            raise ValueError("Este archivo de cartola ya ha sido importado anteriormente.")
+        
         # Parsear archivo
         try:
             parsed_data = ReconciliationService.parse_file(file, parser_config)
@@ -80,9 +90,12 @@ class ReconciliationService:
         statement = BankStatement.objects.create(
             treasury_account=treasury_account,
             statement_date=parsed_data['statement_date'],
+            period_start=validation_result.get('period_start', parsed_data['statement_date']),
+            period_end=validation_result.get('period_end', parsed_data['statement_date']),
             opening_balance=parsed_data['opening_balance'],
             closing_balance=parsed_data['closing_balance'],
             file=file,
+            file_hash=file_hash,
             imported_by=user,
             bank_format=bank_format,
             total_lines=len(parsed_data['lines']),
@@ -91,7 +104,28 @@ class ReconciliationService:
         
         # Crear líneas
         bulk_lines = []
+        seen_tx_ids = set()
+        skipped_count = 0
+        
+        # Mapa de advertencias por línea para fácil acceso
+        line_warnings_map = {
+            w['line']: w['message'] 
+            for w in validation_result['warnings'] 
+            if w.get('line') is not None
+        }
+
         for line_data in parsed_data['lines']:
+            tx_id = line_data.get('transaction_id', '')
+            if tx_id and tx_id in seen_tx_ids:
+                skipped_count += 1
+                continue
+            
+            if tx_id:
+                seen_tx_ids.add(tx_id)
+                
+            line_warn = line_warnings_map.get(line_data['line_number'])
+            has_warning = bool(line_warn)
+
             line = BankStatementLine(
                 statement=statement,
                 line_number=line_data['line_number'],
@@ -99,14 +133,25 @@ class ReconciliationService:
                 value_date=line_data.get('value_date'),
                 description=line_data['description'],
                 reference=line_data.get('reference', ''),
-                transaction_id=line_data.get('transaction_id', ''),
+                transaction_id=tx_id,
                 debit=line_data['debit'],
                 credit=line_data['credit'],
-                balance=line_data['balance']
+                balance=line_data['balance'],
+                has_warning=has_warning,
+                warning_message=line_warn or ''
             )
             bulk_lines.append(line)
         
+        if skipped_count > 0:
+            validation_result['warnings'].append({
+                "line": None,
+                "message": f"Se omitieron {skipped_count} transacciones con ID de transacción duplicado."
+            })
+        
         BankStatementLine.objects.bulk_create(bulk_lines)
+        
+        from core.cache import invalidate_report_cache
+        invalidate_report_cache('treasury')
         
         return {
             'statement': statement,
@@ -191,15 +236,56 @@ class ReconciliationService:
             # Tolerancia de 0.01 para redondeos
             diff = abs(expected_closing - closing_balance)
             if not diff.is_nan() and diff > Decimal('0.01'):
-                errors.append(
-                    f"Balance inconsistente: Apertura {opening_balance} + Movimientos {total_movements} "
+                warnings.append({
+                    "line": None,
+                    "message": f"Balance inconsistente: Apertura {opening_balance} + Movimientos {total_movements} "
                     f"= {expected_closing}, pero el cierre es {closing_balance}"
-                )
+                })
         
         # Validar fechas
         statement_date = parsed_data.get('statement_date')
         if not statement_date:
             errors.append("Fecha de la cartola es requerida")
+
+        # Determinar periodo
+        period_start = None
+        period_end = None
+        if lines:
+            period_start = min(line['transaction_date'] for line in lines)
+            period_end = max(line['transaction_date'] for line in lines)
+        else:
+            period_start = statement_date
+            period_end = statement_date
+
+        if period_start and period_end:
+            # Solapamiento de rangos
+            overlapping = BankStatement.objects.filter(
+                treasury_account=treasury_account,
+                period_end__gte=period_start,
+                period_start__lte=period_end
+            )
+            
+            if overlapping.filter(status='CONFIRMED').exists():
+                errors.append(f"El rango de fechas ({period_start} a {period_end}) se solapa con una cartola confirmada existente.")
+            elif overlapping.filter(status='DRAFT').exists():
+                warnings.append({
+                    "line": None,
+                    "message": f"El rango de fechas ({period_start} a {period_end}) se solapa con una cartola en borrador."
+                })
+
+            # Continuidad de balance
+            previous_statement = BankStatement.objects.filter(
+                treasury_account=treasury_account,
+                period_end__lt=period_start
+            ).order_by('-period_end').first()
+            
+            if previous_statement:
+                diff = abs(previous_statement.closing_balance - opening_balance)
+                if not diff.is_nan() and diff > Decimal('0.01'):
+                    warnings.append({
+                        "line": None,
+                        "message": f"Discontinuidad de saldos: El balance inicial ({opening_balance}) no coincide con el balance final de la cartola anterior ({previous_statement.closing_balance})."
+                    })
 
         # Validar consistencia línea por línea
         if lines:
@@ -224,34 +310,30 @@ class ReconciliationService:
                     # Intentar detectar si es orden inverso
                     # Si falla mucho, quizás el archivo está al revés.
                     # Por ahora, solo warning si es inconsistencia leve, error si es grave
-                     warnings.append(
-                        f"Discontinuidad de saldo en línea {line['line_number']}: "
+                     warnings.append({
+                        "line": line['line_number'],
+                        "message": f"Discontinuidad de saldo en línea {line['line_number']}: "
                         f"Anterior {current_balance} + A{line['credit']} - C{line['debit']} "
                         f"!= Actual {actual}"
-                    )
+                    })
                 
                 current_balance = actual
 
         
-        # Validar que no haya líneas duplicadas por transaction_id
-        transaction_ids = [
-            line.get('transaction_id')
-            for line in lines
-            if line.get('transaction_id')
-        ]
-        
-        if len(transaction_ids) != len(set(transaction_ids)):
-            warnings.append("Se encontraron transaction_ids duplicados")
-        
         # Validar fechas de transacciones
         for line in lines:
             if line['transaction_date'] > timezone.now().date():
-                warnings.append(f"Línea {line['line_number']} tiene fecha futura: {line['transaction_date']}")
+                warnings.append({
+                    "line": line['line_number'],
+                    "message": f"Línea {line['line_number']} tiene fecha futura: {line['transaction_date']}"
+                })
         
         return {
             'is_valid': len(errors) == 0,
             'errors': errors,
-            'warnings': warnings
+            'warnings': warnings,
+            'period_start': period_start,
+            'period_end': period_end
         }
     
     @staticmethod

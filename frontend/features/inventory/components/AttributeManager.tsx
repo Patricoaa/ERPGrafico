@@ -2,13 +2,11 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, { useEffect, useState, useMemo } from "react"
+import React, { useEffect, useState, useMemo, useCallback } from "react"
 import api from "@/lib/api"
 import { Plus, Trash2, Tag, LayoutDashboard, Eye, X, Loader2 } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { DataTable } from "@/components/ui/data-table"
@@ -16,12 +14,10 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { CancelButton, SubmitButton, IconButton, LabeledInput, MultiTagInput, ActionConfirmModal } from "@/components/shared"
 
 interface ProductAttribute {
     id: number
@@ -48,7 +44,6 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
     const [selectedAttribute, setSelectedAttribute] = useState<ProductAttribute | null>(null)
     const [newAttrName, setNewAttrName] = useState("")
     const [newAttrValues, setNewAttrValues] = useState<string[]>([])
-    const [tagInput, setTagInput] = useState("")
     const [newValueName, setNewValueName] = useState("")
     const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
     const [isSaving, setIsSaving] = useState(false)
@@ -63,7 +58,6 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
         setSelectedAttribute(null)
         setNewAttrName("")
         setNewAttrValues([])
-        setTagInput("")
         
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
@@ -137,11 +131,9 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
         }
     }
 
-    const addTag = () => {
-        const tag = tagInput.trim()
+    const addTag = (tag: string) => {
         if (tag && !newAttrValues.includes(tag)) {
             setNewAttrValues([...newAttrValues, tag])
-            setTagInput("")
         }
     }
 
@@ -175,7 +167,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
         }
     })
 
-    const handleDeleteAttribute = (id: number) => deleteAttrConfirm.requestConfirm(id)
+    const handleDeleteAttribute = useCallback((id: number) => deleteAttrConfirm.requestConfirm(id), [deleteAttrConfirm])
 
     const deleteValueConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -187,7 +179,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
         }
     })
 
-    const handleDeleteValue = (id: number) => deleteValueConfirm.requestConfirm(id)
+    const handleDeleteValue = useCallback((id: number) => deleteValueConfirm.requestConfirm(id), [deleteValueConfirm])
 
     const columns = useMemo<ColumnDef<ProductAttribute>[]>(() => [
         {
@@ -240,21 +232,20 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                                 className="flex items-center gap-1 px-2.5 py-0.5 h-6 text-[10px] font-bold border-secondary/50"
                             >
                                 {val.value}
-                                <button
+                                <IconButton
+                                    variant="ghost"
+                                    className="ml-1 h-4 w-4 p-0 text-muted-foreground hover:text-destructive transition-colors"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         handleDeleteValue(val.id)
                                     }}
-                                    className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
                                     title="Eliminar valor"
                                 >
                                     <X className="h-3 w-3" />
-                                </button>
+                                </IconButton>
                             </DataCell.Badge>
                         ))}
-                        <Button
-                            variant="ghost"
-                            size="icon"
+                        <IconButton
                             className="h-6 w-6 rounded-full bg-primary/5 hover:bg-primary/20 text-primary transition-all duration-300"
                             onClick={() => {
                                 setSelectedAttribute(row.original)
@@ -263,7 +254,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                             title="Añadir valor"
                         >
                             <Plus className="h-3.5 w-3.5" />
-                        </Button>
+                        </IconButton>
                         {values.length === 0 && (
                             <DataCell.Secondary className="text-muted-foreground/40 italic">
                                 Sin valores
@@ -295,7 +286,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                 </>
             ),
         }),
-    ], [])
+    ], [handleDeleteValue, handleDeleteAttribute])
 
     const selectedAttributes = useMemo(() => {
         return attributes.filter((_, index) => selectedRows[index])
@@ -361,11 +352,10 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                 description={selectedAttribute ? "Modifica el nombre o añade nuevos valores al atributo." : "Define un nuevo atributo para generar variaciones de producto (ej: Color, Talla)."}
                 footer={
                     <div className="flex justify-end gap-2 w-full">
-                        <Button variant="outline" onClick={handleCloseModal} disabled={isSaving}>Cancelar</Button>
-                        <Button onClick={handleCreateAttribute} disabled={isSaving}>
-                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <CancelButton onClick={handleCloseModal} disabled={isSaving} />
+                        <SubmitButton onClick={handleCreateAttribute} loading={isSaving}>
                             {selectedAttribute ? "Guardar Cambios" : "Crear Atributo"}
-                        </Button>
+                        </SubmitButton>
                     </div>
                 }
                 hideScrollArea={true}
@@ -374,60 +364,23 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                 <div className="flex flex-1 overflow-hidden min-h-[400px]">
                     <div className="flex-1 overflow-y-auto p-6 space-y-4">
                         <div className="space-y-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="attr-name" className={FORM_STYLES.label}>Nombre del Atributo (ej: Color, Talla)</Label>
-                                <Input
-                                    id="attr-name"
-                                    value={newAttrName}
-                                    onChange={(e) => setNewAttrName(e.target.value)}
-                                    placeholder="Escribe el nombre..."
-                                    className={FORM_STYLES.input}
-                                />
-                            </div>
+                            <LabeledInput
+                                label="Nombre del Atributo (ej: Color, Talla)"
+                                required
+                                id="attr-name"
+                                value={newAttrName}
+                                onChange={(e) => setNewAttrName(e.target.value)}
+                                placeholder="Escribe el nombre..."
+                            />
 
-                            <div className="space-y-3">
-                                <div className="flex flex-col gap-1">
-                                    <Label className={FORM_STYLES.label}>Nuevos Valores</Label>
-                                    <p className="text-[10px] text-muted-foreground">Escribe los valores que deseas añadir (ej: Rojo, Azul) y pulsa Enter.</p>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Input
-                                        value={tagInput}
-                                        onChange={(e) => setTagInput(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.preventDefault()
-                                                addTag()
-                                            }
-                                        }}
-                                        placeholder="Ej: Rojo..."
-                                        className={FORM_STYLES.input}
-                                    />
-                                    <Button type="button" onClick={addTag} size="icon" variant="secondary" className="shrink-0">
-                                        <Plus className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                                
-                                <div className="flex flex-wrap gap-2 pt-2 min-h-[60px] p-3 rounded-md border border-dashed bg-muted/20">
-                                    {newAttrValues.map((tag, i) => (
-                                        <DataCell.Badge key={i} variant="secondary" className="flex items-center gap-1.5 py-1 px-2.5 text-xs font-medium animate-in zoom-in-50 duration-200">
-                                            {tag}
-                                            <button 
-                                                type="button" 
-                                                onClick={() => removeTag(tag)}
-                                                className="hover:text-destructive transition-colors"
-                                            >
-                                                <X className="h-3 w-3" />
-                                            </button>
-                                        </DataCell.Badge>
-                                    ))}
-                                    {newAttrValues.length === 0 && (
-                                        <div className="flex items-center justify-center w-full h-full text-muted-foreground text-[11px] italic">
-                                            Lista de nuevos valores vacía
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                            <MultiTagInput
+                                label="Nuevos Valores"
+                                placeholder="Escribe un valor y pulsa Enter..."
+                                values={newAttrValues}
+                                onAdd={addTag}
+                                onRemove={removeTag}
+                                hint="Escribe los valores que deseas añadir (ej: Rojo, Azul) y pulsa Enter."
+                            />
                         </div>
                     </div>
 
@@ -455,28 +408,25 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
             }
                 footer={
                     <div className="flex justify-end gap-2 w-full">
-                        <Button variant="outline" onClick={() => setIsValueModalOpen(false)} disabled={isSaving}>Cancelar</Button>
-                        <Button onClick={handleCreateValue} disabled={isSaving}>
-                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <CancelButton onClick={() => setIsValueModalOpen(false)} disabled={isSaving} />
+                        <SubmitButton onClick={handleCreateValue} loading={isSaving}>
                             Añadir Valor
-                        </Button>
+                        </SubmitButton>
                     </div>
                 }
             >
                 <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="val-name" className={FORM_STYLES.label}>Nombre del Valor (ej: Rojo, XL)</Label>
-                        <Input
-                            id="val-name"
-                            value={newValueName}
-                            onChange={(e) => setNewValueName(e.target.value)}
-                            placeholder="Escribe el valor..."
-                            className={FORM_STYLES.input}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") handleCreateValue()
-                            }}
-                        />
-                    </div>
+                    <LabeledInput
+                        label="Nombre del Valor (ej: Rojo, XL)"
+                        required
+                        id="val-name"
+                        value={newValueName}
+                        onChange={(e) => setNewValueName(e.target.value)}
+                        placeholder="Escribe el valor..."
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") handleCreateValue()
+                        }}
+                    />
                 </div>
             </BaseModal>
 

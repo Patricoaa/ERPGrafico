@@ -25,3 +25,4 @@ django-storages[boto3]>=1.14.2
 django-imagekit
 cryptography>=42.0.0
 requests>=2.31.0
+rapidfuzz>=3.0  # S2.6: fuzzy matching para scoring de descripción en conciliación bancaria

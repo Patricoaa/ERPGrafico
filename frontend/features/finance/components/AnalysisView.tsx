@@ -5,11 +5,11 @@ import dynamic from "next/dynamic"
 import { TabsContent } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { DateRangeSelector } from "@/features/finance/components/DateRangeSelector"
+import { DateRangeFilter } from "@/components/shared"
 import { DateRange } from "react-day-picker"
 import { startOfYear, subYears } from "date-fns"
 import { useServerDate } from "@/hooks/useServerDate"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
+import { CardSkeleton } from "@/components/shared"
 import { MappingConfigSheet } from "@/features/finance/components/MappingConfigSheet"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { Button } from "@/components/ui/button"
@@ -17,12 +17,12 @@ import { SlidersHorizontal } from "lucide-react"
 
 const RatiosView = dynamic(() => import("@/features/finance/components/RatiosView").then(mod => mod.RatiosView), {
     ssr: false,
-    loading: () => <LoadingFallback message="Cargando análisis..." />
+    loading: () => <CardSkeleton variant="grid" count={4} />
 })
 
 const BIAnalyticsView = dynamic(() => import("@/features/finance/components/BIAnalyticsView").then(mod => mod.BIAnalyticsView), {
     ssr: false,
-    loading: () => <LoadingFallback message="Cargando BI..." />
+    loading: () => <CardSkeleton variant="grid" count={4} />
 })
 
 interface AnalysisViewProps {
@@ -80,11 +80,11 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                    <DateRangeSelector date={date} onDateChange={setDate} />
+                    <DateRangeFilter date={date} onDateChange={setDate} label="Periodo Principal" />
                     {showComparison && (
                         <div className="flex items-center space-x-2 border-l pl-4">
                             <span className="text-xs text-muted-foreground">vs</span>
-                            <DateRangeSelector date={compDate} onDateChange={setCompDate} />
+                            <DateRangeFilter date={compDate} onDateChange={setCompDate} label="Comparar con" />
                         </div>
                     )}
                 </div>

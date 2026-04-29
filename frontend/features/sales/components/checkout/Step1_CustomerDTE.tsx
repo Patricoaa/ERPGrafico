@@ -1,9 +1,7 @@
 "use client"
 
-import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import {
     User,
@@ -15,8 +13,7 @@ import {
 import { useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useQuery } from "@tanstack/react-query"
-import { settingsApi } from "@/features/settings/api/settingsApi"
+import { useBillingSettingsQuery } from "@/features/settings"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
@@ -24,6 +21,7 @@ import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationD
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { LabeledContainer, FormSection, LabeledSwitch } from "@/components/shared"
 
 import { CheckoutDTEData, PendingDebt } from "../../types"
 
@@ -59,11 +57,7 @@ export function Step1_CustomerDTE({
     const { openHub } = useHubPanel()
 
     // Fetch billing settings
-    const { data: settings } = useQuery({
-        queryKey: ["settings-billing"],
-        queryFn: settingsApi.getBillingSettings,
-        staleTime: 1000 * 60 * 5,
-    })
+    const { settings } = useBillingSettingsQuery()
 
     const allowedDteTypes = useMemo(() => {
         if (!settings) return ["BOLETA", "FACTURA", "BOLETA_EXENTA", "FACTURA_EXENTA"]
@@ -155,39 +149,22 @@ export function Step1_CustomerDTE({
             )}
 
             {/* ── Customer Selector ───────────────────────────── */}
-            <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                    <User className="h-5 w-5 text-primary" />
-                    <h3 className="font-black tracking-tighter text-foreground uppercase">
-                        Cliente
-                    </h3>
-                </div>
-                <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground">
-                        Buscar por Nombre, RUT o Email
-                    </Label>
-                    <AdvancedContactSelector
-                        value={selectedCustomerId}
-                        onChange={setSelectedCustomerId}
-                        onSelectContact={(contact) => setSelectedCustomerName(contact.name)}
-                        placeholder="Buscar por Nombre, RUT o Email..."
-                    />
-                </div>
+            <div className="space-y-4">
+                <AdvancedContactSelector
+                    label="Seleccionar Cliente"
+                    value={selectedCustomerId}
+                    onChange={setSelectedCustomerId}
+                    onSelectContact={(contact) => setSelectedCustomerName(contact.name)}
+                    contactType="CUSTOMER"
+                    placeholder="Buscar por Nombre, RUT o Email..."
+                />
             </div>
 
             <Separator className="opacity-30" />
 
             {/* ── DTE Document Section ────────────────────────── */}
             <div className="space-y-4">
-                <div className="flex flex-col gap-1">
-                    <h3 className="font-black tracking-tighter text-foreground uppercase flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-primary" />
-                        Documento Tributario
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                        Seleccione el tipo de documento y adjunte el respaldo si corresponde.
-                    </p>
-                </div>
+                <FormSection title="Documento Tributario" icon={FileText} />
 
                 {isDefaultCustomer && (
                     <Alert className="bg-warning/5 border-warning/20 text-warning-foreground py-3">
@@ -231,76 +208,79 @@ export function Step1_CustomerDTE({
 
                 {(dteData.type === "FACTURA" || dteData.type === "FACTURA_EXENTA") && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center space-x-2 p-3 bg-muted/30 rounded-lg border border-dashed">
-                            <Checkbox
-                                id="is-pending"
-                                checked={dteData.isPending}
-                                onCheckedChange={(checked) => {
-                                    const pending = !!checked
-                                    if (pending) {
-                                        setDteData({
-                                            ...dteData,
-                                            isPending: true,
-                                            number: "",
-                                            attachment: null,
-                                        })
-                                        onValidityChange?.(true)
-                                        onPeriodValidityChange?.(true)
-                                    } else {
-                                        setDteData({ ...dteData, isPending: false })
-                                    }
-                                }}
-                            />
-                            <Label htmlFor="is-pending" className="text-xs font-medium cursor-pointer">
-                                Emitiré la factura luego
-                            </Label>
-                        </div>
+                        {/* ── Switch: Emisión diferida ────────────────────── */}
+                        <LabeledSwitch
+                            label="Emisión"
+                            description={dteData.isPending ? "Emitiré la factura luego" : "Emisión inmediata"}
+                            checked={!!dteData.isPending}
+                            onCheckedChange={(checked) => {
+                                const pending = !!checked
+                                if (pending) {
+                                    setDteData({
+                                        ...dteData,
+                                        isPending: true,
+                                        number: "",
+                                        attachment: null,
+                                    })
+                                    onValidityChange?.(true)
+                                    onPeriodValidityChange?.(true)
+                                } else {
+                                    setDteData({ ...dteData, isPending: false })
+                                }
+                            }}
+                            icon={<FileText className={cn("h-4 w-4 transition-colors", dteData.isPending ? "text-warning" : "text-muted-foreground/30")} />}
+                            className={cn(dteData.isPending ? "bg-warning/5 border-warning/20 shadow-sm" : "border-dashed")}
+                        />
 
                         {!dteData.isPending && (
-                            <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg bg-muted/10">
-                                <div className="space-y-2">
-                                    <FolioValidationInput
-                                        value={dteData.number}
-                                        onChange={(val) => setDteData({ ...dteData, number: val })}
-                                        dteType={dteData.type}
-                                        isPurchase={false}
-                                        onValidityChange={onValidityChange}
-                                        disabled={dteData.isPending}
-                                    />
-                                </div>
-                                <div>
-                                    <PeriodValidationDateInput
-                                        date={
-                                            dteData.date
-                                                ? new Date(`${dteData.date}T12:00:00`)
-                                                : undefined
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* ── Folio — FolioValidationInput ya tiene su LabeledInput interno ── */}
+                                <FolioValidationInput
+                                    value={dteData.number}
+                                    onChange={(val) => setDteData({ ...dteData, number: val })}
+                                    dteType={dteData.type}
+                                    isPurchase={false}
+                                    onValidityChange={onValidityChange}
+                                    disabled={dteData.isPending}
+                                />
+
+                                {/* ── Fecha Emisión — PeriodValidationDateInput ya tiene su LabeledContainer ── */}
+                                <PeriodValidationDateInput
+                                    date={
+                                        dteData.date
+                                            ? new Date(`${dteData.date}T12:00:00`)
+                                            : undefined
+                                    }
+                                    onDateChange={(d) => {
+                                        if (d) {
+                                            const year = d.getFullYear()
+                                            const month = String(d.getMonth() + 1).padStart(2, "0")
+                                            const day = String(d.getDate()).padStart(2, "0")
+                                            setDteData({
+                                                ...dteData,
+                                                date: `${year}-${month}-${day}`,
+                                            })
+                                        } else {
+                                            setDteData({ ...dteData, date: "" })
                                         }
-                                        onDateChange={(d) => {
-                                            if (d) {
-                                                const year = d.getFullYear()
-                                                const month = String(d.getMonth() + 1).padStart(2, "0")
-                                                const day = String(d.getDate()).padStart(2, "0")
-                                                setDteData({
-                                                    ...dteData,
-                                                    date: `${year}-${month}-${day}`,
-                                                })
-                                            } else {
-                                                setDteData({ ...dteData, date: "" })
-                                            }
-                                        }}
-                                        validationType="both"
-                                        onValidityChange={onPeriodValidityChange}
-                                    />
-                                </div>
+                                    }}
+                                    validationType="both"
+                                    onValidityChange={onPeriodValidityChange}
+                                />
+
+                                {/* ── Dropzone — LabeledContainer externo (componente no usa fieldset) ── */}
                                 <div className="col-span-2">
-                                    <DocumentAttachmentDropzone
-                                        file={dteData.attachment}
-                                        onFileChange={(file) =>
-                                            setDteData({ ...dteData, attachment: file })
-                                        }
-                                        dteType={dteData.type}
-                                        isPending={dteData.isPending}
-                                    />
+                                    <LabeledContainer label="Documento de Respaldo (PDF/XML)">
+                                        <DocumentAttachmentDropzone
+                                            file={dteData.attachment}
+                                            onFileChange={(file) =>
+                                                setDteData({ ...dteData, attachment: file })
+                                            }
+                                            dteType={dteData.type}
+                                            isPending={dteData.isPending}
+                                            hideLabel
+                                        />
+                                    </LabeledContainer>
                                 </div>
                             </div>
                         )}

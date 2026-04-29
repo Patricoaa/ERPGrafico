@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { AbsenceFormDialog } from "@/features/hr"
-import { getAbsences, deleteAbsence, getEmployees } from "@/lib/hr/api"
+import { AbsenceFormModal } from "@/features/hr"
+import { getAbsences, deleteAbsence, getEmployees } from '@/features/hr/api/hrApi'
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import type { Absence, Employee } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
@@ -122,7 +122,7 @@ export default function AbsencesPage({ createAction }: { createAction?: React.Re
     return (
         <div className="space-y-4">
 
-            <AbsenceFormDialog
+            <AbsenceFormModal
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
                 absence={editingAbsence}

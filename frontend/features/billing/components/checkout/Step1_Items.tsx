@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { LabeledInput } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -100,12 +100,12 @@ export function Step1_Items({
                             <TableHead className="w-14 text-center">
                                 <Tag className="h-4 w-4 mx-auto text-muted-foreground" />
                             </TableHead>
-                            <TableHead className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Producto/Servicio</TableHead>
-                            <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-muted-foreground">Original</TableHead>
-                            <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-muted-foreground">Entregado</TableHead>
-                            <TableHead className="w-28 text-center font-black uppercase text-[10px] tracking-widest text-muted-foreground">Cant. Corregir</TableHead>
-                            <TableHead className="w-32 text-center font-black uppercase text-[10px] tracking-widest text-muted-foreground">Precio</TableHead>
-                            <TableHead className="font-black uppercase text-[10px] tracking-widest text-muted-foreground">Motivo / Razón</TableHead>
+                            <TableHead className="font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Producto/Servicio</TableHead>
+                            <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Original</TableHead>
+                            <TableHead className="text-right font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Entregado</TableHead>
+                            <TableHead className="w-28 text-center font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Cantidad Corregir</TableHead>
+                            <TableHead className="w-32 text-center font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Precio</TableHead>
+                            <TableHead className="font-black uppercase text-[10px] tracking-widest text-muted-foreground/60">Motivo / Razón</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -172,7 +172,7 @@ export function Step1_Items({
                                     </TableCell>
                                     <TableCell className="px-4">
                                         <div className="relative group max-w-[100px] mx-auto">
-                                            <Input
+                                            <LabeledInput
                                                 type="number"
                                                 step="1"
                                                 disabled={!selected}
@@ -209,7 +209,7 @@ export function Step1_Items({
                                     <TableCell className="px-4">
                                         <div className="max-w-[120px] mx-auto flex flex-col items-center gap-1">
                                             <div className="relative w-full">
-                                                <Input
+                                                <LabeledInput
                                                     type="number"
                                                     disabled={!selected || isCreditNote}
                                                     value={itemData?.unit_price ?? ""}
@@ -233,7 +233,7 @@ export function Step1_Items({
                                     </TableCell>
 
                                     <TableCell>
-                                        <Input
+                                        <LabeledInput
                                             placeholder="Indique motivo..."
                                             disabled={!selected}
                                             value={itemData?.reason || ""}

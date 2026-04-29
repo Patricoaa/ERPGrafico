@@ -4,8 +4,8 @@ import { useState, useEffect } from "react"
 import { showApiError } from "@/lib/errors"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
+import { Badge } from "@/components/ui/badge"
 import {
     Table,
     TableBody,
@@ -14,19 +14,10 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { FORM_STYLES } from "@/lib/styles"
 import { useServerDate } from "@/hooks/useServerDate"
 
 interface PurchaseOrderLine {
@@ -248,57 +239,45 @@ export function ReceiptModal({
                 <div className="space-y-4">
                     {/* Warehouse and Date Selection */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="warehouse" className={FORM_STYLES.label}>Bodega de {isRefund ? 'Salida' : 'Recepción'}</Label>
-                            <Select
-                                value={selectedWarehouse?.toString() || ''}
-                                onValueChange={(val) => setSelectedWarehouse(Number(val))}
-                            >
-                                <SelectTrigger className={FORM_STYLES.input}>
-                                    <SelectValue placeholder="Seleccione bodega" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {warehouses.map(warehouse => (
-                                        <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
-                                            {warehouse.name} ({warehouse.code})
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="receipt-date" className={FORM_STYLES.label}>Fecha de {isRefund ? 'Devolución' : 'Recepción'}</Label>
-                            <Input
-                                id="receipt-date"
-                                type="date"
-                                className={FORM_STYLES.input}
-                                value={receiptDate}
-                                onChange={(e) => setReceiptDate(e.target.value)}
-                            />
-                        </div>
+                        <LabeledSelect
+                            label={`Bodega de ${isRefund ? 'Salida' : 'Recepción'}`}
+                            required
+                            value={selectedWarehouse?.toString() || ''}
+                            onChange={(val) => setSelectedWarehouse(Number(val))}
+                            options={warehouses.map(warehouse => ({
+                                value: warehouse.id.toString(),
+                                label: `${warehouse.name} (${warehouse.code})`
+                            }))}
+                            placeholder="Seleccione bodega"
+                        />
+                        <PeriodValidationDateInput
+                            label={`Fecha de ${isRefund ? 'Devolución' : 'Recepción'}`}
+                            required
+                            date={receiptDate ? new Date(receiptDate + 'T12:00:00') : undefined}
+                            onDateChange={(d) => {
+                                if (!d) {
+                                    setReceiptDate("")
+                                    return
+                                }
+                                setReceiptDate(d.toISOString().split('T')[0])
+                            }}
+                            validationType="tax"
+                        />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="delivery-reference" className={FORM_STYLES.label}>Referencia (Guía/Comprobante)</Label>
-                            <Input
-                                id="delivery-reference"
-                                placeholder="Ej: GD-12345"
-                                className={FORM_STYLES.input}
-                                value={deliveryReference}
-                                onChange={(e) => setDeliveryReference(e.target.value)}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="notes" className={FORM_STYLES.label}>Notas / Observaciones</Label>
-                            <Input
-                                id="notes"
-                                placeholder="Mercadería recibida en buen estado..."
-                                className={FORM_STYLES.input}
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                            />
-                        </div>
+                        <LabeledInput
+                            label="Referencia (Guía/Comprobante)"
+                            placeholder="Ej: GD-12345"
+                            value={deliveryReference}
+                            onChange={(e) => setDeliveryReference(e.target.value)}
+                        />
+                        <LabeledInput
+                            label="Notas / Observaciones"
+                            placeholder="Mercadería recibida en buen estado..."
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                        />
                     </div>
 
                     {/* Receiving Status */}
@@ -353,24 +332,24 @@ export function ReceiptModal({
                                                     <Badge variant="outline">{line.quantity_pending}</Badge>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <Input
+                                                    <LabeledInput
                                                         type="number"
                                                         min="0"
                                                         max={line.quantity_pending}
                                                         step="1"
                                                         value={receiptQuantities[line.id] || 0}
                                                         onChange={(e) => handleQuantityChange(line.id, e.target.value)}
-                                                        className="w-24 text-center mx-auto h-8 rounded-lg border-dashed bg-background focus-visible:ring-primary font-bold"
+                                                        className="w-24 text-center mx-auto"
                                                     />
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <Input
+                                                    <LabeledInput
                                                         type="number"
                                                         min="0"
                                                         step="1"
                                                         value={receiptCosts[line.id] || 0}
                                                         onChange={(e) => handleCostChange(line.id, e.target.value)}
-                                                        className="w-32 text-center mx-auto h-8 rounded-lg border-dashed bg-background focus-visible:ring-primary font-bold"
+                                                        className="w-32 text-center mx-auto"
                                                     />
                                                 </TableCell>
                                                 <TableCell>

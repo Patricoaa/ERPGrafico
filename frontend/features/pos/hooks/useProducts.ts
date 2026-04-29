@@ -6,7 +6,7 @@ import { usePOS } from '../contexts/POSContext'
 import api from '@/lib/api'
 import type { Product, StockLimits } from '@/types/pos'
 import { toast } from 'sonner'
-import * as BOMResolver from '@/lib/pos/bom-resolver'
+import * as BOMResolver from '@/features/pos/utils/bom-resolver'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { inventoryApi } from '@/features/inventory/api/inventoryApi'

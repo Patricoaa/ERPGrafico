@@ -119,6 +119,8 @@ interface StatusBadgeProps {
     tooltip?: string
     /** Size variant */
     size?: "sm" | "md" | "lg"
+    /** Whether to use fully rounded (pill) style */
+    rounded?: boolean
     /** Optional className override */
     className?: string
 }
@@ -134,6 +136,7 @@ export function StatusBadge({
     icon: Icon,
     tooltip,
     size = "md",
+    rounded = false,
     className,
 }: StatusBadgeProps) {
     const normalizedStatus = status?.toUpperCase() || ""
@@ -213,6 +216,7 @@ export function StatusBadge({
                 size === "sm" && "text-[9px] px-1.5 py-0 gap-1",
                 size === "md" && "text-[10px] px-2 py-0.5 gap-1",
                 size === "lg" && "h-7 text-xs px-2.5 gap-1.5",
+                rounded && "rounded-full px-3",
                 className
             )}
         >

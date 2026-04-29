@@ -5,22 +5,17 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Input } from "@/components/ui/input"
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+import { LabeledInput, LabeledSelect } from "@/components/shared"
 import { Plus, Trash2, Edit, Wand2, CheckCircle2 } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { useReconciliation } from "../hooks/useReconciliation"
+import { Card } from "@/components/ui/card"
 import type { ReconciliationRule, TreasuryAccount as Account } from "../types"
 import { SimulationResults } from "./SimulationResults"
-import { FORM_STYLES } from "@/lib/styles"
 import { cn } from "@/lib/utils"
 
 type RuleRow = ReconciliationRule & { account_name: string }
@@ -89,7 +84,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
             cell: ({ row }) => (
                 <div className="flex flex-col items-center justify-center w-full">
                     <span className="font-medium text-sm">{row.original.name}</span>
-                    <span className="text-[10px] text-muted-foreground truncate max-w-[280px] text-center">
+                    <span className="text-xs text-muted-foreground truncate max-w-[280px] text-center">
                         {row.original.description}
                     </span>
                 </div>
@@ -101,7 +96,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cuenta" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <Badge variant="outline" className="font-mono text-[10px]">{row.getValue("account_name")}</Badge>
+                    <Badge variant="outline" className="font-mono text-xs">{row.getValue("account_name")}</Badge>
                 </div>
             ),
             filterFn: "arrIncludes",
@@ -113,7 +108,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
             cell: ({ row }) => (
                 <div className="flex gap-1 flex-wrap justify-center w-full">
                     {row.original.match_config.criteria?.map((c) => (
-                        <Badge key={c} variant="secondary" className="text-[10px] lowercase">
+                        <Badge key={c} variant="secondary" className="text-xs lowercase">
                             {c.replace('_', ' ')}
                         </Badge>
                     ))}
@@ -146,7 +141,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
                     )}>
                         {row.original.success_rate}%
                     </span>
-                    <span className="text-[9px] text-muted-foreground font-mono">{row.original.times_applied} usos</span>
+                    <span className="text-[10px] text-muted-foreground font-mono"> {/* intentional: badge density */} {row.original.times_applied} usos</span>
                 </div>
             ),
         },
@@ -213,54 +208,48 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
             >
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Nombre</Label>
-                            <Input value={editingRule.name} onChange={e => setEditingRule({ ...editingRule, name: e.target.value })} className={FORM_STYLES.input} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label className={FORM_STYLES.label}>Cuenta</Label>
-                            <Select
-                                value={editingRule.treasury_account?.id?.toString() || "global"}
-                                onValueChange={val => setEditingRule({
-                                    ...editingRule,
-                                    treasury_account: val === "global" ? null : accounts.find(a => a.id.toString() === val) as Account
-                                })}
-                            >
-                                <SelectTrigger className={FORM_STYLES.input}>
-                                    <SelectValue placeholder="Global (Todas)" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="global">Global (Todas)</SelectItem>
-                                    {accounts.map(acc => (
-                                        <SelectItem key={acc.id} value={acc.id.toString()}>{acc.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Descripción</Label>
-                        <Textarea
-                            value={editingRule.description}
-                            onChange={e => setEditingRule({ ...editingRule, description: e.target.value })}
-                            className={cn("min-h-[80px]", FORM_STYLES.input, "h-auto py-2")}
+                        <LabeledInput
+                            label="Nombre"
+                            value={editingRule.name || ""}
+                            onChange={e => setEditingRule({ ...editingRule, name: e.target.value })}
+                        />
+                        <LabeledSelect
+                            label="Cuenta"
+                            value={editingRule.treasury_account?.id?.toString() || "global"}
+                            onChange={val => setEditingRule({
+                                ...editingRule,
+                                treasury_account: val === "global" ? null : accounts.find(a => a.id.toString() === val) as Account
+                            })}
+                            options={[
+                                { value: "global", label: "Global (Todas)" },
+                                ...accounts.map(acc => ({ value: acc.id.toString(), label: acc.name }))
+                            ]}
                         />
                     </div>
 
-                    <div className={cn("flex items-center justify-between", FORM_STYLES.card)}>
+                    <div className="space-y-2">
+                        <LabeledInput
+                            as="textarea"
+                            label="Descripción"
+                            value={editingRule.description || ""}
+                            onChange={e => setEditingRule({ ...editingRule, description: e.target.value })}
+                            className="min-h-[80px]"
+                        />
+                    </div>
+
+                    <Card variant="dashed" className="flex items-center justify-between">
                         <div className="space-y-0.5">
-                            <Label className={FORM_STYLES.label}>Auto-Confirmar</Label>
+                            <p className="text-xs font-bold uppercase text-muted-foreground">Auto-Confirmar</p>
                             <p className="text-xs text-muted-foreground">Reconciliar automáticamente si el score es alto</p>
                         </div>
                         <Switch
                             checked={editingRule.auto_confirm}
                             onCheckedChange={checked => setEditingRule({ ...editingRule, auto_confirm: checked })}
                         />
-                    </div>
+                    </Card>
 
                     <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Criterios de Coincidencia</Label>
+                        <p className="text-xs font-bold uppercase text-muted-foreground">Criterios de Coincidencia</p>
                         <div className="grid grid-cols-2 gap-2">
                             {['amount_exact', 'transaction_id', 'date_range', 'reference'].map(criteria => (
                                 <div key={criteria} className="flex items-center space-x-2 border p-2 rounded">
@@ -289,7 +278,7 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
                     </div>
 
                     <div className="space-y-2">
-                        <Label className={FORM_STYLES.label}>Score Mínimo ({editingRule.match_config?.min_score || 50}%)</Label>
+                        <p className="text-xs font-bold uppercase text-muted-foreground">Score Mínimo ({editingRule.match_config?.min_score || 50}%)</p>
                         <div className="flex items-center gap-4">
                             <input
                                 type="range" min="0" max="100" step="5"

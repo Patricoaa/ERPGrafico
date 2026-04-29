@@ -4,16 +4,9 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import { FileText, Loader2, Upload, ShieldAlert } from "lucide-react"
+import { FileText, Loader2, Upload, ShieldAlert, Plus } from "lucide-react"
+import { FormFooter, LabeledInput, LabeledSelect, FormSection } from "@/components/shared"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
@@ -123,92 +116,99 @@ export function DocumentRegistrationModal({
             }
             description="Ingrese los datos del documento tributario recibido del proveedor."
             footer={
-                <div className="flex justify-end gap-2 w-full">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-                        Cancelar
-                    </Button>
-                    <Button 
-                        onClick={handleSubmit} 
-                        disabled={submitting || (!isPending && (!isPeriodValid || !isFolioValid))}
-                    >
-                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Registrar Documento
-                    </Button>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+                                Cancelar
+                            </Button>
+                            <Button 
+                                onClick={handleSubmit} 
+                                disabled={submitting || (!isPending && (!isPeriodValid || !isFolioValid))}
+                            >
+                                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Registrar Documento
+                            </Button>
+                        </>
+                    }
+                />
             }
         >
-            <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                    <Label>Tipo de Documento</Label>
-                    <Select value={dteType} onValueChange={setDteType}>
-                        <SelectTrigger>
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="FACTURA">Factura Electrónica</SelectItem>
-                            <SelectItem value="BOLETA">Boleta Electrónica</SelectItem>
-                        </SelectContent>
-                    </Select>
+            <div className="space-y-8 py-4">
+                <div className="space-y-4">
+                    <LabeledSelect
+                        label="Tipo de Documento"
+                        value={dteType}
+                        onChange={setDteType}
+                        options={[
+                            { value: "FACTURA", label: "Factura Electrónica" },
+                            { value: "BOLETA", label: "Boleta Electrónica" },
+                        ]}
+                    />
+
+                    <div className="flex items-center space-x-2 py-2">
+                        <input
+                            type="checkbox"
+                            id="pending-check"
+                            checked={isPending}
+                            onChange={(e) => {
+                                const pending = e.target.checked;
+                                setIsPending(pending);
+                                if (pending) {
+                                    setReference('');
+                                    setAttachment(null);
+                                    setIsFolioValid(true);
+                                    setIsPeriodValid(true);
+                                }
+                            }}
+                            className="h-4 w-4 rounded border text-primary focus:ring-info"
+                        />
+                        <Label htmlFor="pending-check" className="text-sm font-medium leading-none cursor-pointer">
+                            Aún no recibo el documento físico / digital
+                        </Label>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className={`${isPending ? 'opacity-50' : ''}`}>
+                            <Label htmlFor="issue-date" className={cn("mb-2 block", isPending ? 'text-muted-foreground' : '')}>Fecha de Emisión</Label>
+                            <PeriodValidationDateInput
+                                date={issueDate ? new Date(issueDate + 'T12:00:00') : undefined}
+                                onDateChange={(date) => setIssueDate(date ? date.toISOString().split('T')[0] : "")}
+                                disabled={isPending}
+                                validationType="both"
+                                onValidityChange={setIsPeriodValid}
+                            />
+                        </div>
+
+                        <div className={`${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <FolioValidationInput
+                                value={reference}
+                                onChange={setReference}
+                                onValidityChange={setIsFolioValid}
+                                contactId={supplierId}
+                                isPurchase={true}
+                                dteType={dteType}
+                                placeholder="Ej: 12345"
+                                disabled={isPending}
+                            />
+                        </div>
+                    </div>
                 </div>
 
-                <div className="flex items-center space-x-2 py-2">
-                    <input
-                        type="checkbox"
-                        id="pending-check"
-                        checked={isPending}
-                        onChange={(e) => {
-                            const pending = e.target.checked;
-                            setIsPending(pending);
-                            if (pending) {
-                                setReference('');
-                                setAttachment(null);
-                                setIsFolioValid(true);
-                                setIsPeriodValid(true);
-                            }
-                        }}
-                        className="h-4 w-4 rounded border text-primary focus:ring-info"
-                    />
-                    <Label htmlFor="pending-check" className="text-sm font-medium leading-none cursor-pointer">
-                        Aún no recibo el documento físico / digital
-                    </Label>
-                </div>
-
-                <div className={`space-y-2 ${isPending ? 'opacity-50' : ''}`}>
-                    <Label htmlFor="issue-date" className={isPending ? 'text-muted-foreground' : ''}>Fecha de Emisión</Label>
-                    <PeriodValidationDateInput
-                        date={issueDate ? new Date(issueDate + 'T12:00:00') : undefined}
-                        onDateChange={(date) => setIssueDate(date ? date.toISOString().split('T')[0] : "")}
-                        disabled={isPending}
-                        validationType="both"
-                        onValidityChange={setIsPeriodValid}
-                    />
-                </div>
-
-                <div className={`space-y-2 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
-                    <FolioValidationInput
-                        value={reference}
-                        onChange={setReference}
-                        onValidityChange={setIsFolioValid}
-                        contactId={supplierId}
-                        isPurchase={true}
-                        dteType={dteType}
-                        placeholder="Ej: 12345"
-                        disabled={isPending}
-                    />
-                </div>
-
-                <div className={`space-y-2 ${isPending ? 'opacity-50 pointer-events-none' : ''}`}>
-                    <DocumentAttachmentDropzone
-                        file={attachment}
-                        onFileChange={setAttachment}
-                        dteType={dteType}
-                        isPending={isPending}
-                        disabled={isPending}
-                    />
-                </div>
+                {!isPending && (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                        <FormSection title="Soporte Digital" icon={Upload} />
+                        <DocumentAttachmentDropzone
+                            file={attachment}
+                            onFileChange={setAttachment}
+                            dteType={dteType}
+                            isPending={isPending}
+                            disabled={isPending}
+                        />
+                    </div>
+                )}
             </div>
         </BaseModal>
     )
 }
 
-import { CheckCircle2 } from "lucide-react"
