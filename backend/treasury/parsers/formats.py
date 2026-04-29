@@ -150,6 +150,7 @@ def get_parser_config(format_name: str) -> dict:
 def get_available_formats() -> dict:
     """
     Retorna todos los formatos disponibles con sus nombres descriptivos.
+    Por el momento, solo expone los formatos GENERIC.
     
     Returns:
         Dict {format_id: format_name}
@@ -157,4 +158,5 @@ def get_available_formats() -> dict:
     return {
         format_id: config['name']
         for format_id, config in FORMAT_MAP.items()
+        if format_id.startswith('GENERIC_')
     }

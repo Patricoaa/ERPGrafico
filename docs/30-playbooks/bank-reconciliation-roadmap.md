@@ -395,25 +395,31 @@ Objetivo: blindar import contra duplicados y errores.
   - UI: pre-seleccionar formato basado en cuenta.
 - **DoD:** seleccionar cuenta BCI muestra warning si user elige formato Santander.
 
-### S3.6 · UI: Step "Validación / Preview" en wizard
+### S3.6 · UI: Step "Validación / Preview" en wizard [COMPLETADA]
 - **Gaps:** F24 (sin step preview), F31 (errores genéricos)
 - **Dificultad:** L
-- **Archivos:** `frontend/features/treasury/components/StatementImportModal.tsx`, posiblemente nuevo `ImportPreviewStep.tsx`
+- **Archivos:** `frontend/features/finance/bank-reconciliation/components/StatementImportModal.tsx`, `frontend/features/finance/bank-reconciliation/components/ImportPreviewStep.tsx`
 - **Cambios:**
   - Nuevo step entre "Mapping" y "Submit".
   - Llama nuevo endpoint `/treasury/statements/dry_run/` que parsea sin persistir, retorna: total líneas, period_start, period_end, opening/closing balance detectado, warnings, errores por fila.
   - Tabla de warnings con fila + mensaje. Botón "Continuar de todas formas" o "Volver al mapeo".
 - **DoD:** flujo completo: Upload → Map → Preview con totales y warnings → Submit.
 
-### S3.7 · Skip rows configurable + auto-detect delimiter
+### S3.7 · Skip rows configurable + auto-detect delimiter [COMPLETADA]
 - **Gaps:** F25 (delimiter hardcoded), F26 (skip_rows no configurable)
 - **Dificultad:** M
-- **Archivos:** `StatementImportModal.tsx`, `csv_parser.py`
+- **Archivos:** `frontend/features/finance/bank-reconciliation/components/StatementImportModal.tsx`, `backend/treasury/parsers/csv_parser.py`
 - **Cambios:**
-  - UI agrega controles `skip_rows`, `skip_footer_rows`, `delimiter` (auto/`;`/`,`/`\t`) en step Mapping.
-  - Pasa al `custom_config`.
-  - Backend: si `delimiter='auto'` usa `csv.Sniffer`.
-- **DoD:** importar Banco Estado (5 header rows) sin tocar formats.py.
+  - UI agrega controles `delimiter` (auto/`;`/`,`/`\t`/`|`), `skip_rows`, `skip_footer_rows` en step Mapping (sección "Opciones de Parseo", solo visible para GENERIC_CSV).
+  - `buildCustomConfig()` helper consolida la construcción del `custom_config` para `dry_run` e `import_statement`.
+  - Backend: `GenericCSVParser._resolve_delimiter(content)` — si `delimiter=='auto'` usa `csv.Sniffer` (delimitadores `,;\t|`), fallback a `,`.
+  - `skip_rows` y `skip_footer_rows` ya eran soportados en el backend; ahora el UI los envía explícitamente.
+- **DoD:** importar un CSV con delimitador `;` sin seleccionarlo manualmente funciona con Auto-detectar. Campo `skip_rows=5` permite importar Banco Estado (5 header rows) sin tocar `formats.py`.
+- **Verificación:**
+  - `GenericCSVParser._resolve_delimiter` implementado con Sniffer ✅
+  - Controles `delimiter` / `skip_rows` / `skip_footer_rows` en step Mapping ✅
+  - `buildCustomConfig()` remplaza código duplicado en `handleDryRun` y `handleSubmit` ✅
+  - `type-check` (sólo archivos modificados) sin errores nuevos ✅
 
 ---
 
@@ -796,4 +802,4 @@ Cobertura de gaps: B1, B2, B3, B6, B7 (parcial), B8–B33 + F1, F3–F52 (B4/B5 
 
 ## Hallazgos no planificados
 
-(Vacío — el ejecutor agrega aquí gaps descubiertos durante implementación.)
+- **2026-04-29 (Durante pre-S3.6):** Formatos de bancos específicos (Banco de Chile, Santander, BICE, etc.) no deben estar disponibles por el momento para los usuarios. Solo las opciones genéricas (CSV, Excel) deben mostrarse, mientras se madura el parser automático de los formatos específicos.

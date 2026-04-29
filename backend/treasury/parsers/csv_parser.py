@@ -94,9 +94,10 @@ class GenericCSVParser(BaseParser):
             content = file.read().decode(encoding)
             file.seek(0)
             
+            delimiter = self._resolve_delimiter(content)
             reader = csv.reader(
                 io.StringIO(content),
-                delimiter=self.config.get('delimiter', ',')
+                delimiter=delimiter
             )
             
             # Intentar leer al menos 2 líneas
@@ -135,9 +136,10 @@ class GenericCSVParser(BaseParser):
         content = file.read().decode(encoding)
         file.seek(0)
         
+        delimiter = self._resolve_delimiter(content)
         reader = csv.reader(
             io.StringIO(content),
-            delimiter=self.config.get('delimiter', ',')
+            delimiter=delimiter
         )
         
         all_rows = list(reader)
@@ -348,3 +350,28 @@ class GenericCSVParser(BaseParser):
                 return parsed_date
         
         return None
+
+    def _resolve_delimiter(self, content: str) -> str:
+        """
+        Resuelve el delimitador a usar para el CSV.
+
+        Si config['delimiter'] == 'auto', usa csv.Sniffer para detectarlo
+        automáticamente a partir de la muestra del contenido.
+        En caso de error del Sniffer, cae a ',' como fallback.
+
+        Args:
+            content: Contenido del archivo como string
+
+        Returns:
+            Caracter delimitador a usar
+        """
+        delimiter = self.config.get('delimiter', ',')
+        if delimiter != 'auto':
+            return delimiter
+
+        sample = content[:4096]
+        try:
+            dialect = csv.Sniffer().sniff(sample, delimiters=',;\t|')
+            return dialect.delimiter
+        except csv.Error:
+            return ','

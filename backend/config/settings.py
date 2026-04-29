@@ -108,9 +108,20 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if not DATABASE_URL and os.environ.get('DB_HOST'):
+    # Build Postgres URL from individual environment variables
+    DB_NAME = os.environ.get('POSTGRES_DB', 'erpgrafico')
+    DB_USER = os.environ.get('POSTGRES_USER', 'postgres')
+    DB_PASSWORD = os.environ.get('POSTGRES_PASSWORD', 'postgres')
+    DB_HOST = os.environ.get('DB_HOST', 'db')
+    DB_PORT = os.environ.get('DB_PORT', '5432')
+    DATABASE_URL = f"postgres://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
 DATABASES = {
     'default': dj_database_url.config(
-        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
+        default=DATABASE_URL or f'sqlite:///{BASE_DIR / "db.sqlite3"}',
         conn_max_age=600
     )
 }

@@ -438,6 +438,13 @@ class TreasuryAccount(models.Model):
         null=True,
         help_text=_("Número de cuenta bancaria (solo para cuentas corrientes)")
     )
+    default_bank_format = models.CharField(
+        _("Formato Bancario por Defecto"),
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text=_("Formato sugerido para esta cuenta al importar cartolas (ej: BANCO_CHILE_CSV)")
+    )
     allows_cash = models.BooleanField(_("Permite Efectivo"), default=False)
     allows_card = models.BooleanField(_("Permite Tarjeta"), default=False)
     allows_transfer = models.BooleanField(_("Permite Traspaso"), default=False)
