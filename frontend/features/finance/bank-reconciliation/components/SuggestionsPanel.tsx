@@ -186,7 +186,7 @@ function SuggestionCard({ suggestion, onMatch, isMatching }: { suggestion: Payme
                         <TooltipProvider key={i}>
                             <Tooltip>
                                 <TooltipTrigger>
-                                    <Badge variant="secondary" className="bg-white/5 hover:bg-white/10 text-[9px] font-bold text-white/60 uppercase h-5">
+                                    <Badge variant="secondary" className="bg-white/5 hover:bg-white/10 text-xs font-bold text-white/60 uppercase h-5">
                                         {getReasonIcon(r)}
                                     </Badge>
                                 </TooltipTrigger>
@@ -246,7 +246,7 @@ function LineSuggestionCard({ suggestion, onMatch, isMatching }: { suggestion: L
                 <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Razones</p>
                 <div className="flex flex-wrap gap-1">
                     {suggestion.reasons.map((r, i) => (
-                        <Badge key={i} variant="secondary" className="bg-white/5 text-[9px] font-bold text-white/60 uppercase h-5">
+                        <Badge key={i} variant="secondary" className="bg-white/5 text-xs font-bold text-white/60 uppercase h-5">
                             {r}
                         </Badge>
                     ))}

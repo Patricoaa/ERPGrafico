@@ -44,7 +44,7 @@ class BankStatementAdmin(admin.ModelAdmin):
     list_display = ['display_id', 'treasury_account', 'statement_date', 'status', 'total_lines', 'reconciled_lines', 'reconciliation_progress']
     list_filter = ['status', 'treasury_account', 'statement_date', 'bank_format']
     search_fields = ['notes']
-    readonly_fields = ['display_id', 'imported_at', 'imported_by', 'reconciliation_progress']
+    readonly_fields = ['display_id', 'imported_at', 'imported_by', 'reconciliation_progress', 'reconciled_lines']
     
     fieldsets = (
         ('Información de la cartola', {

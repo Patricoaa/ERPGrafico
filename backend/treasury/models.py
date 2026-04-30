@@ -747,7 +747,10 @@ class BankStatement(models.Model):
         help_text=_("Formato usado para parsear el archivo (ej: BANCO_CHILE_CSV, GENERIC_CSV)")
     )
     total_lines = models.IntegerField(_("Total de Líneas"), default=0)
-    reconciled_lines = models.IntegerField(_("Líneas Reconciliadas"), default=0)
+
+    @property
+    def reconciled_lines(self):
+        return self.lines.filter(reconciliation_status='RECONCILED').count()
     
     file_hash = models.CharField(
         _("Hash del Archivo"), 

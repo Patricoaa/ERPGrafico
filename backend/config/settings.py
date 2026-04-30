@@ -224,6 +224,15 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
 
+# ── Email ────────────────────────────────────────────────────────────────────
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '1025'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@erpgrafico.local')
+
 # ── Redis ────────────────────────────────────────────────────────────────────
 # Central Redis URL. DB selection:
 #   DB 0 — Celery Broker
@@ -235,7 +244,7 @@ REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379')
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': f'{REDIS_URL}/2',
+        'LOCATION': f'{REDIS_URL}/0',
         'KEY_PREFIX': 'erp',
         'TIMEOUT': 300,  # 5 min default TTL
     }
@@ -244,7 +253,7 @@ CACHES = {
 
 # Celery Configuration
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', f'{REDIS_URL}/0')
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', f'{REDIS_URL}/1')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', f'{REDIS_URL}/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
