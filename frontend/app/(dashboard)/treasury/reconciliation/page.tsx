@@ -5,7 +5,7 @@ import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import { StatementsList, ReconciliationDashboard, ReconciliationRules } from "@/features/finance"
+import { StatementsList, ReconciliationDashboard, ReconciliationRules, ReconciliationBreadcrumbs } from "@/features/finance/bank-reconciliation/components"
 
 
 export const metadata: Metadata = {
@@ -72,6 +72,7 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
 
     return (
         <div className={LAYOUT_TOKENS.view}>
+            <ReconciliationBreadcrumbs />
             <PageHeader
                 title={title}
                 description={description}

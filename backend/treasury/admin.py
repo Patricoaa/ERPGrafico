@@ -44,7 +44,7 @@ class BankStatementAdmin(admin.ModelAdmin):
     list_display = ['display_id', 'treasury_account', 'statement_date', 'status', 'total_lines', 'reconciled_lines', 'reconciliation_progress']
     list_filter = ['status', 'treasury_account', 'statement_date', 'bank_format']
     search_fields = ['notes']
-    readonly_fields = ['display_id', 'imported_at', 'imported_by', 'reconciliation_progress']
+    readonly_fields = ['display_id', 'imported_at', 'imported_by', 'reconciliation_progress', 'reconciled_lines']
     
     fieldsets = (
         ('Información de la cartola', {
@@ -73,7 +73,7 @@ class BankStatementAdmin(admin.ModelAdmin):
 
 @admin.register(BankStatementLine)
 class BankStatementLineAdmin(admin.ModelAdmin):
-    list_display = ['__str__', 'transaction_date', 'description', 'debit', 'credit', 'balance', 'reconciliation_status', 'matched_payment']
+    list_display = ['__str__', 'transaction_date', 'description', 'debit', 'credit', 'balance', 'reconciliation_status']
     list_filter = ['reconciliation_status', 'statement__treasury_account', 'transaction_date']
     search_fields = ['description', 'reference', 'transaction_id']
     readonly_fields = ['reconciled_at', 'reconciled_by', 'amount']
@@ -89,7 +89,7 @@ class BankStatementLineAdmin(admin.ModelAdmin):
             'fields': ('debit', 'credit', 'balance', 'amount')
         }),
         ('Reconciliación', {
-            'fields': ('reconciliation_status', 'matched_payment', 'reconciled_at', 'reconciled_by')
+            'fields': ('reconciliation_status', 'reconciled_at', 'reconciled_by')
         }),
         ('Diferencias', {
             'fields': ('difference_amount', 'difference_reason', 'difference_journal_entry'),

@@ -10,10 +10,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { LabeledSelect, GenericWizard, WizardStep, FormSection, DocumentAttachmentDropzone } from "@/components/shared"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
-import { FileUp, Columns, Table as TableIcon, AlertCircle, CheckCircle2, RefreshCw, FileSearch, Landmark, FileText } from "lucide-react"
+import { FileUp, Columns, Table as TableIcon, AlertCircle, CheckCircle2, RefreshCw, FileSearch, Landmark, FileText, SlidersHorizontal } from "lucide-react"
 import api from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import ImportPreviewStep, { DryRunResult } from "./ImportPreviewStep"
 
 const importSchema = z.object({
     treasury_account_id: z.string().min(1, "Debes seleccionar una cuenta"),
@@ -48,6 +49,11 @@ interface StatementImportModalProps {
 export default function StatementImportModal({ open, onOpenChange, onSuccess }: StatementImportModalProps) {
 
     const [previewData, setPreviewData] = useState<ImportPreviewData | null>(null)
+    const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null)
+    // S3.7: parse options
+    const [csvDelimiter, setCsvDelimiter] = useState<string>('auto')
+    const [skipRows, setSkipRows] = useState<number>(0)
+    const [skipFooterRows, setSkipFooterRows] = useState<number>(0)
     const [bankFormats, setBankFormats] = useState<BankFormat>({})
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -80,6 +86,10 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
     const resetForm = useCallback(() => {
         form.reset()
         setPreviewData(null)
+        setDryRunResult(null)
+        setCsvDelimiter('auto')
+        setSkipRows(0)
+        setSkipFooterRows(0)
         setError(null)
     }, [form])
 
@@ -152,6 +162,56 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
         }
     }
 
+    // S3.7: builds custom_config for both dry_run and import_statement
+    const buildCustomConfig = () => {
+        if (!isGenericFormat()) return undefined
+        return {
+            columns: mapping,
+            header_row: 0,
+            delimiter: bankFormat === 'GENERIC_CSV' ? csvDelimiter : undefined,
+            skip_rows: skipRows > 0 ? skipRows : undefined,
+            skip_footer_rows: skipFooterRows > 0 ? skipFooterRows : undefined,
+        }
+    }
+
+    const handleDryRun = async () => {
+        if (!treasuryAccountId) {
+            setError("Selecciona una cuenta de tesorería")
+            return false
+        }
+        
+        if (isGenericFormat() && !validateMapping()) {
+            setError("Debes mapear todas las columnas obligatorias")
+            return false
+        }
+        
+        setLoading(true)
+        setError(null)
+        try {
+            const formData = new FormData()
+            formData.append('file', file!)
+            formData.append('treasury_account_id', treasuryAccountId)
+            formData.append('bank_format', bankFormat)
+            
+            if (isGenericFormat()) {
+                const config = buildCustomConfig()
+                formData.append('custom_config', JSON.stringify(config))
+            }
+            
+            const response = await api.post('/treasury/statements/dry_run/', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            })
+            setDryRunResult(response.data)
+            return true
+        } catch (error: unknown) {
+            console.error('Dry run error:', error)
+            setError(getErrorMessage(error) || "Error al validar la cartola.")
+            return false
+        } finally {
+            setLoading(false)
+        }
+    }
+
     const handleSubmit = async () => {
         setError(null)
 
@@ -175,11 +235,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
             formData.append('bank_format', bankFormat)
 
             if (isGenericFormat()) {
-                const config = {
-                    columns: mapping,
-                    header_row: 0,
-                    delimiter: bankFormat === 'GENERIC_CSV' ? ';' : undefined
-                }
+                const config = buildCustomConfig()
                 formData.append('custom_config', JSON.stringify(config))
             }
 
@@ -272,7 +328,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                 if (isGenericFormat()) {
                     return await handlePreview()
                 } else {
-                    return await handleSubmit()
+                    return await handleDryRun()
                 }
             }
         },
@@ -282,6 +338,55 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
             component: (
                 <div className="px-4 pb-4 pt-2 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                     <FormSection title="Mapeo de Columnas" icon={Columns} />
+
+                    {/* S3.7: Parse options */}
+                    {bankFormat === 'GENERIC_CSV' && (
+                        <div className="rounded-lg border border-border/40 bg-muted/20 p-4">
+                            <div className="flex items-center gap-2 mb-3">
+                                <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="text-xs font-black uppercase text-muted-foreground">Opciones de Parseo</span>
+                            </div>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold uppercase text-muted-foreground">Delimitador</label>
+                                    <Select value={csvDelimiter} onValueChange={setCsvDelimiter}>
+                                        <SelectTrigger className="h-8 text-xs font-bold uppercase">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="auto" className="text-xs font-bold uppercase">Auto-detectar</SelectItem>
+                                            <SelectItem value=";" className="text-xs font-bold uppercase">Punto y coma ( ; )</SelectItem>
+                                            <SelectItem value="," className="text-xs font-bold uppercase">Coma ( , )</SelectItem>
+                                            <SelectItem value="\t" className="text-xs font-bold uppercase">Tab ( \t )</SelectItem>
+                                            <SelectItem value="|" className="text-xs font-bold uppercase">Barra ( | )</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold uppercase text-muted-foreground">Saltar filas inicio</label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={20}
+                                        value={skipRows}
+                                        onChange={e => setSkipRows(Math.max(0, parseInt(e.target.value) || 0))}
+                                        className="h-8 w-full rounded-md border border-input bg-background px-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-ring"
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold uppercase text-muted-foreground">Saltar filas final</label>
+                                    <input
+                                        type="number"
+                                        min={0}
+                                        max={20}
+                                        value={skipFooterRows}
+                                        onChange={e => setSkipFooterRows(Math.max(0, parseInt(e.target.value) || 0))}
+                                        className="h-8 w-full rounded-md border border-input bg-background px-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-ring"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="rounded-lg border border-border/40 overflow-hidden bg-background">
                         <div className="max-h-[50vh] overflow-x-auto overflow-y-auto w-full relative custom-scrollbar">
@@ -390,9 +495,18 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
             ),
             isValid: validateMapping(),
             onNext: async () => {
+                return await handleDryRun()
+            }
+        }] : []),
+        {
+            id: 'PREVIEW',
+            title: 'Validación / Vista Previa',
+            component: <ImportPreviewStep data={dryRunResult} isLoading={loading} />,
+            isValid: dryRunResult?.can_import ?? false,
+            onNext: async () => {
                 return await handleSubmit()
             }
-        }] : [])
+        }
     ]
 
     return (

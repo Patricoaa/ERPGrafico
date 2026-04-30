@@ -12,7 +12,8 @@ import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
-import { useReconciliation } from "../hooks/useReconciliation"
+import { useRulesQuery, useAccountsQuery } from "../hooks/useReconciliationQueries"
+import { useSaveRuleMutation, useCreateDefaultRulesMutation } from "../hooks/useReconciliationMutations"
 import { Card } from "@/components/ui/card"
 import type { ReconciliationRule, TreasuryAccount as Account } from "../types"
 import { SimulationResults } from "./SimulationResults"
@@ -22,12 +23,18 @@ type RuleRow = ReconciliationRule & { account_name: string }
 
 export function ReconciliationRules({ externalOpen, createAction }: { externalOpen?: boolean; createAction?: React.ReactNode }) {
     const router = useRouter()
-    const { fetchRules, fetchAccounts, saveRule, createDefaultRules, loading } = useReconciliation()
-    const [rules, setRules] = useState<ReconciliationRule[]>([])
-    const [accounts, setAccounts] = useState<Account[]>([])
+    
+    const { data: rules = [], isLoading: isLoadingRules } = useRulesQuery()
+    const { data: accounts = [], isLoading: isLoadingAccounts } = useAccountsQuery()
+    
+    const saveRuleMutation = useSaveRuleMutation()
+    const createDefaultRulesMutation = useCreateDefaultRulesMutation()
+
     const [openDialog, setOpenDialog] = useState(false)
     const [openSimulation, setOpenSimulation] = useState(false)
     const [editingRule, setEditingRule] = useState<Partial<ReconciliationRule>>({})
+
+    const loading = isLoadingRules || isLoadingAccounts
 
     useEffect(() => {
         if (externalOpen) {
@@ -38,32 +45,22 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
         }
     }, [externalOpen])
 
-    const loadData = async () => {
-        const [r, a] = await Promise.all([fetchRules(), fetchAccounts()])
-        setRules(r)
-        setAccounts(a)
-    }
-
-    useEffect(() => { 
-        requestAnimationFrame(() => loadData()) 
-    }, [])
-
     const handleDialogChange = (open: boolean) => {
         setOpenDialog(open)
         if (!open) router.replace('/treasury/reconciliation?tab=rules')
     }
 
     const handleSaveRule = async () => {
-        const success = await saveRule(editingRule)
-        if (success) {
-            loadData()
+        try {
+            await saveRuleMutation.mutateAsync(editingRule)
             handleDialogChange(false)
+        } catch (error) {
+            // Error handled in mutation
         }
     }
 
     const handleCreateDefaults = async (accountId: number) => {
-        const success = await createDefaultRules(accountId)
-        if (success) loadData()
+        await createDefaultRulesMutation.mutateAsync(accountId)
     }
 
     // Flatten treasury_account.name for easy filtering/sorting
@@ -163,6 +160,22 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
         })
     ], [])
 
+    const finalCreateAction = (
+        <div className="flex items-center gap-2">
+            {!loading && rules.length === 0 && (
+                <Button 
+                    variant="outline" 
+                    onClick={() => handleCreateDefaults(accounts[0]?.id)}
+                    className="h-9 px-4 text-[10px] font-bold uppercase tracking-widest"
+                >
+                    <Wand2 className="mr-2 h-3.5 w-3.5" />
+                    Generar Reglas Sugeridas
+                </Button>
+            )}
+            {createAction}
+        </div>
+    )
+
     return (
         <div className="space-y-4">
             <DataTable
@@ -179,18 +192,8 @@ export function ReconciliationRules({ externalOpen, createAction }: { externalOp
                 ]}
                 defaultPageSize={10}
                 pageSizeOptions={[5, 10, 20, 50]}
-                createAction={createAction}
+                createAction={finalCreateAction}
             />
-
-            {/* Empty state when no rules configured */}
-            {!loading && rules.length === 0 && (
-                <div className="text-center py-4">
-                    <Button variant="outline" onClick={() => handleCreateDefaults(accounts[0]?.id)}>
-                        <Wand2 className="mr-2 h-4 w-4" />
-                        Generar Reglas Sugeridas
-                    </Button>
-                </div>
-            )}
 
             {/* Edit / Create Modal */}
             <BaseModal

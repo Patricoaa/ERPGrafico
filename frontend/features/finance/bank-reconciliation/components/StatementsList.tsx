@@ -1,10 +1,9 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Eye } from "lucide-react"
-import { useReconciliation } from "../hooks/useReconciliation"
+import { useStatementsQuery } from "../hooks/useReconciliationQueries"
 import type { BankStatement } from "../types"
 import { StatementImportModal } from "@/features/treasury"
 import { DataTable } from "@/components/ui/data-table"
@@ -21,9 +20,17 @@ interface StatementsListProps {
 
 export function StatementsList({ externalOpen = false, createAction }: StatementsListProps) {
     const router = useRouter()
-    const { fetchStatements, loading } = useReconciliation()
-    const [statements, setStatements] = useState<BankStatement[]>([])
+    const searchParams = useSearchParams()
+    const { data: statements = [], isLoading, refetch } = useStatementsQuery()
     const [importModalOpen, setImportModalOpen] = useState(false)
+
+    const initialFilters = React.useMemo(() => {
+        const filters = []
+        if (searchParams.get("filter") === "in_progress") {
+            filters.push({ id: "state", value: ["DRAFT"] })
+        }
+        return filters
+    }, [searchParams])
 
     // Open import dialog when triggered via URL (?modal=import)
     useEffect(() => {
@@ -32,17 +39,8 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
         }
     }, [externalOpen])
 
-    const loadData = async () => {
-        const data = await fetchStatements()
-        setStatements(data)
-    }
-
-    useEffect(() => {
-        requestAnimationFrame(() => loadData())
-    }, [])
-
     const handleImportSuccess = () => {
-        loadData()
+        refetch()
         setImportModalOpen(false)
         // Clear modal param from URL
         router.replace('/treasury/reconciliation?tab=statements')
@@ -168,7 +166,7 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
                 columns={columns}
                 data={statements}
                 cardMode
-                isLoading={loading}
+                isLoading={isLoading}
                 globalFilterFields={["treasury_account_name", "display_id"]}
                 searchPlaceholder="Buscar por ID..."
                 facetedFilters={[
@@ -182,6 +180,7 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
                         ]
                     }
                 ]}
+                initialColumnFilters={initialFilters}
                 useAdvancedFilter={true}
                 defaultPageSize={10}
                 createAction={createAction}

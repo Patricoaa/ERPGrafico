@@ -16,6 +16,31 @@ export interface BankStatement {
     imported_at: string
 }
 
+export interface BankStatementLine {
+    id: number
+    line_number: number
+    transaction_date: string
+    description: string
+    reference: string
+    debit: string
+    credit: string
+    balance: string
+    reconciliation_state: string
+    reconciliation_state_display: string
+}
+
+export interface ReconciliationSystemItem {
+    id: number
+    amount: string
+    date: string
+    contact_name: string
+    display_id?: string
+    code?: string
+    is_batch?: boolean
+    identifier?: string
+    name?: string
+}
+
 export interface MatchConfig {
     criteria?: string[]
     min_score?: number
@@ -93,4 +118,48 @@ export interface ReconciliationDashboardStats {
     total_unreconciled_amount: number
     oldest_unreconciled_date: string | null
     recent_activity: RecentActivity[]
+}
+
+export interface PaginatedResponse<T> {
+    results: T[]
+    count: number
+    next: string | null
+    previous: string | null
+}
+
+export interface QueryPaginationParams {
+    page?: number
+    pageSize?: number
+    search?: string
+    date_from?: string
+    date_to?: string
+    amount_min?: number
+    amount_max?: number
+}
+
+// S5.1: Payment Allocation
+export interface PaymentAllocation {
+    id: number
+    treasury_movement: number
+    amount: string
+    notes?: string
+    invoice?: number
+    invoice_display_id?: string
+    sale_order?: number
+    sale_order_display_id?: string
+    purchase_order?: number
+    purchase_order_display_id?: string
+    bank_statement_line?: number
+    bank_statement_line_display?: string
+    created_at: string
+    created_by_name?: string
+}
+
+export interface PaymentAllocationPayload {
+    amount: number | string
+    notes?: string
+    invoice?: number
+    sale_order?: number
+    purchase_order?: number
+    bank_statement_line?: number
 }

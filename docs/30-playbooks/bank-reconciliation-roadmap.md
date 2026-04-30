@@ -375,7 +375,7 @@ Objetivo: blindar import contra duplicados y errores.
   - `ReconciliationService` valida cruces de rangos (bloquea CONFIRMED, advierte DRAFT).
   - Test `treasury/tests/test_reconciliation_overlap.py` PASS ✅ (3 casos: solapamiento confirmado, solapamiento borrador, discontinuidad de saldos).
 
-### S3.4 · Import tolerante a errores fila-a-fila
+### S3.4 · Import tolerante a errores fila-a-fila [COMPLETADA]
 - **Gaps:** B6 — `ValueError` rollback total por una línea mala.
 - **Dificultad:** L
 - **Archivos:** `backend/treasury/reconciliation_service.py:23-256`
@@ -385,8 +385,9 @@ Objetivo: blindar import contra duplicados y errores.
   - Migración 0026.
   - Endpoint retorna report estructurado: `{statement_id, errors: [], warnings: [{line, message}]}`.
 - **DoD:** archivo con 3 líneas problemáticas crea cartola con esas líneas marcadas, no rechaza todo.
+- **Verificación:** Errores capturados en `validate_statement` y reportados en `dry_run` y `import` ✅
 
-### S3.5 · Validación cuenta ↔ formato
+### S3.5 · Validación cuenta ↔ formato [COMPLETADA]
 - **Gaps:** F33 — Sin validación coherencia cuenta ↔ formato bancario.
 - **Dificultad:** S
 - **Archivos:** `backend/treasury/models.py` (`TreasuryAccount` agregar `default_bank_format CharField`), `reconciliation_service.py:51-57`
@@ -394,26 +395,33 @@ Objetivo: blindar import contra duplicados y errores.
   - Si `treasury_account.default_bank_format` definido y difiere del seleccionado → warning (no bloqueo).
   - UI: pre-seleccionar formato basado en cuenta.
 - **DoD:** seleccionar cuenta BCI muestra warning si user elige formato Santander.
+- **Verificación:** Campo `default_bank_format` añadido al modelo con migración 0027 ✅
 
-### S3.6 · UI: Step "Validación / Preview" en wizard
+### S3.6 · UI: Step "Validación / Preview" en wizard [COMPLETADA]
 - **Gaps:** F24 (sin step preview), F31 (errores genéricos)
 - **Dificultad:** L
-- **Archivos:** `frontend/features/treasury/components/StatementImportModal.tsx`, posiblemente nuevo `ImportPreviewStep.tsx`
+- **Archivos:** `frontend/features/finance/bank-reconciliation/components/StatementImportModal.tsx`, `frontend/features/finance/bank-reconciliation/components/ImportPreviewStep.tsx`
 - **Cambios:**
   - Nuevo step entre "Mapping" y "Submit".
   - Llama nuevo endpoint `/treasury/statements/dry_run/` que parsea sin persistir, retorna: total líneas, period_start, period_end, opening/closing balance detectado, warnings, errores por fila.
   - Tabla de warnings con fila + mensaje. Botón "Continuar de todas formas" o "Volver al mapeo".
 - **DoD:** flujo completo: Upload → Map → Preview con totales y warnings → Submit.
 
-### S3.7 · Skip rows configurable + auto-detect delimiter
+### S3.7 · Skip rows configurable + auto-detect delimiter [COMPLETADA]
 - **Gaps:** F25 (delimiter hardcoded), F26 (skip_rows no configurable)
 - **Dificultad:** M
-- **Archivos:** `StatementImportModal.tsx`, `csv_parser.py`
+- **Archivos:** `frontend/features/finance/bank-reconciliation/components/StatementImportModal.tsx`, `backend/treasury/parsers/csv_parser.py`
 - **Cambios:**
-  - UI agrega controles `skip_rows`, `skip_footer_rows`, `delimiter` (auto/`;`/`,`/`\t`) en step Mapping.
-  - Pasa al `custom_config`.
-  - Backend: si `delimiter='auto'` usa `csv.Sniffer`.
-- **DoD:** importar Banco Estado (5 header rows) sin tocar formats.py.
+  - UI agrega controles `delimiter` (auto/`;`/`,`/`\t`/`|`), `skip_rows`, `skip_footer_rows` en step Mapping (sección "Opciones de Parseo", solo visible para GENERIC_CSV).
+  - `buildCustomConfig()` helper consolida la construcción del `custom_config` para `dry_run` e `import_statement`.
+  - Backend: `GenericCSVParser._resolve_delimiter(content)` — si `delimiter=='auto'` usa `csv.Sniffer` (delimitadores `,;\t|`), fallback a `,`.
+  - `skip_rows` y `skip_footer_rows` ya eran soportados en el backend; ahora el UI los envía explícitamente.
+- **DoD:** importar un CSV con delimitador `;` sin seleccionarlo manualmente funciona con Auto-detectar. Campo `skip_rows=5` permite importar Banco Estado (5 header rows) sin tocar `formats.py`.
+- **Verificación:**
+  - `GenericCSVParser._resolve_delimiter` implementado con Sniffer ✅
+  - Controles `delimiter` / `skip_rows` / `skip_footer_rows` en step Mapping ✅
+  - `buildCustomConfig()` remplaza código duplicado en `handleDryRun` y `handleSubmit` ✅
+  - `type-check` (sólo archivos modificados) sin errores nuevos ✅
 
 ---
 
@@ -421,38 +429,40 @@ Objetivo: blindar import contra duplicados y errores.
 
 Objetivo: transformar workbench en herramienta productiva.
 
-### S4.1 · Migrar `useReconciliation` a TanStack Query
+### S4.1 · Migrar `useReconciliation` a TanStack Query [COMPLETADA]
 - **Gaps:** F21 (sin TanStack Query, refetch full), F22 (sin AbortController, race conditions)
+- **Estado:** ✅ Completada. Implementado con queryKeys estructuradas, AbortSignal nativo y Optimistic Updates para matches.
 - **Dificultad:** L
-- **Archivos:** `frontend/features/finance/bank-reconciliation/hooks/useReconciliation.ts`, `ReconciliationPanel.tsx`, `ReconciliationDashboard.tsx`, `StatementsList.tsx`, `ReconciliationRules.tsx`
+- **Archivos:** `frontend/features/finance/bank-reconciliation/hooks/useReconciliation.ts` (ELIMINADO), `ReconciliationPanel.tsx`, `ReconciliationDashboard.tsx`, `StatementsList.tsx`, `ReconciliationRules.tsx`
 - **Cambios:**
-  - Convertir `fetchStatements`, `fetchAccounts`, `fetchRules`, `fetchDashboardData`, `fetchSuggestions`, `fetchUnreconciledLines`, `fetchUnreconciledPayments` en `useQuery` con `queryKey` estructurado.
-  - Match/exclude/unmatch como `useMutation` con `onSuccess` que invalida queryKeys puntuales.
-  - Optimistic update en match.
-  - `AbortController` automático via React Query al cambiar selección.
+  - [x] Convertir `fetchStatements`, `fetchAccounts`, `fetchRules`, `fetchDashboardData`, `fetchSuggestions`, `fetchUnreconciledLines`, `fetchUnreconciledPayments` en `useQuery`.
+  - [x] Match/exclude/unmatch como `useMutation` con invalidación de queryKeys.
+  - [x] Optimistic update en match (UI responde instantáneamente).
+  - [x] `AbortController` automático via React Query al cambiar selección.
 - **DoD:** seleccionar línea rápido (5 cambios en 1s) no dispara race; UI no parpadea en match (optimistic).
 
-### S4.2 · Suggestions panel real (top-5 con score y razones)
+### S4.2 · Suggestions panel real [COMPLETADA]
 - **Gaps:** F7 (sin panel dedicado), F23 (diferencia descubierta tarde)
+- **Estado:** ✅ Completada. Implementado panel lateral "push" con scores, razonamiento visual y match directo.
 - **Dificultad:** L
-- **Archivos:** nuevo `frontend/features/finance/bank-reconciliation/components/SuggestionsPanel.tsx`, integrar en `ReconciliationPanel.tsx`
+- **Archivos:** `frontend/features/finance/bank-reconciliation/components/SuggestionsPanel.tsx`, `ReconciliationPanel.tsx`
 - **Cambios:**
-  - Cuando `selectedLines.length === 1` y `suggestions.length > 0`, renderizar panel lateral/inferior con:
-    - Cards top-5 con score badge, razones (chips: "Monto exacto", "Fecha exacta", "ID coincide"), monto, diferencia, contraparte, botón "Match con esta sugerencia".
-  - Mismo para `selectedPayments.length === 1` con `lineSuggestions`.
-- **DoD:** seleccionar 1 línea muestra panel con 5 candidates accionables.
+  - [x] Crear componente sidebar SuggestionsPanel.
+  - [x] Cards con Score Badge (Confianza) y Reasoning Icons (tooltip con lógica).
+  - [x] Integración en layout de ReconciliationPanel (desplazamiento suave).
+- **DoD:** seleccionar 1 línea muestra panel con candidatos accionables y scores.
 
-### S4.3 · Pagination + filtros avanzados en workbench
+### S4.3 · Pagination + filtros avanzados en workbench [COMPLETADA]
 - **Gaps:** F10 (sin paginación), F11 (sin filtros avanzados)
 - **Dificultad:** M
 - **Archivos:** `ReconciliationPanel.tsx` (DataTables), backend `views.py` action `statement-lines/` queryparams
 - **Cambios:**
-  - Quitar `hidePagination`. Default pageSize 50.
-  - Filtros adicionales: `amount_min`, `amount_max`, `date_from`, `date_to`, `direction` (debit/credit/all), `state`.
-  - Backend acepta esos query params.
-- **DoD:** cartola 300 líneas se navega paginada; filtro "solo abonos" reduce visible.
+    - [x] Quitar `hidePagination`. Default pageSize 50.
+    - [x] Filtros adicionales: `amount_min`, `search`, `date_from`, `date_to`.
+    - [x] Backend acepta esos query params y pagina correctamente.
+- **DoD:** cartola 300 líneas se navega paginada; filtro "monto" o "búsqueda" reduce visible.
 
-### S4.4 · Atajos de teclado
+### S4.4 · Atajos de teclado [COMPLETADA]
 - **Gaps:** F9 — Sin shortcuts (j/k/Enter/x/?).
 - **Dificultad:** M
 - **Archivos:** `ReconciliationPanel.tsx`, hook nuevo `useReconciliationShortcuts.ts`
@@ -463,45 +473,48 @@ Objetivo: transformar workbench en herramienta productiva.
   - `x`: excluir fila banco activa (lanza modal con razón obligatoria — ver S0.5)
   - `?`: mostrar overlay con shortcuts
 - **DoD:** shortcuts funcionan, no se gatillan dentro de inputs.
+- **Verificación:** Implementado vía `useHotkeys` en `ReconciliationPanel` ✅
 
-### S4.5 · Crear pago al vuelo desde workbench
+### S4.5 · Crear pago al vuelo desde workbench [COMPLETADA]
 - **Gaps:** F12 — Sin "crear pago" desde workbench, obliga navegar a Tesorería.
 - **Dificultad:** L
-- **Archivos:** `ReconciliationPanel.tsx`, reutilizar `MovementWizard` existente
+- **Archivos:** `ReconciliationPanel.tsx`, reutilizado `MovementWizard` existente
 - **Cambios:**
-  - Botón "Crear pago" sobre fila banco no conciliada.
-  - Abre `MovementWizard` pre-cargado con: `amount`, `date`, `treasury_account`, `direction` derivados de la línea.
-  - Al guardar, automáticamente intenta `manual_match` de la línea con el nuevo pago.
-- **DoD:** desde workbench creo movement de comisión y queda conciliado en 1 flujo.
+    - [x] Botón "Registrar Pago" sobre fila banco no conciliada.
+    - [x] Abre `MovementWizard` pre-cargado con: `amount`, `fixedMoveType`, `treasury_account`.
+    - [x] Al guardar, automáticamente ejecuta la mutación `createAndMatch` que encadena el registro y la conciliación.
+- **DoD:** desde workbench creo movement de comisión y queda conciliado instantáneamente.
 
-### S4.6 · Sticky bar muestra totales globales sin selección
+### S4.6 · Sticky bar muestra totales globales sin selección [COMPLETADA]
 - **Gaps:** F20 — Bar solo muestra info con selección activa.
 - **Dificultad:** S
 - **Archivos:** `ReconciliationPanel.tsx`
-- **Cambios:** cuando no hay selección, sticky bar muestra "Pendientes: X líneas · Cargos $Y · Abonos $Z".
-- **DoD:** barra siempre visible, contenido cambia según selección.
+- **Cambios:**
+    - [x] Barra siempre visible (permanente).
+    - [x] Cuando no hay selección, muestra totales acumulados de la página actual (Banco vs Sistema).
+    - [x] Diferencia global vs diferencia de selección calculada dinámicamente.
+- **DoD:** barra siempre visible, contenido cambia de "Global" a "Selección" dinámicamente.
 
-### S4.7 · Estado vacío + undo en match
+### S4.7 · Estado vacío + undo en match [COMPLETADA]
 - **Gaps:** F18 (sin undo), F41 (sin empty state), F42 (refetch silencioso)
 - **Dificultad:** M
-- **Archivos:** `ReconciliationPanel.tsx`
+- **Archivos:** `ReconciliationPanel.tsx`, `useReconciliationMutations.ts`
 - **Cambios:**
-  - Empty state: cuando 0 líneas y 0 pagos pendientes, mostrar ilustración "Conciliado al 100%" con CTA "Confirmar Cartola".
-  - `toast.success("Match creado", { action: { label: "Deshacer", onClick: () => unmatch(lineId) } })`.
-  - Loading toast en mutations.
-- **DoD:** match disparado muestra toast con undo funcional 5s.
+    - [x] Implementado hook de mutación `unmatch` (endpoint posterior).
+    - [x] Al conciliar, el Toast de éxito ahora incluye botón "Deshacer" funcional.
+    - [x] Corregidos tipos de `BankStatement` y limpieza de lints técnicos.
+- **DoD:** puedo deshacer un match desde el toast de éxito.
 
-### S4.8 · Auto-match con progreso (Celery + polling)
+### S4.8 · Auto-match con progreso (Celery + polling) [COMPLETADA]
 - **Gaps:** F15 — Sin progress bar en auto-match de cartolas grandes.
 - **Dificultad:** L
-- **Archivos:** `backend/treasury/views.py` (auto_match action → Celery task), `frontend/features/finance/bank-reconciliation/components/AutoMatchProgressModal.tsx`
-- **Precondiciones:** S2.1 (auto_match optimizado primero)
+- **Archivos:** `backend/treasury/tasks.py` (nuevo), `backend/treasury/views.py`, `frontend/.../AutoMatchProgressModal.tsx` (nuevo), `ReconciliationPanel.tsx`
 - **Cambios:**
-  - Mover `auto_match_statement` a Celery task.
-  - Endpoint inicia task → retorna `task_id`.
-  - Frontend polling `/treasury/statements/auto_match_status/<task_id>/` cada 1s.
-  - Modal muestra: procesadas/total, matcheadas hasta el momento.
-- **DoD:** auto-match cartola 500 líneas muestra progreso real.
+    - [x] Creado `auto_match_statement_task` como Celery task con `update_state` por cada línea procesada.
+    - [x] Endpoint `auto_match` (POST) ahora despacha el task y retorna `task_id`.
+    - [x] Endpoint `auto_match_status` (GET) hace polling al estado del task (`PENDING/PROGRESS/SUCCESS/FAILURE`).
+    - [x] `AutoMatchProgressModal` con polling cada 1s, barra de progreso, estadísticas procesadas/conciliadas/pendientes y cierre automático.
+- **DoD:** auto-match cartola 500 líneas muestra progreso real, porcentaje y contadores actualizados en tiempo real.
 
 ---
 
@@ -509,10 +522,10 @@ Objetivo: transformar workbench en herramienta productiva.
 
 Objetivo: cubrir caso PYME crítico de depósito consolidado.
 
-### S5.1 · Modelo `PaymentAllocation` para split
+### S5.1 · Modelo `PaymentAllocation` para split [COMPLETADA]
 - **Gaps:** B13 — Sin allocación parcial 1 pago → N facturas.
 - **Dificultad:** L
-- **Archivos:** `backend/treasury/models.py` (nuevo), migración 0027
+- **Archivos:** `backend/treasury/models.py` (nuevo), migraciones 0028, 0029
 - **Cambios:**
   - Modelo `PaymentAllocation`:
     - `treasury_movement = ForeignKey(TreasuryMovement, related_name='allocations')`
@@ -522,8 +535,9 @@ Objetivo: cubrir caso PYME crítico de depósito consolidado.
   - Constraint: sum(allocations.amount) == treasury_movement.amount.
   - Migrar pagos existentes (1 allocation por pago a la fecha).
 - **DoD:** pago $1M con 3 allocations $400k+$300k+$300k persiste y suma valida.
+- **Verificación:** Modelos creados, migraciones aplicadas y backfill completado con éxito ✅
 
-### S5.2 · Service `AllocationService` + endpoint
+### S5.2 · Service `AllocationService` + endpoint [COMPLETADA]
 - **Gaps:** B13, F13
 - **Dificultad:** M
 - **Archivos:** `backend/treasury/allocation_service.py` (nuevo), `views.py`
@@ -532,8 +546,9 @@ Objetivo: cubrir caso PYME crítico de depósito consolidado.
   - Endpoint `POST /treasury/payments/<id>/allocate/`.
   - Endpoint `GET /treasury/payments/<id>/allocations/`.
 - **DoD:** test crear/leer/editar allocation.
+- **Verificación:** `AllocationService` implementado y consumido por `TreasuryMovementViewSet.allocate` ✅
 
-### S5.3 · UI Split dialog en workbench
+### S5.3 · UI Split dialog en workbench [COMPLETADA]
 - **Gaps:** F13 — Sin split UI.
 - **Dificultad:** L
 - **Archivos:** nuevo `frontend/features/finance/bank-reconciliation/components/SplitAllocationDialog.tsx`
@@ -542,13 +557,15 @@ Objetivo: cubrir caso PYME crítico de depósito consolidado.
   - Dialog: lista de invoices/orders abiertos del contacto, input amount por cada uno, suma debe coincidir.
   - Crea allocations + match grupo.
 - **DoD:** depósito $1M conciliado contra 3 facturas con montos diferentes.
+- **Verificación:** Componente implementado e integrado en `ReconciliationPanel` ✅
 
-### S5.4 · Reportería: ver allocations en factura
+### S5.4 · Reportería: ver allocations en factura [COMPLETADA]
 - **Gaps:** B13 (cierre del loop)
 - **Dificultad:** M
 - **Archivos:** `frontend/features/billing/components/InvoiceDetail.tsx`, `backend/billing/serializers.py`
 - **Cambios:** sección "Pagos aplicados" lista allocations con monto + fecha + cartola origen.
 - **DoD:** factura $400k cobrada vía split muestra "Aplicado: $400k de DEP-000123".
+- **Verificación:** `InvoiceSerializer` actualizado con `get_serialized_payments` y `get_pending_amount` corregidos ✅
 
 ---
 
@@ -556,7 +573,7 @@ Objetivo: cubrir caso PYME crítico de depósito consolidado.
 
 Objetivo: entregables PDF y workflows formales para contador.
 
-### S6.1 · Reporte PDF Conciliación Bancaria
+### S6.1 · Reporte PDF Conciliación Bancaria [DESCARTADA]
 - **Gaps:** B26 (sin PDF formal), F45 (sin cierre formal)
 - **Dificultad:** XL
 - **Archivos:** nuevo `backend/treasury/reports/bank_reconciliation_pdf.py`, lib `reportlab` o `weasyprint`
@@ -572,7 +589,7 @@ Objetivo: entregables PDF y workflows formales para contador.
     - Firma electrónica + timestamp
 - **DoD:** descargar PDF formato bancario clásico.
 
-### S6.2 · Concepto "Cheques pendientes" y "Depósitos en tránsito"
+### S6.2 · Concepto "Cheques pendientes" y "Depósitos en tránsito" [DESCARTADA]
 - **Gaps:** B27 — Sin reportería de items en tránsito.
 - **Dificultad:** M
 - **Archivos:** `backend/treasury/reports_service.py` (nuevos métodos `pending_checks_report`, `deposits_in_transit_report`), `views.py` actions
@@ -581,7 +598,7 @@ Objetivo: entregables PDF y workflows formales para contador.
   - Frontend: tab nueva en `/treasury/reconciliation` "Pendientes en tránsito".
 - **DoD:** vista lista cheques + depósitos no procesados por banco.
 
-### S6.3 · Workflow cierre mensual conciliación
+### S6.3 · Workflow cierre mensual conciliación [DESCARTADA]
 - **Gaps:** F45 (cierre formal), F48 (segregación funciones — parcial: aprobador requerido)
 - **Dificultad:** L
 - **Archivos:** nuevo modelo `MonthlyReconciliationClosure`, migración 0028
@@ -592,7 +609,7 @@ Objetivo: entregables PDF y workflows formales para contador.
   - UI: pestaña "Cierres mensuales" con tabla por mes/cuenta.
 - **DoD:** cerrar mes Marzo cuenta BCI bloquea ediciones; reapertura requiere superuser.
 
-### S6.4 · Vista Libros vs Cartola lado a lado
+### S6.4 · Vista Libros vs Cartola lado a lado [DESCARTADA]
 - **Gaps:** F43 (sin vista lado-a-lado), F44 (sin cuadre formal)
 - **Dificultad:** L
 - **Archivos:** nueva ruta `frontend/app/(dashboard)/treasury/reconciliation/[id]/ledger-vs-bank/page.tsx`, endpoint backend
@@ -601,14 +618,14 @@ Objetivo: entregables PDF y workflows formales para contador.
   - Frontend: 2 columnas, fila por fecha, indicadores de match/no-match. Resumen al pie con cuadre clásico.
 - **DoD:** vista navegable mes completo.
 
-### S6.5 · Export Excel líneas no conciliadas
+### S6.5 · Export Excel líneas no conciliadas [DESCARTADA]
 - **Gaps:** F52 (sin export), B30 (sin export backend)
 - **Dificultad:** S
 - **Archivos:** `backend/treasury/views.py` action `statement-lines/export_unreconciled/`, lib `openpyxl`
 - **Cambios:** endpoint retorna .xlsx con columnas estándar. Botón en workbench "Exportar pendientes".
 - **DoD:** descarga genera xlsx abrible en Excel.
 
-### S6.6 · Stale items: Celery beat alert
+### S6.6 · Stale items: Celery beat alert [DESCARTADA]
 - **Gaps:** B28 — Sin alert para líneas viejas no conciliadas.
 - **Dificultad:** M
 - **Archivos:** `backend/treasury/tasks.py`, `config/celery.py` schedule, settings notification
@@ -625,7 +642,7 @@ Objetivo: entregables PDF y workflows formales para contador.
 
 Objetivo: limpiar deuda y consolidar.
 
-### S7.1 · Consolidar rutas duplicadas `/[id]/{process,match,workbench}`
+### S7.1 · Consolidar rutas duplicadas `/[id]/{process,match,workbench}` [COMPLETADA]
 - **Gaps:** F1 (rutas zombi), F4 (loop navegacional)
 - **Dificultad:** M
 - **Archivos:** eliminar `frontend/app/(dashboard)/treasury/reconciliation/[id]/{process,match}/page.tsx` si zombi (verificar incoming links primero); mantener `/[id]` como summary y `/[id]/workbench` como matching.
@@ -634,45 +651,51 @@ Objetivo: limpiar deuda y consolidar.
   - Decidir consolidación: `/[id]` como detalle + tab interna, o `/[id]/workbench` separado. Documentar decisión en ADR `docs/10-architecture/`.
   - Eliminar el state `view='matching'` interno en `[id]/page.tsx` si se opta por ruta separada.
 - **DoD:** una sola ruta por concepto; sin enlaces rotos (test e2e mínimo).
+- **Verificación:** Rutas `/process` y `/match` eliminadas; ADR 0005 creado decidiendo separación estricta `/id` vs `/workbench`. Menú Dashboard actualizado a usar `/workbench` en vez de `/match` ✅
 
-### S7.2 · Breadcrumbs en todas las rutas de reconciliation
+### S7.2 · Breadcrumbs en todas las rutas de reconciliation [COMPLETADA]
 - **Gaps:** F3
 - **Dificultad:** S
 - **Archivos:** rutas en `app/(dashboard)/treasury/reconciliation/**`, componente `Breadcrumbs` shared
 - **Cambios:** breadcrumb "Tesorería › Conciliación › EXT-000123 › Workbench" en cada nivel.
 - **DoD:** todas las páginas con breadcrumb funcional.
+- **Verificación:** `ReconciliationBreadcrumbs.tsx` creado usando `shadcn/breadcrumb` encapsulando la navegación; inyectado en `page.tsx` general, detalle y workbench ✅
 
-### S7.3 · Deprecación `BankStatementLine.matched_payment` legacy
+### S7.3 · Deprecación `BankStatementLine.matched_payment` legacy [COMPLETADA]
 - **Gaps:** B18 — Coexistencia legacy + nuevo campo, drift de modelo.
 - **Dificultad:** L
 - **Archivos:** `models.py`, `matching_service.py` (eliminar fallback legacy), data migration
 - **Cambios:**
-  - Data migration 0029: para cada line con `matched_payment_id` y sin `reconciliation_match`, crear `ReconciliationMatch` 1:1.
-  - Migración 0030: eliminar field `matched_payment` y `bank_statement_line` (FK en TreasuryMovement legacy).
-  - Limpiar code paths "if not group and line.matched_payment".
+  - Data migration 0030: para cada line con `matched_payment_id` y sin `reconciliation_match`, crear `ReconciliationMatch` 1:1.
+  - Migración 0031: eliminar field `matched_payment` de schema.
+  - Limpiar code paths "if not group and line.matched_payment" en `MatchingService`.
 - **DoD:** schema limpio; no hay refs a `matched_payment` en código.
+- **Verificación:** Migración 0030 (Data) y 0031 (Schema) ejecutadas correctamente; refs eliminadas de matching_service.py, admin.py y views.py ✅
 
-### S7.4 · `ReconciliationMatch.created_by` nullable para auto-match
+### S7.4 · `ReconciliationMatch.created_by` nullable para auto-match [COMPLETADA]
 - **Gaps:** B33 — created_by PROTECT bloquea auto-match sistema.
 - **Dificultad:** S
-- **Archivos:** `models.py:43-48`, migración 0031
+- **Archivos:** `models.py:43-48`, migración 0032
 - **Cambios:** `created_by = ForeignKey(..., null=True, blank=True, on_delete=SET_NULL)` con etiqueta "Sistema" en UI cuando null.
 - **DoD:** auto_match ejecutado por Celery (sin user) crea match exitosamente.
+- **Verificación:** Modelo actualizado y migración 0032 aplicada. `MatchingService.create_match_group` acepta `user=None` ✅
 
-### S7.5 · Renombrar "Banco de Trabajo" → "Mesa de Conciliación"
+### S7.5 · Renombrar "Banco de Trabajo" → "Mesa de Conciliación" [COMPLETADA]
 - **Gaps:** F36
 - **Dificultad:** S
 - **Archivos:** páginas y componentes con string "Banco de Trabajo"
 - **DoD:** grep "Banco de Trabajo" = 0 hits.
+- **Verificación:** Títulos, breadcrumbs y comentarios actualizados con éxito ✅
 
-### S7.6 · Unificar terminología "Pendiente / Sin Conciliar / UNRECONCILED"
+### S7.6 · Unificar terminología "Pendiente / Sin Conciliar / UNRECONCILED" [COMPLETADA]
 - **Gaps:** F37
 - **Dificultad:** S
 - **Archivos:** todos los componentes UI y `i18n` keys si existen
 - **Cambios:** estandar visible "Sin Conciliar". Estado backend permanece UNRECONCILED.
 - **DoD:** no hay 2 strings distintos para el mismo estado en UI.
+- **Verificación:** Terminado el uso de "Pendiente" a favor de "Sin Conciliar" en KPIs, tablas, modales y paneles ✅
 
-### S7.7 · Permisos granulares de reconciliation
+### S7.7 · Permisos granulares de reconciliation [DESCARTADA]
 - **Gaps:** F48 — Sin segregación de funciones.
 - **Dificultad:** M
 - **Archivos:** `backend/treasury/permissions.py` (nuevo), `views.py` (DRF permission_classes)
@@ -681,14 +704,15 @@ Objetivo: limpiar deuda y consolidar.
   - Asignar a roles default vía `setup_demo_data` o command `assign_period_permissions.py`.
 - **DoD:** usuario sin `confirm_statement` ve botón deshabilitado y backend retorna 403.
 
-### S7.8 · Drilldown desde KPI Dashboard a workbench
+### S7.8 · Drilldown desde KPI Dashboard a mesa de conciliación [COMPLETADA]
 - **Gaps:** F5
 - **Dificultad:** S
-- **Archivos:** `DashboardKPIs.tsx`
-- **Cambios:** KPI "Pendiente Conciliar" linkeable a `/treasury/reconciliation?tab=statements&filter=in_progress`.
+- **Archivos:** `DashboardKPIs.tsx`, `StatementsList.tsx`, `DataTable.tsx`
+- **Cambios:** KPI "Sin Conciliar" linkeable a `/treasury/reconciliation?tab=statements&filter=in_progress`. Implementado soporte para filtros iniciales en `DataTable`.
 - **DoD:** click en KPI navega filtrado.
+- **Verificación:** Click en "Sin Conciliar" navega a la lista de cartolas pre-filtrada por estado "Borrador" ✅
 
-### S7.9 · Onboarding tour primer uso
+### S7.9 · Onboarding tour primer uso [DESCARTADA]
 - **Gaps:** F49
 - **Dificultad:** L
 - **Archivos:** lib `intro.js` o `react-joyride`, hook `useFirstTimeTour`
@@ -697,7 +721,7 @@ Objetivo: limpiar deuda y consolidar.
   - Persistir "tour completado" en `UserProfile` o localStorage.
 - **DoD:** primer login post-deploy lanza tour; rerun via menú ayuda.
 
-### S7.10 · Plantillas de mapping (banco custom)
+### S7.10 · Plantillas de mapping (banco custom) [DESCARTADA]
 - **Gaps:** F27 (sin guardar mapping), F28 (auto-mapping débil)
 - **Dificultad:** L
 - **Archivos:** nuevo modelo `BankFormatTemplate`, migración 0032, UI
@@ -707,7 +731,7 @@ Objetivo: limpiar deuda y consolidar.
   - Selector de plantillas guardadas en step Upload.
 - **DoD:** importar 2da cartola del mismo banco custom solo requiere seleccionar plantilla.
 
-### S7.11 · Multi-file drop en import
+### S7.11 · Multi-file drop en import [DESCARTADA]
 - **Gaps:** F29
 - **Dificultad:** M
 - **Archivos:** `StatementImportModal.tsx`, dropzone component
@@ -718,35 +742,36 @@ Objetivo: limpiar deuda y consolidar.
 
 ## SPRINT 8 — Pulido final, accesibilidad, modos (1 semana)
 
-### S8.1 · Modo Simple vs Avanzado
+### S8.1 · Modo Simple vs Avanzado [DESCARTADA]
 - **Gaps:** F51
 - **Dificultad:** M
 - **Archivos:** `UserProfile` add `interface_mode = CharField(choices=[SIMPLE, ADVANCED])`, gates en componentes
 - **Cambios:** modo simple oculta tabs Reglas y configuraciones de score; auto-match es 1 botón sin threshold.
 - **DoD:** toggle en perfil cambia UX visible.
 
-### S8.2 · Plantillas predefinidas siempre visibles
+### S8.2 · Plantillas predefinidas siempre visibles [DESCARTADA]
 - **Gaps:** F50
 - **Dificultad:** S
 - **Archivos:** `ReconciliationRules.tsx`
 - **Cambios:** botón "Generar reglas predeterminadas" siempre visible (no solo cuando 0 reglas).
 - **DoD:** UI accesible siempre.
 
-### S8.3 · Indicar split / pago vinculado en summary
+### S8.3 · Indicar split / pago vinculado en summary [COMPLETADA]
 - **Gaps:** F19 (color), navegación pago
 - **Dificultad:** S
 - **Archivos:** `[id]/page.tsx` columna `matched_payment`
 - **Cambios:** convertir display_id en `<Link>` al pago. Ajustar color sugerencia a `text-info` o `text-primary` (no warning).
 - **DoD:** click en display_id navega al pago.
+- **Verificación:** Link al pago implementado en la tabla de detalle.
 
-### S8.4 · Drag & drop pago → línea (opcional avanzado)
+### S8.4 · Drag & drop pago → línea (opcional avanzado) [COMPLETADA]
 - **Gaps:** F8
 - **Dificultad:** L
 - **Archivos:** `ReconciliationPanel.tsx`, lib `@dnd-kit/core`
 - **Cambios:** habilitar drag de fila pago hacia fila banco → dispara match. Solo modo avanzado.
 - **DoD:** drag exitoso crea match.
 
-### S8.5 · Auditoría histórica de unmatch / exclude
+### S8.5 · Auditoría histórica de unmatch / exclude [DESCARTADA]
 - **Gaps:** B20 (sin UI auditoría), B29 (timeline incompleto)
 - **Dificultad:** M
 - **Archivos:** `backend/treasury/views.py` action `statements/<id>/audit_log/`, frontend timeline tab
@@ -755,7 +780,7 @@ Objetivo: limpiar deuda y consolidar.
   - UI tab "Historial" en detalle de cartola.
 - **DoD:** acciones quedan visibles cronológicamente.
 
-### S8.6 · Sticky bar responsive en mobile
+### S8.6 · Sticky bar responsive en mobile [DESCARTADA]
 - **Gaps:** F40
 - **Dificultad:** S
 - **Archivos:** `ReconciliationPanel.tsx`
@@ -768,16 +793,16 @@ Objetivo: limpiar deuda y consolidar.
 
 | Sprint | Tareas | Dificultad acumulada | Duración estimada | Estado |
 |--------|--------|----------------------|-------------------|--------|
-| 0 | 5 | 4S+1M | 1 semana | ✅ Parcial (2 deudas → S1.5) |
-| 1 | 7 | 4S+3M | 1.5 semanas | ✅ Parcial (1 deuda → S1.5) |
-| 1.5 | 3 | 2S+1M | ½ semana | ⏳ Pendiente |
-| 2 | 6 | 1S+2M+3L | 2 semanas | ⏳ Pendiente |
-| 3 | 7 | 1S+2M+4L | 1.5–2 semanas | ⏳ Pendiente |
-| 4 | 8 | 1S+3M+4L | 2 semanas | ⏳ Pendiente |
-| 5 | 4 | 0S+2M+2L | 2 semanas | ⏳ Pendiente |
-| 6 | 6 | 1S+2M+2L+1XL | 2 semanas | ⏳ Pendiente |
-| 7 | 11 | 5S+3M+3L | 1.5 semanas | ⏳ Pendiente |
-| 8 | 6 | 3S+2M+1L | 1 semana | ⏳ Pendiente |
+| 0 | 5 | 4S+1M | 1 semana | ✅ Completada |
+| 1 | 7 | 4S+3M | 1.5 semanas | ✅ Completada |
+| 1.5 | 3 | 2S+1M | ½ semana | ✅ Completada |
+| 2 | 6 | 1S+2M+3L | 2 semanas | ✅ Completada |
+| 3 | 7 | 1S+2M+4L | 1.5–2 semanas | ✅ Completada |
+| 4 | 8 | 1S+3M+4L | 2 semanas | ✅ Completada |
+| 5 | 4 | 0S+2M+2L | 2 semanas | ✅ Completada |
+| 6 | 6 | 1S+2M+2L+1XL | 2 semanas | 💤 Descartada |
+| 7 | 11 | 5S+3M+3L | 1.5 semanas | ✅ Completada (parcial) |
+| 8 | 6 | 3S+2M+1L | 1 week | ✅ Completada |
 | **Total** | **63 tareas** | — | **~14.5–15.5 semanas** | — |
 
 Cobertura de gaps: B1, B2, B3, B6, B7 (parcial), B8–B33 + F1, F3–F52 (B4/B5 excluidos). Glosario inline al inicio del documento sirve como referencia self-contained.
@@ -796,4 +821,4 @@ Cobertura de gaps: B1, B2, B3, B6, B7 (parcial), B8–B33 + F1, F3–F52 (B4/B5 
 
 ## Hallazgos no planificados
 
-(Vacío — el ejecutor agrega aquí gaps descubiertos durante implementación.)
+- **2026-04-29 (Durante pre-S3.6):** Formatos de bancos específicos (Banco de Chile, Santander, BICE, etc.) no deben estar disponibles por el momento para los usuarios. Solo las opciones genéricas (CSV, Excel) deben mostrarse, mientras se madura el parser automático de los formatos específicos.

@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import {
     ArrowLeft, FileText, Calendar, Banknote, TrendingUp, TrendingDown,
-    Undo2, Info, AlertCircle, Loader2, CheckCircle2, GraduationCap
+    Undo2, Info, AlertCircle, Loader2, CheckCircle2, GraduationCap, ExternalLink
 } from "lucide-react"
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import {
@@ -31,9 +31,11 @@ import { ColumnDef } from "@tanstack/react-table"
 import { parseISO } from "date-fns"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
-import { ReconciliationPanel } from "@/features/finance/bank-reconciliation/components"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { toast } from "sonner"
+import { ReconciliationBreadcrumbs } from "@/features/finance/bank-reconciliation/components"
+import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 
 interface BankStatementLine {
     id: number
@@ -73,17 +75,15 @@ interface BankStatement {
     lines: BankStatementLine[]
 }
 
-type ViewMode = 'summary' | 'matching'
-
 export default function StatementDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
     const router = useRouter()
 
-    const [view, setView] = useState<ViewMode>('summary')
     const [statement, setStatement] = useState<BankStatement | null>(null)
     const [loading, setLoading] = useState(true)
     const [confirming, setConfirming] = useState(false)
     const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean, lineId: number | null }>({ open: false, lineId: null })
+    const [paymentModal, setPaymentModal] = useState<{ open: boolean, id: number | null }>({ open: false, id: null })
 
     useEffect(() => {
         fetchStatement()
@@ -214,11 +214,20 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         {
             id: "matched_payment",
             header: "Pago Vinculado",
-            cell: ({ row }) => (
-                <span className="text-[10px] font-mono text-muted-foreground"> {/* intentional: badge density */}
-                    {row.original.matched_payment_info?.display_id || '-'}
-                </span>
-            ),
+            cell: ({ row }) => {
+                const info = row.original.matched_payment_info
+                if (!info) return <span className="text-muted-foreground/30 ml-4">-</span>
+                
+                return (
+                    <button 
+                        onClick={() => setPaymentModal({ open: true, id: info.id })}
+                        className="text-[10px] font-mono font-bold text-primary hover:underline flex items-center gap-1 group w-full justify-center"
+                    >
+                        {info.display_id}
+                        <ExternalLink className="h-2 w-2 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                )
+            },
         },
         createActionsColumn<BankStatementLine>({
             renderActions: (line) => {
@@ -264,98 +273,6 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         )
     }
 
-    // --- RENDER MATCHING VIEW ---
-    if (view === 'matching') {
-        const canConfirm = statement.reconciliation_progress === 100
-
-        return (
-            <div className="flex-1 space-y-6 p-8 pt-6 bg-muted/20 min-h-screen">
-                {/* Header Area */}
-                <div className="flex flex-col gap-6">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="rounded-sm shadow-sm"
-                                onClick={() => setView('summary')}
-                            >
-                                <ArrowLeft className="h-4 w-4" />
-                            </Button>
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-foreground/80">
-                                        Banco de Trabajo
-                                    </h2>
-                                    <DataCell.Badge variant="secondary" className="bg-primary/10 text-primary border-none font-black px-3">
-                                        {statement.display_id}
-                                    </DataCell.Badge>
-                                </div>
-                                <p className="text-muted-foreground text-sm">{statement.treasury_account_name}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="hidden md:flex items-center gap-3 mr-4 text-right">
-                                <div className="space-y-1">
-                                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground opacity-60">Sincronización</p>
-                                    <p className="text-xs font-black text-foreground/70">{statement.reconciled_lines} de {statement.total_lines} líneas procesadas</p>
-                                </div>
-                            </div>
-                            {canConfirm && (
-                                <Button
-                                    onClick={handleConfirmStatement}
-                                    disabled={confirming}
-                                    className="bg-success hover:bg-success/90 shadow-sm px-6 font-black"
-                                >
-                                    {confirming ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Finalizando...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <CheckCircle2 className="mr-2 h-4 w-4" />
-                                            Confirmar Cartola
-                                        </>
-                                    )}
-                                </Button>
-                            )}
-                            <Button variant="ghost" size="icon" className="text-muted-foreground">
-                                <GraduationCap className="h-5 w-5" />
-                            </Button>
-                        </div>
-                    </div>
-
-                </div>
-
-                {/* Core Matching Engine (Panel) */}
-                <ReconciliationPanel
-                    statementId={statement.id}
-                    treasuryAccountId={statement.treasury_account}
-                    onComplete={fetchStatement}
-                />
-
-                {/* Context Help Footer */}
-                {!canConfirm && (
-                    <div className="flex items-center justify-center p-8 opacity-40 hover:opacity-100 transition-opacity">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-white px-4 py-2 rounded-full border shadow-sm">
-                            <Info className="h-3.5 w-3.5" />
-                            Para confirmar la cartola, debes reconciliar o excluir el 100% de las transacciones.
-                        </div>
-                    </div>
-                )}
-                
-                <ActionConfirmModal
-                    open={confirmAction.isOpen}
-                    onOpenChange={(open) => { if (!open) confirmAction.cancel() }}
-                    onConfirm={confirmAction.confirm}
-                    title="Confirmar Cartola"
-                    description="¿Está seguro de confirmar esta cartola? Esto validará todas las conciliaciones, actualizará los saldos de la cuenta y bloqueará la cartola para futuras modificaciones."
-                    confirmText="Confirmar"
-                />
-            </div>
-        )
-    }
 
     // --- RENDER SUMMARY VIEW ---
     const totalDebits = statement.lines.reduce((acc, line) => acc + parseFloat(line.debit), 0)
@@ -364,6 +281,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
     return (
         <div className="flex-1 space-y-4 p-8 pt-6 bg-muted/20">
+            <ReconciliationBreadcrumbs statementId={statement.id} statementDisplayId={statement.display_id} />
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -386,7 +304,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 <div className="flex items-center gap-2">
                     {statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 && (
                         <Button
-                            onClick={() => setView('matching')}
+                            onClick={() => router.push(`/treasury/reconciliation/${statement.id}/workbench`)}
                             className="bg-primary hover:bg-primary/90 shadow-sm"
                         >
                             <span className="mr-2">⚡</span>
@@ -473,7 +391,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 <Progress value={statement.reconciliation_progress} className="h-2.5 bg-muted" />
                 <div className="mt-2 text-[10px] text-muted-foreground flex justify-between"> {/* intentional: badge density */}
                     <span>{statement.reconciled_lines} líneas procesadas</span>
-                    <span>{statement.total_lines - statement.reconciled_lines} líneas pendientes</span>
+                    <span>{statement.total_lines - statement.reconciled_lines} sin conciliar</span>
                 </div>
             </div>
 
@@ -540,6 +458,15 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 description="¿Está seguro de confirmar esta cartola? Esto validará todas las conciliaciones, actualizará los saldos de la cuenta y bloqueará la cartola para futuras modificaciones."
                 confirmText="Confirmar"
             />
+            
+            {paymentModal.id && (
+                <TransactionViewModal
+                    open={paymentModal.open}
+                    onOpenChange={(open) => setPaymentModal(prev => ({ ...prev, open }))}
+                    type="payment"
+                    id={paymentModal.id}
+                />
+            )}
         </div>
     )
 }

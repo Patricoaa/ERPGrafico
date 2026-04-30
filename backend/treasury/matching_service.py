@@ -375,7 +375,7 @@ class MatchingService:
     def create_match_group(
         line_ids: List[int],
         movement_ids: List[int],
-        user,
+        user=None,
         difference_reason: Optional[str] = None,
         notes: Optional[str] = None,
         batch_ids: Optional[List[int]] = None
@@ -444,7 +444,6 @@ class MatchingService:
         total_lines_amount = Decimal(0)
         for l in lines:
             l.reconciliation_match = group
-            l.matched_payment = None  # Clear legacy
             l.reconciliation_status = 'MATCHED'
             l.save()
             total_lines_amount += abs(l.credit - l.debit)
@@ -533,14 +532,6 @@ class MatchingService:
             raise ValueError(f"Línea {statement_line_id} no encontrada")
         
         group = line.reconciliation_match
-        
-        # Fallback legacy 1:1 if no group (Migración en caliente)
-        if not group and line.matched_payment:
-             # Convert legacy to group logic on the fly? Or just run legacy code?
-             # Let's simple create a group now to migrate it.
-             group = MatchingService.create_match_group([line.id], [line.matched_payment.id], user)
-             # Refresh line
-             line.refresh_from_db()
         
         if not group:
             raise ValueError("Línea no tiene conciliación asociada para confirmar")
@@ -648,21 +639,6 @@ class MatchingService:
 
         group = line.reconciliation_match
         
-        # Legacy fallback
-        if not group and line.matched_payment:
-             # Legacy unmatch logic
-             payment = line.matched_payment
-             payment.is_reconciled = False
-             payment.reconciled_at = None
-             payment.bank_statement_line = None
-             payment.save()
-             
-             line.matched_payment = None
-             line.reconciliation_status = 'UNRECONCILED'
-             line.difference_amount = Decimal(0)
-             line.save()
-             return line
-             
         if not group:
             if line.reconciliation_status == 'EXCLUDED':
                 line.reconciliation_status = 'UNRECONCILED'
@@ -682,13 +658,12 @@ class MatchingService:
         lines_to_reset = list(group.lines.all())
         for l in lines_to_reset:
             l.reconciliation_match = None
-            l.matched_payment = None
             l.reconciliation_status = 'UNRECONCILED'
             l.reconciled_at = None
             l.difference_amount = Decimal(0)
         BankStatementLine.objects.bulk_update(
             lines_to_reset,
-            ['reconciliation_match', 'matched_payment', 'reconciliation_status',
+            ['reconciliation_match', 'reconciliation_status',
              'reconciled_at', 'difference_amount']
         )
             
