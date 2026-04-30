@@ -470,6 +470,7 @@ class BankStatementListSerializer(serializers.ModelSerializer):
     imported_by_name = serializers.CharField(source='imported_by.username', read_only=True)
     reconciliation_progress = serializers.FloatField(read_only=True)
     display_id = serializers.CharField(read_only=True)
+    reconciled_lines = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = BankStatement

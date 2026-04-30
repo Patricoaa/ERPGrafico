@@ -1,0 +1,55 @@
+# Docker Compose — Cloud Dev Stack (Mínimo Local)
+# -------------------------------------------------------
+# Uso: docker compose -f docker-compose.cloud-dev.yml up -d
+#
+# Solo levanta los 3 servicios que corren en local:
+#   - redis    → broker + cache (128 MB)
+#   - nginx    → reverse proxy unificado (64 MB)
+#   - mailpit  → trampa SMTP para emails de dev (64 MB)
+#
+# Servicios en CLOUD (configurar en .env.dev):
+#   - DB       → Neon.tech (DATABASE_URL)
+#   - Storage  → Cloudflare R2 (AWS_* vars)
+#
+# Servicios NATIVOS (correr en terminal):
+#   - Backend  → python manage.py runserver 0.0.0.0:8100
+#   - Frontend → npm run dev
+#   - Celery   → solo cuando se necesite
+# -------------------------------------------------------
+
+services:
+
+  # ── Nginx Reverse Proxy ─────────────────────────────────
+  # Unifica frontend (:3000) y backend (:8100) bajo localhost:80
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ./nginx/nginx.cloud-dev.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "80:80"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 64M
+
+  # ── Mailpit (SMTP Trap) ─────────────────────────────────
+  # Captura todos los emails que envía Django sin enviarlos realmente.
+  # UI web en http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP — Django apunta aquí
+      - "8025:8025" # Web UI
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 64M
+
+volumes:
+  redis_data:

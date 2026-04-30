@@ -99,11 +99,14 @@ def test_no_reconciled_lines_write_in_matching_service():
     )
 
 
-def test_reconciled_lines_field_still_exists_in_models():
-    """S2.3: campo aún existe en BankStatement (Fase 2 = drop column, en Sprint 3)"""
+def test_reconciled_lines_is_property_in_models():
+    """S2.3b DoD: reconciled_lines es @property derivada (columna eliminada)"""
     src = pathlib.Path("/app/treasury/models.py").read_text()
-    assert "reconciled_lines = models.IntegerField" in src, (
-        "BankStatement.reconciled_lines should still exist as DB column (Fase 1 only stops writes)"
+    assert "reconciled_lines = models.IntegerField" not in src, (
+        "BankStatement.reconciled_lines should NOT be a DB column anymore (S2.3b completed)"
+    )
+    assert "def reconciled_lines(self)" in src, (
+        "BankStatement.reconciled_lines should be a @property deriving from lines queryset"
     )
 
 

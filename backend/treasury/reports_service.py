@@ -218,7 +218,7 @@ class ReportsService:
         ).values('month').annotate(
             total_statements=Count('id'),
             total_lines=Sum('total_lines'),
-            reconciled_lines=Sum('reconciled_lines')
+            reconciled_lines=Count('lines', filter=Q(lines__reconciliation_status='RECONCILED'))
         ).order_by('month')
         
         result = []
