@@ -7,7 +7,7 @@ if [ "$SKIP_MIGRATIONS" != "true" ]; then
     
     # Si usamos DATABASE_URL (Cloud), validamos con python
     if [ -n "$DATABASE_URL" ]; then
-        until python -c "import os; import psycopg; psycopg.connect(os.environ['DATABASE_URL'])" > /dev/null 2>&1; do
+        until python -c "import os; import psycopg2; psycopg2.connect(os.environ['DATABASE_URL'])" > /dev/null 2>&1; do
             echo "  Cloud Database not ready, retrying in 2s..."
             sleep 2
         done
