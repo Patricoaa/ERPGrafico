@@ -15,8 +15,7 @@ RUN apt-get update \
 
 # Instalar dependencias Python (cacheado si requirements.txt no cambia)
 COPY requirements.txt .
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip --timeout 120 --retries 5 && \
+RUN pip install --upgrade pip --timeout 120 --retries 5 && \
     pip install -r requirements.txt --timeout 120 --retries 5
 
 # Entrypoint — el código fuente se monta como volumen en dev
@@ -42,8 +41,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip --timeout 120 --retries 5 && \
+RUN pip install --upgrade pip --timeout 120 --retries 5 && \
     pip install -r requirements.txt --timeout 120 --retries 5
 
 COPY entrypoint.sh /entrypoint.sh
