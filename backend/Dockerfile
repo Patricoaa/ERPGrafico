@@ -18,6 +18,9 @@ COPY requirements.txt .
 RUN pip install --upgrade pip --timeout 120 --retries 5 && \
     pip install -r requirements.txt --timeout 120 --retries 5
 
+# Copiar el resto del código
+COPY . .
+
 # Entrypoint — el código fuente se monta como volumen en dev
 COPY entrypoint.sh /entrypoint.sh
 RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
@@ -43,6 +46,9 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --upgrade pip --timeout 120 --retries 5 && \
     pip install -r requirements.txt --timeout 120 --retries 5
+
+# Copiar el resto del código
+COPY . .
 
 COPY entrypoint.sh /entrypoint.sh
 RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
