@@ -14,6 +14,9 @@ Stack de desarrollo optimizado para máquinas con recursos limitados.
 | Celery worker | Nativo | **Railway** (cloud) | 0 |
 | **Total Docker** | | | **~256 MB** |
 
+> [!TIP]
+> **¿Tienes una PC vieja disponible?** Si tienes hardware extra, el [Setup de Home Server](home-server-setup.md) es la opción recomendada. Es gratuita, 100% privada y ofrece el mejor rendimiento para tu laptop.
+
 ---
 
 ## Paso 0 — Prerequisitos
