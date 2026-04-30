@@ -39,6 +39,7 @@ services:
     deploy:
       resources:
         limits:
+          cpus: '0.5'
           memory: 256M
 
   # ── Backend Django ──────────────────────────────────────
@@ -71,6 +72,7 @@ services:
     deploy:
       resources:
         limits:
+          cpus: '1.0'
           memory: 512M
 
   # ── Redis (Broker + Cache + Rate Limiting) ─────────────────
@@ -90,7 +92,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          cpus: '0.2'
+          memory: 128M
 
   # ── MinIO (S3 Object Storage Local) ─────────────────────
   minio:
@@ -110,6 +113,7 @@ services:
     deploy:
       resources:
         limits:
+          cpus: '0.5'
           memory: 512M
 
   # ── MinIO Init (Creates default bucket) ─────────────────
@@ -129,6 +133,11 @@ services:
       "
     networks:
       - backend_net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
 
   # ── Celery Worker ───────────────────────────────────────
   celery-worker:
@@ -159,6 +168,7 @@ services:
     deploy:
       resources:
         limits:
+          cpus: '0.5'
           memory: 512M
 
   # ── Celery Beat (Scheduler) ─────────────────────────────
@@ -189,7 +199,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          cpus: '0.2'
+          memory: 128M
 
   # ── Monitor Celery (Flower) ──────────────────────────────
   flower:
@@ -209,7 +220,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
+          cpus: '0.2'
+          memory: 128M
 
   # ── Frontend Next.js (Dev Mode) ─────────────────────────
   frontend:
@@ -245,7 +257,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 4G
+          cpus: '2.0'
+          memory: 2G
 
   # ── Nginx Reverse Proxy ─────────────────────────────────
   nginx:
@@ -264,6 +277,7 @@ services:
     deploy:
       resources:
         limits:
+          cpus: '0.2'
           memory: 64M
 
 # ── Redes ───────────────────────────────────────────────

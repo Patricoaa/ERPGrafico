@@ -1,9 +1,10 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, pagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from celery.result import AsyncResult
 from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine, 
                      ReconciliationRule, POSTerminal, TerminalBatch,
                      POSSession, POSSessionAudit, Bank, PaymentMethod,
@@ -29,6 +30,11 @@ from decimal import Decimal
 from accounting.models import Account
 from core.mixins import AuditHistoryMixin
 
+
+class StandardResultsSetPagination(pagination.PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
 
 class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Bank.objects.all().order_by('name')
@@ -221,6 +227,7 @@ class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryMovement.objects.all().order_by('-date', '-created_at')
     serializer_class = TreasuryMovementSerializer
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         qs = self.queryset
@@ -235,6 +242,21 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         date = self.request.query_params.get('date')
         if date:
             qs = qs.filter(date=date)
+        
+        date_from = self.request.query_params.get('date_from')
+        date_to = self.request.query_params.get('date_to')
+        if date_from:
+            qs = qs.filter(date__gte=date_from)
+        if date_to:
+            qs = qs.filter(date__lte=date_to)
+
+        # Amount range
+        amount_min = self.request.query_params.get('amount_min')
+        amount_max = self.request.query_params.get('amount_max')
+        if amount_min:
+            qs = qs.filter(amount__gte=amount_min)
+        if amount_max:
+            qs = qs.filter(amount__lte=amount_max)
 
         # Batch filtering (IsNull)
         terminal_batch_isnull = self.request.query_params.get('terminal_batch__isnull')
@@ -374,10 +396,51 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({'suggestions': suggestions})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        """Get bank statement line suggestions for this payment"""
+
+    @action(detail=True, methods=['post'])
+    def allocate(self, request, pk=None):
+        """S5.2: Set partial allocations for a payment"""
+        movement = self.get_object()
+        allocations_data = request.data.get('allocations')
+        
+        # Determine if we should validate the sum. For S5, the rule is to allow draft state
+        # in some contexts, but usually we validate strict sum. We'll allow a query param.
+        # Although the roadmap says 'permisivo', let's default to permissive during the dialog,
+        # but the frontend sends them incrementally. Wait, the frontend dialog sends all splits at once.
+        validate_sum = request.query_params.get('validate_sum', 'false').lower() == 'true'
+        
+        if not allocations_data or not isinstance(allocations_data, list):
+            return Response(
+                {'error': 'Debe proveer una lista de "allocations"'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         try:
-            suggestions = MatchingService.suggest_lines_for_payment(pk)
-            return Response({'suggestions': suggestions})
+            from treasury.allocation_service import AllocationService
+            created = AllocationService.allocate(
+                movement=movement,
+                allocations=allocations_data,
+                user=request.user,
+                validate_sum=validate_sum
+            )
+            return Response(
+                PaymentAllocationSerializer(created, many=True).data,
+                status=status.HTTP_201_CREATED
+            )
+        except ValidationError as e:
+            # e.messages is a list if it comes from django ValidationError
+            err = e.message if hasattr(e, 'message') else str(e)
+            return Response({'error': err}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'])
+    def allocations(self, request, pk=None):
+        """S5.2: Get allocations for a payment"""
+        try:
+            from treasury.allocation_service import AllocationService
+            allocs = AllocationService.get_allocations(pk)
+            return Response(PaymentAllocationSerializer(allocs, many=True).data)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -453,6 +516,44 @@ class BankStatementViewSet(viewsets.ModelViewSet):
             return Response({'error': f'Error al importar cartola: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=False, methods=['post'])
+    def dry_run(self, request):
+        """
+        Validate and parse a bank statement without persisting.
+        """
+        file = request.FILES.get('file')
+        treasury_account_id = request.data.get('treasury_account_id')
+        bank_format = request.data.get('bank_format', 'GENERIC_CSV')
+        custom_config = request.data.get('custom_config')
+        
+        if custom_config and isinstance(custom_config, str):
+            try:
+                import json
+                custom_config = json.loads(custom_config)
+            except Exception:
+                pass
+        
+        if not file:
+            return Response({'error': 'Archivo es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not treasury_account_id:
+            return Response({'error': 'Cuenta de tesorería es requerida'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            result = ReconciliationService.dry_run_import(
+                file=file,
+                treasury_account_id=treasury_account_id,
+                bank_format=bank_format,
+                custom_config=custom_config
+            )
+            return Response(result)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': f'Error al validar cartola: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    @action(detail=False, methods=['post'])
     def preview(self, request):
         """
         Generate file preview for column mapping
@@ -484,16 +585,56 @@ class BankStatementViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def auto_match(self, request, pk=None):
-        """Auto-match all unreconciled lines in statement"""
+        """S4.8: Kicks off async auto-match, returns task_id for polling."""
+        from .tasks import auto_match_statement_task
         try:
             threshold = float(request.data.get('confidence_threshold', 90.0))
-            result = MatchingService.auto_match_statement(pk, threshold)
-            return Response(result)
+            task = auto_match_statement_task.delay(int(pk), threshold)
+            return Response({'task_id': task.id, 'status': 'PENDING'})
         except ValueError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
+    @action(detail=True, methods=['get'])
+    def auto_match_status(self, request, pk=None):
+        """S4.8: Poll the progress of an ongoing auto_match task."""
+        task_id = request.query_params.get('task_id')
+        if not task_id:
+            return Response({'error': 'task_id requerido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        task = AsyncResult(task_id)
+
+        if task.state == 'PENDING':
+            return Response({'status': 'PENDING', 'processed': 0, 'total': 0, 'matched': 0, 'percent': 0})
+
+        if task.state == 'PROGRESS':
+            meta = task.info or {}
+            return Response({
+                'status': 'PROGRESS',
+                'processed': meta.get('processed', 0),
+                'total': meta.get('total', 0),
+                'matched': meta.get('matched', 0),
+                'percent': meta.get('percent', 0),
+            })
+
+        if task.state == 'SUCCESS':
+            result = task.result or {}
+            return Response({
+                'status': 'SUCCESS',
+                'matched_count': result.get('matched_count', 0),
+                'total_unreconciled': result.get('total_unreconciled', 0),
+                'percent': 100,
+            })
+
+        if task.state == 'FAILURE':
+            return Response(
+                {'status': 'FAILURE', 'error': str(task.info)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        return Response({'status': task.state})
+
     @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):
         """Confirm statement (locks it)"""
@@ -526,8 +667,9 @@ class BankStatementViewSet(viewsets.ModelViewSet):
 
 class BankStatementLineViewSet(viewsets.ModelViewSet):
     """ViewSet for bank statement lines"""
-    queryset = BankStatementLine.objects.all().select_related('statement', 'matched_payment', 'reconciled_by')
+    queryset = BankStatementLine.objects.all().select_related('statement', 'reconciled_by')
     serializer_class = BankStatementLineSerializer
+    pagination_class = StandardResultsSetPagination
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -541,6 +683,27 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
         reconciliation_status = self.request.query_params.get('reconciliation_status') or self.request.query_params.get('reconciliation_state')
         if reconciliation_status:
             queryset = queryset.filter(reconciliation_status=reconciliation_status)
+        
+        date_from = self.request.query_params.get('date_from')
+        date_to = self.request.query_params.get('date_to')
+        if date_from:
+            queryset = queryset.filter(transaction_date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(transaction_date__lte=date_to)
+
+        amount_min = self.request.query_params.get('amount_min')
+        amount_max = self.request.query_params.get('amount_max')
+        if amount_min:
+            from django.db.models import Q
+            queryset = queryset.filter(Q(credit__gte=amount_min) | Q(debit__gte=amount_min))
+        if amount_max:
+            from django.db.models import Q
+            queryset = queryset.filter(Q(credit__lte=amount_max) | Q(debit__lte=amount_max))
+
+        search = self.request.query_params.get('search')
+        if search:
+            from django.db.models import Q
+            queryset = queryset.filter(Q(description__icontains=search) | Q(reference__icontains=search))
         
         return queryset
     

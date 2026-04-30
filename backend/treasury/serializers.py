@@ -57,7 +57,7 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
         model = TreasuryAccount
         fields = ['id', 'name', 'code', 'currency', 'account', 'account_name', 'account_code', 'account_type', 'account_type_display',
                   'bank', 'bank_name', 'account_number', 'allows_cash', 'allows_card', 'allows_transfer', 'allows_check',
-                  'is_system_managed', 'current_balance', 'payment_methods']
+                  'is_system_managed', 'current_balance', 'payment_methods', 'default_bank_format']
 
 
 class POSTerminalSerializer(serializers.ModelSerializer):
@@ -182,6 +182,26 @@ class POSTerminalSerializer(serializers.ModelSerializer):
         return attrs
 
 
+
+class PaymentAllocationSerializer(serializers.ModelSerializer):
+    invoice_display_id = serializers.CharField(source='invoice.display_id', read_only=True, allow_null=True)
+    sale_order_display_id = serializers.CharField(source='sale_order.display_id', read_only=True, allow_null=True)
+    purchase_order_display_id = serializers.CharField(source='purchase_order.display_id', read_only=True, allow_null=True)
+    bank_statement_line_display = serializers.CharField(source='bank_statement_line.description', read_only=True, allow_null=True)
+    created_by_name = serializers.CharField(source='created_by.username', read_only=True, allow_null=True)
+
+    class Meta:
+        from .models import PaymentAllocation
+        model = PaymentAllocation
+        fields = [
+            'id', 'treasury_movement', 'amount', 'notes',
+            'invoice', 'invoice_display_id',
+            'sale_order', 'sale_order_display_id',
+            'purchase_order', 'purchase_order_display_id',
+            'bank_statement_line', 'bank_statement_line_display',
+            'created_at', 'created_by', 'created_by_name'
+        ]
+        read_only_fields = ['created_at', 'created_by']
 
 class TreasuryMovementSerializer(serializers.ModelSerializer):
     partner_name = serializers.SerializerMethodField()
@@ -450,6 +470,7 @@ class BankStatementListSerializer(serializers.ModelSerializer):
     imported_by_name = serializers.CharField(source='imported_by.username', read_only=True)
     reconciliation_progress = serializers.FloatField(read_only=True)
     display_id = serializers.CharField(read_only=True)
+    reconciled_lines = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = BankStatement
