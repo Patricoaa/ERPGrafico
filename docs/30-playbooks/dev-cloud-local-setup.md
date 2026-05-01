@@ -116,14 +116,14 @@ python -c "import secrets; print(secrets.token_hex(50))"
 
 ---
 
-## Paso 5 — Levantar el stack Docker mínimo
+## Paso 5 — Levantar el stack Docker (Servicios Locales)
 
 ```bash
 # Desde la raíz del proyecto
 docker compose -f docker-compose.cloud-dev.yml up -d
 ```
 
-Verificar que los 3 servicios están corriendo:
+Verificar que los servicios están corriendo:
 
 ```bash
 docker compose -f docker-compose.cloud-dev.yml ps
@@ -132,9 +132,9 @@ docker compose -f docker-compose.cloud-dev.yml ps
 Salida esperada:
 
 ```
-NAME        STATUS    PORTS
-nginx       running   0.0.0.0:80->80/tcp
-mailpit     running   0.0.0.0:1025->1025/tcp, 0.0.0.0:8025->8025/tcp
+NAME                STATUS    PORTS
+erp-frontend-dev    running   0.0.0.0:3000->3000/tcp
+erp-mailpit         running   0.0.0.0:1025->1025/tcp, 0.0.0.0:8025->8025/tcp
 ```
 
 ---
@@ -212,23 +212,17 @@ Railway es ideal para desarrollo porque te regalan crédito inicial sin pedir ta
 
 ## Paso 7 — Levantar el frontend
 
-En una **nueva terminal**:
+En este setup Cloud Dev, el frontend ya está configurado en el `docker-compose.cloud-dev.yml` (Paso 5). 
 
-```bash
-cd frontend
-npm install     # solo primera vez
-npm run dev
-```
+- El código local se monta vía volúmenes.
+- Los cambios en el código disparan el Hot Reload (HMR) automáticamente dentro del contenedor.
+- Puedes ver los logs con: `docker compose -f docker-compose.cloud-dev.yml logs -f frontend`.
 
 Frontend disponible en:
 - Directo: `http://localhost:3000`
-- Via Nginx: `http://localhost` (recomendado, evita problemas de CORS)
 
-#### **Alternativa Cloud: Vercel (0 RAM local)**
-Para evitar la compilación pesada de Next.js en local:
-1. Sube tu rama a GitHub y conéctala en [Vercel](https://vercel.com).
-2. Configura las variables de entorno (`NEXT_PUBLIC_API_URL` apuntando a tu backend).
-3. Vercel desplegará automáticamente en cada `git push`.
+> [!NOTE]
+> Si prefieres correrlo nativo (sin Docker), simplemente detén el contenedor (`docker compose stop frontend`) y corre `npm run dev` en la carpeta `frontend`.
 
 ---
 
@@ -274,6 +268,62 @@ python manage.py migrate
 ```
 
 La migración se aplica sobre la DB de Neon. No hay pasos extra.
+
+---
+
+## Paso 10 — Exposición Externa Persistente (Cloudflare Tunnel)
+
+Para que tu localhost sea accesible desde internet con una URL fija (ej: `erp.tudominio.com`) y que el túnel se inicie automáticamente al encender el PC.
+
+### 10.1 Configuración Inicial (Solo una vez)
+
+1.  **Login en Cloudflare**:
+    ```bash
+    cloudflared tunnel login
+    ```
+2.  **Crear el túnel**:
+    ```bash
+    cloudflared tunnel create erpgrafico-dev
+    ```
+    *Copia la ID generada (ej: `8a7b...`).*
+
+3.  **Vincular a tu dominio**:
+    ```bash
+    cloudflared tunnel route dns erpgrafico-dev erp.tudominio.com
+    ```
+
+### 10.2 Configuración del Túnel (`config.yml`)
+
+Crea un archivo de configuración para el túnel (usualmente en `~/.cloudflared/config.yml`):
+
+```yaml
+tunnel: <TU_ID_DE_TUNEL>
+credentials-file: /home/usuario/.cloudflared/<TU_ID_DE_TUNEL>.json
+
+ingress:
+  - hostname: erp.tudominio.com
+    service: http://localhost:3000
+  - service: http_status:404
+```
+
+### 10.3 Instalación como Servicio del Sistema (Persistencia al boot)
+
+Para que el túnel arranque solo al encender el PC sin abrir terminales:
+
+```bash
+# Instalar el servicio (usa el archivo config.yml creado arriba)
+sudo cloudflared service install
+
+# Iniciar y habilitar
+sudo systemctl start cloudflared
+sudo systemctl enable cloudflared
+```
+
+### 10.4 Actualización Única en Railway
+
+Como tu URL ahora es fija, solo debes configurar esto una vez en Railway:
+1.  `ALLOWED_HOSTS`: Agrega `erp.tudominio.com`.
+2.  `CSRF_TRUSTED_ORIGINS`: Agrega `https://erp.tudominio.com`.
 
 ---
 

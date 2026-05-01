@@ -95,50 +95,47 @@ services:
           cpus: '0.2'
           memory: 128M
 
-  # ── MinIO (S3 Object Storage Local) ─────────────────────
-  minio:
-    image: minio/minio:latest
-    restart: unless-stopped
-    command: server /data --console-address ":9001"
-    environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
-    volumes:
-      - minio_data:/data
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    networks:
-      - backend_net
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-
+  #minio:
+  #  image: minio/minio:latest
+  #  restart: unless-stopped
+  #  command: server /data --console-address ":9001"
+  #  environment:
+  #    - MINIO_ROOT_USER=minioadmin
+  #    - MINIO_ROOT_PASSWORD=minioadmin
+  #  volumes:
+  #    - minio_data:/data
+  #  ports:
+  #    - "9000:9000"
+  #    - "9001:9001"
+  #  networks:
+  #    - backend_net
+  #  deploy:
+  #    resources:
+  #      limits:
+  #        cpus: '0.5'
+  #        memory: 512M
   # ── MinIO Init (Creates default bucket) ─────────────────
-  minio-init:
-    image: minio/mc:latest
-    depends_on:
-      - minio
-    entrypoint: >
-      /bin/sh -c "
-      sleep 3;
-      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
-      /usr/bin/mc mb myminio/erpgrafico-media --ignore-existing;
-      /usr/bin/mc mb myminio/erpgrafico-media-public --ignore-existing;
-      /usr/bin/mc mb myminio/erpgrafico-media-private --ignore-existing;
-      /usr/bin/mc anonymous set download myminio/erpgrafico-media-public;
-      exit 0;
-      "
-    networks:
-      - backend_net
-    deploy:
-      resources:
-        limits:
-          cpus: '0.2'
-          memory: 128M
-
+  #minio-init:
+  #  image: minio/mc:latest
+  #  depends_on:
+  #    - minio
+  #  entrypoint: >
+  #    /bin/sh -c "
+  #    sleep 3;
+  #    /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+  #    /usr/bin/mc mb myminio/erpgrafico-media --ignore-existing;
+  #    /usr/bin/mc mb myminio/erpgrafico-media-public --ignore-existing;
+  #    /usr/bin/mc mb myminio/erpgrafico-media-private --ignore-existing;
+  #    /usr/bin/mc anonymous set download myminio/erpgrafico-media-public;
+  #    exit 0;
+  #    "
+  #  networks:
+  #    - backend_net
+  #  deploy:
+  #    resources:
+  #      limits:
+  #        cpus: '0.2'
+  #        memory: 128M
   # ── Celery Worker ───────────────────────────────────────
   celery-worker:
     build:
