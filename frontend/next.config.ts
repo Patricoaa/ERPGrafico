@@ -5,11 +5,12 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   images: {
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "erpgrafico-production.up.railway.app",
+      },
       {
         protocol: "http",
         hostname: "localhost",

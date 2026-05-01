@@ -1,49 +1,51 @@
-# Docker Compose — Cloud Dev Stack (Mínimo Local)
+# Docker Compose — Cloud Dev Stack (Mínimo Local con Frontend)
 # -------------------------------------------------------
 # Uso: docker compose -f docker-compose.cloud-dev.yml up -d
 #
-# Solo levanta los 3 servicios que corren en local:
-#   - redis    → broker + cache (128 MB)
-#   - nginx    → reverse proxy unificado (64 MB)
-#   - mailpit  → trampa SMTP para emails de dev (64 MB)
-#
-# Servicios en CLOUD (configurar en .env.dev):
-#   - DB       → Neon.tech (DATABASE_URL)
-#   - Storage  → Cloudflare R2 (AWS_* vars)
-#
-# Servicios NATIVOS (correr en terminal):
-#   - Backend  → python manage.py runserver 0.0.0.0:8100
-#   - Frontend → npm run dev
-#   - Celery   → solo cuando se necesite
+# Levanta los servicios locales necesarios cuando el backend está en Railway:
+#   - frontend → Next.js en modo desarrollo (puerto 3000)
+#   - mailpit  → trampa SMTP para emails de dev (puertos 1025, 8025)
 # -------------------------------------------------------
 
 services:
 
-  # ── Nginx Reverse Proxy ─────────────────────────────────
-  # Unifica frontend (:3000) y backend (:8100) bajo localhost:80
-  nginx:
-    image: nginx:1.27-alpine
+  # ── Frontend Next.js (Modo Dev) ─────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    container_name: erp-frontend-dev
     restart: unless-stopped
-    volumes:
-      - ./nginx/nginx.cloud-dev.conf:/etc/nginx/conf.d/default.conf:ro
+    tty: true
+    stdin_open: true
     ports:
-      - "80:80"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    env_file:
+      - .env.devcloud
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=https://erpgrafico-production.up.railway.app/api
+      - WATCHPACK_POLLING=true
+      - RUST_BACKTRACE=1
+    # Borramos el CONTENIDO de .next para evitar el error de "Resource busy"
+    command: sh -c "find .next -mindepth 1 -delete 2>/dev/null || true && npx next dev"
     deploy:
       resources:
         limits:
-          cpus: '0.2'
-          memory: 64M
+          cpus: '1.5'
+          memory: 2G
 
   # ── Mailpit (SMTP Trap) ─────────────────────────────────
-  # Captura todos los emails que envía Django sin enviarlos realmente.
-  # UI web en http://localhost:8025
   mailpit:
     image: axllent/mailpit:latest
+    container_name: erp-mailpit
     restart: unless-stopped
     ports:
-      - "1025:1025" # SMTP — Django apunta aquí
+      - "1025:1025" # SMTP
       - "8025:8025" # Web UI
     deploy:
       resources:
@@ -52,4 +54,4 @@ services:
           memory: 64M
 
 volumes:
-  redis_data:
+  next_cache:

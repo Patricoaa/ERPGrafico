@@ -77,44 +77,80 @@ cd ERPGrafico
 ```
 
 ### 4.2 Configurar Variables (.env.dev)
-Crea/Edita el archivo `.env.dev`. Mezclamos **Servicios Locales** con **Cloudflare R2**:
 
-| Variable | Valor para Home Server |
-| :--- | :--- |
-| `DATABASE_URL` | `postgresql://postgres:postgres@db:5432/erpgrafico` |
-| `REDIS_URL` | `redis://redis:6379/0` |
-| `AWS_S3_ENDPOINT_URL`| `https://TU_ID.r2.cloudflarestorage.com` (Cloudflare R2) |
-| `AWS_ACCESS_KEY_ID` | Tu Key de R2 |
-| `AWS_SECRET_ACCESS_KEY`| Tu Secret de R2 |
-| `NEXT_PUBLIC_API_URL`| `http://localhost/api` |
+Debes crear este archivo en la raíz del proyecto (`/mnt/data/ERPGrafico/.env.dev`). El contenido mezcla el uso de la base de datos local (Docker) con el almacenamiento en la nube (Cloudflare R2).
+
+#### Paso a paso para crear el archivo:
+1. Ejecuta: `nano .env.dev`
+2. Pega el siguiente contenido (ajustando tus datos de Cloudflare):
+
+```env
+# --- Configuración Básica ---
+DJANGO_DEBUG=True
+DJANGO_SECRET_KEY=cambiame_por_algo_seguro_o_usa_el_comando_abajo
+ALLOWED_HOSTS=localhost,127.0.0.1,192.168.1.50 # Pon aquí la IP de tu PC vieja
+
+# --- Base de Datos (USANDO DOCKER LOCAL) ---
+DATABASE_URL=postgresql://postgres:postgres@db:5432/erpgrafico
+
+# --- Cache y Broker (USANDO DOCKER LOCAL) ---
+REDIS_URL=redis://redis:6379/0
+
+# --- Storage (USANDO CLOUDFLARE R2) ---
+AWS_ACCESS_KEY_ID=tu_access_key_id
+AWS_SECRET_ACCESS_KEY=tu_secret_access_key
+AWS_S3_ENDPOINT_URL=https://TU_ACCOUNT_ID.r2.cloudflarestorage.com
+AWS_S3_CUSTOM_DOMAIN=https://pub-xxxxxx.r2.dev
+AWS_STORAGE_BUCKET_NAME=erpgrafico-media-public
+
+# --- Frontend ---
+# Esta URL es la que usará el navegador en tu laptop
+NEXT_PUBLIC_API_URL=http://localhost/api
+```
+
+3. **Tip**: Para generar una `SECRET_KEY` rápida, corre esto en la terminal:
+   `python3 -c 'import secrets; print(secrets.token_hex(50))'`
 
 ---
 
-## 🔌 Fase 5: Conexión con Antigravity
+## Fase 5: Conexión y Sincronización (SFTP Mirror)
 
-1. En tu laptop, abre Antigravity.
-2. Presiona `F1` -> **Remote-SSH: Connect to Host...** -> `pato@192.168.1.50`.
-3. Una vez conectado, ve a **File -> Open Folder** y elige `/mnt/data/ERPGrafico`.
-4. **Port Forwarding**: Antigravity detectará los puertos. Asegúrate de que el puerto **3000** y **80** estén mapeados.
+**¡IMPORTANTE!**: Si tu Home Server tiene hardware antiguo (ej. AMD A4, Intel pre-2012), el método "Remote-SSH" puede fallar. Usaremos el método **Mirroring**, que es más estable y rápido.
+
+### 5.1 En tu Laptop (Antigravity)
+1. Instala la extensión **"SFTP"** (Natizyskunk).
+2. Abre la carpeta del proyecto LOCALMENTE en tu laptop.
+3. Presiona `F1` o `Ctrl+Shift+P` -> **SFTP: Config**.
+4. Pega la configuración apuntando a la IP de tu servidor (ej. `192.168.1.25`) y el `remotePath: "/mnt/data/ERPGrafico"`.
+5. Asegúrate de poner `"uploadOnSave": true`.
+
+### 5.2 Flujo de Trabajo
+1. **Programas en Laptop**: Antigravity usa tu CPU moderno para la IA.
+2. **Guardas**: El archivo se sube automáticamente al servidor.
+3. **Docker reacciona**: Como los archivos están vinculados, Django/Next.js recargan solos.
+4. **Verificas**: Abre en tu navegador `http://192.168.1.94`.
 
 ---
 
 ## ⚡ Fase 6: Arranque del Stack
 
-Desde la terminal integrada de Antigravity (que ya está corriendo en el servidor):
+- **Almacenamiento**: Híbrido (Postgres Local + Cloudflare R2 para Media).
+- **IDE**: Antigravity (VS Code Fork) corriendo localmente con sincronización **SFTP Mirror**.
+- **Sincronización**: Latencia de subida < 300ms, disparando Hot Reload en el servidor.
 
-```bash
-# Levanta la base de datos, redis y nginx (MinIO no es necesario si usas R2)
-docker compose up -d db redis nginx
+## ✅ Hitos Alcanzados
+1. **Configuración de Hardware**: Activación de virtualización (VT-x/AMD-V) en BIOS para soporte KVM.
+2. **Setup de Proxmox**: Creación de VM con balanceo de carga (2 vCPUs) y QEMU Guest Agent.
+3. **Persistencia**: Implementación de un segundo disco duro virtual (`/dev/sdb`) montado en `/mnt/data` para aislar el código y la DB del sistema operativo.
+4. **Networking**: Configuración de acceso directo vía IP local (Evitando fallos de KVM Server Instruction Set).
+5. **Base de Datos**: Migración exitosa de más de 100 tablas y creación de superusuario administrativo.
+6. **Sincronización**: Configuración de extensión SFTP para desarrollo distribuido sin crasheos de hardware.
 
-# Levanta el Backend y Frontend en modo desarrollo
-docker compose up -d backend frontend celery-worker
-```
-
-**Verificación**:
-Abre en el navegador de tu laptop: `http://localhost`. Deberías ver el ERPGrafico cargando al instante.
-
----
+## 🚀 Pruebas de Validación
+- [x] **Conexión SSHFS/SFTP**: Exitosa hacia `192.168.1.25`.
+- [x] **Docker Stack**: Levantado correctamente con `docker compose up -d`.
+- [x] **Frontend Access**: Disponible en `http://192.168.1.25` vía proxy Nginx.
+- [x] **Hot Reload**: Validado al cambiar código en laptop y ver reflejo inmediato en server.
 
 ## 🆘 Troubleshooting Comunes
 
