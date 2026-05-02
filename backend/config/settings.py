@@ -251,6 +251,12 @@ def fix_redis_url(url, db_index):
     # Remove trailing slash
     url = url.rstrip('/')
     
+    # UPSTASH / CLOUD REDIS FIX: Many cloud providers only support DB 0.
+    # If the URL contains upstash.io or we are in a cloud-dev environment, 
+    # we force DB 0 regardless of what was requested.
+    if 'upstash.io' in url or os.environ.get('FORCE_REDIS_DB0', '0') == '1':
+        db_index = 0
+    
     # Inject DB index if not present (simple check for /0 to /15)
     import re
     if not re.search(r'/\d+$', url.split('?')[0]):
@@ -268,7 +274,7 @@ def fix_redis_url(url, db_index):
         
     return url
 
-# Django Cache Framework — backed by Redis DB 2
+# Django Cache Framework — backed by Redis DB 2 (or 0 in cloud)
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
