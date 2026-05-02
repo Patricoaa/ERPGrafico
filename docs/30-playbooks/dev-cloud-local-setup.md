@@ -98,7 +98,7 @@ Si quieres apagar el contenedor de Redis en tu PC:
 4. Copia la URL que empieza con `rediss://`
 5. En tu `.env.dev`, reemplaza `REDIS_URL`:
    ```env
-   REDIS_URL=rediss://default:tu_password@tu_endpoint.upstash.io:6379
+   REDIS_URL=rediss://default:tu_password@tu_endpoint.upstash.io:6379?ssl_cert_reqs=none
    ```
 6. **Ya puedes apagar el contenedor local**: `docker compose stop redis`
 

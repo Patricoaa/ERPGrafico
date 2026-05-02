@@ -238,13 +238,41 @@ DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@erpgrafico.lo
 #   DB 0 — Celery Broker
 #   DB 1 — Celery Results
 #   DB 2 — Django Cache (general cache, singletons, throttle counters)
-REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379')
+REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379').rstrip('/')
+
+def fix_redis_url(url, db_index):
+    """
+    Appends DB index and handles Celery 5.1+ requirement for rediss:// URLs
+    to have ssl_cert_reqs=none (or similar) when not verifying certs.
+    """
+    if not url:
+        return None
+        
+    # Remove trailing slash
+    url = url.rstrip('/')
+    
+    # Inject DB index if not present (simple check for /0 to /15)
+    import re
+    if not re.search(r'/\d+$', url.split('?')[0]):
+        # No DB index at the end of the path part
+        if '?' in url:
+            parts = url.split('?', 1)
+            url = f"{parts[0]}/{db_index}?{parts[1]}"
+        else:
+            url = f"{url}/{db_index}"
+            
+    # Inject ssl_cert_reqs=none if rediss:// and param missing
+    if url.startswith('rediss://') and 'ssl_cert_reqs' not in url:
+        sep = '&' if '?' in url else '?'
+        url = f"{url}{sep}ssl_cert_reqs=none"
+        
+    return url
 
 # Django Cache Framework — backed by Redis DB 2
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': f'{REDIS_URL}/0',
+        'LOCATION': fix_redis_url(REDIS_URL, 2),
         'KEY_PREFIX': 'erp',
         'TIMEOUT': 300,  # 5 min default TTL
     }
@@ -252,8 +280,8 @@ CACHES = {
 
 
 # Celery Configuration
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', f'{REDIS_URL}/0')
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', f'{REDIS_URL}/0')
+CELERY_BROKER_URL = fix_redis_url(os.environ.get('CELERY_BROKER_URL', REDIS_URL), 0)
+CELERY_RESULT_BACKEND = fix_redis_url(os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL), 1)
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'

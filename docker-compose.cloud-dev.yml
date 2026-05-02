@@ -1,10 +1,6 @@
 # Docker Compose — Cloud Dev Stack (Mínimo Local con Frontend)
 # -------------------------------------------------------
 # Uso: docker compose -f docker-compose.cloud-dev.yml up -d
-#
-# Levanta los servicios locales necesarios cuando el backend está en Railway:
-#   - frontend → Next.js en modo desarrollo (puerto 3000)
-#   - mailpit  → trampa SMTP para emails de dev (puertos 1025, 8025)
 # -------------------------------------------------------
 
 services:
@@ -30,14 +26,15 @@ services:
       - NODE_ENV=development
       - NEXT_PUBLIC_API_URL=https://erpgrafico-production.up.railway.app/api
       - WATCHPACK_POLLING=true
-      - RUST_BACKTRACE=1
-    # Borramos el CONTENIDO de .next para evitar el error de "Resource busy"
-    command: sh -c "find .next -mindepth 1 -delete 2>/dev/null || true && npx next dev"
+      # Limitamos la memoria que Node puede pedir antes de limpiar
+      - NODE_OPTIONS=--max-old-space-size=2560
+    command: sh -c "npx next dev"
     deploy:
       resources:
         limits:
-          cpus: '1.5'
-          memory: 2G
+          cpus: '2.0'
+          # Subimos a 3GB para dar margen al sistema operativo del contenedor
+          memory: 3G
 
   # ── Mailpit (SMTP Trap) ─────────────────────────────────
   mailpit:
