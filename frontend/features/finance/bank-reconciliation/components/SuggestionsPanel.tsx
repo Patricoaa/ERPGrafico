@@ -1,6 +1,6 @@
 "use client"
 
-import { Sparkles, CheckCircle2, AlertCircle, Info, Calculator, ArrowRight, X } from "lucide-react"
+import { Sparkles, CheckCircle2, Info, Calculator, ArrowRight, X, Loader2 } from "lucide-react"
 import { cn, formatCurrency } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -66,33 +66,34 @@ export function SuggestionsPanel({
 }: SuggestionsPanelProps) {
     
     const hasSuggestions = suggestions.length > 0 || lineSuggestions.length > 0
-    const title = selectedLine ? "Sugerencias para el Movimiento" : "Movimientos sugeridos"
+    const title = selectedLine ? "Sugerencias" : "Líneas sugeridas"
+    const count = suggestions.length || lineSuggestions.length
 
     return (
         <aside
             className={cn(
-                "fixed top-20 right-4 h-[calc(100vh-6rem)] w-[360px] bg-sidebar dark border border-white/5 flex flex-col will-change-transform overflow-hidden z-40 shadow-2xl rounded-lg transition-all duration-500 ease-[var(--ease-premium)]",
+                "fixed top-20 right-4 h-[calc(100vh-6rem)] w-[340px] bg-card border shadow-floating flex flex-col will-change-transform overflow-hidden z-40 rounded-lg transition-all duration-500 ease-[var(--ease-premium)]",
                 isOpen ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0 pointer-events-none"
             )}
         >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 bg-sidebar/80 backdrop-blur-md">
-                <div className="flex items-center gap-3">
-                    <Sparkles className="h-5 w-5 text-warning animate-pulse" />
+            <div className="flex items-center justify-between px-4 py-3 border-b">
+                <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-warning" />
                     <div>
-                        <h2 className="text-sm font-black uppercase tracking-widest text-white">{title}</h2>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
-                            {hasSuggestions ? `${suggestions.length || lineSuggestions.length} candidatos encontrados` : "Sin sugerencias automáticas"}
+                        <h2 className="text-xs font-black uppercase tracking-wider text-foreground">{title}</h2>
+                        <p className="text-[10px] text-muted-foreground">
+                            {hasSuggestions ? `${count} candidato${count !== 1 ? 's' : ''}` : "Sin sugerencias"}
                         </p>
                     </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 hover:bg-white/10 text-white/40">
-                    <X className="h-4 w-4" />
+                <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7 text-muted-foreground">
+                    <X className="h-3.5 w-3.5" />
                 </Button>
             </div>
 
-            <ScrollArea className="flex-1 p-4">
-                <div className="space-y-4">
+            <ScrollArea className="flex-1 p-3">
+                <div className="space-y-2">
                     {selectedLine && suggestions.map((s, idx) => (
                         <SuggestionCard 
                             key={idx}
@@ -113,10 +114,10 @@ export function SuggestionsPanel({
 
                     {!hasSuggestions && (
                         <div className="flex flex-col items-center justify-center py-12 text-center">
-                            <div className="h-12 w-12 rounded-full bg-white/5 flex items-center justify-center mb-4">
-                                <Search className="h-6 w-6 text-white/20" />
+                            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center mb-3">
+                                <Info className="h-5 w-5 text-muted-foreground" />
                             </div>
-                            <p className="text-xs font-bold text-white/40 uppercase tracking-widest">No hay sugerencias automáticas para esta selección</p>
+                            <p className="text-xs text-muted-foreground">No hay sugerencias para esta selección</p>
                         </div>
                     )}
                 </div>
@@ -125,18 +126,14 @@ export function SuggestionsPanel({
     )
 }
 
-function Search({ className }: { className?: string }) {
-    return <AlertCircle className={className} />
-}
-
 function ScoreBadge({ score }: { score: number }) {
-    const colorClass = score >= 80 ? "bg-success/20 text-success border-success/30" : 
-                       score >= 50 ? "bg-warning/20 text-warning border-warning/30" : 
-                       "bg-white/5 text-white/40 border-white/10"
+    const colorClass = score >= 80 ? "bg-success/10 text-success border-success/20" : 
+                       score >= 50 ? "bg-warning/10 text-warning border-warning/20" : 
+                       "bg-muted text-muted-foreground border-border"
     
     return (
-        <Badge variant="outline" className={cn("text-[10px] font-black h-5 px-2 tracking-tighter", colorClass)}>
-            {score}% MATCH
+        <Badge variant="outline" className={cn("text-[10px] font-bold h-5 px-1.5 tabular-nums", colorClass)}>
+            {score}%
         </Badge>
     )
 }
@@ -146,66 +143,62 @@ function SuggestionCard({ suggestion, onMatch, isMatching }: { suggestion: Payme
     const diff = parseFloat(suggestion.difference)
     
     return (
-        <Card className="bg-white/5 border-white/5 p-4 hover:border-white/10 transition-colors group relative overflow-hidden">
-            {/* Background score indicator */}
-            <div className="absolute top-0 right-0 h-1 bg-success/40 transition-all" style={{ width: `${suggestion.score}%` }} />
+        <Card className="p-3 hover:border-primary/30 transition-colors group relative overflow-hidden">
+            {/* Score bar */}
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-muted">
+                <div className="h-full bg-success/60 transition-all" style={{ width: `${suggestion.score}%` }} />
+            </div>
             
-            <div className="flex justify-between items-start mb-3">
-                <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">
-                        {suggestion.is_batch ? 'Lote Terminal' : 'Pago / Cobro'}
+            <div className="flex justify-between items-start mb-2 pt-1">
+                <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">
+                        {suggestion.is_batch ? 'Lote Terminal' : 'Pago'}
                     </span>
-                    <span className="text-xs font-bold text-white truncate max-w-[180px]">
-                        {suggestion.is_batch ? suggestion.batch_data?.supplier_name || 'Liquidación Terminal' : suggestion.payment_data?.contact_name}
+                    <span className="text-xs font-bold text-foreground truncate max-w-[160px]">
+                        {suggestion.is_batch ? suggestion.batch_data?.supplier_name || 'Terminal' : suggestion.payment_data?.contact_name}
                     </span>
-                    <span className="text-[10px] font-mono text-white/40 mt-1 uppercase">
-                        ID: {data.display_id} • {suggestion.is_batch ? suggestion.batch_data?.sales_date : suggestion.payment_data?.date}
+                    <span className="text-[10px] font-mono text-muted-foreground">
+                        {data.display_id}
                     </span>
                 </div>
                 <ScoreBadge score={suggestion.score} />
             </div>
 
-            <div className="flex items-center justify-between py-2 border-y border-white/5 mb-3">
-                <div className="text-right">
-                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Monto</p>
-                    <p className="text-xs font-black text-white">{formatCurrency(suggestion.is_batch ? suggestion.batch_data!.net_amount : suggestion.payment_data!.amount)}</p>
+            <div className="flex items-center justify-between py-1.5 border-y border-border/50 mb-2 text-xs">
+                <div>
+                    <span className="font-mono font-bold">{formatCurrency(suggestion.is_batch ? suggestion.batch_data!.net_amount : suggestion.payment_data!.amount)}</span>
                 </div>
-                <ArrowRight className="h-3 w-3 text-white/20" />
-                <div className="text-right">
-                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Diferencia</p>
-                    <p className={cn("text-xs font-black", diff === 0 ? "text-success" : "text-warning")}>
-                        {diff === 0 ? "EXACTA" : formatCurrency(diff)}
-                    </p>
+                <ArrowRight className="h-3 w-3 text-muted-foreground/40" />
+                <div>
+                    <span className={cn("font-mono font-bold", diff === 0 ? "text-success" : "text-warning")}>
+                        {diff === 0 ? "Exacto" : formatCurrency(diff)}
+                    </span>
                 </div>
             </div>
 
-            <div className="space-y-2 mb-4">
-                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Razones de coincidencia</p>
-                <div className="flex flex-wrap gap-1">
-                    {suggestion.reasons.map((r, i) => (
-                        <TooltipProvider key={i}>
-                            <Tooltip>
-                                <TooltipTrigger>
-                                    <Badge variant="secondary" className="bg-white/5 hover:bg-white/10 text-xs font-bold text-white/60 uppercase h-5">
-                                        {getReasonIcon(r)}
-                                    </Badge>
-                                </TooltipTrigger>
-                                <TooltipContent className="bg-popover border-border/10 text-[10px] font-bold uppercase tracking-widest">
-                                    {r}
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    ))}
-                </div>
+            <div className="flex flex-wrap gap-1 mb-2">
+                {suggestion.reasons.map((r, i) => (
+                    <TooltipProvider key={i}>
+                        <Tooltip>
+                            <TooltipTrigger>
+                                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 font-medium">
+                                    {getReasonIcon(r)}
+                                </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent className="text-[10px]">{r}</TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                ))}
             </div>
 
             <Button 
                 onClick={onMatch} 
                 disabled={isMatching}
-                className="w-full h-8 bg-success/10 hover:bg-success text-success hover:text-white border border-success/20 text-[10px] font-black uppercase tracking-widest transition-all"
+                size="sm"
+                className="w-full h-7 bg-success hover:bg-success/90 text-success-foreground text-[10px] font-bold uppercase"
             >
-                {isMatching ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <CheckCircle2 className="h-3 w-3 mr-2" />}
-                Conciliar Ahora
+                {isMatching ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <CheckCircle2 className="h-3 w-3 mr-1" />}
+                Conciliar
             </Button>
         </Card>
     )
@@ -216,50 +209,42 @@ function LineSuggestionCard({ suggestion, onMatch, isMatching }: { suggestion: L
     const diff = parseFloat(suggestion.difference)
     
     return (
-        <Card className="bg-white/5 border-white/5 p-4 hover:border-white/10 transition-colors group relative overflow-hidden">
-            <div className="absolute top-0 right-0 h-1 bg-info/40 transition-all" style={{ width: `${suggestion.score}%` }} />
+        <Card className="p-3 hover:border-info/30 transition-colors group relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-muted">
+                <div className="h-full bg-info/60 transition-all" style={{ width: `${suggestion.score}%` }} />
+            </div>
             
-            <div className="flex justify-between items-start mb-3">
-                <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-0.5">Movimiento Bancario</span>
-                    <span className="text-xs font-bold text-white truncate max-w-[180px]">{data.description}</span>
-                    <span className="text-[10px] font-mono text-white/40 mt-1 uppercase">Ref: {data.reference} • {data.transaction_date}</span>
+            <div className="flex justify-between items-start mb-2 pt-1">
+                <div className="flex flex-col min-w-0">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Mov. Bancario</span>
+                    <span className="text-xs font-bold text-foreground truncate max-w-[160px]">{data.description}</span>
+                    <span className="text-[10px] font-mono text-muted-foreground">Ref: {data.reference}</span>
                 </div>
                 <ScoreBadge score={suggestion.score} />
             </div>
 
-            <div className="flex items-center justify-between py-2 border-y border-white/5 mb-3">
-                <div className="text-right">
-                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Monto</p>
-                    <p className="text-xs font-black text-white">{formatCurrency(parseFloat(data.credit) || parseFloat(data.debit))}</p>
-                </div>
-                <ArrowRight className="h-3 w-3 text-white/20" />
-                <div className="text-right">
-                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Diferencia</p>
-                    <p className={cn("text-xs font-black", diff === 0 ? "text-success" : "text-warning")}>
-                        {diff === 0 ? "EXACTA" : formatCurrency(diff)}
-                    </p>
-                </div>
+            <div className="flex items-center justify-between py-1.5 border-y border-border/50 mb-2 text-xs">
+                <span className="font-mono font-bold">{formatCurrency(parseFloat(data.credit) || parseFloat(data.debit))}</span>
+                <ArrowRight className="h-3 w-3 text-muted-foreground/40" />
+                <span className={cn("font-mono font-bold", diff === 0 ? "text-success" : "text-warning")}>
+                    {diff === 0 ? "Exacto" : formatCurrency(diff)}
+                </span>
             </div>
 
-            <div className="space-y-2 mb-4">
-                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Razones</p>
-                <div className="flex flex-wrap gap-1">
-                    {suggestion.reasons.map((r, i) => (
-                        <Badge key={i} variant="secondary" className="bg-white/5 text-xs font-bold text-white/60 uppercase h-5">
-                            {r}
-                        </Badge>
-                    ))}
-                </div>
+            <div className="flex flex-wrap gap-1 mb-2">
+                {suggestion.reasons.map((r, i) => (
+                    <Badge key={i} variant="secondary" className="text-[10px] h-4 px-1.5 font-medium">{r}</Badge>
+                ))}
             </div>
 
             <Button 
                 onClick={onMatch} 
                 disabled={isMatching}
-                className="w-full h-8 bg-info/10 hover:bg-info text-info hover:text-white border border-info/20 text-[10px] font-black uppercase tracking-widest transition-all"
+                size="sm"
+                className="w-full h-7 bg-info hover:bg-info/90 text-info-foreground text-[10px] font-bold uppercase"
             >
-                {isMatching ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <CheckCircle2 className="h-3 w-3 mr-2" />}
-                Asociar Movimiento
+                {isMatching ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <CheckCircle2 className="h-3 w-3 mr-1" />}
+                Asociar
             </Button>
         </Card>
     )
@@ -267,12 +252,8 @@ function LineSuggestionCard({ suggestion, onMatch, isMatching }: { suggestion: L
 
 function getReasonIcon(reason: string) {
     const lowers = reason.toLowerCase()
-    if (lowers.includes('monto')) return <><Calculator className="h-2.5 w-2.5 mr-1" /> Monto</>
-    if (lowers.includes('fecha')) return <><Info className="h-2.5 w-2.5 mr-1" /> Fecha</>
-    if (lowers.includes('id') || lowers.includes('referencia')) return <><Info className="h-2.5 w-2.5 mr-1" /> ID/Ref</>
+    if (lowers.includes('monto')) return <><Calculator className="h-2.5 w-2.5 mr-1 inline" /> Monto</>
+    if (lowers.includes('fecha')) return <><Info className="h-2.5 w-2.5 mr-1 inline" /> Fecha</>
+    if (lowers.includes('id') || lowers.includes('referencia')) return <><Info className="h-2.5 w-2.5 mr-1 inline" /> ID/Ref</>
     return reason
-}
-
-function Loader2({ className }: { className?: string }) {
-    return <AlertCircle className={cn("animate-spin", className)} />
 }

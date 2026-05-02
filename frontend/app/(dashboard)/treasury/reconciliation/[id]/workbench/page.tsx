@@ -4,13 +4,12 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Loader2, CheckCircle2, Info, GraduationCap } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowLeft, Loader2, CheckCircle2, Info } from "lucide-react"
 import api from "@/lib/api"
 import { ReconciliationPanel } from "@/features/treasury"
 import { DataCell } from "@/components/ui/data-table-cells"
-import { Progress } from "@/components/ui/progress"
+
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
@@ -106,74 +105,45 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
     const canConfirm = statement.reconciliation_progress === 100
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6 bg-muted/20 min-h-screen">
+        <div className="flex-1 space-y-4 p-6 pt-4 bg-muted/20 min-h-screen">
             <ReconciliationBreadcrumbs statementId={statementId} statementDisplayId={statement.display_id} isWorkbench />
-            {/* Header Area */}
-            <div className="flex flex-col gap-6">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="rounded-sm shadow-sm"
-                            onClick={() => router.push(`/treasury/reconciliation/${statementId}`)}
-                        >
-                            <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h2 className="text-2xl font-extrabold tracking-tighter uppercase text-foreground/80">
-                                    Mesa de Conciliación
-                                </h2>
-                                <DataCell.Badge variant="secondary" className="bg-primary/10 text-primary border-none font-mono font-black px-3">
-                                    {statement.display_id}
-                                </DataCell.Badge>
-                            </div>
-                            <p className="text-muted-foreground text-sm">{statement.treasury_account_name}</p>
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        className="rounded-sm shadow-sm h-8 w-8"
+                        onClick={() => router.push(`/treasury/reconciliation/${statementId}`)}
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-xl font-extrabold tracking-tighter uppercase text-foreground/80">
+                                Conciliación
+                            </h2>
+                            <DataCell.Badge variant="secondary" className="bg-primary/10 text-primary border-none font-mono font-black px-2 text-xs">
+                                {statement.display_id}
+                            </DataCell.Badge>
+                            <span className="text-xs text-muted-foreground font-medium hidden md:inline">— {statement.treasury_account_name}</span>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <div className="hidden md:flex items-center gap-3 mr-4 text-right">
-                            <div className="space-y-1">
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground opacity-60">Sincronización</p>
-                                <p className="text-xs font-black text-foreground/70">{statement.reconciled_lines} de {statement.total_lines} líneas procesadas</p>
-                            </div>
-                        </div>
-                        {canConfirm && (
-                            <Button
-                                onClick={handleConfirmStatement}
-                                disabled={confirming}
-                                className="bg-success hover:bg-success/90 shadow-sm px-6 font-black"
-                            >
-                                {confirming ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Finalizando...
-                                    </>
-                                ) : (
-                                    <>
-                                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                                        Confirmar Cartola
-                                    </>
-                                )}
-                            </Button>
-                        )}
-                        <Button variant="ghost" size="icon" className="text-muted-foreground">
-                            <GraduationCap className="h-5 w-5" />
-                        </Button>
                     </div>
                 </div>
-
-                {/* Global Progress Header Tooltip-like Area */}
-                <div className="bg-card p-5 rounded-lg border shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">Flujo de conciliación en tiempo real</span>
-                        </div>
-                        <span className="text-sm font-black text-primary font-mono">{statement.reconciliation_progress}%</span>
-                    </div>
-                    <Progress value={statement.reconciliation_progress} className="h-2 bg-muted overflow-hidden" />
+                <div className="flex items-center gap-2">
+                    {canConfirm && (
+                        <Button
+                            onClick={handleConfirmStatement}
+                            disabled={confirming}
+                            className="bg-success hover:bg-success/90 shadow-sm px-5 font-bold text-sm"
+                        >
+                            {confirming ? (
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Finalizando...</>
+                            ) : (
+                                <><CheckCircle2 className="mr-2 h-4 w-4" />Confirmar Cartola</>
+                            )}
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -184,16 +154,6 @@ export default function ReconciliationWorkbenchPage({ params }: { params: Promis
                 onComplete={handleComplete}
             />
 
-            {/* Context Help Footer */}
-            {!canConfirm && (
-                <div className="flex items-center justify-center p-8 opacity-40 hover:opacity-100 transition-opacity">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-white px-4 py-2 rounded-sm border shadow-sm">
-                        <Info className="h-3.5 w-3.5" />
-                        Para confirmar la cartola, debes reconciliar o excluir el 100% de las transacciones.
-                    </div>
-                </div>
-            )}
-            
             <ActionConfirmModal
                 open={confirmAction.isOpen}
                 onOpenChange={(open) => { if (!open) confirmAction.cancel() }}
