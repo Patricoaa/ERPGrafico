@@ -30,9 +30,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" className="dark" style={{ colorScheme: 'dark' }}>
       <body
-        className={`${syne.variable} ${onest.variable} font-sans antialiased`}
+        className={`${syne.variable} ${onest.variable} font-sans antialiased bg-background text-foreground`}
       >
         <a href="#main-content" className="skip-to-content">
           Ir al contenido principal

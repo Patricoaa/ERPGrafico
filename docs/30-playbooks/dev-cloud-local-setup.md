@@ -224,6 +224,25 @@ Frontend disponible en:
 > [!NOTE]
 > Si prefieres correrlo nativo (sin Docker), simplemente detén el contenedor (`docker compose stop frontend`) y corre `npm run dev` en la carpeta `frontend`.
 
+#### **Alternativa Cloud: GitHub Codespaces (0 RAM local - Hot Reload Nativo)**
+Si no quieres consumir recursos de tu PC compilando Next.js, puedes mudar el entorno de desarrollo del frontend a la nube con Codespaces. 
+
+**Flujo paso a paso:**
+1. Ve a tu repositorio en GitHub.
+2. Haz clic en el botón verde **Code** → pestaña **Codespaces** → **Create codespace**.
+3. **Crucial para usar Antigravity:** Abre tu **VS Code local** en tu computadora e instala la extensión **"GitHub Codespaces"**.
+4. Haz clic en el ícono verde `><` en la esquina inferior izquierda de tu VS Code local y selecciona **"Connect to Codespace"**. Elige el que acabas de crear.
+5. Al conectarte de esta forma, la interfaz de tu editor está en tu PC, pero **los archivos, la terminal y Antigravity se ejecutan en la nube**.
+6. Abre la terminal integrada en VS Code (que ahora está conectada al Codespace) y levanta el entorno:
+   ```bash
+   cd frontend
+   npm install
+   # Asegúrate de crear tu archivo .env local apuntando al backend correcto (ej: el de Railway)
+   npm run dev
+   ```
+7. Codespaces detectará automáticamente que el puerto `3000` está en uso y creará un túnel seguro. Te dará un botón para abrir la previsualización en tu navegador.
+8. Como Antigravity está editando los archivos directamente en el disco duro del Codespace (donde corre el servidor), **el Hot Reload funcionará al instante al guardar**, igual que si estuviera en tu PC.
+
 ---
 
 ## Paso 8 — Celery (solo cuando se necesite)
@@ -324,6 +343,12 @@ sudo systemctl enable cloudflared
 Como tu URL ahora es fija, solo debes configurar esto una vez en Railway:
 1.  `ALLOWED_HOSTS`: Agrega `erp.tudominio.com`.
 2.  `CSRF_TRUSTED_ORIGINS`: Agrega `https://erp.tudominio.com`.
+
+
+
+### 10.5 Levantar tunnel local
+
+cloudflared tunnel run erp-pato
 
 ---
 

@@ -120,36 +120,48 @@
 }
 
 .dark {
-  --background-raw: 0.10 0.02 240;
-  --foreground-raw: 0.95 0.02 240;
-  --card-raw: 0.14 0.02 240;
-  --card-foreground-raw: 0.95 0.02 240;
-  --popover-raw: 0.14 0.02 240;
-  --popover-foreground-raw: 0.95 0.02 240;
+  /* 1. DOMINANT SURFACES (Modern SaaS: Deep, Desaturated Grays) */
+  --background-raw: 0.13 0.008 240;     /* Fondo base del lienzo (casi negro industrial) */
+  --foreground-raw: 0.98 0.0 0;         /* Texto principal brillante y nítido */
+  
+  --card-raw: 0.17 0.008 240;           /* Fondo del card principal (más elevado que el background) */
+  --card-foreground-raw: 0.98 0.0 0;
+  
+  --popover-raw: 0.19 0.008 240;        /* Elementos más elevados (Dropdowns, modales) */
+  --popover-foreground-raw: 0.98 0.0 0;
 
-  --primary-raw: 0.65 0.24 301;
-  --primary-foreground-raw: 0.95 0.02 301;
+  /* 2. SIDEBAR (Específico para dark mode para que se funda bien) */
+  --sidebar-raw: 0.13 0.008 240;        /* Se funde con el background para un look "seamless" */
+  --sidebar-foreground-raw: 0.85 0.0 0; /* Texto ligeramente más apagado para no distraer */
 
-  --secondary-raw: 0.25 0.03 240;
-  --secondary-foreground-raw: 0.95 0.02 240;
+  /* 3. NEUTRALS & UI ELEMENTS (Bordes tenues y fondos secundarios) */
+  --muted-raw: 0.22 0.008 240;          /* Fondos tenues (skeletons, inputs inactivos) */
+  --muted-foreground-raw: 0.65 0.01 240;/* Texto secundario (descripciones, placeholders) */
 
-  --muted-raw: 0.18 0.02 240;
-  --muted-foreground-raw: 0.60 0.02 240;
+  --secondary-raw: 0.26 0.008 240;      /* Botones secundarios */
+  --secondary-foreground-raw: 0.98 0.0 0;
 
-  --accent-raw: 0.75 0.18 55;
-  --accent-foreground-raw: 0.10 0.02 55;
+  /* Bordes ultra-finos y sutiles (Típico en Vercel/Railway) */
+  --border-raw: 0.95 0.0 0;
+  --border: oklch(var(--border-raw) / 0.08); 
+  --input-raw: 0.95 0.0 0;
+  --input: oklch(var(--input-raw) / 0.08);
 
+  /* 4. BRAND ACCENTS (Minimalist SaaS: High Contrast White) */
+  --primary-raw: 0.95 0.0 0;            /* Blanco puro/gris perlado para máxima limpieza */
+  --primary-foreground-raw: 0.12 0.008 240; /* Texto oscuro inverso para botones principales */
+  
+  --ring-raw: 0.95 0.0 0;
+  --ring: oklch(var(--ring-raw) / 0.20); /* Focus rings sutiles en blanco/plata */
+
+  /* ACCENT: Hover states (Tablas, Dropdowns, etc) */
+  --accent-raw: 0.20 0.008 240;         /* Gris elevado sutil, reemplaza al naranja */
+  --accent-foreground-raw: 0.98 0.0 0;  /* Texto blanco en hover */
+
+  /* 5. STATES (Semántica visual) */
   --destructive-raw: 0.45 0.18 25;
   --destructive-foreground-raw: 0.95 0.02 25;
-
-  --border-raw: 1 0 0;
-  --border: oklch(var(--border-raw) / 0.15);
-  --input-raw: 1 0 0;
-  --input: oklch(var(--input-raw) / 0.1);
-
-  --ring-raw: 0.65 0.24 301;
-  --ring: oklch(var(--ring-raw) / 0.5);
-
+  
   --success-raw: 0.65 0.18 155;
   --success-foreground-raw: 0.10 0.02 155;
   --warning-raw: 0.75 0.20 85;
@@ -162,7 +174,7 @@
 
   /* GRAPHIC INDUSTRY TOKENS (Dark Mode) */
   --mark-color: oklch(0.98 0.01 240 / 0.25);
-  --grid-line-color: oklch(0.98 0.01 240 / 0.12);
+  --grid-line-color: oklch(0.98 0.01 240 / 0.04);
   --separator-industry: 2px dashed oklch(0.98 0.01 240 / 0.25);
 }
 

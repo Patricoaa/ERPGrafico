@@ -87,6 +87,10 @@ interface DataTableProps<TData, TValue> {
         context?: EmptyStateContext
     }
     renderRow?: (row: Row<TData>, children: React.ReactNode) => React.ReactNode
+    manualPagination?: boolean
+    pageCount?: number
+    pagination?: { pageIndex: number; pageSize: number }
+    onPaginationChange?: (updater: any) => void
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -135,6 +139,10 @@ export function DataTable<TData, TValue>({
     emptyState: customEmptyState,
     initialColumnFilters = EMPTY_ARRAY,
     renderRow,
+    manualPagination,
+    pageCount,
+    pagination,
+    onPaginationChange,
 }: DataTableProps<TData, TValue>) {
     // Uncontrolled mode: let TanStack Table manage sorting/filters/visibility/
     // expansion/selection state internally. Previous controlled-state wiring
@@ -162,16 +170,22 @@ export function DataTable<TData, TValue>({
         getFacetedUniqueValues: getFacetedUniqueValues(),
         getExpandedRowModel: getExpandedRowModel(),
         getSubRows,
+        manualPagination,
+        pageCount,
+        onPaginationChange,
         autoResetPageIndex: false,
         autoResetExpanded: false,
         initialState: {
-            pagination: {
+            pagination: pagination ? undefined : {
                 pageSize: defaultPageSize,
             },
             columnVisibility: initialVisibility,
             expanded: autoExpand ? true : {},
             columnFilters: initialColumnFilters,
         },
+        state: {
+            ...(pagination ? { pagination } : {}),
+        }
     })
 
     // Sync prop-driven column visibility after mount.

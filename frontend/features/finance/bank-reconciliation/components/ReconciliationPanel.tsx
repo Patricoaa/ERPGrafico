@@ -688,25 +688,17 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         {children}
                                     </DroppableBankLine>
                                 )}
-                                renderFooter={(table) => (
-                                    <TableRow className="hover:bg-transparent border-none">
-                                        <TableCell colSpan={table.getVisibleFlatColumns().length} className="p-0">
-                                            <div className="flex items-center justify-between px-2 py-1 w-full">
-                                                <span className="text-[10px] text-muted-foreground">Pág. {bankParams.page}</span>
-                                                <div className="flex items-center gap-1">
-                                                    <Button variant="outline" size="icon" className="h-6 w-6"
-                                                        onClick={() => setBankParams(p => ({ ...p, page: Math.max(1, (p.page || 1) - 1) }))}
-                                                        disabled={bankParams.page === 1}
-                                                    ><ChevronRight className="h-3 w-3 rotate-180" /></Button>
-                                                    <Button variant="outline" size="icon" className="h-6 w-6"
-                                                        onClick={() => setBankParams(p => ({ ...p, page: (p.page || 1) + 1 }))}
-                                                        disabled={!bankData?.next}
-                                                    ><ChevronRight className="h-3 w-3" /></Button>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                )}
+                                onPaginationChange={(updater) => {
+                                    if (typeof updater === 'function') {
+                                        const newState = updater({ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 })
+                                        setBankParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
+                                    } else {
+                                        setBankParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
+                                    }
+                                }}
+                                manualPagination
+                                pageCount={Math.ceil((bankData?.count || 0) / (bankParams.pageSize || 50))}
+                                pagination={{ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 }}
                             />
                         </div>
 
@@ -733,25 +725,17 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         {children}
                                     </DraggablePayment>
                                 )}
-                                renderFooter={(table) => (
-                                    <TableRow className="hover:bg-transparent border-none">
-                                        <TableCell colSpan={table.getVisibleFlatColumns().length} className="p-0">
-                                            <div className="flex items-center justify-between px-2 py-1 w-full">
-                                                <span className="text-[10px] text-muted-foreground">Pág. {systemParams.page}</span>
-                                                <div className="flex items-center gap-1">
-                                                    <Button variant="outline" size="icon" className="h-6 w-6"
-                                                        onClick={() => setSystemParams(p => ({ ...p, page: Math.max(1, (p.page || 1) - 1) }))}
-                                                        disabled={systemParams.page === 1}
-                                                    ><ChevronRight className="h-3 w-3 rotate-180" /></Button>
-                                                    <Button variant="outline" size="icon" className="h-6 w-6"
-                                                        onClick={() => setSystemParams(p => ({ ...p, page: (p.page || 1) + 1 }))}
-                                                        disabled={!systemData?.results || systemData.results.length < (systemParams.pageSize || 50)}
-                                                    ><ChevronRight className="h-3 w-3" /></Button>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                )}
+                                onPaginationChange={(updater) => {
+                                    if (typeof updater === 'function') {
+                                        const newState = updater({ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 })
+                                        setSystemParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
+                                    } else {
+                                        setSystemParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
+                                    }
+                                }}
+                                manualPagination
+                                pageCount={Math.ceil((systemData?.count || 0) / (systemParams.pageSize || 50))}
+                                pagination={{ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 }}
                             />
                         </div>
                     </div>
