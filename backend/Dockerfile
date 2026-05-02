@@ -107,7 +107,7 @@ RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 EXPOSE 8100
 
-USER django
+# USER django  # Comentado para evitar conflictos de permisos con volúmenes locales
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["sh", "-c", "python manage.py runserver 0.0.0.0:${PORT:-8100}"]
