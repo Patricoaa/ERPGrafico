@@ -81,12 +81,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 }}
             />
 
-            {/* ── TOP BAR (Moved outside layout shifting) ────────────────────── */}
-            {/* Single 64px bar that aligns: logo zone | title | actions */}
-            <div className="absolute top-0 left-0 right-0 h-[64px] flex items-center border-b border-light-200/[0.04] z-30">
-
-                {/* Left: logo placeholder — actual logo button is in MiniSidebar fixed */}
-                <div className="w-[72px] shrink-0" />
+            {/* ── TOP BAR ────────────────────────────────────────────── */}
+            <div className="absolute top-0 left-14 right-0 h-16 flex items-center border-b border-border/5 bg-background/50 backdrop-blur-md z-30 px-6">
 
                 {/* Center: page title & meta — takes remaining space */}
                 <div className="flex-1 flex items-center gap-4 min-w-0 pointer-events-none">
@@ -158,36 +154,32 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     </AnimatePresence>
                 </div>
 
-                {/* Right: UserActions — inline, same bar, consistent vertical center */}
-                <div className="shrink-0 pr-4">
+                {/* Right: UserActions */}
+                <div className="shrink-0">
                     <UserActions isInboxOpen={isInboxOpen} onInboxToggle={handleInboxToggle} />
                 </div>
             </div>
 
             {/* Main Content Area */}
             <div
-                className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-500 ease-[var(--ease-premium)] pt-[104px] pb-8 px-8"
+                className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-500 ease-[var(--ease-premium)] pt-20 pb-6 pl-20 pr-6"
                 style={{
                     marginRight: isInboxOpen && isHubEffectivelyOpen
-                        ? "calc(360px + 320px + 2rem)"
+                        ? "calc(360px + 320px)"
                         : isHubEffectivelyOpen
-                            ? "calc(360px + 1rem)"
+                            ? "360px"
                             : isInboxOpen
-                                ? "calc(320px + 1rem)"
+                                ? "320px"
                                 : "0px"
                 }}
             >
-                {/* Page Content Wrapper — crop marks delimit this area, no border needed */}
-                <div className="relative flex-1 overflow-visible">
-                    {/* IndustryMark as layout delimiter: crop marks + registration symbols in bleed zone */}
-                    <IndustryMark variant="crop" showRegistration />
-
-                    {/* Scrollable content area — borderless by design */}
+                {/* Railway-style Main Card */}
+                <div className="relative flex-1 bg-card rounded-xl border border-border/5 shadow-sm overflow-hidden flex flex-col dot-grid">
                     <main
                         id="main-content"
-                        className="absolute inset-0 overflow-y-auto custom-scrollbar bg-transparent backdrop-blur-sm"
+                        className="flex-1 overflow-y-auto custom-scrollbar"
                     >
-                        <div className="w-full h-full">
+                        <div className="w-full min-h-full p-6">
                             {children}
                         </div>
                     </main>

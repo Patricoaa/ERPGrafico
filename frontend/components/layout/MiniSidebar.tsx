@@ -39,14 +39,9 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
     const router = useRouter()
     const { logout, user } = useAuth()
     const { logo } = useBranding()
-    
-    // New state for floating dock
-    const [isOpen, setIsOpen] = useState(false)
-
 
     const handleCategoryClick = (id: string) => {
         onCategoryChange(id)
-        setIsOpen(false) // Auto-close on selection
     }
 
     const getInitials = () => {
@@ -60,86 +55,52 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
     }
 
     return (
-        <>
-            {/* 1. Logo Trigger Button - Fixed Top Left, aligned to 64px topbar */}
-            <div className="fixed top-[8px] left-4 z-[60]">
-                <motion.div
-                    initial={{ rotate: -10, scale: 0.9 }}
-                    animate={{ rotate: isOpen ? 90 : 0, scale: 1 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="cursor-pointer"
-                    onClick={() => setIsOpen(!isOpen)}
-                >
-                    <div className="w-12 h-12 rounded-none bg-primary flex items-center justify-center text-primary-foreground font-black text-xl shadow-none overflow-hidden transition-colors hover:bg-primary/90">
-                        {logo ? (
-                            <img src={logo} alt="Logo" className="w-full h-full object-cover" />
-                        ) : (
-                            getInitials()
-                        )}
-                    </div>
-                </motion.div>
+        <aside className="fixed top-0 left-0 bottom-0 w-14 flex flex-col items-center py-4 gap-6 bg-sidebar border-r border-border/5 z-50">
+            {/* 1. Logo */}
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-sm overflow-hidden shrink-0">
+                {logo ? (
+                    <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+                ) : (
+                    getInitials()
+                )}
             </div>
 
-            {/* 2. Backdrop Blur Overlay */}
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setIsOpen(false)}
-                        className="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-40 transition-colors duration-500"
-                    />
-                )}
-            </AnimatePresence>
+            {/* Separator */}
+            <div className="w-8 h-px bg-border/20 shrink-0" />
 
-            {/* 3. Floating Dock - Animates Downwards */}
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.aside
-                        initial={{ opacity: 0, y: -20, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                        transition={{ type: "spring", damping: 20, stiffness: 300 }}
-                        className="fixed top-20 left-4 w-12 flex flex-col items-center py-4 gap-4 bg-sidebar border border-sidebar-border/50 rounded-none z-50 shadow-2xl max-h-[calc(100vh-100px)] overflow-y-auto overflow-x-hidden scrollbar-hide"
-                    >
-                        <TooltipProvider delayDuration={0}>
-                            {/* Main Navigation Items */}
-                            <div className="flex flex-col gap-4">
-                                {mainItems.map((item, index) => (
-                                    <PermissionGuard permission={item.permission || undefined} key={item.id}>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <CropFrame variant="compact">
-                                                    <motion.button
-                                                        initial={{ opacity: 0, x: -10 }}
-                                                        animate={{ opacity: 1, x: 0 }}
-                                                        transition={{ delay: index * 0.03 }}
-                                                        whileTap={{ scale: 0.95 }}
-                                                        onClick={() => handleCategoryClick(item.id)}
-                                                        className={cn(
-                                                            "h-8 w-8 relative flex items-center justify-center rounded-none transition-colors",
-                                                            activeCategory === item.id
-                                                                ? "bg-primary text-primary-foreground"
-                                                                : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-foreground"
-                                                        )}
-                                                    >
-                                                        <item.icon className="h-5 w-5" />
-                                                    </motion.button>
-                                                </CropFrame>
-                                            </TooltipTrigger>
-                                            <TooltipContent side="right" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border px-3 py-1.5 shadow-md">
-                                                {item.label}
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </PermissionGuard>
-                                ))}
-                            </div>
-
-                        </TooltipProvider>
-                    </motion.aside>
-                )}
-            </AnimatePresence>
-        </>
+            {/* 2. Navigation Rail */}
+            <div className="flex-1 w-full flex flex-col items-center gap-3 overflow-y-auto overflow-x-hidden scrollbar-hide">
+                <TooltipProvider delayDuration={0}>
+                    {mainItems.map((item, index) => (
+                        <PermissionGuard permission={item.permission || undefined} key={item.id}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        onClick={() => handleCategoryClick(item.id)}
+                                        className={cn(
+                                            "relative h-10 w-10 flex items-center justify-center rounded-lg transition-all duration-200",
+                                            activeCategory === item.id
+                                                ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                                                : "text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                                        )}
+                                    >
+                                        <item.icon className="h-5 w-5" />
+                                        {activeCategory === item.id && (
+                                            <motion.div 
+                                                layoutId="sidebar-active-indicator"
+                                                className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary rounded-r-full" 
+                                            />
+                                        )}
+                                    </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="font-bold uppercase tracking-widest text-[10px] bg-foreground text-background px-3 py-1.5 ml-2 shadow-xl">
+                                    {item.label}
+                                </TooltipContent>
+                            </Tooltip>
+                        </PermissionGuard>
+                    ))}
+                </TooltipProvider>
+            </div>
+        </aside>
     )
 }
