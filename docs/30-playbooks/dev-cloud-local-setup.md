@@ -251,7 +251,7 @@ Si no quieres correr Celery en tu PC, puedes usar la misma cuenta de Railway:
 2. Selecciona el mismo repositorio.
 3. En **Settings** de este nuevo servicio (cámbiale el nombre a `celery-worker`):
    - **Root Directory**: `/backend`
-   - **Custom Deploy Command**: `celery -A config worker -l INFO`
+   - **Custom Deploy Command**: `celery -A config worker -l INFO --concurrency=2`
 4. Asegúrate de que las **Variables** sean las mismas que el Backend.
 5. ¡Listo! Tendrás el worker procesando tareas en la nube.
 

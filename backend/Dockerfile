@@ -41,8 +41,13 @@ COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
+# Crear usuario no root
+RUN groupadd -g 1000 django && \
+    useradd -u 1000 -g django -s /bin/bash -m django
+
 # Copiar el resto del código
 COPY . .
+RUN chown -R django:django /app
 
 COPY entrypoint.sh /entrypoint.sh
 RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
@@ -85,19 +90,24 @@ RUN apt-get update \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
-
-
 COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
+# Crear usuario no root en stage de desarrollo
+RUN groupadd -g 1000 django && \
+    useradd -u 1000 -g django -s /bin/bash -m django
+
 # Copiar el resto del código
 COPY . .
+RUN chown -R django:django /app
 
 COPY entrypoint.sh /entrypoint.sh
 RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
 
 EXPOSE 8100
+
+USER django
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["sh", "-c", "python manage.py runserver 0.0.0.0:${PORT:-8100}"]
