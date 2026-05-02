@@ -82,7 +82,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             />
 
             {/* ── TOP BAR ────────────────────────────────────────────── */}
-            <div className="absolute top-0 left-14 right-0 h-16 flex items-center border-b border-border/5 bg-background/50 backdrop-blur-md z-30 px-6">
+            <div className="absolute top-0 left-14 right-0 h-16 flex items-center bg-background border-b border-border/10 z-30 px-6">
 
                 {/* Center: page title & meta — takes remaining space */}
                 <div className="flex-1 flex items-center gap-4 min-w-0 pointer-events-none">
@@ -103,13 +103,13 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
                                 {/* Texts & Icons Wrapper */}
                                 <div className="flex items-start gap-5">
-                                    {/* Left: Text Container (Title forces width, Description wraps natively) */}
+                                    {/* Left: Text Container */}
                                     <div className="flex flex-col w-min">
-                                        <h1 className="text-base font-black tracking-tight font-heading uppercase text-foreground leading-none whitespace-nowrap">
+                                        <h1 className="text-sm font-semibold tracking-tight text-foreground/90 whitespace-nowrap flex items-center gap-2">
                                             {config.title}
                                         </h1>
                                         {config.description && (
-                                            <p className="text-[10px] text-muted-foreground font-medium mt-[6px] opacity-60 leading-[1.2]">
+                                            <p className="text-xs text-muted-foreground/60 font-medium mt-0.5">
                                                 {config.description}
                                             </p>
                                         )}
@@ -162,28 +162,26 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
             {/* Main Content Area */}
             <div
-                className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-500 ease-[var(--ease-premium)] pt-20 pb-6 pl-20 pr-6"
+                className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-500 ease-[var(--ease-premium)] pt-20 pl-[4.5rem] pr-4 pb-4"
                 style={{
                     marginRight: isInboxOpen && isHubEffectivelyOpen
-                        ? "calc(360px + 320px)"
+                        ? "calc(360px + 320px + 2rem)"
                         : isHubEffectivelyOpen
-                            ? "360px"
+                            ? "calc(360px + 1rem)"
                             : isInboxOpen
-                                ? "320px"
+                                ? "calc(320px + 1rem)"
                                 : "0px"
                 }}
             >
-                {/* Railway-style Main Card */}
-                <div className="relative flex-1 bg-card rounded-xl border border-border/5 shadow-sm overflow-hidden flex flex-col dot-grid">
-                    <main
-                        id="main-content"
-                        className="flex-1 overflow-y-auto custom-scrollbar"
-                    >
-                        <div className="w-full min-h-full p-6">
-                            {children}
-                        </div>
-                    </main>
-                </div>
+                {/* Railway-style Main Canvas */}
+                <main
+                    id="main-content"
+                    className="flex-1 overflow-y-auto custom-scrollbar dot-grid bg-card border border-border/10 rounded-xl"
+                >
+                    <div className="w-full min-h-full p-6 lg:p-8">
+                        {children}
+                    </div>
+                </main>
             </div>
 
             {/* Task Inbox Sidebar (Right) - Fixed position */}

@@ -8,9 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import {
     ArrowLeft, FileText, Calendar, Banknote, TrendingUp, TrendingDown,
-    Undo2, Info, AlertCircle, Loader2, CheckCircle2, GraduationCap, ExternalLink
+    Undo2, Info, AlertCircle, Loader2, CheckCircle2, GraduationCap, ExternalLink, Activity
 } from "lucide-react"
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
+import { BaseDrawer } from "@/components/shared/BaseDrawer"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -34,8 +35,8 @@ import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { toast } from "sonner"
-import { ReconciliationBreadcrumbs } from "@/features/finance/bank-reconciliation/components"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { ReconciliationPanel } from "@/features/treasury"
 
 interface BankStatementLine {
     id: number
@@ -84,6 +85,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const [confirming, setConfirming] = useState(false)
     const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean, lineId: number | null }>({ open: false, lineId: null })
     const [paymentModal, setPaymentModal] = useState<{ open: boolean, id: number | null }>({ open: false, id: null })
+    const [isWorkbenchOpen, setIsWorkbenchOpen] = useState(false)
 
     useEffect(() => {
         fetchStatement()
@@ -113,6 +115,10 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         } finally {
             setUnmatchDialog({ open: false, lineId: null })
         }
+    }
+
+    const handleWorkbenchComplete = async () => {
+        await fetchStatement()
     }
 
     const confirmAction = useConfirmAction(async () => {
@@ -280,8 +286,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const netMovement = totalCredits - totalDebits
 
     return (
-        <div className="flex-1 space-y-4 p-8 pt-6 bg-muted/20">
-            <ReconciliationBreadcrumbs statementId={statement.id} statementDisplayId={statement.display_id} />
+        <div className="flex-1 space-y-4 pt-2">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -304,10 +309,10 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 <div className="flex items-center gap-2">
                     {statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 && (
                         <Button
-                            onClick={() => router.push(`/treasury/reconciliation/${statement.id}/workbench`)}
+                            onClick={() => setIsWorkbenchOpen(true)}
                             className="bg-primary hover:bg-primary/90 shadow-sm"
                         >
-                            <span className="mr-2">⚡</span>
+                            <Activity className="mr-2 h-4 w-4" />
                             Reconciliar
                         </Button>
                     )}
@@ -459,14 +464,36 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 confirmText="Confirmar"
             />
             
-            {paymentModal.id && (
-                <TransactionViewModal
-                    open={paymentModal.open}
-                    onOpenChange={(open) => setPaymentModal(prev => ({ ...prev, open }))}
-                    type="payment"
-                    id={paymentModal.id}
+            <BaseDrawer
+                open={isWorkbenchOpen}
+                onOpenChange={setIsWorkbenchOpen}
+                title="MESA DE CONCILIACIÓN"
+                subtitle={`${statement.display_id} — ${statement.treasury_account_name}`}
+                icon={Activity}
+                height="h-[95vh]"
+                contentClassName="p-4 lg:p-6 dot-grid"
+                headerActions={
+                    statement.reconciliation_progress === 100 && (
+                        <Button
+                            onClick={handleConfirmStatement}
+                            disabled={confirming}
+                            className="bg-success hover:bg-success/90 shadow-sm px-5 font-bold text-sm mr-8"
+                        >
+                            {confirming ? (
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Finalizando...</>
+                            ) : (
+                                <><CheckCircle2 className="mr-2 h-4 w-4" />Confirmar Cartola</>
+                            )}
+                        </Button>
+                    )
+                }
+            >
+                <ReconciliationPanel
+                    statementId={statement.id}
+                    treasuryAccountId={statement.treasury_account}
+                    onComplete={handleWorkbenchComplete}
                 />
-            )}
+            </BaseDrawer>
         </div>
     )
 }
