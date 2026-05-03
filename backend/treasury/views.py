@@ -842,13 +842,19 @@ class ReconciliationSettingsViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def for_account(self, request):
         account_id = request.query_params.get('treasury_account_id')
-        if not account_id:
-            return Response({'error': 'treasury_account_id required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if account_id == 'global' or not account_id:
+            # Global settings singleton
+            settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=None)
+            return Response(ReconciliationSettingsSerializer(settings).data)
         
         from .models import TreasuryAccount
-        account = TreasuryAccount.objects.get(id=account_id)
-        settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=account)
-        return Response(ReconciliationSettingsSerializer(settings).data)
+        try:
+            account = TreasuryAccount.objects.get(id=account_id)
+            settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=account)
+            return Response(ReconciliationSettingsSerializer(settings).data)
+        except TreasuryAccount.DoesNotExist:
+            return Response({'error': 'Cuenta no encontrada'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class ReconciliationReportsViewSet(viewsets.ViewSet):

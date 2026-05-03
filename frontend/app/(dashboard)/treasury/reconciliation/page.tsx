@@ -25,7 +25,7 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
     const tabs = [
         { value: "statements", label: "Cartolas", iconName: "file-text", href: "/treasury/reconciliation?tab=statements" },
         { value: "dashboard", label: "Dashboard", iconName: "bar-chart-3", href: "/treasury/reconciliation?tab=dashboard" },
-        { value: "rules", label: "Inteligencia", iconName: "brain", href: "/treasury/reconciliation?tab=rules" },
+        { value: "intelligence", label: "Inteligencia", iconName: "brain", href: "/treasury/reconciliation?tab=intelligence" },
     ]
 
     const getHeaderConfig = () => {
@@ -40,6 +40,7 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
                     title: "Dashboard de Conciliación",
                     description: "Estadísticas y métricas de conciliación bancaria.",
                 }
+            case "intelligence":
                 return {
                     title: "Inteligencia de Conciliación",
                     description: "Configura pesos y umbrales para el matching automático por cuenta.",
@@ -62,10 +63,10 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
         />
     )
 
-    const rulesCreateAction = (
+    const intelligenceCreateAction = (
         <ToolbarCreateButton
-            label="Nueva Regla"
-            href="/treasury/reconciliation?tab=rules&modal=new-rule"
+            label="Ajustar Inteligencia"
+            href="/treasury/reconciliation?tab=intelligence"
         />
     )
 
@@ -89,7 +90,7 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
                     <TabsContent value="dashboard" className="mt-0 outline-none">
                         <ReconciliationDashboard />
                     </TabsContent>
-                    <TabsContent value="rules" className="mt-0 outline-none">
+                    <TabsContent value="intelligence" className="mt-0 outline-none">
                         <ReconciliationIntelligence externalOpen={resolvedParams.modal === "new-rule"} />
                     </TabsContent>
                 </Tabs>

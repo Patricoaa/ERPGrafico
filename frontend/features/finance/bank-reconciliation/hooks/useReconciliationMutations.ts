@@ -194,7 +194,7 @@ export function useAutoMatchMutation(statementId: number) {
     })
 }
 
-export function useUpdateReconciliationSettingsMutation(accountId?: number) {
+export function useUpdateReconciliationSettingsMutation(accountId?: number | string) {
     const queryClient = useQueryClient()
 
     return useMutation({

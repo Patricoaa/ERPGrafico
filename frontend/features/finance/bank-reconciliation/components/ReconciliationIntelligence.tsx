@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
-import { Info, Brain, Save, Settings2, Calendar, Hash, User, CircleDollarSign, Loader2 } from "lucide-react"
+import { Info, Brain, Save, Settings2, Calendar, Hash, User, CircleDollarSign, Loader2, Wand2 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 import { useAccountsQuery, useReconciliationSettingsQuery } from "../hooks/useReconciliationQueries"
 import { useUpdateReconciliationSettingsMutation } from "../hooks/useReconciliationMutations"
@@ -63,16 +63,16 @@ const ThresholdControl = ({ label, value, suffix, tooltip, onChange, min = 0, ma
 
 export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: boolean }) {
     const { data: accounts = [], isLoading: isLoadingAccounts } = useAccountsQuery()
-    const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null)
+    const [selectedAccountId, setSelectedAccountId] = useState<number | string>("global")
     
-    const { data: settings, isLoading: isLoadingSettings, isFetching: isFetchingSettings } = useReconciliationSettingsQuery(selectedAccountId || undefined)
-    const updateMutation = useUpdateReconciliationSettingsMutation(selectedAccountId || 0)
+    const { data: settings, isLoading: isLoadingSettings, isFetching: isFetchingSettings } = useReconciliationSettingsQuery(selectedAccountId || "global")
+    const updateMutation = useUpdateReconciliationSettingsMutation(selectedAccountId || "global")
 
     const [localSettings, setLocalSettings] = useState<any>(null)
 
     useEffect(() => {
         if (accounts.length > 0 && !selectedAccountId) {
-            setSelectedAccountId(accounts[0].id)
+            setSelectedAccountId("global")
         }
     }, [accounts])
 
@@ -109,15 +109,20 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
                     <div className="w-64">
                         <LabeledSelect
                             label="Seleccionar Cuenta"
-                            value={selectedAccountId?.toString() || ""}
-                            onChange={val => setSelectedAccountId(parseInt(val))}
-                            options={accounts.map(acc => ({ value: acc.id.toString(), label: acc.name }))}
+                            value={selectedAccountId?.toString() || "global"}
+                            onChange={val => setSelectedAccountId(val === "global" ? "global" : parseInt(val))}
+                            options={[
+                                { value: "global", label: "🌍 Inteligencia Global (Default)" },
+                                ...accounts.map(acc => ({ value: acc.id.toString(), label: acc.name }))
+                            ]}
                             className="bg-background"
                         />
                     </div>
                     <div className="text-right">
                         <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground/50">Estado de Inteligencia</p>
-                        <Badge variant="outline" className="mt-1 border-primary/30 text-primary">Perfil Activo</Badge>
+                        <Badge variant="outline" className="mt-1 border-primary/30 text-primary">
+                            {selectedAccountId === 'global' ? 'Maestro Global' : 'Perfil de Cuenta'}
+                        </Badge>
                     </div>
                 </Card>
 
@@ -196,7 +201,7 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
                             <Card className="p-6 space-y-6">
                                 <div className="flex items-center gap-2 border-b pb-4">
                                     <Settings2 className="h-4 w-4 text-primary" />
-                                    <h4 className="text-sm font-bold uppercase tracking-wider">Ajustes de Motor</h4>
+                                    <h4 className="text-sm font-bold uppercase tracking-wider">Parámetros de Inteligencia</h4>
                                 </div>
                                 
                                 <ThresholdControl

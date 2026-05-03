@@ -9,7 +9,7 @@ const TreasuryMovementsClientView = lazy(() => import("@/features/treasury").the
 const TreasuryAccountsView = lazy(() => import("@/features/treasury").then(m => ({ default: m.TreasuryAccountsView })))
 const StatementsList = lazy(() => import("@/features/finance").then(m => ({ default: m.StatementsList })))
 const ReconciliationDashboard = lazy(() => import("@/features/finance").then(m => ({ default: m.ReconciliationDashboard })))
-const ReconciliationRules = lazy(() => import("@/features/finance").then(m => ({ default: m.ReconciliationRules })))
+const ReconciliationIntelligence = lazy(() => import("@/features/finance").then(m => ({ default: m.ReconciliationIntelligence })))
 const TreasurySettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.TreasurySettingsView })))
 
 
@@ -50,7 +50,7 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
             subTabs: [
                 { value: "statements", label: "Cartolas", iconName: "file-text", href: "/treasury?view=reconciliation&sub=statements" },
                 { value: "dashboard", label: "Dashboard", iconName: "bar-chart-3", href: "/treasury?view=reconciliation&sub=dashboard" },
-                { value: "rules", label: "Reglas", iconName: "wand-2", href: "/treasury?view=reconciliation&sub=rules" },
+                { value: "intelligence", label: "Inteligencia", iconName: "brain", href: "/treasury?view=reconciliation&sub=intelligence" },
             ]
         },
         { 
@@ -127,15 +127,15 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
                     iconName: "bar-chart-3" as const,
                     showAction: false
                 }
-            } else if (subView === 'rules') {
+            } else if (subView === 'intelligence') {
                 return {
-                    title: "Reglas de Conciliación",
-                    description: "Configure reglas para la asignación automática de movimientos.",
-                    iconName: "wand-2" as const,
-                    actionTitle: "Nueva Regla",
-                    actionHref: "/treasury?view=reconciliation&sub=rules&modal=new-rule",
-                    actionIcon: "plus",
-                    showAction: true
+                    title: "Inteligencia de Conciliación",
+                    description: "Configura pesos y umbrales para el matching automático por cuenta.",
+                    iconName: "brain" as const,
+                    actionTitle: "Ajustar Inteligencia",
+                    actionHref: "/treasury?view=reconciliation&sub=intelligence",
+                    actionIcon: "settings-2",
+                    showAction: false
                 }
             } else {
                 return {
@@ -190,7 +190,7 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
                         <div className="pt-2">
                             {subView === 'statements' && <StatementsList externalOpen={modal === 'import'} createAction={createAction} />}
                             {subView === 'dashboard' && <ReconciliationDashboard />}
-                            {subView === 'rules' && <ReconciliationRules externalOpen={modal === 'new-rule'} createAction={createAction} />}
+                            {subView === 'intelligence' && <ReconciliationIntelligence externalOpen={modal === 'new-rule'} createAction={createAction} />}
                         </div>
                     )}
 
