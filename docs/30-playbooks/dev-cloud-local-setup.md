@@ -348,7 +348,7 @@ Como tu URL ahora es fija, solo debes configurar esto una vez en Railway:
 
 ### 10.5 Levantar tunnel local
 
-cloudflared tunnel run erp-pato
+cloudflared tunnel run [nombre del tunnel]
 
 ---
 

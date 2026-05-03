@@ -991,15 +991,12 @@ class ReconciliationSettings(models.Model):
         verbose_name_plural = _("Inteligencia de Conciliación")
     
     @classmethod
-    def get_for_account(cls, account):
+    def get_for_account(cls, account=None):
         """
-        Obtiene la configuración de inteligencia para una cuenta.
-        Prioridad: Perfil de Cuenta > Perfil Global > Valores Default.
+        Obtiene la configuración de inteligencia global.
+        (Configuración unificada para todas las cuentas).
         """
-        settings = cls.objects.filter(treasury_account=account).first()
-        if not settings:
-            # Fallback a perfil global
-            settings = cls.objects.filter(treasury_account__isnull=True).first()
+        settings = cls.objects.filter(treasury_account__isnull=True).first()
         
         if not settings:
             # Fallback a valores default si no hay nada en DB
@@ -1014,9 +1011,7 @@ class ReconciliationSettings(models.Model):
         return settings
 
     def __str__(self):
-        if not self.treasury_account:
-            return "Perfil de Inteligencia Global (Default)"
-        return f"Perfil de Inteligencia: {self.treasury_account.name}"
+        return "Inteligencia de Conciliación Global"
 
 
 

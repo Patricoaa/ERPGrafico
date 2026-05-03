@@ -18,8 +18,6 @@ frontend/out/
 frontend/build/
 
 # Environments
-.env
-.env*
 !.env.example
 
 # IDEs
