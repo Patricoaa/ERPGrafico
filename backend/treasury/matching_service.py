@@ -56,13 +56,17 @@ class MatchingService:
         except BankStatementLine.DoesNotExist:
             return []
         
-        # Calcular monto neto de la línea
+        # 1. Cargar Configuración (Hierarchical: Account -> Global -> Defaults)
+        from .models import ReconciliationSettings
+        account = line.statement.treasury_account
+        settings = ReconciliationSettings.get_for_account(account)
+
+        # 2. Calcular monto neto y rango de búsqueda
         line_amount = line.credit - line.debit
         is_inbound = line_amount > 0
-        
-        # Rango de fechas (±7 días por defecto para candidatos generales)
-        date_min = line.transaction_date - timedelta(days=7)
-        date_max = line.transaction_date + timedelta(days=7)
+        lookback = settings.date_range_days
+        date_min = line.transaction_date - timedelta(days=lookback)
+        date_max = line.transaction_date + timedelta(days=lookback)
         
         # Criterios básicos: no reconciliado, exclude pending
         base_filters = Q(
@@ -100,10 +104,6 @@ class MatchingService:
             base_filters & candidate_filters
         ).select_related('contact', 'invoice', 'sale_order', 'purchase_order')
         
-        # Configuración de conciliación de la cuenta
-        from .models import ReconciliationSettings
-        settings = ReconciliationSettings.get_for_account(account)
-
         # Scoring de cada pago
         suggestions = []
         
