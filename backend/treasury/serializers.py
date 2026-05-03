@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine,  
-                     ReconciliationRule, POSTerminal, 
+                     ReconciliationSettings, POSTerminal, 
                      POSSessionAudit, Bank, PaymentMethod,
                      PaymentTerminalProvider, PaymentTerminalDevice)
 # Remove top-level import to avoid circular dependency
@@ -53,11 +53,19 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
     def get_is_system_managed(self, obj):
         return obj.account_type in TreasuryAccount._NON_CASH_EQUIVALENT_TYPES
 
+    reconciliation_settings = serializers.SerializerMethodField()
+
+    def get_reconciliation_settings(self, obj):
+        # We use a method field to ensure it exists or returns default
+        from .models import ReconciliationSettings
+        settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=obj)
+        return ReconciliationSettingsSerializer(settings).data
+
     class Meta:
         model = TreasuryAccount
         fields = ['id', 'name', 'code', 'currency', 'account', 'account_name', 'account_code', 'account_type', 'account_type_display',
                   'bank', 'bank_name', 'account_number', 'allows_cash', 'allows_card', 'allows_transfer', 'allows_check',
-                  'is_system_managed', 'current_balance', 'payment_methods', 'default_bank_format']
+                  'is_system_managed', 'current_balance', 'payment_methods', 'default_bank_format', 'reconciliation_settings']
 
 
 class POSTerminalSerializer(serializers.ModelSerializer):
@@ -482,14 +490,15 @@ class BankStatementListSerializer(serializers.ModelSerializer):
         ]
 
 
-class ReconciliationRuleSerializer(serializers.ModelSerializer):
-    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True, allow_null=True)
-    created_by_name = serializers.CharField(source='created_by.username', read_only=True)
+class ReconciliationSettingsSerializer(serializers.ModelSerializer):
+    treasury_account_name = serializers.CharField(source='treasury_account.name', read_only=True)
 
     class Meta:
-        model = ReconciliationRule
+        model = ReconciliationSettings
         fields = '__all__'
-        read_only_fields = ['times_applied', 'success_rate', 'created_by']
+
+
+
 
 
 

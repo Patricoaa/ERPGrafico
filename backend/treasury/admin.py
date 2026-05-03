@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine,
-                     ReconciliationRule, TerminalBatch, PaymentTerminalProvider,
+                     ReconciliationSettings, TerminalBatch, PaymentTerminalProvider,
                      PaymentTerminalDevice, POSTerminal, PaymentMethod)
 
 
@@ -102,18 +102,21 @@ class BankStatementLineAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(ReconciliationRule)
-class ReconciliationRuleAdmin(admin.ModelAdmin):
-    list_display = ['name', 'treasury_account', 'priority', 'is_active']
-    list_filter = ['is_active', 'treasury_account']
-    search_fields = ['name']
+@admin.register(ReconciliationSettings)
+class ReconciliationSettingsAdmin(admin.ModelAdmin):
+    list_display = ['treasury_account', 'confidence_threshold', 'date_range_days', 'auto_confirm']
+    list_filter = ['auto_confirm']
+    search_fields = ['treasury_account__name']
     
     fieldsets = (
         ('Información Básica', {
-            'fields': ('name', 'treasury_account', 'priority', 'is_active')
+            'fields': ('treasury_account', 'auto_confirm')
         }),
-        ('Configuración de Matching', {
-            'fields': ('match_config',)
+        ('Pesos de Scoring', {
+            'fields': ('amount_weight', 'date_weight', 'reference_weight', 'contact_weight')
+        }),
+        ('Lógica del Motor', {
+            'fields': ('confidence_threshold', 'date_range_days')
         }),
     )
 

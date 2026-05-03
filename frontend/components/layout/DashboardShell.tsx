@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeaderSkeleton } from "@/components/shared"
 import { Loader2 } from "lucide-react"
 import { IndustryMark } from "@/components/shared/IndustryMark"
+import { DynamicIcon } from "@/components/ui/dynamic-icon"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
@@ -82,7 +83,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             />
 
             {/* ── TOP BAR ────────────────────────────────────────────── */}
-            <div className="absolute top-0 left-14 right-0 h-16 flex items-center bg-background border-b border-border/10 z-30 px-6">
+            <div className="absolute top-0 left-14 right-0 h-16 flex items-center bg-background z-30 px-6">
 
                 {/* Center: page title & meta — takes remaining space */}
                 <div className="flex-1 flex items-center gap-4 min-w-0 pointer-events-none">
@@ -102,21 +103,21 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                 )}
 
                                 {/* Texts & Icons Wrapper */}
-                                <div className="flex items-start gap-5">
+                                <div className="flex items-center gap-5">
                                     {/* Left: Text Container */}
                                     <div className="flex flex-col w-min">
                                         <h1 className="text-sm font-semibold tracking-tight text-foreground/90 whitespace-nowrap flex items-center gap-2">
+                                            {config.icon ? (
+                                                <config.icon className="h-4 w-4 text-primary/70 shrink-0" />
+                                            ) : config.iconName ? (
+                                                <DynamicIcon name={config.iconName} className="h-4 w-4 text-primary/70 shrink-0" />
+                                            ) : null}
                                             {config.title}
                                         </h1>
-                                        {config.description && (
-                                            <p className="text-xs text-muted-foreground/60 font-medium mt-0.5">
-                                                {config.description}
-                                            </p>
-                                        )}
                                     </div>
 
                                     {/* Right: Icons & Actions */}
-                                    <div className="flex items-center gap-2 mt-[-2px] shrink-0">
+                                    <div className="flex items-center gap-2 shrink-0">
                                         {config.status && (
                                             config.status.type === 'saving' ? (
                                                 <Skeleton className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border shrink-0 bg-primary/20 text-primary border-primary/20 flex items-center justify-center">

@@ -1,6 +1,6 @@
 export * from './ReconciliationDashboard'
 export * from './StatementsList'
-export * from './ReconciliationRules'
+export * from './ReconciliationIntelligence'
 export * from './DashboardKPIs'
 export * from './DashboardPendingTable'
 export * from './DashboardTrendChart'

@@ -10,7 +10,7 @@ from django.utils import timezone
 from datetime import date, timedelta
 from typing import Dict, List, Any, Optional
 from decimal import Decimal
-from .models import BankStatement, BankStatementLine, ReconciliationRule
+from .models import BankStatement, BankStatementLine
 
 
 class ReportsService:
@@ -237,49 +237,7 @@ class ReportsService:
         
         return result
     
-    @staticmethod
-    def get_rules_performance(
-        treasury_account_id: Optional[int] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        Performance de reglas de matching.
-        
-        Args:
-            treasury_account_id: Filtrar por cuenta
-        
-        Returns:
-            Lista de reglas con estadísticas
-        """
-        filters = Q(is_active=True)
-        
-        if treasury_account_id:
-            filters &= Q(
-                Q(treasury_account_id=treasury_account_id) | 
-                Q(treasury_account__isnull=True)
-            )
-        
-        rules = ReconciliationRule.objects.filter(filters).select_related(
-            'treasury_account', 'created_by'
-        )
-        
-        result = []
-        for rule in rules:
-            result.append({
-                'id': rule.id,
-                'name': rule.name,
-                'description': rule.description,
-                'priority': rule.priority,
-                'times_applied': rule.times_applied,
-                'success_rate': float(rule.success_rate),
-                'auto_confirm': rule.auto_confirm,
-                'account': rule.treasury_account.name if rule.treasury_account else 'Global',
-                'created_by': rule.created_by.get_full_name() if rule.created_by else None
-            })
-        
-        # Ordenar por tasa de éxito descendente
-        result.sort(key=lambda x: x['success_rate'], reverse=True)
-        
-        return result
+
     
     @staticmethod
     def get_reconciliation_timeline(

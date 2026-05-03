@@ -512,11 +512,26 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         {
             id: "amount",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="text-right font-mono font-black text-[13px] tracking-tight group-hover:scale-105 transition-transform">
-                    {formatCurrency(Math.abs(parseFloat(row.original.amount)))}
-                </div>
-            ),
+            cell: ({ row }) => {
+                const item = row.original
+                const isDeposit = item.is_batch || (
+                    item.movement_type === 'INBOUND' || 
+                    (item.movement_type === 'TRANSFER' && item.to_account === treasuryAccountId)
+                )
+                return (
+                    <div className="flex flex-col items-end">
+                        <span className={cn(
+                            "font-mono font-black text-[13px] tracking-tight group-hover:scale-105 transition-transform",
+                            isDeposit ? "text-success" : "text-destructive"
+                        )}>
+                            {formatCurrency(Math.abs(parseFloat(item.amount)))}
+                        </span>
+                        <span className="text-[10px] font-black uppercase opacity-40">
+                            {isDeposit ? "Ingreso" : "Egreso"}
+                        </span>
+                    </div>
+                )
+            },
             size: 100,
         },
         createActionsColumn<ReconciliationSystemItem>({

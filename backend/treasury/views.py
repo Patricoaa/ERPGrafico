@@ -6,13 +6,13 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 from celery.result import AsyncResult
 from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine, 
-                     ReconciliationRule, POSTerminal, TerminalBatch,
+                     ReconciliationSettings, POSTerminal, TerminalBatch,
                      POSSession, POSSessionAudit, Bank, PaymentMethod,
                      PaymentTerminalProvider, PaymentTerminalDevice)
 from .serializers import (
     TreasuryMovementSerializer, TreasuryAccountSerializer,
     BankStatementSerializer, BankStatementListSerializer,
-    BankStatementLineSerializer, ReconciliationRuleSerializer,
+    BankStatementLineSerializer, ReconciliationSettingsSerializer,
     POSTerminalSerializer,
     POSSessionSerializer, POSSessionAuditSerializer,
     BankSerializer, PaymentMethodSerializer, TerminalBatchSerializer,
@@ -22,7 +22,7 @@ from .services import TreasuryService, TerminalBatchService
 from .pos_service import POSService
 from .reconciliation_service import ReconciliationService
 from .matching_service import MatchingService
-from .rule_service import RuleService
+# from .rule_service import RuleService
 from .difference_service import DifferenceService
 from .reports_service import ReportsService
 from contacts.models import Contact
@@ -827,48 +827,28 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class ReconciliationRuleViewSet(viewsets.ModelViewSet):
-    """ViewSet for reconciliation rules"""
-    queryset = ReconciliationRule.objects.all().select_related('treasury_account', 'created_by')
-    serializer_class = ReconciliationRuleSerializer
-    
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
-    
-    @action(detail=True, methods=['get'])
-    def statistics(self, request, pk=None):
-        """Get usage statistics for this rule"""
-        stats = RuleService.get_rule_statistics(pk)
-        return Response(stats)
-    
-    @action(detail=False, methods=['post'])
-    def create_defaults(self, request):
-        """Create default rules for an account"""
-        try:
-            account_id = request.data.get('treasury_account_id')
-            if not account_id:
-                return Response({'error': 'treasury_account_id required'}, status=status.HTTP_400_BAD_REQUEST)
-            
-            account = TreasuryAccount.objects.get(id=account_id)
-            RuleService.create_default_rules(account, request.user)
-            
-            return Response({'message': 'Reglas predeterminadas creadas'})
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+class ReconciliationSettingsViewSet(viewsets.ModelViewSet):
+    """ViewSet for reconciliation settings"""
+    queryset = ReconciliationSettings.objects.all().select_related('treasury_account')
+    serializer_class = ReconciliationSettingsSerializer
 
-    @action(detail=False, methods=['post'])
-    def simulate(self, request):
-        """Simulate rule execution"""
-        try:
-            rule_data = request.data
-            account_id = rule_data.get('treasury_account_id')
-            if account_id == 'global':
-                account_id = None
-            
-            results = RuleService.simulate_rule(rule_data, account_id)
-            return Response({'results': results})
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    def get_queryset(self):
+        qs = super().get_queryset()
+        account_id = self.request.query_params.get('treasury_account')
+        if account_id:
+            qs = qs.filter(treasury_account_id=account_id)
+        return qs
+
+    @action(detail=False, methods=['get'])
+    def for_account(self, request):
+        account_id = request.query_params.get('treasury_account_id')
+        if not account_id:
+            return Response({'error': 'treasury_account_id required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        from .models import TreasuryAccount
+        account = TreasuryAccount.objects.get(id=account_id)
+        settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=account)
+        return Response(ReconciliationSettingsSerializer(settings).data)
 
 
 class ReconciliationReportsViewSet(viewsets.ViewSet):

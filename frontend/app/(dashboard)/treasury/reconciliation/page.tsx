@@ -5,7 +5,7 @@ import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
-import { StatementsList, ReconciliationDashboard, ReconciliationRules, ReconciliationBreadcrumbs } from "@/features/finance/bank-reconciliation/components"
+import { StatementsList, ReconciliationDashboard, ReconciliationIntelligence, ReconciliationBreadcrumbs } from "@/features/finance/bank-reconciliation/components"
 
 
 export const metadata: Metadata = {
@@ -25,7 +25,7 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
     const tabs = [
         { value: "statements", label: "Cartolas", iconName: "file-text", href: "/treasury/reconciliation?tab=statements" },
         { value: "dashboard", label: "Dashboard", iconName: "bar-chart-3", href: "/treasury/reconciliation?tab=dashboard" },
-        { value: "rules", label: "Reglas", iconName: "wand-2", href: "/treasury/reconciliation?tab=rules" },
+        { value: "rules", label: "Inteligencia", iconName: "brain", href: "/treasury/reconciliation?tab=rules" },
     ]
 
     const getHeaderConfig = () => {
@@ -40,10 +40,9 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
                     title: "Dashboard de Conciliación",
                     description: "Estadísticas y métricas de conciliación bancaria.",
                 }
-            case "rules":
                 return {
-                    title: "Reglas de Matching",
-                    description: "Configura la automatización de reconciliación.",
+                    title: "Inteligencia de Conciliación",
+                    description: "Configura pesos y umbrales para el matching automático por cuenta.",
                 }
             default:
                 return {
@@ -91,7 +90,7 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
                         <ReconciliationDashboard />
                     </TabsContent>
                     <TabsContent value="rules" className="mt-0 outline-none">
-                        <ReconciliationRules externalOpen={resolvedParams.modal === "new-rule"} createAction={rulesCreateAction} />
+                        <ReconciliationIntelligence externalOpen={resolvedParams.modal === "new-rule"} />
                     </TabsContent>
                 </Tabs>
             </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { Sparkles, CheckCircle2, Info, Calculator, ArrowRight, X, Loader2 } from "lucide-react"
+import { Sparkles, CheckCircle2, Info, Calculator, ArrowRight, X, Loader2, CircleDollarSign, Calendar, Hash, User } from "lucide-react"
 import { cn, formatCurrency } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -252,8 +252,9 @@ function LineSuggestionCard({ suggestion, onMatch, isMatching }: { suggestion: L
 
 function getReasonIcon(reason: string) {
     const lowers = reason.toLowerCase()
-    if (lowers.includes('monto')) return <><Calculator className="h-2.5 w-2.5 mr-1 inline" /> Monto</>
-    if (lowers.includes('fecha')) return <><Info className="h-2.5 w-2.5 mr-1 inline" /> Fecha</>
-    if (lowers.includes('id') || lowers.includes('referencia')) return <><Info className="h-2.5 w-2.5 mr-1 inline" /> ID/Ref</>
-    return reason
+    if (lowers.includes('amount') || lowers.includes('monto')) return <><CircleDollarSign className="h-2.5 w-2.5 mr-1 inline" /> Monto</>
+    if (lowers.includes('date') || lowers.includes('fecha')) return <><Calendar className="h-2.5 w-2.5 mr-1 inline" /> Fecha</>
+    if (lowers.includes('id') || lowers.includes('ref')) return <><Hash className="h-2.5 w-2.5 mr-1 inline" /> ID/Ref</>
+    if (lowers.includes('contact')) return <><User className="h-2.5 w-2.5 mr-1 inline" /> Contacto</>
+    return reason.replace(/_/g, ' ')
 }
