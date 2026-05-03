@@ -7,9 +7,8 @@ import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Info, Brain, Save, Settings2, Calendar, Hash, User, CircleDollarSign, Loader2, Wand2 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
-import { useAccountsQuery, useReconciliationSettingsQuery } from "../hooks/useReconciliationQueries"
+import { useReconciliationSettingsQuery } from "../hooks/useReconciliationQueries"
 import { useUpdateReconciliationSettingsMutation } from "../hooks/useReconciliationMutations"
-import { LabeledSelect } from "@/components/shared"
 import { cn } from "@/lib/utils"
 
 const FieldLabel = ({ title, tooltip }: { title: string; tooltip: string }) => (
@@ -62,19 +61,10 @@ const ThresholdControl = ({ label, value, suffix, tooltip, onChange, min = 0, ma
 )
 
 export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: boolean }) {
-    const { data: accounts = [], isLoading: isLoadingAccounts } = useAccountsQuery()
-    const [selectedAccountId, setSelectedAccountId] = useState<number | string>("global")
-    
-    const { data: settings, isLoading: isLoadingSettings, isFetching: isFetchingSettings } = useReconciliationSettingsQuery(selectedAccountId || "global")
-    const updateMutation = useUpdateReconciliationSettingsMutation(selectedAccountId || "global")
+    const { data: settings, isLoading: isLoadingSettings, isFetching: isFetchingSettings } = useReconciliationSettingsQuery("global")
+    const updateMutation = useUpdateReconciliationSettingsMutation("global")
 
     const [localSettings, setLocalSettings] = useState<any>(null)
-
-    useEffect(() => {
-        if (accounts.length > 0 && !selectedAccountId) {
-            setSelectedAccountId("global")
-        }
-    }, [accounts])
 
     useEffect(() => {
         if (settings) {
@@ -94,34 +84,24 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
         localSettings.reference_weight + 
         localSettings.contact_weight : 0
 
-    if (isLoadingAccounts) return (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
-            <p className="text-sm text-muted-foreground animate-pulse">Cargando cuentas bancarias...</p>
-        </div>
-    )
-
     return (
         <TooltipProvider>
             <div className="space-y-6 max-w-4xl mx-auto py-2">
-                {/* Account Selector */}
+                {/* Header Information */}
                 <Card className="p-4 border-primary/20 bg-primary/[0.02] flex items-center justify-between">
-                    <div className="w-64">
-                        <LabeledSelect
-                            label="Seleccionar Cuenta"
-                            value={selectedAccountId?.toString() || "global"}
-                            onChange={val => setSelectedAccountId(val === "global" ? "global" : parseInt(val))}
-                            options={[
-                                { value: "global", label: "🌍 Inteligencia Global (Default)" },
-                                ...accounts.map(acc => ({ value: acc.id.toString(), label: acc.name }))
-                            ]}
-                            className="bg-background"
-                        />
+                    <div className="flex items-center gap-3">
+                        <div className="bg-primary/10 p-2 rounded-lg">
+                            <Brain className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold">Inteligencia Global</h2>
+                            <p className="text-xs text-muted-foreground">Esta configuración aplica de forma automática a todas tus cuentas bancarias.</p>
+                        </div>
                     </div>
                     <div className="text-right">
-                        <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground/50">Estado de Inteligencia</p>
-                        <Badge variant="outline" className="mt-1 border-primary/30 text-primary">
-                            {selectedAccountId === 'global' ? 'Maestro Global' : 'Perfil de Cuenta'}
+                        <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground/50">Nivel de Aplicación</p>
+                        <Badge variant="outline" className="mt-1 border-primary/30 text-primary bg-primary/5">
+                            Corporativo / Global
                         </Badge>
                     </div>
                 </Card>
