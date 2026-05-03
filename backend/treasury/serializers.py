@@ -56,9 +56,9 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
     reconciliation_settings = serializers.SerializerMethodField()
 
     def get_reconciliation_settings(self, obj):
-        # We use a method field to ensure it exists or returns default
+        # We use a method field to ensure it exists or returns default (Global fallback)
         from .models import ReconciliationSettings
-        settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=obj)
+        settings = ReconciliationSettings.get_for_account(obj)
         return ReconciliationSettingsSerializer(settings).data
 
     class Meta:

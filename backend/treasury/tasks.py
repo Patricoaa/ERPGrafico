@@ -34,7 +34,7 @@ def auto_match_statement_task(self, statement_id: int, confidence_threshold: flo
         account = statement.treasury_account
         
         # Load Settings
-        settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=account)
+        settings = ReconciliationSettings.get_for_account(account)
         
         # Use provided threshold or fallback to settings
         threshold = confidence_threshold if confidence_threshold is not None else settings.confidence_threshold

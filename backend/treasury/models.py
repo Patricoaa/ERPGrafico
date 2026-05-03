@@ -530,10 +530,6 @@ class TreasuryAccount(models.Model):
         self.clean()
         is_new = self.pk is None
         super().save(*args, **kwargs)
-        
-        # Ensure reconciliation settings exist
-        if is_new:
-            ReconciliationSettings.objects.get_or_create(treasury_account=self)
 
     @property
     def current_balance(self):
@@ -993,6 +989,29 @@ class ReconciliationSettings(models.Model):
     class Meta:
         verbose_name = _("Inteligencia de Conciliación")
         verbose_name_plural = _("Inteligencia de Conciliación")
+    
+    @classmethod
+    def get_for_account(cls, account):
+        """
+        Obtiene la configuración de inteligencia para una cuenta.
+        Prioridad: Perfil de Cuenta > Perfil Global > Valores Default.
+        """
+        settings = cls.objects.filter(treasury_account=account).first()
+        if not settings:
+            # Fallback a perfil global
+            settings = cls.objects.filter(treasury_account__isnull=True).first()
+        
+        if not settings:
+            # Fallback a valores default si no hay nada en DB
+            return cls(
+                amount_weight=40,
+                date_weight=30,
+                reference_weight=20,
+                contact_weight=10,
+                confidence_threshold=90,
+                date_range_days=30
+            )
+        return settings
 
     def __str__(self):
         if not self.treasury_account:
