@@ -68,25 +68,27 @@ class MatchingService:
         date_min = line.transaction_date - timedelta(days=lookback)
         date_max = line.transaction_date + timedelta(days=lookback)
         
-        # Criterios básicos: no reconciliado, exclude pending
+        # Criterios básicos: no reconciliado
+        # Permitimos ver pendientes en sugerencias manuales para ayudar al usuario
         base_filters = Q(
             is_reconciled=False,
-            is_pending_registration=False,
         )
         
         # Filtro de cuenta y sentido
         account = line.statement.treasury_account
         if is_inbound:
-            # Abono: Buscar INBOUND a la cuenta O TRANSFER hacia la cuenta
+            # Abono: Buscar INBOUND a la cuenta O TRANSFER hacia la cuenta O AJUSTE
             base_filters &= (
                 (Q(movement_type='INBOUND') & Q(to_account=account)) |
-                (Q(movement_type='TRANSFER') & Q(to_account=account))
+                (Q(movement_type='TRANSFER') & Q(to_account=account)) |
+                (Q(movement_type='ADJUSTMENT') & Q(to_account=account))
             )
         else:
-            # Cargo: Buscar OUTBOUND desde la cuenta O TRANSFER desde la cuenta
+            # Cargo: Buscar OUTBOUND desde la cuenta O TRANSFER desde la cuenta O AJUSTE
             base_filters &= (
                 (Q(movement_type='OUTBOUND') & Q(from_account=account)) |
-                (Q(movement_type='TRANSFER') & Q(from_account=account))
+                (Q(movement_type='TRANSFER') & Q(from_account=account)) |
+                (Q(movement_type='ADJUSTMENT') & Q(from_account=account))
             )
 
         # Candidatos por proximidad de fecha O por coincidencia exacta de ID/Referencia
@@ -259,8 +261,9 @@ class MatchingService:
             total_weight = 100 # Avoid division by zero
 
         reasons = []
-        line_amount = abs(line.credit - line.debit)
-        payment_amount = abs(payment.amount)
+        # Redondeamos a 2 decimales para evitar problemas de precisión float/decimal
+        line_amount = round(abs(line.credit - line.debit), 2)
+        payment_amount = round(abs(payment.amount), 2)
         difference = line_amount - payment_amount
         
         # 1. Amount Match (0-100)
@@ -813,11 +816,13 @@ class MatchingService:
             return (
                 (payment.movement_type == 'INBOUND' and payment.to_account_id == account.pk)
                 or (payment.movement_type == 'TRANSFER' and payment.to_account_id == account.pk)
+                or (payment.movement_type == 'ADJUSTMENT' and payment.to_account_id == account.pk)
             )
         else:
             return (
                 (payment.movement_type == 'OUTBOUND' and payment.from_account_id == account.pk)
                 or (payment.movement_type == 'TRANSFER' and payment.from_account_id == account.pk)
+                or (payment.movement_type == 'ADJUSTMENT' and payment.from_account_id == account.pk)
             )
 
 
