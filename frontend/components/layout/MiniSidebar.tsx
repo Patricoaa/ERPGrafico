@@ -55,18 +55,15 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
     }
 
     return (
-        <aside className="fixed top-0 left-0 bottom-0 w-14 flex flex-col items-center py-4 gap-6 bg-sidebar border-r border-border/5 z-50">
+        <aside className="fixed top-0 left-0 bottom-0 w-14 flex flex-col items-center py-4 gap-6 bg-sidebar z-50">
             {/* 1. Logo */}
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-sm overflow-hidden shrink-0">
+            <div className="w-10 h-10 mx-auto rounded-lg bg-primary/10 flex items-center justify-center text-primary font-black text-sm overflow-hidden shrink-0">
                 {logo ? (
                     <img src={logo} alt="Logo" className="w-full h-full object-cover" />
                 ) : (
                     getInitials()
                 )}
             </div>
-
-            {/* Separator */}
-            <div className="w-8 h-px bg-border/20 shrink-0" />
 
             {/* 2. Navigation Rail */}
             <div className="flex-1 w-full flex flex-col items-center gap-3 overflow-y-auto overflow-x-hidden scrollbar-hide">
@@ -78,7 +75,7 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
                                     <button
                                         onClick={() => handleCategoryClick(item.id)}
                                         className={cn(
-                                            "relative h-10 w-10 flex items-center justify-center rounded-lg transition-all duration-200",
+                                            "relative h-10 w-10 mx-auto flex items-center justify-center rounded-lg transition-all duration-200",
                                             activeCategory === item.id
                                                 ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
                                                 : "text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"

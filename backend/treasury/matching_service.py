@@ -11,8 +11,8 @@ from django.utils import timezone
 from decimal import Decimal
 from datetime import timedelta
 from typing import List, Dict, Any, Optional
-from .models import BankStatementLine, TreasuryMovement, BankStatement, ReconciliationRule, TerminalBatch
-from .rule_service import RuleService
+from .models import BankStatementLine, TreasuryMovement, BankStatement, ReconciliationSettings, TerminalBatch
+# from .rule_service import RuleService
 
 
 class MatchingService:
@@ -100,32 +100,17 @@ class MatchingService:
             base_filters & candidate_filters
         ).select_related('contact', 'invoice', 'sale_order', 'purchase_order')
         
+        # Configuración de conciliación de la cuenta
+        from .models import ReconciliationSettings
+        settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=account)
+
         # Scoring de cada pago
         suggestions = []
         
-        # 1. Aplicar reglas personalizadas primero
-        rule_matches = RuleService.apply_rules_to_line(line)
-        for match in rule_matches:
-            from .serializers import TreasuryMovementSerializer
-            suggestions.append({
-                'payment_data': TreasuryMovementSerializer(match['payment']).data,
-                'score': match['score'],
-                'reasons': [f"Rule: {match['rule_name']}"],
-                'difference': abs(line.credit - line.debit) - abs(match['payment'].amount),
-                'rule_id': match['rule_id'],
-                'auto_confirm': match['auto_confirm']
-            })
+        for payment in payments_query[:200]:
+            score_data = MatchingService._calculate_match_score(line, payment, settings=settings)
             
-        # 2. Scoring estándar (evitando duplicados)
-        seen_ids = {s['payment_data']['id'] for s in suggestions}
-        
-        for payment in payments_query[:200]:  # B10: cap aumentado de 50→200 para evitar falsos negativos silenciosos en cuentas con muchos pagos
-            if payment.id in seen_ids:
-                continue
-                
-            score_data = MatchingService._calculate_match_score(line, payment)
-            
-            if score_data['score'] >= 50:  # Threshold mínimo
+            if score_data['score'] >= 40:  # Threshold base de visibilidad
                 suggestions.append(score_data)
         
         # Order by score descending and limit
@@ -235,10 +220,14 @@ class MatchingService:
             filters & candidate_filters
         )
         
+        # Load settings
+        from .models import ReconciliationSettings
+        settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=account)
+
         suggestions = []
         for line in lines_query[:20]:
-            score_data = MatchingService._calculate_match_score(line, payment)
-            if score_data['score'] >= 50:
+            score_data = MatchingService._calculate_match_score(line, payment, settings=settings)
+            if score_data['score'] >= 40:
                 # Re-format for line suggestion
                 from .serializers import BankStatementLineSerializer
                 suggestions.append({
@@ -254,110 +243,105 @@ class MatchingService:
     @staticmethod
     def _calculate_match_score(
         line: BankStatementLine,
-        payment: TreasuryMovement
+        payment: TreasuryMovement,
+        settings=None
     ) -> Dict[str, Any]:
         """
-        Calcula score de matching entre línea y pago.
-        
-        Returns:
-            {
-                'payment': TreasuryMovement,
-                'payment_data': dict,
-                'score': float,
-                'reasons': list,
-                'difference': Decimal
-            }
+        Calcula score de matching entre línea y pago usando pesos configurables.
         """
-        score = 0
+        if not settings:
+            from .models import ReconciliationSettings
+            account = line.statement.treasury_account if line.statement else None
+            if account:
+                settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=account)
+            else:
+                # Fallback to default weights
+                settings = ReconciliationSettings(
+                    amount_weight=40, date_weight=30, reference_weight=20, contact_weight=10
+                )
+
+        total_weight = settings.amount_weight + settings.date_weight + settings.reference_weight + settings.contact_weight
+        if total_weight == 0:
+            total_weight = 100 # Avoid division by zero
+
         reasons = []
-        
         line_amount = abs(line.credit - line.debit)
         payment_amount = abs(payment.amount)
         difference = line_amount - payment_amount
         
-        # 1. Exact amount match (40 puntos)
+        # 1. Amount Match (0-100)
+        amount_score = 0
         if line_amount == payment_amount:
-            score += 40
+            amount_score = 100
             reasons.append('exact_amount')
         elif abs(difference) <= payment_amount * Decimal('0.05'):  # ±5%
-            score += 25
+            amount_score = 50
             reasons.append('similar_amount')
         
-        # 2. Date proximity (30 puntos)
+        # 2. Date Match (0-100)
+        date_score = 0
         date_diff = abs((line.transaction_date - payment.date).days)
         if date_diff == 0:
-            score += 30
+            date_score = 100
             reasons.append('exact_date')
         elif date_diff <= 1:
-            score += 25
+            date_score = 80
             reasons.append('date_1day')
         elif date_diff <= 3:
-            score += 15
+            date_score = 50
             reasons.append('date_3days')
         elif date_diff <= 7:
-            score += 5
+            date_score = 20
             reasons.append('date_week')
         
-        # 3. Reference/ID match (Hasta 30 puntos)
-        id_score = 0
-        
-        # Prioridad 1: ID de transacción exacto (30 pts)
+        # 3. Reference/ID match (0-100)
+        ref_score = 0
         if line.transaction_id and payment.transaction_number:
             l_id = line.transaction_id.strip().upper()
             p_id = payment.transaction_number.strip().upper()
             if l_id == p_id:
-                id_score = max(id_score, 30)
+                ref_score = 100
                 reasons.append('exact_id_match')
             elif l_id in p_id or p_id in l_id:
-                id_score = max(id_score, 20)
+                ref_score = 60
                 reasons.append('partial_id_match')
         
-        # Prioridad 2: Referencia (Hasta 25 pts)
-        if line.reference and payment.transaction_number:
+        if ref_score < 80 and line.reference and payment.transaction_number:
             l_ref = line.reference.strip().upper()
             p_id = payment.transaction_number.strip().upper()
             if l_ref == p_id:
-                id_score = max(id_score, 25)
+                ref_score = 80
                 reasons.append('exact_ref_match')
             elif l_ref in p_id or p_id in l_ref:
-                id_score = max(id_score, 15)
+                ref_score = 50
                 reasons.append('partial_ref_match')
         
-        score += id_score
-        
-        # 4. Description match (10 puntos)
-        # S2.5: normalizar descripción de la línea (quitar prefijos bancarios de ruido)
-        # S2.6: reemplazar substring strict por fuzzy matching con rapidfuzz
+        # 4. Description/Contact match (0-100)
+        contact_score = 0
         if payment.contact:
             contact_name = payment.contact.name.upper()
-
             bank_format = line.statement.bank_format if line.statement else None
-            # Normalizar descripción de la línea bancaria
             from .glossa_normalizer import normalize_description
             normalized_description = normalize_description(line.description, bank_format)
 
             try:
                 from rapidfuzz import fuzz as _fuzz
                 ratio = _fuzz.partial_ratio(contact_name, normalized_description)
-                if ratio == 100:
-                    score += 10
-                    reasons.append('contact_name_match')
-                elif ratio >= 80:
-                    # Escala lineal 5–9 pts entre ratio 80 y 99
-                    score += int(5 + (ratio - 80) / 19 * 4)
-                    reasons.append('contact_fuzzy_match')
-                # ratio < 80 → 0 pts (no penalizamos)
+                if ratio >= 70:
+                    contact_score = ratio
+                    reasons.append('contact_name_match' if ratio == 100 else 'contact_fuzzy_match')
             except ImportError:
-                # Fallback sin rapidfuzz: substring o palabras clave
                 if contact_name in normalized_description:
-                    score += 10
+                    contact_score = 100
                     reasons.append('contact_name_match')
-                else:
-                    words = [w for w in contact_name.split() if len(w) >= 3]
-                    matches = sum(1 for word in words if word in normalized_description)
-                    if matches >= 2:
-                        score += 5
-                        reasons.append('contact_partial_match')
+
+        # Final Weighted Score
+        final_score = (
+            (amount_score * settings.amount_weight) +
+            (date_score * settings.date_weight) +
+            (ref_score * settings.reference_weight) +
+            (contact_score * settings.contact_weight)
+        ) / total_weight
 
         # Serializar payment data
         from .serializers import TreasuryMovementSerializer
@@ -365,7 +349,7 @@ class MatchingService:
         
         return {
             'payment_data': payment_data,
-            'score': min(score, 100),  # Cap at 100
+            'score': round(final_score, 2),
             'reasons': reasons,
             'difference': difference
         }
@@ -752,14 +736,13 @@ class MatchingService:
 
         all_candidates: List[TreasuryMovement] = list(candidates_qs)
 
-        # ── 4. Pre-fetch reglas activas (1 query) ────────────────────────────────
-        from .models import ReconciliationRule
-        active_rules = list(
-            ReconciliationRule.objects.filter(
-                Q(treasury_account=account) | Q(treasury_account__isnull=True),
-                is_active=True
-            ).order_by('priority')
-        )
+        # ── 4. Load intelligence settings ────────────────────────────────────────
+        from .models import ReconciliationSettings
+        settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=account)
+        
+        # Use settings thresholds if not provided
+        if confidence_threshold is None:
+            confidence_threshold = settings.confidence_threshold
 
         # ── 5. Conjuntos de IDs ya matched (para skip inmediato) ─────────────────
         already_matched_payment_ids: set[int] = set()
@@ -768,57 +751,25 @@ class MatchingService:
         matches: List[Dict[str, Any]] = []
 
         for line in unreconciled_lines:
-            line_amount = abs(line.credit - line.debit)
-            is_inbound = line.credit > line.debit
-
-            # ── 5a. Filtrar candidatos en RAM por sentido + account ──────────────
             line_candidates = [
                 p for p in all_candidates
                 if p.id not in already_matched_payment_ids
-                and MatchingService._payment_matches_account_sense(p, account, is_inbound)
+                and MatchingService._payment_matches_account_sense(p, account, line.credit > line.debit)
             ]
 
-            # ── 5b. Score en RAM (sin queries adicionales) ───────────────────────
             best_suggestion: Optional[Dict[str, Any]] = None
             best_score: float = 0.0
 
-            # Reglas primero
-            for rule in active_rules:
-                config = rule.match_config
-                min_score = config.get('min_score', 50)
-                for p in line_candidates:
-                    score = RuleService._calculate_rule_score(line, p, rule)
-                    if score >= min_score and score > best_score:
-                        best_score = score
-                        best_suggestion = {
-                            'payment': p,
-                            'score': score,
-                            'rule_id': rule.id,
-                            'auto_confirm': rule.auto_confirm,
-                        }
+            for p in line_candidates:
+                score_data = MatchingService._calculate_match_score(line, p, settings)
+                if score_data['score'] > best_score:
+                    best_score = score_data['score']
+                    best_suggestion = {
+                        'payment': p,
+                        'score': score_data['score'],
+                    }
 
-            # Score estándar si ninguna regla supera threshold
-            if best_score < confidence_threshold:
-                for p in line_candidates:
-                    score_data = MatchingService._calculate_match_score(line, p)
-                    if score_data['score'] > best_score:
-                        best_score = score_data['score']
-                        best_suggestion = {
-                            'payment': p,
-                            'score': score_data['score'],
-                            'rule_id': None,
-                            'auto_confirm': False,
-                        }
-
-            if not best_suggestion:
-                continue
-
-            should_match = (
-                best_suggestion['score'] >= confidence_threshold
-                or best_suggestion.get('auto_confirm', False)
-            )
-
-            if not should_match:
+            if not best_suggestion or best_score < confidence_threshold:
                 continue
 
             payment = best_suggestion['payment']
@@ -827,22 +778,16 @@ class MatchingService:
                 MatchingService.create_match_group(
                     [line.id],
                     [payment.id],
-                    None,  # Sistema (B33: created_by nullable pending S7.4)
+                    None,
                 )
 
-                if best_suggestion.get('rule_id'):
-                    RuleService.increment_rule_usage(best_suggestion['rule_id'], success=True)
-
-                # Marcar como ya usado para evitar doble-match
                 already_matched_payment_ids.add(payment.id)
-
                 matched_count += 1
                 matches.append({
                     'line_id': line.id,
                     'line_number': line.line_number,
                     'payment_id': payment.id,
-                    'score': best_suggestion['score'],
-                    'rule_applied': best_suggestion.get('rule_id') is not None,
+                    'score': best_score,
                 })
             except Exception:
                 continue

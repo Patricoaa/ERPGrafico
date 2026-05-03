@@ -17,8 +17,7 @@ def auto_match_statement_task(self, statement_id: int, confidence_threshold: flo
         { 'processed': int, 'total': int, 'matched': int, 'percent': int }
     """
     try:
-        from .models import BankStatement, TreasuryMovement, ReconciliationRule
-        from .rule_service import RuleService
+        from .models import BankStatement, TreasuryMovement, ReconciliationSettings
         from django.db.models import Q
         from datetime import timedelta
 
@@ -33,6 +32,12 @@ def auto_match_statement_task(self, statement_id: int, confidence_threshold: flo
             raise ValueError("Cartola ya confirmada")
 
         account = statement.treasury_account
+        
+        # Load Settings
+        settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=account)
+        
+        # Use provided threshold or fallback to settings
+        threshold = confidence_threshold if confidence_threshold is not None else settings.confidence_threshold
 
         # Pre-fetch unreconciled lines
         unreconciled_lines = list(
@@ -51,12 +56,13 @@ def auto_match_statement_task(self, statement_id: int, confidence_threshold: flo
             meta={'processed': 0, 'total': total_unreconciled, 'matched': 0, 'percent': 0}
         )
 
-        # Date range
+        # Date range from settings
         dates = [l.transaction_date for l in unreconciled_lines]
-        range_min = min(dates) - timedelta(days=7)
-        range_max = max(dates) + timedelta(days=7)
+        lookback = settings.date_range_days
+        range_min = min(dates) - timedelta(days=lookback)
+        range_max = max(dates) + timedelta(days=lookback)
 
-        # Pre-fetch candidates and rules
+        # Pre-fetch candidates
         candidates_qs = TreasuryMovement.objects.filter(
             Q(
                 is_reconciled=False,
@@ -68,19 +74,11 @@ def auto_match_statement_task(self, statement_id: int, confidence_threshold: flo
 
         all_candidates = list(candidates_qs)
 
-        active_rules = list(
-            ReconciliationRule.objects.filter(
-                Q(treasury_account=account) | Q(treasury_account__isnull=True),
-                is_active=True
-            ).order_by('priority')
-        )
-
         already_matched_payment_ids: set = set()
         matched_count = 0
         matches = []
 
         for i, line in enumerate(unreconciled_lines):
-            line_amount = abs(line.credit - line.debit)
             is_inbound = line.credit > line.debit
 
             line_candidates = [
@@ -92,48 +90,20 @@ def auto_match_statement_task(self, statement_id: int, confidence_threshold: flo
             best_suggestion = None
             best_score: float = 0.0
 
-            # Rules first
-            for rule in active_rules:
-                config = rule.match_config
-                min_score = config.get('min_score', 50)
-                for p in line_candidates:
-                    score = RuleService._calculate_rule_score(line, p, rule)
-                    if score >= min_score and score > best_score:
-                        best_score = score
-                        best_suggestion = {
-                            'payment': p,
-                            'score': score,
-                            'rule_id': rule.id,
-                            'auto_confirm': rule.auto_confirm,
-                        }
+            # Scoring in memory using settings
+            for p in line_candidates:
+                score_data = MatchingService._calculate_match_score(line, p, settings=settings)
+                if score_data['score'] > best_score:
+                    best_score = score_data['score']
+                    best_suggestion = {
+                        'payment': p,
+                        'score': score_data['score']
+                    }
 
-            # Standard score fallback
-            if best_score < confidence_threshold:
-                for p in line_candidates:
-                    score_data = MatchingService._calculate_match_score(line, p)
-                    if score_data['score'] > best_score:
-                        best_score = score_data['score']
-                        best_suggestion = {
-                            'payment': p,
-                            'score': score_data['score'],
-                            'rule_id': None,
-                            'auto_confirm': False,
-                        }
-
-            should_match = (
-                best_suggestion
-                and (
-                    best_suggestion['score'] >= confidence_threshold
-                    or best_suggestion.get('auto_confirm', False)
-                )
-            )
-
-            if should_match and best_suggestion:
+            if best_suggestion and best_score >= threshold:
                 payment = best_suggestion['payment']
                 try:
                     MatchingService.create_match_group([line.id], [payment.id], None)
-                    if best_suggestion.get('rule_id'):
-                        RuleService.increment_rule_usage(best_suggestion['rule_id'], success=True)
                     already_matched_payment_ids.add(payment.id)
                     matched_count += 1
                     matches.append({

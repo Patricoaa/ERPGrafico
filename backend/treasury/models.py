@@ -528,7 +528,12 @@ class TreasuryAccount(models.Model):
                 
     def save(self, *args, **kwargs):
         self.clean()
+        is_new = self.pk is None
         super().save(*args, **kwargs)
+        
+        # Ensure reconciliation settings exist
+        if is_new:
+            ReconciliationSettings.objects.get_or_create(treasury_account=self)
 
     @property
     def current_balance(self):
@@ -945,99 +950,52 @@ class BankStatementLine(models.Model):
         return self.credit - self.debit
 
 
-class ReconciliationRule(models.Model):
-    """Reglas de matching automático configurables (para fase 3)"""
-    
-    name = models.CharField(_("Nombre"), max_length=100)
-    description = models.TextField(
-        _("Descripción"),
-        blank=True,
-        help_text=_("Descripción del propósito de esta regla")
-    )
-    treasury_account = models.ForeignKey(
+class ReconciliationSettings(models.Model):
+    """Configuración global de conciliación por cuenta de tesorería"""
+    treasury_account = models.OneToOneField(
         'TreasuryAccount',
         on_delete=models.CASCADE,
-        null=True, blank=True,
-        related_name='reconciliation_rules',
-        verbose_name=_("Cuenta de Tesorería"),
-        help_text=_("Dejar vacío para aplicar a todas las cuentas")
+        related_name='reconciliation_settings',
+        verbose_name=_("Cuenta de Tesorería")
     )
-    priority = models.IntegerField(
-        _("Prioridad"), 
-        default=10,
-        help_text=_("Menor número = mayor prioridad")
-    )
-    is_active = models.BooleanField(_("Activa"), default=True)
     
-    # Configuración de matching (JSONField para flexibilidad)
-    match_config = models.JSONField(
-        _("Configuración de Matching"),
-        default=dict,
-        help_text=_("Configuración en JSON con criterios de matching")
-    )
-    # Ejemplo de match_config:
-    # {
-    #   'criteria': ['amount_exact', 'date_range'],
-    #   'amount_tolerance': 0,
-    #   'date_range_days': 3,
-    #   'min_score': 85,
-    #   'reference_keywords': ['TRANSFERENCIA'],
-    #   'weights': {'amount': 40, 'date': 30, 'reference': 20, 'contact': 10}
-    # }
+    # Pesos de scoring (Importancia)
+    amount_weight = models.IntegerField(_("Peso del Monto"), default=40)
+    date_weight = models.IntegerField(_("Peso de la Fecha"), default=30)
+    reference_weight = models.IntegerField(_("Peso de la Referencia"), default=20)
+    contact_weight = models.IntegerField(_("Peso del Contacto"), default=10)
     
-    # Acciones automáticas
+    # Umbrales
+    confidence_threshold = models.IntegerField(
+        _("Umbral de Confianza"), 
+        default=90,
+        help_text=_("Puntaje mínimo para sugerir o auto-conciliar (0-100)")
+    )
+    
+    # Filtros
+    date_range_days = models.IntegerField(
+        _("Rango de Búsqueda (Días)"), 
+        default=30,
+        help_text=_("Días hacia atrás/adelante para buscar candidatos")
+    )
+    
     auto_confirm = models.BooleanField(
         _("Auto-confirmar"),
         default=False,
-        help_text=_("Si es True, confirma reconciliación automáticamente sin revisión")
-    )
-    create_payment_if_not_found = models.BooleanField(
-        _("Crear Pago si no existe"),
-        default=False,
-        help_text=_("Crear pago automático si no se encuentra match (casos especiales)")
-    )
-    
-    # Estadísticas de uso
-    times_applied = models.IntegerField(
-        _("Veces Aplicada"),
-        default=0,
-        help_text=_("Contador de veces que esta regla ha generado un match")
-    )
-    times_succeeded = models.IntegerField(
-        _("Veces Confirmada"),
-        default=0,
-        help_text=_("Contador de veces que un match sugerido por esta regla fue confirmado")
+        help_text=_("Si es True, el sistema concilia automáticamente sobre el umbral de confianza")
     )
 
-    @property
-    def success_rate(self) -> float:
-        """
-        Tasa de éxito derivada: (times_succeeded / times_applied) * 100.
-        Retorna 0.0 si no se ha aplicado nunca para evitar ZeroDivisionError.
-        """
-        if self.times_applied == 0:
-            return 0.0
-        return round((self.times_succeeded / self.times_applied) * 100, 2)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
-        related_name='created_reconciliation_rules',
-        verbose_name=_("Creado Por")
-    )
-    
     history = HistoricalRecords()
-    
+
     class Meta:
-        verbose_name = _("Regla de Reconciliación")
-        verbose_name_plural = _("Reglas de Reconciliación")
-        ordering = ['priority', '-id']
-    
+        verbose_name = _("Configuración de Conciliación")
+        verbose_name_plural = _("Configuraciones de Conciliación")
+
     def __str__(self):
-        scope = self.treasury_account.name if self.treasury_account else "Global"
-        return f"{self.name} ({scope})"
+        return f"Ajustes: {self.treasury_account.name}"
+
+
 
 
 class Bank(models.Model):

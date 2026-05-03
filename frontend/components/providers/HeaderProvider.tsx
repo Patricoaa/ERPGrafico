@@ -3,16 +3,20 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from "react"
 import { usePathname } from "next/navigation"
 
+import { LucideIcon } from "lucide-react"
+ 
 export interface HeaderConfig {
     title: string
     description?: string
     iconName?: string
+    icon?: LucideIcon
     titleActions?: React.ReactNode
     isLoading?: boolean
     status?: {
         label: string
         type?: 'synced' | 'saving' | 'error' | 'warning' | 'info'
         iconName?: string
+        icon?: LucideIcon
     }
     children?: React.ReactNode
 }
@@ -37,11 +41,8 @@ export function HeaderProvider({ children }: { children: React.ReactNode }) {
         setConfig(null)
     }, [])
 
-    // Clear header when navigating to a different page
-    // This prevents the old header from lingering on pages that don't define one
-    useEffect(() => {
-        requestAnimationFrame(() => clearHeader())
-    }, [pathname, clearHeader])
+    // Header clearing is now handled by PageHeader's cleanup function
+    // to avoid race conditions during navigation.
 
     const value = useMemo(() => ({
         config,

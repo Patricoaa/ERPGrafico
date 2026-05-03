@@ -194,43 +194,24 @@ export function useAutoMatchMutation(statementId: number) {
     })
 }
 
-export function useSaveRuleMutation() {
+export function useUpdateReconciliationSettingsMutation(accountId?: number) {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async (rule: Partial<ReconciliationRule>) => {
-            const payload = { ...rule, treasury_account: rule.treasury_account?.id || null }
-            if (rule.id) {
-                await api.patch(`/treasury/reconciliation-rules/${rule.id}/`, payload)
-                return { success: true, isNew: false }
-            } else {
-                await api.post('/treasury/reconciliation-rules/', payload)
-                return { success: true, isNew: true }
-            }
-        },
-        onSuccess: (data) => {
-            toast.success(data.isNew ? 'Regla creada' : 'Regla actualizada')
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.rules() })
-        },
-        onError: (err) => {
-            showApiError(err, 'Error al guardar regla')
-        }
-    })
-}
-
-export function useCreateDefaultRulesMutation() {
-    const queryClient = useQueryClient()
-
-    return useMutation({
-        mutationFn: async (accountId: number) => {
-            await api.post('/treasury/reconciliation-rules/create_defaults/', { treasury_account_id: accountId })
+        mutationFn: async (settings: any) => {
+            const res = await api.patch(`/treasury/reconciliation-settings/${settings.id}/`, settings)
+            return res.data
         },
         onSuccess: () => {
-            toast.success('Reglas predeterminadas creadas')
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.rules() })
+            toast.success('Configuración de inteligencia actualizada')
+            if (accountId) {
+                queryClient.invalidateQueries({ queryKey: reconciliationKeys.settings(accountId) })
+            } else {
+                queryClient.invalidateQueries({ queryKey: reconciliationKeys.all })
+            }
         },
         onError: (err) => {
-            showApiError(err, 'Error al crear reglas predeterminadas')
+            showApiError(err, 'Error al guardar configuración')
         }
     })
 }

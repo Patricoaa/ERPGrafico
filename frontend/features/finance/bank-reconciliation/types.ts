@@ -39,6 +39,9 @@ export interface ReconciliationSystemItem {
     is_batch?: boolean
     identifier?: string
     name?: string
+    movement_type?: 'INBOUND' | 'OUTBOUND' | 'TRANSFER' | 'ADJUSTMENT'
+    from_account?: number
+    to_account?: number
 }
 
 export interface MatchConfig {
@@ -48,17 +51,15 @@ export interface MatchConfig {
     amount_tolerance?: number
 }
 
-export interface ReconciliationRule {
+export interface ReconciliationSettings {
     id: number
-    name: string
-    description: string
-    treasury_account: { id: number, name: string } | null
-    priority: number
-    is_active: boolean
+    amount_weight: number
+    date_weight: number
+    reference_weight: number
+    contact_weight: number
+    confidence_threshold: number
+    date_range_days: number
     auto_confirm: boolean
-    times_applied: number
-    success_rate: number
-    match_config: MatchConfig
 }
 
 export interface TreasuryAccount {
@@ -66,6 +67,7 @@ export interface TreasuryAccount {
     name: string
     currency?: string
     account_type?: string
+    reconciliation_settings?: ReconciliationSettings
 }
 
 export interface DashboardPendingItem {

@@ -69,34 +69,31 @@ export function PageHeader({
 
     // Sync header config to global provider
     useEffect(() => {
-        // Defer update to next tick to avoid React warnings about state updates during mount/hydration
-        // especially when parent is a Server Component and children are lazy-loaded
-        const timer = setTimeout(() => {
-            setHeader({
-                title,
-                description,
-                iconName,
-                titleActions,
-                isLoading,
-                status,
-                children
-            })
-        }, 0)
+        setHeader({
+            title,
+            description,
+            icon: Icon,
+            iconName,
+            titleActions,
+            isLoading,
+            status,
+            children
+        })
 
         return () => {
-            clearTimeout(timer)
-            // Optional: only clear if we are still the active header
-            // But since PageHeader usually defines the entire page's identity, clearing is fine.
+            clearHeader()
         }
     }, [
         title, 
         description, 
+        Icon,
         iconName, 
         titleActions, 
         isLoading, 
         status, 
         children, 
-        setHeader
+        setHeader,
+        clearHeader
     ])
 
     // This component now renders nothing in-place,

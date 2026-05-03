@@ -34,13 +34,16 @@ export function useAccountsQuery() {
     })
 }
 
-export function useRulesQuery() {
+export function useReconciliationSettingsQuery(accountId?: number) {
     return useQuery({
-        queryKey: reconciliationKeys.rules(),
+        queryKey: reconciliationKeys.settings(accountId),
         queryFn: async () => {
-            const res = await api.get('/treasury/reconciliation-rules/')
-            return res.data as ReconciliationRule[]
-        }
+            const res = await api.get('/treasury/reconciliation-settings/for_account/', {
+                params: { treasury_account_id: accountId }
+            })
+            return res.data
+        },
+        enabled: !!accountId
     })
 }
 
@@ -136,7 +139,8 @@ export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: 
                 amount: b.net_amount,
                 date: b.sales_date,
                 contact_name: b.supplier_name || 'Liquidación Terminal',
-                is_batch: true
+                is_batch: true,
+                movement_type: 'INBOUND'
             })) : []
 
             return {

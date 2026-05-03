@@ -12,22 +12,9 @@ import { TableSkeleton } from "./TableSkeleton"
 export function PageHeaderSkeleton() {
     return (
         <div className="flex items-center gap-3 pointer-events-none min-w-0 animate-in fade-in duration-300">
-            {/* Loading Indicator Placeholder */}
-            <Skeleton className="h-8 w-8 shrink-0 bg-primary/5 border border-primary/5" />
-
-            <div className="flex items-start gap-5">
-                {/* Title and Description Placeholders */}
-                <div className="flex flex-col gap-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-2.5 w-48 opacity-40" />
-                </div>
-
-                {/* Status and Actions Placeholders */}
-                <div className="flex items-center gap-2 mt-[-2px]">
-                    <Skeleton className="h-5 w-16 rounded-full" />
-                    <Skeleton className="h-8 w-8 rounded-sm" />
-                    <Skeleton className="h-8 w-8 rounded-sm" />
-                </div>
+            <div className="flex items-center gap-2">
+                <Skeleton className="h-4 w-4 shrink-0 rounded-sm opacity-20" />
+                <Skeleton className="h-4 w-32 opacity-20" />
             </div>
         </div>
     )
