@@ -34,7 +34,7 @@ export function useAccountsQuery() {
     })
 }
 
-export function useReconciliationSettingsQuery(accountId?: number) {
+export function useReconciliationSettingsQuery(accountId?: number | string) {
     return useQuery({
         queryKey: reconciliationKeys.settings(accountId),
         queryFn: async () => {

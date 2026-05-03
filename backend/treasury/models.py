@@ -956,7 +956,9 @@ class ReconciliationSettings(models.Model):
         'TreasuryAccount',
         on_delete=models.CASCADE,
         related_name='reconciliation_settings',
-        verbose_name=_("Cuenta de Tesorería")
+        verbose_name=_("Cuenta de Tesorería"),
+        null=True,
+        blank=True
     )
     
     # Pesos de scoring (Importancia)
@@ -989,11 +991,13 @@ class ReconciliationSettings(models.Model):
     history = HistoricalRecords()
 
     class Meta:
-        verbose_name = _("Configuración de Conciliación")
-        verbose_name_plural = _("Configuraciones de Conciliación")
+        verbose_name = _("Inteligencia de Conciliación")
+        verbose_name_plural = _("Inteligencia de Conciliación")
 
     def __str__(self):
-        return f"Ajustes: {self.treasury_account.name}"
+        if not self.treasury_account:
+            return "Perfil de Inteligencia Global (Default)"
+        return f"Perfil de Inteligencia: {self.treasury_account.name}"
 
 
 

@@ -253,12 +253,25 @@ class MatchingService:
             from .models import ReconciliationSettings
             account = line.statement.treasury_account if line.statement else None
             if account:
-                settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=account)
+                settings = ReconciliationSettings.objects.filter(treasury_account=account).first()
+                if not settings:
+                    # Fallback to Global Settings
+                    settings = ReconciliationSettings.objects.filter(treasury_account__isnull=True).first()
+                
+                if not settings:
+                    # Final fallback if even global is missing
+                    settings = ReconciliationSettings(
+                        amount_weight=40, date_weight=30, reference_weight=20, contact_weight=10,
+                        confidence_threshold=90, date_range_days=30
+                    )
             else:
-                # Fallback to default weights
-                settings = ReconciliationSettings(
-                    amount_weight=40, date_weight=30, reference_weight=20, contact_weight=10
-                )
+                # Fallback to Global Settings directly if no account context
+                settings = ReconciliationSettings.objects.filter(treasury_account__isnull=True).first()
+                if not settings:
+                    settings = ReconciliationSettings(
+                        amount_weight=40, date_weight=30, reference_weight=20, contact_weight=10,
+                        confidence_threshold=90, date_range_days=30
+                    )
 
         total_weight = settings.amount_weight + settings.date_weight + settings.reference_weight + settings.contact_weight
         if total_weight == 0:
