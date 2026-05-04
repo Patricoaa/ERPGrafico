@@ -1400,6 +1400,7 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
             data = request.data
             provider_id = data.get('provider')
             sales_date = data.get('sales_date')
+            sales_date_end = data.get('sales_date_end')
             gross_amount = Decimal(str(data.get('gross_amount')))
             commission_base = Decimal(str(data.get('commission_base', 0)))
             commission_tax = Decimal(str(data.get('commission_tax', 0)))
@@ -1412,6 +1413,7 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
             batch = TerminalBatchService.create_batch(
                 provider=provider,
                 sales_date=sales_date,
+                sales_date_end=sales_date_end,
                 gross_amount=gross_amount,
                 commission_base=commission_base,
                 commission_tax=commission_tax,

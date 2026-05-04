@@ -129,8 +129,15 @@ class MatchingService:
     def _suggest_batches(line: BankStatementLine, limit: int) -> List[Dict[str, Any]]:
         """Busca lotes de terminales que coincidan con la línea de abono."""
         line_amount = line.credit - line.debit
-        date_min = line.transaction_date - timedelta(days=7)
-        date_max = line.transaction_date + timedelta(days=7)
+        
+        # Use configured date range
+        from .models import ReconciliationSettings
+        account = line.statement.treasury_account
+        settings = ReconciliationSettings.get_for_account(account)
+        lookback = settings.date_range_days
+        
+        date_min = line.transaction_date - timedelta(days=lookback)
+        date_max = line.transaction_date + timedelta(days=lookback)
         
         batches = TerminalBatch.objects.filter(
             status=TerminalBatch.Status.SETTLED,
@@ -139,7 +146,7 @@ class MatchingService:
             net_amount__lte=line_amount * Decimal('1.05'),
             sales_date__gte=date_min,
             sales_date__lte=date_max,
-            payment_method__treasury_account=line.statement.treasury_account
+            provider__bank_treasury_account=line.statement.treasury_account
         )
         
         suggestions = []
@@ -549,6 +556,15 @@ class MatchingService:
                 b.deposit_date = line.transaction_date
             b.bank_statement_line = line
             b.save()
+            
+            # Also reconcile the settlement movement if it exists
+            if hasattr(b, 'settlement_movement') and b.settlement_movement:
+                sm = b.settlement_movement
+                sm.is_reconciled = True
+                sm.reconciled_at = now
+                sm.reconciled_by = user
+                sm.reconciliation_match = group
+                sm.save()
 
         # Update All TreasuryMovements in Group AND Handle Transfer if Accounts Differs
         for p in group.movements.all():
@@ -655,6 +671,14 @@ class MatchingService:
             b.reconciliation_match = None
             b.bank_statement_line = None
             b.save()
+            
+            # Also un-reconcile the settlement movement if it exists
+            if hasattr(b, 'settlement_movement') and b.settlement_movement:
+                sm = b.settlement_movement
+                sm.is_reconciled = False
+                sm.reconciled_at = None
+                sm.reconciliation_match = None
+                sm.save()
             
         # 4. Delete Group
         group.delete()

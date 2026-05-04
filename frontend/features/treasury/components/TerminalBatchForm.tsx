@@ -10,8 +10,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Loader2, Calculator, Info, Search, ChevronDown, Check, MousePointerClick, RefreshCcw, Landmark } from "lucide-react"
-import { PeriodValidationDateInput } from "@/components/shared"
+import { DateRangeFilter, PeriodValidationDateInput } from "@/components/shared"
 import { toast } from "sonner"
+import { DateRange } from "react-day-picker"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -34,13 +35,13 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     const [providerId, setProviderId] = useState<string>("")
     const [depositMethodId, setDepositMethodId] = useState<string>("")
     const { serverDate } = useServerDate()
-    const [date, setDate] = useState<Date | undefined>(undefined)
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
     const [isDateValid, setIsDateValid] = useState(true)
 
     // Sync state with server date when available and not yet set
     useEffect(() => {
-        if (serverDate && !date) {
-            requestAnimationFrame(() => setDate(serverDate))
+        if (serverDate && !dateRange) {
+            requestAnimationFrame(() => setDateRange({ from: serverDate, to: serverDate }))
         }
     }, [serverDate])
     const [grossAmount, setGrossAmount] = useState<string>("0")
@@ -85,7 +86,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
 
     const handleAutoCalculate = async () => {
-        if (!providerId || !date) {
+        if (!providerId || !dateRange?.from) {
             toast.error("Seleccione proveedor y fecha")
             return
         }
@@ -104,7 +105,8 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
             const payload = {
                 provider: providerId,
                 payment_method: depositMethodId,
-                sales_date: date ? format(date, "yyyy-MM-dd") : null,
+                sales_date: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : null,
+                sales_date_end: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : null,
                 gross_amount: parseFloat(grossAmount),
                 commission_base: parseFloat(commissionNet),
                 commission_tax: parseFloat(commissionTax),
@@ -192,14 +194,13 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                             </Popover>
                         </LabeledContainer>
 
-                        <PeriodValidationDateInput
-                            date={date}
-                            onDateChange={setDate}
-                            label="Fecha de Ventas"
-                            validationType="tax"
-                            onValidityChange={setIsDateValid}
-                            required
-                        />
+                        <LabeledContainer label="Fechas de Venta">
+                            <DateRangeFilter
+                                date={dateRange}
+                                onDateChange={setDateRange}
+                                className="w-full"
+                            />
+                        </LabeledContainer>
 
                         <LabeledSelect
                             label="Método de Depósito (Hacia Banco)"
@@ -233,15 +234,15 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                     context="treasury"
                                     variant="compact"
                                     title="Pendiente de Selección"
-                                    description={(!providerId || !date)
-                                        ? "Seleccione proveedor y fecha para cargar ventas."
+                                    description={(!providerId || !dateRange?.from)
+                                        ? "Seleccione proveedor y rango de fechas para cargar ventas."
                                         : "Vincule las ventas del terminal para calcular el lote automáticamente."
                                     }
                                     action={
                                         <ActionSlideButton
                                             type="button"
                                             onClick={handleAutoCalculate}
-                                            disabled={!providerId || !date}
+                                            disabled={!providerId || !dateRange?.from}
                                             icon={MousePointerClick}
                                             className="min-w-[200px]"
                                         >
@@ -331,7 +332,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                 open={openSelection}
                 onOpenChange={setOpenSelection}
                 providerId={providerId}
-                date={date}
+                dateRange={dateRange}
                 initialSelectedIds={selectedIds}
                 onConfirm={(movements, ids) => {
                     setSelectedMovements(movements)
@@ -345,11 +346,11 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     )
 }
 
-function SaleSelectionModal({ open, onOpenChange, providerId, date, onConfirm, initialSelectedIds }: {
+function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfirm, initialSelectedIds }: {
     open: boolean,
     onOpenChange: (open: boolean) => void,
     providerId: string,
-    date: Date | undefined,
+    dateRange: DateRange | undefined,
     onConfirm: (movements: any[], ids: Set<number>) => void,
     initialSelectedIds: Set<number>
 }) {
@@ -359,35 +360,54 @@ function SaleSelectionModal({ open, onOpenChange, providerId, date, onConfirm, i
 
     useEffect(() => {
         let isMounted = true
-        if (open && providerId && date) {
+        if (open && providerId && dateRange?.from) {
             requestAnimationFrame(() => {
                 if (isMounted) setLoading(true)
             })
-            const dateStr = format(date, "yyyy-MM-dd")
+            
+            const params: any = {
+                terminal_provider: providerId,
+                movement_type: 'INBOUND',
+                terminal_batch__isnull: 'True'
+            }
+            
+            if (dateRange?.from) {
+                params.date_from = format(dateRange.from, "yyyy-MM-dd")
+            }
+            if (dateRange?.to) {
+                params.date_to = format(dateRange.to, "yyyy-MM-dd")
+            }
+            
             api.get(`/treasury/movements/`, {
-                params: {
-                    terminal_provider: providerId,
-                    movement_type: 'INBOUND',
-                    terminal_batch__isnull: 'True'
-                }
+                params
             }).then((res: any) => {
                 if (!isMounted) return
                 const data = res.data.results || res.data
 
-                // Sort: Prioritize selected date, then by date descending
+                // Sort: Prioritize selected dates, then by date descending
+                const dateFromStr = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : null;
+                const dateToStr = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : dateFromStr;
+                
+                const isDateInRange = (date: string) => {
+                    if (!dateFromStr || !dateToStr) return false;
+                    return date >= dateFromStr && date <= dateToStr;
+                };
+
                 const sorted = [...data].sort((a: any, b: any) => {
-                    if (a.date === dateStr && b.date !== dateStr) return -1
-                    if (a.date !== dateStr && b.date === dateStr) return 1
+                    const aInRange = isDateInRange(a.date);
+                    const bInRange = isDateInRange(b.date);
+                    if (aInRange && !bInRange) return -1
+                    if (!aInRange && bInRange) return 1
                     return b.date.localeCompare(a.date)
                 })
 
                 setMovements(sorted)
                 requestAnimationFrame(() => {
-                    // Initial auto-selection: only sales for the selected date
+                    // Initial auto-selection: only sales for the selected date range
                     const next = new Set<number>()
                     if (initialSelectedIds.size === 0) {
                         sorted.forEach((m: any) => {
-                            if (m.date === dateStr) next.add(m.id)
+                            if (isDateInRange(m.date)) next.add(m.id)
                         })
                     } else {
                         initialSelectedIds.forEach(id => {
@@ -401,7 +421,7 @@ function SaleSelectionModal({ open, onOpenChange, providerId, date, onConfirm, i
             })
         }
         return () => { isMounted = false }
-    }, [open, providerId, date])
+    }, [open, providerId, dateRange])
 
     const toggleAll = () => {
         if (selectedIds.size === movements.length) {
@@ -493,9 +513,6 @@ function SaleSelectionModal({ open, onOpenChange, providerId, date, onConfirm, i
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
                                                 <p className="text-sm font-bold">{m.reference || 'Sin referencia'}</p>
-                                                {m.date === format(date!, "yyyy-MM-dd") && (
-                                                    <span className="text-[10px] font-black text-primary uppercase ml-1 opacity-70">HOY</span>
-                                                )}
                                             </div>
                                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase">
                                                 <span>{m.partner_name || 'Particular'}</span>

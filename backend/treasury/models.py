@@ -1369,8 +1369,13 @@ class TerminalBatch(models.Model):
     
     # Fechas
     sales_date = models.DateField(
-        _("Fecha de Ventas"),
-        help_text=_("Día en que se realizaron las ventas")
+        _("Fecha de Ventas (Desde)"),
+        help_text=_("Día en que se realizaron las ventas (o inicio del rango)")
+    )
+    sales_date_end = models.DateField(
+        _("Fecha de Ventas (Hasta)"),
+        null=True, blank=True,
+        help_text=_("Fin del rango de ventas (si abarca varios días)")
     )
     settlement_date = models.DateField(
         _("Fecha de Liquidación"),
@@ -1453,6 +1458,16 @@ class TerminalBatch(models.Model):
         null=True, blank=True,
         related_name='terminal_batches',
         verbose_name=_("Grupo de Conciliación")
+    )
+    
+    # Movimiento de liquidación (creado automáticamente al liquidar)
+    settlement_movement = models.OneToOneField(
+        'TreasuryMovement',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='settlement_batch',
+        verbose_name=_("Movimiento de Liquidación"),
+        help_text=_("Movimiento INBOUND creado automáticamente al liquidar el lote")
     )
     
     # Facturación

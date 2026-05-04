@@ -36,6 +36,7 @@ export interface ReconciliationSystemItem {
     contact_name: string
     display_id?: string
     code?: string
+    /** @deprecated Used only for legacy batch suggestions from matching service */
     is_batch?: boolean
     identifier?: string
     name?: string
@@ -43,6 +44,7 @@ export interface ReconciliationSystemItem {
     from_account?: number
     to_account?: number
     is_pending_registration?: boolean
+    terminal_batch_id?: number | null
 }
 
 export interface MatchConfig {
