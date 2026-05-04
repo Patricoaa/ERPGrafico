@@ -20,6 +20,7 @@ import {
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { cn, formatCurrency } from "@/lib/utils"
 import {
     DndContext,
@@ -138,6 +139,7 @@ function DroppableBankLine({ id, children }: { id: number, children: React.React
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete }: ReconciliationPanelProps) {
+    const { isHubOpen } = useHubPanel()
     const [selectedLines, setSelectedLines] = useState<BankStatementLine[]>([])
     const [selectedPayments, setSelectedPayments] = useState<ReconciliationSystemItem[]>([])
 
@@ -225,6 +227,26 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         const selected = Object.keys(selection).map(index => unreconciledPayments[parseInt(index)])
         setSelectedPayments(selected.filter(Boolean))
     }, [unreconciledPayments])
+
+    const bankRowSelection = useMemo(() => {
+        const selection: RowSelectionState = {}
+        unreconciledLines.forEach((l, index) => {
+            if (selectedLines.some(sl => sl.id === l.id)) {
+                selection[index] = true
+            }
+        })
+        return selection
+    }, [unreconciledLines, selectedLines])
+
+    const systemRowSelection = useMemo(() => {
+        const selection: RowSelectionState = {}
+        unreconciledPayments.forEach((p, index) => {
+            if (selectedPayments.some(sp => sp.id === p.id)) {
+                selection[index] = true
+            }
+        })
+        return selection
+    }, [unreconciledPayments, selectedPayments])
 
     // ─── Matching Logic ───────────────────────────────────────────────────────
 
@@ -722,21 +744,24 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     data={unreconciledLines}
                                     cardMode
                                     searchPlaceholder="Buscar movimiento..."
+                                    rowSelection={bankRowSelection}
                                     onRowSelectionChange={handleLineSelectionChange}
                                     skeletonRows={10}
                                     pageSizeOptions={[50, 100]}
                                     defaultPageSize={50}
                                     renderRow={(row, children) => {
-                                        const isSuggested = lineSuggestions.some((s: any) => s.line_data?.id === (row.original as BankStatementLine).id)
-                                        const isExcluded = (row.original as BankStatementLine).reconciliation_status === 'EXCLUDED'
+                                        const line = row.original as BankStatementLine
+                                        const isSuggested = lineSuggestions.some((s: any) => s.line_data?.id === line.id)
+                                        const isExcluded = line.reconciliation_status === 'EXCLUDED' || (line as any).reconciliation_state === 'EXCLUDED'
+                                        
                                         return (
-                                            <DroppableBankLine id={(row.original as BankStatementLine).id}>
+                                            <DroppableBankLine id={line.id}>
                                                 {React.cloneElement(children as React.ReactElement, {
                                                     className: cn(
                                                         (children as React.ReactElement).props.className,
-                                                        "group",
-                                                        isSuggested && "[&_td]:!bg-warning/20 [&_td]:!border-y [&_td]:!border-warning/40",
-                                                        isExcluded && "opacity-60 grayscale-[0.5] [&_td]:!bg-muted/30"
+                                                        "group transition-all duration-200",
+                                                        isSuggested && "[&_td]:!bg-warning/15 [&_td]:!border-y [&_td]:!border-warning/30",
+                                                        isExcluded && "opacity-40 grayscale-[0.5] [&_td]:!bg-muted/30"
                                                     )
                                                 })}
                                             </DroppableBankLine>
@@ -770,6 +795,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     data={unreconciledPayments}
                                     cardMode
                                     searchPlaceholder="Buscar pago..."
+                                    rowSelection={systemRowSelection}
                                     onRowSelectionChange={handlePaymentSelectionChange}
                                     skeletonRows={10}
                                     pageSizeOptions={[50, 100]}
@@ -962,9 +988,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
             {/* Floating Bottom Taskbar */}
             {(selectedLines.length > 0 || selectedPayments.length > 0) && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-card border shadow-elevated rounded-full px-6 py-3 flex items-center gap-8 animate-in slide-in-from-bottom-8">
+                <div 
+                    className={cn(
+                        "fixed bottom-6 z-[100] bg-card border shadow-elevated rounded-full px-6 py-3 flex items-center gap-8 animate-in slide-in-from-bottom-8 transition-all duration-300",
+                        isHubOpen ? "left-[calc(50%-200px)] -translate-x-1/2" : "left-1/2 -translate-x-1/2"
+                    )}
+                >
                     {/* Suggestions Section */}
-                    {selectedLines.length === 1 && suggestions.length > 0 && (
+                    {selectedLines.length === 1 && suggestions.length > 0 && !(
+                        suggestions.length === 1 && selectedPayments.some(p => p.id === (suggestions[0].is_batch ? suggestions[0].batch_data?.id : suggestions[0].payment_data?.id))
+                    ) && (
                         <div className="flex items-center gap-2 mr-2">
                             {suggestions.length === 1 ? (
                                 <button 
@@ -976,19 +1009,18 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     }}
                                     className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-colors rounded-full py-1.5 pl-4 pr-2 group"
                                 >
-                                    <div className="flex flex-col items-start">
-                                        <span className="text-[9px] font-black uppercase text-warning tracking-tight">Sugerencia de Match</span>
+                                    <div className="flex flex-col items-start leading-none">
+                                        <span className="text-[8px] font-black uppercase text-warning/70 mb-0.5 tracking-wider">Usar Sugerencia</span>
                                         <span className="text-[11px] font-bold truncate max-w-[180px]">{suggestions[0].payment_data?.contact_name || suggestions[0].batch_data?.name}</span>
                                     </div>
-                                    <div className="h-6 w-6 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-colors">
-                                        <ChevronRight className="h-3.5 w-3.5 text-warning" />
+                                    <div className="h-7 w-7 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
+                                        <ChevronRight className="h-4 w-4 text-warning group-hover:translate-x-0.5 transition-transform" />
                                     </div>
                                 </button>
                             ) : (
                                 <div className="flex items-center gap-3 bg-warning/10 border border-warning/20 rounded-full py-1.5 pl-4 pr-4">
                                     <div className="flex flex-col items-start">
-                                        <span className="text-[9px] font-black uppercase text-warning tracking-tight">Múltiples Sugerencias</span>
-                                        <span className="text-[11px] font-bold">{suggestions.length} Coincidencias encontradas</span>
+                                        <span className="text-[11px] font-bold text-warning">{suggestions.length} Sugerencias</span>
                                     </div>
                                     <Sparkles className="h-4 w-4 text-warning animate-pulse" />
                                 </div>
@@ -996,22 +1028,22 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         </div>
                     )}
 
-                    {/* Summary Stats (Always Visible) */}
-                    <div className="flex items-center gap-6 bg-muted/30 px-6 py-1.5 rounded-full border border-border/40">
-                        <div className="flex flex-col">
-                            <span className="text-[9px] font-black uppercase text-muted-foreground/70 tracking-widest leading-none mb-1">Banco ({selectedLines.length})</span>
+                    {/* Summary Stats (Always Visible - Unified Unit) */}
+                    <div className="flex items-center gap-8 bg-muted/40 px-8 py-2.5 rounded-full border border-border/40 shadow-inner">
+                        <div className="flex flex-col border-r border-border/40 pr-8 last:border-0 h-8 justify-center">
+                            <span className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-1.5">Banco ({selectedLines.length})</span>
                             <span className="text-sm font-mono font-bold text-info leading-none">
                                 {formatCurrency(selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0))}
                             </span>
                         </div>
-                        <div className="flex flex-col">
-                            <span className="text-[9px] font-black uppercase text-muted-foreground/70 tracking-widest leading-none mb-1">Sistema ({selectedPayments.length})</span>
+                        <div className="flex flex-col border-r border-border/40 pr-8 last:border-0 h-8 justify-center">
+                            <span className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-1.5">Sistema ({selectedPayments.length})</span>
                             <span className="text-sm font-mono font-bold text-primary leading-none">
                                 {formatCurrency(selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0))}
                             </span>
                         </div>
-                        <div className="flex flex-col items-end">
-                            <span className="text-[9px] font-black uppercase text-muted-foreground/70 tracking-widest leading-none mb-1">Diferencia</span>
+                        <div className="flex flex-col items-end last:border-0 h-8 justify-center pl-2">
+                            <span className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-1.5">Diferencia</span>
                             <span className={cn(
                                 "text-sm font-mono font-bold leading-none",
                                 (() => {
