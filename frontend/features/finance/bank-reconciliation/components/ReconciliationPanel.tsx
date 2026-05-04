@@ -727,7 +727,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     pageSizeOptions={[50, 100]}
                                     defaultPageSize={50}
                                     renderRow={(row, children) => {
-                                        const isSuggested = suggestions.some((s: any) => s.line_data?.id === (row.original as BankStatementLine).id)
+                                        const isSuggested = lineSuggestions.some((s: any) => s.line_data?.id === (row.original as BankStatementLine).id)
                                         const isExcluded = (row.original as BankStatementLine).reconciliation_status === 'EXCLUDED'
                                         return (
                                             <DroppableBankLine id={(row.original as BankStatementLine).id}>
@@ -776,7 +776,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     defaultPageSize={50}
                                     renderRow={(row, children) => {
                                         const item = row.original as ReconciliationSystemItem
-                                        const isSuggested = lineSuggestions.some((s: any) =>
+                                        const isSuggested = suggestions.some((s: any) =>
                                             (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === item.id
                                         )
                                         return (
@@ -963,57 +963,57 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             {/* Floating Bottom Taskbar */}
             {(selectedLines.length > 0 || selectedPayments.length > 0) && (
                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-card border shadow-elevated rounded-full px-6 py-3 flex items-center gap-8 animate-in slide-in-from-bottom-8">
-                    {/* Suggestion Card (if applicable) */}
-                    {(() => {
-                        if (selectedLines.length === 1 && suggestions.length > 0) {
-                            const s = suggestions[0]
-                            return (
-                                <div className="flex items-center gap-3 bg-warning/10 border border-warning/20 rounded-full py-1.5 pl-4 pr-1.5 mr-2">
-                                    <div className="flex flex-col">
+                    {/* Suggestions Section */}
+                    {selectedLines.length === 1 && suggestions.length > 0 && (
+                        <div className="flex items-center gap-2 mr-2">
+                            {suggestions.length === 1 ? (
+                                <button 
+                                    onClick={() => {
+                                        const s = suggestions[0]
+                                        const paymentId = s.is_batch ? s.batch_data?.id : s.payment_data?.id
+                                        const item = unreconciledPayments.find(p => p.id === paymentId)
+                                        if (item) setSelectedPayments([item])
+                                    }}
+                                    className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-colors rounded-full py-1.5 pl-4 pr-2 group"
+                                >
+                                    <div className="flex flex-col items-start">
                                         <span className="text-[9px] font-black uppercase text-warning tracking-tight">Sugerencia de Match</span>
-                                        <span className="text-[10px] font-bold truncate max-w-[150px]">{s.payment_data?.contact_name || s.batch_data?.name}</span>
+                                        <span className="text-[11px] font-bold truncate max-w-[180px]">{suggestions[0].payment_data?.contact_name || suggestions[0].batch_data?.name}</span>
                                     </div>
-                                    <div className="h-8 w-px bg-warning/20 mx-1" />
-                                    <div className="flex flex-col items-end pr-2">
-                                        <span className="text-[9px] font-black uppercase text-warning/70 tracking-tight">Dif.</span>
-                                        <span className={cn("text-[10px] font-mono font-bold", parseFloat(s.difference) === 0 ? "text-success" : "text-destructive")}>
-                                            {formatCurrency(parseFloat(s.difference))}
-                                        </span>
+                                    <div className="h-6 w-6 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-colors">
+                                        <ChevronRight className="h-3.5 w-3.5 text-warning" />
                                     </div>
-                                    <Button 
-                                        size="sm" 
-                                        variant="warning"
-                                        className="h-8 rounded-full px-4 text-[10px] font-black uppercase shadow-sm active:scale-95"
-                                        onClick={() => handleMatch(selectedLines[0].id, s.is_batch ? s.batch_data!.id : s.payment_data!.id, s.is_batch)}
-                                    >
-                                        Match Sugerido
-                                    </Button>
+                                </button>
+                            ) : (
+                                <div className="flex items-center gap-3 bg-warning/10 border border-warning/20 rounded-full py-1.5 pl-4 pr-4">
+                                    <div className="flex flex-col items-start">
+                                        <span className="text-[9px] font-black uppercase text-warning tracking-tight">Múltiples Sugerencias</span>
+                                        <span className="text-[11px] font-bold">{suggestions.length} Coincidencias encontradas</span>
+                                    </div>
+                                    <Sparkles className="h-4 w-4 text-warning animate-pulse" />
                                 </div>
-                            )
-                        }
-                        return null
-                    })()}
+                            )}
+                        </div>
+                    )}
 
-                    {/* Summary Stats */}
-                    <div className="flex items-center gap-6 pr-4">
+                    {/* Summary Stats (Always Visible) */}
+                    <div className="flex items-center gap-6 bg-muted/30 px-6 py-1.5 rounded-full border border-border/40">
                         <div className="flex flex-col">
-                            <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Banco ({selectedLines.length})</span>
-                            <span className="text-sm font-mono font-bold text-info">
+                            <span className="text-[9px] font-black uppercase text-muted-foreground/70 tracking-widest leading-none mb-1">Banco ({selectedLines.length})</span>
+                            <span className="text-sm font-mono font-bold text-info leading-none">
                                 {formatCurrency(selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0))}
                             </span>
                         </div>
-                        <div className="h-8 w-px bg-border/60" />
                         <div className="flex flex-col">
-                            <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Sistema ({selectedPayments.length})</span>
-                            <span className="text-sm font-mono font-bold text-primary">
+                            <span className="text-[9px] font-black uppercase text-muted-foreground/70 tracking-widest leading-none mb-1">Sistema ({selectedPayments.length})</span>
+                            <span className="text-sm font-mono font-bold text-primary leading-none">
                                 {formatCurrency(selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0))}
                             </span>
                         </div>
-                        <div className="h-8 w-px bg-border/60" />
-                        <div className="flex flex-col">
-                            <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Diferencia</span>
+                        <div className="flex flex-col items-end">
+                            <span className="text-[9px] font-black uppercase text-muted-foreground/70 tracking-widest leading-none mb-1">Diferencia</span>
                             <span className={cn(
-                                "text-sm font-mono font-bold",
+                                "text-sm font-mono font-bold leading-none",
                                 (() => {
                                     const lineTotal = selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
                                     const payTotal = selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0)
