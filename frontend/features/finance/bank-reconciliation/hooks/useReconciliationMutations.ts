@@ -49,8 +49,8 @@ export function useMatchMutation(statementId: number, treasuryAccountId: number)
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledLines(statementId) })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledPayments(treasuryAccountId) })
+            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
+            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] })
             queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
         }
     })
@@ -95,8 +95,8 @@ export function useGroupMatchMutation(statementId: number, treasuryAccountId: nu
             }
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledLines(statementId) })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledPayments(treasuryAccountId) })
+            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
+            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] })
             queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
         }
     })
@@ -108,29 +108,19 @@ export function useExcludeMutation(statementId: number) {
     return useMutation({
         mutationFn: async ({ lineId, reason, notes }: { lineId: number; reason: string; notes: string }) => {
             return api.patch(`/treasury/statement-lines/${lineId}/`, {
-                reconciliation_state: 'EXCLUDED',
+                reconciliation_status: 'EXCLUDED',
                 exclusion_reason: reason,
                 exclusion_notes: notes
             })
         },
-        onMutate: async ({ lineId }) => {
-            const linesKey = reconciliationKeys.unreconciledLines(statementId)
-            await queryClient.cancelQueries({ queryKey: linesKey })
-            const previousLines = queryClient.getQueryData(linesKey)
-            queryClient.setQueryData(linesKey, (old: any) => old?.filter((l: any) => l.id !== lineId))
-            return { previousLines, linesKey }
-        },
-        onError: (err, variables, context: any) => {
+        onError: (err) => {
             showApiError(err, 'Error al excluir')
-            if (context?.previousLines) {
-                queryClient.setQueryData(context.linesKey, context.previousLines)
-            }
         },
         onSuccess: () => {
             toast.success("Movimiento excluido correctamente")
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledLines(statementId) })
+            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
             queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
         }
     })
@@ -147,24 +137,38 @@ export function useBulkExcludeMutation(statementId: number) {
                 exclusion_notes: notes
             })
         },
-        onMutate: async ({ lineIds }) => {
-            const linesKey = reconciliationKeys.unreconciledLines(statementId)
-            await queryClient.cancelQueries({ queryKey: linesKey })
-            const previousLines = queryClient.getQueryData(linesKey)
-            queryClient.setQueryData(linesKey, (old: any) => old?.filter((l: any) => !lineIds.includes(l.id)))
-            return { previousLines, linesKey }
-        },
-        onError: (err, variables, context: any) => {
+        onError: (err) => {
             showApiError(err, 'Error al excluir masivamente')
-            if (context?.previousLines) {
-                queryClient.setQueryData(context.linesKey, context.previousLines)
-            }
         },
         onSuccess: () => {
             toast.success("Movimientos excluidos correctamente")
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledLines(statementId) })
+            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
+            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
+        }
+    })
+}
+
+export function useRestoreMutation(statementId: number) {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async (lineId: number) => {
+            return api.patch(`/treasury/statement-lines/${lineId}/`, {
+                reconciliation_status: 'UNRECONCILED',
+                exclusion_reason: null,
+                exclusion_notes: null
+            })
+        },
+        onSuccess: () => {
+            toast.success("Movimiento restaurado")
+        },
+        onError: (err) => {
+            showApiError(err, 'Error al restaurar')
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
             queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
         }
     })
@@ -187,7 +191,7 @@ export function useAutoMatchMutation(statementId: number) {
             showApiError(err, 'Error en auto-match')
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledLines(statementId) })
+            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
             // Auto match could have matched payments, we should invalidate across accounts to be safe
             queryClient.invalidateQueries({ queryKey: reconciliationKeys.all }) 
         }
@@ -240,8 +244,8 @@ export function useCreateAndMatchMutation(statementId: number, treasuryAccountId
             showApiError(err, "Error al crear y conciliar pago")
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledLines(statementId) })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledPayments(treasuryAccountId) })
+            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
+            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] })
             queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
         }
     })
@@ -264,8 +268,8 @@ export function useUnmatchMutation(statementId: number, treasuryAccountId: numbe
             showApiError(err, "Error al deshacer conciliación")
         },
         onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledLines(statementId) })
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.unreconciledPayments(treasuryAccountId) })
+            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
+            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] })
             queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
         }
     })

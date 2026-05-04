@@ -15,16 +15,16 @@ import { SplitAllocationDialog } from "./SplitAllocationDialog"
 import { LabeledSelect, LabeledInput, TableSkeleton } from "@/components/shared"
 import {
     Ban, CheckCircle2, ChevronRight,
-    Loader2, Search, Sparkles, X, Wand2, SplitSquareHorizontal, Calculator
+    Loader2, Search, Sparkles, X, Wand2, SplitSquareHorizontal, Calculator, RotateCcw
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
 import { cn, formatCurrency } from "@/lib/utils"
-import { 
-    DndContext, 
-    DragEndEvent, 
-    useDraggable, 
+import {
+    DndContext,
+    DragEndEvent,
+    useDraggable,
     useDroppable,
     PointerSensor,
     useSensor,
@@ -45,7 +45,8 @@ import {
     useExcludeMutation,
     useBulkExcludeMutation,
     useCreateAndMatchMutation,
-    useUnmatchMutation
+    useUnmatchMutation,
+    useRestoreMutation
 } from "../hooks/useReconciliationMutations"
 
 import { MovementWizard, type MovementData } from "@/features/treasury/components/MovementWizard"
@@ -61,10 +62,10 @@ import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 
 // Types moved to types.ts or correctly imported
-import type { 
-    BankStatement, 
-    BankStatementLine, 
-    ReconciliationSystemItem, 
+import type {
+    BankStatement,
+    BankStatementLine,
+    ReconciliationSystemItem,
     QueryPaginationParams
 } from "../types"
 
@@ -93,7 +94,7 @@ function DraggablePayment({ id, children, disabled }: { id: number, children: Re
         data: { type: 'payment', id },
         disabled
     });
-    
+
     const style = transform ? {
         transform: CSS.Translate.toString(transform),
         zIndex: isDragging ? 50 : undefined,
@@ -149,7 +150,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const { data: statement } = useStatementQuery(statementId)
     const { data: bankData, isLoading: loadingLines } = useUnreconciledLinesQuery(statementId, bankParams)
     const { data: systemData, isLoading: loadingPayments } = useUnreconciledPaymentsQuery(treasuryAccountId, systemParams)
-    
+
     const unreconciledLines = bankData?.results || []
     const unreconciledPayments = systemData?.results || []
 
@@ -162,6 +163,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const excludeMutation = useExcludeMutation(statementId)
     const bulkExcludeMutation = useBulkExcludeMutation(statementId)
     const unmatchMutation = useUnmatchMutation(statementId, treasuryAccountId)
+    const restoreMutation = useRestoreMutation(statementId)
 
     const loading = loadingLines || loadingPayments
     const matching = matchMutation.isPending || groupMatchMutation.isPending
@@ -184,7 +186,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     })
 
     const [confidenceThreshold, setConfidenceThreshold] = useState<number>(90)
-    
+
     // Create and Match "On the fly"
     const [createMatchDialog, setCreateMatchDialog] = useState<{ open: boolean, line: BankStatementLine | null }>({
         open: false, line: null
@@ -193,7 +195,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     // S4.8: Async auto-match progress state
     const [autoMatchProgressOpen, setAutoMatchProgressOpen] = useState(false)
-    
+
     const [sidebarOpen, setSidebarOpen] = useState(false)
 
     const sensors = useSensors(
@@ -203,7 +205,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             },
         })
     );
-    
+
     useEffect(() => {
         if (selectedLines.length === 1 || selectedPayments.length === 1) {
             setSidebarOpen(true)
@@ -254,7 +256,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
             setDiffDialog(prev => ({ ...prev, open: false }))
             setDiffNotes("")
-            
+
             toast.success("Match realizado", {
                 action: {
                     label: "Deshacer",
@@ -314,11 +316,11 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
-        
+
         if (over && active.data.current?.type === 'payment' && over.data.current?.type === 'line') {
             const paymentId = active.data.current.id;
             const lineId = over.data.current.id;
-            
+
             handleMatch(lineId, paymentId);
         }
     };
@@ -340,9 +342,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         }
 
         try {
-            await createAndMatchMutation.mutateAsync({ 
-                lineId: createMatchDialog.line.id, 
-                movementData: payload 
+            await createAndMatchMutation.mutateAsync({
+                lineId: createMatchDialog.line.id,
+                movementData: payload
             })
             setCreateMatchDialog({ open: false, line: null })
         } catch (error) {
@@ -395,8 +397,13 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         <span className={cn("text-xs font-bold truncate", isSuggested && "text-warning")}>
                             {row.original.description}
                         </span>
+                        {row.original.reconciliation_status === 'EXCLUDED' && (
+                            <Badge variant="outline" className="w-fit text-[8px] font-black uppercase py-0 px-1.5 border-destructive/30 text-destructive bg-destructive/5">
+                                Excluido
+                            </Badge>
+                        )}
                         {row.original.reference && (
-                            <span className="text-[10px] font-mono text-muted-foreground truncate opacity-70"> {/* intentional: badge density */} REF: {row.original.reference}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground truncate opacity-70"> REF: {row.original.reference}</span>
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
@@ -443,20 +450,31 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         createActionsColumn<BankStatementLine>({
             headerLabel: "",
             renderActions: (item) => [
-                <DataCell.Action
-                    key="exclude"
-                    icon={Ban}
-                    title="Excluir"
-                    className="text-muted-foreground hover:text-destructive"
-                    onClick={(e) => { e.stopPropagation(); setActionDialog({ open: true, type: 'exclude', lineId: item.id }) }}
-                />,
+                item.reconciliation_status === 'EXCLUDED' ? (
+                    <DataCell.Action
+                        key="restore"
+                        icon={RotateCcw}
+                        title="Restaurar"
+                        className="text-success hover:text-success/80"
+                        onClick={(e) => { e.stopPropagation(); restoreMutation.mutate(item.id) }}
+                    />
+                ) : (
+                    <DataCell.Action
+                        key="exclude"
+                        icon={Ban}
+                        title="Excluir"
+                        className="text-muted-foreground hover:text-destructive"
+                        onClick={(e) => { e.stopPropagation(); setActionDialog({ open: true, type: 'exclude', lineId: item.id }) }}
+                    />
+                ),
                 <DataCell.Action
                     key="create-match"
                     icon={Calculator}
                     title="Registrar Pago"
                     className="text-primary hover:text-primary/80"
-                    onClick={(e) => { 
-                        e.stopPropagation(); 
+                    disabled={item.reconciliation_status === 'EXCLUDED'}
+                    onClick={(e) => {
+                        e.stopPropagation();
                         setCreateMatchDialog({ open: true, line: item })
                     }}
                 />
@@ -528,14 +546,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             cell: ({ row }) => {
                 const item = row.original
                 const isDeposit = item.is_batch || (
-                    item.movement_type === 'INBOUND' || 
+                    item.movement_type === 'INBOUND' ||
                     (item.movement_type === 'TRANSFER' && item.to_account === treasuryAccountId)
                 )
                 let label = isDeposit ? "Ingreso" : "Egreso"
                 if (item.movement_type === 'TRANSFER') label = isDeposit ? "Transf. Entrante" : "Transf. Saliente"
                 if (item.movement_type === 'ADJUSTMENT') label = "Ajuste"
                 if (item.is_batch) label = "Lote"
-                
+
                 return (
                     <Badge variant="outline" className={cn(
                         "text-[9px] font-black uppercase tracking-wider",
@@ -553,7 +571,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             cell: ({ row }) => {
                 const item = row.original
                 const isDeposit = item.is_batch || (
-                    item.movement_type === 'INBOUND' || 
+                    item.movement_type === 'INBOUND' ||
                     (item.movement_type === 'TRANSFER' && item.to_account === treasuryAccountId)
                 )
                 return (
@@ -577,8 +595,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     icon={SplitSquareHorizontal}
                     title="Distribuir"
                     className="text-primary hover:text-primary/80"
-                    onClick={(e) => { 
-                        e.stopPropagation(); 
+                    onClick={(e) => {
+                        e.stopPropagation();
                         setSplitDialog({ open: true, payment: item })
                     }}
                 />
@@ -592,10 +610,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     return (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <div className="space-y-4">
-            {/* ─── Sticky Command Bar ─── */}
-            {/* Top Tools Bar */}
-            <div className="flex items-center justify-between bg-card border shadow-sm rounded-lg px-4 py-3">
+            <div className="space-y-4">
+                {/* ─── Sticky Command Bar ─── */}
+                {/* Top Tools Bar */}
+                <div className="flex items-center justify-between bg-card border shadow-sm rounded-lg px-4 py-3">
                     <div className="flex items-center gap-3">
                         <div className="relative">
                             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -671,233 +689,123 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             <option value="OUT">Egresos / Cargos</option>
                         </select>
                     </div>
-                <div className="flex items-center gap-2">
-                    <Button
-                        onClick={() => setActionDialog({ open: true, type: 'automatch' })}
-                        disabled={autoMatching}
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-xs font-bold bg-success/5 hover:bg-success/10 text-success border-success/20 hover:border-success/30 group transition-all"
-                    >
-                        {autoMatching ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-1.5 h-3.5 w-3.5 group-hover:rotate-12 transition-transform" />}
-                        Conciliación Automática
-                    </Button>
-                </div>
-            </div>
-
-            <div className="flex gap-6 relative min-h-[600px] items-start pb-24">
-                {/* Tables Container */}
-                <div className="flex-1 transition-all duration-500 ease-[var(--ease-premium)] min-w-0">
-                    {/* ─── Grid with Section Headers ─── */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        {/* Left: Bank */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between px-1">
-                                <div className="flex items-center gap-2">
-                                    <div className="h-2 w-2 rounded-full bg-info" />
-                                    <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Extracto Bancario</span>
-                                </div>
-                                <span className="text-[10px] font-mono text-muted-foreground">{bankData?.count || 0} pendientes</span>
-                            </div>
-                            <DataTable
-                                columns={bankColumns}
-                                data={unreconciledLines}
-                                cardMode
-                                searchPlaceholder="Buscar movimiento..."
-                                onRowSelectionChange={handleLineSelectionChange}
-                                skeletonRows={10}
-                                pageSizeOptions={[50, 100]}
-                                defaultPageSize={50}
-                                renderRow={(row, children) => {
-                                    const isSuggested = suggestions.some((s: any) => s.line_data?.id === (row.original as BankStatementLine).id)
-                                    return (
-                                        <DroppableBankLine id={(row.original as BankStatementLine).id}>
-                                            {React.cloneElement(children as React.ReactElement, {
-                                                className: cn(
-                                                    (children as React.ReactElement).props.className,
-                                                    "group",
-                                                    isSuggested && "[&_td]:!bg-warning/20 [&_td]:!border-y [&_td]:!border-warning/40"
-                                                )
-                                            })}
-                                        </DroppableBankLine>
-                                    )
-                                }}
-                                onPaginationChange={(updater) => {
-                                    if (typeof updater === 'function') {
-                                        const newState = updater({ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 })
-                                        setBankParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
-                                    } else {
-                                        setBankParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
-                                    }
-                                }}
-                                manualPagination
-                                pageCount={Math.ceil((bankData?.count || 0) / (bankParams.pageSize || 50))}
-                                pagination={{ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 }}
-                            />
-                        </div>
-
-                        {/* Right: System */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between px-1">
-                                <div className="flex items-center gap-2">
-                                    <div className="h-2 w-2 rounded-full bg-primary" />
-                                    <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Movimientos Sistema</span>
-                                </div>
-                                <span className="text-[10px] font-mono text-muted-foreground">{systemData?.count || 0} disponibles</span>
-                            </div>
-                            <DataTable
-                                columns={paymentColumns}
-                                data={unreconciledPayments}
-                                cardMode
-                                searchPlaceholder="Buscar pago..."
-                                onRowSelectionChange={handlePaymentSelectionChange}
-                                skeletonRows={10}
-                                pageSizeOptions={[50, 100]}
-                                defaultPageSize={50}
-                                renderRow={(row, children) => {
-                                    const item = row.original as ReconciliationSystemItem
-                                    const isSuggested = lineSuggestions.some((s: any) => 
-                                        (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === item.id
-                                    )
-                                    return (
-                                        <DraggablePayment id={item.id}>
-                                            {React.cloneElement(children as React.ReactElement, {
-                                                className: cn(
-                                                    (children as React.ReactElement).props.className,
-                                                    "group",
-                                                    isSuggested && "[&_td]:!bg-warning/20 [&_td]:!border-y [&_td]:!border-warning/40"
-                                                )
-                                            })}
-                                        </DraggablePayment>
-                                    )
-                                }}
-                                onPaginationChange={(updater) => {
-                                    if (typeof updater === 'function') {
-                                        const newState = updater({ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 })
-                                        setSystemParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
-                                    } else {
-                                        setSystemParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
-                                    }
-                                }}
-                                manualPagination
-                                pageCount={Math.ceil((systemData?.count || 0) / (systemParams.pageSize || 50))}
-                                pagination={{ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 }}
-                            />
-                        </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            onClick={() => setActionDialog({ open: true, type: 'automatch' })}
+                            disabled={autoMatching}
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs font-bold bg-success/5 hover:bg-success/10 text-success border-success/20 hover:border-success/30 group transition-all"
+                        >
+                            {autoMatching ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-1.5 h-3.5 w-3.5 group-hover:rotate-12 transition-transform" />}
+                            Conciliación Automática
+                        </Button>
                     </div>
                 </div>
 
-                {/* Floating Bottom Taskbar */}
-                {(selectedLines.length > 0 || selectedPayments.length > 0) && (
-                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border shadow-elevated rounded-full px-6 py-3 flex items-center gap-8 animate-in slide-in-from-bottom-8">
-                        {/* Suggestion Card (if applicable) */}
-                        {(() => {
-                            if (selectedLines.length === 1 && suggestions.length > 0) {
-                                const s = suggestions[0]
-                                return (
-                                    <div className="flex items-center gap-3 bg-warning/10 border border-warning/20 rounded-full py-1.5 pl-4 pr-1.5 mr-2">
-                                        <div className="flex flex-col">
-                                            <span className="text-[9px] font-black uppercase text-warning tracking-tight">Sugerencia de Match</span>
-                                            <span className="text-[11px] font-bold text-foreground truncate max-w-[120px]">
-                                                {s.is_batch ? s.batch_data?.name : s.payment_data?.contact_name}
-                                            </span>
-                                        </div>
-                                        <Button 
-                                            size="sm" 
-                                            variant="secondary"
-                                            className="h-7 text-[10px] font-black uppercase bg-warning text-warning-foreground hover:bg-warning/90 rounded-full"
-                                            onClick={() => handleMatch(selectedLines[0].id, s.is_batch ? s.batch_data?.id : s.payment_data?.id, s.is_batch)}
-                                        >
-                                            Conciliar Match
-                                        </Button>
+                <div className="flex gap-6 relative min-h-[600px] items-start pb-24">
+                    {/* Tables Container */}
+                    <div className="flex-1 transition-all duration-500 ease-[var(--ease-premium)] min-w-0">
+                        {/* ─── Grid with Section Headers ─── */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {/* Left: Bank */}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between px-1">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-2 w-2 rounded-full bg-info" />
+                                        <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Cartola Bancaria</span>
                                     </div>
-                                )
-                            }
-                            if (selectedPayments.length === 1 && lineSuggestions.length > 0) {
-                                const s = lineSuggestions[0]
-                                return (
-                                    <div className="flex items-center gap-3 bg-warning/10 border border-warning/20 rounded-full py-1.5 pl-4 pr-1.5 mr-2">
-                                        <div className="flex flex-col">
-                                            <span className="text-[9px] font-black uppercase text-warning tracking-tight">Sugerencia de Match</span>
-                                            <span className="text-[11px] font-bold text-foreground truncate max-w-[120px]">
-                                                {s.line_data?.description}
-                                            </span>
-                                        </div>
-                                        <Button 
-                                            size="sm" 
-                                            variant="secondary"
-                                            className="h-7 text-[10px] font-black uppercase bg-warning text-warning-foreground hover:bg-warning/90 rounded-full"
-                                            onClick={() => handleMatch(s.line_data?.id, selectedPayments[0].id, selectedPayments[0].is_batch)}
-                                        >
-                                            Conciliar Match
-                                        </Button>
-                                    </div>
-                                )
-                            }
-                            return null
-                        })()}
+                                    <span className="text-[10px] font-mono text-muted-foreground">{bankData?.count || 0} pendientes</span>
+                                </div>
+                                <DataTable
+                                    columns={bankColumns}
+                                    data={unreconciledLines}
+                                    cardMode
+                                    searchPlaceholder="Buscar movimiento..."
+                                    onRowSelectionChange={handleLineSelectionChange}
+                                    skeletonRows={10}
+                                    pageSizeOptions={[50, 100]}
+                                    defaultPageSize={50}
+                                    renderRow={(row, children) => {
+                                        const isSuggested = suggestions.some((s: any) => s.line_data?.id === (row.original as BankStatementLine).id)
+                                        const isExcluded = (row.original as BankStatementLine).reconciliation_status === 'EXCLUDED'
+                                        return (
+                                            <DroppableBankLine id={(row.original as BankStatementLine).id}>
+                                                {React.cloneElement(children as React.ReactElement, {
+                                                    className: cn(
+                                                        (children as React.ReactElement).props.className,
+                                                        "group",
+                                                        isSuggested && "[&_td]:!bg-warning/20 [&_td]:!border-y [&_td]:!border-warning/40",
+                                                        isExcluded && "opacity-60 grayscale-[0.5] [&_td]:!bg-muted/30"
+                                                    )
+                                                })}
+                                            </DroppableBankLine>
+                                        )
+                                    }}
+                                    onPaginationChange={(updater) => {
+                                        if (typeof updater === 'function') {
+                                            const newState = updater({ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 })
+                                            setBankParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
+                                        } else {
+                                            setBankParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
+                                        }
+                                    }}
+                                    manualPagination
+                                    pageCount={Math.ceil((bankData?.count || 0) / (bankParams.pageSize || 50))}
+                                    pagination={{ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 }}
+                                />
+                            </div>
 
-                        <div className="flex items-center gap-6">
-                            <div className="flex flex-col items-center min-w-[80px]">
-                                <span className="text-[10px] font-bold uppercase text-muted-foreground mb-0.5">Banco {selectedLines.length > 0 && <span className="text-primary">({selectedLines.length})</span>}</span>
-                                <span className="text-sm font-black font-mono tabular-nums text-foreground">
-                                    {formatCurrency(
-                                        selectedLines.length > 0 ? selectedLines.reduce((acc: number, l: any) => 
-                                            acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0
-                                        ) : 0
-                                    )}
-                                </span>
-                            </div>
-                            <div className="h-8 w-px bg-border/60" />
-                            <div className="flex flex-col items-center min-w-[80px]">
-                                <span className="text-[10px] font-bold uppercase text-muted-foreground mb-0.5">Sistema {selectedPayments.length > 0 && <span className="text-primary">({selectedPayments.length})</span>}</span>
-                                <span className="text-sm font-black font-mono tabular-nums text-foreground">
-                                    {formatCurrency(
-                                        selectedPayments.length > 0 ? selectedPayments.reduce((acc: number, p: any) => 
-                                            acc + Math.abs(parseFloat(p.amount)), 0
-                                        ) : 0
-                                    )}
-                                </span>
-                            </div>
-                            <div className="h-8 w-px bg-border/60" />
-                            <div className="flex flex-col items-center min-w-[80px]">
-                                <span className="text-[10px] font-bold uppercase text-muted-foreground mb-0.5">Diferencia</span>
-                                {(() => {
-                                    const lineTotal = selectedLines.reduce((acc: number, l: any) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
-                                    const payTotal = selectedPayments.reduce((acc: number, p: any) => acc + Math.abs(parseFloat(p.amount)), 0)
-                                    const diff = lineTotal - payTotal
-                                    return (
-                                        <span className={cn("text-base font-black font-mono tabular-nums", Math.abs(diff) < 1 ? "text-success" : "text-warning")}>
-                                            {formatCurrency(Math.abs(diff))}
-                                        </span>
-                                    )
-                                })()}
+                            {/* Right: System */}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between px-1">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-2 w-2 rounded-full bg-primary" />
+                                        <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Movimientos Sistema</span>
+                                    </div>
+                                    <span className="text-[10px] font-mono text-muted-foreground">{systemData?.count || 0} disponibles</span>
+                                </div>
+                                <DataTable
+                                    columns={paymentColumns}
+                                    data={unreconciledPayments}
+                                    cardMode
+                                    searchPlaceholder="Buscar pago..."
+                                    onRowSelectionChange={handlePaymentSelectionChange}
+                                    skeletonRows={10}
+                                    pageSizeOptions={[50, 100]}
+                                    defaultPageSize={50}
+                                    renderRow={(row, children) => {
+                                        const item = row.original as ReconciliationSystemItem
+                                        const isSuggested = lineSuggestions.some((s: any) =>
+                                            (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === item.id
+                                        )
+                                        return (
+                                            <DraggablePayment id={item.id}>
+                                                {React.cloneElement(children as React.ReactElement, {
+                                                    className: cn(
+                                                        (children as React.ReactElement).props.className,
+                                                        "group",
+                                                        isSuggested && "[&_td]:!bg-warning/20 [&_td]:!border-y [&_td]:!border-warning/40"
+                                                    )
+                                                })}
+                                            </DraggablePayment>
+                                        )
+                                    }}
+                                    onPaginationChange={(updater) => {
+                                        if (typeof updater === 'function') {
+                                            const newState = updater({ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 })
+                                            setSystemParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
+                                        } else {
+                                            setSystemParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
+                                        }
+                                    }}
+                                    manualPagination
+                                    pageCount={Math.ceil((systemData?.count || 0) / (systemParams.pageSize || 50))}
+                                    pagination={{ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 }}
+                                />
                             </div>
                         </div>
-
-                        <div className="flex items-center gap-2 border-l border-border/60 pl-6">
-                            <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="h-9 text-xs text-muted-foreground hover:bg-muted rounded-full px-4" 
-                                onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}
-                            >
-                                <X className="h-3 w-3 mr-1.5" />
-                                Limpiar
-                            </Button>
-                            
-                            <Button
-                                size="sm"
-                                className="h-9 px-6 text-xs font-bold shadow-sm transition-transform active:scale-95 rounded-full"
-                                onClick={() => handleGroupMatch(false)}
-                                disabled={matching || selectedLines.length === 0 || selectedPayments.length === 0}
-                            >
-                                {matching ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                                Conciliar
-                            </Button>
-                        </div>
-                    </div>
-                )}
+                </div>
             </div>
 
             {/* ─── Modals ─── */}
@@ -906,31 +814,38 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 onOpenChange={(open) => !open && setActionDialog({ open: false, type: null })}
                 title={actionDialog.type === 'bulk_exclude' ? `Excluir ${selectedLines.length} Movimientos` : "Excluir Movimiento"}
                 onConfirm={async (reason, notes) => {
+                    const isBulk = actionDialog.type === 'bulk_exclude'
+                    const affectedCount = isBulk ? selectedLines.length : 1
+
                     try {
-                        if (actionDialog.type === 'bulk_exclude') {
+                        if (isBulk) {
                             await bulkExcludeMutation.mutateAsync({
                                 lineIds: selectedLines.map(l => l.id),
                                 reason,
                                 notes
                             })
                             setSelectedLines([])
-                        } else {
-                            if (actionDialog.lineId) {
-                                await excludeMutation.mutateAsync({
-                                    lineId: actionDialog.lineId,
-                                    reason,
-                                    notes
-                                })
-                            }
+                        } else if (actionDialog.lineId) {
+                            await excludeMutation.mutateAsync({
+                                lineId: actionDialog.lineId,
+                                reason,
+                                notes
+                            })
+                        }
+
+                        if ((bankData?.count || 0) === affectedCount) {
+                            onComplete()
                         }
                     } catch (error) {
                         // Handled in mutation
-                    } finally { setActionDialog({ open: false, type: null }) }
+                    } finally {
+                        setActionDialog({ open: false, type: null })
+                    }
                 }}
             />
 
-            <SplitAllocationDialog 
-                open={splitDialog.open} 
+            <SplitAllocationDialog
+                open={splitDialog.open}
                 onOpenChange={(open) => !open && setSplitDialog({ open: false, payment: null })}
                 payment={splitDialog.payment}
                 treasuryAccountId={treasuryAccountId}
@@ -944,7 +859,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 description={
                     <div className="space-y-6 pt-2">
                         <p>Se buscarán coincidencias automáticas basadas en monto y fecha. Las sugerencias con un score superior al umbral se procesarán automáticamente.</p>
-                        
+
                         <div className="space-y-3 bg-muted/30 p-4 rounded-lg border border-border/50">
                             <div className="flex justify-between items-center">
                                 <Label className="text-xs font-black uppercase tracking-wider text-muted-foreground">
@@ -954,16 +869,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     {confidenceThreshold}%
                                 </Badge>
                             </div>
-                            <input 
-                                type="range" 
-                                min="50" 
-                                max="100" 
+                            <input
+                                type="range"
+                                min="50"
+                                max="100"
                                 step="1"
                                 value={confidenceThreshold}
                                 onChange={(e) => setConfidenceThreshold(parseInt(e.target.value))}
                                 className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
                             />
-                            <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase opacity-50"> {/* intentional: badge density */}
+                            <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase opacity-50">
                                 <span>Flexible (50%)</span>
                                 <span>Estricto (100%)</span>
                             </div>
@@ -974,7 +889,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 confirmText="Iniciar Auto-Match"
             />
 
-            {/* Difference Handling Modal */}
             <BaseModal
                 open={diffDialog.open}
                 onOpenChange={(open) => !open && setDiffDialog(prev => ({ ...prev, open: false }))}
@@ -1013,6 +927,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     />
                 </div>
             </BaseModal>
+
             {/* ─── Create and Match Wizard ─── */}
             {createMatchDialog.line && (
                 <MovementWizard
@@ -1022,12 +937,12 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     variant="standard"
                     initialAccountName={statement?.treasury_account_name || "Cuenta Banco"}
                     fixedAccountId={treasuryAccountId}
-                    // Pre-fill amount based on absolute value of line
                     fixedMoveType={parseFloat(createMatchDialog.line.credit) > parseFloat(createMatchDialog.line.debit) ? 'OTHER_IN' : 'OTHER_OUT'}
                     onComplete={handleCreateAndMatch}
                     onCancel={() => setCreateMatchDialog({ open: false, line: null })}
                 />
             )}
+
             {/* ─── S4.8: Auto-Match Progress with Polling ─── */}
             <AutoMatchProgressModal
                 open={autoMatchProgressOpen}
@@ -1044,7 +959,112 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     if (unreconciledLines.length - matchedCount === 0) onComplete()
                 }}
             />
+
+            {/* Floating Bottom Taskbar */}
+            {(selectedLines.length > 0 || selectedPayments.length > 0) && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-card border shadow-elevated rounded-full px-6 py-3 flex items-center gap-8 animate-in slide-in-from-bottom-8">
+                    {/* Suggestion Card (if applicable) */}
+                    {(() => {
+                        if (selectedLines.length === 1 && suggestions.length > 0) {
+                            const s = suggestions[0]
+                            return (
+                                <div className="flex items-center gap-3 bg-warning/10 border border-warning/20 rounded-full py-1.5 pl-4 pr-1.5 mr-2">
+                                    <div className="flex flex-col">
+                                        <span className="text-[9px] font-black uppercase text-warning tracking-tight">Sugerencia de Match</span>
+                                        <span className="text-[10px] font-bold truncate max-w-[150px]">{s.payment_data?.contact_name || s.batch_data?.name}</span>
+                                    </div>
+                                    <div className="h-8 w-px bg-warning/20 mx-1" />
+                                    <div className="flex flex-col items-end pr-2">
+                                        <span className="text-[9px] font-black uppercase text-warning/70 tracking-tight">Dif.</span>
+                                        <span className={cn("text-[10px] font-mono font-bold", parseFloat(s.difference) === 0 ? "text-success" : "text-destructive")}>
+                                            {formatCurrency(parseFloat(s.difference))}
+                                        </span>
+                                    </div>
+                                    <Button 
+                                        size="sm" 
+                                        variant="warning"
+                                        className="h-8 rounded-full px-4 text-[10px] font-black uppercase shadow-sm active:scale-95"
+                                        onClick={() => handleMatch(selectedLines[0].id, s.is_batch ? s.batch_data!.id : s.payment_data!.id, s.is_batch)}
+                                    >
+                                        Match Sugerido
+                                    </Button>
+                                </div>
+                            )
+                        }
+                        return null
+                    })()}
+
+                    {/* Summary Stats */}
+                    <div className="flex items-center gap-6 pr-4">
+                        <div className="flex flex-col">
+                            <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Banco ({selectedLines.length})</span>
+                            <span className="text-sm font-mono font-bold text-info">
+                                {formatCurrency(selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0))}
+                            </span>
+                        </div>
+                        <div className="h-8 w-px bg-border/60" />
+                        <div className="flex flex-col">
+                            <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Sistema ({selectedPayments.length})</span>
+                            <span className="text-sm font-mono font-bold text-primary">
+                                {formatCurrency(selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0))}
+                            </span>
+                        </div>
+                        <div className="h-8 w-px bg-border/60" />
+                        <div className="flex flex-col">
+                            <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Diferencia</span>
+                            <span className={cn(
+                                "text-sm font-mono font-bold",
+                                (() => {
+                                    const lineTotal = selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
+                                    const payTotal = selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0)
+                                    const diff = lineTotal - payTotal
+                                    return Math.abs(diff) < 0.01 ? "text-success" : "text-warning"
+                                })()
+                            )}>
+                                {formatCurrency(
+                                    selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0) - 
+                                    selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0)
+                                )}
+                            </span>
+                        </div>
+                    </div>
+
+                        <div className="flex items-center gap-2 border-l pl-6 py-1">
+                            {selectedLines.length > 0 && selectedPayments.length === 0 && (
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    className="h-9 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive rounded-full px-4" 
+                                    onClick={() => setActionDialog({ open: true, type: 'bulk_exclude' })}
+                                >
+                                    <Ban className="h-3 w-3 mr-1.5" />
+                                    Excluir Seleccionados
+                                </Button>
+                            )}
+                            
+                            <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="h-9 text-xs text-muted-foreground hover:bg-muted rounded-full px-4" 
+                                onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}
+                            >
+                                <X className="h-3 w-3 mr-1.5" />
+                                Limpiar
+                            </Button>
+                            
+                            <Button
+                                size="sm"
+                                className="h-9 px-6 text-xs font-bold shadow-sm transition-transform active:scale-95 rounded-full"
+                                onClick={() => handleGroupMatch(false)}
+                                disabled={matching || selectedLines.length === 0 || selectedPayments.length === 0}
+                            >
+                                {matching ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                                Conciliar
+                            </Button>
+                        </div>
+                </div>
+            )}
         </div>
-        </DndContext>
-    )
+    </DndContext>
+)
 }
