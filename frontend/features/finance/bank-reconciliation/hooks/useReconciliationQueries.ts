@@ -84,7 +84,7 @@ export function useUnreconciledLinesQuery(statementId: number, params: QueryPagi
             const res = await api.get('/treasury/statement-lines/', {
                 params: {
                     statement: statementId,
-                    reconciliation_state: 'UNRECONCILED',
+                    reconciliation_state: 'UNRECONCILED,EXCLUDED',
                     page: params.page || 1,
                     page_size: params.pageSize || 50,
                     search: params.search,

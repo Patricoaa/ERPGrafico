@@ -682,7 +682,10 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
         # Filter by reconciliation status
         reconciliation_status = self.request.query_params.get('reconciliation_status') or self.request.query_params.get('reconciliation_state')
         if reconciliation_status:
-            queryset = queryset.filter(reconciliation_status=reconciliation_status)
+            if ',' in reconciliation_status:
+                queryset = queryset.filter(reconciliation_status__in=reconciliation_status.split(','))
+            else:
+                queryset = queryset.filter(reconciliation_status=reconciliation_status)
         
         date_from = self.request.query_params.get('date_from')
         date_to = self.request.query_params.get('date_to')
