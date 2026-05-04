@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import TreasuryMovement, TreasuryAccount, TerminalBatch, PaymentMethod
+from treasury.models import TreasuryMovement, TreasuryAccount, TerminalBatch, PaymentMethod
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
 from accounting.services import JournalEntryService
 from decimal import Decimal
@@ -499,6 +499,8 @@ class TreasuryService:
         payment_method_new = None
         payment_method_id = data.get("payment_method_id") or data.get("payment_method_new")
         if payment_method_id:
+            from django.apps import apps
+            PaymentMethod = apps.get_model('treasury', 'PaymentMethod')
             payment_method_new = PaymentMethod.objects.filter(pk=payment_method_id).first()
 
         pos_session_id = data.get("pos_session_id") or data.get("pos_session")
