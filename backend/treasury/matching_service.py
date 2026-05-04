@@ -182,10 +182,6 @@ class MatchingService:
         if payment.is_reconciled or not payment.treasury_account:
             return []
             
-        # Rango de fechas
-        date_min = payment.date - timedelta(days=7)
-        date_max = payment.date + timedelta(days=7)
-        
         # Sentido e identificación de cuenta relevante
         if payment.movement_type == 'TRANSFER':
             # Si es traspaso, la cuenta relevante para la línea de cartola 
@@ -204,6 +200,15 @@ class MatchingService:
             account = payment.from_account or payment.to_account
             sense_filter = Q(credit__gt=0) if payment.movement_type == 'INBOUND' else Q(debit__gt=0)
             
+        # Load settings
+        from .models import ReconciliationSettings
+        settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=account)
+
+        # Rango de fechas
+        lookback = settings.date_range_days
+        date_min = payment.date - timedelta(days=lookback)
+        date_max = payment.date + timedelta(days=lookback)
+        
         filters = Q(
             statement__treasury_account=account,
             reconciliation_status='UNRECONCILED'
@@ -221,10 +226,6 @@ class MatchingService:
         lines_query = BankStatementLine.objects.filter(
             filters & candidate_filters
         )
-        
-        # Load settings
-        from .models import ReconciliationSettings
-        settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=account)
 
         suggestions = []
         for line in lines_query[:20]:
