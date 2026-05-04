@@ -174,18 +174,18 @@ export const LabeledInput = forwardRef<
             </fieldset>
 
             {hasError && (
-                <p
+                <div
                     role="alert"
                     className="text-[10px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200 pl-1"
                 >
                     {error}
-                </p>
+                </div>
             )}
 
             {hint && !hasError && (
-                <p className={cn("text-[10px] text-muted-foreground pl-1", hintClassName)}>
+                <div className={cn("text-[10px] text-muted-foreground pl-1", hintClassName)}>
                     {hint}
-                </p>
+                </div>
             )}
         </div>
     )
