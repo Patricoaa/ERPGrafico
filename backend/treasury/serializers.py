@@ -550,7 +550,7 @@ class TerminalBatchSerializer(serializers.ModelSerializer):
         model = TerminalBatch
         fields = [
             'id', 'display_id', 'provider', 'provider_name',
-            'sales_date', 'settlement_date', 'deposit_date',
+            'sales_date', 'sales_date_end', 'settlement_date', 'deposit_date',
             'gross_amount', 'commission_base', 'commission_tax', 'commission_total', 'net_amount',
             'terminal_reference', 'status', 'status_display', 'payment_count',
             'settlement_journal_entry', 'settlement_journal_entry_data',

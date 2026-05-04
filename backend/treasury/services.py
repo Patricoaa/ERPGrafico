@@ -525,7 +525,7 @@ class TreasuryService:
 class TerminalBatchService:
     @staticmethod
     @transaction.atomic
-    def create_batch(provider, sales_date, gross_amount, commission_base, commission_tax, net_amount, terminal_reference='', user=None, movement_ids=None):
+    def create_batch(provider, sales_date, gross_amount, commission_base, commission_tax, net_amount, terminal_reference='', user=None, movement_ids=None, sales_date_end=None):
         """
         Create a TerminalBatch and its accounting entries.
         Stage 2 of the Terminal accounting flow.
@@ -558,6 +558,7 @@ class TerminalBatchService:
         batch = TerminalBatch.objects.create(
             provider=provider,
             sales_date=sales_date,
+            sales_date_end=sales_date_end,
             settlement_date=timezone.now().date(), # Or passed as arg
             deposit_date=timezone.now().date(), # Assuming deposit happens on settlement report
             gross_amount=gross_amount,
@@ -627,6 +628,28 @@ class TerminalBatchService:
         JournalEntryService.post_entry(entry)
         
         batch.settlement_journal_entry = entry
+        
+        # 4. Create Settlement TreasuryMovement (INBOUND, net_amount)
+        # This movement represents the actual bank deposit and will appear
+        # in the reconciliation workbench for standard 1:1 matching.
+        # We skip accounting entry generation since it's already handled above.
+        settlement_movement = TreasuryMovement.objects.create(
+            movement_type=TreasuryMovement.Type.INBOUND,
+            payment_method=TreasuryMovement.Method.TRANSFER,
+            amount=net_amount,
+            date=batch.settlement_date,
+            to_account=provider.bank_treasury_account,
+            contact=provider.supplier,
+            reference=f"Liquidación {batch.display_id}",
+            notes=f"Liquidación terminal {provider.name} - Ventas {sales_date} (Bruto: ${gross_amount}, Comisión: ${commission_total})",
+            terminal_batch=batch,
+            created_by=user,
+            is_reconciled=False,
+            # journal_entry is intentionally left null — accounting is handled
+            # by the settlement_journal_entry on the batch itself.
+        )
+        
+        batch.settlement_movement = settlement_movement
         batch.save()
         
         return batch
@@ -703,5 +726,36 @@ class TerminalBatchService:
 
         # 5. Link Batches
         batches.update(supplier_invoice=invoice, status=TerminalBatch.Status.INVOICED)
+        
+        # 6. Create ADJUSTMENT TreasuryMovement to auto-pay the invoice against the Bridge Account
+        from treasury.models import TreasuryMovement
+        from treasury.allocation_service import AllocationService
+        
+        # Total cost equals commission_base + commission_tax, which is the invoice total.
+        invoice_total = invoice.total
+        
+        adjustment_movement = TreasuryMovement.objects.create(
+            movement_type=TreasuryMovement.Type.ADJUSTMENT,
+            payment_method=TreasuryMovement.Method.OTHER,
+            amount=invoice_total,
+            date=date or timezone.now().date(),
+            from_account=provider.terminal_commission_bridge_account,  # Crucial: Clears the bridge
+            contact=supplier,
+            reference=f"Pago Automático {invoice.number or invoice.display_id}",
+            notes=f"Cruce automático de liquidaciones contra factura {invoice.display_id}",
+            created_by=user,
+            is_reconciled=False,  # Adjustments usually don't need bank reconciliation
+        )
+        
+        # Allocate the adjustment to fully pay the invoice
+        AllocationService.allocate(
+            movement=adjustment_movement,
+            allocations=[{
+                "invoice": invoice.id,
+                "amount": invoice_total
+            }],
+            user=user,
+            validate_sum=True
+        )
         
         return invoice

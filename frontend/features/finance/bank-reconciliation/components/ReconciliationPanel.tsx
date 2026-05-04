@@ -311,8 +311,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         try {
             const payload: Record<string, unknown> = {
                 line_ids: selectedLines.map(l => l.id),
-                payment_ids: selectedPayments.filter(p => !p.is_batch).map(p => p.id),
-                batch_ids: selectedPayments.filter(p => p.is_batch).map(p => p.id)
+                payment_ids: selectedPayments.map(p => p.id),
             }
 
             if (force) { payload.difference_reason = diffType; payload.notes = diffNotes; }
@@ -542,15 +541,15 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             accessorKey: "contact_name",
             header: "Entidad / Concepto",
             cell: ({ row }) => {
-                const isBatch = row.original.is_batch
                 const isSuggested = suggestions.some((s: PaymentSuggestion) => (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === row.original.id)
+                const isSettlement = row.original.terminal_batch_id != null
                 return (
                     <div className="flex flex-col gap-0.5 max-w-[220px] justify-center h-full py-1">
                         <span className={cn("text-xs font-bold truncate", isSuggested && "text-warning")}>
                             {row.original.contact_name}
                         </span>
-                        {isBatch && (
-                            <Badge variant="secondary" className="w-fit text-[10px] h-4 px-1.5 font-black uppercase bg-info/10 text-info">Lote Terminal</Badge>
+                        {isSettlement && (
+                            <Badge variant="secondary" className="w-fit text-[10px] h-4 px-1.5 font-black uppercase bg-info/10 text-info">Liquidación Terminal</Badge>
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
@@ -567,14 +566,13 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             header: "Tipo",
             cell: ({ row }) => {
                 const item = row.original
-                const isDeposit = item.is_batch || (
+                const isDeposit = (
                     item.movement_type === 'INBOUND' ||
                     (item.movement_type === 'TRANSFER' && item.to_account === treasuryAccountId)
                 )
                 let label = isDeposit ? "Ingreso" : "Egreso"
                 if (item.movement_type === 'TRANSFER') label = isDeposit ? "Transf. Entrante" : "Transf. Saliente"
                 if (item.movement_type === 'ADJUSTMENT') label = "Ajuste"
-                if (item.is_batch) label = "Lote"
 
                 return (
                     <Badge variant="outline" className={cn(
@@ -592,7 +590,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-end" />,
             cell: ({ row }) => {
                 const item = row.original
-                const isDeposit = item.is_batch || (
+                const isDeposit = (
                     item.movement_type === 'INBOUND' ||
                     (item.movement_type === 'TRANSFER' && item.to_account === treasuryAccountId)
                 )

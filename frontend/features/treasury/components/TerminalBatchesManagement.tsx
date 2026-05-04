@@ -71,8 +71,13 @@ export function TerminalBatchesManagement({
             accessorKey: "sales_date",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Fecha Ventas" className="justify-center" />,
             cell: ({ row }: any) => (
-                <div className="flex justify-center w-full">
+                <div className="flex flex-col justify-center w-full items-center text-xs">
                     <DataCell.Date value={row.original.sales_date} />
+                    {row.original.sales_date_end && row.original.sales_date_end !== row.original.sales_date && (
+                        <span className="text-[10px] text-muted-foreground leading-none mt-1">
+                            al {format(new Date(row.original.sales_date_end + "T12:00:00"), "dd/MM/yyyy")}
+                        </span>
+                    )}
                 </div>
             )
         },
@@ -146,6 +151,7 @@ export function TerminalBatchesManagement({
                         options: [
                             { label: "Pendiente", value: "PENDING" },
                             { label: "Liquidado", value: "SETTLED" },
+                            { label: "Facturado", value: "INVOICED" },
                             { label: "Conciliado", value: "RECONCILED" },
                         ]
                     }

@@ -106,43 +106,29 @@ export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: 
     return useQuery({
         queryKey: reconciliationKeys.unreconciledPayments(treasuryAccountId, params),
         queryFn: async ({ signal }) => {
-            const [paymentsRes, batchesRes] = await Promise.all([
-                api.get('/treasury/payments/', {
-                    params: {
-                        is_reconciled: 'False',
-                        treasury_account: treasuryAccountId,
-                        page: params.page || 1,
-                        page_size: params.pageSize || 50,
-                        date_from: params.date_from,
-                        date_to: params.date_to,
-                        amount_min: params.amount_min,
-                        amount_max: params.amount_max,
-                        direction: params.type
-                    },
-                    signal
-                }),
-                api.get('/treasury/terminal-batches/', {
-                    params: {
-                        status: 'SETTLED',
-                        reconciliation_match__isnull: 'True',
-                        // Batches are usually fewer, but we take a safety margin
-                        limit: 100 
-                    },
-                    signal
-                })
-            ])
+            const paymentsRes = await api.get('/treasury/payments/', {
+                params: {
+                    is_reconciled: 'False',
+                    treasury_account: treasuryAccountId,
+                    page: params.page || 1,
+                    page_size: params.pageSize || 50,
+                    date_from: params.date_from,
+                    date_to: params.date_to,
+                    amount_min: params.amount_min,
+                    amount_max: params.amount_max,
+                    direction: params.type
+                },
+                signal
+            })
 
             const paymentsData = paymentsRes.data.results || paymentsRes.data
-            const batchesData = batchesRes.data.results || batchesRes.data
 
             const payments = Array.isArray(paymentsData) ? paymentsData.map((p: any) => {
                 let contactName = p.partner_name || 'Particular'
                 
                 if (p.movement_type === 'TRANSFER') {
-                    // For transfers, show the other account name
                     contactName = p.is_inbound ? (p.from_account_name || 'Cuenta Origen') : (p.to_account_name || 'Cuenta Destino')
                 } else if (p.movement_type === 'ADJUSTMENT') {
-                    // For adjustments, show the reason or notes
                     contactName = p.justify_reason_display || p.notes || 'Ajuste Manual'
                 }
 
@@ -151,27 +137,10 @@ export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: 
                     contact_name: contactName
                 }
             }) : []
-            const batches = Array.isArray(batchesData) ? batchesData.map((b: any) => ({
-                id: b.id,
-                display_id: b.display_id,
-                amount: b.net_amount,
-                date: b.sales_date,
-                contact_name: b.supplier_name || 'Liquidación Terminal',
-                is_batch: true,
-                movement_type: 'INBOUND'
-            })) : []
-
-            const finalResults = []
-            if (!params.type || params.type !== 'BATCH') {
-                finalResults.push(...payments)
-            }
-            if (!params.type || params.type === 'BATCH' || params.type === 'IN') {
-                finalResults.push(...batches)
-            }
 
             return {
-                results: finalResults,
-                count: finalResults.length
+                results: payments,
+                count: paymentsRes.data.count || payments.length
             }
         },
         enabled: !!treasuryAccountId
