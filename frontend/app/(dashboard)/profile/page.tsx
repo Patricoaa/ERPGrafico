@@ -2,7 +2,6 @@
 
 import { ProfileView } from "@/features/profile"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useSearchParams } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
@@ -92,10 +91,14 @@ export default function ProfilePage() {
 
     const { title, description, iconName } = getHeaderConfig()
 
+    const navigation = {
+        tabs,
+        activeValue: activeTab
+    }
+
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <PageHeader title={title} description={description} iconName={iconName} />
-            <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-md" />
+            <PageHeader title={title} description={description} iconName={iconName} variant="minimal" navigation={navigation} />
             
             <div className="pt-4">
                 <ProfileView activeTab={activeTab} initialProfile={profile ?? undefined} />

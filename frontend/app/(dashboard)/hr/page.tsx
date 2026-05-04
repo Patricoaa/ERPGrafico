@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
 import Link from "next/link"
-import { PageTabs, TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
+import { TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { FileText } from "lucide-react"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -43,6 +43,13 @@ export default async function HRPage({ searchParams }: PageProps) {
             ]
         },
     ]
+
+    const navigation = {
+        tabs,
+        activeValue: viewMode,
+        subActiveValue: viewMode === 'config' ? configTab : undefined,
+        configHref: "/hr?view=config"
+    }
 
     const getHeaderConfig = () => {
         switch (viewMode) {
@@ -90,11 +97,9 @@ export default async function HRPage({ searchParams }: PageProps) {
 
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <PageHeader title={config.title} description={config.description} iconName={config.icon} variant="minimal">
+            <PageHeader title={config.title} description={config.description} iconName={config.icon} variant="minimal" navigation={navigation}>
                 {headerChildren}
             </PageHeader>
-
-            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={viewMode === 'config' ? configTab : undefined} />
 
             <div className="pt-2">
                 <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>

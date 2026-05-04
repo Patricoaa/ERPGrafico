@@ -16,6 +16,7 @@ import { PageHeaderSkeleton } from "@/components/shared"
 import { Loader2 } from "lucide-react"
 import { IndustryMark } from "@/components/shared/IndustryMark"
 import { DynamicIcon } from "@/components/ui/dynamic-icon"
+import { HeaderNavDropdowns } from "@/components/shared/HeaderNavDropdowns"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
@@ -104,17 +105,24 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
                                 {/* Texts & Icons Wrapper */}
                                 <div className="flex items-center gap-5">
-                                    {/* Left: Text Container */}
-                                    <div className="flex flex-col w-min">
-                                        <h1 className="text-sm font-semibold tracking-tight text-foreground/90 whitespace-nowrap flex items-center gap-2">
-                                            {config.icon ? (
-                                                <config.icon className="h-4 w-4 text-primary/70 shrink-0" />
-                                            ) : config.iconName ? (
-                                                <DynamicIcon name={config.iconName} className="h-4 w-4 text-primary/70 shrink-0" />
-                                            ) : null}
-                                            {config.title}
-                                        </h1>
-                                    </div>
+                                    {/* Left: Title — dropdown nav or static */}
+                                    {config.navigation ? (
+                                        <HeaderNavDropdowns
+                                            navigation={config.navigation}
+                                            iconName={config.iconName}
+                                        />
+                                    ) : (
+                                        <div className="flex flex-col w-min">
+                                            <h1 className="text-sm font-semibold tracking-tight text-foreground/90 whitespace-nowrap flex items-center gap-2">
+                                                {config.icon ? (
+                                                    <config.icon className="h-4 w-4 text-primary/70 shrink-0" />
+                                                ) : config.iconName ? (
+                                                    <DynamicIcon name={config.iconName} className="h-4 w-4 text-primary/70 shrink-0" />
+                                                ) : null}
+                                                {config.title}
+                                            </h1>
+                                        </div>
+                                    )}
 
                                     {/* Right: Icons & Actions */}
                                     <div className="flex items-center gap-2 shrink-0">

@@ -2,7 +2,7 @@ import { Metadata } from "next"
 import { Suspense, lazy } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { PageTabs } from "@/components/shared/PageTabs"
+import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { Tabs } from "@/components/ui/tabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -34,6 +34,11 @@ export default async function CreditsPage({ searchParams }: PageProps) {
         { value: "history", label: "Historial de Créditos", iconName: "clock", href: "/sales/credits?tab=history" },
         { value: "blacklist", label: "Lista Negra", iconName: "user-x", href: "/sales/credits?tab=blacklist" },
     ]
+
+    const navigation = {
+        tabs,
+        activeValue: activeTab
+    }
 
     const getHeaderConfig = () => {
         switch (activeTab) {
@@ -78,8 +83,9 @@ export default async function CreditsPage({ searchParams }: PageProps) {
                     title={title}
                     description={description}
                     iconName={iconName}
+                    variant="minimal"
+                    navigation={navigation}
                 />
-                <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-md" />
 
                 <div className="pt-4 mt-0 outline-none">
                     <Suspense fallback={<LoadingFallback />}>

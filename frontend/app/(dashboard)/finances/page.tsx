@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { TableSkeleton, PageTabs, PageHeader, ToolbarCreateButton } from "@/components/shared"
+import { TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load feature components
@@ -55,6 +55,12 @@ export default async function FinancesPage({ searchParams }: PageProps) {
         },
     ]
 
+    const navigation = {
+        tabs,
+        activeValue: viewMode,
+        subActiveValue: tab
+    }
+
     const getHeaderConfig = () => {
         switch (viewMode) {
             case 'statements':
@@ -107,9 +113,8 @@ export default async function FinancesPage({ searchParams }: PageProps) {
                 description={config.description}
                 iconName={config.icon}
                 variant="minimal"
+                navigation={navigation}
             />
-
-            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={tab} />
 
             <div className="pt-2">
                 <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>

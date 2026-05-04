@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { PageTabs, TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
+import { TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 
@@ -65,6 +65,13 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
             ]
         },
     ]
+
+    const navigation = {
+        tabs,
+        activeValue: viewMode,
+        subActiveValue: viewMode === 'config' ? configTab : subView,
+        configHref: "/treasury?view=config"
+    }
 
     const getHeaderConfig = () => {
         if (viewMode === 'config') {
@@ -168,9 +175,8 @@ export default async function TreasuryPage({ searchParams }: PageProps) {
                 description={config.description}
                 iconName={config.iconName}
                 variant="minimal"
+                navigation={navigation}
             />
-
-            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={viewMode === 'config' ? configTab : subView} />
 
             <div className="pt-4">
                 <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>

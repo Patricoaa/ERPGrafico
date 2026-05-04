@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { PageTabs, TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
+import { TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 const PurchasingOrdersClientView = lazy(() =>
@@ -29,6 +29,12 @@ export default async function PurchasingPage({ searchParams }: PageProps) {
         { value: "config", label: "Config", iconName: "settings", href: "/purchasing?view=config" },
     ]
 
+    const navigation = {
+        tabs,
+        activeValue: viewMode,
+        configHref: "/purchasing?view=config"
+    }
+
     const getHeaderConfig = () => {
         if (viewMode === 'config') return { title: "Configuración de Compras", description: "Gestione las cuentas de gastos para diferentes tipos de compras.", iconName: "settings" as const }
         return {
@@ -43,8 +49,7 @@ export default async function PurchasingPage({ searchParams }: PageProps) {
 
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <PageHeader title={config.title} description={config.description} iconName={config.iconName} variant="minimal" />
-            <PageTabs tabs={tabs} activeValue={viewMode} />
+            <PageHeader title={config.title} description={config.description} iconName={config.iconName} variant="minimal" navigation={navigation} />
             <div className="pt-4">
                 <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                     {(viewMode === 'orders' || viewMode === 'notes') && (

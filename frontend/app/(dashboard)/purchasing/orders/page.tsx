@@ -1,7 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -29,6 +28,11 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps) {
         { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: "/purchasing/orders?view=notes" },
     ]
 
+    const navigation = {
+        tabs,
+        activeValue: viewMode
+    }
+
     const createAction = viewMode === 'orders' ? (
         <ToolbarCreateButton
             label="Nueva Orden"
@@ -46,9 +50,8 @@ export default async function PurchaseOrdersPage({ searchParams }: PageProps) {
                 }
                 iconName="shopping-bag"
                 variant="minimal"
+                navigation={navigation}
             />
-
-            <PageTabs tabs={tabs} activeValue={viewMode} />
 
             <div className="pt-4">
                 <Suspense fallback={<LoadingFallback />}>

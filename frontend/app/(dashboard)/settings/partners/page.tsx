@@ -5,7 +5,6 @@ import { toast } from "sonner"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useSearchParams, useRouter } from "next/navigation"
 import { PartnerAccountingTab } from "@/features/settings"
@@ -85,6 +84,11 @@ export default function PartnersSettingsPage() {
         },
     ]
 
+    const navigation = {
+        tabs,
+        activeValue: activeTab
+    }
+
     const headerConfig = useMemo(() => {
         switch (activeTab) {
             case "config":
@@ -140,6 +144,7 @@ export default function PartnersSettingsPage() {
                 description={headerConfig.description}
                 iconName={headerConfig.iconName}
                 variant="minimal"
+                navigation={navigation}
             >
                 {headerConfig.showStats && (
                     <Link href="/settings/partners?tab=composition&modal=stats">
@@ -149,8 +154,6 @@ export default function PartnersSettingsPage() {
                     </Link>
                 )}
             </PageHeader>
-
-            <PageTabs tabs={tabs} activeValue={activeTab} />
 
             <div className="pt-4">
                 <Suspense fallback={<LoadingFallback message="Cargando configuración de socios..." />}>

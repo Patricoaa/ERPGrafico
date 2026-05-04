@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { FormSkeleton, PageHeader, PageTabs } from "@/components/shared"
+import { FormSkeleton, PageHeader } from "@/components/shared"
 import { WorkflowSettings } from "@/features/workflow"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
@@ -17,6 +17,11 @@ export default async function WorkflowSettingsPage({ searchParams }: PageProps) 
         { value: "notif", label: "Notificaciones", iconName: "bell", href: "/settings/workflow?tab=notif" },
     ]
 
+    const navigation = {
+        tabs,
+        activeValue: activeTab
+    }
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
@@ -24,11 +29,8 @@ export default async function WorkflowSettingsPage({ searchParams }: PageProps) 
                 description="Defina los responsables por defecto para cada etapa y tarea automática del sistema."
                 variant="minimal"
                 iconName="settings"
+                navigation={navigation}
             />
-            
-            <div className="pt-2">
-                <PageTabs tabs={tabs} activeValue={activeTab} />
-            </div>
 
             <Suspense fallback={<FormSkeleton fields={5} />}>
                 <div className="pt-4">

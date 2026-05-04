@@ -42,6 +42,7 @@ export interface ReconciliationSystemItem {
     movement_type?: 'INBOUND' | 'OUTBOUND' | 'TRANSFER' | 'ADJUSTMENT'
     from_account?: number
     to_account?: number
+    is_pending_registration?: boolean
 }
 
 export interface MatchConfig {

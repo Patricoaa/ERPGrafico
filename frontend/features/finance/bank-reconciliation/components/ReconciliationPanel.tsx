@@ -11,7 +11,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ExclusionModal } from "./ExclusionModal"
 import { SplitAllocationDialog } from "./SplitAllocationDialog"
-import { SuggestionsPanel } from "./SuggestionsPanel"
+
 import { LabeledSelect, LabeledInput, TableSkeleton } from "@/components/shared"
 import {
     Ban, CheckCircle2, ChevronRight,
@@ -70,13 +70,13 @@ import type {
 
 interface PaymentSuggestion {
     is_batch?: boolean
-    payment_data?: { id: number }
-    batch_data?: { id: number }
+    payment_data?: { id: number, contact_name: string }
+    batch_data?: { id: number, name: string }
     difference: string
 }
 
 interface LineSuggestion {
-    line_data: { id: number }
+    line_data: { id: number, description: string }
 }
 
 interface ReconciliationPanelProps {
@@ -376,7 +376,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             accessorKey: "transaction_date",
             header: "Fecha",
             cell: ({ row }) => (
-                <div className="flex flex-col">
+                <div className="flex flex-col justify-center h-full">
                     <span className="font-mono font-bold text-xs">
                         {format(new Date(row.original.transaction_date), 'dd MMM yy', { locale: es })}
                     </span>
@@ -391,7 +391,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             cell: ({ row }) => {
                 const isSuggested = lineSuggestions.some((s: LineSuggestion) => s.line_data.id === row.original.id)
                 return (
-                    <div className="flex flex-col gap-0.5 max-w-[220px]">
+                    <div className="flex flex-col gap-0.5 max-w-[220px] justify-center h-full py-1">
                         <span className={cn("text-xs font-bold truncate", isSuggested && "text-warning")}>
                             {row.original.description}
                         </span>
@@ -409,18 +409,31 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             },
         },
         {
+            id: "type",
+            header: "Tipo",
+            cell: ({ row }) => {
+                const isCredit = parseFloat(row.original.credit) > parseFloat(row.original.debit)
+                return (
+                    <Badge variant="outline" className={cn(
+                        "text-[9px] font-black uppercase tracking-wider",
+                        isCredit ? "text-success border-success/20 bg-success/5" : "text-destructive border-destructive/20 bg-destructive/5"
+                    )}>
+                        {isCredit ? "Abono" : "Cargo"}
+                    </Badge>
+                )
+            },
+            size: 70,
+        },
+        {
             id: "amount",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-end" />,
             cell: ({ row }) => {
                 const amount = Math.abs(parseFloat(row.original.credit) - parseFloat(row.original.debit))
                 const isCredit = parseFloat(row.original.credit) > parseFloat(row.original.debit)
                 return (
-                    <div className="flex flex-col items-end">
+                    <div className="flex flex-col items-end justify-center h-full">
                         <span className={cn("font-mono font-black text-[13px] tracking-tight", isCredit ? "text-success" : "text-destructive")}>
                             {formatCurrency(amount)}
-                        </span>
-                        <span className="text-[10px] font-black uppercase opacity-40"> {/* intentional: badge density */}
-                            {isCredit ? "Abono" : "Cargo"}
                         </span>
                     </div>
                 )
@@ -474,7 +487,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             accessorKey: "date",
             header: "Documento",
             cell: ({ row }) => (
-                <div className="flex flex-col">
+                <div className="flex flex-col justify-center h-full">
                     <span className="font-mono font-bold text-xs">
                         {row.original.display_id || row.original.code || 'PEND'}
                     </span>
@@ -492,12 +505,12 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 const isBatch = row.original.is_batch
                 const isSuggested = suggestions.some((s: PaymentSuggestion) => (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === row.original.id)
                 return (
-                    <div className="flex flex-col gap-0.5 max-w-[220px]">
+                    <div className="flex flex-col gap-0.5 max-w-[220px] justify-center h-full py-1">
                         <span className={cn("text-xs font-bold truncate", isSuggested && "text-warning")}>
                             {row.original.contact_name}
                         </span>
                         {isBatch && (
-                            <Badge variant="secondary" className="w-fit text-[10px] h-4 px-1.5 font-black uppercase bg-info/10 text-info"> {/* intentional: badge density */} Lote Terminal</Badge>
+                            <Badge variant="secondary" className="w-fit text-[10px] h-4 px-1.5 font-black uppercase bg-info/10 text-info">Lote Terminal</Badge>
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
@@ -510,6 +523,31 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             },
         },
         {
+            id: "type",
+            header: "Tipo",
+            cell: ({ row }) => {
+                const item = row.original
+                const isDeposit = item.is_batch || (
+                    item.movement_type === 'INBOUND' || 
+                    (item.movement_type === 'TRANSFER' && item.to_account === treasuryAccountId)
+                )
+                let label = isDeposit ? "Ingreso" : "Egreso"
+                if (item.movement_type === 'TRANSFER') label = isDeposit ? "Transf. Entrante" : "Transf. Saliente"
+                if (item.movement_type === 'ADJUSTMENT') label = "Ajuste"
+                if (item.is_batch) label = "Lote"
+                
+                return (
+                    <Badge variant="outline" className={cn(
+                        "text-[9px] font-black uppercase tracking-wider",
+                        isDeposit ? "text-success border-success/20 bg-success/5" : "text-destructive border-destructive/20 bg-destructive/5"
+                    )}>
+                        {label}
+                    </Badge>
+                )
+            },
+            size: 90,
+        },
+        {
             id: "amount",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-end" />,
             cell: ({ row }) => {
@@ -519,15 +557,12 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     (item.movement_type === 'TRANSFER' && item.to_account === treasuryAccountId)
                 )
                 return (
-                    <div className="flex flex-col items-end">
+                    <div className="flex flex-col items-end justify-center h-full">
                         <span className={cn(
                             "font-mono font-black text-[13px] tracking-tight group-hover:scale-105 transition-transform",
                             isDeposit ? "text-success" : "text-destructive"
                         )}>
                             {formatCurrency(Math.abs(parseFloat(item.amount)))}
-                        </span>
-                        <span className="text-[10px] font-black uppercase opacity-40">
-                            {isDeposit ? "Ingreso" : "Egreso"}
                         </span>
                     </div>
                 )
@@ -559,125 +594,100 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div className="space-y-4">
             {/* ─── Sticky Command Bar ─── */}
-            <div className="flex gap-6 relative min-h-[600px]">
-                {/* Tables Container */}
-                <div className={cn(
-                    "flex-1 transition-all duration-500 ease-[var(--ease-premium)]",
-                    sidebarOpen ? "mr-[340px]" : "mr-0"
-                )}>
-                    <div className={cn(
-                        "sticky top-2 z-40 bg-card border shadow-elevated rounded-lg transition-all duration-500 mb-4"
-                    )}>
-                        {/* Row 1: Metrics + Actions */}
-                        <div className="flex items-center justify-between px-4 py-3">
-                            <div className="flex items-center gap-6">
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase text-muted-foreground mb-0.5">
-                                        Banco {selectedLines.length > 0 && <span className="text-primary">({selectedLines.length})</span>}
-                                    </p>
-                                    <p className="text-base font-black font-mono tabular-nums text-foreground">
-                                        {formatCurrency(
-                                            (selectedLines.length > 0 ? selectedLines : unreconciledLines).reduce((acc: number, l: any) => 
-                                                acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0
-                                            )
-                                        )}
-                                    </p>
-                                </div>
-                                <div className="h-8 w-px bg-border" />
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase text-muted-foreground mb-0.5">
-                                        Sistema {selectedPayments.length > 0 && <span className="text-primary">({selectedPayments.length})</span>}
-                                    </p>
-                                    <p className="text-base font-black font-mono tabular-nums text-foreground">
-                                        {formatCurrency(
-                                            (selectedPayments.length > 0 ? selectedPayments : unreconciledPayments).reduce((acc: number, p: any) => 
-                                                acc + Math.abs(parseFloat(p.amount)), 0
-                                            )
-                                        )}
-                                    </p>
-                                </div>
-                                <div className="h-8 w-px bg-border" />
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase text-muted-foreground mb-0.5">Diferencia</p>
-                                    {(() => {
-                                        const lineItems = selectedLines.length > 0 ? selectedLines : unreconciledLines
-                                        const payItems = selectedPayments.length > 0 ? selectedPayments : unreconciledPayments
-                                        const lineTotal = lineItems.reduce((acc: number, l: any) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
-                                        const payTotal = payItems.reduce((acc: number, p: any) => acc + Math.abs(parseFloat(p.amount)), 0)
-                                        const diff = lineTotal - payTotal
-                                        return (
-                                            <p className={cn("text-base font-black font-mono tabular-nums", Math.abs(diff) < 1 ? "text-success" : "text-warning")}>
-                                                {formatCurrency(Math.abs(diff))}
-                                            </p>
-                                        )
-                                    })()}
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                {/* Inline compact search */}
-                                <div className="relative hidden lg:block">
-                                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                                    <input
-                                        type="text"
-                                        placeholder="Buscar..."
-                                        className="h-8 w-36 pl-7 pr-2 rounded-md border border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-                                        value={bankParams.search || ""}
-                                        onChange={(e) => {
-                                            const val = e.target.value
-                                            setBankParams(prev => ({ ...prev, search: val, page: 1 }))
-                                            setSystemParams(prev => ({ ...prev, search: val, page: 1 }))
-                                        }}
-                                    />
-                                </div>
-                                {(bankParams.search || bankParams.date_from || bankParams.amount_min) && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-muted-foreground"
-                                        onClick={() => {
-                                            setBankParams({ page: 1, pageSize: 50 })
-                                            setSystemParams({ page: 1, pageSize: 50 })
-                                        }}
-                                    >
-                                        <X className="h-3.5 w-3.5" />
-                                    </Button>
-                                )}
-                                <div className="h-6 w-px bg-border" />
+            {/* Top Tools Bar */}
+            <div className="flex items-center justify-between bg-card border shadow-sm rounded-lg px-4 py-3">
+                    <div className="flex items-center gap-3">
+                        <div className="relative">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                            <input
+                                type="text"
+                                placeholder="Buscar..."
+                                className="h-8 w-48 pl-8 pr-8 rounded-md border border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+                                value={bankParams.search || ""}
+                                onChange={(e) => {
+                                    const val = e.target.value
+                                    setBankParams(prev => ({ ...prev, search: val, page: 1 }))
+                                    setSystemParams(prev => ({ ...prev, search: val, page: 1 }))
+                                }}
+                            />
+                            {(bankParams.search || bankParams.date_from || bankParams.amount_min) && (
                                 <Button
-                                    onClick={() => setActionDialog({ open: true, type: 'automatch' })}
-                                    disabled={autoMatching}
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 text-xs font-bold bg-success/5 hover:bg-success/10 text-success border-success/20 hover:border-success/30 group"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground hover:bg-muted"
+                                    onClick={() => {
+                                        setBankParams({ page: 1, pageSize: 50 })
+                                        setSystemParams({ page: 1, pageSize: 50 })
+                                    }}
                                 >
-                                    {autoMatching ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-1.5 h-3.5 w-3.5 group-hover:rotate-12 transition-transform" />}
-                                    Auto
+                                    <X className="h-3 w-3" />
                                 </Button>
-                                {(selectedLines.length > 0 || selectedPayments.length > 0) && (
-                                    <Button 
-                                        variant="ghost" 
-                                        size="sm"
-                                        className="h-8 text-xs text-muted-foreground" 
-                                        onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}
-                                    >
-                                        <X className="h-3 w-3 mr-1" />
-                                        Limpiar
-                                    </Button>
-                                )}
-                                <Button
-                                    size="sm"
-                                    className="h-8 px-4 text-xs font-bold shadow-sm"
-                                    onClick={() => handleGroupMatch(false)}
-                                    disabled={matching || selectedLines.length === 0 || selectedPayments.length === 0}
-                                >
-                                    {matching ? <Loader2 className="animate-spin mr-1.5 h-3.5 w-3.5" /> : <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />}
-                                    Conciliar
-                                </Button>
-                            </div>
+                            )}
                         </div>
-                    </div>
 
+                        <div className="h-4 w-px bg-border/60" />
+
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold uppercase text-muted-foreground">Desde</span>
+                            <input
+                                type="date"
+                                className="h-8 w-32 px-2 rounded-md border border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                                value={bankParams.date_from || ""}
+                                onChange={(e) => {
+                                    const val = e.target.value
+                                    setBankParams(prev => ({ ...prev, date_from: val, page: 1 }))
+                                    setSystemParams(prev => ({ ...prev, date_from: val, page: 1 }))
+                                }}
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold uppercase text-muted-foreground">Hasta</span>
+                            <input
+                                type="date"
+                                className="h-8 w-32 px-2 rounded-md border border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                                value={bankParams.date_to || ""}
+                                onChange={(e) => {
+                                    const val = e.target.value
+                                    setBankParams(prev => ({ ...prev, date_to: val, page: 1 }))
+                                    setSystemParams(prev => ({ ...prev, date_to: val, page: 1 }))
+                                }}
+                            />
+                        </div>
+
+                        <div className="h-4 w-px bg-border/60" />
+
+                        <select
+                            className="h-8 w-36 px-2 rounded-md border border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                            value={bankParams.type || ""}
+                            onChange={(e) => {
+                                const val = e.target.value
+                                setBankParams(prev => ({ ...prev, type: val, page: 1 }))
+                                setSystemParams(prev => ({ ...prev, type: val, page: 1 }))
+                            }}
+                        >
+                            <option value="">Todos los movimientos</option>
+                            <option value="IN">Ingresos / Abonos</option>
+                            <option value="OUT">Egresos / Cargos</option>
+                        </select>
+                    </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        onClick={() => setActionDialog({ open: true, type: 'automatch' })}
+                        disabled={autoMatching}
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs font-bold bg-success/5 hover:bg-success/10 text-success border-success/20 hover:border-success/30 group transition-all"
+                    >
+                        {autoMatching ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-1.5 h-3.5 w-3.5 group-hover:rotate-12 transition-transform" />}
+                        Conciliación Automática
+                    </Button>
+                </div>
+            </div>
+
+            <div className="flex gap-6 relative min-h-[600px] items-start pb-24">
+                {/* Tables Container */}
+                <div className="flex-1 transition-all duration-500 ease-[var(--ease-premium)] min-w-0">
                     {/* ─── Grid with Section Headers ─── */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {/* Left: Bank */}
@@ -698,11 +708,20 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 skeletonRows={10}
                                 pageSizeOptions={[50, 100]}
                                 defaultPageSize={50}
-                                renderRow={(row, children) => (
-                                    <DroppableBankLine id={(row.original as BankStatementLine).id}>
-                                        {children}
-                                    </DroppableBankLine>
-                                )}
+                                renderRow={(row, children) => {
+                                    const isSuggested = suggestions.some((s: any) => s.line_data?.id === (row.original as BankStatementLine).id)
+                                    return (
+                                        <DroppableBankLine id={(row.original as BankStatementLine).id}>
+                                            {React.cloneElement(children as React.ReactElement, {
+                                                className: cn(
+                                                    (children as React.ReactElement).props.className,
+                                                    "group",
+                                                    isSuggested && "[&_td]:!bg-warning/20 [&_td]:!border-y [&_td]:!border-warning/40"
+                                                )
+                                            })}
+                                        </DroppableBankLine>
+                                    )
+                                }}
                                 onPaginationChange={(updater) => {
                                     if (typeof updater === 'function') {
                                         const newState = updater({ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 })
@@ -735,11 +754,23 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 skeletonRows={10}
                                 pageSizeOptions={[50, 100]}
                                 defaultPageSize={50}
-                                renderRow={(row, children) => (
-                                    <DraggablePayment id={(row.original as ReconciliationSystemItem).id}>
-                                        {children}
-                                    </DraggablePayment>
-                                )}
+                                renderRow={(row, children) => {
+                                    const item = row.original as ReconciliationSystemItem
+                                    const isSuggested = lineSuggestions.some((s: any) => 
+                                        (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === item.id
+                                    )
+                                    return (
+                                        <DraggablePayment id={item.id}>
+                                            {React.cloneElement(children as React.ReactElement, {
+                                                className: cn(
+                                                    (children as React.ReactElement).props.className,
+                                                    "group",
+                                                    isSuggested && "[&_td]:!bg-warning/20 [&_td]:!border-y [&_td]:!border-warning/40"
+                                                )
+                                            })}
+                                        </DraggablePayment>
+                                    )
+                                }}
                                 onPaginationChange={(updater) => {
                                     if (typeof updater === 'function') {
                                         const newState = updater({ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 })
@@ -756,17 +787,117 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     </div>
                 </div>
 
-                {/* Sidebar Suggestions */}
-                <SuggestionsPanel 
-                    isOpen={sidebarOpen}
-                    onClose={() => setSidebarOpen(false)}
-                    suggestions={suggestions}
-                    lineSuggestions={lineSuggestions}
-                    selectedLine={selectedLines.length === 1 ? selectedLines[0] : undefined}
-                    selectedPayment={selectedPayments.length === 1 ? selectedPayments[0] : undefined}
-                    onMatch={(id, isBatch) => handleMatch(selectedLines[0]?.id || id, id, isBatch)}
-                    isMatching={matching}
-                />
+                {/* Floating Bottom Taskbar */}
+                {(selectedLines.length > 0 || selectedPayments.length > 0) && (
+                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-card border shadow-elevated rounded-full px-6 py-3 flex items-center gap-8 animate-in slide-in-from-bottom-8">
+                        {/* Suggestion Card (if applicable) */}
+                        {(() => {
+                            if (selectedLines.length === 1 && suggestions.length > 0) {
+                                const s = suggestions[0]
+                                return (
+                                    <div className="flex items-center gap-3 bg-warning/10 border border-warning/20 rounded-full py-1.5 pl-4 pr-1.5 mr-2">
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-black uppercase text-warning tracking-tight">Sugerencia de Match</span>
+                                            <span className="text-[11px] font-bold text-foreground truncate max-w-[120px]">
+                                                {s.is_batch ? s.batch_data?.name : s.payment_data?.contact_name}
+                                            </span>
+                                        </div>
+                                        <Button 
+                                            size="sm" 
+                                            variant="secondary"
+                                            className="h-7 text-[10px] font-black uppercase bg-warning text-warning-foreground hover:bg-warning/90 rounded-full"
+                                            onClick={() => handleMatch(selectedLines[0].id, s.is_batch ? s.batch_data?.id : s.payment_data?.id, s.is_batch)}
+                                        >
+                                            Conciliar Match
+                                        </Button>
+                                    </div>
+                                )
+                            }
+                            if (selectedPayments.length === 1 && lineSuggestions.length > 0) {
+                                const s = lineSuggestions[0]
+                                return (
+                                    <div className="flex items-center gap-3 bg-warning/10 border border-warning/20 rounded-full py-1.5 pl-4 pr-1.5 mr-2">
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-black uppercase text-warning tracking-tight">Sugerencia de Match</span>
+                                            <span className="text-[11px] font-bold text-foreground truncate max-w-[120px]">
+                                                {s.line_data?.description}
+                                            </span>
+                                        </div>
+                                        <Button 
+                                            size="sm" 
+                                            variant="secondary"
+                                            className="h-7 text-[10px] font-black uppercase bg-warning text-warning-foreground hover:bg-warning/90 rounded-full"
+                                            onClick={() => handleMatch(s.line_data?.id, selectedPayments[0].id, selectedPayments[0].is_batch)}
+                                        >
+                                            Conciliar Match
+                                        </Button>
+                                    </div>
+                                )
+                            }
+                            return null
+                        })()}
+
+                        <div className="flex items-center gap-6">
+                            <div className="flex flex-col items-center min-w-[80px]">
+                                <span className="text-[10px] font-bold uppercase text-muted-foreground mb-0.5">Banco {selectedLines.length > 0 && <span className="text-primary">({selectedLines.length})</span>}</span>
+                                <span className="text-sm font-black font-mono tabular-nums text-foreground">
+                                    {formatCurrency(
+                                        selectedLines.length > 0 ? selectedLines.reduce((acc: number, l: any) => 
+                                            acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0
+                                        ) : 0
+                                    )}
+                                </span>
+                            </div>
+                            <div className="h-8 w-px bg-border/60" />
+                            <div className="flex flex-col items-center min-w-[80px]">
+                                <span className="text-[10px] font-bold uppercase text-muted-foreground mb-0.5">Sistema {selectedPayments.length > 0 && <span className="text-primary">({selectedPayments.length})</span>}</span>
+                                <span className="text-sm font-black font-mono tabular-nums text-foreground">
+                                    {formatCurrency(
+                                        selectedPayments.length > 0 ? selectedPayments.reduce((acc: number, p: any) => 
+                                            acc + Math.abs(parseFloat(p.amount)), 0
+                                        ) : 0
+                                    )}
+                                </span>
+                            </div>
+                            <div className="h-8 w-px bg-border/60" />
+                            <div className="flex flex-col items-center min-w-[80px]">
+                                <span className="text-[10px] font-bold uppercase text-muted-foreground mb-0.5">Diferencia</span>
+                                {(() => {
+                                    const lineTotal = selectedLines.reduce((acc: number, l: any) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
+                                    const payTotal = selectedPayments.reduce((acc: number, p: any) => acc + Math.abs(parseFloat(p.amount)), 0)
+                                    const diff = lineTotal - payTotal
+                                    return (
+                                        <span className={cn("text-base font-black font-mono tabular-nums", Math.abs(diff) < 1 ? "text-success" : "text-warning")}>
+                                            {formatCurrency(Math.abs(diff))}
+                                        </span>
+                                    )
+                                })()}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 border-l border-border/60 pl-6">
+                            <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="h-9 text-xs text-muted-foreground hover:bg-muted rounded-full px-4" 
+                                onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}
+                            >
+                                <X className="h-3 w-3 mr-1.5" />
+                                Limpiar
+                            </Button>
+                            
+                            <Button
+                                size="sm"
+                                className="h-9 px-6 text-xs font-bold shadow-sm transition-transform active:scale-95 rounded-full"
+                                onClick={() => handleGroupMatch(false)}
+                                disabled={matching || selectedLines.length === 0 || selectedPayments.length === 0}
+                            >
+                                {matching ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                                Conciliar
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* ─── Modals ─── */}

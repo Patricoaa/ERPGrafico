@@ -1,7 +1,6 @@
 import React from "react"
 import { Metadata } from "next"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -27,6 +26,11 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
         { value: "dashboard", label: "Dashboard", iconName: "bar-chart-3", href: "/treasury/reconciliation?tab=dashboard" },
         { value: "intelligence", label: "Inteligencia", iconName: "brain", href: "/treasury/reconciliation?tab=intelligence" },
     ]
+
+    const navigation = {
+        tabs,
+        activeValue: activeTab
+    }
 
     const getHeaderConfig = () => {
         switch (activeTab) {
@@ -78,9 +82,8 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
                 description={description}
                 iconName="landmark"
                 variant="minimal"
+                navigation={navigation}
             />
-
-            <PageTabs tabs={tabs} activeValue={activeTab} />
 
             <div className="pt-4">
                 <Tabs value={activeTab} className="space-y-4">

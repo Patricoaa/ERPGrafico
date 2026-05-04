@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { PageTabs, TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
+import { TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load feature components
@@ -73,6 +73,13 @@ export default async function InventoryPage({ searchParams }: PageProps) {
         },
     ]
 
+    const navigation = {
+        tabs,
+        activeValue: viewMode,
+        subActiveValue: viewMode === 'config' ? configTab : subView,
+        configHref: "/inventory?view=config"
+    }
+
     const getHeaderConfig = () => {
         if (viewMode === 'config') {
             return { title: "Configuración de Inventario", description: "Gestione las cuentas de stock, ajustes y costo de ventas.", iconName: "settings", showAction: false }
@@ -103,8 +110,7 @@ export default async function InventoryPage({ searchParams }: PageProps) {
 
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <PageHeader title={config.title} description={config.description} iconName={config.iconName} variant="minimal" />
-            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={viewMode === 'config' ? configTab : subView} />
+            <PageHeader title={config.title} description={config.description} iconName={config.iconName} variant="minimal" navigation={navigation} />
 
             <div className="pt-4">
                 <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>

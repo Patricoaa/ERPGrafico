@@ -2,7 +2,6 @@ import { Metadata } from "next"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { WarehouseList, MovementList, StockReport } from "@/features/inventory"
 import { Warehouse, History, FileBarChart } from "lucide-react"
-import { PageTabs } from "@/components/shared/PageTabs"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -26,6 +25,11 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
         { value: "movements", label: "Movimientos", iconName: "history", href: "/inventory/stock?tab=movements" },
         { value: "warehouses", label: "Almacenes", iconName: "warehouse", href: "/inventory/stock?tab=warehouses" },
     ]
+
+    const navigation = {
+        tabs,
+        activeValue: activeTab
+    }
 
     const getHeaderConfig = () => {
         switch (activeTab) {
@@ -72,9 +76,8 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                 description={description}
                 iconName="warehouse"
                 variant="minimal"
+                navigation={navigation}
             />
-
-            <PageTabs tabs={tabs} activeValue={activeTab} />
 
             <div className="pt-4">
                 <Tabs value={activeTab} className="space-y-4">

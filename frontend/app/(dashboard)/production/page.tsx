@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { PageTabs, TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
+import { TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load feature components
@@ -28,6 +28,12 @@ export default async function ProductionPage({ searchParams }: PageProps) {
         { value: "config", label: "Config", iconName: "settings", href: "/production?view=config" },
     ]
 
+    const navigation = {
+        tabs,
+        activeValue: viewMode,
+        configHref: "/production?view=config"
+    }
+
     const getHeaderConfig = () => {
         switch (viewMode) {
             case 'config':
@@ -46,8 +52,7 @@ export default async function ProductionPage({ searchParams }: PageProps) {
 
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <PageHeader title={title} description={description} iconName={icon} variant="minimal" />
-            <PageTabs tabs={tabs} activeValue={viewMode} />
+            <PageHeader title={title} description={description} iconName={icon} variant="minimal" navigation={navigation} />
             <div className="pt-2">
                 <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                     {viewMode === 'orders' && <WorkOrdersView createAction={createAction} />}

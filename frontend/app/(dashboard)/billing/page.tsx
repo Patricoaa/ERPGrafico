@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { PageTabs, CardSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
+import { CardSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 // Lazy load feature components
@@ -37,6 +37,8 @@ export default async function BillingPage({ searchParams }: PageProps) {
         },
     ]
 
+    const navigation = { tabs, activeValue: viewMode, subActiveValue: configTab, configHref: "/billing?view=config" }
+
     const getHeaderConfig = () => {
         if (viewMode === 'config') return { title: "Configuración de Facturación", description: "Gestione las cuentas contables y parámetros de documentos electrónicos.", iconName: "settings" as const }
         return {
@@ -52,8 +54,7 @@ export default async function BillingPage({ searchParams }: PageProps) {
 
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <PageHeader title={config.title} description={config.description} iconName={config.iconName} variant="minimal" />
-            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={configTab} />
+            <PageHeader title={config.title} description={config.description} iconName={config.iconName} variant="minimal" navigation={navigation} />
 
             <div className="pt-2">
                 <Suspense fallback={<CardSkeleton variant="list" count={5} />}>

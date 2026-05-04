@@ -2,7 +2,7 @@ import { Metadata } from "next"
 import { Suspense } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ProductList, CategoryList, PricingRuleList } from "@/features/inventory"
-import { TableSkeleton, PageTabs, PageHeader, ToolbarCreateButton } from "@/components/shared"
+import { TableSkeleton, PageHeader, ToolbarCreateButton } from "@/components/shared"
 
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
@@ -29,6 +29,11 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
         { value: "categories", label: "Categorías", iconName: "tags", href: "/inventory/products?tab=categories" },
         { value: "pricing-rules", label: "Reglas de Precio", iconName: "dollar-sign", href: "/inventory/products?tab=pricing-rules" },
     ]
+
+    const navigation = {
+        tabs,
+        activeValue: activeTab
+    }
 
     const getHeaderConfig = () => {
         switch (activeTab) {
@@ -74,11 +79,8 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                 description={description}
                 variant="minimal"
                 iconName="package"
+                navigation={navigation}
             />
-
-            <div className="pt-2">
-                <PageTabs tabs={tabs} activeValue={activeTab} />
-            </div>
 
             <Tabs value={activeTab} className="space-y-4 pt-4">
                 <div className="pt-0 min-h-[400px]">
