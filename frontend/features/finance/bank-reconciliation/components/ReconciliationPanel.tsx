@@ -14,7 +14,7 @@ import { SplitAllocationDialog } from "./SplitAllocationDialog"
 
 import { LabeledSelect, LabeledInput, TableSkeleton } from "@/components/shared"
 import {
-    Ban, CheckCircle2, ChevronRight,
+    Ban, CheckCircle2, ChevronRight, ChevronLeft,
     Loader2, Search, Sparkles, X, Wand2, SplitSquareHorizontal, Calculator, RotateCcw
 } from "lucide-react"
 import { format } from "date-fns"
@@ -997,7 +997,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     {/* Suggestions Section */}
                     {selectedLines.length === 1 && suggestions.length > 0 && !(
                         suggestions.length === 1 && selectedPayments.some(p => p.id === (suggestions[0].is_batch ? suggestions[0].batch_data?.id : suggestions[0].payment_data?.id))
-                    ) && (
+                    ) ? (
                         <div className="flex items-center gap-2 mr-2">
                             {suggestions.length === 1 ? (
                                 <button 
@@ -1026,7 +1026,38 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 </div>
                             )}
                         </div>
-                    )}
+                    ) : selectedPayments.length === 1 && lineSuggestions.length > 0 && !(
+                        lineSuggestions.length === 1 && selectedLines.some(l => l.id === lineSuggestions[0].line_data?.id)
+                    ) ? (
+                        <div className="flex items-center gap-2 mr-2">
+                            {lineSuggestions.length === 1 ? (
+                                <button 
+                                    onClick={() => {
+                                        const s = lineSuggestions[0]
+                                        const lineId = s.line_data?.id
+                                        const item = unreconciledLines.find(l => l.id === lineId)
+                                        if (item) setSelectedLines([item])
+                                    }}
+                                    className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-colors rounded-full py-1.5 pr-4 pl-2 group"
+                                >
+                                    <div className="h-7 w-7 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
+                                        <ChevronLeft className="h-4 w-4 text-warning group-hover:-translate-x-0.5 transition-transform" />
+                                    </div>
+                                    <div className="flex flex-col items-end leading-none text-right">
+                                        <span className="text-[8px] font-black uppercase text-warning/70 mb-0.5 tracking-wider">Usar Sugerencia</span>
+                                        <span className="text-[11px] font-bold truncate max-w-[180px]">{lineSuggestions[0].line_data?.description}</span>
+                                    </div>
+                                </button>
+                            ) : (
+                                <div className="flex items-center gap-3 bg-warning/10 border border-warning/20 rounded-full py-1.5 pl-4 pr-4">
+                                    <div className="flex flex-col items-start">
+                                        <span className="text-[11px] font-bold text-warning">{lineSuggestions.length} Sugerencias</span>
+                                    </div>
+                                    <Sparkles className="h-4 w-4 text-warning animate-pulse" />
+                                </div>
+                            )}
+                        </div>
+                    ) : null}
 
                     {/* Summary Stats (Always Visible - Unified Unit) */}
                     <div className="flex items-center gap-8 bg-muted/40 px-8 py-2.5 rounded-full border border-border/40 shadow-inner">
