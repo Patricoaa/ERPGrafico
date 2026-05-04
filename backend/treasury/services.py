@@ -525,7 +525,7 @@ class TreasuryService:
 class TerminalBatchService:
     @staticmethod
     @transaction.atomic
-    def create_batch(provider, sales_date, gross_amount, commission_base, commission_tax, net_amount, terminal_reference='', user=None, movement_ids=None, sales_date_end=None):
+    def create_batch(provider, payment_method, sales_date, gross_amount, commission_base, commission_tax, net_amount, terminal_reference='', user=None, movement_ids=None, sales_date_end=None):
         """
         Create a TerminalBatch and its accounting entries.
         Stage 2 of the Terminal accounting flow.
@@ -557,6 +557,7 @@ class TerminalBatchService:
         
         batch = TerminalBatch.objects.create(
             provider=provider,
+            payment_method=payment_method,
             sales_date=sales_date,
             sales_date_end=sales_date_end,
             settlement_date=timezone.now().date(), # Or passed as arg

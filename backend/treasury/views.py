@@ -1399,6 +1399,7 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
         try:
             data = request.data
             provider_id = data.get('provider')
+            payment_method_id = data.get('payment_method')
             sales_date = data.get('sales_date')
             sales_date_end = data.get('sales_date_end')
             gross_amount = Decimal(str(data.get('gross_amount')))
@@ -1408,10 +1409,12 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
             terminal_reference = data.get('terminal_reference', '')
             
             provider = PaymentTerminalProvider.objects.get(pk=provider_id)
+            payment_method = PaymentMethod.objects.get(pk=payment_method_id)
             movement_ids = data.get('movement_ids', None)
             
             batch = TerminalBatchService.create_batch(
                 provider=provider,
+                payment_method=payment_method,
                 sales_date=sales_date,
                 sales_date_end=sales_date_end,
                 gross_amount=gross_amount,

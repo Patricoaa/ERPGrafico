@@ -11,7 +11,7 @@ interface LabeledContainerProps {
     /** Error message — turns border red and shows text below the field. */
     error?: string
     /** Helper hint shown below when there is no error. */
-    hint?: string
+    hint?: ReactNode
     /** Additional classes for the outer wrapper `<div>`. */
     containerClassName?: string
     /** Additional classes for the `<fieldset>`. */
@@ -97,13 +97,13 @@ export function LabeledContainer({
             {(error || hint) && (
                 <div className="px-1 pt-1 min-h-[1.25rem]">
                     {error ? (
-                        <p className="text-[10px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
+                        <div className="text-[10px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
                             {error}
-                        </p>
+                        </div>
                     ) : hint ? (
-                        <p className="text-[10px] text-muted-foreground">
+                        <div className="text-[10px] text-muted-foreground">
                             {hint}
-                        </p>
+                        </div>
                     ) : null}
                 </div>
             )}

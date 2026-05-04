@@ -34,7 +34,8 @@ export interface LabeledSelectProps extends Omit<SelectProps, "value" | "onValue
     /** Error message — turns border red and shows text below the field. */
     error?: string
     /** Helper hint shown below when there is no error. */
-    hint?: string
+    /** Helper hint shown below when there is no error. */
+    hint?: React.ReactNode
     /** Additional classes for the outer wrapper `<div>`. */
     containerClassName?: string
     /** Additional classes for the `SelectTrigger` button. */
@@ -144,13 +145,13 @@ export const LabeledSelect = forwardRef<
 
             {/* Error or Hint Text */}
             {hasError ? (
-                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 px-1">
+                <div className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 px-1">
                     {error}
-                </p>
+                </div>
             ) : hint ? (
-                <p className="mt-1.5 text-[11px] font-medium text-muted-foreground/70 px-1">
+                <div className="mt-1.5 text-[11px] font-medium text-muted-foreground/70 px-1">
                     {hint}
-                </p>
+                </div>
             ) : null}
         </div>
     )
