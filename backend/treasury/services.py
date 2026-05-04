@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import TreasuryMovement, TreasuryAccount, TerminalBatch
+from .models import TreasuryMovement, TreasuryAccount, TerminalBatch, PaymentMethod
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
 from accounting.services import JournalEntryService
 from decimal import Decimal
@@ -546,13 +546,14 @@ class TerminalBatchService:
              raise ValidationError("El proveedor de terminal debe tener configuradas las cuentas: Por Cobrar, Gasto Comisión y Tesorería.")
 
         # 2. Identify Payments
+        payments = TreasuryMovement.objects.none()
         if movement_ids:
             payments = TreasuryMovement.objects.filter(
                 id__in=movement_ids,
-            payment_method_new__processes_via_terminal=True,
-            terminal_device__provider=provider,
-            terminal_batch__isnull=True
-        )
+                payment_method_new__processes_via_terminal=True,
+                terminal_device__provider=provider,
+                terminal_batch__isnull=True
+            )
         
         batch = TerminalBatch.objects.create(
             provider=provider,
