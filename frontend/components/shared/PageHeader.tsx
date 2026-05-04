@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 import { ActionFoldButton } from "@/components/shared/ActionFoldButton"
+import type { NavigationConfig } from "@/components/providers/HeaderProvider"
 
 export type PageHeaderStatusType = 'synced' | 'saving' | 'error' | 'warning' | 'info'
 
@@ -44,6 +45,8 @@ interface PageHeaderProps {
     className?: string
     /** Optional children rendered inside the header area */
     children?: React.ReactNode
+    /** Navigation config for dropdown tabs in the header bar */
+    navigation?: NavigationConfig
 }
 
 /**
@@ -63,7 +66,8 @@ export function PageHeader({
     status,
     variant = 'default',
     children, 
-    className 
+    className,
+    navigation 
 }: PageHeaderProps) {
     const { setHeader, clearHeader } = useHeader()
 
@@ -77,7 +81,8 @@ export function PageHeader({
             titleActions,
             isLoading,
             status,
-            children
+            children,
+            navigation
         })
 
         return () => {
@@ -92,6 +97,7 @@ export function PageHeader({
         isLoading, 
         status, 
         children, 
+        navigation,
         setHeader,
         clearHeader
     ])

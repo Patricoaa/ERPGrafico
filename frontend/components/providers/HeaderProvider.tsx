@@ -5,6 +5,24 @@ import { usePathname } from "next/navigation"
 
 import { LucideIcon } from "lucide-react"
  
+export interface NavigationTabConfig {
+    value: string
+    label: string
+    iconName?: string
+    href: string
+    subTabs?: { value: string; label: string; href: string; iconName?: string }[]
+}
+
+export interface NavigationConfig {
+    tabs: NavigationTabConfig[]
+    activeValue: string
+    subActiveValue?: string
+    /** Separate href for config/settings gear icon (excluded from main dropdown) */
+    configHref?: string
+    /** Optional deep breadcrumbs added after the dropdowns */
+    breadcrumbs?: { label: string; href?: string }[]
+}
+
 export interface HeaderConfig {
     title: string
     description?: string
@@ -19,6 +37,7 @@ export interface HeaderConfig {
         icon?: LucideIcon
     }
     children?: React.ReactNode
+    navigation?: NavigationConfig
 }
 
 interface HeaderContextType {

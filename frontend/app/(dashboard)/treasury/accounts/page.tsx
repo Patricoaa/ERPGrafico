@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react"
-import { LoadingFallback, PageHeader, PageTabs, ToolbarCreateButton, TableSkeleton } from "@/components/shared"
+import { LoadingFallback, PageHeader, ToolbarCreateButton, TableSkeleton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 const TreasuryAccountsView = lazy(() =>
@@ -22,6 +22,11 @@ export default async function AccountsPage({ searchParams }: PageProps) {
         { value: "banks", label: "Bancos", iconName: "landmark", href: "/treasury/accounts?tab=banks" },
         { value: "methods", label: "Métodos", iconName: "credit-card", href: "/treasury/accounts?tab=methods" },
     ]
+
+    const navigation = {
+        tabs,
+        activeValue: activeTab
+    }
 
     const getHeaderConfig = () => {
         switch (activeTab) {
@@ -67,9 +72,8 @@ export default async function AccountsPage({ searchParams }: PageProps) {
                 description={description}
                 iconName={iconName}
                 variant="minimal"
+                navigation={navigation}
             />
-
-            <PageTabs tabs={tabs} activeValue={activeTab} />
 
             <div className="pt-4">
                 <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>

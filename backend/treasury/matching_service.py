@@ -403,11 +403,11 @@ class MatchingService:
         for p in payments:
             if p.is_reconciled:
                  raise ValueError(f"Pago {p.id} ya reconciliado")
+            # S2.5: Permited matching even if pending registration. 
+            # The match itself is the proof of registration.
             if p.is_pending_registration:
-                raise ValueError(
-                    f"Pago {p.display_id} está pendiente de registro bancario. "
-                    "No se puede reconciliar hasta que el banco confirme la transacción."
-                )
+                p.is_pending_registration = False
+                p.save()
 
         for b in batches:
             if b.status == TerminalBatch.Status.RECONCILED:

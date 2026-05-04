@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { lazy, Suspense } from "react"
-import { TableSkeleton, PageHeader, PageTabs, PageHeaderButton } from "@/components/shared"
+import { TableSkeleton, PageHeader, PageHeaderButton } from "@/components/shared"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
@@ -44,6 +44,8 @@ export default async function AccountingPage({ searchParams }: PageProps) {
         },
     ]
 
+    const navigation = { tabs, activeValue: viewMode, subActiveValue: configTab, configHref: "/accounting?view=config" }
+
     const getHeaderConfig = () => {
         switch (viewMode) {
             case 'config':
@@ -70,8 +72,7 @@ export default async function AccountingPage({ searchParams }: PageProps) {
 
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <PageHeader title={config.title} description={config.description} iconName={config.icon} variant="minimal" titleActions={config.titleAction} />
-            <PageTabs tabs={tabs} activeValue={viewMode} subActiveValue={configTab} />
+            <PageHeader title={config.title} description={config.description} iconName={config.icon} variant="minimal" titleActions={config.titleAction} navigation={navigation} />
 
             <div className="pt-2">
                 <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>

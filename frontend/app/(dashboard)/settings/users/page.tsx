@@ -3,7 +3,6 @@
 import { type ReactNode, lazy, Suspense, useState } from "react"
 import { TableSkeleton } from "@/components/shared"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { PageTabs } from "@/components/shared/PageTabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useSearchParams } from "next/navigation"
 
@@ -22,6 +21,11 @@ export default function UsersSettingsPage() {
         { value: "users", label: "Usuarios", iconName: "users", href: "/settings/users?tab=users" },
         { value: "groups", label: "Grupos y Equipos", iconName: "user-plus", href: "/settings/users?tab=groups" },
     ]
+
+    const navigation = {
+        tabs,
+        activeValue: activeTab
+    }
 
     const getHeaderConfig = () => {
         switch (activeTab) {
@@ -51,12 +55,9 @@ export default function UsersSettingsPage() {
                 description={description}
                 variant="minimal"
                 iconName={iconName}
+                navigation={navigation}
             />
             
-            <div className="pt-2">
-                <PageTabs tabs={tabs} activeValue={activeTab} />
-            </div>
-
             <div className="mt-6">
                 <Suspense fallback={<TableSkeleton rows={10} columns={5} />}>
                     <UsersSettingsView 

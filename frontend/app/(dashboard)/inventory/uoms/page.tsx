@@ -1,5 +1,4 @@
 import { Tabs } from "@/components/ui/tabs"
-import { PageTabs } from "@/components/shared/PageTabs"
 import { UoMsView } from "@/features/inventory"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
@@ -17,6 +16,11 @@ export default async function UnifiedUoMPage({ searchParams }: PageProps) {
         { value: "categories", label: "Categorías", iconName: "layers", href: "/inventory/uoms?tab=categories" },
     ]
 
+    const navigation = {
+        tabs,
+        activeValue: activeTab
+    }
+
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader
@@ -24,10 +28,8 @@ export default async function UnifiedUoMPage({ searchParams }: PageProps) {
                 description="Gestión de unidades físicas, conversiones y redondeo."
                 variant="minimal"
                 iconName="scale"
+                navigation={navigation}
             />
-            <div className="pt-2">
-                <PageTabs tabs={tabs} activeValue={activeTab} />
-            </div>
             <Tabs value={activeTab} className="space-y-4 pt-4">
                 <UoMsView activeTab={activeTab} />
             </Tabs>

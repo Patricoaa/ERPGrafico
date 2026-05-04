@@ -46,7 +46,6 @@ export * from './DocumentAttachmentDropzone';
 
 // Navigation & Layout
 export * from './PageHeader';
-export * from './PageTabs';
 export * from './FormTabs';
 export * from './FormFooter';
 export * from './FormSplitLayout';

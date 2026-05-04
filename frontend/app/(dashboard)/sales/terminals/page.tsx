@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { PageTabs } from "@/components/shared/PageTabs"
+import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import Link from "next/link"
@@ -27,6 +27,11 @@ export default async function TerminalsPage({ searchParams }: PageProps) {
         { value: "batches", label: "Lotes de Liquidación", iconName: "receipt", href: "/sales/terminals?tab=batches" },
         { value: "sessions", label: "Historial de Sesiones", iconName: "list", href: "/sales/terminals?tab=sessions" },
     ]
+
+    const navigation = {
+        tabs,
+        activeValue: activeTab
+    }
 
     const getHeaderConfig = () => {
         switch (activeTab) {
@@ -83,12 +88,12 @@ export default async function TerminalsPage({ searchParams }: PageProps) {
 
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <PageTabs tabs={tabs} activeValue={activeTab} maxWidth="max-w-2xl" />
-
             <PageHeader
                 title={title}
                 description={description}
                 iconName={iconName}
+                variant="minimal"
+                navigation={navigation}
             >
                 {children}
             </PageHeader>

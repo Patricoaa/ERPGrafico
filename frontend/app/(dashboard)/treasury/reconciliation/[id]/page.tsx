@@ -11,7 +11,7 @@ import {
     Undo2, Info, AlertCircle, Loader2, CheckCircle2, GraduationCap, ExternalLink, Activity
 } from "lucide-react"
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
-import { BaseDrawer } from "@/components/shared/BaseDrawer"
+import { PageHeader } from "@/components/shared/PageHeader"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -36,7 +36,6 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { ReconciliationPanel } from "@/features/treasury"
 
 interface BankStatementLine {
     id: number
@@ -85,7 +84,6 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const [confirming, setConfirming] = useState(false)
     const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean, lineId: number | null }>({ open: false, lineId: null })
     const [paymentModal, setPaymentModal] = useState<{ open: boolean, id: number | null }>({ open: false, id: null })
-    const [isWorkbenchOpen, setIsWorkbenchOpen] = useState(false)
 
     useEffect(() => {
         fetchStatement()
@@ -115,10 +113,6 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         } finally {
             setUnmatchDialog({ open: false, lineId: null })
         }
-    }
-
-    const handleWorkbenchComplete = async () => {
-        await fetchStatement()
     }
 
     const confirmAction = useConfirmAction(async () => {
@@ -285,39 +279,41 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const totalCredits = statement.lines.reduce((acc, line) => acc + parseFloat(line.credit), 0)
     const netMovement = totalCredits - totalDebits
 
+    const navigation = {
+        tabs: [
+            { value: "statements", label: "Cartolas", iconName: "file-text", href: "/treasury/reconciliation?tab=statements" },
+            { value: "dashboard", label: "Dashboard", iconName: "bar-chart-3", href: "/treasury/reconciliation?tab=dashboard" },
+            { value: "intelligence", label: "Inteligencia", iconName: "brain", href: "/treasury/reconciliation?tab=intelligence" },
+        ],
+        activeValue: "statements",
+        breadcrumbs: [
+            { label: statement.display_id }
+        ]
+    }
+
     return (
         <div className="flex-1 space-y-4 pt-2">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => router.push('/treasury/reconciliation')}
-                        className="rounded-sm shadow-sm"
-                    >
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    <div>
-                        <div className="flex items-center gap-2">
-                            <h2 className="text-3xl font-extrabold tracking-tighter uppercase text-foreground/90">{statement.display_id}</h2>
-                            <DataCell.Status status={statement.state} />
-                        </div>
-                        <p className="text-muted-foreground text-sm font-medium">{statement.treasury_account_name}</p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-2">
-                    {statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 && (
+            <PageHeader
+                title={statement.display_id}
+                description={statement.treasury_account_name}
+                variant="minimal"
+                navigation={navigation}
+                status={{
+                    label: statement.state_display || statement.state,
+                    type: statement.state === 'CONFIRMED' ? 'synced' : 'info'
+                }}
+                titleActions={
+                    statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 && (
                         <Button
-                            onClick={() => setIsWorkbenchOpen(true)}
+                            onClick={() => router.push(`/treasury/reconciliation/${statement.id}/workbench`)}
                             className="bg-primary hover:bg-primary/90 shadow-sm"
                         >
                             <Activity className="mr-2 h-4 w-4" />
                             Reconciliar
                         </Button>
-                    )}
-                </div>
-            </div>
+                    )
+                }
+            />
 
             {/* Summary Grid */}
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
@@ -463,37 +459,6 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 description="¿Está seguro de confirmar esta cartola? Esto validará todas las conciliaciones, actualizará los saldos de la cuenta y bloqueará la cartola para futuras modificaciones."
                 confirmText="Confirmar"
             />
-            
-            <BaseDrawer
-                open={isWorkbenchOpen}
-                onOpenChange={setIsWorkbenchOpen}
-                title="MESA DE CONCILIACIÓN"
-                subtitle={`${statement.display_id} — ${statement.treasury_account_name}`}
-                icon={Activity}
-                height="h-[95vh]"
-                contentClassName="p-4 lg:p-6 dot-grid"
-                headerActions={
-                    statement.reconciliation_progress === 100 && (
-                        <Button
-                            onClick={handleConfirmStatement}
-                            disabled={confirming}
-                            className="bg-success hover:bg-success/90 shadow-sm px-5 font-bold text-sm mr-8"
-                        >
-                            {confirming ? (
-                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Finalizando...</>
-                            ) : (
-                                <><CheckCircle2 className="mr-2 h-4 w-4" />Confirmar Cartola</>
-                            )}
-                        </Button>
-                    )
-                }
-            >
-                <ReconciliationPanel
-                    statementId={statement.id}
-                    treasuryAccountId={statement.treasury_account}
-                    onComplete={handleWorkbenchComplete}
-                />
-            </BaseDrawer>
         </div>
     )
 }

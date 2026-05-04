@@ -1,7 +1,7 @@
 "use client"
 
 import { use, lazy, Suspense, useState } from "react"
-import { PageTabs, TableSkeleton, PageHeader } from "@/components/shared"
+import { TableSkeleton, PageHeader } from "@/components/shared"
 import { Tabs } from "@/components/ui/tabs"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
@@ -22,6 +22,11 @@ export default function SalesOrdersPage({ searchParams }: PageProps) {
         { value: "orders", label: "Notas de Venta", iconName: "shopping-cart", href: "/sales/orders?view=orders" },
         { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: "/sales/orders?view=notes" },
     ]
+
+    const navigation = {
+        tabs,
+        activeValue: viewMode
+    }
 
     const headerConfigs = {
         orders: {
@@ -47,12 +52,10 @@ export default function SalesOrdersPage({ searchParams }: PageProps) {
                 description={currentHeader.description}
                 iconName={currentHeader.iconName}
                 variant="minimal"
+                navigation={navigation}
             />
 
-            <Tabs value={viewMode} className="w-full">
-                <div className="-mx-8">
-                    <PageTabs tabs={tabs} activeValue={viewMode} />
-                </div>
+            <Tabs value={viewMode} className="w-full pt-4">
                 
                 <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                     <SalesOrdersClientView 

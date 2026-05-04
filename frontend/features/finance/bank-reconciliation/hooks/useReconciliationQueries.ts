@@ -55,6 +55,7 @@ export interface QueryPaginationParams {
     date_to?: string
     amount_min?: number
     amount_max?: number
+    type?: string
 }
 
 export function useDashboardDataQuery(selectedAccount: string = 'all') {
@@ -90,7 +91,8 @@ export function useUnreconciledLinesQuery(statementId: number, params: QueryPagi
                     date_from: params.date_from,
                     date_to: params.date_to,
                     amount_min: params.amount_min,
-                    amount_max: params.amount_max
+                    amount_max: params.amount_max,
+                    direction: params.type
                 },
                 signal
             })
@@ -114,7 +116,8 @@ export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: 
                         date_from: params.date_from,
                         date_to: params.date_to,
                         amount_min: params.amount_min,
-                        amount_max: params.amount_max
+                        amount_max: params.amount_max,
+                        direction: params.type
                     },
                     signal
                 }),
@@ -132,7 +135,22 @@ export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: 
             const paymentsData = paymentsRes.data.results || paymentsRes.data
             const batchesData = batchesRes.data.results || batchesRes.data
 
-            const payments = Array.isArray(paymentsData) ? paymentsData : []
+            const payments = Array.isArray(paymentsData) ? paymentsData.map((p: any) => {
+                let contactName = p.partner_name || 'Particular'
+                
+                if (p.movement_type === 'TRANSFER') {
+                    // For transfers, show the other account name
+                    contactName = p.is_inbound ? (p.from_account_name || 'Cuenta Origen') : (p.to_account_name || 'Cuenta Destino')
+                } else if (p.movement_type === 'ADJUSTMENT') {
+                    // For adjustments, show the reason or notes
+                    contactName = p.justify_reason_display || p.notes || 'Ajuste Manual'
+                }
+
+                return {
+                    ...p,
+                    contact_name: contactName
+                }
+            }) : []
             const batches = Array.isArray(batchesData) ? batchesData.map((b: any) => ({
                 id: b.id,
                 display_id: b.display_id,
@@ -143,9 +161,17 @@ export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: 
                 movement_type: 'INBOUND'
             })) : []
 
+            const finalResults = []
+            if (!params.type || params.type !== 'BATCH') {
+                finalResults.push(...payments)
+            }
+            if (!params.type || params.type === 'BATCH') {
+                finalResults.push(...batches)
+            }
+
             return {
-                results: [...payments, ...batches],
-                count: (paymentsRes.data.count || payments.length) + batches.length
+                results: finalResults,
+                count: finalResults.length
             }
         },
         enabled: !!treasuryAccountId
