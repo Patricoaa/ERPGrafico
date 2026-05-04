@@ -91,6 +91,7 @@ interface DataTableProps<TData, TValue> {
     pageCount?: number
     pagination?: { pageIndex: number; pageSize: number }
     onPaginationChange?: (updater: any) => void
+    rowSelection?: RowSelectionState
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -143,6 +144,7 @@ export function DataTable<TData, TValue>({
     pageCount,
     pagination,
     onPaginationChange,
+    rowSelection,
 }: DataTableProps<TData, TValue>) {
     // Uncontrolled mode: let TanStack Table manage sorting/filters/visibility/
     // expansion/selection state internally. Previous controlled-state wiring
@@ -206,15 +208,24 @@ export function DataTable<TData, TValue>({
         }
     }, [initialColumnVisibility, hiddenColumns, table])
 
-    // Fire parent row-selection callback when TanStack's internal rowSelection changes.
-    const rowSelection = table.getState().rowSelection
-    const prevRowSelection = React.useRef(rowSelection)
+    // Sync prop-driven row selection after mount.
+    const prevRowSelectionProp = React.useRef(rowSelection)
     React.useEffect(() => {
-        if (JSON.stringify(prevRowSelection.current) !== JSON.stringify(rowSelection)) {
-            prevRowSelection.current = rowSelection
-            onRowSelectionChange?.(rowSelection)
+        if (rowSelection !== undefined && JSON.stringify(prevRowSelectionProp.current) !== JSON.stringify(rowSelection)) {
+            table.setRowSelection(rowSelection)
+            prevRowSelectionProp.current = rowSelection
         }
-    }, [rowSelection, onRowSelectionChange])
+    }, [rowSelection, table])
+
+    // Fire parent row-selection callback when TanStack's internal rowSelection changes.
+    const internalRowSelection = table.getState().rowSelection
+    const prevInternalRowSelection = React.useRef(internalRowSelection)
+    React.useEffect(() => {
+        if (JSON.stringify(prevInternalRowSelection.current) !== JSON.stringify(internalRowSelection)) {
+            prevInternalRowSelection.current = internalRowSelection
+            onRowSelectionChange?.(internalRowSelection)
+        }
+    }, [internalRowSelection, onRowSelectionChange])
 
     const showToolbar = filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction || createAction
     const selectedRows = table.getSelectedRowModel().rows

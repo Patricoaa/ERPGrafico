@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -50,70 +50,74 @@ export function AdvancedManufacturingModal({
     const [prevOpen, setPrevOpen] = useState(false)
     const [prevProductId, setPrevProductId] = useState<number | null>(null)
 
-    if (open && (open !== prevOpen || product?.id !== prevProductId)) {
-        setPrevOpen(open)
-        setPrevProductId(product?.id ?? null)
+    useEffect(() => {
+        if (open && (open !== prevOpen || product?.id !== prevProductId)) {
+            setPrevOpen(open)
+            setPrevProductId(product?.id ?? null)
 
-        const prod = product as any;
-        const mfgData = prod?.manufacturing_data as any;
+            const prod = product as any;
+            const mfgData = prod?.manufacturing_data as any;
 
-        if (mfgData) {
-            setDesignNeeded(mfgData.design_needed || false)
-            setContact(mfgData.contact || null)
-            setDescription(mfgData.description || "")
-            setProductDescription(mfgData.product_description || "")
-            setDesignFiles(mfgData.design_files || [])
-            setFolioEnabled(mfgData.folio_enabled || false)
-            setFolioStart(mfgData.folio_start || "")
-            setPrintType(mfgData.print_type || null)
+            if (mfgData) {
+                setDesignNeeded(mfgData.design_needed || false)
+                setContact(mfgData.contact || null)
+                setDescription(mfgData.description || "")
+                setProductDescription(mfgData.product_description || "")
+                setDesignFiles(mfgData.design_files || [])
+                setFolioEnabled(mfgData.folio_enabled || false)
+                setFolioStart(mfgData.folio_start || "")
+                setPrintType(mfgData.print_type || null)
 
-            if (mfgData.phases) {
-                setEnablePrepress(mfgData.phases.prepress ?? !!prod.mfg_enable_prepress)
-                setEnablePress(mfgData.phases.press ?? !!prod.mfg_enable_press)
-                setEnablePostpress(mfgData.phases.postpress ?? !!prod.mfg_enable_postpress)
-            } else {
+                if (mfgData.phases) {
+                    setEnablePrepress(mfgData.phases.prepress ?? !!prod.mfg_enable_prepress)
+                    setEnablePress(mfgData.phases.press ?? !!prod.mfg_enable_press)
+                    setEnablePostpress(mfgData.phases.postpress ?? !!prod.mfg_enable_postpress)
+                } else {
+                    setEnablePrepress(!!prod.mfg_enable_prepress)
+                    setEnablePress(!!prod.mfg_enable_press)
+                    setEnablePostpress(!!prod.mfg_enable_postpress)
+                }
+
+                if (mfgData.specifications) {
+                    setPrepressSpecs(mfgData.specifications.prepress || "")
+                    setPressSpecs(mfgData.specifications.press || "")
+                    setPostpressSpecs(mfgData.specifications.postpress || "")
+                } else {
+                    setPrepressSpecs("")
+                    setPressSpecs("")
+                    setPostpressSpecs("")
+                }
+            } else if (prod) {
+                setDesignNeeded(!!prod.mfg_prepress_design)
+                setContact(null)
+                setDescription("")
+                setProductDescription("")
+                setDesignFiles([])
+                setFolioEnabled(!!prod.mfg_prepress_folio)
+                setFolioStart("")
+                setPrepressSpecs("")
+                setPressSpecs("")
+                setPostpressSpecs("")
+
+                // Initialize printType from product flags
+                if (prod.mfg_press_offset) setPrintType('offset')
+                else if (prod.mfg_press_digital) setPrintType('digital')
+                else if (prod.mfg_press_special) setPrintType('especial')
+                else setPrintType(null)
+
+                // Initialize switches from product configuration
                 setEnablePrepress(!!prod.mfg_enable_prepress)
                 setEnablePress(!!prod.mfg_enable_press)
                 setEnablePostpress(!!prod.mfg_enable_postpress)
             }
-
-            if (mfgData.specifications) {
-                setPrepressSpecs(mfgData.specifications.prepress || "")
-                setPressSpecs(mfgData.specifications.press || "")
-                setPostpressSpecs(mfgData.specifications.postpress || "")
-            } else {
-                setPrepressSpecs("")
-                setPressSpecs("")
-                setPostpressSpecs("")
-            }
-        } else if (prod) {
-            setDesignNeeded(!!prod.mfg_prepress_design)
-            setContact(null)
-            setDescription("")
-            setProductDescription("")
-            setDesignFiles([])
-            setFolioEnabled(!!prod.mfg_prepress_folio)
-            setFolioStart("")
-            setPrepressSpecs("")
-            setPressSpecs("")
-            setPostpressSpecs("")
-
-            // Initialize printType from product flags
-            if (prod.mfg_press_offset) setPrintType('offset')
-            else if (prod.mfg_press_digital) setPrintType('digital')
-            else if (prod.mfg_press_special) setPrintType('especial')
-            else setPrintType(null)
-
-            // Initialize switches from product configuration
-            setEnablePrepress(!!prod.mfg_enable_prepress)
-            setEnablePress(!!prod.mfg_enable_press)
-            setEnablePostpress(!!prod.mfg_enable_postpress)
         }
-    }
+    }, [open, prevOpen, product, prevProductId])
 
-    if (!open && prevOpen) {
-        setPrevOpen(false)
-    }
+    useEffect(() => {
+        if (!open && prevOpen) {
+            setPrevOpen(false)
+        }
+    }, [open, prevOpen])
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {

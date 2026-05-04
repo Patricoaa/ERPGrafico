@@ -1,7 +1,7 @@
 "use client"
 
 import { getErrorMessage } from "@/lib/errors"
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
@@ -185,6 +185,26 @@ export function POSClientView() {
     const [ordersModalOpen, setOrdersModalOpen] = useState(false)
     const [isSharedSession, setIsSharedSession] = useState(false)
     const draftLoadedFromUrl = useRef(false)
+
+    const currentOrderLines = useMemo(() => items.map(item => ({
+        product: item.id,
+        product_name: item.name,
+        description: item.name,
+        quantity: item.qty,
+        uom: item.uom || 0,
+        uom_name: item.uom_name,
+        unit_price: item.unit_price_gross,
+        unit_price_net: item.unit_price_net,
+        unit_price_gross: item.unit_price_gross,
+        tax_rate: (item as any).tax_rate || 19,
+        discount_amount: item.discount_amount,
+        discount_percentage: item.discount_percentage,
+        product_type: item.product_type,
+        requires_advanced_manufacturing: item.requires_advanced_manufacturing,
+        manufacturing_data: item.manufacturing_data,
+        code: item.code,
+        internal_code: item.internal_code,
+    })), [items])
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -546,20 +566,7 @@ export function POSClientView() {
                                 <SalesCheckoutWizardContent
                                     key={currentDraftId || 'checkout-new'}
                                     order={null}
-                                    orderLines={items.map(item => ({
-                                        product: item.id,
-                                        product_name: item.name,
-                                        description: item.name,
-                                        quantity: item.qty,
-                                        uom: item.uom || 0,
-                                        uom_name: item.uom_name,
-                                        unit_price: item.unit_price_gross,
-                                        unit_price_net: item.unit_price_net,
-                                        unit_price_gross: item.unit_price_gross,
-                                        tax_rate: (item as any).tax_rate || 19, // Use any briefly for dynamic prop or check Product type
-                                        discount_amount: item.discount_amount,
-                                        discount_percentage: item.discount_percentage,
-                                    })) as any} // Still need any here because SaleOrderLine has many required fields like description
+                                    orderLines={currentOrderLines as any}
                                     total={totals.total_gross}
                                     totalDiscountAmount={totalDiscountAmount}
                                     onComplete={(data) => handleCheckoutComplete(data as any)}

@@ -50,7 +50,7 @@ export function ProcessSummarySidebar({
     ]
 
     if (hasManufacturing) {
-        steps.push({ id: 'mfg', label: 'Fabricación', icon: Paintbrush })
+        steps.push({ id: 'manufacturing', label: 'Fabricación', icon: Paintbrush })
     }
 
     if (totalSteps > (hasManufacturing ? 3 : 2)) {

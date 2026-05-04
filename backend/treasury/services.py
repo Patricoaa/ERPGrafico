@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from treasury.models import TreasuryMovement, TreasuryAccount, TerminalBatch, PaymentMethod
+from .models import TreasuryMovement, TreasuryAccount, TerminalBatch, PaymentMethod
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
 from accounting.services import JournalEntryService
 from decimal import Decimal
@@ -279,12 +279,12 @@ class TreasuryService:
             debit_acc = to_acc
             
             # Stage 1: Record to Terminal Receivable Account if it's a terminal-based payment
-            processes_via_terminal = getattr(movement.payment_method_new, 'processes_via_terminal', False)
-            if processes_via_terminal and movement.terminal_device:
+            is_integrated = getattr(movement.payment_method_new, 'is_integrated', False)
+            if is_integrated and movement.terminal_device:
                  provider = movement.terminal_device.provider
                  if provider.receivable_account:
                      debit_acc = provider.receivable_account
-            elif processes_via_terminal:
+            elif is_integrated:
                  # Logic fallback if no device is set but should have one
                  pass
             
@@ -499,8 +499,6 @@ class TreasuryService:
         payment_method_new = None
         payment_method_id = data.get("payment_method_id") or data.get("payment_method_new")
         if payment_method_id:
-            from django.apps import apps
-            PaymentMethod = apps.get_model('treasury', 'PaymentMethod')
             payment_method_new = PaymentMethod.objects.filter(pk=payment_method_id).first()
 
         pos_session_id = data.get("pos_session_id") or data.get("pos_session")
@@ -552,7 +550,7 @@ class TerminalBatchService:
         if movement_ids:
             payments = TreasuryMovement.objects.filter(
                 id__in=movement_ids,
-                payment_method_new__processes_via_terminal=True,
+                payment_method_new__method_type=PaymentMethod.Type.CARD_TERMINAL,
                 terminal_device__provider=provider,
                 terminal_batch__isnull=True
             )
