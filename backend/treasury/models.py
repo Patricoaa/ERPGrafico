@@ -602,8 +602,8 @@ class POSTerminal(models.Model):
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='pos_terminals',
-        verbose_name=_("Dispositivo de Cobro Asociado"),
-        help_text=_("La maquinita física amarrada a esta caja del sistema")
+        verbose_name=_("Dispositivo de Terminal"),
+        help_text=_("Dispositivo físico vinculado a esta caja para cobros integrados")
     )
     
     # Hardware information (optional)

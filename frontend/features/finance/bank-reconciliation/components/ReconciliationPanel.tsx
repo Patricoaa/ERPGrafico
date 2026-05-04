@@ -549,7 +549,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             {row.original.contact_name}
                         </span>
                         {isSettlement && (
-                            <Badge variant="secondary" className="w-fit text-[10px] h-4 px-1.5 font-black uppercase bg-info/10 text-info">Liquidación Terminal</Badge>
+                            <Badge variant="secondary" className="w-fit text-[10px] h-4 px-1.5 font-black uppercase bg-info/10 text-info">Liquidación Terminal de Cobro</Badge>
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">

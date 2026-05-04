@@ -52,7 +52,7 @@ const BYPASS_COPY: Record<BypassVariant, BypassCopy> = {
         showSwitchMethod: true,
     },
     timeout: {
-        title: "Terminal no respondió a tiempo",
+        title: "Terminal de cobro no respondió a tiempo",
         lines: [
             "El terminal TUU no respondió en 3 minutos. Cobra {amount} directamente en el dispositivo físico.",
             "Registrará el pago como tarjeta manual sin integración automática.",
@@ -77,7 +77,7 @@ const BYPASS_COPY: Record<BypassVariant, BypassCopy> = {
         showSwitchMethod: false,
     },
     generic: {
-        title: "Terminal no disponible — registro manual",
+        title: "Terminal de cobro no disponible — registro manual",
         lines: [
             "El terminal TUU no respondió. Cobra {amount} directamente en el dispositivo físico.",
             "El sistema registrará el pago como tarjeta manual sin integración automática.",

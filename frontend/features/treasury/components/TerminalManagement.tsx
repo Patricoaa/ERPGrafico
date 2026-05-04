@@ -81,11 +81,11 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
             ) : terminals.length === 0 ? (
                 <EmptyState
                     context="finance"
-                    title="No hay terminales configurados"
+                    title="No hay cajas POS configuradas"
                     description="Administre los puntos de venta y sus métodos de pago autorizados desde aquí."
                     action={
                         <Button onClick={handleCreate} className="h-9">
-                            <Plus className="mr-2 h-4 w-4" /> Crear primer terminal
+                            <Plus className="mr-2 h-4 w-4" /> Crear primera caja
                         </Button>
                     }
                 />
@@ -111,8 +111,8 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                 open={deleteConfirm.isOpen}
                 onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
                 onConfirm={deleteConfirm.confirm}
-                title="Eliminar Terminal"
-                description={`¿Está seguro de eliminar el terminal "${deleteConfirm.payload?.name || ''}"? Esta acción no se puede deshacer.`}
+                title="Eliminar Caja POS"
+                description={`¿Está seguro de eliminar la caja POS "${deleteConfirm.payload?.name || ''}"? Esta acción no se puede deshacer.`}
                 variant="destructive"
             />
         </div>
@@ -238,7 +238,9 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
                     setLocation(terminal.location || "")
                     setSerialNumber(terminal.serial_number || "")
                     setIpAddress(terminal.ip_address || "")
-                    setDeviceId(terminal.payment_terminal_device?.toString() || "")
+                    const dId = terminal.payment_terminal_device as any;
+                    const deviceIdValue = dId?.id ? dId.id.toString() : dId?.toString() || "";
+                    setDeviceId(deviceIdValue);
                     setSelectedMethodIds(terminal.allowed_payment_methods.map(m => m.id))
                 } else {
                     setName("")
@@ -323,17 +325,17 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
         try {
             if (terminal) {
                 await api.patch(`/treasury/pos-terminals/${terminal.id}/`, payload)
-                toast.success("Terminal actualizado")
+                toast.success("Caja POS actualizada")
             } else {
                 await api.post('/treasury/pos-terminals/', payload)
-                toast.success("Terminal creado")
+                toast.success("Caja POS creada")
             }
             onSuccess()
             onOpenChange(false)
         } catch (error: unknown) {
             const err = error as any
             console.error("Error saving terminal:", err.response?.data || err)
-            toast.error("Error al guardar terminal")
+            toast.error("Error al guardar la caja POS")
         } finally {
             setLoading(false)
         }
@@ -374,7 +376,7 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
             title={
                 <div className="flex items-center gap-3">
                     <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
-                    <span>{terminal ? "Ficha de Terminal" : "Nuevo Terminal"}</span>
+                    <span>{terminal ? "Ficha de Caja POS" : "Nueva Caja POS"}</span>
                 </div>
             }
             description={
@@ -385,7 +387,7 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
                             <span className="opacity-30">|</span>
                         </>
                     )}
-                    <span>{terminal ? "Modifique la configuración del terminal y revise su historial." : "Configuración del terminal y asignación de métodos de pago."}</span>
+                    <span>{terminal ? "Modifique la configuración de la caja POS y revise su historial." : "Configuración de la caja POS y asignación de métodos de pago."}</span>
                 </div>
             }
             footer={
@@ -394,7 +396,7 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
                             <ActionSlideButton type="submit" form="terminal-form" loading={loading} disabled={loading}>
-                                {terminal ? "Guardar Cambios" : "Crear Terminal"}
+                                {terminal ? "Guardar Cambios" : "Crear Caja POS"}
                             </ActionSlideButton>
                         </>
                     }
@@ -445,7 +447,7 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
 
                     <div className="space-y-2">
                         <LabeledSelect
-                            label="Integración con Hardware"
+                            label="Dispositivo de Terminal"
                             placeholder="Sin dispositivo integrado"
                             value={deviceId}
                             onChange={setDeviceId}

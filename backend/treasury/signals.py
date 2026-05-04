@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save, pre_save, pre_delete, post_delete
 from django.dispatch import receiver
 
 
@@ -100,3 +100,60 @@ def sync_card_terminal_payment_method(sender, instance, **kwargs):
 
     # Asegurar que el método está en allowed_payment_methods de la caja
     instance.allowed_payment_methods.add(method)
+
+
+@receiver(pre_delete, sender='treasury.PaymentTerminalProvider')
+def cleanup_terminal_provider_assets(sender, instance, **kwargs):
+    """
+    Antes de eliminar el proveedor:
+    1. Eliminar métodos de pago vinculados a sus dispositivos.
+    2. Guardar ID de la cuenta de tesorería para intentar borrarla en post_delete.
+    """
+    from treasury.models import PaymentMethod
+    # Eliminar métodos de pago CARD_TERMINAL vinculados a dispositivos de este proveedor
+    PaymentMethod.objects.filter(
+        method_type=PaymentMethod.Type.CARD_TERMINAL,
+        linked_terminal_device__provider=instance
+    ).delete()
+    
+    # Guardar ID de la cuenta puente para el post_delete
+    instance._cleanup_account_id = instance.bank_treasury_account_id
+
+
+@receiver(post_delete, sender='treasury.PaymentTerminalProvider')
+def cleanup_orphaned_treasury_account(sender, instance, **kwargs):
+    """
+    Después de eliminar el proveedor, intentar borrar la cuenta de tesorería
+    si quedó huérfana y no tiene actividad.
+    """
+    account_id = getattr(instance, '_cleanup_account_id', None)
+    if not account_id:
+        return
+
+    from django.db.models import Q
+    from treasury.models import TreasuryAccount, PaymentTerminalProvider, TreasuryMovement
+    
+    # 1. Verificar si otras entidades la usan
+    is_shared = PaymentTerminalProvider.objects.filter(bank_treasury_account_id=account_id).exists()
+    if is_shared:
+        return
+        
+    try:
+        account = TreasuryAccount.objects.get(pk=account_id)
+        
+        # 2. Verificar actividad (movimientos o asientos contables)
+        has_movements = TreasuryMovement.objects.filter(
+            Q(from_account=account) | Q(to_account=account)
+        ).exists()
+        
+        # También chequear JournalItems por si se usó en asientos manuales
+        from accounting.models import JournalItem
+        has_gl_activity = JournalItem.objects.filter(account=account.account).exists()
+        
+        if not has_movements and not has_gl_activity:
+            account.delete()
+    except TreasuryAccount.DoesNotExist:
+        pass
+    except Exception:
+        # No queremos que el cleanup falle y rompa la experiencia del usuario si algo sale mal
+        pass

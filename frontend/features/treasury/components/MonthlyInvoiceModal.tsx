@@ -130,7 +130,7 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
                 <div className="grid grid-cols-12 gap-3">
                     <div className="col-span-12 lg:col-span-6">
                         <LabeledSelect
-                            label="Proveedor (Terminal)"
+                            label="Proveedor (Terminal de Cobro)"
                             placeholder="Seleccione proveedor..."
                             value={supplierId}
                             onChange={setSupplierId}
