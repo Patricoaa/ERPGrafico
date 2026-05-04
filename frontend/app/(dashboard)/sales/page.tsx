@@ -117,17 +117,17 @@ export default async function SalesPage({ searchParams }: PageProps) {
         if (viewMode === 'pos') {
             if (subView === 'pos-terminals') {
                 return {
-                    title: "Terminales POS",
+                    title: "Cajas POS",
                     description: "Administre los puntos de venta y sus métodos de pago autorizados.",
                     iconName: "banknote" as const,
-                    actionTitle: "Nuevo Terminal",
+                    actionTitle: "Nueva Caja POS",
                     actionHref: "/sales?view=pos&sub=pos-terminals&modal=new-terminal",
                     showAction: true
                 }
             } else {
                 return {
                     title: "Historial de Sesiones",
-                    description: "Registro cronológico de aperturas y cierres de terminales POS.",
+                    description: "Registro cronológico de aperturas y cierres de cajas POS.",
                     iconName: "banknote" as const,
                     showAction: false
                 }

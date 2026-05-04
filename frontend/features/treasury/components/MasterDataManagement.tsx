@@ -423,7 +423,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
 
     const methodTypeLabels: Record<string, string> = {
         CASH: "Efectivo Directo",
-        CARD_TERMINAL: "Tarjeta (Terminal POS Integrado)",
+        CARD_TERMINAL: "Tarjeta (Dispositivo Integrado)",
         TRANSFER: "Transferencia Bancaria",
         DEBIT_CARD: "Tarjeta Débito Empresa",
         CREDIT_CARD: "Tarjeta Crédito Empresa",
@@ -697,7 +697,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                                             error={fieldState.error?.message}
                                             options={[
                                                 { value: "CASH", label: "Efectivo Directo" },
-                                                { value: "CARD_TERMINAL", label: "Tarjeta (Terminal POS Integrado)" },
+                                                { value: "CARD_TERMINAL", label: "Tarjeta (Dispositivo Integrado)" },
                                                 { value: "TRANSFER", label: "Transferencia Bancaria" },
                                                 { value: "DEBIT_CARD", label: "Tarjeta Débito Empresa" },
                                                 { value: "CREDIT_CARD", label: "Tarjeta Crédito Empresa" },
