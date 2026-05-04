@@ -268,6 +268,24 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if pm:
             qs = qs.filter(payment_method_new_id=pm)
 
+        direction = self.request.query_params.get('direction')
+        if direction and treasury_account:
+            from django.db.models import Q
+            if direction == 'IN':
+                # Inbound movements or Transfers where the selected account is the destination
+                qs = qs.filter(
+                    Q(movement_type='INBOUND') | 
+                    Q(movement_type='TRANSFER', to_account_id=treasury_account) |
+                    Q(movement_type='ADJUSTMENT', amount__gt=0) # Adjustments can be positive
+                )
+            elif direction == 'OUT':
+                # Outbound movements or Transfers where the selected account is the source
+                qs = qs.filter(
+                    Q(movement_type='OUTBOUND') | 
+                    Q(movement_type='TRANSFER', from_account_id=treasury_account) |
+                    Q(movement_type='ADJUSTMENT', amount__lt=0) # Adjustments can be negative
+                )
+
         return qs
 
     filterset_fields = [
@@ -707,6 +725,12 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
         if search:
             from django.db.models import Q
             queryset = queryset.filter(Q(description__icontains=search) | Q(reference__icontains=search))
+
+        direction = self.request.query_params.get('direction')
+        if direction == 'IN':
+            queryset = queryset.filter(credit__gt=0)
+        elif direction == 'OUT':
+            queryset = queryset.filter(debit__gt=0)
         
         return queryset
     
