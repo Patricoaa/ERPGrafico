@@ -165,7 +165,7 @@ export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: 
             if (!params.type || params.type !== 'BATCH') {
                 finalResults.push(...payments)
             }
-            if (!params.type || params.type === 'BATCH') {
+            if (!params.type || params.type === 'BATCH' || params.type === 'IN') {
                 finalResults.push(...batches)
             }
 
