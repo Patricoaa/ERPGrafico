@@ -18,7 +18,7 @@ import { WorkOrderKanban } from "@/features/production/components/WorkOrderKanba
 import { TabsContent } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
 import { translateProductionStage } from "@/lib/utils"
@@ -42,11 +42,7 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
     'CANCELLED': { label: 'Anulada', variant: 'destructive' },
 }
 
-interface WorkOrdersPageProps {
-    createAction?: React.ReactNode
-}
-
-export default function WorkOrdersPage({ createAction }: WorkOrdersPageProps = {}) {
+export default function WorkOrdersPage() {
     const [orders, setOrders] = useState<WorkOrder[]>([])
     const [loading, setLoading] = useState(true)
     const [editingOrder, setEditingOrder] = useState<WorkOrder | null>(null)
@@ -326,7 +322,7 @@ export default function WorkOrdersPage({ createAction }: WorkOrdersPageProps = {
                     }
                     onReset={() => setDateRange(undefined)}
                     renderCustomView={viewMode === "kanban" ? renderKanbanView : undefined}
-                    createAction={createAction}
+                    createAction={<ToolbarCreateButton label="Nueva OT" href="/production/orders?modal=new" />}
                 />
             </div>
 
