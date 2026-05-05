@@ -56,8 +56,18 @@ class TreasuryService:
             pos_session = POSSession.objects.filter(id=pos_session_id).first()
 
 
+        # 1.6 Resolve Terminal Fields from Payment Method
+        terminal_device = None
+        terminal_provider = None
+        if payment_method_new and payment_method_new.method_type == PaymentMethod.Type.CARD_TERMINAL:
+             terminal_device = payment_method_new.linked_terminal_device
+             if terminal_device:
+                 terminal_provider = terminal_device.provider
+
         # 2. Create TreasuryMovement
         movement = TreasuryMovement.objects.create(
+            terminal_device=terminal_device,
+            terminal_provider=terminal_provider,
             movement_type=movement_type,
             payment_method=payment_method,
             payment_method_new=payment_method_new,
