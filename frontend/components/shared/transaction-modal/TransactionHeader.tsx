@@ -72,6 +72,8 @@ export function TransactionHeader({
                 const moveType = data.movement_type === 'DEPOSIT' ? 'Depósito' :
                     data.movement_type === 'WITHDRAWAL' ? 'Retiro' : 'Traspaso'
                 return { main: `${moveType} de Efectivo`, sub: `MOV-${data.id}` }
+            case 'terminal_batch':
+                return { main: "Lote de Liquidación", sub: data.display_id || `BATCH-${data.id}` }
             default:
                 return { main: "Detalles de Transacción", sub: "" }
         }
@@ -90,6 +92,7 @@ export function TransactionHeader({
         if (type === 'work_order') return <ClipboardList className="h-5 w-5 text-primary" />
         if (type === 'sale_delivery' || type === 'purchase_receipt') return <Package className="h-5 w-5 text-warning" />
         if (type === 'cash_movement') return <ArrowLeft className="h-5 w-5 text-primary" />
+        if (type === 'terminal_batch') return <ClipboardList className="h-5 w-5 text-primary" />
         return <FileText className="h-5 w-5 text-primary" />
     }
 

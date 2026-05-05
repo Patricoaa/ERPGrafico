@@ -2,6 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import * as React from "react"
+import dynamic from "next/dynamic"
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -17,7 +18,7 @@ import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 import { LabeledSelect, LabeledInput, TableSkeleton } from "@/components/shared"
 import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 import {
-    Ban, CheckCircle2, ChevronRight, ChevronLeft,
+    Ban, CheckCircle2, ChevronRight, ChevronLeft, FileText,
     Loader2, Search, Sparkles, X, Wand2, SplitSquareHorizontal, Calculator, RotateCcw
 } from "lucide-react"
 import { format } from "date-fns"
@@ -58,6 +59,10 @@ import { AutoMatchProgressModal } from "./AutoMatchProgressModal"
 
 
 import { DataTable } from "@/components/ui/data-table"
+const TransactionViewModal = dynamic(() =>
+    import("@/components/shared/TransactionViewModal").then(module => ({ default: module.TransactionViewModal })),
+    { ssr: false, loading: () => <Loader2 className="h-6 w-6 animate-spin" /> }
+)
 import { ColumnDef, RowSelectionState, PaginationState, Updater } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
@@ -152,11 +157,35 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const [bankParams, setBankParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
     const [systemParams, setSystemParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
 
+    const [selectedMovement, setSelectedMovement] = useState<{ id: number | string, type: any } | null>(null)
+    const [detailsOpen, setDetailsOpen] = useState(false)
+
+    const openTransactionDetail = (id: number | string, type: any) => {
+        setSelectedMovement({ id, type })
+        setDetailsOpen(true)
+    }
+
     const { data: statement } = useStatementQuery(statementId)
     const { data: bankData, isLoading: loadingLines } = useUnreconciledLinesQuery(statementId, bankParams)
     const { data: systemData, isLoading: loadingPayments } = useUnreconciledPaymentsQuery(treasuryAccountId, systemParams)
-    const { data: reconciledData, isLoading: loadingReconciled } = useReconciledLinesQuery(statementId, { page: 1, pageSize: 50 })
+    const { data: reconciledData, isLoading: loadingReconciled } = useReconciledLinesQuery(statementId, { page: 1, pageSize: 200 })
 
+    const reconciledGroups = useMemo(() => {
+        if (!reconciledData?.results) return []
+        const groups: Record<number, { id: number, group: any, lines: BankStatementLine[] }> = {}
+        
+        reconciledData.results.forEach(line => {
+            const groupId = line.reconciliation_group_data?.id
+            if (groupId) {
+                if (!groups[groupId]) {
+                    groups[groupId] = { id: groupId, group: line.reconciliation_group_data, lines: [] }
+                }
+                groups[groupId].lines.push(line)
+            }
+        })
+        
+        return Object.values(groups)
+    }, [reconciledData])
     const unreconciledLines: BankStatementLine[] = bankData?.results || []
     const unreconciledPayments: ReconciliationSystemItem[] = systemData?.results || []
 
@@ -648,17 +677,36 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     return (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-            <div className="space-y-4">
+            <Tabs defaultValue="unreconciled" className="space-y-4 w-full">
                 {/* ─── Sticky Command Bar ─── */}
                 {/* Top Tools Bar */}
                 <div className="flex items-center justify-between bg-card border shadow-sm rounded-lg px-4 py-3">
-                    <div className="flex items-center gap-3">
+                    {/* Left: Navigation */}
+                    <div className="flex items-center gap-4 shrink-0">
+                        <TabsList className="bg-muted/30 p-0.5 rounded-md border border-border/40 h-8 gap-0.5">
+                            <TabsTrigger 
+                                value="unreconciled" 
+                                className="text-[10px] font-black uppercase tracking-widest px-6 h-7 rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
+                            >
+                                Pendientes
+                            </TabsTrigger>
+                            <TabsTrigger 
+                                value="reconciled" 
+                                className="text-[10px] font-black uppercase tracking-widest px-6 h-7 rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
+                            >
+                                Conciliados
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
+
+                    {/* Center: Filters (Flat Layout) */}
+                    <div className="flex-1 flex items-center justify-center gap-6">
                         <div className="relative">
                             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                             <input
                                 type="text"
                                 placeholder="Buscar..."
-                                className="h-8 w-48 pl-8 pr-8 rounded-md border border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+                                className="h-8 w-40 pl-8 pr-8 rounded-md border border-input bg-background text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
                                 value={bankParams.search || ""}
                                 onChange={(e) => {
                                     const val = e.target.value
@@ -681,40 +729,37 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             )}
                         </div>
 
-                        <div className="h-4 w-px bg-border/60" />
-
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold uppercase text-muted-foreground">Desde</span>
-                            <input
-                                type="date"
-                                className="h-8 w-32 px-2 rounded-md border border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-                                value={bankParams.date_from || ""}
-                                onChange={(e) => {
-                                    const val = e.target.value
-                                    setBankParams(prev => ({ ...prev, date_from: val, page: 1 }))
-                                    setSystemParams(prev => ({ ...prev, date_from: val, page: 1 }))
-                                }}
-                            />
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Desde</span>
+                                <input
+                                    type="date"
+                                    className="h-8 w-32 px-2 rounded-md border border-input bg-background text-[11px] font-bold focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
+                                    value={bankParams.date_from || ""}
+                                    onChange={(e) => {
+                                        const val = e.target.value
+                                        setBankParams(prev => ({ ...prev, date_from: val, page: 1 }))
+                                        setSystemParams(prev => ({ ...prev, date_from: val, page: 1 }))
+                                    }}
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hasta</span>
+                                <input
+                                    type="date"
+                                    className="h-8 w-32 px-2 rounded-md border border-input bg-background text-[11px] font-bold focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
+                                    value={bankParams.date_to || ""}
+                                    onChange={(e) => {
+                                        const val = e.target.value
+                                        setBankParams(prev => ({ ...prev, date_to: val, page: 1 }))
+                                        setSystemParams(prev => ({ ...prev, date_to: val, page: 1 }))
+                                    }}
+                                />
+                            </div>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-bold uppercase text-muted-foreground">Hasta</span>
-                            <input
-                                type="date"
-                                className="h-8 w-32 px-2 rounded-md border border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-ring"
-                                value={bankParams.date_to || ""}
-                                onChange={(e) => {
-                                    const val = e.target.value
-                                    setBankParams(prev => ({ ...prev, date_to: val, page: 1 }))
-                                    setSystemParams(prev => ({ ...prev, date_to: val, page: 1 }))
-                                }}
-                            />
-                        </div>
-
-                        <div className="h-4 w-px bg-border/60" />
 
                         <select
-                            className="h-8 w-36 px-2 rounded-md border border-input bg-background text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="h-8 px-3 rounded-md border border-input bg-background text-[11px] font-bold focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
                             value={bankParams.type || ""}
                             onChange={(e) => {
                                 const val = e.target.value
@@ -722,40 +767,29 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 setSystemParams(prev => ({ ...prev, type: val, page: 1 }))
                             }}
                         >
-                            <option value="">Todos los movimientos</option>
-                            <option value="IN">Ingresos / Abonos</option>
-                            <option value="OUT">Egresos / Cargos</option>
+                            <option value="">Todos los Movimientos</option>
+                            <option value="IN">Abonos / Ingresos</option>
+                            <option value="OUT">Cargos / Egresos</option>
                         </select>
                     </div>
-                    <div className="flex items-center gap-2">
+
+                    {/* Right: Actions */}
+                    <div className="flex items-center gap-4 shrink-0">
                         <Button
                             onClick={() => setActionDialog({ open: true, type: 'automatch' })}
                             disabled={autoMatching}
                             variant="outline"
                             size="sm"
-                            className="h-8 text-xs font-bold bg-success/5 hover:bg-success/10 text-success border-success/20 hover:border-success/30 group transition-all"
+                            className="h-8 text-[11px] font-black uppercase tracking-widest bg-success/5 hover:bg-success/10 text-success border-success/20 hover:border-success/30 group transition-all px-4"
                         >
-                            {autoMatching ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-1.5 h-3.5 w-3.5 group-hover:rotate-12 transition-transform" />}
+                            {autoMatching ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-2 h-3.5 w-3.5 group-hover:rotate-12 transition-transform" />}
                             Conciliación Automática
                         </Button>
                     </div>
                 </div>
 
-                <Tabs defaultValue="unreconciled" className="w-full">
-                    <TabsList className="bg-muted/50 p-1 rounded-lg border border-border/40 mb-4 h-10 w-full justify-start gap-1">
-                        <TabsTrigger 
-                            value="unreconciled" 
-                            className="text-[10px] font-black uppercase tracking-widest px-8 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
-                        >
-                            Pendientes
-                        </TabsTrigger>
-                        <TabsTrigger 
-                            value="reconciled" 
-                            className="text-[10px] font-black uppercase tracking-widest px-8 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
-                        >
-                            Conciliados
-                        </TabsTrigger>
-                    </TabsList>
+
+
 
                     <TabsContent value="unreconciled">
                         <div className="flex gap-6 relative min-h-[600px] items-start pb-24">
@@ -821,7 +855,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <div className="flex items-center justify-between px-1">
                                             <div className="flex items-center gap-2">
                                                 <div className="h-2 w-2 rounded-full bg-primary" />
-                                                <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Movimientos de Tesorería</span>
+                                                <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Movimientos del Sistema</span>
                                             </div>
                                             <span className="text-[10px] font-mono text-muted-foreground">{systemData?.count || 0} disponibles</span>
                                         </div>
@@ -876,115 +910,149 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     </TabsContent>
 
                     <TabsContent value="reconciled">
-                        <div className="grid grid-cols-1 gap-6 pb-24">
-                            {reconciledData?.results.map((line: BankStatementLine) => {
-                                const group = line.reconciliation_group_data;
-                                const isBankCredit = parseFloat(line.credit) > parseFloat(line.debit);
-                                const bankAmount = Math.abs(parseFloat(line.credit) - parseFloat(line.debit));
+                        <div className="grid grid-cols-1 gap-4 pb-24">
+                            {reconciledGroups.map((groupItem) => {
+                                const { group, lines } = groupItem;
                                 
-                                // Get details from backend provided group data
+                                // Totals for the whole group
                                 const movements = group?.movements || [];
                                 const batches = group?.batches || [];
                                 const diffAmount = group?.difference_amount || 0;
-                                const diffType = group?.difference_type_display || group?.difference_type || "Ajuste de Diferencia";
+                                const diffTypeRaw = group?.difference_type || "OTHER";
+                                
+                                const translationMap: Record<string, string> = {
+                                    'COMMISSION': 'Comisión',
+                                    'TAX': 'Impuesto',
+                                    'ROUNDING': 'Redondeo',
+                                    'OTHER': 'Ajuste de Diferencia'
+                                };
+                                const diffType = translationMap[diffTypeRaw] || group?.difference_type_display || "Ajuste de Diferencia";
 
                                 return (
-                                    <div key={line.id} className="group/card bg-card border border-border/40 hover:border-primary/30 rounded-2xl overflow-hidden shadow-sm hover:shadow-elevated transition-all duration-300">
+                                    <div key={groupItem.id} className="group/card bg-transparent border border-border/40 hover:border-primary/20 rounded-2xl overflow-hidden transition-all duration-300">
                                         <div className="flex">
-                                            {/* Left Column: Bank Side */}
-                                            <div className={cn(
-                                                "w-1/3 p-6 border-r border-border/40 bg-muted/10",
-                                                isBankCredit ? "border-l-4 border-l-success" : "border-l-4 border-l-destructive"
-                                            )}>
-                                                <div className="flex flex-col h-full justify-between">
-                                                    <div>
-                                                        <div className="flex items-center gap-2 mb-3">
-                                                            <Badge variant="outline" className="text-[8px] font-black uppercase tracking-wider bg-background">Cartola Bancaria</Badge>
-                                                            <span className="text-[10px] font-mono text-muted-foreground opacity-60">ID: {line.transaction_id || line.id}</span>
-                                                        </div>
-                                                        <h3 className="text-sm font-bold leading-tight mb-1">{line.description}</h3>
-                                                        <p className="text-[10px] font-mono text-muted-foreground uppercase">{format(new Date(line.transaction_date), 'dd MMMM yyyy', { locale: es })}</p>
+                                            {/* Left Column: Bank Side (Can have multiple lines) */}
+                                            <div className="w-[40%] p-6 flex flex-col justify-start border-r border-border/40 relative">
+                                                {/* Connecting Visual Resource */}
+                                                <div className="absolute top-1/2 -right-3 -translate-y-1/2 z-10">
+                                                    <div className="h-6 w-6 rounded-full bg-background border border-border/40 flex items-center justify-center text-primary shadow-sm group-hover/card:border-primary/40 transition-all">
+                                                        <CheckCircle2 className="h-3.5 w-3.5" />
                                                     </div>
-                                                    <div className="mt-6">
-                                                        <span className={cn("text-lg font-mono font-black tracking-tighter", isBankCredit ? "text-success" : "text-destructive")}>
-                                                            {formatCurrency(bankAmount)}
-                                                        </span>
+                                                </div>
+
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center justify-between px-1">
+                                                        <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Cartola Bancaria ({lines.length})</span>
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        {lines.map((line) => {
+                                                            const isBankCredit = parseFloat(line.credit) > parseFloat(line.debit);
+                                                            const bankAmount = Math.abs(parseFloat(line.credit) - parseFloat(line.debit));
+                                                            
+                                                            return (
+                                                                <div key={line.id} className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-xl hover:border-primary/20 transition-all shadow-sm">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="h-8 w-8 rounded-lg bg-background border border-border/40 flex items-center justify-center text-muted-foreground shrink-0">
+                                                                            <FileText className="h-4 w-4" />
+                                                                        </div>
+                                                                        <div className="flex flex-col min-w-0">
+                                                                            <span className="text-[9px] font-mono font-black uppercase text-muted-foreground opacity-60">Línea: {line.line_number}</span>
+                                                                            <h3 className="text-xs font-bold leading-tight text-foreground/90 truncate max-w-[200px]">{line.description}</h3>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    <div className="text-right shrink-0">
+                                                                        <span className="text-[9px] font-mono font-bold text-muted-foreground/60 uppercase block mb-0.5">
+                                                                            {format(new Date(line.transaction_date), 'dd MMM yyyy', { locale: es })}
+                                                                        </span>
+                                                                        <span className={cn(
+                                                                            "text-sm font-mono font-black tracking-tighter leading-none",
+                                                                            isBankCredit ? "text-success" : "text-destructive"
+                                                                        )}>
+                                                                            {formatCurrency(bankAmount)}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             </div>
-
-                                            {/* Center Column: Relationship (The "Link") */}
-                                            <div className="flex flex-col items-center justify-center px-4 relative bg-muted/5">
-                                                <div className="h-full w-px bg-gradient-to-b from-transparent via-border/60 to-transparent absolute left-1/2 -translate-x-1/2" />
-                                                <div className="z-10 bg-background border border-border/60 rounded-full p-2 shadow-sm group-hover/card:scale-110 group-hover/card:border-primary/40 transition-all">
-                                                    <CheckCircle2 className="h-4 w-4 text-primary" />
-                                                </div>
-                                            </div>
-
-                                            {/* Right Column: Treasury Side */}
+                                            {/* Right Column: System Side */}
                                             <div className="flex-1 p-6">
-                                                <div className="mb-4">
-                                                    <Badge variant="outline" className="text-[8px] font-black uppercase tracking-wider bg-background text-primary border-primary/20">Movimientos de Tesorería</Badge>
-                                                </div>
-                                                
                                                 <div className="space-y-2">
-                                                    {movements.length === 0 && batches.length === 0 && (
-                                                        <div className="flex items-center justify-center py-4 border border-dashed rounded-lg bg-muted/5">
-                                                            <span className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Sin detalles de movimientos de tesorería</span>
-                                                        </div>
-                                                    )}
+                                                    <div className="flex items-center justify-between px-1">
+                                                        <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Movimientos del Sistema ({movements.length + batches.length})</span>
+                                                    </div>
                                                     
-                                                    {batches.map((batch: any) => (
-                                                        <div key={batch.id} className="flex items-center justify-between bg-info/5 border border-info/20 rounded-lg p-3 group/item hover:bg-info/10 transition-colors">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="h-8 w-8 rounded-full bg-info/20 flex items-center justify-center">
-                                                                    <Wand2 className="h-4 w-4 text-info" />
+                                                    <div className="space-y-1.5">
+                                                        {movements.map((m: any) => (
+                                                            <div 
+                                                                key={m.id} 
+                                                                onClick={() => openTransactionDetail(m.id, 'payment')}
+                                                                className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-xl hover:bg-muted/50 hover:border-primary/20 transition-all cursor-pointer"
+                                                            >
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="h-8 w-8 rounded-lg bg-background border border-border/40 flex items-center justify-center text-muted-foreground group-hover/card:text-primary transition-colors">
+                                                                        <FileText className="h-4 w-4" />
+                                                                    </div>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-xs font-bold uppercase tracking-tight text-foreground/80">
+                                                                            {m.movement_type_display || 'Movimiento'} #{m.id}
+                                                                        </span>
+                                                                        <span className="text-[10px] text-muted-foreground font-medium truncate max-w-[200px]">
+                                                                            {m.notes || m.reference || 'Sin concepto'}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-[10px] font-black uppercase text-info/70 tracking-wider">Lote Terminal</span>
-                                                                    <span className="text-xs font-bold">{batch.name}</span>
-                                                                </div>
+                                                                <span className="text-sm font-mono font-bold text-foreground/90">
+                                                                    {formatCurrency(m.amount)}
+                                                                </span>
                                                             </div>
-                                                            <span className="text-xs font-mono font-black text-info">
-                                                                {formatCurrency(Math.abs(parseFloat(batch.total_amount)))}
-                                                            </span>
-                                                        </div>
-                                                    ))}
+                                                        ))}
 
-                                                    {movements.map((move: any) => (
-                                                        <div key={move.id} className="flex items-center justify-between bg-primary/5 border border-primary/10 rounded-lg p-3 group/item hover:bg-primary/10 transition-colors">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                                                                    <Calculator className="h-4 w-4 text-primary" />
+                                                        {batches.map((b: any) => (
+                                                            <div 
+                                                                key={b.id} 
+                                                                onClick={() => openTransactionDetail(b.id, 'terminal_batch')}
+                                                                className="flex items-center justify-between p-3 bg-primary/5 border border-primary/10 rounded-xl hover:bg-primary/10 transition-all cursor-pointer"
+                                                            >
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                                                        <Wand2 className="h-4 w-4" />
+                                                                    </div>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-xs font-black uppercase tracking-widest text-primary">Lote Terminal</span>
+                                                                        <span className="text-[10px] text-primary/70 font-bold">{b.terminal_name || 'Terminal'} - {b.display_id}</span>
+                                                                    </div>
                                                                 </div>
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-[10px] font-black uppercase text-primary/70 tracking-wider">Movimiento #{move.id}</span>
-                                                                    <span className="text-xs font-bold">{move.contact_name || move.concept || "Sin concepto"}</span>
-                                                                </div>
+                                                                <span className="text-sm font-mono font-bold text-primary">
+                                                                    {formatCurrency(b.total_amount || b.amount)}
+                                                                </span>
                                                             </div>
-                                                            <span className="text-xs font-mono font-black text-primary">
-                                                                {formatCurrency(Math.abs(parseFloat(move.amount)))}
-                                                            </span>
-                                                        </div>
-                                                    ))}
+                                                        ))}
 
-                                                    {/* Adjustment Row - Updated to use backend data */}
-                                                    {Math.abs(diffAmount) > 0 && (
-                                                        <div className="flex items-center justify-between bg-warning/5 border border-warning/20 border-dashed rounded-lg p-3 mt-4">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="h-8 w-8 rounded-full bg-warning/20 flex items-center justify-center">
-                                                                    <SplitSquareHorizontal className="h-4 w-4 text-warning" />
+                                                        {Math.abs(diffAmount) > 0.01 && (
+                                                            <div 
+                                                                onClick={() => group?.difference_journal_entry && openTransactionDetail(group.difference_journal_entry, 'journal_entry')}
+                                                                className="flex items-center justify-between p-3 bg-warning/5 border border-warning/20 border-dashed rounded-xl hover:bg-warning/10 transition-all cursor-pointer"
+                                                            >
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="h-8 w-8 rounded-lg bg-warning/10 flex items-center justify-center text-warning">
+                                                                        <Calculator className="h-4 w-4" />
+                                                                    </div>
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-xs font-black uppercase tracking-widest text-warning">{diffType}</span>
+                                                                        <span className="text-[10px] text-warning/70 font-bold italic">Ajuste automático de diferencia</span>
+                                                                    </div>
                                                                 </div>
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-[10px] font-black uppercase text-warning tracking-wider">{diffType}</span>
-                                                                    <span className="text-[10px] text-muted-foreground font-medium">Ajuste automático de diferencia</span>
-                                                                </div>
+                                                                <span className="text-sm font-mono font-bold text-warning">
+                                                                    {formatCurrency(diffAmount)}
+                                                                </span>
                                                             </div>
-                                                            <span className="text-xs font-mono font-bold text-warning">
-                                                                {formatCurrency(diffAmount)}
-                                                            </span>
-                                                        </div>
-                                                    )}
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -993,8 +1061,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             })}
                         </div>
                     </TabsContent>
-                </Tabs>
-
 
                 {/* ─── Modals ─── */}
                 <ExclusionModal
@@ -1331,7 +1397,17 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     variant="destructive"
                     confirmText="Confirmar Conciliación"
                 />
-            </div>
+
+                {selectedMovement && (
+                    <TransactionViewModal
+                        open={detailsOpen}
+                        onOpenChange={setDetailsOpen}
+                        type={selectedMovement.type}
+                        id={selectedMovement.id}
+                        view="all"
+                    />
+                )}
+            </Tabs>
         </DndContext>
     )
 }

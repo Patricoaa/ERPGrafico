@@ -493,7 +493,8 @@ class BankStatementLineSerializer(serializers.ModelSerializer):
             'batches': TerminalBatchSerializer(batches, many=True).data,
             'difference_amount': float(obj.difference_amount),
             'difference_type': obj.difference_reason,
-            'difference_type_display': obj.difference_reason # We can add a mapper if needed
+            'difference_type_display': obj.difference_reason,
+            'difference_journal_entry': obj.difference_journal_entry_id
         }
     
     class Meta:

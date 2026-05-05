@@ -36,6 +36,7 @@ export interface BankStatementLine {
         difference_amount: number
         difference_type: string
         difference_type_display: string
+        difference_journal_entry?: number
     }
 }
 
