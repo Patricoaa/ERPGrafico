@@ -303,8 +303,20 @@ class TreasuryService:
 
             if not source_acc:
                 if movement.invoice or movement.sale_order:
-                    # Customer Account
-                    source_acc = (movement.contact.account_receivable if movement.contact else None) or settings.default_receivable_account
+                    # Resolve customer from the document itself, not movement.contact —
+                    # they can diverge in some flows (e.g. POS guest sales) and any
+                    # divergence breaks the receivable offset against Stage 1.1's invoice
+                    # entry. Fall back to movement.contact only when the document has no
+                    # explicit customer.
+                    doc_customer = None
+                    if movement.invoice and getattr(movement.invoice, 'sale_order', None):
+                        doc_customer = movement.invoice.sale_order.customer
+                    elif movement.sale_order:
+                        doc_customer = movement.sale_order.customer
+                    elif movement.invoice:
+                        doc_customer = getattr(movement.invoice, 'contact', None)
+                    customer = doc_customer or movement.contact
+                    source_acc = (customer.account_receivable if customer else None) or settings.default_receivable_account
                 elif movement.justify_reason:
                     # Operational Reasons (Tips, Adjustments)
                     source_acc = TreasuryService._get_reason_account(settings, movement.justify_reason, 'IN')
@@ -537,13 +549,18 @@ class TerminalBatchService:
         if abs(net_amount - expected_net) > Decimal('0.01'):
              raise ValidationError(f"El monto neto no coincide con Bruto - Comisión. Esperado: {expected_net}")
 
-        # Accounts Validation
+        # Accounts resolution: prefer per-provider configuration, fall back to global
+        # AccountingSettings bridges so granularity per provider is honored.
+        settings = AccountingSettings.get_solo()
         receivable_acc = provider.receivable_account
-        expense_acc = provider.commission_expense_account
         bank_acc = provider.bank_treasury_account.account if provider.bank_treasury_account else None
+        comm_bridge = provider.commission_expense_account or (settings.terminal_commission_bridge_account if settings else None)
+        iva_bridge = provider.commission_iva_account or (settings.terminal_iva_bridge_account if settings else None)
 
-        if not (receivable_acc and expense_acc and bank_acc):
-             raise ValidationError("El proveedor de terminal debe tener configuradas las cuentas: Por Cobrar, Gasto Comisión y Tesorería.")
+        if not (receivable_acc and bank_acc):
+             raise ValidationError("El proveedor de terminal debe tener configuradas las cuentas: Por Cobrar y Tesorería de Liquidación.")
+        if not (comm_bridge and iva_bridge):
+             raise ValidationError("Debe configurar la cuenta de comisión y la cuenta de IVA comisión en el proveedor (o las cuentas puente globales en la configuración contable).")
 
         # 2. Identify Payments
         payments = TreasuryMovement.objects.none()
@@ -585,15 +602,6 @@ class TerminalBatchService:
             status=JournalEntry.State.DRAFT
         )
         
-        # Get Bridge Accounts
-        settings = AccountingSettings.get_solo()
-        comm_bridge = settings.terminal_commission_bridge_account if settings else None
-        iva_bridge = settings.terminal_iva_bridge_account if settings else None
-        
-        if not (comm_bridge and iva_bridge):
-             # Log warning or handle gracefully? For now mandatory if using this flow.
-             raise ValidationError("Debe configurar las cuentas puente de comisiones e IVA en la configuración contable.")
-
         # A. Bridge Commission - Neto (Debit)
         JournalItem.objects.create(
             entry=entry,
@@ -673,9 +681,13 @@ class TerminalBatchService:
         
         if not batches.exists():
             return None
-            
-        total_commission_net = sum(b.commission_base for b in batches)
-        
+
+        # Materialize totals before status mutation (line 725 changes status=INVOICED,
+        # which would empty the queryset on re-iteration).
+        batch_list = list(batches)
+        total_commission_net = sum(b.commission_base for b in batch_list)
+        total_commission_tax = sum(b.commission_tax for b in batch_list)
+
         supplier = provider.supplier
         commission_product = provider.commission_product
         
@@ -694,13 +706,23 @@ class TerminalBatchService:
             payment_method=PurchaseOrder.PaymentMethod.CREDIT 
         )
         
-        # Create Line
+        # Create Line — set tax_rate from the actual effective rate of the settled
+        # batches so the resulting invoice total matches what the provider charged
+        # (avoids divergence from product's default 19% if the provider applied a
+        # different effective rate, exemption, or rounding).
+        if total_commission_net > 0 and total_commission_tax > 0:
+            effective_tax_rate = (total_commission_tax / total_commission_net) * Decimal('100')
+            effective_tax_rate = effective_tax_rate.quantize(Decimal('0.01'))
+        else:
+            effective_tax_rate = Decimal('0.00')
+
         PurchaseLine.objects.create(
             order=po,
             product=commission_product,
             quantity=1,
             unit_cost=total_commission_net,
-            uom=commission_product.uom 
+            tax_rate=effective_tax_rate,
+            uom=commission_product.uom
         )
         
         # 3. Confirm PO
@@ -727,36 +749,31 @@ class TerminalBatchService:
 
         # 5. Link Batches
         batches.update(supplier_invoice=invoice, status=TerminalBatch.Status.INVOICED)
-        
-        # 6. Create ADJUSTMENT TreasuryMovement to auto-pay the invoice against the Bridge Account
-        from treasury.models import TreasuryMovement
-        from treasury.allocation_service import AllocationService
-        
-        # Total cost equals commission_base + commission_tax, which is the invoice total.
-        invoice_total = invoice.total
-        
-        adjustment_movement = TreasuryMovement.objects.create(
-            movement_type=TreasuryMovement.Type.ADJUSTMENT,
-            payment_method=TreasuryMovement.Method.OTHER,
-            amount=invoice_total,
+
+        # 6. Cancel Bridge Accounts against Supplier Payable (direct JournalEntry)
+        # The settlement batches debited Commission Bridge + IVA Bridge against the
+        # Terminal Receivable. Now that the supplier invoice exists, we offset both
+        # bridges by crediting them and debiting the supplier's payable.
+        settings = AccountingSettings.get_solo()
+        comm_bridge = provider.commission_expense_account or (settings.terminal_commission_bridge_account if settings else None)
+        iva_bridge = provider.commission_iva_account or (settings.terminal_iva_bridge_account if settings else None)
+        payable_acc = supplier.account_payable or (settings.default_payable_account if settings else None)
+
+        if not (comm_bridge and iva_bridge and payable_acc):
+            raise ValidationError("Faltan cuentas para cancelar las cuentas puente de comisión: configure cuentas de comisión/IVA en el proveedor (o globales) y la cuenta por pagar del contacto.")
+
+        bridge_total = total_commission_net + total_commission_tax
+
+        bridge_entry = JournalEntry.objects.create(
             date=date or timezone.now().date(),
-            from_account=provider.terminal_commission_bridge_account,  # Crucial: Clears the bridge
-            contact=supplier,
-            reference=f"Pago Automático {invoice.number or invoice.display_id}",
-            notes=f"Cruce automático de liquidaciones contra factura {invoice.display_id}",
-            created_by=user,
-            is_reconciled=False,  # Adjustments usually don't need bank reconciliation
+            description=f"Cruce comisiones terminales {provider.name} - {month}/{year}",
+            reference=f"BRIDGE-{invoice.display_id}",
+            status=JournalEntry.State.DRAFT,
         )
-        
-        # Allocate the adjustment to fully pay the invoice
-        AllocationService.allocate(
-            movement=adjustment_movement,
-            allocations=[{
-                "invoice": invoice.id,
-                "amount": invoice_total
-            }],
-            user=user,
-            validate_sum=True
-        )
-        
+        JournalItem.objects.create(entry=bridge_entry, account=payable_acc, debit=bridge_total, credit=0)
+        JournalItem.objects.create(entry=bridge_entry, account=comm_bridge, debit=0, credit=total_commission_net)
+        if total_commission_tax > 0:
+            JournalItem.objects.create(entry=bridge_entry, account=iva_bridge, debit=0, credit=total_commission_tax)
+        JournalEntryService.post_entry(bridge_entry)
+
         return invoice
