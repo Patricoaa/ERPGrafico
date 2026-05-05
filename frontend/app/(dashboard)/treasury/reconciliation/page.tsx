@@ -29,19 +29,42 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
 
     const navigation = {
         tabs: [
-            {
-                value: "treasury",
-                label: "Tesorería",
-                iconName: "landmark",
-                href: "/treasury",
+            { value: "movements", label: "Movimientos", iconName: "banknote", href: "/treasury?view=movements" },
+            { 
+                value: "accounts", 
+                label: "Cuentas y Caja", 
+                iconName: "landmark", 
+                href: "/treasury?view=accounts",
                 subTabs: [
-                    { value: "statements", label: "Cartolas", iconName: "file-text", href: "/treasury/reconciliation?tab=statements" },
-                    { value: "dashboard", label: "Dashboard", iconName: "bar-chart-3", href: "/treasury/reconciliation?tab=dashboard" },
+                    { value: "accounts", label: "Cuentas", href: "/treasury?view=accounts&sub=accounts" },
+                    { value: "banks", label: "Bancos", href: "/treasury?view=accounts&sub=banks" },
+                    { value: "methods", label: "Métodos", href: "/treasury?view=accounts&sub=methods" },
+                ]
+            },
+            { 
+                value: "reconciliation", 
+                label: "Conciliación", 
+                iconName: "history", 
+                href: "/treasury?view=reconciliation",
+                subTabs: [
+                    { value: "statements", label: "Cartolas", iconName: "file-text", href: "/treasury?view=reconciliation&sub=statements" },
+                    { value: "dashboard", label: "Dashboard", iconName: "bar-chart-3", href: "/treasury?view=reconciliation&sub=dashboard" },
                     { value: "intelligence", label: "Inteligencia", iconName: "brain", href: "/treasury/reconciliation?tab=intelligence" },
                 ]
-            }
+            },
+            { 
+                value: "config", 
+                label: "Config", 
+                iconName: "settings", 
+                href: "/treasury?view=config",
+                subTabs: [
+                    { value: "conciliation", label: "Conciliación", href: "/treasury?view=config&tab=conciliation", iconName: "arrow-left-right" },
+                    { value: "audit", label: "Arqueo", href: "/treasury?view=config&tab=audit", iconName: "banknote" },
+                    { value: "movements", label: "Movimientos", href: "/treasury?view=config&tab=movements", iconName: "settings-2" }
+                ]
+            },
         ],
-        activeValue: "treasury",
+        activeValue: "reconciliation",
         subActiveValue: activeTab
     }
 

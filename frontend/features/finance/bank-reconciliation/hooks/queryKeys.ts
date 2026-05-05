@@ -9,4 +9,5 @@ export const reconciliationKeys = {
     unreconciledPayments: (accountId: number, params: any = {}) => [...reconciliationKeys.all, 'unreconciled-payments', accountId, params] as const,
     lineSuggestions: (lineId: number) => [...reconciliationKeys.all, 'line-suggestions', lineId] as const,
     paymentSuggestions: (paymentId: number) => [...reconciliationKeys.all, 'payment-suggestions', paymentId] as const,
+    reconciledLines: (statementId: number, params: any = {}) => [...reconciliationKeys.all, 'reconciled-lines', statementId, params] as const,
 }

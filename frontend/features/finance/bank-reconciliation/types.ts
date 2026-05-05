@@ -20,6 +20,7 @@ export interface BankStatementLine {
     id: number
     line_number: number
     transaction_date: string
+    transaction_id?: string
     description: string
     reference: string
     debit: string
@@ -27,6 +28,15 @@ export interface BankStatementLine {
     balance: string
     reconciliation_state: string
     reconciliation_state_display: string
+    reconciliation_status: string // Legacy or alias for state
+    reconciliation_group_data?: {
+        id: number
+        movements: any[]
+        batches: any[]
+        difference_amount: number
+        difference_type: string
+        difference_type_display: string
+    }
 }
 
 export interface ReconciliationSystemItem {
@@ -141,6 +151,7 @@ export interface QueryPaginationParams {
     date_to?: string
     amount_min?: number
     amount_max?: number
+    type?: string
 }
 
 // S5.1: Payment Allocation
