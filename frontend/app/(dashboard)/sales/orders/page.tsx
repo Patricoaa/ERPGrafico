@@ -1,70 +1,28 @@
 "use client"
 
-import { use, lazy, Suspense, useState } from "react"
-import { TableSkeleton, PageHeader } from "@/components/shared"
+import { lazy, Suspense, useState } from "react"
+import { TableSkeleton } from "@/components/shared"
 import { Tabs } from "@/components/ui/tabs"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+import { useSearchParams } from "next/navigation"
 
 const SalesOrdersClientView = lazy(() =>
     import("@/features/sales").then(m => ({ default: m.SalesOrdersClientView }))
 )
 
-interface PageProps {
-    searchParams: Promise<{ view?: string }>
-}
-
-export default function SalesOrdersPage({ searchParams }: PageProps) {
-    const params = use(searchParams)
-    const viewMode = (params.view as 'orders' | 'notes') || 'notes'
+export default function SalesOrdersPage() {
+    const searchParams = useSearchParams()
+    const viewMode = (searchParams.get('view') as 'orders' | 'notes') || 'orders'
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
-    const tabs = [
-        { value: "orders", label: "Notas de Venta", iconName: "shopping-cart", href: "/sales/orders?view=orders" },
-        { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: "/sales/orders?view=notes" },
-    ]
-
-    const navigation = {
-        tabs,
-        activeValue: viewMode
-    }
-
-    const headerConfigs = {
-        orders: {
-            title: "Notas de Venta",
-            description: "Seguimiento de pedidos, estados de fabricación y logística de entregas.",
-            iconName: "shopping-cart",
-            showAction: false
-        },
-        notes: {
-            title: "Notas de Crédito y Débito",
-            description: "Gestión de devoluciones, correcciones de facturación y ajustes de cuenta.",
-            iconName: "file-text",
-            showAction: false // Hidden by default unless manual entry is needed
-        }
-    }
-
-    const currentHeader = headerConfigs[viewMode]
-
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title={currentHeader.title}
-                description={currentHeader.description}
-                iconName={currentHeader.iconName}
-                variant="minimal"
-                navigation={navigation}
-            />
-
-            <Tabs value={viewMode} className="w-full pt-4">
-                
-                <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                    <SalesOrdersClientView 
-                        viewMode={viewMode} 
-                        isCreateModalOpen={isCreateModalOpen}
-                        setCreateModalOpen={setIsCreateModalOpen}
-                    />
-                </Suspense>
-            </Tabs>
-        </div>
+        <Tabs value={viewMode} className="w-full pt-2">
+            <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
+                <SalesOrdersClientView
+                    viewMode={viewMode}
+                    isCreateModalOpen={isCreateModalOpen}
+                    setCreateModalOpen={setIsCreateModalOpen}
+                />
+            </Suspense>
+        </Tabs>
     )
 }
