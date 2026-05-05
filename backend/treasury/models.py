@@ -1093,7 +1093,6 @@ class PaymentTerminalProvider(models.Model):
     )
     commission_iva_account = models.ForeignKey(
         'accounting.Account', on_delete=models.PROTECT,
-        null=True, blank=True,
         related_name='terminal_provider_iva',
         verbose_name=_("Cuenta IVA Comisión")
     )

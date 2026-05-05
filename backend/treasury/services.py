@@ -277,17 +277,27 @@ class TreasuryService:
         elif movement.movement_type == TreasuryMovement.Type.INBOUND:
             # Debit ToAccount (Treasury or Card Provider Receivable)
             debit_acc = to_acc
-            
-            # Stage 1: Record to Terminal Receivable Account if it's a terminal-based payment
-            is_integrated = getattr(movement.payment_method_new, 'is_integrated', False)
-            if is_integrated and movement.terminal_device:
-                 provider = movement.terminal_device.provider
-                 if provider.receivable_account:
-                     debit_acc = provider.receivable_account
-            elif is_integrated:
-                 # Logic fallback if no device is set but should have one
-                 pass
-            
+
+            # Stage 1.2: Terminal payments must hit the provider's clearing/receivable
+            # account (so Stage 2 batch settlement can credit the same account and
+            # cancel the cycle cleanly). Detect by method type (stable) rather than
+            # is_integrated (runtime-only). If the provider lacks receivable_account,
+            # fail loudly — silently falling back to the treasury account would create
+            # an asymmetric cycle that batch settlement cannot close.
+            pm = movement.payment_method_new
+            is_card_terminal = bool(pm and pm.method_type == PaymentMethod.Type.CARD_TERMINAL)
+            if is_card_terminal:
+                provider = None
+                if movement.terminal_device:
+                    provider = movement.terminal_device.provider
+                elif pm.linked_terminal_device_id:
+                    provider = pm.linked_terminal_device.provider
+                if not provider or not provider.receivable_account:
+                    raise ValidationError(
+                        "El proveedor del terminal no tiene 'Cuenta Por Cobrar Terminal' (clearing) configurada."
+                    )
+                debit_acc = provider.receivable_account
+
             if debit_acc:
                 JournalItem.objects.create(entry=entry, account=debit_acc, debit=movement.amount, credit=0)
             
@@ -549,18 +559,51 @@ class TerminalBatchService:
         if abs(net_amount - expected_net) > Decimal('0.01'):
              raise ValidationError(f"El monto neto no coincide con Bruto - Comisión. Esperado: {expected_net}")
 
-        # Accounts resolution: prefer per-provider configuration, fall back to global
-        # AccountingSettings bridges so granularity per provider is honored.
-        settings = AccountingSettings.get_solo()
+        # Accounts resolution — all per-provider, no global fallbacks.
+        # Provider's receivable_account is the clearing account that was debited at
+        # Stage 1.2; Stage 2 credits it to close the cycle. Commission and IVA
+        # accounts are mandatory at provider level for granular reporting.
         receivable_acc = provider.receivable_account
-        bank_acc = provider.bank_treasury_account.account if provider.bank_treasury_account else None
-        comm_bridge = provider.commission_expense_account or (settings.terminal_commission_bridge_account if settings else None)
-        iva_bridge = provider.commission_iva_account or (settings.terminal_iva_bridge_account if settings else None)
+        comm_acc = provider.commission_expense_account
+        iva_acc = provider.commission_iva_account
 
-        if not (receivable_acc and bank_acc):
-             raise ValidationError("El proveedor de terminal debe tener configuradas las cuentas: Por Cobrar y Tesorería de Liquidación.")
-        if not (comm_bridge and iva_bridge):
-             raise ValidationError("Debe configurar la cuenta de comisión y la cuenta de IVA comisión en el proveedor (o las cuentas puente globales en la configuración contable).")
+        # Bank deposit account: use the "Método de Depósito (Hacia Banco)" chosen
+        # in the batch modal. The method must represent a transfer/cash settlement
+        # to a real bank — never a CARD_TERMINAL method, whose treasury account is
+        # itself the provider's clearing and would create a self-canceling entry.
+        if not payment_method:
+            raise ValidationError("Debe seleccionar un Método de Depósito (Hacia Banco) para registrar la liquidación.")
+        if payment_method.method_type == PaymentMethod.Type.CARD_TERMINAL:
+            raise ValidationError(
+                "El Método de Depósito no puede ser un método CARD_TERMINAL: ese tipo "
+                "representa la entrada de la venta, no el abono al banco. Use un método "
+                "de tipo TRANSFER o CASH cuya cuenta de tesorería sea el banco real."
+            )
+        deposit_treasury = payment_method.treasury_account
+        # Reject treasury accounts that are themselves clearing/merchant pools — the
+        # deposit must land in a real bank/cash account so the cycle Stage 1.2 → Stage 2
+        # actually moves money out of the clearing.
+        if deposit_treasury and deposit_treasury.account_type in TreasuryAccount._NON_CASH_EQUIVALENT_TYPES:
+            raise ValidationError(
+                f"La cuenta de tesorería del Método de Depósito es de tipo "
+                f"'{deposit_treasury.get_account_type_display()}' (cuenta puente). "
+                f"Seleccione un método cuya cuenta sea un banco real (CHECKING) o caja (CASH)."
+            )
+        bank_acc = deposit_treasury.account if deposit_treasury else None
+
+        if not receivable_acc:
+             raise ValidationError("El proveedor del terminal no tiene configurada la 'Cuenta Por Cobrar Terminal' (clearing).")
+        if not comm_acc:
+             raise ValidationError("El proveedor del terminal no tiene configurada la 'Cuenta Gasto Comisión'.")
+        if not iva_acc:
+             raise ValidationError("El proveedor del terminal no tiene configurada la 'Cuenta IVA Comisión'.")
+        if not bank_acc:
+             raise ValidationError("Debe seleccionar un Método de Depósito con cuenta de tesorería válida para registrar la liquidación.")
+        if bank_acc.pk == receivable_acc.pk:
+             raise ValidationError(
+                 "El Método de Depósito apunta a la misma cuenta que la cuenta puente del proveedor. "
+                 "Configure un método cuya cuenta de tesorería sea la cuenta bancaria real donde se acreditó el depósito."
+             )
 
         # 2. Identify Payments
         payments = TreasuryMovement.objects.none()
@@ -602,18 +645,18 @@ class TerminalBatchService:
             status=JournalEntry.State.DRAFT
         )
         
-        # A. Bridge Commission - Neto (Debit)
+        # A. Commission Expense - Net (Debit)
         JournalItem.objects.create(
             entry=entry,
-            account=comm_bridge,
+            account=comm_acc,
             debit=commission_base,
             credit=0
         )
 
-        # B. Bridge IVA (Debit)
+        # B. IVA Commission (Debit)
         JournalItem.objects.create(
             entry=entry,
-            account=iva_bridge,
+            account=iva_acc,
             debit=commission_tax,
             credit=0
         )

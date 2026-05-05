@@ -204,12 +204,11 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
                         <LabeledSelect
                             label="Método de Depósito (Hacia Banco)"
-                            hint="Método que el banco usa para registrar el abono neto."
                             value={depositMethodId}
                             onChange={setDepositMethodId}
                             placeholder="Seleccione método de abono..."
                             options={paymentMethods
-                                .filter(m => m.allow_for_sales)
+                                .filter(m => m.allow_for_sales && m.method_type !== 'CARD_TERMINAL')
                                 .map(meth => ({ value: meth.id.toString(), label: meth.name }))}
                         />
 
@@ -364,20 +363,20 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
             requestAnimationFrame(() => {
                 if (isMounted) setLoading(true)
             })
-            
+
             const params: any = {
                 terminal_provider: providerId,
                 movement_type: 'INBOUND',
                 terminal_batch__isnull: 'True'
             }
-            
+
             if (dateRange?.from) {
                 params.date_from = format(dateRange.from, "yyyy-MM-dd")
             }
             if (dateRange?.to) {
                 params.date_to = format(dateRange.to, "yyyy-MM-dd")
             }
-            
+
             api.get(`/treasury/movements/`, {
                 params
             }).then((res: any) => {
@@ -387,7 +386,7 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
                 // Sort: Prioritize selected dates, then by date descending
                 const dateFromStr = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : null;
                 const dateToStr = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : dateFromStr;
-                
+
                 const isDateInRange = (date: string) => {
                     if (!dateFromStr || !dateToStr) return false;
                     return date >= dateFromStr && date <= dateToStr;

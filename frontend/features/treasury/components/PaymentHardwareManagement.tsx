@@ -424,7 +424,7 @@ function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
                             value={receivableAccount?.toString() || null}
                             onChange={(v) => setReceivableAccount(v ? parseInt(v) : null)}
                             accountType="ASSET"
-                            label="Cuenta Puente Recaudación (Activo)"
+                            label="Cuenta Puente Recaudación"
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -441,7 +441,7 @@ function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
                                 value={ivaAccount?.toString() || null}
                                 onChange={(v) => setIvaAccount(v ? parseInt(v) : null)}
                                 accountType="ASSET"
-                                label="Cuenta IVA Comisiones (Activo)"
+                                label="Cuenta Puente IVA Comisiones"
                             />
                         </div>
                     </div>

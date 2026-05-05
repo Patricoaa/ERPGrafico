@@ -39,7 +39,10 @@
       "Read(//tmp/**)",
       "Bash(dir \"c:\\\\Users\\\\patox\\\\Nextcloud\\\\Pato\\\\Aplicaciones\\\\ERPGrafico\\\\docs\\\\20-contracts\\\\\")",
       "Bash(python -c \"import ast; ast.parse\\(open\\('treasury/services.py'\\).read\\(\\)\\); print\\('OK'\\)\")",
-      "Bash(python3 -c \"import ast; ast.parse\\(open\\('/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/backend/treasury/services.py'\\).read\\(\\)\\); print\\('OK'\\)\")"
+      "Bash(python3 -c \"import ast; ast.parse\\(open\\('/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/backend/treasury/services.py'\\).read\\(\\)\\); print\\('OK'\\)\")",
+      "Bash(python3 -c \"import ast; ast.parse\\(open\\('/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/backend/treasury/services.py'\\).read\\(\\)\\); print\\('services OK'\\)\")",
+      "Bash(python3 -c \"import ast; ast.parse\\(open\\('/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/backend/treasury/models.py'\\).read\\(\\)\\); print\\('models OK'\\)\")",
+      "Bash(python3 -c \"import ast; ast.parse\\(open\\('/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/backend/treasury/migrations/0041_paymentterminalprovider_iva_account_required.py'\\).read\\(\\)\\); print\\('migration OK'\\)\")"
     ]
   }
 }
