@@ -20,7 +20,7 @@ from sales.models import SaleOrder, SaleLine, SaleDelivery, SaleDeliveryLine, Sa
 from purchasing.models import PurchaseOrder, PurchaseLine, PurchaseReceipt, PurchaseReceiptLine, PurchaseReturn, PurchaseReturnLine
 from treasury.models import (
     TreasuryAccount, TreasuryMovement, BankStatement, BankStatementLine,
-    ReconciliationMatch, ReconciliationRule,
+    ReconciliationMatch, ReconciliationSettings,
     POSTerminal, POSSession, POSSessionAudit,
     Bank, PaymentMethod, TerminalBatch,
     PaymentTerminalProvider, PaymentTerminalDevice,
@@ -271,7 +271,7 @@ class Command(BaseCommand):
         _safe_delete(BankStatementLine, "BankStatementLine")
         _safe_delete(BankStatement, "BankStatement")
         _safe_delete(ReconciliationMatch, "ReconciliationMatch")
-        _safe_delete(ReconciliationRule, "ReconciliationRule")
+        _safe_delete(ReconciliationSettings, "ReconciliationSettings")
         _safe_delete(TreasuryAccount, "TreasuryAccount")
         _safe_delete(Bank, "Bank")
 
@@ -1464,6 +1464,21 @@ class Command(BaseCommand):
             }
         )
         self.stdout.write("  ✓ Initialized/Updated company settings singleton")
+
+        # Initialize Reconciliation Settings with 100% weight to amount
+        ReconciliationSettings.objects.update_or_create(
+            treasury_account=None,
+            defaults={
+                'amount_weight': 100,
+                'date_weight': 0,
+                'reference_weight': 0,
+                'contact_weight': 0,
+                'confidence_threshold': 95,
+                'date_range_days': 30,
+                'auto_confirm': False
+            }
+        )
+        self.stdout.write("  ✓ Global Reconciliation Settings initialized (100% Amount Weight)")
 
     def _create_hr_demo_data(self, accounts):
         """Seeds Chilean HR parameters, AFPs, and Concepts."""
