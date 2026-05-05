@@ -21,6 +21,7 @@ interface DateRangeFilterProps {
     onDateChange: (date: DateRange | undefined) => void
     label?: string
     defaultRange?: DateRange
+    variant?: 'outline' | 'ghost'
 }
 
 export function DateRangeFilter({
@@ -29,6 +30,7 @@ export function DateRangeFilter({
     onDateChange,
     label = "Filtrar por fecha",
     defaultRange,
+    variant = 'outline',
 }: DateRangeFilterProps) {
     const [internalDate, setInternalDate] = React.useState<DateRange | undefined>(defaultRange)
     const date = controlledDate !== undefined ? controlledDate : internalDate
@@ -53,8 +55,12 @@ export function DateRangeFilter({
                         variant={"outline"}
                         size="sm"
                         className={cn(
-                            "w-full justify-start text-left font-bold uppercase tracking-wider text-[10px] bg-background/50 backdrop-blur-sm border-border/60 rounded-md hover:bg-muted/50 transition-all group h-9",
-                            !date && "text-muted-foreground"
+                            "w-full justify-start text-left font-bold uppercase tracking-wider text-[10px] transition-all group",
+                            variant === 'outline' 
+                                ? "bg-background/50 backdrop-blur-sm border-border/60 rounded-md hover:bg-muted/50 h-9 px-3" 
+                                : "h-[1.5rem] border-0 bg-transparent hover:bg-transparent shadow-none px-3",
+                            !date && "text-muted-foreground",
+                            className
                         )}
                     >
                         <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />

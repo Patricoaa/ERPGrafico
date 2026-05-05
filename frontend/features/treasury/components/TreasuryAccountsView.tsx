@@ -40,7 +40,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         setIsBankModalOpen(false)
         setIsMethodModalOpen(false)
         setIsLocalAccountModalOpen(false)
-        
+
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
@@ -91,7 +91,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         DEBIT_CARD: "T. Débito Empresa",
         CREDIT_CARD: "T. Crédito Empresa",
         CHECKBOOK: "Chequera / Instr.",
-        BRIDGE: "Cta. Puente (Clearing)",
+        BRIDGE: "Puente",
         MERCHANT: "Cta. Recaudadora",
     }
 
@@ -209,7 +209,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                                 { label: "T. Débito Empresa", value: "DEBIT_CARD" },
                                 { label: "T. Crédito Empresa", value: "CREDIT_CARD" },
                                 { label: "Chequera / Instr.", value: "CHECKBOOK" },
-                                { label: "Cta. Puente (Clearing)", value: "BRIDGE" },
+                                { label: "Puente", value: "BRIDGE" },
                                 { label: "Cta. Recaudadora", value: "MERCHANT" },
                             ]
                         }

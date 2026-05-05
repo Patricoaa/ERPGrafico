@@ -264,6 +264,17 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             val = terminal_batch_isnull.lower() == 'true'
             qs = qs.filter(terminal_batch__isnull=val)
 
+        # Terminal provider filter (used by batch creation modal): restrict to
+        # movements captured through devices owned by this provider. This excludes
+        # cash payments and movements from other providers, even if they belong to
+        # the same sale order (split payments).
+        terminal_provider = self.request.query_params.get('terminal_provider')
+        if terminal_provider:
+            qs = qs.filter(
+                terminal_device__provider_id=terminal_provider,
+                payment_method_new__method_type=PaymentMethod.Type.CARD_TERMINAL,
+            )
+
         pm = self.request.query_params.get('payment_method_new')
         if pm:
             qs = qs.filter(payment_method_new_id=pm)

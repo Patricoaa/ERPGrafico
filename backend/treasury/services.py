@@ -682,23 +682,25 @@ class TerminalBatchService:
         batch.settlement_journal_entry = entry
         
         # 4. Create Settlement TreasuryMovement (INBOUND, net_amount)
-        # This movement represents the actual bank deposit and will appear
-        # in the reconciliation workbench for standard 1:1 matching.
-        # We skip accounting entry generation since it's already handled above.
+        # The provider's clearing is a virtual/bridge treasury — the real cash
+        # arrival happens in the bank account chosen as deposit method. Modeling
+        # this as INBOUND to that bank ensures the movement surfaces in the bank
+        # reconciliation workbench for 1:1 matching with the actual bank statement.
+        # journal_entry stays null: accounting is already booked above as
+        # settlement_journal_entry on the batch.
         settlement_movement = TreasuryMovement.objects.create(
             movement_type=TreasuryMovement.Type.INBOUND,
             payment_method=TreasuryMovement.Method.TRANSFER,
             amount=net_amount,
             date=batch.settlement_date,
-            to_account=provider.bank_treasury_account,
+            to_account=deposit_treasury,
+            payment_method_new=payment_method,
             contact=provider.supplier,
             reference=f"Liquidación {batch.display_id}",
             notes=f"Liquidación terminal {provider.name} - Ventas {sales_date} (Bruto: ${gross_amount}, Comisión: ${commission_total})",
             terminal_batch=batch,
             created_by=user,
             is_reconciled=False,
-            # journal_entry is intentionally left null — accounting is handled
-            # by the settlement_journal_entry on the batch itself.
         )
         
         batch.settlement_movement = settlement_movement

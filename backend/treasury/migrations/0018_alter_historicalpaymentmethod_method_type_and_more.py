@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='historicaltreasuryaccount',
             name='account_type',
-            field=models.CharField(choices=[('CHECKING', 'Cuenta Bancaria (Corriente/Vista)'), ('CREDIT_CARD', 'Tarjeta de Crédito (Cta. Propia)'), ('DEBIT_CARD', 'Tarjeta de Débito (Cta. Propia)'), ('CHECKBOOK', 'Chequera / Instrumentos'), ('CASH', 'Caja Física (Efectivo)'), ('BRIDGE', 'Cuenta Puente (Liquidación/Clearing)'), ('MERCHANT', 'Cuenta Recaudadora (Pasarela/Wallet)')], default='CASH', max_length=20, verbose_name='Tipo'),
+            field=models.CharField(choices=[('CHECKING', 'Cuenta Bancaria (Corriente/Vista)'), ('CREDIT_CARD', 'Tarjeta de Crédito (Cta. Propia)'), ('DEBIT_CARD', 'Tarjeta de Débito (Cta. Propia)'), ('CHECKBOOK', 'Chequera / Instrumentos'), ('CASH', 'Caja Física (Efectivo)'), ('BRIDGE', 'Puente'), ('MERCHANT', 'Cuenta Recaudadora (Pasarela/Wallet)')], default='CASH', max_length=20, verbose_name='Tipo'),
         ),
         migrations.AlterField(
             model_name='paymentmethod',
@@ -28,6 +28,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='treasuryaccount',
             name='account_type',
-            field=models.CharField(choices=[('CHECKING', 'Cuenta Bancaria (Corriente/Vista)'), ('CREDIT_CARD', 'Tarjeta de Crédito (Cta. Propia)'), ('DEBIT_CARD', 'Tarjeta de Débito (Cta. Propia)'), ('CHECKBOOK', 'Chequera / Instrumentos'), ('CASH', 'Caja Física (Efectivo)'), ('BRIDGE', 'Cuenta Puente (Liquidación/Clearing)'), ('MERCHANT', 'Cuenta Recaudadora (Pasarela/Wallet)')], default='CASH', max_length=20, verbose_name='Tipo'),
+            field=models.CharField(choices=[('CHECKING', 'Cuenta Bancaria (Corriente/Vista)'), ('CREDIT_CARD', 'Tarjeta de Crédito (Cta. Propia)'), ('DEBIT_CARD', 'Tarjeta de Débito (Cta. Propia)'), ('CHECKBOOK', 'Chequera / Instrumentos'), ('CASH', 'Caja Física (Efectivo)'), ('BRIDGE', 'Puente'), ('MERCHANT', 'Cuenta Recaudadora (Pasarela/Wallet)')], default='CASH', max_length=20, verbose_name='Tipo'),
         ),
     ]
