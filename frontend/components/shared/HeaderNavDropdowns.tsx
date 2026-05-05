@@ -43,6 +43,25 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                 />
             )}
 
+            {/* ── Module Name (Root) ── */}
+            {navigation.moduleName && (
+                <div className="flex items-center">
+                    {navigation.moduleHref ? (
+                        <Link 
+                            href={navigation.moduleHref}
+                            className="text-sm font-semibold tracking-tight text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            {navigation.moduleName}
+                        </Link>
+                    ) : (
+                        <span className="text-sm font-semibold tracking-tight text-muted-foreground">
+                            {navigation.moduleName}
+                        </span>
+                    )}
+                    <span className="text-border/60 mx-1.5 text-sm select-none">/</span>
+                </div>
+            )}
+
             {/* ── Primary Dropdown: View Selector ── */}
             <DropdownMenu>
                 <DropdownMenuTrigger

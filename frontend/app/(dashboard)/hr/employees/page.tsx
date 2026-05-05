@@ -14,10 +14,12 @@ import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Pencil } from "lucide-react"
 import { useSearchParams } from "next/navigation"
+import { ToolbarCreateButton } from "@/components/shared"
 
 // Employee schemas and types moved to features/hr/components/EmployeeFormDialog
 
-export default function EmployeesPage({ createAction }: { createAction?: React.ReactNode } = {}) {
+export default function EmployeesPage() {
+    const createAction = <ToolbarCreateButton label="Nuevo Empleado" href="/hr/employees?modal=new" />
     const router = useRouter()
     const searchParams = useSearchParams()
     const [employees, setEmployees] = useState<Employee[]>([])
