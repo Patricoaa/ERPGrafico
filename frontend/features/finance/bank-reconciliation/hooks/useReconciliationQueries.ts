@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
-import type { BankStatement, ReconciliationRule, TreasuryAccount } from '../types'
+import type { BankStatement, ReconciliationRule, TreasuryAccount, PaginatedResponse, BankStatementLine, ReconciliationSystemItem } from '../types'
 import { reconciliationKeys } from './queryKeys'
 
 export function useStatementsQuery() {
@@ -81,7 +81,7 @@ export function useUnreconciledLinesQuery(statementId: number, params: QueryPagi
     return useQuery({
         queryKey: reconciliationKeys.unreconciledLines(statementId, params),
         queryFn: async ({ signal }) => {
-            const res = await api.get('/treasury/statement-lines/', {
+            const res = await api.get<PaginatedResponse<BankStatementLine>>('/treasury/statement-lines/', {
                 params: {
                     statement: statementId,
                     reconciliation_state: 'UNRECONCILED,EXCLUDED',
@@ -106,7 +106,7 @@ export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: 
     return useQuery({
         queryKey: reconciliationKeys.unreconciledPayments(treasuryAccountId, params),
         queryFn: async ({ signal }) => {
-            const paymentsRes = await api.get('/treasury/payments/', {
+            const paymentsRes = await api.get<PaginatedResponse<ReconciliationSystemItem>>('/treasury/payments/', {
                 params: {
                     is_reconciled: 'False',
                     treasury_account: treasuryAccountId,
@@ -166,5 +166,29 @@ export function usePaymentSuggestionsQuery(paymentId: number, enabled: boolean) 
             return res.data.suggestions || []
         },
         enabled: enabled && !!paymentId
+    })
+}
+export function useReconciledLinesQuery(statementId: number, params: QueryPaginationParams = {}) {
+    return useQuery({
+        queryKey: reconciliationKeys.reconciledLines(statementId, params),
+        queryFn: async ({ signal }) => {
+            const res = await api.get<PaginatedResponse<BankStatementLine>>('/treasury/statement-lines/', {
+                params: {
+                    statement: statementId,
+                    reconciliation_state: 'RECONCILED',
+                    page: params.page || 1,
+                    page_size: params.pageSize || 50,
+                    search: params.search,
+                    date_from: params.date_from,
+                    date_to: params.date_to,
+                    amount_min: params.amount_min,
+                    amount_max: params.amount_max,
+                    direction: params.type
+                },
+                signal
+            })
+            return res.data
+        },
+        enabled: !!statementId
     })
 }

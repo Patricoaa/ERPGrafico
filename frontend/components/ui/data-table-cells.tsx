@@ -280,7 +280,7 @@ export const DataCell = {
         color?: string, 
         variant?: "ghost" | "outline" | "default" | "secondary",
         compact?: boolean
-    } & HTMLAttributes<HTMLButtonElement>) => (
+    } & React.ButtonHTMLAttributes<HTMLButtonElement>) => (
         <TooltipProvider delayDuration={400}>
             <Tooltip>
                 <TooltipTrigger asChild>

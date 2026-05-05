@@ -461,6 +461,40 @@ class CashFlowSerializer(serializers.Serializer):
 class BankStatementLineSerializer(serializers.ModelSerializer):
     reconciled_by_name = serializers.CharField(source='reconciled_by.username', read_only=True, allow_null=True)
     amount = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
+    reconciliation_group_data = serializers.SerializerMethodField()
+    
+    def get_reconciliation_group_data(self, obj):
+        if not obj.reconciliation_match:
+            return None
+        
+        match = obj.reconciliation_match
+        movements = match.movements.all()
+        # Batches are linked via movements in the model structure (TreasuryMovement -> TerminalBatch)
+        # However, a match might link to movements that belong to batches.
+        # We also check for movements linked directly to this line (backward compatibility)
+        line_movements = obj.matched_movements.all()
+        
+        # Combine all movements
+        all_movements = (movements | line_movements).distinct()
+        
+        # Get unique batches from movements
+        batch_ids = all_movements.filter(terminal_batch__isnull=False).values_list('terminal_batch_id', flat=True).distinct()
+        from .models import TerminalBatch
+        batches = TerminalBatch.objects.filter(id__in=batch_ids)
+        
+        # Move movements that are part of batches to a separate list if preferred, 
+        # but the frontend expects movements and batches lists.
+        # We'll filter out movements that are part of the batches displayed to avoid double counting
+        standalone_movements = all_movements.filter(terminal_batch__isnull=True)
+        
+        return {
+            'id': match.id,
+            'movements': TreasuryMovementSerializer(standalone_movements, many=True).data,
+            'batches': TerminalBatchSerializer(batches, many=True).data,
+            'difference_amount': float(obj.difference_amount),
+            'difference_type': obj.difference_reason,
+            'difference_type_display': obj.difference_reason # We can add a mapper if needed
+        }
     
     class Meta:
         model = BankStatementLine
