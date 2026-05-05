@@ -834,10 +834,11 @@ class BankStatementLineViewSet(viewsets.ModelViewSet):
             difference_type = request.data.get('difference_type')
             notes = request.data.get('notes', '')
             card_provider_id = request.data.get('card_provider_id')
+            accounting_date = request.data.get('accounting_date')
             
             if difference_type and line.difference_amount != 0:
                 DifferenceService.create_difference_adjustment(
-                    line, difference_type, request.user, notes
+                    line, difference_type, request.user, notes, accounting_date
                 )
             
             confirmed_line = MatchingService.confirm_match(pk, request.user)
