@@ -51,11 +51,20 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
 
     const navigation = {
         tabs: [
-            { value: "statements", label: "Cartolas", iconName: "file-text", href: "/treasury/reconciliation?tab=statements" },
-            { value: "dashboard", label: "Dashboard", iconName: "bar-chart-3", href: "/treasury/reconciliation?tab=dashboard" },
-            { value: "intelligence", label: "Inteligencia", iconName: "brain", href: "/treasury/reconciliation?tab=intelligence" },
+            { 
+                value: "treasury", 
+                label: "Tesorería", 
+                iconName: "landmark",
+                href: "/treasury",
+                subTabs: [
+                    { value: "statements", label: "Cartolas", iconName: "file-text", href: "/treasury/reconciliation?tab=statements" },
+                    { value: "dashboard", label: "Dashboard", iconName: "bar-chart-3", href: "/treasury/reconciliation?tab=dashboard" },
+                    { value: "intelligence", label: "Inteligencia", iconName: "brain", href: "/treasury/reconciliation?tab=intelligence" },
+                ]
+            },
         ],
-        activeValue: "statements",
+        activeValue: "treasury",
+        subActiveValue: "statements",
         breadcrumbs: [
             { label: statement.display_id, href: `/treasury/reconciliation/${statement.id}` },
             { label: "Mesa de Conciliación" }

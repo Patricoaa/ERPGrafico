@@ -64,12 +64,12 @@ export function TreasuryAccountSelector({
     const filteredAccounts = accounts.filter(a => {
         const matchesType = !type || a.account_type === type
         const searchLower = search.toLowerCase()
-        const matchesSearch = !search || 
-            a.name.toLowerCase().includes(searchLower) || 
+        const matchesSearch = !search ||
+            a.name.toLowerCase().includes(searchLower) ||
             a.account_type.toLowerCase().includes(searchLower)
         return matchesType && matchesSearch
     })
-    
+
     const selectedAccount = value && accounts.length > 0
         ? accounts.find(a => a.id.toString() === value.toString()) || null
         : null
@@ -92,7 +92,7 @@ export function TreasuryAccountSelector({
         'DEBIT_CARD': 'Débito Empresa',
         'CREDIT_CARD': 'Crédito Empresa',
         'CHECKBOOK': 'Chequera',
-        'BRIDGE': 'Clearing',
+        'BRIDGE': 'Puente',
         'MERCHANT': 'Recaudadora',
     }
 
@@ -104,7 +104,7 @@ export function TreasuryAccountSelector({
 
     return (
         <div className="relative w-full flex flex-col group">
-            <fieldset 
+            <fieldset
                 className={cn(
                     "notched-field w-full group transition-all",
                     open && "focused",
@@ -117,82 +117,82 @@ export function TreasuryAccountSelector({
                         {label}
                     </legend>
                 )}
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-                <Button
-                    variant="ghost"
-                    role="combobox"
-                    aria-expanded={open}
-                    className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
-                    disabled={disabled}
-                >
-                    {selectedAccount ? (
-                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                            <span className="text-primary shrink-0">{getIcon(selectedAccount.account_type)}</span>
-                            <span className="font-medium text-sm truncate">{selectedAccount.name}</span>
-                            <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
-                                • {formatCurrency(selectedAccount.current_balance || 0)}
-                            </span>
-                        </div>
-                    ) : (
-                        <span className="text-muted-foreground truncate">{placeholder}</span>
-                    )}
-                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                <div className="p-2 border-b">
-                    <div className="relative">
-                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                        <Input
-                            placeholder="Buscar cuenta..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="pl-8 h-8 text-xs border-none bg-muted focus-visible:ring-0"
-                        />
-                    </div>
-                </div>
-                <div className="p-1 max-h-[300px] overflow-y-auto space-y-0.5">
-                    {loading ? (
-                        <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
-                    ) : filteredAccounts.length === 0 ? (
-                        <EmptyState context="finance" variant="compact" title="No hay cuentas disponibles" />
-                    ) : (
-                        filteredAccounts.map((account) => (
-                            <div
-                                key={account.id}
-                                className={cn(
-                                    "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-                                    selectedAccount?.id === account.id && "bg-accent"
-                                )}
-                                onClick={() => handleSelect(account)}
-                            >
-                                <Check
-                                    className={cn(
-                                        "mr-2 h-4 w-4",
-                                        selectedAccount?.id === account.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                />
-                                <div className="flex flex-col flex-1">
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-medium">{account.name}</span>
-                                        <span className="text-xs text-muted-foreground ml-2">
-                                            {ACCOUNT_TYPE_LABELS[account.account_type] || account.account_type}
-                                        </span>
-                                    </div>
-                                    {account.current_balance !== undefined && account.current_balance !== null && (
-                                        <span className="text-xs text-muted-foreground">
-                                            Disponible: ${Number(account.current_balance).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                                        </span>
-                                    )}
+                <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            role="combobox"
+                            aria-expanded={open}
+                            className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
+                            disabled={disabled}
+                        >
+                            {selectedAccount ? (
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <span className="text-primary shrink-0">{getIcon(selectedAccount.account_type)}</span>
+                                    <span className="font-medium text-sm truncate">{selectedAccount.name}</span>
+                                    <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
+                                        • {formatCurrency(selectedAccount.current_balance || 0)}
+                                    </span>
                                 </div>
+                            ) : (
+                                <span className="text-muted-foreground truncate">{placeholder}</span>
+                            )}
+                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                        <div className="p-2 border-b">
+                            <div className="relative">
+                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                <Input
+                                    placeholder="Buscar cuenta..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    className="pl-8 h-8 text-xs border-none bg-muted focus-visible:ring-0"
+                                />
                             </div>
-                        ))
-                    )}
-                </div>
-            </PopoverContent>
-        </Popover>
-        </fieldset>
+                        </div>
+                        <div className="p-1 max-h-[300px] overflow-y-auto space-y-0.5">
+                            {loading ? (
+                                <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
+                            ) : filteredAccounts.length === 0 ? (
+                                <EmptyState context="finance" variant="compact" title="No hay cuentas disponibles" />
+                            ) : (
+                                filteredAccounts.map((account) => (
+                                    <div
+                                        key={account.id}
+                                        className={cn(
+                                            "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                                            selectedAccount?.id === account.id && "bg-accent"
+                                        )}
+                                        onClick={() => handleSelect(account)}
+                                    >
+                                        <Check
+                                            className={cn(
+                                                "mr-2 h-4 w-4",
+                                                selectedAccount?.id === account.id ? "opacity-100" : "opacity-0"
+                                            )}
+                                        />
+                                        <div className="flex flex-col flex-1">
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-medium">{account.name}</span>
+                                                <span className="text-xs text-muted-foreground ml-2">
+                                                    {ACCOUNT_TYPE_LABELS[account.account_type] || account.account_type}
+                                                </span>
+                                            </div>
+                                            {account.current_balance !== undefined && account.current_balance !== null && (
+                                                <span className="text-xs text-muted-foreground">
+                                                    Disponible: ${Number(account.current_balance).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            </fieldset>
             {error && (
                 <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
                     {error}

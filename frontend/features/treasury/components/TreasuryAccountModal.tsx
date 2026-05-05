@@ -240,7 +240,7 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                                                         { value: "DEBIT_CARD", label: "Tarjeta de Débito (Cta. Propia)" },
                                                         { value: "CREDIT_CARD", label: "Tarjeta de Crédito (Cta. Propia)" },
                                                         { value: "CHECKBOOK", label: "Chequera / Instrumentos" },
-                                                        { value: "BRIDGE", label: "Cuenta Puente (Liquidación/Clearing)" },
+                                                        { value: "BRIDGE", label: "Cuenta Puente" },
                                                         { value: "MERCHANT", label: "Cuenta Recaudadora (Pasarela/Wallet)" }
                                                     ]}
                                                 />

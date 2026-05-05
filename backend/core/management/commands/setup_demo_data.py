@@ -362,6 +362,7 @@ class Command(BaseCommand):
             'salary_advance': Account.objects.get(code='1.1.02.03'),
             'expense_salary': Account.objects.get(code='5.2.01.01'),
             'expense_prevision': Account.objects.get(code='5.2.01.02'),
+            'bank_commission': Account.objects.get(code='5.2.10'),
         }
 
     def _create_partners(self, accounts):
@@ -1283,8 +1284,7 @@ class Command(BaseCommand):
 
         # 1.2 TUU Integration Infrastructure
         # Bridge account: clearing between card payment capture and bank settlement.
-        # Type BRIDGE bypasses the 1.1.01 prefix-only restriction.
-        acc_tuu_bridge = get_create_cash_account('1.1.01.16', "Liquidación TUU (Clearing)")
+        acc_tuu_bridge = get_create_cash_account('1.1.01.16', "Cuenta Puente Liquidación TUU")
         tuu_bridge, _ = TreasuryAccount.objects.get_or_create(
             code="PUENTE-TUU",
             defaults={
@@ -1298,15 +1298,34 @@ class Command(BaseCommand):
 
         tuu_contact, _ = Contact.objects.get_or_create(
             tax_id="76.354.771-8",
-            defaults={'name': "TUU SpA", 'email': "soporte@tuu.cl"}
+            defaults={'name': "TUU SpA", 'email': "soporte@tuu.cl", 'account_payable': accounts['payable']}
         )
+
+        # Service product for commissions
+        cat_services = ProductCategory.objects.get(name="Servicios Gráficos")
+        uom_un = UoM.objects.get(name="Unidad")
+        p_commission, _ = Product.objects.get_or_create(
+            code="SRV-COMM-TERM",
+            defaults={
+                'name': "Comisión Terminal de Pago",
+                'category': cat_services,
+                'product_type': Product.Type.SERVICE,
+                'uom': uom_un,
+                'sale_price': 0,
+                'can_be_sold': False,
+                'can_be_purchased': True,
+            }
+        )
+
         tuu_provider, _ = PaymentTerminalProvider.objects.get_or_create(
             name="TUU",
             defaults={
                 'provider_type': PaymentTerminalProvider.ProviderType.TUU,
                 'supplier': tuu_contact,
-                'receivable_account': accounts['receivable'],
-                'commission_expense_account': accounts['expense_general'],
+                'receivable_account': acc_tuu_bridge,
+                'commission_expense_account': accounts['bank_commission'],
+                'commission_iva_account': accounts['vat_credit'],
+                'commission_product': p_commission,
                 'bank_treasury_account': tuu_bridge,
                 'is_active': True,
             }

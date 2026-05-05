@@ -400,8 +400,8 @@ class TreasuryAccount(models.Model):
         DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito (Cta. Propia)')
         CHECKBOOK = 'CHECKBOOK', _('Chequera / Instrumentos')
         CASH = 'CASH', _('Caja Física (Efectivo)')
-        BRIDGE = 'BRIDGE', _('Cuenta Puente (Liquidación/Clearing)')
-        MERCHANT = 'MERCHANT', _('Cuenta Recaudadora (Pasarela/Wallet)')
+        BRIDGE = 'BRIDGE', _('Puente')
+        MERCHANT = 'MERCHANT', _('Cuenta Recaudadora')
 
     # Types que NO son efectivo/banco directo — usan prefijos contables distintos.
     _NON_CASH_EQUIVALENT_TYPES = frozenset({'BRIDGE', 'MERCHANT'})

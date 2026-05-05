@@ -441,7 +441,7 @@ function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
                                 value={ivaAccount?.toString() || null}
                                 onChange={(v) => setIvaAccount(v ? parseInt(v) : null)}
                                 accountType="ASSET"
-                                label="Cuenta Puente IVA Comisiones"
+                                label="Cuenta Puente IVA de Comisiones"
                             />
                         </div>
                     </div>

@@ -16,7 +16,7 @@ ACCOUNT_TYPE_CHOICES = [
     ('DEBIT_CARD', 'Tarjeta de Débito'),
     ('CHECKBOOK', 'Chequera'),
     ('CASH', 'Efectivo'),
-    ('BRIDGE', 'Cuenta Puente (Clearing)'),
+    ('BRIDGE', 'Puente'),
     ('MERCHANT', 'Cuenta Recaudadora Pasarela'),
 ]
 

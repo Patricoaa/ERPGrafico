@@ -198,7 +198,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                             <DateRangeFilter
                                 date={dateRange}
                                 onDateChange={setDateRange}
-                                className="w-full"
+                                variant="ghost"
                             />
                         </LabeledContainer>
 
