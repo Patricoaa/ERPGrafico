@@ -548,8 +548,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         <span className={cn("text-xs font-bold truncate", isSuggested && "text-warning")}>
                             {row.original.contact_name}
                         </span>
-                        {isSettlement && (
-                            <Badge variant="secondary" className="w-fit text-[10px] h-4 px-1.5 font-black uppercase bg-info/10 text-info">Liquidación Terminal de Cobro</Badge>
+                        {row.original.terminal_batch_id && (
+                            <Badge variant="secondary" className="w-fit text-[10px] h-4 px-1.5 font-black uppercase bg-info/10 text-info">
+                                Liquidación Terminal: {row.original.terminal_batch_display}
+                            </Badge>
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
@@ -800,9 +802,12 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     defaultPageSize={50}
                                     renderRow={(row, children) => {
                                         const item = row.original as ReconciliationSystemItem
-                                        const isSuggested = suggestions.some((s: any) =>
-                                            (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === item.id
-                                        )
+                                        const isSuggested = suggestions.some((s: any) => {
+                                            if (s.is_batch) {
+                                                return s.batch_data?.id === item.terminal_batch_id
+                                            }
+                                            return s.payment_data?.id === item.id
+                                        })
                                         return (
                                             <DraggablePayment id={item.id}>
                                                 {React.cloneElement(children as React.ReactElement, {

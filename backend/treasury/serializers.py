@@ -245,6 +245,7 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     # Additional Context
     justify_reason_display = serializers.SerializerMethodField()
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
+    terminal_batch_id = serializers.IntegerField(source='terminal_batch_id', read_only=True, allow_null=True)
     terminal_batch_display = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
 
@@ -293,6 +294,11 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
         return None
 
     def get_partner_name(self, obj):
+        # S4.1: If it's a terminal batch settlement, include the batch display ID
+        if obj.terminal_batch:
+            contact_prefix = obj.contact.name if obj.contact else "Liquidación"
+            return f"{contact_prefix} (Lote: {obj.terminal_batch.display_id})"
+
         # 1. Direct contact
         if obj.contact:
             return obj.contact.name

@@ -103,7 +103,7 @@ class MatchingService:
             candidate_filters |= Q(reference__iexact=line.reference)
 
         payments_query = TreasuryMovement.objects.filter(
-            base_filters & candidate_filters
+            base_filters & candidate_filters & Q(terminal_batch__isnull=True)
         ).select_related('contact', 'invoice', 'sale_order', 'purchase_order')
         
         # Scoring de cada pago
