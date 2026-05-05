@@ -245,7 +245,7 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     # Additional Context
     justify_reason_display = serializers.SerializerMethodField()
     created_by_name = serializers.CharField(source='created_by.username', read_only=True)
-    terminal_batch_id = serializers.IntegerField(source='terminal_batch_id', read_only=True, allow_null=True)
+    terminal_batch_id = serializers.IntegerField(read_only=True, allow_null=True)
     terminal_batch_display = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
 
