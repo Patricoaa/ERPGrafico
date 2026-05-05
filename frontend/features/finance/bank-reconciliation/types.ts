@@ -45,6 +45,7 @@ export interface ReconciliationSystemItem {
     to_account?: number
     is_pending_registration?: boolean
     terminal_batch_id?: number | null
+    terminal_batch_display?: string | null
 }
 
 export interface MatchConfig {
