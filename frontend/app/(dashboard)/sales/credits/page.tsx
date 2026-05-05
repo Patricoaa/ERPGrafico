@@ -1,11 +1,8 @@
 import { Metadata } from "next"
 import { Suspense, lazy } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { Tabs } from "@/components/ui/tabs"
-import { LAYOUT_TOKENS } from "@/lib/styles"
 
 const CreditPortfolioView = lazy(() =>
     import("@/features/credits").then(m => ({ default: m.CreditPortfolioView }))
@@ -29,47 +26,7 @@ export default async function CreditsPage({ searchParams }: PageProps) {
     const activeTab = resolvedParams.tab || "portfolio"
     const modalOpen = resolvedParams.modal === "new"
 
-    const tabs = [
-        { value: "portfolio", label: "Cartera de Crédito", iconName: "pie-chart", href: "/sales/credits?tab=portfolio" },
-        { value: "history", label: "Historial de Créditos", iconName: "clock", href: "/sales/credits?tab=history" },
-        { value: "blacklist", label: "Lista Negra", iconName: "user-x", href: "/sales/credits?tab=blacklist" },
-    ]
-
-    const navigation = {
-        tabs,
-        activeValue: activeTab
-    }
-
-    const getHeaderConfig = () => {
-        switch (activeTab) {
-            case "history":
-                return {
-                    title: "Historial de Asignaciones",
-                    description: "Registro global de créditos asignados a clientes.",
-                    iconName: "history",
-                    showAction: false
-                }
-            case "blacklist":
-                return {
-                    title: "Lista Negra",
-                    description: "Clientes con historial de impago o riesgo crediticio.",
-                    iconName: "user-x",
-                    showAction: false
-                }
-            case "portfolio":
-            default:
-                return {
-                    title: "Cartera de Créditos",
-                    description: "Saldo por cliente, clasificación por antigüedad y estado de cobro.",
-                    iconName: "credit-card",
-                    showAction: true
-                }
-        }
-    }
-
-    const { title, description, iconName, showAction } = getHeaderConfig()
-
-    const createAction = showAction ? (
+    const createAction = activeTab === 'portfolio' ? (
         <ToolbarCreateButton
             label="Asignar Crédito"
             href="/sales/credits?tab=portfolio&modal=new"
@@ -77,17 +34,9 @@ export default async function CreditsPage({ searchParams }: PageProps) {
     ) : null
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
+        <div className="pt-2">
             <Tabs value={activeTab} className="space-y-4">
-                <PageHeader
-                    title={title}
-                    description={description}
-                    iconName={iconName}
-                    variant="minimal"
-                    navigation={navigation}
-                />
-
-                <div className="pt-4 mt-0 outline-none">
+                <div className="mt-0 outline-none">
                     <Suspense fallback={<LoadingFallback />}>
                         {activeTab === 'blacklist' ? (
                             <BlacklistView />
