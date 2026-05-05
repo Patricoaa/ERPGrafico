@@ -3,7 +3,8 @@
 import { showApiError } from "@/lib/errors"
 import * as React from "react"
 import dynamic from "next/dynamic"
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { TableCell, TableRow } from "@/components/ui/table"
@@ -17,9 +18,12 @@ import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 
 import { LabeledSelect, LabeledInput, TableSkeleton } from "@/components/shared"
 import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 import {
     Ban, CheckCircle2, ChevronRight, ChevronLeft, FileText,
-    Loader2, Search, Sparkles, X, Wand2, SplitSquareHorizontal, Calculator, RotateCcw
+    Loader2, Search, Sparkles, X, Wand2, SplitSquareHorizontal, Calculator, RotateCcw, Brain
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -34,6 +38,7 @@ import {
     PointerSensor,
     useSensor,
     useSensors,
+    useSensors as useDndSensors,
 } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 import {
@@ -56,6 +61,7 @@ import {
 
 import { MovementWizard, type MovementData } from "@/features/treasury/components/MovementWizard"
 import { AutoMatchProgressModal } from "./AutoMatchProgressModal"
+import { ReconciliationIntelligence } from "./ReconciliationIntelligence"
 
 
 import { DataTable } from "@/components/ui/data-table"
@@ -118,7 +124,7 @@ function DraggablePayment({ id, children, disabled }: { id: number, children: Re
         className: cn(
             child.props.className,
             "touch-none",
-            isDragging && "opacity-50 grayscale scale-95"
+            isDragging && "opacity-50 grayscale-[0.5] scale-95"
         ),
         ...listeners,
         ...attributes
@@ -233,6 +239,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const [autoMatchProgressOpen, setAutoMatchProgressOpen] = useState(false)
 
     const [sidebarOpen, setSidebarOpen] = useState(false)
+    const [intelOpen, setIntelOpen] = useState(false)
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -249,6 +256,31 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             setSidebarOpen(false)
         }
     }, [selectedLines.length, selectedPayments.length])
+
+    // Sync Intelligence Panel state with global DashboardShell
+    useEffect(() => {
+        if (intelOpen) {
+            document.body.setAttribute('data-side-panel-width', '400')
+        } else {
+            document.body.removeAttribute('data-side-panel-width')
+        }
+        return () => document.body.removeAttribute('data-side-panel-width')
+    }, [intelOpen])
+
+    // Track other panels to calculate correct 'right' position
+    const [globalPanelStates, setGlobalPanelStates] = useState({ hub: false, inbox: false })
+    useEffect(() => {
+        const updateStates = () => {
+            setGlobalPanelStates({
+                hub: document.body.hasAttribute('data-hub-open'),
+                inbox: document.body.hasAttribute('data-inbox-open')
+            })
+        }
+        updateStates()
+        const observer = new MutationObserver(updateStates)
+        observer.observe(document.body, { attributes: true, attributeFilter: ['data-hub-open', 'data-inbox-open'] })
+        return () => observer.disconnect()
+    }, [])
 
     // ─── Selection Handlers ───────────────────────────────────────────────────
 
@@ -334,9 +366,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         if (selectedLines.length === 0 || selectedPayments.length === 0) return
 
         // Validations omitted for brevity as they are business logic from source
-        const lineTotal = selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
-        const payTotal = selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0)
-        const diff = lineTotal - payTotal
+        const lineTotal = safeSum(selectedLines.map(l => Math.abs(safeDifference(safeParseFloat(l.credit), safeParseFloat(l.debit)))))
+        const payTotal = safeSum(selectedPayments.map(p => Math.abs(safeParseFloat(p.amount))))
+        const diff = safeDifference(lineTotal, payTotal)
 
         if (!force && Math.abs(diff) > 1) {
             const line = selectedLines[0]
@@ -501,8 +533,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             id: "amount",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Monto" className="justify-end" />,
             cell: ({ row }) => {
-                const amount = Math.abs(parseFloat(row.original.credit) - parseFloat(row.original.debit))
-                const isCredit = parseFloat(row.original.credit) > parseFloat(row.original.debit)
+                const amount = Math.abs(safeDifference(safeParseFloat(row.original.credit), safeParseFloat(row.original.debit)))
+                const isCredit = safeParseFloat(row.original.credit) > safeParseFloat(row.original.debit)
                 return (
                     <div className="flex flex-col items-end justify-center h-full">
                         <span className={cn("font-mono font-black text-[13px] tracking-tight", isCredit ? "text-success" : "text-destructive")}>
@@ -586,7 +618,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             accessorKey: "contact_name",
             header: "Entidad / Concepto",
             cell: ({ row }) => {
-                const isSuggested = suggestions.some((s: PaymentSuggestion) => (s.is_batch ? s.batch_data?.id : s.payment_data?.id) === row.original.id)
+                const isSuggested = suggestions.some((s: PaymentSuggestion) => 
+                    s.is_batch ? s.batch_data?.id === row.original.terminal_batch_id : s.payment_data?.id === row.original.id
+                )
                 const isSettlement = row.original.terminal_batch_id != null
                 return (
                     <div className="flex flex-col gap-0.5 max-w-[220px] justify-center h-full py-1">
@@ -683,16 +717,16 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 <div className="flex items-center justify-between bg-card border shadow-sm rounded-lg px-4 py-3">
                     {/* Left: Navigation */}
                     <div className="flex items-center gap-4 shrink-0">
-                        <TabsList className="bg-muted/30 p-0.5 rounded-md border border-border/40 h-8 gap-0.5">
+                        <TabsList className="bg-muted/30 p-0.5 rounded-md border border-border/40 h-7 gap-0.5 overflow-hidden items-center">
                             <TabsTrigger 
                                 value="unreconciled" 
-                                className="text-[10px] font-black uppercase tracking-widest px-6 h-7 rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
+                                className="text-[9px] font-black uppercase tracking-wider px-2.5 h-5 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
                             >
                                 Pendientes
                             </TabsTrigger>
                             <TabsTrigger 
                                 value="reconciled" 
-                                className="text-[10px] font-black uppercase tracking-widest px-6 h-7 rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary"
+                                className="text-[9px] font-black uppercase tracking-wider px-2.5 h-5 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
                             >
                                 Conciliados
                             </TabsTrigger>
@@ -700,13 +734,13 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     </div>
 
                     {/* Center: Filters (Flat Layout) */}
-                    <div className="flex-1 flex items-center justify-center gap-6">
+                    <div className="flex-1 flex items-center justify-center gap-3">
                         <div className="relative">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                            <input
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                            <Input
                                 type="text"
                                 placeholder="Buscar..."
-                                className="h-8 w-40 pl-8 pr-8 rounded-md border border-input bg-background text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
+                                className="h-7 w-32 pl-7 pr-6 rounded-md text-[10px] font-medium"
                                 value={bankParams.search || ""}
                                 onChange={(e) => {
                                     const val = e.target.value
@@ -729,12 +763,12 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             )}
                         </div>
 
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Desde</span>
-                                <input
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[8px] font-bold uppercase text-muted-foreground/50 tracking-tighter">Desde</span>
+                                <Input
                                     type="date"
-                                    className="h-8 w-32 px-2 rounded-md border border-input bg-background text-[11px] font-bold focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
+                                    className="h-7 w-28 px-1 text-[10px] font-medium"
                                     value={bankParams.date_from || ""}
                                     onChange={(e) => {
                                         const val = e.target.value
@@ -743,11 +777,11 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     }}
                                 />
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest">Hasta</span>
-                                <input
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[8px] font-bold uppercase text-muted-foreground/50 tracking-tighter">Hasta</span>
+                                <Input
                                     type="date"
-                                    className="h-8 w-32 px-2 rounded-md border border-input bg-background text-[11px] font-bold focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
+                                    className="h-7 w-28 px-1 text-[10px] font-medium"
                                     value={bankParams.date_to || ""}
                                     onChange={(e) => {
                                         const val = e.target.value
@@ -758,32 +792,48 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             </div>
                         </div>
 
-                        <select
-                            className="h-8 px-3 rounded-md border border-input bg-background text-[11px] font-bold focus:outline-none focus:ring-1 focus:ring-primary/30 transition-all"
-                            value={bankParams.type || ""}
-                            onChange={(e) => {
-                                const val = e.target.value
-                                setBankParams(prev => ({ ...prev, type: val, page: 1 }))
-                                setSystemParams(prev => ({ ...prev, type: val, page: 1 }))
+                        <Select
+                            value={bankParams.type || "all"}
+                            onValueChange={(val) => {
+                                const realVal = val === "all" ? "" : val
+                                setBankParams(prev => ({ ...prev, type: realVal, page: 1 }))
+                                setSystemParams(prev => ({ ...prev, type: realVal, page: 1 }))
                             }}
                         >
-                            <option value="">Todos los Movimientos</option>
-                            <option value="IN">Abonos / Ingresos</option>
-                            <option value="OUT">Cargos / Egresos</option>
-                        </select>
+                            <SelectTrigger className="h-7 w-[150px] text-[10px] font-medium">
+                                <SelectValue placeholder="Movimientos" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos los Movimientos</SelectItem>
+                                <SelectItem value="IN">Abonos / Ingresos</SelectItem>
+                                <SelectItem value="OUT">Cargos / Egresos</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     {/* Right: Actions */}
-                    <div className="flex items-center gap-4 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                         <Button
                             onClick={() => setActionDialog({ open: true, type: 'automatch' })}
                             disabled={autoMatching}
                             variant="outline"
                             size="sm"
-                            className="h-8 text-[11px] font-black uppercase tracking-widest bg-success/5 hover:bg-success/10 text-success border-success/20 hover:border-success/30 group transition-all px-4"
+                            className="h-7 text-[9px] font-black uppercase tracking-widest bg-success/5 hover:bg-success/10 text-success border-success/20 hover:border-success/30 group transition-all px-3"
                         >
-                            {autoMatching ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-2 h-3.5 w-3.5 group-hover:rotate-12 transition-transform" />}
-                            Conciliación Automática
+                            {autoMatching ? <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> : <Wand2 className="mr-1.5 h-3 w-3 group-hover:rotate-12 transition-transform" />}
+                            Auto-Match
+                        </Button>
+                        <Button
+                            onClick={() => setIntelOpen(true)}
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                                "h-7 w-7 p-0 rounded-md border-primary/20 hover:border-primary/40 transition-all",
+                                intelOpen && "bg-primary text-primary-foreground border-primary"
+                            )}
+                            title="Configurar Inteligencia"
+                        >
+                            <Brain className="h-3.5 w-3.5" />
                         </Button>
                     </div>
                 </div>
@@ -1028,7 +1078,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                                     </div>
                                                                 </div>
                                                                 <span className="text-sm font-mono font-bold text-primary">
-                                                                    {formatCurrency(b.total_amount || b.amount)}
+                                                                    {formatCurrency(b.net_amount)}
                                                                 </span>
                                                             </div>
                                                         ))}
@@ -1254,13 +1304,27 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             const s = suggestions[0]
                                             const paymentId = s.is_batch ? s.batch_data?.id : s.payment_data?.id
                                             const item = unreconciledPayments.find(p => p.id === paymentId)
-                                            if (item) setSelectedPayments([item])
+                                            if (item) {
+                                                setSelectedPayments([item])
+                                            } else if (s.is_batch && s.batch_data) {
+                                                // Map batch data if not found in current page
+                                                setSelectedPayments([{
+                                                    id: s.batch_data.id, // Using batch ID as primary for selection if movement not in list
+                                                    amount: s.difference, // Fallback amount
+                                                    date: statement?.statement_date || "",
+                                                    contact_name: s.batch_data.name || "Lote Terminal",
+                                                    terminal_batch_id: s.batch_data.id,
+                                                    display_id: s.batch_data.id.toString()
+                                                } as any])
+                                            } else if (s.payment_data) {
+                                                setSelectedPayments([s.payment_data as any])
+                                            }
                                         }}
                                         className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-colors rounded-full py-1.5 pl-4 pr-2 group"
                                     >
                                         <div className="flex flex-col items-start leading-none">
                                             <span className="text-[8px] font-black uppercase text-warning/70 mb-0.5 tracking-wider">Usar Sugerencia</span>
-                                            <span className="text-[11px] font-bold truncate max-w-[180px]">{suggestions[0].payment_data?.contact_name || suggestions[0].batch_data?.name}</span>
+                                            <span className="text-[11px] font-bold truncate max-w-[180px]">{suggestions[0].payment_data?.contact_name || suggestions[0].batch_data?.display_id || suggestions[0].batch_data?.name}</span>
                                         </div>
                                         <div className="h-7 w-7 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
                                             <ChevronRight className="h-4 w-4 text-warning group-hover:translate-x-0.5 transition-transform" />
@@ -1285,7 +1349,11 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             const s = lineSuggestions[0]
                                             const lineId = s.line_data?.id
                                             const item = unreconciledLines.find(l => l.id === lineId)
-                                            if (item) setSelectedLines([item])
+                                            if (item) {
+                                                setSelectedLines([item])
+                                            } else if (s.line_data) {
+                                                setSelectedLines([s.line_data as any])
+                                            }
                                         }}
                                         className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-colors rounded-full py-1.5 pr-4 pl-2 group"
                                     >
@@ -1313,13 +1381,13 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             <div className="flex flex-col border-r border-border/40 pr-8 last:border-0 h-8 justify-center">
                                 <span className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-1.5">Banco ({selectedLines.length})</span>
                                 <span className="text-sm font-mono font-bold text-info leading-none">
-                                    {formatCurrency(selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0))}
+                                    {formatCurrency(safeSum(selectedLines.map(l => Math.abs(safeDifference(safeParseFloat(l.credit), safeParseFloat(l.debit))))))}
                                 </span>
                             </div>
                             <div className="flex flex-col border-r border-border/40 pr-8 last:border-0 h-8 justify-center">
                                 <span className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-1.5">Tesorería ({selectedPayments.length})</span>
                                 <span className="text-sm font-mono font-bold text-primary leading-none">
-                                    {formatCurrency(selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0))}
+                                    {formatCurrency(safeSum(selectedPayments.map(p => Math.abs(safeParseFloat(p.amount)))))}
                                 </span>
                             </div>
                             <div className="flex flex-col items-end last:border-0 h-8 justify-center pl-2">
@@ -1327,15 +1395,17 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 <span className={cn(
                                     "text-sm font-mono font-bold leading-none",
                                     (() => {
-                                        const lineTotal = selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0)
-                                        const payTotal = selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0)
-                                        const diff = lineTotal - payTotal
-                                        return Math.abs(diff) < 0.01 ? "text-success" : "text-warning"
+                                        const lineTotal = safeSum(selectedLines.map(l => Math.abs(safeDifference(safeParseFloat(l.credit), safeParseFloat(l.debit)))))
+                                        const payTotal = safeSum(selectedPayments.map(p => Math.abs(safeParseFloat(p.amount))))
+                                        const diff = safeDifference(lineTotal, payTotal)
+                                        return isZeroTolerance(diff) ? "text-success" : "text-warning"
                                     })()
                                 )}>
                                     {formatCurrency(
-                                        selectedLines.reduce((acc, l) => acc + (Math.abs(parseFloat(l.credit) - parseFloat(l.debit))), 0) -
-                                        selectedPayments.reduce((acc, p) => acc + Math.abs(parseFloat(p.amount)), 0)
+                                        safeDifference(
+                                            safeSum(selectedLines.map(l => Math.abs(safeDifference(safeParseFloat(l.credit), safeParseFloat(l.debit))))),
+                                            safeSum(selectedPayments.map(p => Math.abs(safeParseFloat(p.amount))))
+                                        )
                                     )}
                                 </span>
                             </div>
@@ -1407,6 +1477,51 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         view="all"
                     />
                 )}
+
+                {/* Intelligence Panel (Fixed/Global Pattern) */}
+                <AnimatePresence>
+                    {intelOpen && (
+                        <motion.div
+                            initial={{ x: "120%", opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: "120%", opacity: 0 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            className={cn(
+                                "fixed top-20 h-[calc(100vh-6rem)] w-[400px] z-[55] border border-white/5 bg-sidebar dark flex flex-col pointer-events-auto rounded-lg shadow-2xl overflow-hidden transition-all duration-500 ease-[var(--ease-premium)]",
+                                globalPanelStates.inbox && globalPanelStates.hub 
+                                    ? "right-[calc(320px+360px+3rem)]" 
+                                    : globalPanelStates.hub 
+                                        ? "right-[calc(360px+2rem)]" 
+                                        : globalPanelStates.inbox 
+                                            ? "right-[calc(320px+2rem)]" 
+                                            : "right-4"
+                            )}
+                        >
+                            <div className="p-4 border-b bg-muted/30 flex justify-between items-center shrink-0">
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-primary/10 p-1.5 rounded-lg">
+                                        <Brain className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground/90 leading-tight">Inteligencia</h2>
+                                        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Configuración de Matching</span>
+                                    </div>
+                                </div>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors" 
+                                    onClick={() => setIntelOpen(false)}
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                                <ReconciliationIntelligence />
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </Tabs>
         </DndContext>
     )

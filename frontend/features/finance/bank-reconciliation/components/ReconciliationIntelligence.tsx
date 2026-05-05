@@ -86,26 +86,7 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
 
     return (
         <TooltipProvider>
-            <div className="space-y-6 max-w-4xl mx-auto py-2">
-                {/* Header Information */}
-                <Card className="p-4 border-primary/20 bg-primary/[0.02] flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-primary/10 p-2 rounded-lg">
-                            <Brain className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-bold">Inteligencia Global</h2>
-                            <p className="text-xs text-muted-foreground">Esta configuración aplica de forma automática a todas tus cuentas bancarias.</p>
-                        </div>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground/50">Nivel de Aplicación</p>
-                        <Badge variant="outline" className="mt-1 border-primary/30 text-primary bg-primary/5">
-                            Corporativo / Global
-                        </Badge>
-                    </div>
-                </Card>
-
+            <div className="space-y-4 max-w-2xl mx-auto py-2">
                 {(isLoadingSettings || isFetchingSettings) && !localSettings ? (
                     <div className="flex justify-center py-20">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -113,31 +94,31 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
                 ) : localSettings && (
                     <div className="grid gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {/* Weight Config */}
-                        <Card className="p-8 border-primary/10 shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
-                                <Brain className="h-40 w-40" />
+                        <Card className="p-4 border-primary/10 shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-[0.02] pointer-events-none">
+                                <Brain className="h-20 w-20" />
                             </div>
                             
-                            <div className="flex justify-between items-center mb-8">
-                                <div className="space-y-1">
-                                    <h3 className="text-xl font-bold flex items-center gap-2">
-                                        <Brain className="h-5 w-5 text-primary" />
-                                        Ecualizador de Pesos
+                            <div className="flex justify-between items-center mb-6">
+                                <div className="space-y-0.5">
+                                    <h3 className="text-sm font-bold flex items-center gap-2">
+                                        <Brain className="h-4 w-4 text-primary" />
+                                        Pesos de Matching
                                     </h3>
-                                    <p className="text-sm text-muted-foreground">Configura qué importancia tiene cada dato para encontrar un match perfecto.</p>
+                                    <p className="text-[10px] text-muted-foreground">Importancia de cada dato para el score.</p>
                                 </div>
                                 <Badge 
                                     variant={totalWeight === 100 ? "success" : "warning"} 
                                     className={cn(
-                                        "font-mono text-sm px-3 py-1",
+                                        "font-mono text-[10px] px-2 py-0.5",
                                         totalWeight !== 100 && "animate-pulse"
                                     )}
                                 >
-                                    Total: {totalWeight}% / 100%
+                                    {totalWeight}% / 100%
                                 </Badge>
                             </div>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+                            <div className="grid grid-cols-1 gap-y-6">
                                 <WeightControl
                                     icon={CircleDollarSign}
                                     label="Monto Exacto"
@@ -177,11 +158,11 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
                         </Card>
 
                         {/* Logic Config */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <Card className="p-6 space-y-6">
-                                <div className="flex items-center gap-2 border-b pb-4">
-                                    <Settings2 className="h-4 w-4 text-primary" />
-                                    <h4 className="text-sm font-bold uppercase tracking-wider">Parámetros de Inteligencia</h4>
+                        <div className="grid grid-cols-1 gap-6">
+                            <Card className="p-4 space-y-4">
+                                <div className="flex items-center gap-2 border-b pb-3">
+                                    <Settings2 className="h-3.5 w-3.5 text-primary" />
+                                    <h4 className="text-xs font-bold uppercase tracking-wider">Parámetros</h4>
                                 </div>
                                 
                                 <ThresholdControl
@@ -197,17 +178,17 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
                                     value={localSettings.date_range_days}
                                     suffix=" días"
                                     min={1}
-                                    max={90}
+                                    max={365}
                                     tooltip="Días hacia atrás y adelante para buscar candidatos desde la fecha de la línea."
                                     onChange={v => setLocalSettings({...localSettings, date_range_days: v})}
                                 />
                             </Card>
 
-                            <Card className="p-6 flex flex-col justify-between border-primary/5 bg-primary/[0.01]">
-                                <div className="space-y-6">
-                                    <div className="flex items-center gap-2 border-b pb-4">
-                                        <Wand2 className="h-4 w-4 text-primary" />
-                                        <h4 className="text-sm font-bold uppercase tracking-wider">Flujo Automático</h4>
+                            <Card className="p-4 flex flex-col justify-between border-primary/5 bg-primary/[0.01]">
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 border-b pb-3">
+                                        <Wand2 className="h-3.5 w-3.5 text-primary" />
+                                        <h4 className="text-xs font-bold uppercase tracking-wider">Automatización</h4>
                                     </div>
                                     <div className="flex items-center justify-between p-4 border rounded-xl bg-background shadow-sm hover:border-primary/30 transition-colors cursor-pointer group"
                                          onClick={() => setLocalSettings({...localSettings, auto_confirm: !localSettings.auto_confirm})}>
@@ -226,7 +207,7 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
                                 </div>
 
                                 <Button 
-                                    className="w-full mt-8 h-12 text-sm font-bold shadow-lg shadow-primary/20" 
+                                    className="w-full mt-6 h-10 text-xs font-bold shadow-md shadow-primary/10" 
                                     disabled={updateMutation.isPending || totalWeight !== 100 || isFetchingSettings}
                                     onClick={handleSave}
                                 >

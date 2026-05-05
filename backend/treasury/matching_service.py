@@ -65,8 +65,12 @@ class MatchingService:
         line_amount = line.credit - line.debit
         is_inbound = line_amount > 0
         lookback = settings.date_range_days
-        date_min = line.transaction_date - timedelta(days=lookback)
-        date_max = line.transaction_date + timedelta(days=lookback)
+        
+        # Expand query range to ensure we don't miss matches just slightly outside settings
+        # The score will handle the actual confidence calculation.
+        query_lookback = max(lookback * 1.5, 120)
+        date_min = line.transaction_date - timedelta(days=query_lookback)
+        date_max = line.transaction_date + timedelta(days=query_lookback)
         
         # Criterios básicos: no reconciliado
         # Permitimos ver pendientes en sugerencias manuales para ayudar al usuario
@@ -103,7 +107,7 @@ class MatchingService:
             candidate_filters |= Q(reference__iexact=line.reference)
 
         payments_query = TreasuryMovement.objects.filter(
-            base_filters & candidate_filters & Q(terminal_batch__isnull=True)
+            base_filters & candidate_filters
         ).select_related('contact', 'invoice', 'sale_order', 'purchase_order')
         
         # Scoring de cada pago

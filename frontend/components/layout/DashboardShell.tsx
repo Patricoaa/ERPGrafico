@@ -37,6 +37,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
 
     // Sync global data attributes for repelling fixed UI elements (like Sheets)
+    const [featurePanelWidth, setFeaturePanelWidth] = useState(0)
+
     useEffect(() => {
         if (isInboxOpen) {
             document.body.setAttribute('data-inbox-open', 'true')
@@ -49,6 +51,14 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         } else {
             document.body.removeAttribute('data-hub-open')
         }
+
+        // Feature-specific side panels
+        const observer = new MutationObserver(() => {
+            const width = parseInt(document.body.getAttribute('data-side-panel-width') || "0")
+            setFeaturePanelWidth(width)
+        })
+        observer.observe(document.body, { attributes: true, attributeFilter: ['data-side-panel-width'] })
+        return () => observer.disconnect()
     }, [isInboxOpen, isHubEffectivelyOpen])
 
     const handleInboxToggle = () => {
@@ -169,17 +179,10 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 </div>
             </div>
 
-            {/* Main Content Area */}
             <div
                 className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-500 ease-[var(--ease-premium)] pt-20 pl-[4.5rem] pr-4 pb-4"
                 style={{
-                    marginRight: isInboxOpen && isHubEffectivelyOpen
-                        ? "calc(360px + 320px + 2rem)"
-                        : isHubEffectivelyOpen
-                            ? "calc(360px + 1rem)"
-                            : isInboxOpen
-                                ? "calc(320px + 1rem)"
-                                : "0px"
+                    marginRight: `calc(${(isInboxOpen ? 320 : 0) + (isHubEffectivelyOpen ? 360 : 0) + featurePanelWidth}px + ${((isInboxOpen ? 1 : 0) + (isHubEffectivelyOpen ? 1 : 0) + (featurePanelWidth ? 1 : 0)) * 16}px)`
                 }}
             >
                 {/* Railway-style Main Canvas */}
