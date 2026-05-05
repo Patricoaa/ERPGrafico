@@ -21,7 +21,7 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { formatPlainDate } from "@/lib/utils"
-import { PageHeader, TableSkeleton } from "@/components/shared"
+import { TableSkeleton } from "@/components/shared"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -431,13 +431,6 @@ export default function PurchaseInvoicesPage() {
 
     return (
         <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Documentos Recibidos"
-                description="Gestión de facturas y boletas de compra"
-                variant="minimal"
-                iconName="file-badge"
-            />
-
             {loading ? (
                 <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-4">
                     <TableSkeleton rows={5} columns={8} />
