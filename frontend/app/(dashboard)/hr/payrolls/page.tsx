@@ -21,9 +21,12 @@ import { PaymentModal } from "@/features/treasury"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 
 
+import { ToolbarCreateButton } from "@/components/shared"
+
 // Schema and dialog moved to features/hr/components/CreatePayrollDialog
 
-export default function PayrollsPage({ createAction }: { createAction?: React.ReactNode } = {}) {
+export default function PayrollsPage() {
+    const createAction = <ToolbarCreateButton label="Generar Liquidaciones" href="/hr/payrolls?modal=new" />
     const router = useRouter()
     const searchParams = useSearchParams()
     const [payrolls, setPayrolls] = useState<Payroll[]>([])

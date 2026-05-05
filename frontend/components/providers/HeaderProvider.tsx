@@ -14,6 +14,10 @@ export interface NavigationTabConfig {
 }
 
 export interface NavigationConfig {
+    /** Optional module name to display at the root of the breadcrumbs */
+    moduleName?: string
+    /** Optional href for the module name */
+    moduleHref?: string
     tabs: NavigationTabConfig[]
     activeValue: string
     subActiveValue?: string

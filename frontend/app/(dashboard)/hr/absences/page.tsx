@@ -14,9 +14,12 @@ import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Pencil, Trash2 } from "lucide-react"
 
+import { ToolbarCreateButton } from "@/components/shared"
+
 // Absence schemas and types moved to features/hr/components/AbsenceFormDialog
 
-export default function AbsencesPage({ createAction }: { createAction?: React.ReactNode } = {}) {
+export default function AbsencesPage() {
+    const createAction = <ToolbarCreateButton label="Nueva Inasistencia" href="/hr/absences?modal=new" />
     const router = useRouter()
     const searchParams = useSearchParams()
     const [absences, setAbsences] = useState<Absence[]>([])
