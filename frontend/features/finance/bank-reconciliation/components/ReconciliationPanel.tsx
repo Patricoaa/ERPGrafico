@@ -13,6 +13,7 @@ import { ExclusionModal } from "./ExclusionModal"
 import { SplitAllocationDialog } from "./SplitAllocationDialog"
 
 import { LabeledSelect, LabeledInput, TableSkeleton } from "@/components/shared"
+import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 import {
     Ban, CheckCircle2, ChevronRight, ChevronLeft,
     Loader2, Search, Sparkles, X, Wand2, SplitSquareHorizontal, Calculator, RotateCcw
@@ -171,9 +172,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const matching = matchMutation.isPending || groupMatchMutation.isPending
     const autoMatching = autoMatchMutation.isPending
 
-    const [diffDialog, setDiffDialog] = useState<{ open: boolean, lineId: number, paymentId: number, amount: string, isGroup?: boolean }>({
-        open: false, lineId: 0, paymentId: 0, amount: '0', isGroup: false
+    const [diffDialog, setDiffDialog] = useState<{ open: boolean, lineId: number, paymentId: number, amount: string, isGroup?: boolean, accountingDate?: Date }>({
+        open: false, lineId: 0, paymentId: 0, amount: '0', isGroup: false, accountingDate: undefined
     })
+    const [diffDateValid, setDiffDateValid] = useState<boolean>(true)
     const [diffType, setDiffType] = useState<string>("COMMISSION")
     const [diffNotes, setDiffNotes] = useState<string>("")
 
@@ -256,7 +258,11 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             const diffAmount = suggestion ? parseFloat(suggestion.difference) : 0
 
             if (diffAmount !== 0) {
-                setDiffDialog({ open: true, lineId, paymentId, amount: diffAmount.toString() })
+                const line = unreconciledLines.find(l => l.id === lineId)
+                const defaultDate = line ? new Date(line.transaction_date) : new Date()
+                // Adjust for local timezone to avoid off-by-one day issues
+                const localDate = new Date(defaultDate.getTime() + defaultDate.getTimezoneOffset() * 60000)
+                setDiffDialog({ open: true, lineId, paymentId, amount: diffAmount.toString(), accountingDate: localDate })
                 try {
                     const res = await api.get(`/treasury/statement-lines/${lineId}/suggested_difference/`)
                     setDiffType(res.data.suggestion)
@@ -272,6 +278,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             if (force) {
                 confirmData.difference_type = diffType
                 confirmData.notes = diffNotes
+                if (diffDialog.accountingDate) {
+                    confirmData.accounting_date = format(diffDialog.accountingDate, 'yyyy-MM-dd')
+                }
             }
 
             await matchMutation.mutateAsync({ lineId, paymentId, isBatch, confirmData })
@@ -303,7 +312,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         const diff = lineTotal - payTotal
 
         if (!force && Math.abs(diff) > 1) {
-            setDiffDialog({ open: true, lineId: selectedLines[0].id, paymentId: 0, amount: diff.toString(), isGroup: true })
+            const line = selectedLines[0]
+            const defaultDate = line ? new Date(line.transaction_date) : new Date()
+            const localDate = new Date(defaultDate.getTime() + defaultDate.getTimezoneOffset() * 60000)
+            setDiffDialog({ open: true, lineId: selectedLines[0].id, paymentId: 0, amount: diff.toString(), isGroup: true, accountingDate: localDate })
             setDiffType(diff < 0 ? "COMMISSION" : "ROUNDING")
             return
         }
@@ -317,7 +329,13 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             if (force) { payload.difference_reason = diffType; payload.notes = diffNotes; }
 
             const confirmPayload: Record<string, unknown> = {}
-            if (force) { confirmPayload.difference_type = diffType; confirmPayload.notes = diffNotes; }
+            if (force) { 
+                confirmPayload.difference_type = diffType; 
+                confirmPayload.notes = diffNotes; 
+                if (diffDialog.accountingDate) {
+                    confirmPayload.accounting_date = format(diffDialog.accountingDate, 'yyyy-MM-dd')
+                }
+            }
 
             await groupMatchMutation.mutateAsync({ payload, confirmPayload, lineId: selectedLines[0].id })
 
@@ -926,7 +944,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 footer={
                     <div className="flex justify-end gap-2 w-full">
                         <Button variant="outline" onClick={() => setDiffDialog(prev => ({ ...prev, open: false }))}>Cancelar</Button>
-                        <Button onClick={() => diffDialog.isGroup ? handleGroupMatch(true) : handleMatch(diffDialog.lineId, diffDialog.paymentId, false, true)}>
+                        <Button 
+                            disabled={!diffDateValid || matching}
+                            onClick={() => diffDialog.isGroup ? handleGroupMatch(true) : handleMatch(diffDialog.lineId, diffDialog.paymentId, false, true)}
+                        >
                             Confirmar con Ajuste
                         </Button>
                     </div>
@@ -944,6 +965,13 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             { value: "ROUNDING", label: "Diferencia de Redondeo" },
                             { value: "OTHER", label: "Otro (Especificar)" },
                         ]}
+                    />
+                    <PeriodValidationDateInput
+                        label="Fecha Contable"
+                        date={diffDialog.accountingDate}
+                        onDateChange={(date) => setDiffDialog(prev => ({ ...prev, accountingDate: date }))}
+                        onValidityChange={setDiffDateValid}
+                        validationType="accounting"
                     />
                     <LabeledInput
                         label="Notas Adicionales"

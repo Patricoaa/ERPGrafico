@@ -58,7 +58,8 @@ class DifferenceService:
         line: BankStatementLine,
         difference_type: str,
         user,
-        notes: str = ""
+        notes: str = "",
+        accounting_date = None
     ) -> JournalEntry:
         """
         Crea asiento contable de ajuste por diferencia.
@@ -107,7 +108,7 @@ class DifferenceService:
         initial_status = JournalEntry.State.POSTED if settings.auto_post_reconciliation_adjustments else JournalEntry.State.DRAFT
         
         entry = JournalEntry.objects.create(
-            date=line.transaction_date,
+            date=accounting_date or line.transaction_date,
             reference=f"Ajuste {line.statement.display_id} #{line.line_number}",
             description=f"{difference_label} - {notes}" if notes else difference_label,
             status=initial_status
