@@ -270,10 +270,12 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         # the same sale order (split payments).
         terminal_provider = self.request.query_params.get('terminal_provider')
         if terminal_provider:
+            from django.db.models import Q
             qs = qs.filter(
-                terminal_device__provider_id=terminal_provider,
+                Q(terminal_device__provider_id=terminal_provider) |
+                Q(payment_method_new__linked_terminal_device__provider_id=terminal_provider),
                 payment_method_new__method_type=PaymentMethod.Type.CARD_TERMINAL,
-            )
+            ).distinct()
 
         pm = self.request.query_params.get('payment_method_new')
         if pm:
