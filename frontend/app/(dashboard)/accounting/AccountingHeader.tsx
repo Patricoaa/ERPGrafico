@@ -10,7 +10,15 @@ export function AccountingHeader() {
     const segments = pathname.split('/').filter(Boolean)
     const currentSegment = segments[1] || 'ledger'
 
-    const activeValue = currentSegment
+    const segmentToTab: Record<string, string> = {
+        ledger: 'ledger',
+        entries: 'entries',
+        closures: 'closures',
+        tax: 'tax',
+        settings: 'config',
+    }
+
+    const activeValue = segmentToTab[currentSegment] || 'ledger'
     const subActiveValue = searchParams.get('tab')
 
     const tabs = [
@@ -19,7 +27,7 @@ export function AccountingHeader() {
         { value: "closures", label: "Cierre Contable", iconName: "calendar", href: "/accounting/closures" },
         { value: "tax", label: "Impuestos mensuales (F29)", iconName: "landmark", href: "/accounting/tax" },
         {
-            value: "settings",
+            value: "config",
             label: "Config",
             iconName: "settings",
             href: "/accounting/settings",
@@ -41,7 +49,7 @@ export function AccountingHeader() {
     }
 
     const getHeaderConfig = () => {
-        if (activeValue === 'settings') return { title: "Configuración Contable", description: "Gestione la estructura del plan de cuentas, prefijos y reglas de negocio.", iconName: "settings" as const }
+        if (activeValue === 'config') return { title: "Configuración Contable", description: "Gestione la estructura del plan de cuentas, prefijos y reglas de negocio.", iconName: "settings" as const }
         if (activeValue === 'ledger') return { title: "Plan de Cuentas", description: "Estructura contable y clasificación de cuentas.", iconName: "list-tree" as const }
         if (activeValue === 'entries') return { title: "Asientos Contables", description: "Libro diario y registro cronológico de transacciones.", iconName: "file-text" as const }
         if (activeValue === 'closures') return { title: "Gestión de Cierres", description: "Control de validación mensual y cierres de ejercicios anuales.", iconName: "calendar" as const }

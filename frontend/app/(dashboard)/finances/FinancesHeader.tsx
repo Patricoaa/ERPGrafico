@@ -3,6 +3,51 @@
 import { usePathname, useSearchParams } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 
+export const FINANCES_TABS = [
+    {
+        value: "statements",
+        label: "Estados Financieros",
+        iconName: "clipboard-list",
+        href: "/finances/statements",
+        subTabs: [
+            { value: "bs", label: "Balance", iconName: "file-text", href: "/finances/statements?tab=bs" },
+            { value: "pl", label: "Resultados", iconName: "bar-chart-2", href: "/finances/statements?tab=pl" },
+            { value: "cf", label: "Flujos", iconName: "trending-up", href: "/finances/statements?tab=cf" },
+        ]
+    },
+    {
+        value: "analysis",
+        label: "Análisis",
+        iconName: "line-chart",
+        href: "/finances/analysis",
+        subTabs: [
+            { value: "ratios", label: "Ratios Financieros", iconName: "pie-chart", href: "/finances/analysis?tab=ratios" },
+            { value: "bi", label: "Business Intelligence", iconName: "activity", href: "/finances/analysis?tab=bi" },
+        ]
+    },
+    {
+        value: "budgets",
+        label: "Presupuestos",
+        iconName: "target",
+        href: "/finances/budgets",
+        subTabs: [
+            { value: "list", label: "Gestión", iconName: "list", href: "/finances/budgets?tab=list" },
+            { value: "versus", label: "Versus", iconName: "chart-bar", href: "/finances/budgets?tab=versus" },
+        ]
+    },
+    {
+        value: "partners",
+        label: "Capital y Socios",
+        iconName: "users",
+        href: "/finances/partners",
+        subTabs: [
+            { value: "composition", label: "Composición", iconName: "users", href: "/finances/partners?tab=composition" },
+            { value: "distributions", label: "Utilidades", iconName: "pie-chart", href: "/finances/partners?tab=distributions" },
+            { value: "config", label: "Arquitectura", iconName: "settings", href: "/finances/partners?tab=config" },
+        ]
+    },
+]
+
 export function FinancesHeader() {
     const pathname = usePathname()
     const searchParams = useSearchParams()
@@ -13,50 +58,21 @@ export function FinancesHeader() {
     const activeValue = currentSegment
     const subActiveValue = searchParams.get('tab')
 
-    const tabs = [
-        {
-            value: "statements",
-            label: "Estados Financieros",
-            iconName: "clipboard-list",
-            href: "/finances/statements",
-            subTabs: [
-                { value: "bs", label: "Balance", iconName: "file-text", href: "/finances/statements?tab=bs" },
-                { value: "pl", label: "Resultados", iconName: "bar-chart-2", href: "/finances/statements?tab=pl" },
-                { value: "cf", label: "Flujos", iconName: "trending-up", href: "/finances/statements?tab=cf" },
-            ]
-        },
-        {
-            value: "analysis",
-            label: "Análisis",
-            iconName: "line-chart",
-            href: "/finances/analysis",
-            subTabs: [
-                { value: "ratios", label: "Ratios Financieros", iconName: "pie-chart", href: "/finances/analysis?tab=ratios" },
-                { value: "bi", label: "Business Intelligence", iconName: "activity", href: "/finances/analysis?tab=bi" },
-            ]
-        },
-        {
-            value: "budgets",
-            label: "Presupuestos",
-            iconName: "target",
-            href: "/finances/budgets",
-            subTabs: [
-                { value: "list", label: "Gestión", iconName: "list", href: "/finances/budgets?tab=list" },
-                { value: "versus", label: "Versus", iconName: "chart-bar", href: "/finances/budgets?tab=versus" },
-            ]
-        },
-    ]
-
     const navigation = {
         moduleName: "Finanzas",
         moduleHref: "/finances",
-        tabs,
+        tabs: activeValue === 'settings' 
+            ? [...FINANCES_TABS, { value: 'settings', label: 'Configuración', iconName: 'settings', href: '/finances/settings' }] 
+            : FINANCES_TABS,
         activeValue,
         subActiveValue,
         configHref: "/finances/settings"
     }
 
     const getHeaderConfig = () => {
+        if (activeValue === 'settings') {
+            return { title: "Configuración de Finanzas", description: "Períodos fiscales, centros de costo y reglas de consolidación.", iconName: "settings" as const }
+        }
         if (activeValue === 'statements') {
             if (subActiveValue === 'bs') return { title: "Balance General", description: "Estado de situación financiera resumido.", iconName: "file-text" as const }
             if (subActiveValue === 'pl') return { title: "Estado de Resultados", description: "Pérdidas y ganancias en un periodo determinado.", iconName: "bar-chart-2" as const }
@@ -71,6 +87,11 @@ export function FinancesHeader() {
         if (activeValue === 'budgets') {
             if (subActiveValue === 'versus') return { title: "Versus Presupuestario", description: "Análisis de variaciones mes y acumulado.", iconName: "chart-bar" as const }
             return { title: "Control Presupuestario", description: "Gestión de metas presupuestarias y ejecución.", iconName: "target" as const }
+        }
+        if (activeValue === 'partners') {
+            if (subActiveValue === 'config') return { title: "Arquitectura Contable de Socios", description: "Configure las cuentas maestras para el Modelo Híbrido de Capital.", iconName: "settings" as const }
+            if (subActiveValue === 'distributions') return { title: "Distribución de Utilidades", description: "Gestión de actas, resolución de dividendos y reinversiones.", iconName: "pie-chart" as const }
+            return { title: "Composición Societaria", description: "Gestión de capital suscrito y pagado por los socios.", iconName: "users" as const }
         }
         return { title: "Finanzas", description: "", iconName: "trending-up" as const }
     }
