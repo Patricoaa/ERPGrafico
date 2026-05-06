@@ -28,8 +28,8 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
     const { tabs, activeValue, subActiveValue, configHref, breadcrumbs } = navigation
 
     // Separate config tab from regular tabs
-    const regularTabs = tabs.filter(t => t.value !== "config")
-    const activeTab = tabs.find(t => t.value === activeValue)
+    const regularTabs = (tabs || []).filter(t => t.value !== "config")
+    const activeTab = (tabs || []).find(t => t.value === activeValue)
     const activeSubTabs = activeTab?.subTabs
     const activeSubTab = activeSubTabs?.find(s => s.value === subActiveValue)
 
