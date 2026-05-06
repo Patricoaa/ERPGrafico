@@ -1,8 +1,8 @@
 import { Metadata } from "next"
+import { Suspense } from "react"
 import { TreasuryMovementsClientView } from "@/features/treasury"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { TableSkeleton } from "@/components/shared"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import { LAYOUT_TOKENS } from "@/lib/styles"
 
 export const metadata: Metadata = {
     title: "Movimientos de Tesorería | ERPGrafico",
@@ -25,17 +25,10 @@ export default async function TreasuryMovementsPage({ searchParams }: PageProps)
     )
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Movimientos de Tesorería"
-                description="Registro histórico de ingresos, egresos y traslados de fondos."
-                iconName="banknote"
-                variant="minimal"
-            />
-
-            <div className="pt-4">
+        <div className="pt-2">
+            <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                 <TreasuryMovementsClientView externalOpen={modalOpen} createAction={createAction} />
-            </div>
+            </Suspense>
         </div>
     )
 }

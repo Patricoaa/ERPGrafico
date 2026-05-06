@@ -1,8 +1,7 @@
 "use client"
 
 import { lazy, Suspense } from "react"
-import { PageHeader, TableSkeleton, ToolbarCreateButton } from "@/components/shared"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+import { TableSkeleton, ToolbarCreateButton } from "@/components/shared"
 import { useRouter, useSearchParams } from "next/navigation"
 
 const ContactsClientView = lazy(() =>
@@ -28,17 +27,10 @@ export default function ContactsPage() {
     )
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Contactos"
-                description="Directorio de contactos."
-                iconName="users-2"
-            />
-            <div className="pt-2">
-                <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                    <ContactsClientView isNewModalOpen={isNewModalOpen} createAction={createAction} />
-                </Suspense>
-            </div>
+        <div className="pt-2">
+            <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
+                <ContactsClientView isNewModalOpen={isNewModalOpen} createAction={createAction} />
+            </Suspense>
         </div>
     )
 }

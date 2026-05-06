@@ -1,10 +1,29 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
-import { LabeledSelect, LabeledInput } from "@/components/shared"
 import { AlertCircle, Loader2 } from "lucide-react"
+import { z } from "zod"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+
+const exclusionSchema = z.object({
+    reason: z.string().min(1, "Debes seleccionar un motivo"),
+    notes: z.string().optional()
+})
+
+type ExclusionFormValues = z.infer<typeof exclusionSchema>
 
 interface ExclusionModalProps {
     open: boolean
@@ -19,20 +38,29 @@ export function ExclusionModal({
     onConfirm,
     title = "Excluir Movimiento"
 }: ExclusionModalProps) {
-    const [reason, setReason] = useState("DUPLICATE")
-    const [notes, setNotes] = useState("")
-    const [loading, setLoading] = useState(false)
+    
+    const form = useForm<ExclusionFormValues>({
+        resolver: zodResolver(exclusionSchema),
+        defaultValues: {
+            reason: "DUPLICATE",
+            notes: ""
+        }
+    })
 
-    const handleConfirm = async () => {
-        setLoading(true)
+    const { isSubmitting } = form.formState
+
+    useEffect(() => {
+        if (open) {
+            form.reset({ reason: "DUPLICATE", notes: "" })
+        }
+    }, [open, form])
+
+    const onSubmit = async (data: ExclusionFormValues) => {
         try {
-            await onConfirm(reason, notes)
+            await onConfirm(data.reason, data.notes || "")
             onOpenChange(false)
-            // Reset fields
-            setReason("DUPLICATE")
-            setNotes("")
-        } finally {
-            setLoading(false)
+        } catch (error) {
+            // Handled in mutation
         }
     }
 
@@ -51,49 +79,76 @@ export function ExclusionModal({
             }
             footer={
                 <div className="flex gap-2 w-full justify-end">
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading} className="text-xs font-bold uppercase">
+                    <Button 
+                        variant="outline" 
+                        onClick={() => onOpenChange(false)} 
+                        disabled={isSubmitting} 
+                        className="text-xs font-bold uppercase"
+                    >
                         Cancelar
                     </Button>
                     <Button 
                         variant="destructive" 
-                        onClick={handleConfirm} 
-                        disabled={loading || !reason}
+                        onClick={form.handleSubmit(onSubmit)}
+                        disabled={isSubmitting}
                         className="font-black uppercase tracking-widest px-6 text-xs"
                     >
-                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Confirmar Exclusión"}
+                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Confirmar Exclusión"}
                     </Button>
                 </div>
             }
         >
-            <div className="space-y-4 py-4">
-                <p className="text-xs font-bold text-muted-foreground uppercase leading-relaxed opacity-80">
-                    El movimiento se ocultará de la conciliación activa. La justificación es obligatoria para fines de auditoría.
-                </p>
-                
-                <LabeledSelect
-                    label="Motivo de Exclusión"
-                    value={reason}
-                    onChange={setReason}
-                    className="font-bold uppercase text-xs"
-                    options={[
-                        { value: "DUPLICATE", label: "Transacción Duplicada" },
-                        { value: "INTERNAL", label: "Traspaso Interno" },
-                        { value: "ADJUSTMENT", label: "Ajuste de Saldo" },
-                        { value: "ERROR", label: "Error de Importación" },
-                        { value: "OTHER", label: "Otro (Especificar)" },
-                    ]}
-                />
-                
-                <LabeledInput
-                    label="Notas Adicionales"
-                    as="textarea"
-                    rows={3}
-                    value={notes}
-                    onChange={e => setNotes(e.target.value)}
-                    placeholder="Detalla por qué excluyes este movimiento..."
-                    className="text-xs font-medium"
-                />
-            </div>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                    <p className="text-xs font-bold text-muted-foreground uppercase leading-relaxed opacity-80">
+                        El movimiento se ocultará de la conciliación activa. La justificación es obligatoria para fines de auditoría.
+                    </p>
+                    
+                    <FormField
+                        control={form.control}
+                        name="reason"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-xs font-bold uppercase">Motivo de Exclusión</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger className="font-bold uppercase text-xs h-9">
+                                            <SelectValue placeholder="Selecciona un motivo" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="DUPLICATE">Transacción Duplicada</SelectItem>
+                                        <SelectItem value="INTERNAL">Traspaso Interno</SelectItem>
+                                        <SelectItem value="ADJUSTMENT">Ajuste de Saldo</SelectItem>
+                                        <SelectItem value="ERROR">Error de Importación</SelectItem>
+                                        <SelectItem value="OTHER">Otro (Especificar)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    
+                    <FormField
+                        control={form.control}
+                        name="notes"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-xs font-bold uppercase">Notas Adicionales</FormLabel>
+                                <FormControl>
+                                    <Textarea
+                                        {...field}
+                                        rows={3}
+                                        placeholder="Detalla por qué excluyes este movimiento..."
+                                        className="text-xs font-medium resize-none"
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </form>
+            </Form>
         </BaseModal>
     )
 }

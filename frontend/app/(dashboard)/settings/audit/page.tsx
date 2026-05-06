@@ -227,28 +227,19 @@ export default function AuditHubPage() {
     ];
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader
-                title="Centro de Auditoría"
-                description="Registro unificado de acciones y cambios en el sistema."
-                variant="minimal"
-                iconName="history"
+        <div className="pt-4 space-y-8">
+            <DataTable
+                columns={columns}
+                data={logs}
+                isLoading={loading}
+                cardMode
+                globalFilterFields={["entity_type", "action", "change_summary", "entity_label"]}
+                searchPlaceholder="Buscar en la bitácora..."
+                useAdvancedFilter={true}
+                facetedFilters={facetedFilters}
+                hiddenColumns={["source"]}
+                defaultPageSize={50}
             />
-
-            <div className="pt-4">
-                <DataTable
-                    columns={columns}
-                    data={logs}
-                    isLoading={loading}
-                    cardMode
-                    globalFilterFields={["entity_type", "action", "change_summary", "entity_label"]}
-                    searchPlaceholder="Buscar en la bitácora..."
-                    useAdvancedFilter={true}
-                    facetedFilters={facetedFilters}
-                    hiddenColumns={["source"]}
-                    defaultPageSize={50}
-                />
-            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
                 {loading ? (
