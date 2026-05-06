@@ -10,7 +10,8 @@ import type {
     CompanySettings,
     CompanySettingsUpdatePayload,
     PartnerSettings,
-    PartnerSettingsUpdatePayload
+    PartnerSettingsUpdatePayload,
+    SystemStatus
 } from '../types'
 
 /**
@@ -202,5 +203,13 @@ export const settingsApi = {
       */
      updatePartnerSettings: async (payload: PartnerSettingsUpdatePayload): Promise<AccountingSettings> => {
          return settingsApi.updateCurrentSettings(payload)
+     },
+ 
+     /**
+      * Fetch system status (version, hash, etc.)
+      */
+     getSystemStatus: async (): Promise<SystemStatus> => {
+         const { data } = await api.get<SystemStatus>('/core/status/')
+         return data
      },
  }

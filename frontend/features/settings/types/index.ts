@@ -168,3 +168,12 @@ export interface CompanySettings {
 }
 
 export type CompanySettingsUpdatePayload = Partial<CompanySettings> | FormData
+
+// System Status Info
+export interface SystemStatus {
+    version: string
+    git_hash: string
+    environment: 'production' | 'development'
+    database_connected: boolean
+    server_time: string
+}
