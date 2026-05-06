@@ -21,7 +21,7 @@ interface LabeledSwitchProps {
 /**
  * LabeledSwitch — "Notched Boolean" standard component
  *
- * DESIGN CONTRACT (Industrial Premium):
+ * DESIGN CONTRACT:
  * - Default (off) state: `border-dashed` border — communicates an inactive/available feature
  * - Active (on) state:   caller passes `bg-X/5 border-X/20 shadow-sm` via `className` — communicates engagement
  * - The `checked` state drives the visual boundary: dashed = off, solid = on

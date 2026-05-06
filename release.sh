@@ -19,26 +19,21 @@ fi
 
 echo "🚀 Starting release process ($1)..."
 
-# 3. Update Frontend version (without creating git tag yet)
-cd frontend
-NEW_VERSION=$(npm version $1 --no-git-tag-version | sed 's/v//')
-cd ..
+# 3. Execute Release
+echo "🚀 Running standard-version ($1)..."
 
-echo "📦 New version identified: v$NEW_VERSION"
-
-# 4. Update Backend version
-echo "$NEW_VERSION" > backend/VERSION
-
-# 5. Commit the changes
-git add frontend/package.json backend/VERSION
-if [ -f frontend/package-lock.json ]; then
-    git add frontend/package-lock.json
+# Determine the release type
+RELEASE_TYPE=""
+if [ "$1" == "patch" ] || [ "$1" == "minor" ] || [ "$1" == "major" ]; then
+    RELEASE_TYPE="--release-as $1"
 fi
 
-git commit -m "chore: release v$NEW_VERSION"
+# Execute standard-version
+# This will:
+# 1. Bump versions in frontend/package.json and backend/VERSION (configured in .versionrc.json)
+# 2. Update CHANGELOG.md
+# 3. Create git commit and tag
+npx standard-version $RELEASE_TYPE
 
-# 6. Create Git Tag
-git tag -a "v$NEW_VERSION" -m "Release v$NEW_VERSION"
-
-echo "✅ Release v$NEW_VERSION created locally."
+echo "✅ Release created locally with CHANGELOG update."
 echo "🔗 Run 'git push && git push --tags' to publish."

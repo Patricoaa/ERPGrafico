@@ -1,6 +1,6 @@
 # Boolean Fields: Switches & Checkboxes
 
-This contract defines how binary selection controls must be implemented to maintain visual consistency with the "Industrial Premium" aesthetic.
+This contract defines how binary selection controls must be implemented to maintain visual consistency.
 
 ## General Rule: No Naked Controls
 

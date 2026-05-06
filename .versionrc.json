@@ -1,0 +1,32 @@
+{
+  "bumpFiles": [
+    {
+      "filename": "frontend/package.json",
+      "type": "json"
+    },
+    {
+      "filename": "backend/VERSION",
+      "type": "plain-text"
+    }
+  ],
+  "packageFiles": [
+    {
+      "filename": "frontend/package.json",
+      "type": "json"
+    }
+  ],
+  "types": [
+    { "type": "feat", "section": "✨ Features" },
+    { "type": "fix", "section": "🐛 Bug Fixes" },
+    { "type": "chore", "section": "🚀 Maintenance" },
+    { "type": "docs", "section": "📚 Documentation" },
+    { "type": "style", "section": "💅 Styling" },
+    { "type": "refactor", "section": "⚙️ Refactors" },
+    { "type": "perf", "section": "⚡ Performance" },
+    { "type": "test", "section": "🧪 Testing" }
+  ],
+  "commitUrlFormat": "https://github.com/{{owner}}/{{repository}}/commit/{{hash}}",
+  "compareUrlFormat": "https://github.com/{{owner}}/{{repository}}/compare/{{previousTag}}...{{currentTag}}",
+  "issueUrlFormat": "https://github.com/{{owner}}/{{repository}}/issues/{{id}}",
+  "userUrlFormat": "https://github.com/{{user}}"
+}

@@ -22,7 +22,7 @@ export interface FormLineItemColumn {
     width?: string
     /**
      * Text alignment for the header cell.
-     * Defaults to 'center' to match the "Industrial Premium" standard.
+     * Defaults to 'center' to match the standard.
      */
     align?: "left" | "center" | "right"
     /** Additional className forwarded to <TableHead> */
@@ -78,9 +78,9 @@ export interface FormLineItemsTableProps {
 // ─────────────────────────────────────────────────────────
 
 const alignClass: Record<NonNullable<FormLineItemColumn["align"]>, string> = {
-    left:   "text-left",
+    left: "text-left",
     center: "text-center",
-    right:  "text-right",
+    right: "text-right",
 }
 
 /**
@@ -96,7 +96,7 @@ const alignClass: Record<NonNullable<FormLineItemColumn["align"]>, string> = {
  * When the body is empty, callers can choose to show a placeholder row
  * if needed, but the add button in the footer remains accessible at all times.
  *
- * Visual standard: "Industrial Premium" aesthetic inherited from
+ * Visual standard: aesthetic inherited from
  * `AccountingLinesTable` — compact headers (`text-[10px] uppercase
  * tracking-widest`), centered by default, hover `primary/5`, ghost add
  * button, `IconButton` delete affordance per row.

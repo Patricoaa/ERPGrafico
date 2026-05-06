@@ -54,7 +54,7 @@ Tamaños disponibles:
 
 **Importación única:** `import { SubmitButton, CancelButton, DangerButton, IconButton } from "@/components/shared"`
 
-Estos wrappers son la **forma correcta** de manejar acciones semánticas de ERP. Adoptan automáticamente la estética **Industrial Premium**: altura `h-9`, tipografía `text-[10px]`, peso `font-black`, `uppercase` y `tracking-widest`. Incluyen spinner automático, íconos de precisión y `type` correcto.
+Estos wrappers son la **forma correcta** de manejar acciones semánticas de ERP. Adoptan automáticamente: altura `h-9`, tipografía `text-[10px]`, peso `font-black`, `uppercase` y `tracking-widest`. Incluyen spinner automático, íconos de precisión y `type` correcto.
 
 ### `SubmitButton` — Guardar / Procesar / Confirmar
 

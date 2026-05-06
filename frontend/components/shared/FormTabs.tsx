@@ -59,7 +59,7 @@ export function FormTabs({
 
     const isVertical = orientation === "vertical"
 
-    // Common Trigger Style (Industrial Premium Sawtooth)
+    // Common Trigger Style.
     const triggerStyles = cn(
         "group relative w-auto h-auto transition-all duration-200",
         isVertical ? "rounded-l-lg rounded-r-none" : "rounded-t-lg rounded-b-none",

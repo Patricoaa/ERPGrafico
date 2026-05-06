@@ -39,7 +39,7 @@ Nunca usar `Dialog` de shadcn directamente en features.
 
 ## Dropdown & Popover Layout Invariants
 
-Global rules for positioning and width of floating UI elements to ensure consistency across the Industrial Premium design system.
+Global rules for positioning and width of floating UI elements to ensure consistency across the design system.
 
 ### 1. Width Invariant (Match Trigger)
 Every dropdown or popover used within a form field (Select, Selector, Combobox) MUST match the width of its trigger by default.

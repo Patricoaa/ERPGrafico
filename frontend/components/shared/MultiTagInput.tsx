@@ -22,7 +22,7 @@ interface MultiTagInputProps {
 
 /**
  * MultiTagInput — A "combobox-style" multi-select tag input.
- * Integrates with the "Industrial Premium" notched fieldset aesthetic.
+ * Integrates with the notched fieldset aesthetic.
  */
 export function MultiTagInput({
     label,
@@ -122,7 +122,7 @@ export function MultiTagInput({
                             )}
                         />
                     </div>
-                    
+
                     {suffix && (
                         <div className="flex items-center justify-center pr-2 pl-1 text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0 select-none">
                             {suffix}
