@@ -2,12 +2,12 @@
 
 import { Task, TaskAttachment } from '@/features/workflow/api/workflowApi'
 import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { CheckCircle2, Circle, Clock, User, Paperclip, MessageSquare, Download, AlertCircle, ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { LabeledInput, LabeledContainer } from "@/components/shared"
 
 interface TaskActionCardProps {
     task: Task
@@ -116,24 +116,22 @@ export function TaskActionCard({
                     {canComplete ? (
                         <div className="bg-background p-3 rounded border border-warning/20 space-y-3 animate-in fade-in slide-in-from-top-1">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold text-muted-foreground">Comentarios (Opcional)</label>
-                                    <Textarea
-                                        placeholder="Agregar notas u observaciones técnicas..."
-                                        className="h-16 text-xs resize-none bg-background focus-visible:ring-1"
-                                        value={notesValue}
-                                        onChange={(e) => onNotesChange?.(e.target.value)}
-                                    />
-                                </div>
-                                <div className="space-y-1.5 flex flex-col justify-between">
-                                    <div>
-                                        <label className="text-xs font-semibold text-muted-foreground">Adjuntar Evidencia (Opcional)</label>
+                                <LabeledInput
+                                    label="Comentarios"
+                                    as="textarea"
+                                    rows={3}
+                                    placeholder="Agregar notas u observaciones técnicas..."
+                                    value={notesValue}
+                                    onChange={(e) => onNotesChange?.(e.target.value)}
+                                />
+                                <div className="flex flex-col justify-between gap-3">
+                                    <LabeledContainer label="Adjuntar Evidencia">
                                         <Input
                                             type="file"
-                                            className="text-xs h-8 mt-1.5"
+                                            className="border-0 shadow-none focus-visible:ring-0 text-xs h-8"
                                             onChange={(e) => onFileChange?.(e.target.files ? e.target.files[0] : null)}
                                         />
-                                    </div>
+                                    </LabeledContainer>
                                     <p className="text-[10px] text-warning/80 italic leading-tight">
                                         * Al avanzar a la siguiente etapa, esta validación se marcará como completada automáticamente.
                                     </p>

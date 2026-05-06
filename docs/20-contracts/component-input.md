@@ -3,8 +3,10 @@ layer: 20-contracts
 doc: component-input
 status: active
 owner: frontend-team
-last_review: 2026-04-23
+last_review: 2026-05-06
 stability: beta
+changelog:
+  - 2026-05-06: Agregadas secciones de excepciones documentadas — Toolbar Filter Input y resumen de cuándo NO usar notched. Tabla de especializaciones ampliada.
 ---
 
 # LabeledInput y LabeledSelect — Contracts
@@ -209,6 +211,8 @@ Wrapper `fieldset + legend` para controles que **no son** `<input>` nativos (dat
 | [`PeriodValidationDateInput`](./component-contracts.md#period-validation-date-input) | Fecha con validación de periodo contable/tributario |
 | [`DatePicker`](./component-contracts.md#datepicker) | Selector de fecha simple |
 | [`MultiTagInput`](#multitaginput) | Entrada de múltiples etiquetas (tags) con estilo notched |
+| [Table Cell Input](./component-table-cell-input.md) | Input en celdas de tabla editable (spreadsheet inline) — **no usar notched** |
+| [Toolbar Filter Input](#toolbar-filter-input) | Input de búsqueda/filtro en barras de herramientas — **no usar notched** |
 
 ---
 
@@ -295,6 +299,10 @@ Variante del selector múltiple que utiliza un dropdown para elegir entre opcion
 
 // ❌ DON'T — pasar clases de borde al input interno (el fieldset maneja el borde)
 <LabeledInput label="X" className="border rounded-md" {...field} />
+
+// ❌ DON'T — reinventar el notched con CSS manual fuera del componente
+<label className="absolute -top-2 left-2 px-1 bg-background text-[9px]">Label</label>
+<Input className="border-border/40" />
 ```
 
 ## Accessibility
@@ -311,3 +319,90 @@ Variante del selector múltiple que utiliza un dropdown para elegir entre opcion
 | Focus | `:focus-within` | Borde `--primary` + ring 3px |
 | Error | `error` prop presente | Borde + legend `--destructive` |
 | Disabled | `disabled` prop | Opacidad 50%, `pointer-events: none` |
+
+---
+
+## Excepciones documentadas — cuándo NO usar notched
+
+Existen **dos patrones de excepción** donde usar `<Input>` de shadcn directamente (sin `LabeledInput`) es correcto y está bajo contrato:
+
+| Excepción | Cuándo | Contrato |
+|-----------|--------|----------|
+| **Table Cell Input** | Input dentro de `<TableCell>` / `<td>` en tabla editable | [component-table-cell-input.md](./component-table-cell-input.md) |
+| **Toolbar Filter Input** | Input de búsqueda/filtro en barra de herramientas compacta | [Ver §Toolbar Filter Input abajo](#toolbar-filter-input) |
+| **Inner-Container Input** | `<Input>` sin borde dentro de `<LabeledContainer>` | [Ver §LabeledContainer arriba](#labeledcontainer) |
+
+> [!CAUTION]
+> **Fuera de estas tres excepciones, todo input en un formulario DEBE ser `LabeledInput` o `LabeledContainer`.**
+> Crear un label flotante manual (CSS `absolute -top-2`) para simular el notched es un antipatrón — usar `LabeledInput` directamente.
+
+---
+
+## Toolbar Filter Input
+
+Input de búsqueda o filtro dentro de una **barra de herramientas** de tabla o panel. No es un campo de formulario — es un control de navegación/filtrado. El notched sería visualmente inadecuado en este contexto.
+
+### Cuándo aplica
+
+- El input está en un toolbar compacto (altura de contenedor ≤ 44px).
+- El label está implícito en el `placeholder` o en un ícono prefijo (ej. lupa).
+- El propósito es filtrar datos visibles, no capturar datos del modelo.
+
+### Variantes
+
+#### Search Input (con ícono prefijo)
+
+```tsx
+<div className="relative">
+    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+    <Input
+        type="text"
+        placeholder="Buscar..."
+        className="h-7 pl-7 text-[10px] font-medium rounded-md w-32"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+    />
+</div>
+```
+
+#### Date Filter (inline con label de texto)
+
+```tsx
+<div className="flex items-center gap-1.5">
+    <span className="text-[8px] font-bold uppercase text-muted-foreground/50 tracking-tighter">Desde</span>
+    <Input
+        type="date"
+        className="h-7 w-28 px-1 text-[10px] font-medium"
+        value={dateFrom}
+        onChange={(e) => setDateFrom(e.target.value)}
+    />
+</div>
+```
+
+#### Compact Select (toolbar dropdown)
+
+```tsx
+<Select value={filter} onValueChange={setFilter}>
+    <SelectTrigger className="h-7 w-[150px] text-[10px] font-medium">
+        <SelectValue placeholder="Todos" />
+    </SelectTrigger>
+    <SelectContent>
+        <SelectItem value="all">Todos</SelectItem>
+        <SelectItem value="IN">Abonos</SelectItem>
+        <SelectItem value="OUT">Cargos</SelectItem>
+    </SelectContent>
+</Select>
+```
+
+### Invariantes
+
+| Prop | Valor estándar |
+|------|---------------|
+| Altura | `h-7` (toolbar muy compacto) o `h-8` (toolbar estándar) |
+| Texto | `text-[10px]` o `text-xs` |
+| Border radius | `rounded-md` (no `rounded-sm` del notched) |
+
+### Forbidden
+
+- ❌ No usar este patrón para campos de datos de formulario (nombre, precio, RUT, etc.).
+- ❌ No usar `LabeledInput` en toolbars — el notched ocupa demasiado espacio vertical.
