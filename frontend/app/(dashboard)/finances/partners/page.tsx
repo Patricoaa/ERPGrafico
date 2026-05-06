@@ -11,6 +11,7 @@ import { PartnerAccountingTab } from "@/features/settings"
 import Link from "next/link"
 import { BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { FINANCES_TABS } from "../FinancesHeader"
 
 // Lazy load the PartnersSettingsView component
 const PartnersSettingsView = lazy(() =>
@@ -19,7 +20,7 @@ const PartnersSettingsView = lazy(() =>
     }))
 )
 
-export default function PartnersSettingsPage() {
+export default function PartnersPage() {
     const searchParams = useSearchParams()
     const router = useRouter()
     const activeTab = searchParams.get("tab") || "composition"
@@ -30,7 +31,7 @@ export default function PartnersSettingsPage() {
     const [saving, setSaving] = useState(false)
     const [configSaving, setConfigSaving] = useState(false)
 
-    // Callback to clear modal param from URL (lifted from ProfitDistributionsTab)
+    // Callback to clear modal param from URL
     const handleModalClose = useCallback(() => {
         const currentModal = searchParams.get("modal")
         if (currentModal === "new-distribution" || currentModal === "mobilize-earnings" || currentModal === "add-partner" || currentModal === "stats") {
@@ -62,31 +63,13 @@ export default function PartnersSettingsPage() {
         prevConfigSaving.current = configSaving
     }, [configSaving])
 
-    const tabs = [
-// ...
-        { 
-            value: "composition", 
-            label: "Composición", 
-            iconName: "users", 
-            href: "/settings/partners?tab=composition" 
-        },
-        { 
-            value: "distributions", 
-            label: "Utilidades", 
-            iconName: "pie-chart", 
-            href: "/settings/partners?tab=distributions" 
-        },
-        { 
-            value: "config", 
-            label: "Config", 
-            iconName: "settings", 
-            href: "/settings/partners?tab=config" 
-        },
-    ]
-
     const navigation = {
-        tabs,
-        activeValue: activeTab
+        moduleName: "Finanzas",
+        moduleHref: "/finances",
+        tabs: FINANCES_TABS,
+        activeValue: "partners",
+        subActiveValue: activeTab,
+        configHref: "/finances/settings"
     }
 
     const headerConfig = useMemo(() => {
@@ -106,7 +89,7 @@ export default function PartnersSettingsPage() {
                     iconName: "users" as const,
                     showAction: true,
                     actionTitle: "Añadir Socio",
-                    actionHref: "/settings/partners?tab=composition&modal=add-partner",
+                    actionHref: "/finances/partners?tab=composition&modal=add-partner",
                     showStats: true
                 }
             case "distributions":
@@ -116,7 +99,7 @@ export default function PartnersSettingsPage() {
                     iconName: "pie-chart" as const,
                     showAction: true,
                     actionTitle: "Nueva Distribución",
-                    actionHref: "/settings/partners?tab=distributions&modal=new-distribution",
+                    actionHref: "/finances/partners?tab=distributions&modal=new-distribution",
                     showStats: false
                 }
             default:
@@ -147,7 +130,7 @@ export default function PartnersSettingsPage() {
                 navigation={navigation}
             >
                 {headerConfig.showStats && (
-                    <Link href="/settings/partners?tab=composition&modal=stats">
+                    <Link href="/finances/partners?tab=composition&modal=stats">
                         <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full bg-transparent hover:bg-muted/50 text-muted-foreground/70 hover:text-foreground">
                             <BarChart3 className="h-4 w-4" />
                         </Button>

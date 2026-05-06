@@ -45,6 +45,7 @@ export function TreasuryHeader() {
                 { value: "accounts", label: "Cuentas", href: "/treasury/accounts?tab=accounts", iconName: "list" },
                 { value: "banks", label: "Bancos", href: "/treasury/accounts?tab=banks", iconName: "landmark" },
                 { value: "methods", label: "Métodos", href: "/treasury/accounts?tab=methods", iconName: "credit-card" },
+                { value: "terminals", label: "Terminales", href: "/treasury/accounts?tab=terminals", iconName: "smartphone" },
             ]
         },
         {
@@ -87,6 +88,7 @@ export function TreasuryHeader() {
         if (activeValue === 'accounts') {
             if (subActiveValue === 'banks') return { title: "Gestión de Bancos", description: "Administre las entidades bancarias globales del sistema.", iconName: "landmark" as const }
             if (subActiveValue === 'methods') return { title: "Métodos de Pago", description: "Configure los medios de pago aceptados y sus cuentas vinculadas.", iconName: "credit-card" as const }
+            if (subActiveValue === 'terminals') return { title: "Gestión de Terminales POS", description: "Configure los puntos de venta y dispositivos de cobro integrados.", iconName: "smartphone" as const }
             return { title: "Cuentas de Tesorería", description: "Registre y configure sus cuentas bancarias y de efectivo.", iconName: "landmark" as const }
         }
         if (activeValue === 'reconciliation') {

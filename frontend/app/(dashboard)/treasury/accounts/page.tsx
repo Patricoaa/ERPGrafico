@@ -20,6 +20,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
         accounts: { label: "Nueva Cuenta", href: "/treasury/accounts?tab=accounts&modal=new" },
         banks: { label: "Nuevo Banco", href: "/treasury/accounts?tab=banks&modal=new" },
         methods: { label: "Nuevo Método", href: "/treasury/accounts?tab=methods&modal=new" },
+        terminals: { label: "Nueva Caja POS", href: "/treasury/accounts?tab=terminals&modal=new" },
     }
 
     const action = actionMap[activeTab]

@@ -8,8 +8,8 @@ export default function SettingsPage() {
     return (
         <div className={LAYOUT_TOKENS.view}>
             <PageHeader 
-                title="Configuración del Sistema" 
-                description="Panel de administración y parámetros globales." 
+                title="Configuración Global" 
+                description="Panel de administración y parámetros transversales del sistema." 
                 iconName="settings" 
             />
 
@@ -21,18 +21,6 @@ export default function SettingsPage() {
                             <div>
                                 <CardTitle>Empresa</CardTitle>
                                 <CardDescription>Datos fiscales y logotipos.</CardDescription>
-                            </div>
-                        </CardHeader>
-                    </Card>
-                </Link>
-
-                <Link href="/settings/partners">
-                    <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card cursor-pointer hover:border-primary border-t-4 border-t-accent transition-all">
-                        <CardHeader className="flex flex-row items-center gap-4">
-                            <Building2 className="h-8 w-8 text-primary" />
-                            <div>
-                                <CardTitle>Socios y Capital</CardTitle>
-                                <CardDescription>Composición societaria y aportes.</CardDescription>
                             </div>
                         </CardHeader>
                     </Card>
