@@ -17,6 +17,25 @@ ERPGrafico follows the `MAJOR.MINOR.PATCH` format (e.g., `1.2.3`).
 > [!TIP]
 > Para un **MAJOR**, también puedes añadir `BREAKING CHANGE:` en la descripción del commit.
 
+### Fase de Desarrollo Inicial (Versiones `0.x.x`)
+
+Mientras el proyecto se encuentre en una versión menor a `1.0.0` (fase de desarrollo inicial), el estándar SemVer aplica reglas especiales, ya que asume que la API aún no es estable:
+- Los commits `feat:` incrementarán el nivel **PATCH** (tercer nivel) en lugar de MINOR.
+- Los commits `fix:` incrementarán el nivel **PATCH**.
+
+### Cómo pasar a la Versión Estable (`1.0.0`)
+
+Cuando el sistema esté listo para salir de su fase inicial y comportarse con las reglas definitivas (donde `feat:` cambia el segundo nivel), debes forzar el salto a la versión `1.0.0`.
+
+Para hacerlo de forma automatizada mediante GitHub Actions (creando un commit que le indique a `standard-version` que debe lanzar la `1.0.0`), haz lo siguiente:
+
+1. Realiza un commit vacío o acompaña un cambio con la indicación de **Breaking Change**:
+   ```bash
+   git commit -m "feat!: primera versión estable del sistema ERP"
+   ```
+2. Al hacer `push`, el sistema detectará el `feat!:` (Major) y saltará automáticamente a `v1.0.0`.
+3. A partir de ese momento, `feat:` incrementará el nivel MINOR y `fix:` el nivel PATCH.
+
 ## Release Process
 
 We use an automated release process to ensure the Frontend and Backend are always in sync.
