@@ -29,7 +29,7 @@ const WeightControl = ({ icon: Icon, label, value, tooltip, onChange }: { icon: 
     <div className="space-y-3">
         <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-md bg-primary/10">
+                <div className="p-1.5 rounded-sm bg-primary/10">
                     <Icon className="h-3.5 w-3.5 text-primary" />
                 </div>
                 <FieldLabel title={label} tooltip={tooltip} />
@@ -40,7 +40,7 @@ const WeightControl = ({ icon: Icon, label, value, tooltip, onChange }: { icon: 
             type="range" min="0" max="100" step="5"
             value={value}
             onChange={e => onChange(parseInt(e.target.value))}
-            className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+            className="w-full h-1.5 bg-muted rounded-sm appearance-none cursor-pointer accent-primary"
         />
     </div>
 )
@@ -55,7 +55,7 @@ const ThresholdControl = ({ label, value, suffix, tooltip, onChange, min = 0, ma
             type="range" min={min} max={max} step={max > 50 ? 5 : 1}
             value={value}
             onChange={e => onChange(parseInt(e.target.value))}
-            className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+            className="w-full h-1.5 bg-muted rounded-sm appearance-none cursor-pointer accent-primary"
         />
     </div>
 )
@@ -150,7 +150,7 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
                             </div>
                             
                             {totalWeight !== 100 && (
-                                <div className="mt-8 p-3 rounded-lg bg-warning/10 border border-warning/20 flex items-center gap-3 text-warning-foreground text-xs font-medium">
+                                <div className="mt-8 p-3 rounded-md bg-warning/10 border border-warning/20 flex items-center gap-3 text-warning-foreground text-xs font-medium">
                                     <AlertTriangle className="h-4 w-4 shrink-0" />
                                     Los pesos deben sumar exactamente 100% para poder guardar la configuración.
                                 </div>
@@ -190,7 +190,7 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
                                         <Wand2 className="h-3.5 w-3.5 text-primary" />
                                         <h4 className="text-xs font-bold uppercase tracking-wider">Automatización</h4>
                                     </div>
-                                    <div className="flex items-center justify-between p-4 border rounded-xl bg-background shadow-sm hover:border-primary/30 transition-colors cursor-pointer group"
+                                    <div className="flex items-center justify-between p-4 border rounded-md bg-background shadow-sm hover:border-primary/30 transition-colors cursor-pointer group"
                                          onClick={() => setLocalSettings({...localSettings, auto_confirm: !localSettings.auto_confirm})}>
                                         <div className="space-y-1">
                                             <p className="text-sm font-bold">Auto-Confirmación</p>

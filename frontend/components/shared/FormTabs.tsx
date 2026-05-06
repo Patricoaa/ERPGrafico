@@ -62,7 +62,7 @@ export function FormTabs({
     // Common Trigger Style (Industrial Premium Sawtooth)
     const triggerStyles = cn(
         "group relative w-auto h-auto transition-all duration-200",
-        isVertical ? "rounded-l-2xl rounded-r-none" : "rounded-t-2xl rounded-b-none",
+        isVertical ? "rounded-l-lg rounded-r-none" : "rounded-t-lg rounded-b-none",
         isVertical ? "border-y border-l border-r-0" : "border-x border-t border-b-0",
         // Browser-style colors
         "hover:bg-muted hover:text-foreground",
@@ -178,7 +178,7 @@ export function FormTabs({
                 <div
                     className={cn(
                         "col-start-2 flex flex-col overflow-hidden min-h-0 min-w-0 h-full",
-                        contentClassName || "bg-card rounded-t-2xl"
+                        contentClassName || "bg-card rounded-t-lg"
                     )}
                 >
                     {header && (

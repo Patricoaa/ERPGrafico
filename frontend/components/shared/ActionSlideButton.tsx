@@ -38,7 +38,7 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                 disabled={isDisabled}
                 className={cn(
                     "relative inline-flex items-center justify-center overflow-hidden z-10 transition-all duration-300 ease-out",
-                    "h-9 px-5 text-[10px] font-black tracking-widest uppercase rounded-md shadow-sm",
+                    "h-9 px-5 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-sm",
                     "border",
                     isPrimary && "border-primary text-primary hover:text-primary-foreground bg-primary/5",
                     isDestructive && "border-destructive text-destructive hover:text-destructive-foreground bg-destructive/5",

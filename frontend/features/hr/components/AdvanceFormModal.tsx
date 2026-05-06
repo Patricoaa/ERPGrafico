@@ -104,7 +104,7 @@ export function AdvanceFormModal({ open, onOpenChange, advance, employees, payro
             size={advance ? "xl" : "md"}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
+                    <div className="p-2 bg-primary/10 rounded-sm">
                         <WalletCards className="h-5 w-5 text-primary" />
                     </div>
                     <span>{advance ? "Ficha de Anticipo" : "Nuevo Anticipo"}</span>

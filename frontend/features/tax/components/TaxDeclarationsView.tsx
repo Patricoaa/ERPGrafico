@@ -198,7 +198,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
             header: ({ column }) => <DataTableColumnHeader column={column} title="Período" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex items-center justify-center gap-3 w-full">
-                    <div className="w-10 h-10 rounded-lg bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
+                    <div className="w-10 h-10 rounded-sm bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
                         <span className="text-[9px] font-bold text-primary/60">{row.original.year}</span>
                         <span className="text-xs font-bold text-primary">{row.original.month_display?.substring(0, 3)}</span>
                     </div>
@@ -377,7 +377,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
 
                     if (rows.length === 0) {
                         return (
-                            <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-lg border-2 border-dashed">
+                            <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-md border-2 border-dashed">
                                 <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
                                 <p className="text-muted-foreground font-medium">No se encontraron períodos</p>
                             </div>
@@ -396,13 +396,13 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                                     <div
                                         key={period.id}
                                         className={cn(
-                                            "group flex items-center justify-between p-4 bg-card border border-border/50 rounded-lg transition-all",
+                                            "group flex items-center justify-between p-4 bg-card border border-border/50 rounded-md transition-all",
                                             canOpenChecklist ? "hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 cursor-pointer" : "cursor-default"
                                         )}
                                         onClick={() => canOpenChecklist ? handleOpenWizard(period) : null}
                                     >
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-lg bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
+                                            <div className="w-12 h-12 rounded-sm bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
                                                 <span className="text-[10px] font-bold text-primary/60">{period.year}</span>
                                                 <span className="text-sm font-bold text-primary">{period.month_display?.substring(0, 3).toUpperCase() || ''}</span>
                                             </div>
@@ -451,7 +451,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                                                         variant="outline"
                                                         size="sm"
                                                         className={cn(
-                                                            "h-9 rounded-lg border-success/30 text-success hover:bg-success/5",
+                                                            "h-9 rounded-sm border-success/30 text-success hover:bg-success/5",
                                                             isFullyPaid
                                                                 ? "border-success/20 text-success"
                                                                 : "border-success/30 text-success"
@@ -478,7 +478,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        className="h-10 w-10 rounded-lg group-hover:translate-x-1 transition-transform"
+                                                        className="h-10 w-10 rounded-sm group-hover:translate-x-1 transition-transform"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
                                                             handleOpenWizard(period);

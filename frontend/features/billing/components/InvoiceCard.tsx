@@ -85,7 +85,7 @@ export function InvoiceCard({ item, type, onClick, onActionSuccess, className, i
             aria-selected={isSelected}
             data-state={isSelected ? 'selected' : undefined}
             className={cn(
-                "group flex flex-col p-4 relative z-10 cursor-pointer rounded-none border border-border/50 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1",
+                "group flex flex-col p-4 relative z-10 cursor-pointer border border-border/50 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1",
                 isSelected && "ring-2 ring-inset ring-primary/40 bg-primary/5 border-transparent",
                 className
             )}
@@ -95,7 +95,7 @@ export function InvoiceCard({ item, type, onClick, onActionSuccess, className, i
             {/* ROW 1: Header */}
             <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-4 min-w-[30%]">
-                    <div className={cn("w-12 h-12 rounded flex flex-col items-center justify-center border transition-transform duration-300 group-hover:scale-105 shrink-0", iconBg, iconColor, iconBorder)}>
+                    <div className={cn("w-12 h-12 rounded-sm flex flex-col items-center justify-center border transition-transform duration-300 group-hover:scale-105 shrink-0", iconBg, iconColor, iconBorder)}>
                         <Icon className="h-5 w-5" />
                     </div>
                     <div>
@@ -107,7 +107,7 @@ export function InvoiceCard({ item, type, onClick, onActionSuccess, className, i
                             </div>
                         )}
                         <div className="flex items-center gap-2.5 mt-1 text-[11px] font-medium text-muted-foreground flex-wrap">
-                            <span className="font-mono font-semibold text-foreground/80 bg-muted/50 px-1.5 py-0.5 rounded-md">
+                            <span className="font-mono font-semibold text-foreground/80 bg-muted/50 px-1.5 py-0.5 rounded-sm">
                                 {docNumber}
                             </span>
                             {visibleColumns?.date !== false && (

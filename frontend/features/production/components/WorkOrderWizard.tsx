@@ -839,7 +839,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                                                     if (v?.uom) setNewMaterialUoM(v.uom.toString())
                                                                                                 }}
                                                                                             >
-                                                                                                <SelectTrigger className="h-9 w-full bg-primary/5 border-primary/20 rounded-lg">
+                                                                                                <SelectTrigger className="h-9 w-full bg-primary/5 border-primary/20 rounded-md">
                                                                                                     <SelectValue placeholder="Seleccione variante requerida..." />
                                                                                                 </SelectTrigger>
                                                                                                 <SelectContent>
@@ -905,7 +905,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                         <div className="space-y-6">
                                                             <div className="grid gap-3">
                                                                 {order?.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced).map((m: WorkOrderMaterial) => (
-                                                                    <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg bg-background group">
+                                                                    <div key={m.id} className="flex items-center justify-between p-3 border rounded-md bg-background group">
                                                                         <div className="flex items-center gap-3">
                                                                             <Truck className="h-4 w-4 text-muted-foreground" />
                                                                             <div className="space-y-0.5">
@@ -950,7 +950,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                     </div>
                                                                 ))}
                                                                 {(!order?.materials || order.materials.filter((m: WorkOrderMaterial) => m.is_outsourced).length === 0) && (
-                                                                    <div className="p-8 text-center text-muted-foreground italic border rounded-lg border-dashed">
+                                                                    <div className="p-8 text-center text-muted-foreground italic border rounded-md border-dashed">
                                                                         No hay servicios tercerizados asignados.
                                                                     </div>
                                                                 )}
@@ -959,7 +959,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                             {isViewingCurrentStage && (
                                                                 <>
                                                                     {isAddMaterialOpen && isOutsourced ? (
-                                                                        <div className="p-4 border-2 border-primary/20 rounded-lg bg-primary/5 space-y-4 animate-in slide-in-from-top-2 duration-300">
+                                                                        <div className="p-4 border-2 border-primary/20 rounded-md bg-primary/5 space-y-4 animate-in slide-in-from-top-2 duration-300">
                                                                             <div className="flex flex-col md:flex-row gap-4 items-end">
                                                                                 <div className="flex-1 space-y-2">
                                                                                     <label className="text-xs font-bold uppercase">Servicio</label>
@@ -1065,7 +1065,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                 <p className="text-sm text-muted-foreground">Verifique la disponibilidad de stock en {order?.warehouse_name || 'la bodega seleccionada'}.</p>
                                                 <div className="grid gap-4">
                                                     {order?.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced).map((m: WorkOrderMaterial) => (
-                                                        <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg">
+                                                        <div key={m.id} className="flex items-center justify-between p-3 border rounded-md">
                                                             <div className="space-y-1">
                                                                 <p className="text-sm font-medium">{m.component_name} <span className="text-xs text-muted-foreground">({m.component_code})</span></p>
                                                                 <p className="text-xs text-muted-foreground">Requerido: {m.quantity_planned} {m.uom_name}</p>
@@ -1082,7 +1082,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                         </div>
                                                     ))}
                                                     {order?.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced).length === 0 && (
-                                                        <div className="text-center py-4 text-muted-foreground text-sm italic border rounded-lg border-dashed">
+                                                        <div className="text-center py-4 text-muted-foreground text-sm italic border rounded-md border-dashed">
                                                             Sin materiales de stock requeridos.
                                                         </div>
                                                     )}
@@ -1093,7 +1093,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
                                     {STAGES[viewingStepIndex]?.id === 'OUTSOURCING_ASSIGNMENT' && (
                                         <div className="space-y-6">
-                                            <div className="p-4 bg-primary/10 border border-info/10 rounded-lg flex gap-3">
+                                            <div className="p-4 bg-primary/10 border border-info/10 rounded-md flex gap-3">
                                                 <Plus className="h-5 w-5 text-primary shrink-0" />
                                                 <div className="text-sm text-primary">
                                                     <div className="flex items-center gap-2">
@@ -1119,7 +1119,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                 {/* List of current outsourced services */}
                                                 <div className="grid gap-3">
                                                     {order?.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced).map((m: WorkOrderMaterial) => (
-                                                        <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg bg-background group">
+                                                        <div key={m.id} className="flex items-center justify-between p-3 border rounded-md bg-background group">
                                                             <div className="flex items-center gap-3">
                                                                 <Truck className="h-4 w-4 text-muted-foreground" />
                                                                 <div className="space-y-0.5">
@@ -1166,7 +1166,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                 {isViewingCurrentStage && (
                                                     <div className="pt-2">
                                                         {isAddMaterialOpen && isOutsourced ? (
-                                                            <div className="p-4 border-2 border-primary/20 rounded-lg bg-primary/5 space-y-4 animate-in slide-in-from-top-2 duration-300">
+                                                            <div className="p-4 border-2 border-primary/20 rounded-md bg-primary/5 space-y-4 animate-in slide-in-from-top-2 duration-300">
                                                                 <div className="flex flex-col md:flex-row gap-4 items-end">
                                                                     <div className="flex-1 space-y-2">
                                                                         <label className="text-xs font-bold uppercase">Servicio</label>
@@ -1276,7 +1276,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                 />
                                             ))}
 
-                                            <div className="p-4 bg-warning/5 border border-warning/10 rounded-lg flex gap-3">
+                                            <div className="p-4 bg-warning/5 border border-warning/10 rounded-md flex gap-3">
                                                 <LayoutDashboard className="h-5 w-5 text-warning shrink-0" />
                                                 <div className="text-sm text-warning font-medium">
                                                     <p className="font-bold">Verificación de Servicios Tercerizados</p>
@@ -1290,7 +1290,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                     const statusLabel = isReceived ? 'Recibido' : (m.purchase_order_receiving_status === 'PARTIAL' ? 'Parcial' : 'Pendiente')
 
                                                     return (
-                                                        <div key={m.id} className="flex items-center justify-between p-4 border rounded-lg bg-background">
+                                                        <div key={m.id} className="flex items-center justify-between p-4 border rounded-md bg-background">
                                                             <div className="flex items-center gap-4">
                                                                 <div className={cn(
                                                                     "h-3 w-3 rounded-full animate-pulse",
@@ -1335,7 +1335,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                     {STAGES[viewingStepIndex]?.id === 'PREPRESS' && (
                                         <div className="space-y-6">
                                             {/* Design Files & Checkout Files */}
-                                            <div className="p-4 bg-primary/5 border border-primary/10 rounded-lg space-y-3">
+                                            <div className="p-4 bg-primary/5 border border-primary/10 rounded-md space-y-3">
                                                 <div className="space-y-4">
                                                     {/* 1. Checkout Files (from Sale Order) */}
                                                     {order?.checkout_files && order.checkout_files.length > 0 && (
@@ -1594,7 +1594,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                 }
             >
                 <div className="space-y-4 py-4">
-                    <div className="border rounded-lg overflow-x-auto">
+                    <div className="border rounded-md overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead className="bg-muted">
                                 <tr>
@@ -1618,7 +1618,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                             </tbody>
                         </table>
                     </div>
-                    <div className="bg-primary/10 p-4 rounded-lg flex gap-3 border border-primary/10">
+                    <div className="bg-primary/10 p-4 rounded-md flex gap-3 border border-primary/10">
                         <FileText className="h-4 w-4 text-muted-foreground" />
                         <div className="text-xs text-primary leading-relaxed">
                             <p className="font-bold mb-1">Nota importante:</p>
@@ -1640,7 +1640,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         <p>
                             ¿Está seguro de que desea <strong>ANULAR</strong> la Orden de Trabajo OT-{order?.number}?
                         </p>
-                        <div className="bg-warning/10 border border-warning/20 p-3 rounded-lg text-warning text-xs flex gap-3 font-medium">
+                        <div className="bg-warning/10 border border-warning/20 p-3 rounded-md text-warning text-xs flex gap-3 font-medium">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
                             <div className="space-y-1">
                                 <p className="font-bold">Acción con impacto financiero:</p>
@@ -1691,7 +1691,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         <p>
                             ¿Está seguro de que desea retroceder a la etapa <strong>{STAGES.find(s => s.id === pendingPrevStage)?.label}</strong>?
                         </p>
-                        <div className="bg-warning/10 border border-warning/20 p-3 rounded-lg text-warning text-xs flex gap-3 font-medium">
+                        <div className="bg-warning/10 border border-warning/20 p-3 rounded-md text-warning text-xs flex gap-3 font-medium">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
                             <div className="space-y-1">
                                 <p className="font-bold">Aviso de Reinicio de Aprobaciones:</p>

@@ -979,7 +979,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 const diffType = translationMap[diffTypeRaw] || group?.difference_type_display || "Ajuste de Diferencia";
 
                                 return (
-                                    <div key={groupItem.id} className="group/card bg-transparent border border-border/40 hover:border-primary/20 rounded-2xl overflow-hidden transition-all duration-300">
+                                    <div key={groupItem.id} className="group/card bg-transparent border border-border/40 hover:border-primary/20 rounded-md overflow-hidden transition-all duration-300">
                                         <div className="flex">
                                             {/* Left Column: Bank Side (Can have multiple lines) */}
                                             <div className="w-[40%] p-6 flex flex-col justify-start border-r border-border/40 relative">
@@ -1001,9 +1001,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                             const bankAmount = Math.abs(parseFloat(line.credit) - parseFloat(line.debit));
                                                             
                                                             return (
-                                                                <div key={line.id} className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-xl hover:border-primary/20 transition-all shadow-sm">
+                                                                <div key={line.id} className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-md hover:border-primary/20 transition-all shadow-sm">
                                                                     <div className="flex items-center gap-3">
-                                                                        <div className="h-8 w-8 rounded-lg bg-background border border-border/40 flex items-center justify-center text-muted-foreground shrink-0">
+                                                                        <div className="h-8 w-8 rounded-sm bg-background border border-border/40 flex items-center justify-center text-muted-foreground shrink-0">
                                                                             <FileText className="h-4 w-4" />
                                                                         </div>
                                                                         <div className="flex flex-col min-w-0">
@@ -1041,10 +1041,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                             <div 
                                                                 key={m.id} 
                                                                 onClick={() => openTransactionDetail(m.id, 'payment')}
-                                                                className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-xl hover:bg-muted/50 hover:border-primary/20 transition-all cursor-pointer"
+                                                                className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-md hover:bg-muted/50 hover:border-primary/20 transition-all cursor-pointer"
                                                             >
                                                                 <div className="flex items-center gap-3">
-                                                                    <div className="h-8 w-8 rounded-lg bg-background border border-border/40 flex items-center justify-center text-muted-foreground group-hover/card:text-primary transition-colors">
+                                                                    <div className="h-8 w-8 rounded-sm bg-background border border-border/40 flex items-center justify-center text-muted-foreground group-hover/card:text-primary transition-colors">
                                                                         <FileText className="h-4 w-4" />
                                                                     </div>
                                                                     <div className="flex flex-col">
@@ -1066,10 +1066,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                             <div 
                                                                 key={b.id} 
                                                                 onClick={() => openTransactionDetail(b.id, 'terminal_batch')}
-                                                                className="flex items-center justify-between p-3 bg-primary/5 border border-primary/10 rounded-xl hover:bg-primary/10 transition-all cursor-pointer"
+                                                                className="flex items-center justify-between p-3 bg-primary/5 border border-primary/10 rounded-md hover:bg-primary/10 transition-all cursor-pointer"
                                                             >
                                                                 <div className="flex items-center gap-3">
-                                                                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                                                    <div className="h-8 w-8 rounded-sm bg-primary/10 flex items-center justify-center text-primary">
                                                                         <Wand2 className="h-4 w-4" />
                                                                     </div>
                                                                     <div className="flex flex-col">
@@ -1086,10 +1086,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                         {Math.abs(diffAmount) > 0.01 && (
                                                             <div 
                                                                 onClick={() => group?.difference_journal_entry && openTransactionDetail(group.difference_journal_entry, 'journal_entry')}
-                                                                className="flex items-center justify-between p-3 bg-warning/5 border border-warning/20 border-dashed rounded-xl hover:bg-warning/10 transition-all cursor-pointer"
+                                                                className="flex items-center justify-between p-3 bg-warning/5 border border-warning/20 border-dashed rounded-md hover:bg-warning/10 transition-all cursor-pointer"
                                                             >
                                                                 <div className="flex items-center gap-3">
-                                                                    <div className="h-8 w-8 rounded-lg bg-warning/10 flex items-center justify-center text-warning">
+                                                                    <div className="h-8 w-8 rounded-sm bg-warning/10 flex items-center justify-center text-warning">
                                                                         <Calculator className="h-4 w-4" />
                                                                     </div>
                                                                     <div className="flex flex-col">
@@ -1164,7 +1164,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         <div className="space-y-6 pt-2">
                             <p>Se buscarán coincidencias automáticas basadas en monto y fecha. Las sugerencias con un score superior al umbral se procesarán automáticamente.</p>
 
-                            <div className="space-y-3 bg-muted/30 p-4 rounded-lg border border-border/50">
+                            <div className="space-y-3 bg-muted/30 p-4 rounded-md border border-border/50">
                                 <div className="flex justify-between items-center">
                                     <Label className="text-xs font-black uppercase tracking-wider text-muted-foreground">
                                         Umbral de Confianza
@@ -1180,7 +1180,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     step="1"
                                     value={confidenceThreshold}
                                     onChange={(e) => setConfidenceThreshold(parseInt(e.target.value))}
-                                    className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                                    className="w-full h-1.5 bg-muted rounded-sm appearance-none cursor-pointer accent-primary"
                                 />
                                 <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase opacity-50">
                                     <span>Flexible (50%)</span>
@@ -1499,7 +1499,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         >
                             <div className="p-4 border-b bg-muted/30 flex justify-between items-center shrink-0">
                                 <div className="flex items-center gap-2">
-                                    <div className="bg-primary/10 p-1.5 rounded-lg">
+                                    <div className="bg-primary/10 p-1.5 rounded-sm">
                                         <Brain className="h-4 w-4 text-primary" />
                                     </div>
                                     <div className="flex flex-col">

@@ -9,7 +9,7 @@ stability: contract-changes-require-ADR
 
 # Modal Components
 
-Jerarquía de modales del proyecto. Todos los diálogos deben construirse sobre esta familia; **nunca usar `Dialog` de shadcn directamente** en features.
+Jerarquía de modales del proyecto. Todos los diálogos pertenecen al nivel **Overlay** de la jerarquía de radios (`rounded-lg`) y deben construirse sobre esta familia; **nunca usar `Dialog` de shadcn directamente** en features.
 
 ```
 BaseModal  (primitiva)

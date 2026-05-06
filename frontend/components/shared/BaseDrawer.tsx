@@ -49,7 +49,7 @@ export function BaseDrawer({
                 hideOverlay={true}
                 hideCloseButton={true}
                 className={cn(
-                    "p-0 border-t-0 bg-background rounded-t-[2.5rem] shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.25)] flex flex-col",
+                    "p-0 border-t-0 bg-background rounded-t-xl shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.25)] flex flex-col",
                     heightClass,
                     className
                 )}

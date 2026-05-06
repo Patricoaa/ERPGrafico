@@ -325,7 +325,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                         <div className="space-y-6 px-4 pb-4 pt-2">
                                             <div className="space-y-4">
                                                 <FormSection title="Estado y Roles" icon={Scale} />
-                                                <div className="flex items-center gap-8 p-6 bg-muted/5 rounded-xl border border-primary/5">
+                                                <div className="flex items-center gap-8 p-6 bg-muted/5 rounded-md border border-primary/5">
                                                     <FormField
                                                         control={form.control}
                                                         name="is_default_customer"
@@ -640,7 +640,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                 else if (type === 'work_order') { prefix = "OT-"; variant = "purple" }
 
                 return (
-                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground tracking-tight">
+                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-sm border border-border bg-muted/50 text-muted-foreground tracking-tight">
                         {(row.original as any).display_id || `${prefix}${(row.original as any).number?.toString().padStart(6, '0')}`}
                     </span>
                 )
@@ -690,7 +690,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                 {/* 1. Total Card (Available for all types) */}
                 <Card
-                    className={`cursor-pointer transition-all hover:bg-muted/50 border-none shadow-sm rounded-lg ${activeFilter === 'all' ? 'ring-2 ring-primary ring-offset-2' : 'bg-muted/5'}`}
+                    className={`cursor-pointer transition-all hover:bg-muted/50 border-none shadow-sm rounded-md ${activeFilter === 'all' ? 'ring-2 ring-primary ring-offset-2' : 'bg-muted/5'}`}
                     onClick={() => setActiveFilter('all')}
                 >
                     <CardContent className="p-4 flex items-center justify-between">
@@ -707,7 +707,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                     <>
                         {/* 2. Financial Card (Accounts Receivable/Payable) */}
                         <Card
-                            className={`cursor-pointer transition-all hover:bg-destructive/10/50 border-none shadow-sm rounded-lg ${activeFilter === 'financial' ? 'ring-2 ring-destructive ring-offset-2' : 'bg-destructive/10/20'}`}
+                            className={`cursor-pointer transition-all hover:bg-destructive/10/50 border-none shadow-sm rounded-md ${activeFilter === 'financial' ? 'ring-2 ring-destructive ring-offset-2' : 'bg-destructive/10/20'}`}
                             onClick={() => setActiveFilter('financial')}
                         >
                             <CardContent className="p-4 flex items-center justify-between">
@@ -728,7 +728,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
 
                         {/* 3. Logistics Card */}
                         <Card
-                            className={`cursor-pointer transition-all hover:bg-warning/10/50 border-none shadow-sm rounded-lg ${activeFilter === 'logistics' ? 'ring-2 ring-warning ring-offset-2' : 'bg-white'}`}
+                            className={`cursor-pointer transition-all hover:bg-warning/10/50 border-none shadow-sm rounded-md ${activeFilter === 'logistics' ? 'ring-2 ring-warning ring-offset-2' : 'bg-white'}`}
                             onClick={() => setActiveFilter('logistics')}
                         >
                             <CardContent className="p-4 flex items-center justify-between">
@@ -746,7 +746,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
 
                         {/* 4. Billing Card */}
                         <Card
-                            className={`cursor-pointer transition-all hover:bg-primary/10/50 border-none shadow-sm rounded-lg ${activeFilter === 'billing' ? 'ring-2 ring-primary ring-offset-2' : 'bg-white'}`}
+                            className={`cursor-pointer transition-all hover:bg-primary/10/50 border-none shadow-sm rounded-md ${activeFilter === 'billing' ? 'ring-2 ring-primary ring-offset-2' : 'bg-white'}`}
                             onClick={() => setActiveFilter('billing')}
                         >
                             <CardContent className="p-4 flex items-center justify-between">
@@ -767,7 +767,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                 {/* Work Order Specific Card */}
                 {type === 'work_order' && (
                     <Card
-                        className={`cursor-pointer transition-all hover:bg-primary/10/50 border-none shadow-sm ${activeFilter === 'pending' ? 'ring-2 ring-primary ring-offset-2' : 'bg-primary/10/20'}`}
+                        className={`cursor-pointer transition-all hover:bg-primary/10/50 border-none shadow-sm rounded-md ${activeFilter === 'pending' ? 'ring-2 ring-primary ring-offset-2' : 'bg-primary/10/20'}`}
                         onClick={() => setActiveFilter('pending')}
                     >
                         <CardContent className="p-4 flex items-center justify-between">

@@ -97,7 +97,7 @@
 
   /* GEOMETRY & TYPOGRAPHY */
   --radius: 0.5rem;
-  /* Base Radius (8px) — Balanced Softness aesthetic */
+  /* Base Radius (8px) — Industrial Atomic unit */
   --ring-raw: 0.65 0.25 301;
   --ring: oklch(var(--ring-raw) / 0.4);
 
@@ -200,10 +200,15 @@
   --color-input: oklch(var(--input-raw) / 0.1);
   --color-ring: oklch(var(--ring-raw) / 0.4);
   --radius-sm: var(--radius);
-  --radius-md: calc(var(--radius) + 2px);
-  --radius-lg: calc(var(--radius) + 4px);
-  --radius-xl: calc(var(--radius) + 8px);
-  --radius-2xl: calc(var(--radius) + 14px);
+  /* 8px */
+  --radius-md: calc(var(--radius) + 4px);
+  /* 12px (Nested Cards) */
+  --radius-lg: calc(var(--radius) + 8px);
+  /* 16px (Overlays) */
+  --radius-xl: calc(var(--radius) + 12px);
+  /* 20px */
+  --radius-2xl: calc(var(--radius) + 24px);
+  /* Pill-ish */
 
   --color-sidebar: oklch(var(--sidebar-raw));
   --color-sidebar-foreground: oklch(var(--sidebar-foreground-raw));

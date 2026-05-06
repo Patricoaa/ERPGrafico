@@ -78,7 +78,7 @@ export function WorkOrderMaterials({
                 
                 {/* Pre-Impresión */}
                 <div className={cn(
-                    "relative group p-6 rounded-xl border transition-all duration-300",
+                    "relative group p-6 rounded-md border transition-all duration-300",
                     enablePrepress 
                         ? "bg-white shadow-sm border-primary/30 ring-1 ring-primary/5" 
                         : "bg-muted/30 border-border/40 opacity-60 grayscale-[0.5]"
@@ -104,7 +104,7 @@ export function WorkOrderMaterials({
                                 />
                             </div>
 
-                            <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/20 border border-border/40">
+                            <div className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/20 border border-border/40">
                                 <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">Diseño Requerido</span>
                                 <Switch checked={designNeeded} onCheckedChange={setDesignNeeded} className="scale-75 data-[state=checked]:bg-primary" />
                             </div>
@@ -145,7 +145,7 @@ export function WorkOrderMaterials({
                                                 </div>
                                             ))}
                                         </div>
-                                        <label className="flex items-center justify-center gap-2 py-2 border border-dashed border-primary/30 rounded-lg text-[10px] text-primary font-black uppercase tracking-widest cursor-pointer hover:bg-primary/5 transition-all">
+                                        <label className="flex items-center justify-center gap-2 py-2 border border-dashed border-primary/30 rounded-md text-[10px] text-primary font-black uppercase tracking-widest cursor-pointer hover:bg-primary/5 transition-all">
                                             <Plus className="h-3 w-3" /> Adjuntar Diseño
                                             <input type="file" multiple className="hidden" onChange={handleFileChange} />
                                         </label>
@@ -154,7 +154,7 @@ export function WorkOrderMaterials({
                             )}
 
                             <div className="space-y-3 pt-2 border-t border-dashed">
-                                <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-muted/20 border border-border/40">
+                                <div className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/20 border border-border/40">
                                     <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">Numeración (Folio)</span>
                                     <Switch checked={folioEnabled} onCheckedChange={setFolioEnabled} className="scale-75 data-[state=checked]:bg-primary" />
                                 </div>
@@ -178,7 +178,7 @@ export function WorkOrderMaterials({
 
                 {/* Impresión */}
                 <div className={cn(
-                    "relative group p-6 rounded-xl border transition-all duration-300",
+                    "relative group p-6 rounded-md border transition-all duration-300",
                     enablePress 
                         ? "bg-white shadow-sm border-primary/30 ring-1 ring-primary/5" 
                         : "bg-muted/30 border-border/40 opacity-60 grayscale-[0.5]"
@@ -206,7 +206,7 @@ export function WorkOrderMaterials({
 
                             <div className="space-y-2">
                                 <span className="text-[9px] uppercase text-muted-foreground font-black tracking-widest pl-1">Tecnología</span>
-                                <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/30 rounded-lg border border-border/40">
+                                <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/30 rounded-md border border-border/40">
                                     {['offset', 'digital', 'especial'].map(type => (
                                         <Button
                                             key={type}

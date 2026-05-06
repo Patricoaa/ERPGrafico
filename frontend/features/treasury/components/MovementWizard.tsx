@@ -136,7 +136,7 @@ export function MovementWizard({
                                     setStepIndex(1)
                                 }}
                             >
-                                <div className={cn("p-3 rounded-lg bg-success/10 text-success", impact === "IN" && "bg-success text-white")}>
+                                <div className={cn("p-3 rounded-md bg-success/10 text-success", impact === "IN" && "bg-success text-white")}>
                                     <Banknote className="h-6 w-6" />
                                 </div>
                                 <div className="flex flex-col">
@@ -157,7 +157,7 @@ export function MovementWizard({
                                     setStepIndex(1)
                                 }}
                             >
-                                <div className={cn("p-3 rounded-lg bg-warning/10 text-warning", impact === "OUT" && "bg-warning text-white")}>
+                                <div className={cn("p-3 rounded-md bg-warning/10 text-warning", impact === "OUT" && "bg-warning text-white")}>
                                     <LogOut className="h-6 w-6" />
                                 </div>
                                 <div className="flex flex-col">
@@ -179,7 +179,7 @@ export function MovementWizard({
                                         setStepIndex(1)
                                     }}
                                 >
-                                    <div className={cn("p-3 rounded-lg bg-info/10 text-info", impact === "TRANSFER" && "bg-info text-white")}>
+                                    <div className={cn("p-3 rounded-md bg-info/10 text-info", impact === "TRANSFER" && "bg-info text-white")}>
                                         <ArrowRightLeft className="h-6 w-6" />
                                     </div>
                                     <div className="flex flex-col">
@@ -349,7 +349,7 @@ export function MovementWizard({
                     <div className="space-y-4 pt-2">
                         <div className="flex justify-center">
                             <div className={cn(
-                                "uppercase font-black border rounded-md px-4 py-1 text-[10px] tracking-[0.15em] text-center min-w-[120px]",
+                                "uppercase font-black border rounded-sm px-4 py-1 text-[10px] tracking-[0.15em] text-center min-w-[120px]",
                                 impact === "IN" ? "border-success/40 text-success bg-success/5" :
                                     impact === "OUT" ? "border-warning/40 text-warning bg-warning/5" :
                                         "border-info/40 text-info bg-info/5"
@@ -377,7 +377,7 @@ export function MovementWizard({
                                     if (amountNum <= 0) return null
                                     if (amountNum > partnerCapitalInfo.subscribed && partnerCapitalInfo.subscribed > 0) {
                                         return (
-                                            <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/20 rounded-lg text-xs text-warning">
+                                            <div className="flex items-start gap-2 p-3 bg-warning/10 border border-warning/20 rounded-md text-xs text-warning">
                                                 <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                                                 <div>
                                                     <span className="font-bold block">Aporte supera el capital suscrito</span>
@@ -387,14 +387,14 @@ export function MovementWizard({
                                         )
                                     } else if (partnerCapitalInfo.pending <= 0) {
                                         return (
-                                            <div className="flex items-start gap-2 p-3 bg-info/10 border border-info/20 rounded-lg text-xs text-info">
+                                            <div className="flex items-start gap-2 p-3 bg-info/10 border border-info/20 rounded-md text-xs text-info">
                                                 <Info className="h-4 w-4 shrink-0 mt-0.5" />
                                                 <span>Capital ya enterado ({formatCurrency(partnerCapitalInfo.subscribed)}). Generará excedente.</span>
                                             </div>
                                         )
                                     }
                                     return (
-                                        <div className="flex items-center gap-2 p-2.5 bg-success/10 border border-success/20 rounded-lg text-xs text-success">
+                                        <div className="flex items-center gap-2 p-2.5 bg-success/10 border border-success/20 rounded-md text-xs text-success">
                                             <Info className="h-3.5 w-3.5" />
                                             <span>Pendiente de entero: <strong>{formatCurrency(partnerCapitalInfo.pending)}</strong></span>
                                         </div>
@@ -403,7 +403,7 @@ export function MovementWizard({
                             </div>
                         )}
 
-                        <div className="p-4 rounded-lg border border-input bg-transparent">
+                        <div className="p-4 rounded-md border border-input bg-transparent">
                             <div className="text-right mb-4 pr-2">
                                 <div className="text-5xl font-black text-primary font-mono tracking-tighter">
                                     {formatCurrency(parseFloat(amount) || 0)}
@@ -444,11 +444,11 @@ export function MovementWizard({
                                 <p className="text-sm text-muted-foreground">Revise los detalles antes de registrar</p>
                             </div>
 
-                            <div className="bg-transparent border rounded-lg divide-y overflow-hidden">
+                            <div className="bg-transparent border rounded-md divide-y overflow-hidden">
                                 <div className="p-4 flex justify-between items-center text-sm">
                                     <span className="text-muted-foreground font-medium">Operación:</span>
                                     <span className={cn(
-                                        "font-black uppercase tracking-[0.15em] px-3 py-1 rounded border text-[10px]",
+                                        "font-black uppercase tracking-[0.15em] px-3 py-1 rounded-sm border text-[10px]",
                                         impact === "IN" ? "bg-success/10 text-success border-success/30" : 
                                         impact === "OUT" ? "bg-warning/10 text-warning border-warning/30" : 
                                         "bg-info/10 text-info border-info/30"
@@ -497,7 +497,7 @@ export function MovementWizard({
                             </div>
 
                             {hasInsufficientFunds && (
-                                <div className="p-3 bg-destructive/10 border-2 border-destructive/20 text-destructive rounded-lg text-center text-sm font-bold">
+                                <div className="p-3 bg-destructive/10 border-2 border-destructive/20 text-destructive rounded-md text-center text-sm font-bold">
                                     FONDOS INSUFICIENTES (Máx: {formatCurrency(maxOutboundAmount)})
                                 </div>
                             )}

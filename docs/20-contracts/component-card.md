@@ -44,8 +44,8 @@ El componente `Card` acepta una propiedad `variant` que modifica su apariencia p
 
 | Variante | Estilos Principales | Uso Sugerido |
 |----------|---------------------|--------------|
-| `default` | Borde sólido, sombra leve, fondo `bg-card`. | Tarjetas estándar (ej: InvoiceCard, OrderCard, Dashboards). |
-| `dashed` | Bordes punteados, fondo tenue, esquinas redondeadas anchas (`rounded-2xl`). | Secciones de formularios, sub-bloques visuales o contenido destacable donde se desee menor jerarquía visual que una tarjeta estándar. Reemplaza al antiguo `FORM_STYLES.card`. |
+| `default` | Borde sólido, sombra leve, fondo `bg-card`, esquinas redondeadas estándar (`rounded-md`). | Tarjetas estándar (ej: InvoiceCard, OrderCard, Dashboards). |
+| `dashed` | Bordes punteados, fondo tenue, esquinas redondeadas de énfasis (`rounded-lg`). | Secciones de formularios, sub-bloques visuales o contenido destacable donde se desee menor jerarquía visual que una tarjeta estándar. Reemplaza al antiguo `FORM_STYLES.card`. |
 
 ---
 

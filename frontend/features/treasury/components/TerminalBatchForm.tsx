@@ -228,7 +228,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
                     <div className="space-y-4">
                         {selectedMovements.length === 0 ? (
-                            <div className="border border-none rounded-xl p-2 bg-transparent flex flex-col items-center justify-center h-[280px]">
+                            <div className="border border-none rounded-md p-2 bg-transparent flex flex-col items-center justify-center h-[280px]">
                                 <EmptyState
                                     context="treasury"
                                     variant="compact"

@@ -251,7 +251,7 @@ function InfoField({ icon, label, value }: { icon: React.ReactNode; label: strin
     return (
         <div className="space-y-1.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
-            <div className="flex items-center gap-2 h-10 px-3 rounded-lg border bg-muted/20 text-sm font-medium text-foreground">
+            <div className="flex items-center gap-2 h-10 px-3 rounded-sm border bg-muted/20 text-sm font-medium text-foreground">
                 <span className="text-muted-foreground">{icon}</span>
                 {value}
             </div>
@@ -330,7 +330,7 @@ function PasswordChangeCard() {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <ActionSlideButton type="submit" disabled={saving} className="rounded-lg text-xs font-bold gap-2">
+                            <ActionSlideButton type="submit" disabled={saving} className="rounded-sm text-xs font-bold gap-2">
                                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
                                 <KeyRound className="h-4 w-4" />
                                 Cambiar Contraseña
@@ -631,7 +631,7 @@ function PersonalTab({
                                         <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Sistema Salud" value={employee.salud_type_display || "—"} />
                                         <div className="space-y-1.5">
                                             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Sueldo Base</span>
-                                            <div className="flex items-center gap-2 h-10 px-3 rounded-lg border bg-muted/20 text-sm font-bold text-foreground">
+                                            <div className="flex items-center gap-2 h-10 px-3 rounded-sm border bg-muted/20 text-sm font-bold text-foreground">
                                                 <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
                                                 <MoneyDisplay amount={parseFloat(employee.base_salary || "0")} />
                                             </div>
@@ -666,7 +666,7 @@ function PersonalTab({
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            className="gap-2 rounded-lg text-xs font-bold border-primary/30 text-primary hover:bg-primary/5"
+                                            className="gap-2 rounded-sm text-xs font-bold border-primary/30 text-primary hover:bg-primary/5"
                                             onClick={onBulkDownload}
                                             disabled={downloadingAll}
                                         >

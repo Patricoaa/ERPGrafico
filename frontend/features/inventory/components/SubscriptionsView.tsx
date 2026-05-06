@@ -470,7 +470,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
             <div className="space-y-4">
 
                 {loading ? (
-                    <div className="rounded-[0.25rem] border shadow-sm overflow-hidden bg-card p-4">
+                    <div className="rounded-md border shadow-sm overflow-hidden bg-card p-4">
                         <TableSkeleton rows={5} columns={8} />
                     </div>
                 ) : (
@@ -478,21 +478,21 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                         {/* Industrial Stats Panel */}
                         {stats && (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div className="p-4 rounded-[0.25rem] border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                                <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
                                     <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Suscripciones Activas</span>
                                     <span className="text-2xl font-black text-foreground tabular-nums">{stats.active_subscriptions}</span>
                                 </div>
-                                <div className="p-4 rounded-[0.25rem] border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                                <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
                                     <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Costo Mensual Total</span>
                                     <div className="text-2xl font-black text-foreground tabular-nums">
                                         <DataCell.Currency value={stats.total_monthly_cost} />
                                     </div>
                                 </div>
-                                <div className="p-4 rounded-[0.25rem] border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                                <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
                                     <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Próximas Renovaciones</span>
                                     <span className="text-2xl font-black text-warning tabular-nums">{stats.upcoming_renewals_30_days}</span>
                                 </div>
-                                <div className="p-4 rounded-[0.25rem] border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                                <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
                                     <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Estado Pausadas</span>
                                     <span className="text-2xl font-black text-muted-foreground tabular-nums">{stats.paused_subscriptions}</span>
                                 </div>
@@ -523,7 +523,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
-                                        className="h-8 rounded-[0.25rem] text-warning hover:bg-warning/10 gap-2 disabled:opacity-30"
+                                        className="h-8 rounded-sm text-warning hover:bg-warning/10 gap-2 disabled:opacity-30"
                                         onClick={handleBulkPause}
                                         disabled={!canPauseAll}
                                     >
@@ -533,7 +533,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
-                                        className="h-8 rounded-[0.25rem] text-success hover:bg-success/10 gap-2 disabled:opacity-30"
+                                        className="h-8 rounded-sm text-success hover:bg-success/10 gap-2 disabled:opacity-30"
                                         onClick={handleBulkResume}
                                         disabled={!canResumeAll}
                                     >
@@ -543,7 +543,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                                     <Button 
                                         variant="ghost" 
                                         size="sm" 
-                                        className="h-8 rounded-[0.25rem] text-destructive-foreground hover:bg-destructive/10 gap-2 disabled:opacity-30"
+                                        className="h-8 rounded-sm text-destructive-foreground hover:bg-destructive/10 gap-2 disabled:opacity-30"
                                         onClick={handleBulkArchive}
                                         disabled={!canArchiveAllActive}
                                     >
@@ -586,7 +586,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                         <p>
                             ¿Está seguro de que desea archivar el producto <strong>{currentArchivingProduct?.name}</strong>?
                         </p>
-                        <div className="bg-warning/10 border border-warning/20 p-3 rounded-[0.25rem] flex gap-3 text-warning">
+                        <div className="bg-warning/10 border border-warning/20 p-3 rounded-md flex gap-3 text-warning">
                             <AlertCircle className="h-5 w-5 shrink-0" />
                             <div className="text-xs">
                                 <p className="font-bold mb-1">Impacto en Suscripciones</p>

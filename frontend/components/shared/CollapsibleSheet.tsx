@@ -116,7 +116,7 @@ export function CollapsibleSheet({
             side={side}
             className={cn(
                 "p-0 flex flex-col shadow-2xl overflow-visible", // Removed transition-all to allow inline style only
-                "top-20 bottom-4 right-4 h-[calc(100vh-6rem)] border border-white/5 rounded-none",
+                "top-20 bottom-4 right-4 h-[calc(100vh-6rem)] border border-white/5 rounded-xl",
                 // Disable default Radix/Shadcn animations to avoid conflicting with custom high-performance transforms
                 "data-[state=open]:animate-none data-[state=closed]:animate-none duration-0 sm:duration-500",
                 (!open || isCollapsed) ? "border-primary/10" : "translate-x-0",
@@ -169,7 +169,7 @@ export function CollapsibleSheet({
 
             {/* Standard Wrapper for Content to handle opacity/grayscale */}
             <div className={cn(
-                "flex flex-col h-full bg-background transition-opacity duration-300",
+                "flex flex-col h-full bg-background rounded-xl overflow-hidden transition-opacity duration-300",
                 allowOverflow ? "overflow-visible" : "overflow-hidden",
                 ((!open || isCollapsed) && !forceCollapse) ? "opacity-0 pointer-events-none" : "opacity-100",
                 (isHidden && !forceCollapse) && "hidden" // Only prune from DOM after 500ms exit transition finishes
