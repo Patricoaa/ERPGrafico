@@ -13,13 +13,15 @@ export function SalesHeader() {
     // Map physical routes to tab values
     const segmentToTab: Record<string, string> = {
         orders: 'orders',
-        terminals: 'pos',   // pos & hardware both live at /terminals
+        terminals: 'pos',   // pos lives at /terminals
         credits: 'credits',
         sessions: 'pos',    // sessions is a sub of POS tab
         settings: 'config',
     }
 
-    const activeValue = segmentToTab[currentSegment] || 'orders'
+    // Detect hardware sub-tabs from ?tab= param
+    const isHardwareTab = ['providers', 'devices', 'batches'].includes(searchParams.get('tab') || '')
+    const activeValue = isHardwareTab ? 'hardware' : (segmentToTab[currentSegment] || 'orders')
 
     const tabParam = searchParams.get('tab')
     const viewParam = searchParams.get('view')
@@ -28,9 +30,10 @@ export function SalesHeader() {
     const subActiveValue = (() => {
         if (activeValue === 'config') return tabParam || 'income'
         if (activeValue === 'orders') return viewParam || 'orders'
+        if (activeValue === 'hardware') return tabParam || 'batches'
         if (activeValue === 'pos') {
             if (currentSegment === 'sessions') return 'sessions'
-            return tabParam || 'terminals'
+            return tabParam || 'pos-terminals'
         }
         if (activeValue === 'credits') return tabParam || 'portfolio'
         return undefined
@@ -51,10 +54,20 @@ export function SalesHeader() {
             value: "pos",
             label: "POS",
             iconName: "banknote",
-            href: "/sales/terminals",
+            href: "/sales/terminals?tab=pos-terminals",
             subTabs: [
-                { value: "terminals", label: "CAJA/POS", href: "/sales/terminals?tab=terminals" },
+                { value: "pos-terminals", label: "POS", href: "/sales/terminals?tab=pos-terminals" },
                 { value: "sessions", label: "Sesiones", href: "/sales/sessions" },
+            ]
+        },
+        {
+            value: "hardware",
+            label: "Terminal de Cobro",
+            iconName: "cpu",
+            href: "/sales/terminals?tab=batches",
+            subTabs: [
+                { value: "providers", label: "Proveedor de dispositivos", href: "/sales/terminals?tab=providers" },
+                { value: "devices", label: "Dispositivos", href: "/sales/terminals?tab=devices" },
                 { value: "batches", label: "Lotes de Pago", href: "/sales/terminals?tab=batches" },
             ]
         },
@@ -99,9 +112,13 @@ export function SalesHeader() {
             if (subActiveValue === 'blacklist') return { title: "Lista Negra", description: "Clientes con historial de impago o riesgo crediticio.", iconName: "user-x" as const }
             return { title: "Cartera de Créditos", description: "Saldo por cliente, clasificación por antigüedad y estado de cobro.", iconName: "pie-chart" as const }
         }
+        if (activeValue === 'hardware') {
+            if (subActiveValue === 'batches') return { title: "Lotes de Pago", description: "Gestión de cierres diarios y liquidaciones de tarjetas.", iconName: "cpu" as const }
+            if (subActiveValue === 'devices') return { title: "Hardware de Pago", description: "Gestione los dispositivos físicos y su vinculación con el sistema.", iconName: "cpu" as const }
+            return { title: "Proveedores de Pago", description: "Configuración de cuentas y comisiones por proveedor (TUU, Transbank, etc.).", iconName: "cpu" as const }
+        }
         if (activeValue === 'pos') {
             if (subActiveValue === 'sessions') return { title: "Sesiones Punto de Venta", description: "Historial de aperturas y cierres de caja.", iconName: "list" as const }
-            if (subActiveValue === 'batches') return { title: "Lotes de Liquidación", description: "Registre liquidaciones y comisiones de terminales de cobro.", iconName: "receipt" as const }
             return { title: "Cajas POS", description: "Administre los puntos de venta y sus métodos de pago autorizados.", iconName: "banknote" as const }
         }
         if (activeValue === 'orders') {
