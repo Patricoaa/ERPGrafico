@@ -1,6 +1,6 @@
 # Visual Hierarchy & Information Layers
 
-This contract defines the structural and typographic hierarchy for all forms in ERPGrafico. Its goal is to maintain a high-density "Industrial Premium" aesthetic while ensuring clear information architecture.
+This contract defines the structural and typographic hierarchy for all forms in ERPGrafico. Its goal is to maintain a high-density while ensuring clear information architecture.
 
 ## The Three-Layer System
 

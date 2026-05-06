@@ -14,7 +14,7 @@ interface FormSplitLayoutProps {
 }
 
 /**
- * Standard layout for Industrial Premium forms.
+ 
  * Handles the flexbox structure, internal scrolling, and the Audit Sidebar integration.
  */
 export function FormSplitLayout({
@@ -28,7 +28,7 @@ export function FormSplitLayout({
         <div className="flex-1 flex overflow-hidden min-h-[400px]">
             {/* Main Form Area */}
             <div className={cn(
-                "flex-1 flex flex-col overflow-y-auto pr-6 pl-1 pb-4 pt-4 scrollbar-thin", 
+                "flex-1 flex flex-col overflow-y-auto pr-6 pl-1 pb-4 pt-4 scrollbar-thin",
                 className
             )}>
                 {children}
@@ -36,9 +36,9 @@ export function FormSplitLayout({
 
             {/* Audit/Activity Sidebar */}
             {showSidebar && sidebar && (
-                <aside 
+                <aside
                     className={cn(
-                        sidebarWidth, 
+                        sidebarWidth,
                         "border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex"
                     )}
                 >

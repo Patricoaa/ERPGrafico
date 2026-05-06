@@ -1,0 +1,11 @@
+{
+  "name": "erpgrafico-root",
+  "private": true,
+  "description": "Root configuration for ERPGrafico versioning and releases",
+  "scripts": {
+    "release": "standard-version"
+  },
+  "devDependencies": {
+    "standard-version": "^9.5.0"
+  }
+}
