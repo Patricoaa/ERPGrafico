@@ -17,6 +17,25 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# --- SYSTEM VERSIONING ---
+def get_version():
+    try:
+        with open(BASE_DIR / 'VERSION', 'r') as f:
+            return f.read().strip()
+    except:
+        return "0.0.0-unknown"
+
+def get_git_hash():
+    try:
+        import subprocess
+        return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'], cwd=BASE_DIR).decode('ascii').strip()
+    except:
+        return "unknown"
+
+APP_VERSION = get_version()
+GIT_HASH = get_git_hash()
+# -------------------------
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/

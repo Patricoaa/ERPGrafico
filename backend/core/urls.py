@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     UserViewSet, CompanySettingsViewSet, ActionLogViewSet, GlobalAuditLogView,
     CurrentUserView, MyProfileView, ChangePasswordView, ChangePinView, GroupViewSet, server_time,
-    MyProfilePayrollPreviewView
+    MyProfilePayrollPreviewView, system_status
 )
 
 router = DefaultRouter()
@@ -21,4 +21,5 @@ urlpatterns = [
     path('auth/change-pin/', ChangePinView.as_view(), name='change-pin'),
     path('audit/global/', GlobalAuditLogView.as_view(), name='global-audit-log'),
     path('server-time/', server_time, name='server-time'),
+    path('status/', system_status, name='system-status'),
 ]

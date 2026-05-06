@@ -396,3 +396,25 @@ def server_time(request):
         'day': now.day,
         'timezone': str(timezone.get_current_timezone())
     })
+
+@api_view(['GET'])
+def system_status(request):
+    """Return system information: version, git hash, and environment status"""
+    from django.conf import settings
+    from django.db import connections
+    from django.db.utils import OperationalError
+    
+    # Check DB connection
+    db_conn = True
+    try:
+        connections['default'].cursor()
+    except OperationalError:
+        db_conn = False
+
+    return Response({
+        'version': getattr(settings, 'APP_VERSION', '0.0.0'),
+        'git_hash': getattr(settings, 'GIT_HASH', 'unknown'),
+        'environment': 'production' if not settings.DEBUG else 'development',
+        'database_connected': db_conn,
+        'server_time': timezone.now().isoformat(),
+    })
