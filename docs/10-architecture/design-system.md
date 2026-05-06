@@ -13,7 +13,12 @@ ERPGrafico utilizes a unified design system. The goal is to provide a highly fun
 
 ## Core Principles
 1.  **Data Density over Whitespace:** ERP users need to see information at a glance. Primary interactive elements default to `h-10` (40px). `h-8` and `h-9` are permitted only in compact contexts (toolbars, secondary tabs, icon buttons) — not as a general replacement for standard inputs.
-2.  **Balanced Softness (8px Radius):** Standardize on a `0.5rem` (8px) radius for all containers, inputs, and buttons. This provides a modern, approachable feel while maintaining professional precision. Rounding is permitted for icon-only buttons and status pills.
+2.  **Radius Hierarchy (The Rule of Nested Corners):** Standardize on a base radius `R = 0.5rem` (8px). To ensure visual harmony in nested layouts, containers use a larger radius than their content:
+    -   **Atomic Elements (8px):** Buttons, inputs, checkboxes, and small interactive elements.
+    -   **Standard Containers (12px):** Cards and main section wrappers. Use `rounded-md`.
+    -   **Overlays (16px):** Modals, standard Sheets, and floating popovers. Use `rounded-lg`.
+    -   **Main Stage / Shell (20px):** The primary floating container of the application, as well as **Global Side Panels (Hub, Inbox)** that push the main content, and Bottom Drawers. Use `rounded-xl` to ensure parallel framing when they sit side-by-side.
+    -   Rounding (`rounded-full`) is reserved for icon-only buttons, status pills, and specific kinetic elements.
 3.  **Semantic Styling:** Never use hardcoded colors or spacing if a semantic token exists.
 
 ## Color Palette

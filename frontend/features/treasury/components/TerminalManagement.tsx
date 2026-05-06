@@ -494,7 +494,7 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
                                                             key={method.id}
                                                             onClick={() => toggleMethod(method.id)}
                                                             className={cn(
-                                                                "flex items-center space-x-3 p-3 rounded-xl border transition-all cursor-pointer group",
+                                                                "flex items-center space-x-3 p-3 rounded-md border transition-all cursor-pointer group",
                                                                 isSelected
                                                                     ? "bg-primary/5 border-primary/40 shadow-sm ring-1 ring-primary/20"
                                                                     : "bg-background hover:bg-muted/30 border-border/60 hover:border-border"

@@ -87,7 +87,7 @@ export function CreatePayrollModal({ open, onOpenChange, onSaved, trigger }: Cre
             onOpenChange={onOpenChange}
             title={
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                    <div className="p-2 bg-primary/10 rounded-sm text-primary">
                         <Plus className="h-5 w-5" />
                     </div>
                     <div className="flex flex-col text-left">

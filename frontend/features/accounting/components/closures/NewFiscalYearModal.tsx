@@ -87,7 +87,7 @@ export function NewFiscalYearModal({
         >
             <div className="px-4 pb-4 pt-2 space-y-6">
                 {hasOpenPeriods && (
-                    <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex gap-4 items-start animate-in fade-in slide-in-from-top-4">
+                    <div className="p-4 rounded-md bg-destructive/10 border border-destructive/20 flex gap-4 items-start animate-in fade-in slide-in-from-top-4">
                         <ShieldAlert className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
                         <div className="space-y-1">
                             <p className="text-xs font-bold text-destructive uppercase tracking-wider">Acción Bloqueada</p>
@@ -110,7 +110,7 @@ export function NewFiscalYearModal({
                                 <div
                                     key={y}
                                     className={cn(
-                                        "relative group overflow-hidden rounded-lg border px-4 py-6 text-center transition-all duration-200",
+                                        "relative group overflow-hidden rounded-md border px-4 py-6 text-center transition-all duration-200",
                                         isExisting
                                             ? "bg-muted/30 border-muted opacity-50 cursor-not-allowed"
                                             : "cursor-pointer",
@@ -137,7 +137,7 @@ export function NewFiscalYearModal({
                     </div>
                 </LabeledContainer>
 
-                <div className="p-4 rounded-xl bg-info/5 border border-info/10 flex gap-4 items-start">
+                <div className="p-4 rounded-md bg-info/5 border border-info/10 flex gap-4 items-start">
                     <AlertCircle className="h-5 w-5 text-info shrink-0 mt-0.5" />
                     <div className="space-y-1">
                         <p className="text-xs font-bold text-info uppercase tracking-wider">Nota de Apertura</p>

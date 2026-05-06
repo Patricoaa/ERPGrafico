@@ -37,7 +37,7 @@ export function TrialBalanceView() {
     return (
         <div className="space-y-6 pt-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
             {/* Filters Header */}
-            <div className="flex flex-col md:flex-row gap-4 items-center bg-muted/30 p-4 rounded-lg border border-border/50">
+            <div className="flex flex-col md:flex-row gap-4 items-center bg-muted/30 p-4 rounded-md border border-border/50">
                 <PeriodValidationDateInput
                     label="Desde"
                     date={startDate ? new Date(startDate + 'T12:00:00') : undefined}

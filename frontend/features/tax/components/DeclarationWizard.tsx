@@ -212,7 +212,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                     <div
                                         key={y}
                                         className={cn(
-                                            "cursor-pointer rounded-lg border border-transparent px-4 py-5 text-center transition-all duration-200",
+                                            "cursor-pointer rounded-md border border-transparent px-4 py-5 text-center transition-all duration-200",
                                             period.year === y ? "bg-primary/10 border-primary/20 scale-[1.02] shadow-sm shadow-primary/5" : "bg-muted/5 hover:bg-muted/10 text-muted-foreground"
                                         )}
                                         onClick={() => setPeriod(p => ({ ...p, year: y }))}
@@ -232,7 +232,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                         <div
                                             key={m}
                                             className={cn(
-                                                "rounded-lg border border-transparent px-2 py-4 text-center transition-all duration-200",
+                                                "rounded-md border border-transparent px-2 py-4 text-center transition-all duration-200",
                                                 disabled ? "opacity-20 cursor-not-allowed grayscale" : "cursor-pointer",
                                                 isSelected ? "bg-primary/10 border-primary/20 scale-[1.05] shadow-md shadow-primary/5 z-10" : (!disabled ? "bg-muted/5 hover:bg-muted/10" : "")
                                             )}
@@ -259,7 +259,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                     <div className="grid grid-cols-2 gap-12">
                         <section className="space-y-8">
                             <FormSection title="Débito Fiscal" icon={ArrowUpRight} />
-                            <div className="space-y-4 bg-muted/5 p-6 rounded-lg border border-border/50">
+                            <div className="space-y-4 bg-muted/5 p-6 rounded-md border border-border/50">
                                 <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground/70">
                                     <span>Ventas Afectas</span>
                                     <MoneyDisplay amount={calcData?.sales_taxed} showColor={false} className="font-bold" />
@@ -269,7 +269,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                     <MoneyDisplay amount={calcData?.sales_exempt} showColor={false} className="font-bold" />
                                 </div>
                                 <div className="pt-4 space-y-2 border-t border-border/30">
-                                    <div className="flex justify-between items-end p-4 rounded-lg bg-primary/5 border border-primary/10">
+                                    <div className="flex justify-between items-end p-4 rounded-md bg-primary/5 border border-primary/10">
                                         <span className="text-xs font-black uppercase text-primary/80">IVA Débito ({manualFields.tax_rate}%)</span>
                                         <MoneyDisplay amount={calcData?.vat_debit} className="text-2xl font-black text-primary" />
                                     </div>
@@ -278,7 +278,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                         </section>
                         <section className="space-y-8">
                             <FormSection title="Crédito Fiscal" icon={ArrowDownLeft} />
-                            <div className="space-y-4 bg-primary/5 p-6 rounded-lg border border-primary/10">
+                            <div className="space-y-4 bg-primary/5 p-6 rounded-md border border-primary/10">
                                 <div className="flex justify-between items-center text-xs uppercase font-bold text-primary/50">
                                     <span>Compras Afectas</span>
                                     <MoneyDisplay amount={calcData?.purchases_taxed} showColor={false} className="font-bold" />
@@ -288,7 +288,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                     <MoneyDisplay amount={calcData?.purchases_exempt} showColor={false} className="font-bold" />
                                 </div>
                                 <div className="pt-4 space-y-2 border-t border-primary/10">
-                                    <div className="flex justify-between items-end p-4 rounded-lg bg-primary/10 border border-primary/20 text-primary">
+                                    <div className="flex justify-between items-end p-4 rounded-md bg-primary/10 border border-primary/20 text-primary">
                                         <span className="text-xs font-black uppercase">IVA Crédito ({manualFields.tax_rate}%)</span>
                                         <MoneyDisplay amount={calcData?.vat_credit} className="text-2xl font-black" />
                                     </div>
@@ -297,14 +297,14 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                         </section>
                     </div>
                     {calcData?.drafts_summary && (calcData.drafts_summary.invoices.length > 0 || calcData.drafts_summary.entries.length > 0) && (
-                        <Alert variant="default" className="border-warning/30 bg-warning/5 rounded-lg p-6">
+                        <Alert variant="default" className="border-warning/30 bg-warning/5 rounded-md p-6">
                             <AlertCircle className="h-5 w-5 text-warning" />
                             <div className="space-y-4 w-full">
                                 <AlertTitle className="text-sm font-black uppercase tracking-widest text-warning/90">Documentos en Borrador</AlertTitle>
                                 <AlertDescription className="text-xs text-warning/70 font-medium">Hay pendientes que no se incluyeron. Se recomienda procesarlos.</AlertDescription>
                                 <div className="grid grid-cols-2 gap-4">
                                     {calcData.drafts_summary.invoices.slice(0, 2).map(inv => (
-                                        <div key={inv.id} className="flex items-center justify-between bg-white/50 p-3 rounded-xl border border-warning/10">
+                                        <div key={inv.id} className="flex items-center justify-between bg-white/50 p-3 rounded-md border border-warning/10">
                                             <span className="text-[11px] font-bold">{inv.display_id}</span>
                                             <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black" onClick={() => openHub({ type: inv.type, invoiceId: inv.id })}>Abrir Hub</Button>
                                         </div>
@@ -388,7 +388,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
             isValid: true,
             component: (
                 <div className="max-w-4xl mx-auto pb-6 space-y-8">
-                    <div className="bg-card border border-border/50 rounded-lg p-8 space-y-6">
+                    <div className="bg-card border border-border/50 rounded-md p-8 space-y-6">
                         <div className="flex justify-between items-center text-sm font-medium">
                             <span className="text-muted-foreground">IVA Determinado</span>
                             <MoneyDisplay amount={vatToPay} showColor={false} className="font-bold" />
@@ -398,12 +398,12 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                             <MoneyDisplay amount={otherTaxes} showColor={false} className="font-bold" />
                         </div>
                         {vatRemanent > 0 && (
-                            <div className="flex justify-between items-center p-3 rounded-lg bg-success/5 border border-success/10">
+                            <div className="flex justify-between items-center p-3 rounded-md bg-success/5 border border-success/10">
                                 <span className="text-success text-xs font-black uppercase">Nuevo Remanente a Favor</span>
                                 <MoneyDisplay amount={vatRemanent} className="font-black text-success" />
                             </div>
                         )}
-                        <div className="flex flex-col items-center justify-center p-8 rounded-xl bg-primary/5 border-2 border-primary/20">
+                        <div className="flex flex-col items-center justify-center p-8 rounded-md bg-primary/5 border-2 border-primary/20">
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-2">Total a Pagar SII</span>
                             <MoneyDisplay amount={finalToPay} className="text-4xl font-black text-primary" />
                         </div>

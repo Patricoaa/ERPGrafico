@@ -9,6 +9,8 @@ stability: beta
 
 # LabeledInput y LabeledSelect — Contracts
 
+Estos componentes pertenecen al nivel **Atomic Elements** de la jerarquía de radios (`rounded-sm` / `var(--radius)`) y utilizan el patrón de notched border (fieldset + legend).
+
 > 📄 Este documento cubre el primitivo `LabeledInput`. Para inputs especializados de negocio (folio DTE, fecha con validación de periodo), ver las entradas correspondientes en [component-contracts.md](./component-contracts.md).
 
 ## ¿Cuándo usar `LabeledInput`?

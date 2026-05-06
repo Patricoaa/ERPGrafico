@@ -1,6 +1,6 @@
 # Button
 
-El sistema de botones de ERPGrafico es una **jerarquía de 3 capas**. Elegir la capa correcta es obligatorio; crear un botón ad-hoc con estilos en línea está **prohibido**.
+El sistema de botones de ERPGrafico es una **jerarquía de 3 capas**. Pertenecen al nivel **Atomic Elements** de la jerarquía de radios (`rounded-sm`). Elegir la capa correcta es obligatorio; crear un botón ad-hoc con estilos en línea está **prohibido**.
 
 **Layer**: 20-contracts
 **Owner**: frontend-team

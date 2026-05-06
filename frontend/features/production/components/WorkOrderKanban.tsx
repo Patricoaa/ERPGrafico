@@ -140,7 +140,7 @@ export function WorkOrderKanban({ orders, onTransition, onManage, isLoading }: K
                                         </Card>
                                     ))}
                                     {stageOrders.length === 0 && (
-                                        <div className="h-24 border-2 border-dashed border-muted/20 rounded-lg flex items-center justify-center text-xs text-muted-foreground italic">
+                                        <div className="h-24 border-2 border-dashed border-muted/20 rounded-md flex items-center justify-center text-xs text-muted-foreground italic">
                                             Sin órdenes
                                         </div>
                                     )}

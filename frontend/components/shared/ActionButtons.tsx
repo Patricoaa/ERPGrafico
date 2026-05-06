@@ -76,7 +76,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
         type={type} 
         className={cn(
           "h-9 w-9 hover:scale-110 transition-transform", 
-          circular ? "rounded-full" : "rounded-md",
+          circular ? "rounded-full" : "rounded-sm",
           className
         )} 
         {...props} 

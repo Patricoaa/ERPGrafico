@@ -205,7 +205,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                             variant="ghost" 
                             size="icon" 
                             onClick={() => router.push('/hr/payrolls')} 
-                            className="rounded-lg h-10 w-10 text-muted-foreground hover:bg-primary/5 hover:text-primary transition-all"
+                            className="rounded-sm h-10 w-10 text-muted-foreground hover:bg-primary/5 hover:text-primary transition-all"
                         >
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
@@ -219,7 +219,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                                 </h1>
                                 <StatusBadge 
                                     status={isPosted ? "posted" : "draft"} 
-                                    className="rounded-lg px-2 h-4.5"
+                                    className="rounded-sm px-2 h-4.5"
                                 />
                             </div>
                             <div className="flex items-center gap-3 text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
@@ -239,7 +239,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                             <Button
                                 variant="outline" 
                                 size="sm"
-                                className="rounded-lg text-[10px] sm:text-xs font-bold gap-1.5 border-primary/20 text-primary hover:bg-primary/5 px-2 sm:px-4 h-8 sm:h-9"
+                                className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 border-primary/20 text-primary hover:bg-primary/5 px-2 sm:px-4 h-8 sm:h-9"
                                 onClick={handleGenerateProforma}
                                 disabled={generating}
                             >
@@ -250,7 +250,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
 
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button size="sm" className="rounded-lg text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 shadow-lg shadow-primary/20" disabled={posting}>
+                                    <Button size="sm" className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 shadow-lg shadow-primary/20" disabled={posting}>
                                         {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
                                         Contabilizar
                                     </Button>
@@ -264,8 +264,8 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter className="mt-4 gap-3">
-                                        <AlertDialogCancel className="rounded-lg font-bold text-xs border-primary/10">Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handlePost} className="rounded-lg font-bold text-xs bg-primary hover:bg-primary/90">
+                                        <AlertDialogCancel className="rounded-sm font-bold text-xs border-primary/10">Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handlePost} className="rounded-sm font-bold text-xs bg-primary hover:bg-primary/90">
                                             Confirmar y Contabilizar
                                         </AlertDialogAction>
                                     </AlertDialogFooter>
@@ -279,7 +279,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                                 variant="outline" 
                                 size="sm"
                                 className={cn(
-                                    "rounded-lg text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                    "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
                                     salaroPaid
                                         ? "bg-success/10 text-success border-success/20"
                                         : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/10"
@@ -294,7 +294,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                                 variant="outline" 
                                 size="sm"
                                 className={cn(
-                                    "rounded-lg text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                    "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
                                     previredPaid
                                         ? "bg-success/10 text-success border-success/20"
                                         : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
@@ -312,7 +312,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 sm:h-9 sm:w-9 rounded-lg text-destructive hover:bg-destructive/10" 
+                            className="h-8 w-8 sm:h-9 sm:w-9 rounded-sm text-destructive hover:bg-destructive/10" 
                             onClick={handleDeletePayroll}
                         >
                             <Trash2 className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
@@ -472,7 +472,7 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
                         type="button"
                         variant="outline"
                         onClick={() => { setOpen(false); onEditCleared(); }}
-                        className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5"
+                        className="rounded-sm text-xs font-bold border-primary/20 hover:bg-primary/5"
                     >
                         Cancelar
                     </Button>
@@ -480,7 +480,7 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
                         form="payroll-item-form"
                         type="submit"
                         disabled={saving}
-                        className="rounded-lg text-xs font-bold transition-all shadow-lg shadow-primary/20"
+                        className="rounded-sm text-xs font-bold transition-all shadow-lg shadow-primary/20"
                     >
                         {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {item ? "Actualizar Item" : "Añadir a Liquidación"}

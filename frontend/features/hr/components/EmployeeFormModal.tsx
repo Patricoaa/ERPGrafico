@@ -431,7 +431,7 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                                             ].map((sw) => (
                                                 <FormField key={sw.name} control={form.control} name={sw.name as any} render={({ field }) => (
                                                     <div className={cn(
-                                                        "flex items-center justify-between p-3.5 rounded-xl border transition-all",
+                                                        "flex items-center justify-between p-3.5 rounded-md border transition-all",
                                                         field.value ? "bg-primary/5 border-primary/20" : "bg-background border-dashed"
                                                     )}>
                                                         <label className="text-[10px] font-black uppercase tracking-widest">{sw.label}</label>
