@@ -1,8 +1,6 @@
 import React from "react"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { FileIcon, Paintbrush, Printer, FileText, Upload, Plus, X } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -92,17 +90,14 @@ export function WorkOrderMaterials({
 
                     {enablePrepress && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="relative group/field">
-                                <label className="absolute -top-2 left-2 px-1 bg-background text-[9px] font-bold uppercase tracking-wider text-muted-foreground transition-colors group-focus-within/field:text-primary z-10">
-                                    Especificaciones
-                                </label>
-                                <Textarea 
-                                    value={prepressSpecs} 
-                                    onChange={e => setPrepressSpecs(e.target.value)} 
-                                    placeholder="Instrucciones de diseño..."
-                                    className="min-h-[80px] text-xs bg-transparent border-border/40 focus:border-primary/40 transition-all resize-none" 
-                                />
-                            </div>
+                            <LabeledInput
+                                label="Especificaciones"
+                                as="textarea"
+                                rows={3}
+                                value={prepressSpecs}
+                                onChange={e => setPrepressSpecs(e.target.value)}
+                                placeholder="Instrucciones de diseño..."
+                            />
 
                             <div className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/20 border border-border/40">
                                 <span className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">Diseño Requerido</span>
@@ -159,15 +154,13 @@ export function WorkOrderMaterials({
                                     <Switch checked={folioEnabled} onCheckedChange={setFolioEnabled} className="scale-75 data-[state=checked]:bg-primary" />
                                 </div>
                                 {folioEnabled && (
-                                    <div className="relative group/folio animate-in zoom-in-95 duration-200">
-                                        <label className="absolute -top-2 left-2 px-1 bg-background text-[9px] font-bold uppercase tracking-wider text-muted-foreground z-10">
-                                            N° Inicial
-                                        </label>
-                                        <Input 
-                                            placeholder="Ej: 0001" 
-                                            value={folioStart} 
-                                            onChange={e => setFolioStart(e.target.value)} 
-                                            className="h-9 text-xs bg-transparent border-border/40 focus:border-primary/40 font-mono font-bold" 
+                                    <div className="animate-in zoom-in-95 duration-200">
+                                        <LabeledInput
+                                            label="N° Inicial"
+                                            placeholder="Ej: 0001"
+                                            value={folioStart}
+                                            onChange={e => setFolioStart(e.target.value)}
+                                            className="font-mono font-bold"
                                         />
                                     </div>
                                 )}
@@ -192,17 +185,14 @@ export function WorkOrderMaterials({
 
                     {enablePress && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="relative group/field">
-                                <label className="absolute -top-2 left-2 px-1 bg-background text-[9px] font-bold uppercase tracking-wider text-muted-foreground transition-colors group-focus-within/field:text-primary z-10">
-                                    Especificaciones
-                                </label>
-                                <Textarea 
-                                    value={pressSpecs} 
-                                    onChange={e => setPressSpecs(e.target.value)} 
-                                    placeholder="Tintas, papel, terminaciones..."
-                                    className="min-h-[80px] text-xs bg-transparent border-border/40 focus:border-primary/40 transition-all resize-none" 
-                                />
-                            </div>
+                            <LabeledInput
+                                label="Especificaciones"
+                                as="textarea"
+                                rows={3}
+                                value={pressSpecs}
+                                onChange={e => setPressSpecs(e.target.value)}
+                                placeholder="Tintas, papel, terminaciones..."
+                            />
 
                             <div className="space-y-2">
                                 <span className="text-[9px] uppercase text-muted-foreground font-black tracking-widest pl-1">Tecnología</span>
@@ -244,17 +234,14 @@ export function WorkOrderMaterials({
 
                     {enablePostpress && (
                         <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="relative group/field">
-                                <label className="absolute -top-2 left-2 px-1 bg-background text-[9px] font-bold uppercase tracking-wider text-muted-foreground transition-colors group-focus-within/field:text-primary z-10">
-                                    Especificaciones
-                                </label>
-                                <Textarea 
-                                    value={postpressSpecs} 
-                                    onChange={e => setPostpressSpecs(e.target.value)} 
-                                    placeholder="Acabados, laminado, troquel, etc."
-                                    className="min-h-[80px] text-xs bg-transparent border-border/40 focus:border-primary/40 transition-all resize-none" 
-                                />
-                            </div>
+                            <LabeledInput
+                                label="Especificaciones"
+                                as="textarea"
+                                rows={3}
+                                value={postpressSpecs}
+                                onChange={e => setPostpressSpecs(e.target.value)}
+                                placeholder="Acabados, laminado, troquel, etc."
+                            />
                         </div>
                     )}
                 </div>

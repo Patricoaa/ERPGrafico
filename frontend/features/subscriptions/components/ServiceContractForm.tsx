@@ -16,13 +16,6 @@ import { toast } from "sonner"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, FormSection } from "@/components/shared"
 import { Settings2 } from "lucide-react"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 
 import { serviceContractSchema, type ServiceContractFormValues } from "./ServiceContractForm.schema"
 import { Account } from "@/types/entities"
@@ -378,46 +371,36 @@ export function ServiceContractForm({ onSuccess, initialData }: ServiceContractF
                                         control={form.control}
                                         name="expense_account"
                                         render={({ field, fieldState }) => (
-                                            <FormItem>
-                                                <FormControl>
-                                                    <LabeledContainer label="Cuenta Gasto" error={fieldState.error?.message}>
-                                                        <Select onValueChange={field.onChange} value={field.value || "inherited"}>
-                                                            <SelectTrigger className="border-0 focus:ring-0 h-8 px-2">
-                                                                <SelectValue placeholder="Heredado" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="inherited" className="font-semibold text-primary italic">Heredar de categoría (Recomendado)</SelectItem>
-                                                                {accounts.filter((a) => a.account_type === 'EXPENSE').map((a) => (
-                                                                    <SelectItem key={a.id} value={a.id.toString()}>{a.code} - {a.name}</SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </LabeledContainer>
-                                                </FormControl>
-                                            </FormItem>
+                                            <LabeledSelect
+                                                label="Cuenta Gasto"
+                                                error={fieldState.error?.message}
+                                                value={field.value || "inherited"}
+                                                onChange={field.onChange}
+                                                options={[
+                                                    { value: "inherited", label: "Heredar de categoría (Recomendado)" },
+                                                    ...accounts
+                                                        .filter((a) => a.account_type === 'EXPENSE')
+                                                        .map((a) => ({ value: a.id.toString(), label: `${a.code} - ${a.name}` }))
+                                                ]}
+                                            />
                                         )}
                                     />
                                     <FormField
                                         control={form.control}
                                         name="payable_account"
                                         render={({ field, fieldState }) => (
-                                            <FormItem>
-                                                <FormControl>
-                                                    <LabeledContainer label="Cuenta Pasivo" error={fieldState.error?.message}>
-                                                        <Select onValueChange={field.onChange} value={field.value || "inherited"}>
-                                                            <SelectTrigger className="border-0 focus:ring-0 h-8 px-2">
-                                                                <SelectValue placeholder="Heredado" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="inherited" className="font-semibold text-primary italic">Heredar de categoría (Recomendado)</SelectItem>
-                                                                {accounts.filter((a) => a.account_type === 'LIABILITY').map((a) => (
-                                                                    <SelectItem key={a.id} value={a.id.toString()}>{a.code} - {a.name}</SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </LabeledContainer>
-                                                </FormControl>
-                                            </FormItem>
+                                            <LabeledSelect
+                                                label="Cuenta Pasivo"
+                                                error={fieldState.error?.message}
+                                                value={field.value || "inherited"}
+                                                onChange={field.onChange}
+                                                options={[
+                                                    { value: "inherited", label: "Heredar de categoría (Recomendado)" },
+                                                    ...accounts
+                                                        .filter((a) => a.account_type === 'LIABILITY')
+                                                        .map((a) => ({ value: a.id.toString(), label: `${a.code} - ${a.name}` }))
+                                                ]}
+                                            />
                                         )}
                                     />
                                 </div>

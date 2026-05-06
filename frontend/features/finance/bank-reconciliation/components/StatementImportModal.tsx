@@ -8,7 +8,7 @@ import { getErrorMessage } from "@/lib/errors"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { LabeledSelect, GenericWizard, WizardStep, FormSection, DocumentAttachmentDropzone } from "@/components/shared"
+import { LabeledSelect, GenericWizard, WizardStep, FormSection, DocumentAttachmentDropzone, LabeledInput } from "@/components/shared"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { FileUp, Columns, Table as TableIcon, AlertCircle, CheckCircle2, RefreshCw, FileSearch, Landmark, FileText, SlidersHorizontal } from "lucide-react"
 import api from "@/lib/api"
@@ -348,40 +348,37 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                             </div>
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold uppercase text-muted-foreground">Delimitador</label>
-                                    <Select value={csvDelimiter} onValueChange={setCsvDelimiter}>
-                                        <SelectTrigger className="h-8 text-xs font-bold uppercase">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="auto" className="text-xs font-bold uppercase">Auto-detectar</SelectItem>
-                                            <SelectItem value=";" className="text-xs font-bold uppercase">Punto y coma ( ; )</SelectItem>
-                                            <SelectItem value="," className="text-xs font-bold uppercase">Coma ( , )</SelectItem>
-                                            <SelectItem value="\t" className="text-xs font-bold uppercase">Tab ( \t )</SelectItem>
-                                            <SelectItem value="|" className="text-xs font-bold uppercase">Barra ( | )</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    <LabeledSelect
+                                        label="Delimitador"
+                                        value={csvDelimiter}
+                                        onChange={setCsvDelimiter}
+                                        options={[
+                                            { value: "auto", label: "Auto-detectar" },
+                                            { value: ";", label: "Punto y coma ( ; )" },
+                                            { value: ",", label: "Coma ( , )" },
+                                            { value: "\\t", label: "Tab ( \\t )" },
+                                            { value: "|", label: "Barra ( | )" }
+                                        ]}
+                                    />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold uppercase text-muted-foreground">Saltar filas inicio</label>
-                                    <input
+                                    <LabeledInput
+                                        label="Saltar filas inicio"
                                         type="number"
                                         min={0}
                                         max={20}
                                         value={skipRows}
                                         onChange={e => setSkipRows(Math.max(0, parseInt(e.target.value) || 0))}
-                                        className="h-8 w-full rounded-md border border-input bg-background px-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-ring"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold uppercase text-muted-foreground">Saltar filas final</label>
-                                    <input
+                                    <LabeledInput
+                                        label="Saltar filas final"
                                         type="number"
                                         min={0}
                                         max={20}
                                         value={skipFooterRows}
                                         onChange={e => setSkipFooterRows(Math.max(0, parseInt(e.target.value) || 0))}
-                                        className="h-8 w-full rounded-md border border-input bg-background px-3 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-ring"
                                     />
                                 </div>
                             </div>

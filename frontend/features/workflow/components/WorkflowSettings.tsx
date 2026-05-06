@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
+// Label removed — the two numeric inputs below are compact inline controls
+// classified as Toolbar Filter Input per component-input.md §Toolbar Filter Input
 import { UserSelector } from "@/components/selectors/UserSelector"
 import { GroupSelector } from "@/components/selectors/GroupSelector"
 import { Settings, Save, AlertCircle, CheckCircle2, User, Users, CloudUpload, Check } from "lucide-react"
@@ -230,7 +231,8 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                             {/* Recurrent Day Configuration */}
                             {isRecurrent && (
                                 <div className="flex items-center gap-2 px-3 py-1 bg-muted/30 rounded-lg border border-border/50">
-                                    <Label className="text-[10px] whitespace-nowrap">Día Gen:</Label>
+                                    {/* Toolbar Filter Input — compact inline numeric control, not a form field */}
+                                    <span className="text-[10px] whitespace-nowrap text-muted-foreground font-medium">Día Gen:</span>
                                     <Input
                                         type="number"
                                         min="1"
@@ -330,7 +332,8 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
                                 {type.id === 'LOW_MARGIN_ALERT' && (
                                     <div className="flex items-center gap-3 px-4 py-2 bg-muted/30 rounded-lg border border-border/50">
                                         <div className="space-y-0.5">
-                                            <Label className="text-[10px] font-bold uppercase tracking-tight">Umbral Mínimo (%)</Label>
+                                            {/* Toolbar Filter Input — compact inline numeric control, not a form field */}
+                                            <p className="text-[10px] font-bold uppercase tracking-tight text-muted-foreground">Umbral Mínimo (%)</p>
                                             <p className="text-[9px] text-muted-foreground leading-none text-right">0 = Apagado</p>
                                         </div>
                                         <div className="flex items-center gap-1 relative w-[72px]">

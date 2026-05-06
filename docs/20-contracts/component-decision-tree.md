@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-decision-tree
 status: active
 owner: frontend-team
-last_review: 2026-04-23
+last_review: 2026-05-06
 stability: stable
 ---
 
@@ -52,7 +52,7 @@ graph TD
 
 ```mermaid
 graph TD
-    A[¿Qué tipo de Input?]
+    A["¿Qué tipo de Input?"]
     A -->|Texto, número, email, password simple| B(LabeledInput)
     A -->|Textarea / multiline| B
     A -->|Subir/Arrastrar Archivo| C(DocumentAttachmentDropzone)
@@ -60,11 +60,15 @@ graph TD
     A -->|Fecha con validación de Cierre| E(PeriodValidationDateInput)
     A -->|Folio de DTE| F(FolioValidationInput)
     A -->|Rango de fechas - Filtro| G(DateRangeFilter)
+    A -->|"Input en celda de tabla editable"| H(["Table Cell Input \n raw shadcn — ver contrato"])
+    A -->|"Búsqueda/filtro en toolbar"| I(["Toolbar Filter Input \n raw shadcn — ver contrato"])
 ```
 
 - **`LabeledInput`**: Primitivo estándar. Renderiza `fieldset + legend` (patrón Notched). Soporta `as="textarea"`. Compatible con `react-hook-form` via `{...field}`. Ver [component-input.md](./component-input.md).
 - **`PeriodValidationDateInput`**: Obligatorio en documentos donde la fecha impacte contabilidad o impuestos para validar si el periodo está cerrado.
 - **`FolioValidationInput`**: Úsalo para prevenir folios duplicados por proveedor asíncronamente mientras el usuario tipea.
+- **Table Cell Input**: `<Input>` de shadcn sin notched, dentro de `<TableCell>` en una tabla editable (spreadsheet). Ver [component-table-cell-input.md](./component-table-cell-input.md). Usar el shell `FormLineItemsTable` o `AccountingLinesTable`.
+- **Toolbar Filter Input**: `<Input>` de shadcn para filtros/búsqueda en toolbars compactos. Ver sección de excepciones en [component-input.md](./component-input.md#toolbar-filter-input).
 
 ## 4. Layout de Página
 

@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-contracts
 status: active
 owner: frontend-team
-last_review: 2026-04-23
+last_review: 2026-05-06
 stability: contract-changes-require-ADR
 ---
 
@@ -23,6 +23,15 @@ Public API of every shared component in `components/shared/`. Consumers import o
 ## Selector components
 
 > See **[component-selectors.md](./component-selectors.md)** for AccountSelector, ProductSelector, AdvancedWorkOrderSelector, and 7 more.
+
+---
+
+## Table Cell Input (excepción documentada)
+
+> 📄 Documentación completa en **[component-table-cell-input.md](./component-table-cell-input.md)**.
+
+Patrón de `<Input>` de shadcn **sin notched** dentro de `<TableCell>`. Es la única excepción autorizada para no usar `LabeledInput` en un formulario con datos editables.
+Shell components: `FormLineItemsTable` · `AccountingLinesTable`.
 
 ---
 
@@ -512,7 +521,63 @@ La estructura esperada en el array de form values (zod schema) es un array de ob
 
 States handled: Validaciones de input, cálculo en tiempo real de saldos totales.
 
+> Los inputs internos (`<Input>`) siguen el patrón **Table Cell Input** — ver [component-table-cell-input.md](./component-table-cell-input.md).
+
 ---
+
+## FormLineItemsTable 🟢
+
+Shell genérico para tablas de líneas editables (wizards de compra, wizards de producción, notas C/D, distribuciones de capital). Provee el **encabezado + footer con botón "Agregar Línea"** y delega el contenido de las celdas al caller vía `children`.
+
+```tsx
+<FormLineItemsTable
+  title="Líneas"
+  icon={PackageIcon}
+  onAdd={() => append({ ... })}
+  columns={[
+    { header: "Producto", width: "w-[300px]", align: "left" },
+    { header: "Cant.",    width: "w-[100px]", align: "center" },
+    { header: "P.Unit",  width: "w-[120px]", align: "right" },
+    { header: "",         width: "w-[48px]"  },
+  ]}
+  footer={<BalanceSummary />}
+>
+  <TableBody>
+    {fields.map((field, i) => (
+      <TableRow key={field.id} className="hover:bg-primary/5 transition-colors">
+        <TableCell className="p-2"><ProductSelector ... /></TableCell>
+        <TableCell className="p-2"><Input type="number" className="h-8 text-xs font-mono text-right" ... /></TableCell>
+      </TableRow>
+    ))}
+  </TableBody>
+</FormLineItemsTable>
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `columns` | `FormLineItemColumn[]` | ✅ | — | `{ header, width?, align?, className? }` |
+| `children` | `ReactNode` | ✅ | — | Caller renderiza `<TableBody>` completo con sus celdas |
+| `onAdd` | `() => void` | ❌ | — | Callback del botón "Agregar Línea" |
+| `addButtonText` | `string` | ❌ | `'Agregar Línea'` | |
+| `hideAddButton` | `boolean` | ❌ | `false` | Oculta el botón (tablas de solo lectura o read-only wizard steps) |
+| `footer` | `ReactNode` | ❌ | — | Slot derecho del footer (balance, totales, etc.) |
+| `title` | `string` | ❌ | — | Label sobre la tabla |
+| `subtitle` | `string` | ❌ | — | Caption secundario junto al title |
+| `icon` | `ElementType` | ❌ | — | Ícono Lucide junto al title |
+| `className` | `string` | ❌ | — | |
+
+```typescript
+interface FormLineItemColumn {
+  header: ReactNode
+  width?: string     // e.g. "w-[150px]" o "w-[15%]"
+  align?: 'left' | 'center' | 'right'  // default: 'center'
+  className?: string
+}
+```
+
+Import: `import { FormLineItemsTable } from '@/components/shared'`
+
+> Los inputs dentro de las celdas siguen el contrato **[Table Cell Input](./component-table-cell-input.md)**.
 
 ## CollapsibleSheet 🟢
 

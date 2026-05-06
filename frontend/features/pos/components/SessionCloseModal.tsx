@@ -3,8 +3,6 @@
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
     Select,
     SelectContent,
@@ -19,6 +17,7 @@ import api from "@/lib/api"
 import { Numpad } from "@/components/ui/numpad"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { LabeledContainer } from "@/components/shared"
 import { cn, formatCurrency } from "@/lib/utils"
 import { POSReport, type POSReportData } from "./POSReport"
 
@@ -262,10 +261,9 @@ export function SessionCloseModal({
                                     <span>{diff > 0 ? "Sobrante" : "Faltante"}:</span>
                                     <span className="font-bold text-lg">{formatCurrency(Math.abs(diff))}</span>
                                 </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Motivo (Requerido)</Label>
+                                <LabeledContainer label="Motivo" required>
                                     <Select value={justifyReason} onValueChange={setJustifyReason}>
-                                        <SelectTrigger className="bg-white dark:bg-black/20 h-9">
+                                        <SelectTrigger className="border-0 shadow-none focus-visible:ring-0 bg-white dark:bg-black/20 h-9">
                                             <SelectValue placeholder="Seleccione motivo..." />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -300,21 +298,22 @@ export function SessionCloseModal({
                                             )}
                                         </SelectContent>
                                     </Select>
-                                </div>
+                                </LabeledContainer>
 
                                 {/* Dynamic selector for Transfer justification */}
                                 {justifyReason === 'TRANSFER' && (
                                     <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                                        <Label className="text-xs">
-                                            {diff < 0 ? 'Cuenta de Destino (¿A dónde se llevó el dinero?)' : 'Cuenta de Origen (¿De dónde vino el dinero?)'}
-                                        </Label>
-                                        <TreasuryAccountSelector
-                                            value={justifyTargetId}
-                                            onChange={setJustifyTargetId}
-                                            placeholder={diff < 0 ? "Seleccione destino..." : "Seleccione origen..."}
-                                            excludeId={typeof session.treasury_account === 'object' ? session.treasury_account.id : session.treasury_account}
-                                            type="CASH"
-                                        />
+                                        <LabeledContainer
+                                            label={diff < 0 ? 'Cuenta de Destino (¿A dónde se llevó el dinero?)' : 'Cuenta de Origen (¿De dónde vino el dinero?)'}
+                                        >
+                                            <TreasuryAccountSelector
+                                                value={justifyTargetId}
+                                                onChange={setJustifyTargetId}
+                                                placeholder={diff < 0 ? "Seleccione destino..." : "Seleccione origen..."}
+                                                excludeId={typeof session.treasury_account === 'object' ? session.treasury_account.id : session.treasury_account}
+                                                type="CASH"
+                                            />
+                                        </LabeledContainer>
 
                                         {/* Insufficient funds warning */}
                                         {insufficientFunds && selectedAccount && (
@@ -423,8 +422,7 @@ export function SessionCloseModal({
                                 />
                             </div>
 
-                            <div className="space-y-2">
-                                <Label>Destino</Label>
+                            <LabeledContainer label="Destino">
                                 <TreasuryAccountSelector
                                     value={cashDestinationId?.toString()}
                                     onChange={(val) => setCashDestinationId(val ? Number(val) : null)}
@@ -432,7 +430,7 @@ export function SessionCloseModal({
                                     paymentMethod="CASH"
                                     excludeId={typeof session.treasury_account === 'object' ? session.treasury_account.id : session.treasury_account}
                                 />
-                            </div>
+                            </LabeledContainer>
                         </div>
 
                         <div className="flex gap-2">

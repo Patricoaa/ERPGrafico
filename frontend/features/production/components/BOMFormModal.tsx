@@ -25,13 +25,6 @@ import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 import { LabeledInput, LabeledSelect, LabeledSwitch, FormSection, FormFooter, FormLineItemsTable, IconButton } from "@/components/shared"
 
 const tableInputClass = "h-9 w-full bg-background border border-border/80 rounded-md px-2 text-xs focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 
 // Schema for material lines (stock components)
 const materialLineSchema = z.object({
@@ -802,25 +795,19 @@ export function BOMFormModal({
                                                             const lineVars = lineVariantsCache[compId] || []
                                                             if (lineVars.length > 0) return (
                                                                 <div className="animate-in fade-in slide-in-from-top-1">
-                                                                    <Select
+                                                                    {/* Table Cell Input - variant selector inline in service line */}
+                                                                    <LabeledSelect
+                                                                        variant="inline"
                                                                         value={form.watch(`service_lines.${index}.component`)}
-                                                                        onValueChange={(val) => {
+                                                                        onChange={(val) => {
                                                                             form.setValue(`service_lines.${index}.component`, val)
                                                                             const v = lineVars.find((vr: ProductMinimal) => vr.id.toString() === val)
                                                                             if (v && v.uom) form.setValue(`service_lines.${index}.uom`, v.uom.toString())
                                                                         }}
-                                                                    >
-                                                                        <SelectTrigger className="h-7 w-full text-[10px] bg-primary/5 border-primary/20">
-                                                                            <SelectValue placeholder="Variante..." />
-                                                                        </SelectTrigger>
-                                                                        <SelectContent position="popper" className="z-[110]">
-                                                                            {lineVars.map(v => (
-                                                                                <SelectItem key={v.id} value={v.id.toString()} className="text-[10px]">
-                                                                                    {v.variant_display_name || v.name}
-                                                                                </SelectItem>
-                                                                            ))}
-                                                                        </SelectContent>
-                                                                    </Select>
+                                                                        placeholder="Variante..."
+                                                                        className="bg-primary/5"
+                                                                        options={lineVars.map(v => ({ value: v.id.toString(), label: v.variant_display_name || v.name }))}
+                                                                    />
                                                                 </div>
                                                             )
                                                             return null

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -17,7 +16,7 @@ import {
     Info,
     Scale
 } from "lucide-react"
-import { QuantityDisplay } from "@/components/shared"
+import { QuantityDisplay, LabeledInput } from "@/components/shared"
 
 import type { WorkOrder, WorkOrderMaterial } from "../../types"
 
@@ -253,28 +252,27 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 items-center">
+                    <div className="grid grid-cols-2 gap-4 items-start">
                         <div>
-                            <Label className="text-xs text-muted-foreground mb-1.5 block">Cantidad planificada</Label>
+                            <p className="text-xs text-muted-foreground mb-1.5">Cantidad planificada</p>
                             <div className="text-lg font-semibold text-foreground flex items-center">
                                 <QuantityDisplay value={plannedProducedQty} decimals={4} inline />
                                 <span className="text-sm text-muted-foreground ml-1.5">{order?.product?.uom?.name || "un."}</span>
                             </div>
                         </div>
                         <div>
-                            <Label className="text-xs text-muted-foreground mb-1.5 block">Cantidad real producida</Label>
-                            <Input
+                            <LabeledInput
+                                label="Cantidad real producida"
                                 type="number"
                                 min="0.001"
                                 step="any"
                                 value={actualProducedQty}
                                 onChange={e => setActualProducedQty(e.target.value)}
-                                className={cn(
-                                    "h-9",
-                                    parseFloat(actualProducedQty) !== parseFloat(plannedProducedQty) &&
-                                    "border-warning focus-visible:ring-warning"
-                                )}
                                 placeholder="Ej: 95"
+                                containerClassName={cn(
+                                    parseFloat(actualProducedQty) !== parseFloat(plannedProducedQty) &&
+                                    "[&_fieldset]:border-warning [&_legend]:text-warning"
+                                )}
                             />
                         </div>
                     </div>
