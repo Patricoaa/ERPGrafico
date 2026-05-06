@@ -42,6 +42,7 @@
 | "which component", "component decision", "what to use" | [component-decision-tree.md](20-contracts/component-decision-tree.md) | 20 |
 | "component API", "prop signature", "StatusBadge usage" | [component-contracts.md](20-contracts/component-contracts.md) | 20 |
 | "selector component", "entity search", "combobox", "AccountSelector" | [component-selectors.md](20-contracts/component-selectors.md) | 20 |
+| "module layout", "navigation pattern", "dynamic header", "module tabs" | [module-layout-navigation.md](20-contracts/module-layout-navigation.md) | 20 |
 | "form size", "form pattern", "when to use tabs", "wizard vs form", "form surface", "form layout" | [component-form-patterns.md](20-contracts/component-form-patterns.md) | 20 |
 | "hook signature", "return shape" | [hook-contracts.md](20-contracts/hook-contracts.md) | 20 |
 | "entity state", "status values" | [state-map.md](20-contracts/state-map.md) | 20 |
