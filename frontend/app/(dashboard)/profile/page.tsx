@@ -1,6 +1,6 @@
 "use client"
 
-import { ProfileView } from "@/features/profile"
+import { ProfileView, ProfileSidePanel } from "@/features/profile"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useSearchParams } from "next/navigation"
@@ -49,6 +49,8 @@ export default function ProfilePage() {
                 <div className="pt-4">
                     <ProfileView activeTab={activeTab} />
                 </div>
+
+                <ProfileSidePanel profile={null} />
             </div>
         )
     }
@@ -103,6 +105,8 @@ export default function ProfilePage() {
             <div className="pt-4">
                 <ProfileView activeTab={activeTab} initialProfile={profile ?? undefined} />
             </div>
+
+            <ProfileSidePanel profile={profile} />
         </div>
     )
 }
