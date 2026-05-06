@@ -52,7 +52,8 @@ export function FinancesHeader() {
         moduleHref: "/finances",
         tabs,
         activeValue,
-        subActiveValue
+        subActiveValue,
+        configHref: "/finances/settings"
     }
 
     const getHeaderConfig = () => {
