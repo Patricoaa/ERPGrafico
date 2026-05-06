@@ -70,6 +70,25 @@ Rejects gaps + duplicates per fiscal period.
 
 Generic wrapper over TanStack `useMutation`. Applies JWT, error toast, success toast. Feature hooks build on top.
 
+### `useAutoSaveForm<T>(opts)` 🟢
+
+Centralized debounced autosave for `react-hook-form` instances. Used by **every settings panel** that edits a singleton or a row-of-collection. Returns `{ status, invalidReason, lastSavedAt, flush, retry }` — see full contract in [autosave-contract.md](./autosave-contract.md).
+
+```ts
+const { status, flush, retry } = useAutoSaveForm({
+  form,
+  onSave: async (values) => api.patch('/settings/...', values),
+  debounceMs: 1000,
+  validate: (v) => v.weights.sum === 100 || "Pesos deben sumar 100%",
+})
+```
+
+States: `idle | dirty | invalid | saving | synced | error`. Pair with `<AutoSaveStatusBadge />` and `useUnsavedChangesGuard(status)`.
+
+### `useUnsavedChangesGuard(status)` 🟢
+
+Attaches a `beforeunload` warning while the autosave status is `dirty | saving | invalid`. Pass the status returned by `useAutoSaveForm`.
+
 ## Feature-scoped hook examples (reference shape)
 
 Do not import across features. These illustrate the canonical return shape.

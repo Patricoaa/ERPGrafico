@@ -1,81 +1,102 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Settings, Building2, Shield, History } from "lucide-react"
+"use client"
+
 import Link from "next/link"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+import { Building2, ShieldCheck, History, GitBranch, Terminal, UsersRound, Info } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+const settingsModules = [
+    { 
+        id: "company", 
+        icon: Building2, 
+        label: "Empresa", 
+        description: "Datos fiscales y logotipos",
+        url: "/settings/company", 
+        status: "Configurado", 
+        statusColor: "text-success bg-success/10" 
+    },
+    { 
+        id: "users", 
+        icon: ShieldCheck, 
+        label: "Usuarios y Permisos", 
+        description: "Gestión de accesos y roles",
+        url: "/settings/users", 
+        status: "Seguro", 
+        statusColor: "text-success bg-success/10" 
+    },
+    { 
+        id: "audit", 
+        icon: History, 
+        label: "Auditoría", 
+        description: "Logs y actividad del sistema",
+        url: "/settings/audit", 
+        status: "Activo", 
+        statusColor: "text-info bg-info/10" 
+    },
+    { 
+        id: "workflow", 
+        icon: GitBranch, 
+        label: "Workflow", 
+        description: "Tareas y automatizaciones",
+        url: "/settings/workflow", 
+        status: "Ejecutando", 
+        statusColor: "text-success bg-success/10" 
+    },
+]
 
 export default function SettingsPage() {
     return (
-        <div className={LAYOUT_TOKENS.view}>
-            <PageHeader 
-                title="Configuración Global" 
-                description="Panel de administración y parámetros transversales del sistema." 
-                iconName="settings" 
-            />
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <Link href="/settings/company">
-                    <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card cursor-pointer hover:border-primary border-t-4 border-t-primary transition-all">
-                        <CardHeader className="flex flex-row items-center gap-4">
-                            <Building2 className="h-8 w-8 text-primary" />
-                            <div>
-                                <CardTitle>Empresa</CardTitle>
-                                <CardDescription>Datos fiscales y logotipos.</CardDescription>
+        <div className="flex flex-col space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {settingsModules.map((mod, index) => {
+                    const Icon = mod.icon
+                    return (
+                        <Link 
+                            key={mod.id} 
+                            href={mod.url}
+                            className="group relative flex flex-col justify-between p-5 h-32 bg-background border border-border/10 rounded-xl shadow-sm hover:shadow-md hover:border-border/30 transition-all duration-300"
+                            style={{ animationDelay: `${index * 50}ms`, animationFillMode: 'backwards' }}
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-md bg-muted/50 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
+                                        <Icon className="w-4 h-4" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="font-bold tracking-tight text-sm text-foreground">{mod.label}</span>
+                                        <span className="text-[11px] text-muted-foreground line-clamp-1">{mod.description}</span>
+                                    </div>
+                                </div>
                             </div>
-                        </CardHeader>
-                    </Card>
-                </Link>
-
-                <Link href="/settings/users">
-                    <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card cursor-pointer hover:border-primary border-t-4 border-t-success transition-all">
-                        <CardHeader className="flex flex-row items-center gap-4">
-                            <Shield className="h-8 w-8 text-primary" />
-                            <div>
-                                <CardTitle>Usuarios y Permisos</CardTitle>
-                                <CardDescription>Gestión de accesos y roles.</CardDescription>
+                            
+                            <div className="flex items-center gap-2 mt-auto">
+                                <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${mod.statusColor}`}>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+                                    {mod.status}
+                                </div>
                             </div>
-                        </CardHeader>
-                    </Card>
-                </Link>
-
-                <Link href="/settings/audit">
-                    <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card cursor-pointer hover:border-primary border-t-4 border-t-muted-foreground/30 transition-all">
-                        <CardHeader className="flex flex-row items-center gap-4">
-                            <History className="h-8 w-8 text-primary" />
-                            <div>
-                                <CardTitle>Auditoría</CardTitle>
-                                <CardDescription>Historial de actividades y logs del sistema.</CardDescription>
-                            </div>
-                        </CardHeader>
-                    </Card>
-                </Link>
-
-                <Link href="/settings/workflow">
-                    <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card cursor-pointer hover:border-primary border-t-4 border-t-primary transition-all">
-                        <CardHeader className="flex flex-row items-center gap-4">
-                            <Settings className="h-8 w-8 text-primary" />
-                            <div>
-                                <CardTitle>Workflow</CardTitle>
-                                <CardDescription>Configuración de tareas y asignaciones automáticas.</CardDescription>
-                            </div>
-                        </CardHeader>
-                    </Card>
-                </Link>
+                        </Link>
+                    )
+                })}
             </div>
 
-            <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-t-4 border-t-border">
-                <CardHeader>
-                    <CardTitle>Información del ERP</CardTitle>
-                    <CardDescription>Versión y estado del servidor.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Versión Frontend</span>
-                        <span className="font-mono">v1.2.0-beta</span>
+            <Card className="rounded-xl border-border/10 bg-muted/30 shadow-none overflow-hidden border-dashed">
+                <CardHeader className="pb-2">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <Info className="w-4 h-4" />
+                        <CardTitle className="text-sm font-semibold">Información del ERP</CardTitle>
                     </div>
-                    <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Estado API</span>
-                        <span className="text-success font-bold">Conectado</span>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-background/50 border border-border/5">
+                        <span className="text-xs text-muted-foreground">Versión Frontend</span>
+                        <span className="text-xs font-mono bg-primary/10 text-primary px-2 py-0.5 rounded">v1.2.0-beta</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-background/50 border border-border/5">
+                        <span className="text-xs text-muted-foreground">Estado API</span>
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                            <span className="text-xs font-bold text-success uppercase">Conectado</span>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
