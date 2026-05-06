@@ -1,0 +1,89 @@
+name: Automated Versioning
+
+on:
+  push:
+    branches:
+      - master
+      - main
+    # Avoid infinite loop when the action pushes back to the repo
+    paths-ignore:
+      - 'frontend/package.json'
+      - 'backend/VERSION'
+      - 'docs/90-governance/versioning-policy.md'
+
+jobs:
+  release:
+    name: Bump Version & Tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Calculate Next Version
+        id: versioning
+        run: |
+          # Install standard-version locally in the CI environment
+          npm install -g standard-version
+          
+          # Get the current version
+          CURRENT_VERSION=$(cat backend/VERSION)
+          echo "Current Version: $CURRENT_VERSION"
+          
+          # Run standard-version to determine the next version and update package.json
+          # We use --skip.tag and --skip.commit because we'll do it manually to sync backend
+          cd frontend
+          standard-version --dry-run > bump_output.txt
+          cat bump_output.txt
+          
+          # Extract next version from output
+          NEXT_VERSION=$(grep "tagging release v" bump_output.txt | sed 's/.*v//')
+          
+          if [ -z "$NEXT_VERSION" ]; then
+            echo "No version bump needed based on commits."
+            echo "bump_needed=false" >> $GITHUB_OUTPUT
+          else
+            echo "Next Version: $NEXT_VERSION"
+            echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+            echo "bump_needed=true" >> $GITHUB_OUTPUT
+          fi
+          cd ..
+
+      - name: Update Files & Push
+        if: steps.versioning.outputs.bump_needed == 'true'
+        run: |
+          NEXT_VERSION=${{ steps.versioning.outputs.next_version }}
+          
+          # 1. Update Frontend
+          cd frontend
+          npm version $NEXT_VERSION --no-git-tag-version
+          cd ..
+          
+          # 2. Update Backend
+          echo "$NEXT_VERSION" > backend/VERSION
+          
+          # 3. Configure Git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 4. Commit and Tag
+          git add frontend/package.json backend/VERSION
+          if [ -f frontend/package-lock.json ]; then
+            git add frontend/package-lock.json
+          fi
+          
+          git commit -m "chore(release): v$NEXT_VERSION [skip ci]"
+          git tag -a "v$NEXT_VERSION" -m "Release v$NEXT_VERSION"
+          
+          # 5. Push
+          git push origin HEAD:${{ github.ref_name }} --follow-tags
