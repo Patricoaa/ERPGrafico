@@ -1,20 +1,31 @@
 import React from "react"
 import { BudgetsListView, BudgetVarianceView } from "@/features/finance"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 
-interface BudgetsPageProps {
-    externalOpen?: boolean
-    onExternalOpenChange?: (open: boolean) => void
-    tab?: string
-    createAction?: React.ReactNode
+interface PageProps {
+    searchParams: Promise<{ tab?: string; modal?: string }>
 }
 
-export default function BudgetsPage({ externalOpen, onExternalOpenChange, tab, createAction }: BudgetsPageProps) {
+export default async function BudgetsPage({ searchParams }: PageProps) {
+    const { tab, modal } = await searchParams
+    const activeTab = tab || "list"
+
+    const createAction = activeTab === 'list' ? (
+        <ToolbarCreateButton
+            label="Nuevo Presupuesto"
+            href="/finances/budgets?tab=list&modal=new"
+        />
+    ) : null
+
     return (
         <div className="pt-2">
-            {tab === 'versus' ? (
+            {activeTab === 'versus' ? (
                 <BudgetVarianceView />
             ) : (
-                <BudgetsListView externalOpen={externalOpen} onExternalOpenChange={onExternalOpenChange} createAction={createAction} />
+                <BudgetsListView 
+                    externalOpen={modal === 'new'} 
+                    createAction={createAction} 
+                />
             )}
         </div>
     )

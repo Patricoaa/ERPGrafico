@@ -11,7 +11,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Badge } from "@/components/ui/badge"
 import { Landmark, Pencil, Trash2, Lock } from "lucide-react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { BankManagement, PaymentMethodManagement } from "@/features/treasury"
+import { BankManagement, PaymentMethodManagement, TerminalManagement } from "@/features/treasury"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
@@ -67,6 +67,9 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 break
             case "methods":
                 setIsMethodModalOpen(true)
+                break
+            case "terminals":
+                // TerminalManagement handles its own modal state via externalOpen
                 break
         }
     }
@@ -244,6 +247,18 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                         }
                     }}
                     createAction={activeTab === "methods" ? createAction : undefined}
+                />
+            </TabsContent>
+
+            <TabsContent value="terminals">
+                <TerminalManagement
+                    externalOpen={activeTab === "terminals" && !!externalOpen}
+                    onExternalOpenChange={(open) => {
+                        if (!open) {
+                            handleCloseModal()
+                        }
+                    }}
+                    createAction={activeTab === "terminals" ? createAction : undefined}
                 />
             </TabsContent>
         </Tabs>

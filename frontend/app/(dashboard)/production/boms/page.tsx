@@ -15,7 +15,7 @@ import { BOMFormModal } from "@/features/production/components/BOMFormModal"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
+import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -29,11 +29,8 @@ interface BOMListItem extends BOM {
     lines_count: number
     total_cost: number
 }
-interface BOMsPageProps {
-    createAction?: React.ReactNode
-}
 
-export default function BOMsPage({ createAction }: BOMsPageProps = {}) {
+export default function BOMsPage() {
     const [boms, setBoms] = useState<BOMListItem[]>([])
     const [loading, setLoading] = useState(true)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -220,7 +217,7 @@ export default function BOMsPage({ createAction }: BOMsPageProps = {}) {
                         },
                     ]}
                     useAdvancedFilter={true}
-                    createAction={createAction}
+                    createAction={<ToolbarCreateButton label="Nueva Lista" href="/production/boms?modal=new" />}
                 />
             </div>
 

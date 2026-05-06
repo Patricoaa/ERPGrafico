@@ -28,8 +28,8 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
     const { tabs, activeValue, subActiveValue, configHref, breadcrumbs } = navigation
 
     // Separate config tab from regular tabs
-    const regularTabs = tabs.filter(t => t.value !== "config")
-    const activeTab = tabs.find(t => t.value === activeValue)
+    const regularTabs = (tabs || []).filter(t => t.value !== "config")
+    const activeTab = (tabs || []).find(t => t.value === activeValue)
     const activeSubTabs = activeTab?.subTabs
     const activeSubTab = activeSubTabs?.find(s => s.value === subActiveValue)
 
@@ -41,6 +41,25 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                     name={iconName}
                     className="h-4 w-4 text-primary/70 shrink-0 mr-2"
                 />
+            )}
+
+            {/* ── Module Name (Root) ── */}
+            {navigation.moduleName && (
+                <div className="flex items-center">
+                    {navigation.moduleHref ? (
+                        <Link 
+                            href={navigation.moduleHref}
+                            className="text-sm font-semibold tracking-tight text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            {navigation.moduleName}
+                        </Link>
+                    ) : (
+                        <span className="text-sm font-semibold tracking-tight text-muted-foreground">
+                            {navigation.moduleName}
+                        </span>
+                    )}
+                    <span className="text-border/60 mx-1.5 text-sm select-none">/</span>
+                </div>
             )}
 
             {/* ── Primary Dropdown: View Selector ── */}

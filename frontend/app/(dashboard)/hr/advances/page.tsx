@@ -20,9 +20,12 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ColumnDef } from "@tanstack/react-table"
 import { useSearchParams } from "next/navigation"
 
+import { ToolbarCreateButton } from "@/components/shared"
+
 // Advance schemas and types moved to features/hr/components/AdvanceFormDialog
 
-export default function AdvancesPage({ createAction }: { createAction?: React.ReactNode } = {}) {
+export default function AdvancesPage() {
+    const createAction = <ToolbarCreateButton label="Nuevo Anticipo" href="/hr/advances?modal=new" />
     const searchParams = useSearchParams()
     const [advances, setAdvances] = useState<SalaryAdvance[]>([])
     const [employees, setEmployees] = useState<Employee[]>([])

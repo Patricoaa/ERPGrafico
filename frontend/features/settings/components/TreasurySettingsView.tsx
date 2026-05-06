@@ -1,48 +1,50 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import api from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormField } from "@/components/ui/form"
 import { Banknote, ArrowLeftRight, Settings2 } from "lucide-react"
-import { FormSkeleton } from "@/components/shared"
+import { AutoSaveStatusBadge, FormSkeleton } from "@/components/shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-type SavingStatus = "idle" | "saving" | "synced" | "error"
+import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 import { treasurySchema, type TreasuryFormValues } from "./TreasurySettingsView.schema"
 
 interface TreasurySettingsViewProps {
     activeTab: string
-    onSavingChange?: (status: SavingStatus) => void
 }
 
-export function TreasurySettingsView({ activeTab = "conciliation", onSavingChange }: TreasurySettingsViewProps) {
+const DEFAULT_VALUES: TreasuryFormValues = {
+    bank_commission_account: null,
+    interest_income_account: null,
+    exchange_difference_account: null,
+    rounding_adjustment_account: null,
+    error_adjustment_account: null,
+    miscellaneous_adjustment_account: null,
+    pos_cash_difference_gain_account: null,
+    pos_cash_difference_loss_account: null,
+    pos_tip_account: null,
+    pos_other_inflow_account: null,
+    pos_counting_error_account: null,
+    pos_system_error_account: null,
+    pos_partner_withdrawal_account: null,
+    pos_theft_account: null,
+    pos_rounding_adjustment_account: null,
+    pos_cashback_error_account: null,
+    pos_other_outflow_account: null,
+}
+
+export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySettingsViewProps) {
     const [loading, setLoading] = useState(true)
 
     const form = useForm<TreasuryFormValues>({
         resolver: zodResolver(treasurySchema),
-        defaultValues: {
-            bank_commission_account: null,
-            interest_income_account: null,
-            exchange_difference_account: null,
-            rounding_adjustment_account: null,
-            error_adjustment_account: null,
-            miscellaneous_adjustment_account: null,
-            pos_cash_difference_gain_account: null,
-            pos_cash_difference_loss_account: null,
-            pos_tip_account: null,
-            pos_other_inflow_account: null,
-            pos_counting_error_account: null,
-            pos_system_error_account: null,
-            pos_partner_withdrawal_account: null,
-            pos_theft_account: null,
-            pos_rounding_adjustment_account: null,
-            pos_cashback_error_account: null,
-            pos_other_outflow_account: null,
-        }
+        defaultValues: DEFAULT_VALUES,
     })
 
     useEffect(() => {
@@ -71,36 +73,30 @@ export function TreasurySettingsView({ activeTab = "conciliation", onSavingChang
         fetchSettings()
     }, [form])
 
-    const watchedValues = form.watch()
-    const { isDirty } = form.formState
+    const onSave = useCallback(async (data: TreasuryFormValues) => {
+        await api.patch('/accounting/settings/current/', data)
+    }, [])
 
-    const onSubmit = useCallback(async (data: TreasuryFormValues) => {
-        onSavingChange?.("saving")
-        try {
-            await api.patch('/accounting/settings/current/', data)
-            toast.success("Configuración de tesorería aplicada")
-            form.reset(data)
-            onSavingChange?.("synced")
-            setTimeout(() => onSavingChange?.("idle"), 3000)
-        } catch {
-            toast.error("Error al guardar cambios")
-            onSavingChange?.("error")
-        }
-    }, [form, onSavingChange])
+    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
+        form,
+        onSave,
+        enabled: !loading,
+    })
 
-    useEffect(() => {
-        if (!loading && isDirty) {
-            const timer = setTimeout(() => {
-                form.handleSubmit(onSubmit)()
-            }, 1000)
-            return () => clearTimeout(timer)
-        }
-    }, [watchedValues, loading, isDirty, form, onSubmit])
+    useUnsavedChangesGuard(status)
 
     if (loading) return <FormSkeleton hasTabs tabs={3} fields={4} />
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
+            <div className="flex justify-end">
+                <AutoSaveStatusBadge
+                    status={status}
+                    invalidReason={invalidReason}
+                    lastSavedAt={lastSavedAt}
+                    onRetry={retry}
+                />
+            </div>
             <Form {...form}>
                 <form className="space-y-6">
                     {activeTab === "conciliation" && (
@@ -184,7 +180,6 @@ export function TreasurySettingsView({ activeTab = "conciliation", onSavingChang
                 </form>
             </Form>
         </div>
-
     )
 }
 
