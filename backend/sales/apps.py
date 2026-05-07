@@ -14,3 +14,7 @@ class SalesConfig(AppConfig):
             ])
         except ImportError:
             pass
+        
+        # Import signals
+        import sales.signals
+
