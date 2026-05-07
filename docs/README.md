@@ -18,6 +18,7 @@
 | 20 | `20-contracts/` | Public APIs (components, hooks, endpoints, state) | Before consuming or exposing API |
 | 30 | `30-playbooks/` | Step-by-step recipes for common tasks | Every implementation task |
 | 40 | `40-quality/` | Testing, security, observability, performance, CI/CD | Cross-cutting concerns |
+| 50 | `50-audit/` | Major refactor audits and roadmaps | Before launching multi-sprint refactor |
 | 90 | `90-governance/` | Rules, policies, decision records | Before proposing deviation |
 
 ## Task Routing — intent → playbook
@@ -55,6 +56,7 @@
 | "versioning", "release process", "SemVer", "how to version" | [versioning-policy.md](90-governance/versioning-policy.md) | 90 |
 | "ADR", "decision record", "major change" | [adr/README.md](10-architecture/adr/README.md) | 10 |
 | "signals", "signal receiver", "post_save hook", "cross-app event" | [workflow-signals-registry.md](10-architecture/workflow-signals-registry.md) | 10 |
+| "generic form", "universal registry", "metadata schema", "data-driven UI", "Django architecture refactor" | [50-audit/Arquitectura Django/README.md](50-audit/Arquitectura%20Django/README.md) | 50 |
 
 ## Global invariants (violate = PR rejected)
 
