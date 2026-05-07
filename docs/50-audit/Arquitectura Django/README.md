@@ -1,0 +1,87 @@
+# Auditoría de Arquitectura Django — Generic Form Injection & Universal Registry
+
+> **Estado:** Auditoría inicial completa · Pendiente de aprobación para fase 1.
+> **Última actualización:** 2026-05-07
+> **Alcance:** Backend Django (12 apps · ~7.800 líneas de modelos)
+> **Objetivo:** Validar y planificar la refactorización hacia formularios genéricos data-driven y un registro universal de entidades.
+
+---
+
+## Cómo usar esta carpeta
+
+Esta es una **refactorización mayor** que se ejecutará por fases a lo largo de varios sprints. La documentación está organizada para tres audiencias:
+
+| Audiencia | Empieza por | Luego lee |
+|-----------|-------------|-----------|
+| **Stakeholder / decisor técnico** | [00-audit-report.md](00-audit-report.md) | [10-roadmap.md](10-roadmap.md) |
+| **Tech lead planificando un sprint** | [10-roadmap.md](10-roadmap.md) | [20-task-list.md](20-task-list.md) |
+| **Ingeniero ejecutando una tarea** | [20-task-list.md](20-task-list.md) | [30-patterns.md](30-patterns.md) + [40-migration-and-rollback.md](40-migration-and-rollback.md) |
+| **QA / SRE diseñando validación** | [50-testing-strategy.md](50-testing-strategy.md) | [40-migration-and-rollback.md](40-migration-and-rollback.md) |
+
+---
+
+## Índice
+
+| # | Documento | Propósito |
+|---|-----------|-----------|
+| 00 | [audit-report.md](00-audit-report.md) | Diagnóstico completo de la base actual: qué juega a favor, qué rompe la inyectabilidad, cuáles son los modelos bloqueantes |
+| 10 | [roadmap.md](10-roadmap.md) | Plan en 5 fases con hitos, dependencias, criterios de salida y estimación de esfuerzo |
+| 20 | [task-list.md](20-task-list.md) | Tareas atómicas con acceptance criteria, archivos afectados, esfuerzo y orden de ejecución |
+| 30 | [patterns.md](30-patterns.md) | Guías de implementación para los 5 patrones clave: BaseModel, Strategy, GFK, DocumentService, UniversalRegistry, Metadata Schema |
+| 40 | [migration-and-rollback.md](40-migration-and-rollback.md) | Estrategia de migración por fase, feature flags, rollback plan |
+| 50 | [testing-strategy.md](50-testing-strategy.md) | Cómo validar que la refactorización no introduce regresiones contables/operativas |
+
+---
+
+## TL;DR de la auditoría
+
+**Veredicto:** La arquitectura actual está **al ~60%** del objetivo. Lo restante son **tres deudas concretas**, no una reescritura.
+
+**Lo que ya juega a favor:**
+- `ContentType` + `GenericForeignKey` ya en producción ([core/models.py](../../../backend/core/models.py))
+- `simple_history` consistente en 11 modelos
+- `display_id` con prefijos por entidad estandarizados
+- `Status.TextChoices` con `DRAFT/CONFIRMED/CANCELLED` recurrentes
+- `services.py` por app ya creado en 11 apps
+- Singletons con `get_solo()` + Redis cache unificados
+
+**Las tres deudas a resolver:**
+1. **Falta `BaseModel` abstracto** — cada modelo redefine `created_at`/`updated_at`/`notes`/`history` desde cero, con inconsistencias de `decimal_places`.
+2. **Polimorfismo resuelto con `if class.__name__`** en lugar de Strategy ([core/mixins.py:71-72](../../../backend/core/mixins.py#L71-L72), [core/services.py:73-77](../../../backend/core/services.py#L73-L77)).
+3. **Side-effects pesados en `Model.save()`** ([contacts/models.py:142-162](../../../backend/contacts/models.py#L142-L162) crea hasta 4 cuentas; [accounting/models.py:161-241](../../../backend/accounting/models.py#L161-L241) cascadea regeneración de códigos) que un form genérico no puede prever.
+
+**Lo que NO se va a hacer (decisiones tomadas):**
+- ❌ Migrar PKs a UUID (no aporta nada al objetivo, ruptura masiva).
+- ❌ Forms genéricos para `Account`, `JournalEntry`, `Product (manufacturable)` — su complejidad es inherente y merecen forms especializados.
+- ❌ Reescribir `accounting` o `contacts` — solo se extraen side-effects a servicios.
+
+**Próximo paso recomendado:** ejecutar **Fase 1** del [roadmap](10-roadmap.md): introducir `BaseModel` abstractos + `UniversalRegistry` (sin tocar lógica de negocio). Bajo riesgo, valor visible en 2 sprints.
+
+---
+
+## Convenciones de estos documentos
+
+- **Referencias a código** usan `[archivo:línea](ruta)` para que sean clicables desde VSCode.
+- **Tareas** se identifican con código `T-NN` (ej: `T-01`) y se cruzan entre roadmap y task list.
+- **Patrones** se identifican con código `P-NN` (ej: `P-01: BaseModel`).
+- **Riesgos** se identifican con código `R-NN`.
+- Toda tarea tiene **acceptance criteria** explícitos antes de poder marcarse como completada.
+
+## Glosario corto
+
+| Término | Significado en este contexto |
+|---------|------------------------------|
+| **Generic Form Injection** | Capacidad del frontend de renderizar el form de cualquier entidad con un solo componente, leyendo metadatos del backend. |
+| **Universal Registry** | Catálogo central de entidades buscables en el ERP (la barra de navegación encuentra cualquier cosa). |
+| **Inyectabilidad** | Qué tan preparado está un modelo para ser tratado como data-driven sin lógica custom en frontend. |
+| **Strategy Pattern** | Patrón GoF que reemplaza ramas `if class == X` por objetos polimórficos. |
+| **Singleton** (en este proyecto) | Modelo de configuración con `get_solo()` que cachea una única instancia (ej: `AccountingSettings`). |
+| **Documento transaccional** | Cabecera de negocio con número, estado, totales y journal entry asociado (NV, OCS, FAC, AS, etc.). |
+
+---
+
+## Estado del trabajo
+
+Sprint actual: **Pre-aprobación** — la auditoría está finalizada, pendiente decisión de stakeholders sobre si proceder con Fase 1.
+
+Para actualizar el estado de cada tarea, edita [20-task-list.md](20-task-list.md). Para reportar bloqueos, agrégalos en la sección "Riesgos activos" de [40-migration-and-rollback.md](40-migration-and-rollback.md).
