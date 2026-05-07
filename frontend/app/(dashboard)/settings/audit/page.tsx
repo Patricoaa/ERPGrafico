@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { DataTable } from "@/components/ui/data-table";
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
-    History,
     LogIn,
     LogOut,
     Settings,
@@ -18,12 +17,11 @@ import {
     Minus,
     RefreshCw
 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/components/shared";
 import api from "@/lib/api";
 import { DataCell } from "@/components/ui/data-table-cells";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { ColumnDef } from "@tanstack/react-table";
-import { PageHeader } from "@/components/shared/PageHeader";
 
 interface GlobalAuditLog {
     date: string;
@@ -240,7 +238,11 @@ export default function AuditHubPage() {
                 defaultPageSize={50}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
+            <div
+                className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8"
+                role={loading ? "status" : undefined}
+                aria-label={loading ? "Cargando estadísticas" : undefined}
+            >
                 {loading ? (
                     <>
                         {[1, 2, 3, 4].map((i) => (

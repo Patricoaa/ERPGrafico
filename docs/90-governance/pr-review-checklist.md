@@ -3,7 +3,7 @@ layer: 90-governance
 doc: pr-review-checklist
 status: active
 owner: core-team
-last_review: 2026-04-21
+last_review: 2026-05-07
 ---
 
 # PR Review Checklist
@@ -37,6 +37,14 @@ Reviewer pastes or ticks before approving. Author self-reviews first.
 - [ ] `h-10` minimum interactive height.
 - [ ] `StatusBadge` only for statuses.
 - [ ] Three states handled (loading / empty / error).
+
+## Loading states (skeletons)
+
+- [ ] `loading.tsx` for new routes uses `PageLayoutSkeleton` or `AppShellSkeleton` — no raw `<Skeleton>` primitives.
+- [ ] Refetch / filter / pagination uses `SkeletonShell` + typed placeholder data — not an early-return skeleton that dismounts the table.
+- [ ] No direct import of `@/components/ui/skeleton` in `features/**` or `app/**` (ESLint enforces this).
+- [ ] New feature skeleton added as `Component.Skeleton` static property co-located in the same file.
+- [ ] Every skeleton container has `role="status"` + `aria-label` (provided automatically by the shared wrappers).
 
 ## Tests
 

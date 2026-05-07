@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react';
+
 import {
     Table,
     TableBody,
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { TableSkeleton } from "@/components/shared";
+import { TableSkeleton, SkeletonShell } from "@/components/shared";
 
 export interface BudgetVarianceNode {
     id: number;
@@ -38,22 +38,39 @@ interface BudgetVarianceTableProps {
     loading?: boolean;
 }
 
+const BUDGET_VARIANCE_SKELETON_ROWS: BudgetVarianceNode[] = Array.from({ length: 8 }, (_, i) => ({
+    id: i,
+    code: '————',
+    name: '——————————————————————',
+    type: 'INCOME',
+    month_actual: 0,
+    month_budget: 0,
+    month_variance: 0,
+    month_percentage: 0,
+    ytd_actual: 0,
+    ytd_budget: 0,
+    ytd_variance: 0,
+    ytd_percentage: 0,
+    is_unbudgeted: false,
+    children: [],
+}))
+
 const VarianceCell = ({ value, percentage, type }: { value: number, percentage: number, type: string }) => {
     // Logic for "good" vs "bad" variance depends on account type
     // Income: Actual > Budget is GOOD (+ variance)
     // Expense: Actual > Budget is BAD (+ variance)
     const isIncome = type === 'INCOME';
     const isGood = isIncome ? value >= 0 : value <= 0;
-    
+
     return (
         <TableCell className="text-right p-2">
             <div className="flex flex-col items-end">
-                <MoneyDisplay 
-                    amount={value} 
+                <MoneyDisplay
+                    amount={value}
                     className={cn(
                         "font-mono text-xs font-bold",
                         value === 0 ? "text-muted-foreground" : (isGood ? "text-emerald-600 dark:text-emerald-400" : "text-destructive")
-                    )} 
+                    )}
                 />
                 <span className={cn(
                     "text-[10px] opacity-70",
@@ -81,8 +98,8 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
                 <TableCell className="p-2 min-w-[280px]">
                     <div className="flex items-center" style={{ paddingLeft: `${paddingLeft}px` }}>
                         {hasChildren ? (
-                            <button 
-                                onClick={() => setExpanded(!expanded)} 
+                            <button
+                                onClick={() => setExpanded(!expanded)}
                                 className="mr-2 h-5 w-5 flex items-center justify-center hover:bg-accent rounded transition-colors"
                             >
                                 {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -92,7 +109,7 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
                         )}
                         <span className="mr-2 text-muted-foreground font-mono text-[10px] w-12 shrink-0">{node.code}</span>
                         <span className="truncate max-w-[200px]" title={node.name}>{node.name}</span>
-                        
+
                         {node.is_unbudgeted && (
                             <TooltipProvider>
                                 <Tooltip>
@@ -105,7 +122,7 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
                         )}
                     </div>
                 </TableCell>
-                
+
                 {/* Month Columns */}
                 <TableCell className="text-right p-2">
                     <MoneyDisplay amount={node.month_actual} showColor={false} className="font-mono text-xs" />
@@ -131,43 +148,45 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
     );
 };
 
-export const BudgetVarianceTable: React.FC<BudgetVarianceTableProps> = ({ data, loading }) => {
-    if (loading) {
-        return (
-            <div className="p-4">
-                <TableSkeleton rows={8} columns={7} />
-            </div>
-        );
-    }
-
-    if (!data.length) {
+function BudgetVarianceTableBase({ data, loading }: BudgetVarianceTableProps) {
+    if (!loading && !data.length) {
         return <EmptyState context="finance" variant="full" title="Sin datos presupuestarios" description="No se encontraron datos para el periodo seleccionado." />
     }
 
+    const rows = loading ? BUDGET_VARIANCE_SKELETON_ROWS : data
+
     return (
-        <div className="relative overflow-x-auto border rounded-sm shadow-sm bg-card">
-            <Table>
-                <TableHeader className="bg-muted/50">
-                    <TableRow className="hover:bg-transparent border-b-2">
-                        <TableHead className="w-[300px] font-heading text-xs uppercase tracking-wider">Cuenta Contable</TableHead>
-                        
-                        {/* Month Group */}
-                        <TableHead className="text-right font-heading text-[10px] uppercase text-primary border-l">Real Mes</TableHead>
-                        <TableHead className="text-right font-heading text-[10px] uppercase border-r/50">Ppto Mes</TableHead>
-                        <TableHead className="text-right font-heading text-[10px] uppercase">Var Mes</TableHead>
-                        
-                        {/* YTD Group */}
-                        <TableHead className="text-right font-heading text-[10px] uppercase text-primary border-l bg-muted/20">Real YTD</TableHead>
-                        <TableHead className="text-right font-heading text-[10px] uppercase border-r/50 bg-muted/20">Ppto YTD</TableHead>
-                        <TableHead className="text-right font-heading text-[10px] uppercase bg-muted/20">Var YTD</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {data.map(node => (
-                        <AccountRow key={node.id} node={node} />
-                    ))}
-                </TableBody>
-            </Table>
-        </div>
+        <SkeletonShell isLoading={loading ?? false} ariaLabel="Cargando variación presupuestal">
+            <div className="relative overflow-x-auto border rounded-sm shadow-sm bg-card">
+                <Table>
+                    <TableHeader className="bg-muted/50">
+                        <TableRow className="hover:bg-transparent border-b-2">
+                            <TableHead className="w-[300px] font-heading text-xs uppercase tracking-wider">Cuenta Contable</TableHead>
+
+                            {/* Month Group */}
+                            <TableHead className="text-right font-heading text-[10px] uppercase text-primary border-l">Real Mes</TableHead>
+                            <TableHead className="text-right font-heading text-[10px] uppercase border-r/50">Ppto Mes</TableHead>
+                            <TableHead className="text-right font-heading text-[10px] uppercase">Var Mes</TableHead>
+
+                            {/* YTD Group */}
+                            <TableHead className="text-right font-heading text-[10px] uppercase text-primary border-l bg-muted/20">Real YTD</TableHead>
+                            <TableHead className="text-right font-heading text-[10px] uppercase border-r/50 bg-muted/20">Ppto YTD</TableHead>
+                            <TableHead className="text-right font-heading text-[10px] uppercase bg-muted/20">Var YTD</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {rows.map(node => (
+                            <AccountRow key={node.id} node={node} />
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
+        </SkeletonShell>
     );
-};
+}
+
+BudgetVarianceTableBase.Skeleton = function BudgetVarianceTableSkeleton() {
+    return <TableSkeleton rows={8} columns={7} ariaLabel="Cargando variación presupuestal" />
+}
+
+export const BudgetVarianceTable = BudgetVarianceTableBase

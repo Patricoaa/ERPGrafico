@@ -13,20 +13,25 @@ interface LoadingFallbackProps {
      * @deprecated 'spinner' variant removed — see GOVERNANCE.md Rule 10
      */
     variant?: 'table' | 'card' | 'list'
-    /** Optional label text — accepted for API compatibility but not rendered */
+    /** Accessible label announced by screen readers. Passed through to the skeleton's aria-label. */
     message?: string
 }
 
 export const LoadingFallback: React.FC<LoadingFallbackProps> = ({
     className = '',
     variant = 'table',
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    message: _message,
+    message = 'Cargando...',
 }) => {
     if (variant === 'card' || variant === 'list') {
-        const skeletonVariant = variant === 'card' ? 'grid' : 'list';
-        return <CardSkeleton className={className} variant={skeletonVariant} />
+        const skeletonVariant = variant === 'card' ? 'grid' : 'list'
+        return (
+            <CardSkeleton
+                className={className}
+                variant={skeletonVariant}
+                ariaLabel={message}
+            />
+        )
     }
 
-    return <TableSkeleton className={className} />
+    return <TableSkeleton className={className} ariaLabel={message} />
 }

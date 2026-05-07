@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 
@@ -10,24 +10,27 @@ interface CardSkeletonProps {
     variant?: 'grid' | 'list' | 'product' | 'compact'
     /** Optional grid configuration for 'grid' and 'product' variants */
     gridClassName?: string
+    ariaLabel?: string
 }
 
-/**
- * A standardized Card Skeleton for use in grid or list layouts.
- */
-export function CardSkeleton({ 
-    count = 3, 
+export function CardSkeleton({
+    count = 3,
     className,
     variant = 'grid',
-    gridClassName
+    gridClassName,
+    ariaLabel = 'Cargando contenido',
 }: CardSkeletonProps) {
-    // ─── Compact List Variant (Slimmer than standard list) ───────────────
+    // ─── Compact List Variant ────────────────────────────────────────────────
     if (variant === 'compact') {
         return (
-            <div className={cn("flex flex-col gap-2 animate-in fade-in duration-500", className)}>
+            <div
+                role="status"
+                aria-label={ariaLabel}
+                className={cn("flex flex-col gap-2 animate-in fade-in duration-500", className)}
+            >
                 {Array.from({ length: count }).map((_, i) => (
-                    <div 
-                        key={`compact-item-${i}`} 
+                    <div
+                        key={`compact-item-${i}`}
                         className="flex items-center p-3 rounded-md border border-border/40 bg-card/5 gap-3"
                     >
                         <Skeleton className="h-10 w-10 rounded-md shrink-0" />
@@ -41,15 +44,20 @@ export function CardSkeleton({
             </div>
         )
     }
+
+    // ─── List Variant ────────────────────────────────────────────────────────
     if (variant === 'list') {
         return (
-            <div className={cn("flex flex-col gap-3 animate-in fade-in duration-500", className)}>
+            <div
+                role="status"
+                aria-label={ariaLabel}
+                className={cn("flex flex-col gap-3 animate-in fade-in duration-500", className)}
+            >
                 {Array.from({ length: count }).map((_, i) => (
-                    <div 
-                        key={`list-item-${i}`} 
+                    <div
+                        key={`list-item-${i}`}
                         className="flex items-center justify-between p-4 rounded-md border border-border/40 bg-card/10 gap-6"
                     >
-                        {/* ICON & TITLE AREA */}
                         <div className="flex items-center gap-4 min-w-[30%]">
                             <Skeleton className="h-12 w-12 rounded-md shrink-0" />
                             <div className="space-y-2">
@@ -64,12 +72,10 @@ export function CardSkeleton({
                             </div>
                         </div>
 
-                        {/* CENTERED STATUS */}
                         <div className="flex-1 flex justify-center px-4">
                             <Skeleton className="h-6 w-24 rounded-full" />
                         </div>
 
-                        {/* RIGHT: TOTAL & ARROW */}
                         <div className="flex items-center gap-6">
                             <div className="text-right space-y-1 min-w-[100px]">
                                 <Skeleton className="h-3 w-10 ml-auto" />
@@ -83,14 +89,18 @@ export function CardSkeleton({
         )
     }
 
-    // ─── Product/Media Variant (Image on top) ─────────────────────────────
+    // ─── Product/Media Variant (image on top) ────────────────────────────────
     if (variant === 'product') {
         return (
-            <div className={cn(
-                "grid grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-500", 
-                gridClassName,
-                className
-            )}>
+            <div
+                role="status"
+                aria-label={ariaLabel}
+                className={cn(
+                    "grid grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-500",
+                    gridClassName,
+                    className
+                )}
+            >
                 {Array.from({ length: count }).map((_, i) => (
                     <div key={`product-${i}`} className="flex flex-col overflow-hidden rounded-md border border-border/40 bg-card/5">
                         <Skeleton className="aspect-square w-full rounded-none" />
@@ -109,16 +119,20 @@ export function CardSkeleton({
         )
     }
 
-    // ─── Grid Variant (Standard Dashboard Card) ──────────────────────────
+    // ─── Grid Variant (default) ──────────────────────────────────────────────
     return (
-        <div className={cn(
-            "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500", 
-            gridClassName,
-            className
-        )}>
+        <div
+            role="status"
+            aria-label={ariaLabel}
+            className={cn(
+                "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500",
+                gridClassName,
+                className
+            )}
+        >
             {Array.from({ length: count }).map((_, i) => (
-                <div 
-                    key={`card-${i}`} 
+                <div
+                    key={`card-${i}`}
                     className="p-6 rounded-md border border-border/40 bg-card/50 space-y-4"
                 >
                     <div className="flex items-center gap-3">
@@ -128,7 +142,7 @@ export function CardSkeleton({
                             <Skeleton className="h-3 w-1/2 opacity-60" />
                         </div>
                     </div>
-                    
+
                     <div className="space-y-2 pt-2">
                         <Skeleton className="h-4 w-full" />
                         <Skeleton className="h-4 w-[90%]" />

@@ -438,6 +438,30 @@
     border-color: oklch(0.12 0.02 240 / 0.06) !important;
   }
 
+  /* Respect user's motion preference — WCAG 2.1 SC 2.3.3 */
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton {
+      animation: none;
+      opacity: 0.5;
+    }
+
+    [data-skeleton-shell] p,
+    [data-skeleton-shell] h1,
+    [data-skeleton-shell] h2,
+    [data-skeleton-shell] h3,
+    [data-skeleton-shell] h4,
+    [data-skeleton-shell] h5,
+    [data-skeleton-shell] h6,
+    [data-skeleton-shell] label,
+    [data-skeleton-shell] td,
+    [data-skeleton-shell] th,
+    [data-skeleton-shell] span:not(:has(*)),
+    [data-skeleton-shell] div:not(:has(*))[class]:not(:empty) {
+      animation: none;
+      opacity: 0.5;
+    }
+  }
+
   /* Interaction Guards (Ley de Fitts) 
      Target: 40px height for primary interactive elements.
      Excludes: small variants (h-9, h-8, h-7) to maintain density in toolbars/tabs.

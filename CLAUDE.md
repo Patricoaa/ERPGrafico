@@ -30,8 +30,37 @@ Task routing — common intents:
 | Bug / regression | [debug-workflow.md](docs/30-playbooks/debug-workflow.md) |
 | Refactor / rename | [refactor-workflow.md](docs/30-playbooks/refactor-workflow.md) |
 | Deprecate / remove | [deprecate-feature.md](docs/30-playbooks/deprecate-feature.md) |
+| File upload / attachment / MinIO | [add-file-upload.md](docs/30-playbooks/add-file-upload.md) |
+| Permission / role / RBAC / access guard | [add-role-permission.md](docs/30-playbooks/add-role-permission.md) |
+| N+1 query / selector / prefetch | [add-selector.md](docs/30-playbooks/add-selector.md) |
+| Settings panel / config section | [add-settings-panel.md](docs/30-playbooks/add-settings-panel.md) |
+| Which component to use / component decision | [component-decision-tree.md](docs/20-contracts/component-decision-tree.md) |
+| Module layout / navigation tabs / dynamic header | [module-layout-navigation.md](docs/20-contracts/module-layout-navigation.md) |
+| TypeScript error / `any` escape hatch | [resolve-type-errors.md](docs/30-playbooks/resolve-type-errors.md) |
+| Loading state / skeleton / refetch CLS / loading.tsx | [component-skeleton.md](docs/20-contracts/component-skeleton.md) |
 
 Full routing table in [docs/README.md](docs/README.md).
+
+## Pre-flight checklist (every implementation task)
+
+Before writing any code, verify:
+
+- [ ] Matched intent in routing table and read target playbook fully
+- [ ] Consulted [component-decision-tree.md](docs/20-contracts/component-decision-tree.md) — do not reinvent components that exist
+- [ ] Read `frontend/app/globals.css` to verify available semantic color tokens before adding styles
+- [ ] Verified global invariants below are not violated
+
+## Global invariants (violate = PR rejected)
+
+1. **Zero `any`** in TypeScript — use Zod-derived types or `unknown` + type guard. See [zero-any-policy.md](docs/90-governance/zero-any-policy.md).
+2. **No raw Tailwind colors** (`bg-red-500`, `text-blue-600`) — semantic tokens only (`bg-primary`, `text-muted-foreground`).
+3. **No cross-feature internal imports** — import from feature barrel `index.ts` only.
+4. **No `useQuery`/`useMutation` directly in components** — wrap in a feature hook under `features/*/hooks/`.
+5. **No direct `@/lib/api` in components or pages** — only importable from `features/*/api/`, `features/*/hooks/`, and `/hooks/`.
+6. **Shared components imported via barrel only** — `import { X } from '@/components/shared'`, never the file path directly.
+7. **`StatusBadge` is the only authorized status renderer.**
+8. **All forms** use `react-hook-form` + `zodResolver` with schema in `components/forms/schema.ts`.
+9. **Views ≤ 20 lines** per Django action — business logic goes in `services.py`.
 
 ## Stack (short)
 
