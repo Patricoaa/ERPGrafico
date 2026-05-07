@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { useState, useEffect, useCallback } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
+import { useNotifications, NotificationPayload } from "@/features/notifications/hooks/useNotifications"
 import { 
     getNotifications, 
     getUnreadNotificationCount, 
@@ -56,6 +57,15 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
     const [pendingTasksCount, setPendingTasksCount] = useState(0)
     const [isCalculatorOpen, setIsCalculatorOpen] = useState(false)
     const [displayLimit] = useState(5)
+    const { socketConnected } = useNotifications((newNotification: NotificationPayload) => {
+        setNotifications(prev => [newNotification as any, ...prev].slice(0, 20))
+        setUnreadCount(prev => prev + 1)
+        
+        // If it's a task related notification, we might want to refresh tasks too
+        if (newNotification.notification_type?.startsWith('TASK')) {
+            fetchData()
+        }
+    })
 
     const fetchData = useCallback(async () => {
         try {
@@ -79,11 +89,9 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
 
     useEffect(() => {
         if (user) {
-            const init = async () => {
-                await fetchData()
-            }
-            init()
-            const interval = setInterval(fetchData, 30000)
+            fetchData()
+            // Poll every 2 minutes as a fallback
+            const interval = setInterval(fetchData, 120000)
             return () => clearInterval(interval)
         }
     }, [user, fetchData])

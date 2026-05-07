@@ -136,6 +136,8 @@ class Notification(models.Model):
     read = models.BooleanField(_("Leída"), default=False)
     
     link = models.CharField(_("Enlace"), max_length=500, blank=True, help_text="URL relativa para redirigir al usuario")
+    data = models.JSONField(default=dict, blank=True)
+    notification_type = models.CharField(_("Tipo de Evento"), max_length=100, blank=True, db_index=True)
     
     # Construct link context
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True, blank=True)

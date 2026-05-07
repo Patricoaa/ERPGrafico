@@ -5,6 +5,9 @@ class WorkflowConfig(AppConfig):
     name = 'workflow'
 
     def ready(self):
+        # Register signals
+        import workflow.signals
+
         try:
             from core.permissions import PermissionRegistry
             PermissionRegistry.register('workflow', [
