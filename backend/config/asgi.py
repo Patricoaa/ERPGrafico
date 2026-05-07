@@ -1,14 +1,17 @@
 import os
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
-from core.ws_auth import JWTAuthMiddleware
-import sales.routing
-import workflow.routing
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
-# Get the basic ASGI application (for HTTP)
+# Initialize Django BEFORE importing any app modules
+# (get_asgi_application calls django.setup())
 django_asgi_app = get_asgi_application()
+
+# App imports must come AFTER django.setup() — they reference models
+from core.ws_auth import JWTAuthMiddleware  # noqa: E402
+import sales.routing  # noqa: E402
+import workflow.routing  # noqa: E402
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
