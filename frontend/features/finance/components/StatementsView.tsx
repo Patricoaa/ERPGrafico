@@ -4,13 +4,12 @@ import React, { useState, useEffect } from "react"
 import { TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TableSkeleton } from "@/components/shared"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+import { PageContainer } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Download, FileText, BarChart, TrendingUp, SlidersHorizontal } from "lucide-react"
+import { SlidersHorizontal } from "lucide-react"
 import api, { pollTask } from "@/lib/api"
-import { toast } from "sonner"
 import { ReportTable } from "@/components/shared/ReportTable"
 import { CashFlowTable } from "@/features/finance/components/CashFlowTable"
 import { MappingConfigSheet } from "@/features/finance/components/MappingConfigSheet"
@@ -80,7 +79,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                 api.get('finances/api/income-statement/', { params }),
                 api.get('finances/api/cash-flow/', { params })
             ])
-            
+
             const [bs, pl, cf] = await Promise.all([
                 bsRes.data.task_id ? pollTask(bsRes.data.task_id) : Promise.resolve(bsRes.data),
                 plRes.data.task_id ? pollTask(plRes.data.task_id) : Promise.resolve(plRes.data),
@@ -108,11 +107,11 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
         if (!range?.from || !range?.to) return ""
         const fromYear = range.from.getFullYear()
         const toYear = range.to.getFullYear()
-        
+
         if (fromYear === toYear) {
             // Same year, check if it's the whole year
             const isFullYear = range.from.getMonth() === 0 && range.from.getDate() === 1 &&
-                             range.to.getMonth() === 11 && range.to.getDate() === 31
+                range.to.getMonth() === 11 && range.to.getDate() === 31
             if (isFullYear) return `${fromYear}`
             return `${format(range.from, 'MMM', { locale: es })}-${format(range.to, 'MMM yyyy', { locale: es })}`
         }
@@ -212,8 +211,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
     )
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
-
+        <PageContainer>
             <div className="max-w-5xl mx-auto w-full pt-4">
                 <TabsContent value="bs" className="mt-0 outline-none">
                     {activeTab === "bs" && (
@@ -349,10 +347,10 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                 <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} />
                                 <RenderToolbar />
                                 {cfData ? (
-                                    <CashFlowTable 
-                                        data={cfData as any} 
-                                        embedded 
-                                        showComparison={showComparison} 
+                                    <CashFlowTable
+                                        data={cfData as any}
+                                        embedded
+                                        showComparison={showComparison}
                                         periodLabel={periodLabel}
                                         compPeriodLabel={compPeriodLabel}
                                     />
@@ -366,13 +364,13 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                     )}
                 </TabsContent>
             </div>
-            
+
             <MappingConfigSheet
                 open={mappingOpen}
                 onOpenChange={setMappingOpen}
                 mappingType={activeTab === 'pl' ? 'is' : activeTab === 'cf' ? 'cf' : 'bs'}
                 onSaveSuccess={loadData}
             />
-        </div>
+        </PageContainer>
     )
 }

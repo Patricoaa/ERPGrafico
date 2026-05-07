@@ -1,6 +1,5 @@
 import { lazy, Suspense } from "react"
 import { FormSkeleton, PageHeader } from "@/components/shared"
-import { LAYOUT_TOKENS } from "@/lib/styles"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {

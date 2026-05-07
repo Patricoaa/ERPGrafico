@@ -8,17 +8,14 @@ import { useCompanySettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-
-import { Loader2, Check, CloudUpload, Building2, RefreshCw, Palette, Mail, Phone, MapPin, Globe, Upload, Pencil, Trash2 } from "lucide-react"
+import { Loader2, Building2, RefreshCw, Palette, Mail, Phone, MapPin, Globe, Upload, Pencil, Trash2 } from "lucide-react"
 import ContactModal from "@/features/contacts/components/ContactModal"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { PageTabs } from "@/components/shared/PageTabs"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
-import { FormSkeleton, LabeledInput, LabeledSelect } from "@/components/shared"
+import { AutoSaveStatusBadge, FormSkeleton, LabeledInput, LabeledSelect } from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { formatRUT, validateRUT } from "@/lib/utils/format"
+import { formatRUT } from "@/lib/utils/format"
 import { cn } from "@/lib/utils"
+import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 import api, { resolveMediaUrl } from "@/lib/api"
 import { CompanySettings } from "@/features/settings/types"
@@ -28,19 +25,8 @@ import { contactsApi } from "@/features/contacts/api/contactsApi"
 import { companySchema, type CompanyFormValues } from "./CompanySettingsView.schema"
 import { Contact } from "@/features/contacts/types"
 
-export function CompanySettingsView({
-    activeTab,
-    onSavingChange
-}: {
-    activeTab: string,
-    onSavingChange?: (saving: boolean) => void
-}) {
-    const { settings, isLoading, saving, updateSettings } = useCompanySettings()
-
-    // Propage saving status to parent
-    useEffect(() => {
-        onSavingChange?.(saving)
-    }, [saving, onSavingChange])
+export function CompanySettingsView({ activeTab }: { activeTab: string }) {
+    const { settings, isLoading, updateSettings } = useCompanySettings()
 
     const [syncing, setSyncing] = useState(false)
     const [contacts, setContacts] = useState<Contact[]>([])
@@ -91,29 +77,17 @@ export function CompanySettingsView({
         fetchContacts()
     }, [])
 
-    const onSubmit = useCallback(async (data: any) => {
-        try {
-            await updateSettings(data as Partial<CompanySettings>)
-            form.reset(data)
-        } catch (error) {
-            // Error handled by mutation hook
-        }
-    }, [updateSettings, form])
+    const onSave = useCallback(async (data: any) => {
+        await updateSettings(data as Partial<CompanySettings>)
+    }, [updateSettings])
 
-    const { isDirty, isSubmitting } = form.formState
-    const watchedValues = form.watch()
+    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave, enabled: !isLoading })
+
+    useUnsavedChangesGuard(status)
+
     const linkedContactId = form.watch("contact")
     const isLinked = !!linkedContactId
     const selectedContact = contacts.find(c => c.id === linkedContactId)
-
-    useEffect(() => {
-        if (isDirty && !isSubmitting) {
-            const timer = setTimeout(() => {
-                form.handleSubmit(onSubmit)()
-            }, 1000)
-            return () => clearTimeout(timer)
-        }
-    }, [watchedValues, isDirty, isSubmitting, form, onSubmit])
 
     const syncFromContact = useCallback(async (customId?: number | null) => {
         const idToSync = customId !== undefined ? customId : form.getValues("contact")
@@ -175,6 +149,15 @@ export function CompanySettingsView({
     }
 
     return (
+        <>
+        <div className="flex justify-end mb-4">
+            <AutoSaveStatusBadge
+                status={status}
+                invalidReason={invalidReason}
+                lastSavedAt={lastSavedAt}
+                onRetry={retry}
+            />
+        </div>
         <Form {...form}>
             <Tabs value={activeTab} className="w-full h-full m-0 p-0 border-0 outline-none">
                 <TabsContent value="general" className="space-y-6">
@@ -486,5 +469,6 @@ export function CompanySettingsView({
                 }}
             />
         </Form>
+        </>
     )
 }

@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+import { PageContainer } from "@/components/shared"
 import { AccountingHeader } from "./AccountingHeader"
 
 export const metadata: Metadata = {
@@ -9,11 +9,11 @@ export const metadata: Metadata = {
 
 export default function AccountingLayout({ children }: { children: React.ReactNode }) {
     return (
-        <div className={LAYOUT_TOKENS.view}>
+        <PageContainer>
             <AccountingHeader />
             <div className="pt-2">
                 {children}
             </div>
-        </div>
+        </PageContainer>
     )
 }

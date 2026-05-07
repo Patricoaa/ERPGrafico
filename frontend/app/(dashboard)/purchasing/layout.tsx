@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+import { PageContainer } from "@/components/shared"
 import { PurchasingHeader } from "./PurchasingHeader"
 
 export const metadata: Metadata = {
@@ -9,11 +9,11 @@ export const metadata: Metadata = {
 
 export default function PurchasingLayout({ children }: { children: React.ReactNode }) {
     return (
-        <div className={LAYOUT_TOKENS.view}>
+        <PageContainer>
             <PurchasingHeader />
             <div className="pt-2">
                 {children}
             </div>
-        </div>
+        </PageContainer>
     )
 }

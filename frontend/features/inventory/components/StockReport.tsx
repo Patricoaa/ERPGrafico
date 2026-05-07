@@ -8,14 +8,13 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowRightLeft, History } from "lucide-react"
 import api from "@/lib/api"
-import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
+
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { CancelButton, SubmitButton, FormFooter } from "@/components/shared"
 import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+import { PageContainer } from "@/components/shared"
 import { cn, formatCurrency } from "@/lib/utils"
 
 export function StockReport() {
@@ -86,9 +85,9 @@ export function StockReport() {
             cell: ({ row }) => {
                 const qty = Number(row.getValue("stock_qty"))
                 return (
-                    <DataCell.Number 
-                        value={qty} 
-                        suffix={row.original.uom_name} 
+                    <DataCell.Number
+                        value={qty}
+                        suffix={row.original.uom_name}
                         decimals={2}
                         className={cn(
                             "text-[14px]",
@@ -102,9 +101,9 @@ export function StockReport() {
             accessorKey: "qty_reserved",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Reservado" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Number 
-                    value={row.getValue("qty_reserved")} 
-                    suffix={row.original.uom_name} 
+                <DataCell.Number
+                    value={row.getValue("qty_reserved")}
+                    suffix={row.original.uom_name}
                     decimals={2}
                     className="opacity-40"
                 />
@@ -116,9 +115,9 @@ export function StockReport() {
             cell: ({ row }) => {
                 const qty = Number(row.getValue("qty_available"))
                 return (
-                    <DataCell.Number 
-                        value={qty} 
-                        suffix={row.original.uom_name} 
+                    <DataCell.Number
+                        value={qty}
+                        suffix={row.original.uom_name}
                         decimals={2}
                         className={cn(
                             "text-[14px]",
@@ -157,7 +156,7 @@ export function StockReport() {
     const globalFilterFields = useMemo(() => ["name", "code", "internal_code"], [])
 
     return (
-        <div className={cn(LAYOUT_TOKENS.view, "space-y-6")}>
+        <PageContainer className="space-y-6">
             <DataTable
                 columns={columns}
                 data={report}
@@ -223,6 +222,6 @@ export function StockReport() {
                 productId={insightsProduct?.id}
                 productName={insightsProduct?.name}
             />
-        </div>
+        </PageContainer>
     )
 }

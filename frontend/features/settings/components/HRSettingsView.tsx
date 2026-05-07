@@ -8,7 +8,6 @@ import { toast } from "sonner"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-
 import {
     Loader2,
     Trash2,
@@ -16,7 +15,9 @@ import {
     AlertCircle
 } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { FormSkeleton, LabeledInput, LabeledSelect, ToolbarCreateButton } from "@/components/shared"
+import { AutoSaveStatusBadge, FormSkeleton, LabeledInput, LabeledSelect, ToolbarCreateButton } from "@/components/shared"
+import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import {
     getGlobalHRSettings,
@@ -46,13 +47,8 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
 import { globalSettingsSchema, conceptSchema, afpSchema, type GlobalHRFormValues, type ConceptFormValues, type AFPFormValues } from "./HRSettingsView.schema"
 
-export function HRSettingsView({ activeTab = "global", onSavingChange }: {
-    activeTab?: string,
-    onSavingChange?: (saving: boolean) => void
-}) {
-    // Global Settings Form
+export function HRSettingsView({ activeTab = "global" }: { activeTab?: string }) {
     const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
     const [concepts, setConcepts] = useState<PayrollConcept[]>([])
     const [afps, setAfps] = useState<AFP[]>([])
 
@@ -119,40 +115,23 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
         }
     })
 
-    // Auto-save global settings
-    const watchedGlobal = globalForm.watch()
-    const { isDirty: isGlobalDirty } = globalForm.formState
-
     const onSaveGlobal = useCallback(async (data: GlobalHRFormValues) => {
-        setSaving(true)
-        try {
-            const convertedData = {
-                ...data,
-                account_remuneraciones_por_pagar: data.account_remuneraciones_por_pagar ? Number(data.account_remuneraciones_por_pagar) : null,
-                account_previred_por_pagar: data.account_previred_por_pagar ? Number(data.account_previred_por_pagar) : null,
-                account_anticipos: data.account_anticipos ? Number(data.account_anticipos) : null,
-            }
-            await updateGlobalHRSettings(convertedData)
-            globalForm.reset(data)
-        } catch {
-            toast.error("Error al guardar parámetros globales")
-        } finally {
-            setSaving(false)
+        const convertedData = {
+            ...data,
+            account_remuneraciones_por_pagar: data.account_remuneraciones_por_pagar ? Number(data.account_remuneraciones_por_pagar) : null,
+            account_previred_por_pagar: data.account_previred_por_pagar ? Number(data.account_previred_por_pagar) : null,
+            account_anticipos: data.account_anticipos ? Number(data.account_anticipos) : null,
         }
-    }, [globalForm])
+        await updateGlobalHRSettings(convertedData)
+    }, [])
 
-    useEffect(() => {
-        if (!loading && isGlobalDirty) {
-            const timer = setTimeout(() => {
-                globalForm.handleSubmit(onSaveGlobal)()
-            }, 1000)
-            return () => clearTimeout(timer)
-        }
-    }, [watchedGlobal, loading, isGlobalDirty, globalForm, onSaveGlobal])
+    const { status: globalStatus, invalidReason: globalInvalidReason, lastSavedAt: globalLastSavedAt, retry: globalRetry } = useAutoSaveForm({
+        form: globalForm,
+        onSave: onSaveGlobal,
+        enabled: !loading,
+    })
 
-    useEffect(() => {
-        onSavingChange?.(saving)
-    }, [saving, onSavingChange])
+    useUnsavedChangesGuard(globalStatus)
 
     const conceptColumns: ColumnDef<PayrollConcept>[] = [
         {
@@ -227,6 +206,14 @@ export function HRSettingsView({ activeTab = "global", onSavingChange }: {
             {/* --- Tab: Global --- */}
             {activeTab === "global" && (
                 <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
+                    <div className="flex justify-end">
+                        <AutoSaveStatusBadge
+                            status={globalStatus}
+                            invalidReason={globalInvalidReason}
+                            lastSavedAt={globalLastSavedAt}
+                            onRetry={globalRetry}
+                        />
+                    </div>
                     <Form {...globalForm}>
                         <div className="grid gap-6">
                             <Card className="rounded-md border-2">

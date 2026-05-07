@@ -49,7 +49,7 @@ const navigation = {
 Debe ser un **Server Component** para asegurar la eficiencia del renderizado y el SEO.
 
 ### Reglas:
-- Debe envolver a los `children` en el token de estilo estándar `LAYOUT_TOKENS.view`.
+- Debe envolver a los `children` en el componente técnico `<PageContainer />` (reemplaza al antiguo `LAYOUT_TOKENS.view`).
 - Debe inyectar el componente `[Module]Header` en la parte superior.
 - No debe manejar lógica de negocio, solo estructura visual.
 

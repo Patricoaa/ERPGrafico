@@ -2,7 +2,7 @@
 
 import { ProfileView, ProfileSidePanel } from "@/features/profile"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+import { PageContainer } from "@/components/shared"
 import { useSearchParams } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
 import { getMyProfile } from '@/features/profile/api/profileApi'
@@ -32,7 +32,7 @@ export default function ProfilePage() {
 
     if (loading) {
         return (
-            <div className={LAYOUT_TOKENS.view}>
+            <PageContainer>
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-4">
                         <Skeleton className="h-10 w-10 rounded-md" />
@@ -51,7 +51,7 @@ export default function ProfilePage() {
                 </div>
 
                 <ProfileSidePanel profile={null} />
-            </div>
+            </PageContainer>
         )
     }
 
@@ -99,7 +99,7 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
+        <PageContainer>
             <PageHeader title={title} description={description} iconName={iconName} variant="minimal" navigation={navigation} />
             
             <div className="pt-4">
@@ -107,6 +107,6 @@ export default function ProfilePage() {
             </div>
 
             <ProfileSidePanel profile={profile} />
-        </div>
+        </PageContainer>
     )
 }

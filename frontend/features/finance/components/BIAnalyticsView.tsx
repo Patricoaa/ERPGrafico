@@ -24,7 +24,7 @@ import { EmptyState } from "@/components/shared/EmptyState";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 
-import { LAYOUT_TOKENS } from "@/lib/styles";
+import { PageContainer } from "@/components/shared"
 
 const COLORS = ['var(--primary)', 'var(--accent)', 'var(--secondary)', 'var(--muted-foreground)', 'var(--warning)', 'var(--destructive)'];
 
@@ -90,7 +90,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
     const { sales, inventory, performance } = data;
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
+        <PageContainer>
             {/* KPI Overview Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-l-4 border-l-info">
@@ -295,6 +295,6 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     </CardContent>
                 </Card>
             </div>
-        </div>
+        </PageContainer>
     );
 };

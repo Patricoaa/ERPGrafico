@@ -1,7 +1,6 @@
 import { Suspense } from "react"
 import { FormSkeleton, PageHeader } from "@/components/shared"
 import { WorkflowSettings } from "@/features/workflow"
-import { LAYOUT_TOKENS } from "@/lib/styles"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string }>

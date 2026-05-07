@@ -1,22 +1,20 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useForm } from "react-hook-form"
+import { useState, useCallback, useEffect } from "react"
+import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { toast } from "sonner"
 import api from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { FormSkeleton } from "@/components/shared"
+import { Form, FormField } from "@/components/ui/form"
+import { AutoSaveStatusBadge, FormSkeleton } from "@/components/shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 import { purchasingSchema, type PurchasingFormValues } from "./PurchasingSettingsView.schema"
-import { UseFormReturn, Path } from "react-hook-form"
 
-export function PurchasingSettingsView({ onSavingChange }: { onSavingChange?: (saving: boolean) => void }) {
+export function PurchasingSettingsView() {
     const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
 
     const form = useForm<PurchasingFormValues>({
         resolver: zodResolver(purchasingSchema),
@@ -34,15 +32,13 @@ export function PurchasingSettingsView({ onSavingChange }: { onSavingChange?: (s
                 const settings = res.data
                 const formattedSettings = {} as PurchasingFormValues
                 const fields = Object.keys(purchasingSchema.shape) as (keyof PurchasingFormValues)[]
-
                 fields.forEach((key) => {
                     const val = settings[key]
                     formattedSettings[key] = (val ? val.toString() : null) as never
                 })
-
                 form.reset(formattedSettings)
-            } catch (error: unknown) {
-                toast.error("Error al cargar configuración")
+            } catch {
+                // silent — badge handles save errors
             } finally {
                 setLoading(false)
             }
@@ -50,36 +46,30 @@ export function PurchasingSettingsView({ onSavingChange }: { onSavingChange?: (s
         fetchSettings()
     }, [form])
 
-    const watchedValues = form.watch()
-    const { isDirty } = form.formState
+    const onSave = useCallback(async (data: PurchasingFormValues) => {
+        await api.patch('/accounting/settings/current/', data)
+    }, [])
 
-    const onSubmit = useCallback(async (data: PurchasingFormValues) => {
-        setSaving(true)
-        onSavingChange?.(true)
-        try {
-            await api.patch('/accounting/settings/current/', data)
-            form.reset(data)
-        } catch (error) {
-            toast.error("Error al guardar cambios")
-        } finally {
-            setSaving(false)
-            onSavingChange?.(false)
-        }
-    }, [form, onSavingChange])
+    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
+        form,
+        onSave,
+        enabled: !loading,
+    })
 
-    useEffect(() => {
-        if (!loading && isDirty) {
-            const timer = setTimeout(() => {
-                form.handleSubmit(onSubmit)()
-            }, 1000)
-            return () => clearTimeout(timer)
-        }
-    }, [watchedValues, loading, isDirty, form, onSubmit])
+    useUnsavedChangesGuard(status)
 
     if (loading) return <FormSkeleton fields={3} />
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
+            <div className="flex justify-end">
+                <AutoSaveStatusBadge
+                    status={status}
+                    invalidReason={invalidReason}
+                    lastSavedAt={lastSavedAt}
+                    onRetry={retry}
+                />
+            </div>
             <Form {...form}>
                 <form className="space-y-6">
                     <Card className="rounded-md border-2">
@@ -89,7 +79,7 @@ export function PurchasingSettingsView({ onSavingChange }: { onSavingChange?: (s
                         </CardHeader>
                         <CardContent className="space-y-8">
                             <AccountField form={form} name="default_expense_account" label="Cuenta Gastos Generales (Insumos/Stock)" accountType="EXPENSE" />
-                            
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <AccountField form={form} name="default_service_expense_account" label="Gastos por Servicios Externos" accountType="EXPENSE" />
                                 <AccountField form={form} name="default_subscription_expense_account" label="Gastos por Suscripciones Digitales" accountType="EXPENSE" />
@@ -99,7 +89,6 @@ export function PurchasingSettingsView({ onSavingChange }: { onSavingChange?: (s
                 </form>
             </Form>
         </div>
-
     )
 }
 

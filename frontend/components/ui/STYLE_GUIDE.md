@@ -49,8 +49,8 @@ import { LabeledInput } from "@/components/shared"
 | **Label** | `FORM_STYLES.label` | ⚠️ Deprecated — use `LabeledInput` |
 | **Input/Select** | `FORM_STYLES.input` | ⚠️ Deprecated — use `LabeledInput` |
 | **Card** | *(Removed)* | **NO USAR**. Importar y usar `<Card variant="dashed" className="p-4">` |
-| **Table Header** | `FORM_STYLES.tableHeader` | ✅ Active |
-| **Section Header** | `FORM_STYLES.sectionHeader` | ✅ Active |
+| **Table Header** | `FORM_STYLES.tableHeader` | ⚠️ Deprecated — ver hierarchy contract |
+| **Section Header** | `FORM_STYLES.sectionHeader` | ⚠️ Deprecated — usar `<FormSection />` |
 
 ---
 

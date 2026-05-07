@@ -347,6 +347,71 @@ const onSubmitError = (errors: FieldErrors) => {
 
 ---
 
+## 8. Save Strategy
+
+Todo formulario debe declarar explícitamente su estrategia de guardado. Hay tres categorías:
+
+| Categoría | Cuándo usar | Implementación |
+|:---|:---|:---|
+| **Autosave** | Panel de configuración singleton (settings page-level) | `useAutoSaveForm` + `AutoSaveStatusBadge` — sin botón |
+| **Autosave con gate** | Panel singleton con validación cruzada (ej.: pesos que deben sumar 100%) | `useAutoSaveForm` con `validate` — sin botón; badge muestra `invalidReason` |
+| **Autosave por fila** | Colección de N filas editables (workflow rules, etc.) | `useAutoSaveForm` por instancia + `useCombinedAutoSaveStatus` para badge consolidado |
+| **Submit manual** | Catálogos CRUD (alta/baja además de edición), modales transaccionales | `BaseModal` + `SubmitButton` — fuera del scope de autosave |
+
+### Autosave (regla de oro para settings)
+
+```tsx
+// Panel singleton: mínimo viable
+const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
+    form,
+    watchedFields: ["field1", "field2"],
+    onSave: async (values) => {
+        await api.patch("/settings/current/", values)
+    },
+    debounceMs: 1000,        // estándar; usar 400 para colecciones tipo workflow
+    syncedDurationMs: 3000,
+})
+
+// Con validación cruzada (gating semántico)
+const { status, invalidReason } = useAutoSaveForm({
+    form,
+    watchedFields: ["weight_a", "weight_b", "weight_c"],
+    onSave: async (values) => { /* ... */ },
+    validate: (v) =>
+        sumWeights(v) === 100 || "Los pesos deben sumar 100 % — los cambios no se guardarán hasta corregir",
+})
+```
+
+### Badge obligatorio
+
+Todo panel que use autosave **debe** renderizar `AutoSaveStatusBadge`:
+
+```tsx
+<AutoSaveStatusBadge
+    status={status}
+    invalidReason={invalidReason}
+    lastSavedAt={lastSavedAt}
+    onRetry={retry}
+/>
+```
+
+### Árbol de decisión — save strategy
+
+```mermaid
+graph TD
+    S["¿Qué tipo de superficie?"] --> Q1{"¿Es un panel<br/>de configuración?"}
+    Q1 -->|Sí| Q2{"¿Tiene validación<br/>cruzada de campos?"}
+    Q2 -->|No| AS["useAutoSaveForm (debounce 1000 ms)"]
+    Q2 -->|Sí| AG["useAutoSaveForm + validate (gating)"]
+    Q1 -->|No| Q3{"¿Es una colección<br/>de filas editables?"}
+    Q3 -->|Sí| AR["useAutoSaveForm por fila (debounce 400 ms)<br/>+ useCombinedAutoSaveStatus"]
+    Q3 -->|No| SM["Submit manual (BaseModal + SubmitButton)"]
+```
+
+> Ver contrato completo: [autosave-contract.md](./autosave-contract.md).
+
+---
+
 ## Forbidden Patterns
 
 - ❌ **Tabs manuales** — Nunca implementar navegación por tabs de forma artesanal. Siempre usar `FormTabs`.
