@@ -190,59 +190,73 @@ class MatchingService:
         except TreasuryMovement.DoesNotExist:
             return []
             
-        if payment.is_reconciled or not payment.treasury_account:
+        if payment.is_reconciled or not (payment.from_account or payment.to_account):
             return []
             
-        # Sentido e identificación de cuenta relevante
+        # 1. Identificar cuenta bancaria y sentido
+        account = None
+        is_inbound = False # Respecto a la cuenta bancaria
+        
+        # Heurística: si es TRANSFER, buscamos el lado que NO es CASH
         if payment.movement_type == 'TRANSFER':
-            # Si es traspaso, la cuenta relevante para la línea de cartola 
-            # es la que recibe (si buscamos abonos) o la que entrega (si buscamos cargos)
-            # Como el pago es uno solo, el sentido depende de en qué cuenta estemos mirando.
-            # En MatchingService, asumimos que buscamos líneas para EL LADO del pago que toca el banco.
-            
-            # Si el pago tiene to_account bancaria, buscamos Abonos (credit > 0)
             if payment.to_account and payment.to_account.account_type != 'CASH':
                 account = payment.to_account
-                sense_filter = Q(credit__gt=0)
-            else:
+                is_inbound = True
+            elif payment.from_account and payment.from_account.account_type != 'CASH':
                 account = payment.from_account
-                sense_filter = Q(debit__gt=0)
+                is_inbound = False
         else:
-            account = payment.from_account or payment.to_account
-            sense_filter = Q(credit__gt=0) if payment.movement_type == 'INBOUND' else Q(debit__gt=0)
-            
-        # Load settings
+            # INBOUND / OUTBOUND / ADJUSTMENT
+            if payment.movement_type == 'INBOUND':
+                account = payment.to_account
+                is_inbound = True
+            elif payment.movement_type == 'OUTBOUND':
+                account = payment.from_account
+                is_inbound = False
+            elif payment.movement_type == 'ADJUSTMENT':
+                # Si el monto es positivo, es un abono (inbound)
+                is_inbound = payment.amount > 0
+                account = payment.to_account if is_inbound else payment.from_account
+
+        if not account:
+            return []
+
+        # 2. Cargar settings y calcular rango
         from .models import ReconciliationSettings
         settings, _ = ReconciliationSettings.objects.get_or_create(treasury_account=account)
-
-        # Rango de fechas
-        lookback = settings.date_range_days
+        
+        # Usamos lookback ampliado (como en suggest_matches)
+        lookback = max(settings.date_range_days, 120)
         date_min = payment.date - timedelta(days=lookback)
         date_max = payment.date + timedelta(days=lookback)
         
+        # 3. Construir filtros base para líneas
         filters = Q(
             statement__treasury_account=account,
             reconciliation_status='UNRECONCILED'
         )
-        filters &= sense_filter
+        # Sentido: is_inbound (abono) -> credit > 0; cargo -> debit > 0
+        if is_inbound:
+            filters &= Q(credit__gt=0)
+        else:
+            filters &= Q(debit__gt=0)
         
-        # Búsqueda de candidatos...
-            
-        # Candidatos
+        # 4. Búsqueda de candidatos (Date range + IDs)
         candidate_filters = Q(transaction_date__gte=date_min, transaction_date__lte=date_max)
         if payment.transaction_number:
             candidate_filters |= Q(transaction_id__iexact=payment.transaction_number)
             candidate_filters |= Q(reference__iexact=payment.transaction_number)
             
+        # Aumentamos el límite de candidatos para scoring
         lines_query = BankStatementLine.objects.filter(
             filters & candidate_filters
-        )
+        ).select_related('statement')
 
         suggestions = []
-        for line in lines_query[:20]:
+        # Evaluamos hasta 100 candidatos en RAM
+        for line in lines_query[:100]:
             score_data = MatchingService._calculate_match_score(line, payment, settings=settings)
             if score_data['score'] >= 40:
-                # Re-format for line suggestion
                 from .serializers import BankStatementLineSerializer
                 suggestions.append({
                     'line_data': BankStatementLineSerializer(line).data,
