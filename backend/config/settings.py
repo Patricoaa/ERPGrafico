@@ -53,7 +53,9 @@ CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
+
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -122,6 +124,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+ASGI_APPLICATION = 'config.asgi.application'
+
 
 
 # Database
@@ -302,6 +306,17 @@ CACHES = {
         'TIMEOUT': 300,  # 5 min default TTL
     }
 }
+
+# Channels Channel Layer
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [fix_redis_url(REDIS_URL, 3)], # DB 3 for Channels
+        },
+    },
+}
+
 
 
 # Celery Configuration

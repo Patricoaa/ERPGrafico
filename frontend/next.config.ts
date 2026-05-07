@@ -40,6 +40,7 @@ const nextConfig: NextConfig = {
     // Importa solo los módulos utilizados de estas librerías pesadas
     // → evita que el compilador procese toda la librería en cada build
     optimizePackageImports: ["lucide-react", "date-fns", "recharts", "framer-motion"],
+    allowedDevOrigins: ["erp.servidor.click"],
   },
   transpilePackages: ["react-day-picker"],
   devIndicators: {

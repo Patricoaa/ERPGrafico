@@ -1,7 +1,3 @@
-// useDraftSync Hook
-// Real-time synchronization for POS drafts via short-polling
-// Manages: polling for changes, heartbeat for active lock, event callbacks
-
 import { useState, useEffect, useCallback, useRef } from 'react'
 import api from '@/lib/api'
 import { toast } from 'sonner'
@@ -37,7 +33,7 @@ interface SyncResponse {
 interface UseDraftSyncOptions {
     posSessionId: number | null
     enabled?: boolean
-    pollInterval?: number       // ms, default 5000
+    pollInterval?: number       // ms, default 30000 (relaxed as we have WS)
     heartbeatInterval?: number  // ms, default 5000
     onNewDraft?: (draft: SyncDraft) => void
     onDraftDeleted?: (draftId: number) => void
@@ -45,10 +41,6 @@ interface UseDraftSyncOptions {
     onLockChanged?: (draft: SyncDraft) => void
     onSessionStateChange?: (status: 'OPEN' | 'CLOSED', closedByName: string | null) => void
 }
-
-// ── Browser Session Key ──────────────────────────────────────────
-// Unique per browser tab — persisted in sessionStorage so it survives
-// soft refreshes but not new tabs
 
 function getBrowserSessionKey(): string {
     if (typeof window === 'undefined') return ''
@@ -66,7 +58,7 @@ function getBrowserSessionKey(): string {
 export function useDraftSync({
     posSessionId,
     enabled = true,
-    pollInterval = 5000,
+    pollInterval = 30000, // Fallback relaxed
     heartbeatInterval = 5000,
     onNewDraft,
     onDraftDeleted,
@@ -76,112 +68,144 @@ export function useDraftSync({
 }: UseDraftSyncOptions) {
     const { user } = useAuth()
     const [syncDrafts, setSyncDrafts] = useState<SyncDraft[]>([])
-    const [isPolling, setIsPolling] = useState(false)
+    const [isSocketConnected, setIsSocketConnected] = useState(false)
     const [activeLockDraftId, setActiveLockDraftId] = useState<number | null>(null)
     
     const [browserSessionKey] = useState(() => getBrowserSessionKey())
     const prevDraftsRef = useRef<SyncDraft[]>([])
-    const prevStatusRef = useRef<'OPEN' | 'CLOSED' | null>(null)
+    const socketRef = useRef<WebSocket | null>(null)
     const callbacksRef = useRef({ onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged, onSessionStateChange })
     
-    // Keep callbacks ref up to date
     useEffect(() => {
         callbacksRef.current = { onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged, onSessionStateChange }
     }, [onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged, onSessionStateChange])
 
-    // ── Diff detection ──────────────────────────────────────────
-
-    const detectChanges = useCallback((newDrafts: SyncDraft[]) => {
-        const prev = prevDraftsRef.current
-        if (prev.length === 0) {
-            // First sync — no notifications
-            prevDraftsRef.current = newDrafts
-            return
-        }
-
-        const prevMap = new Map(prev.map(d => [d.id, d]))
-        const newMap = new Map(newDrafts.map(d => [d.id, d]))
-        const currentUserId = user?.id
-
-        // Detect new drafts (created by others)
-        for (const d of newDrafts) {
-            if (!prevMap.has(d.id)) {
-                // Only notify if created by someone else
-                if (d.locked_by_id !== currentUserId) {
-                    callbacksRef.current.onNewDraft?.(d)
-                }
-            }
-        }
-
-        // Detect deleted drafts
-        for (const d of prev) {
-            if (!newMap.has(d.id)) {
-                callbacksRef.current.onDraftDeleted?.(d.id)
-            }
-        }
-
-        // Detect updates and lock changes
-        for (const d of newDrafts) {
-            const old = prevMap.get(d.id)
-            if (!old) continue
-
-            // Lock state changed
-            if (old.is_locked !== d.is_locked || old.locked_by_id !== d.locked_by_id) {
-                callbacksRef.current.onLockChanged?.(d)
-            }
-
-            // Content updated (by someone else)
-            if (old.updated_at !== d.updated_at && d.locked_by_id !== currentUserId) {
-                callbacksRef.current.onDraftUpdated?.(d)
-            }
-        }
-
-        prevDraftsRef.current = newDrafts
-    }, [user?.id])
-
-    // ── Polling ─────────────────────────────────────────────────
-
-    const poll = useCallback(async () => {
-        if (!posSessionId) return
-        try {
-            const res = await api.get(`/sales/pos-drafts/sync/?pos_session_id=${posSessionId}`)
-            const data: SyncResponse = res.data
-            
-            // Handle Session Status Sync
-            if (data.session_status && prevStatusRef.current !== data.session_status) {
-                // If it was already set (not first load) and changed to CLOSED
-                if (prevStatusRef.current === 'OPEN' && data.session_status === 'CLOSED') {
-                    callbacksRef.current.onSessionStateChange?.('CLOSED', data.closed_by_name)
-                }
-                prevStatusRef.current = data.session_status
-            }
-
-            setSyncDrafts(data.drafts)
-            detectChanges(data.drafts)
-        } catch (error) {
-            // Silent fail — polling is background, don't spam errors
-            console.debug('[DraftSync] Poll failed:', error)
-        }
-    }, [posSessionId, detectChanges])
+    // ── WebSocket Logic ──────────────────────────────────────────
 
     useEffect(() => {
         if (!enabled || !posSessionId) return
 
-        // All setState calls are deferred into async callbacks to satisfy react-hooks/set-state-in-effect
-        const initialPollTimer = setTimeout(() => {
-            setIsPolling(true)
-            poll()
-        }, 0)
-        const interval = setInterval(poll, pollInterval)
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || ''
+        const wsProtocol = baseUrl.startsWith('https') ? 'wss' : 'ws'
+        const wsHost = baseUrl.replace(/^https?:\/\//, '').replace(/\/api\/?$/, '')
+        const wsUrl = `${wsProtocol}://${wsHost}/ws/sales/pos/${posSessionId}/`
+
+        console.log('[DraftSync] Connecting to WebSocket:', wsUrl)
+        
+        const connect = () => {
+            const socket = new WebSocket(wsUrl)
+            socketRef.current = socket
+
+            socket.onopen = () => {
+                console.log('[DraftSync] WebSocket Connected')
+                setIsSocketConnected(true)
+                // Fetch initial state once connected
+                initialFetch()
+            }
+
+            socket.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data)
+                    handleSocketEvent(data)
+                } catch (e) {
+                    console.error('[DraftSync] Error parsing WS message', e)
+                }
+            }
+
+            socket.onclose = () => {
+                console.log('[DraftSync] WebSocket Disconnected')
+                setIsSocketConnected(false)
+                // Attempt to reconnect after 3 seconds
+                setTimeout(() => {
+                    if (enabled && posSessionId) connect()
+                }, 3000)
+            }
+
+            socket.onerror = (err) => {
+                console.error('[DraftSync] WebSocket Error', err)
+                socket.close()
+            }
+        }
+
+        connect()
 
         return () => {
-            clearTimeout(initialPollTimer)
-            clearInterval(interval)
-            setIsPolling(false)
+            if (socketRef.current) {
+                socketRef.current.close()
+            }
         }
-    }, [enabled, posSessionId, pollInterval, poll])
+    }, [enabled, posSessionId])
 
-    // ── Heartbeat for active lock ───────────────────────────────
+    const handleSocketEvent = useCallback((data: any) => {
+        const { event, draft, draft_id } = data
+        const currentUserId = user?.id
+
+        setSyncDrafts(prev => {
+            let next = [...prev]
+
+            if (event === 'CREATED') {
+                if (!next.find(d => d.id === draft.id)) {
+                    next.push(draft)
+                    if (draft.locked_by_id !== currentUserId) {
+                        callbacksRef.current.onNewDraft?.(draft)
+                    }
+                }
+            } else if (event === 'UPDATED') {
+                const index = next.findIndex(d => d.id === draft.id)
+                if (index !== -1) {
+                    const old = next[index]
+                    next[index] = draft
+
+                    // Detect lock changes
+                    if (old.is_locked !== draft.is_locked || old.locked_by_id !== draft.locked_by_id) {
+                        callbacksRef.current.onLockChanged?.(draft)
+                    }
+
+                    // Detect content updates
+                    if (old.updated_at !== draft.updated_at && draft.locked_by_id !== currentUserId) {
+                        callbacksRef.current.onDraftUpdated?.(draft)
+                    }
+                } else {
+                    // It's an update for something we didn't have? Add it.
+                    next.push(draft)
+                }
+            } else if (event === 'DELETED') {
+                next = next.filter(d => d.id !== draft_id)
+                callbacksRef.current.onDraftDeleted?.(draft_id)
+            }
+
+            // Sort by updated_at desc
+            return next.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+        })
+    }, [user?.id])
+
+    // ── Initial Fetch & Fallback ────────────────────────────────
+
+    const initialFetch = useCallback(async () => {
+        if (!posSessionId) return
+        try {
+            const res = await api.get(`/sales/pos-drafts/sync/?pos_session_id=${posSessionId}`)
+            const data: SyncResponse = res.data
+            setSyncDrafts(data.drafts)
+            prevDraftsRef.current = data.drafts
+            
+            if (data.session_status === 'CLOSED') {
+                callbacksRef.current.onSessionStateChange?.('CLOSED', data.closed_by_name)
+            }
+        } catch (error) {
+            console.debug('[DraftSync] Initial fetch failed:', error)
+        }
+    }, [posSessionId])
+
+    // Use a slow polling fallback ONLY if socket is disconnected for a long time
+    useEffect(() => {
+        if (!enabled || !posSessionId || isSocketConnected) return
+        
+        const interval = setInterval(initialFetch, pollInterval)
+        return () => clearInterval(interval)
+    }, [enabled, posSessionId, isSocketConnected, pollInterval, initialFetch])
+
+    // ── Heartbeat (Legacy HTTP for now) ─────────────────────────
 
     useEffect(() => {
         if (!activeLockDraftId || !posSessionId) return
@@ -195,10 +219,8 @@ export function useDraftSync({
             } catch (error) {
                 const err = error as { response?: { status?: number } }
                 if (err.response?.status === 409) {
-                    // Lock was lost
-                    console.warn('[DraftSync] Lock lost for draft', activeLockDraftId)
-                    toast.warning('El bloqueo del borrador se ha perdido. Otro usuario puede estar editándolo.')
                     setActiveLockDraftId(null)
+                    toast.warning('El bloqueo del borrador se ha perdido.')
                 }
             }
         }
@@ -207,37 +229,30 @@ export function useDraftSync({
         return () => clearInterval(interval)
     }, [activeLockDraftId, posSessionId, heartbeatInterval, browserSessionKey])
 
-    // ── Release lock on page unload ─────────────────────────────
+    // ── Page Unload ─────────────────────────────────────────────
 
     useEffect(() => {
         const handleBeforeUnload = () => {
             if (activeLockDraftId && posSessionId) {
-                // Use sendBeacon for reliable fire-and-forget on page close
                 const url = `${process.env.NEXT_PUBLIC_API_URL}/sales/pos-drafts/${activeLockDraftId}/unlock/`
-                const token = localStorage.getItem('access_token')
                 const body = JSON.stringify({
                     pos_session_id: posSessionId,
                     session_key: browserSessionKey,
                 })
-                
                 if (navigator.sendBeacon) {
                     const blob = new Blob([body], { type: 'application/json' })
-                    // sendBeacon doesn't support auth headers, so we rely on the
-                    // lock timeout as fallback. The explicit unlock is best-effort.
                     navigator.sendBeacon(url, blob)
                 }
             }
         }
-
         window.addEventListener('beforeunload', handleBeforeUnload)
         return () => window.removeEventListener('beforeunload', handleBeforeUnload)
     }, [activeLockDraftId, posSessionId, browserSessionKey])
 
     // ── Lock API ────────────────────────────────────────────────
 
-    const acquireLock = useCallback(async (draftId: number): Promise<{ acquired: boolean, error?: string, locked_by_name?: string }> => {
+    const acquireLock = useCallback(async (draftId: number) => {
         if (!posSessionId) return { acquired: false, error: 'Sin sesión' }
-
         try {
             await api.post(`/sales/pos-drafts/${draftId}/lock/`, {
                 pos_session_id: posSessionId,
@@ -245,52 +260,30 @@ export function useDraftSync({
             })
             setActiveLockDraftId(draftId)
             return { acquired: true }
-        } catch (error) {
-            const err = error as { response?: { status?: number; data?: { error?: string; locked_by_name?: string } } }
-            if (err.response?.status === 423) {
-                const data = err.response.data
-                return {
-                    acquired: false,
-                    error: data?.error,
-                    locked_by_name: data?.locked_by_name,
-                }
+        } catch (error: any) {
+            return {
+                acquired: false,
+                error: error.response?.data?.error || 'Error al bloquear',
+                locked_by_name: error.response?.data?.locked_by_name
             }
-            return { acquired: false, error: 'Error al bloquear borrador' }
         }
     }, [posSessionId, browserSessionKey])
 
     const releaseLock = useCallback(async (draftId?: number) => {
         const targetId = draftId || activeLockDraftId
         if (!targetId || !posSessionId) return
-
         try {
             await api.post(`/sales/pos-drafts/${targetId}/unlock/`, {
                 pos_session_id: posSessionId,
                 session_key: browserSessionKey,
             })
-        } catch (error) {
-            console.debug('[DraftSync] Unlock failed:', error)
-        }
-        
-        if (targetId === activeLockDraftId) {
-            setActiveLockDraftId(null)
-        }
+        } catch (error) {}
+        if (targetId === activeLockDraftId) setActiveLockDraftId(null)
     }, [activeLockDraftId, posSessionId, browserSessionKey])
 
-    // ── Helpers ──────────────────────────────────────────────────
-
-    const isLockedByOther = useCallback((draftId: number): boolean => {
+    const getLockInfo = useCallback((draftId: number) => {
         const draft = syncDrafts.find(d => d.id === draftId)
-        if (!draft || !draft.is_locked) return false
-        // Locked by someone else (different session key)
-        return draft.lock_session_key !== browserSessionKey
-    }, [syncDrafts, browserSessionKey])
-
-    const getLockInfo = useCallback((draftId: number): { isLocked: boolean, lockedByName: string | null, isOwnLock: boolean } => {
-        const draft = syncDrafts.find(d => d.id === draftId)
-        if (!draft || !draft.is_locked) {
-            return { isLocked: false, lockedByName: null, isOwnLock: false }
-        }
+        if (!draft || !draft.is_locked) return { isLocked: false, lockedByName: null, isOwnLock: false }
         return {
             isLocked: true,
             lockedByName: draft.locked_by_name,
@@ -298,20 +291,14 @@ export function useDraftSync({
         }
     }, [syncDrafts, browserSessionKey])
 
-    // Force a sync now (useful after save/delete operations)
-    const forceSync = useCallback(() => {
-        poll()
-    }, [poll])
-
     return {
         syncDrafts,
-        isPolling,
+        isPolling: !isSocketConnected, // For UI indicator
         activeLockDraftId,
         browserSessionKey,
         acquireLock,
         releaseLock,
-        isLockedByOther,
         getLockInfo,
-        forceSync,
+        forceSync: initialFetch,
     }
 }
