@@ -110,4 +110,4 @@ EXPOSE 8100
 # USER django  # Comentado para evitar conflictos de permisos con volúmenes locales
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["sh", "-c", "python manage.py runserver 0.0.0.0:${PORT:-8100}"]
+CMD ["sh", "-c", "daphne -b 0.0.0.0 -p ${PORT:-8100} config.asgi:application"]

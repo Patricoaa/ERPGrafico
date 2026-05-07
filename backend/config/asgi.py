@@ -1,7 +1,7 @@
 import os
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.auth import AuthMiddlewareStack
+from core.ws_auth import JWTAuthMiddleware
 import sales.routing
 import workflow.routing
 
@@ -12,10 +12,11 @@ django_asgi_app = get_asgi_application()
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
-    "websocket": AuthMiddlewareStack(
+    "websocket": JWTAuthMiddleware(
         URLRouter(
             sales.routing.websocket_urlpatterns +
             workflow.routing.websocket_urlpatterns
         )
     ),
 })
+
