@@ -11,9 +11,11 @@ from django.core.exceptions import ValidationError
 from core.storages import PublicMediaStorage
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill
+from core.models import TimeStampedModel
 
 
-class ProductCategory(models.Model):
+class ProductCategory(TimeStampedModel):
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     name = models.CharField(_("Nombre"), max_length=100)
     prefix = models.CharField(_("Prefijo"), max_length=10, null=True, blank=True, help_text=_("Usado para generar el código interno (ej: IMP, DIS)"))
     icon = models.CharField(_("Icono"), max_length=50, null=True, blank=True, help_text=_("Nombre del icono de Lucide (ej: Package, Coffee)"))
@@ -42,7 +44,8 @@ class ProductCategory(models.Model):
     def __str__(self):
         return self.name
 
-class UoMCategory(models.Model):
+class UoMCategory(TimeStampedModel):
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     name = models.CharField(_("Nombre"), max_length=100)
     history = HistoricalRecords()
     
@@ -54,7 +57,8 @@ class UoMCategory(models.Model):
     def __str__(self):
         return self.name
 
-class UoM(models.Model):
+class UoM(TimeStampedModel):
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     class Type(models.TextChoices):
         REFERENCE = 'REFERENCE', _('Referencia para esta categoría')
         BIGGER = 'BIGGER', _('Más grande que la referencia')
@@ -76,10 +80,11 @@ class UoM(models.Model):
     def __str__(self):
         return self.name
 
-class ProductAttribute(models.Model):
+class ProductAttribute(TimeStampedModel):
     """Atributo maestro (ej: Color, Talla)"""
+    # NOTE: created_at heredado de TimeStampedModel (T-14); updated_at es nuevo.
+    # created_at ya existía como campo manual en el modelo — ahora heredado.
     name = models.CharField(_("Nombre"), max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords()
 
     class Meta:
@@ -90,8 +95,9 @@ class ProductAttribute(models.Model):
     def __str__(self):
         return self.name
 
-class ProductAttributeValue(models.Model):
+class ProductAttributeValue(TimeStampedModel):
     """Valor específico de un atributo (ej: Rojo, XL)"""
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     attribute = models.ForeignKey(ProductAttribute, on_delete=models.CASCADE, related_name='values')
     value = models.CharField(_("Valor"), max_length=100)
     history = HistoricalRecords()

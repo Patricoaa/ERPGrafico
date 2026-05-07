@@ -11,6 +11,7 @@ from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from core.validators import validate_file_size, validate_file_extension
 from core.storages import PrivateMediaStorage
+from core.models import TimeStampedModel
 
 
 def get_default_date():
@@ -946,8 +947,11 @@ class BankStatementLine(models.Model):
         return self.credit - self.debit
 
 
-class ReconciliationSettings(models.Model):
-    """Configuración global de conciliación por cuenta de tesorería"""
+class ReconciliationSettings(TimeStampedModel):
+    """Configuración global de conciliación por cuenta de tesorería.
+    NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
+    Tenía updated_at manual — ahora heredado; se añade created_at.
+    """
     treasury_account = models.OneToOneField(
         'TreasuryAccount',
         on_delete=models.CASCADE,
@@ -983,7 +987,7 @@ class ReconciliationSettings(models.Model):
         help_text=_("Si es True, el sistema concilia automáticamente sobre el umbral de confianza")
     )
 
-    updated_at = models.DateTimeField(auto_now=True)
+    # updated_at heredado de TimeStampedModel; campo manual eliminado (T-14).
     history = HistoricalRecords()
 
     class Meta:

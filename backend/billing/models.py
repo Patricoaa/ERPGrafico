@@ -5,13 +5,13 @@ from django.utils import timezone
 from accounting.models import JournalEntry
 from sales.models import SaleOrder
 from purchasing.models import PurchaseOrder
-from simple_history.models import HistoricalRecords
 from core.validators import validate_file_size, validate_file_extension
 from core.utils import generic_upload_path, get_current_date
 from core.storages import PrivateMediaStorage
+from core.models import TransactionalDocument
 from .note_workflow import NoteWorkflow  # Import workflow model
 
-class Invoice(models.Model):
+class Invoice(TransactionalDocument):
     class DTEType(models.TextChoices):
         FACTURA = 'FACTURA', _('Factura Electrónica')
         FACTURA_EXENTA = 'FACTURA_EXENTA', _('Factura No Afecta o Exenta')
@@ -35,6 +35,18 @@ class Invoice(models.Model):
         CREDIT = 'CREDIT', _('Crédito')
         CREDIT_BALANCE = 'CREDIT_BALANCE', _('Saldo a Favor')
 
+    # number: redeclarado — Invoice usa folio sin unique global (mismo folio en distintos dte_type es válido)
+    number = models.CharField(_("Folio"), max_length=20, blank=True)
+    # status: redeclarado con DTEType-aware choices (POSTED en lugar de CONFIRMED)
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
+    # journal_entry: redeclarado para exponer reverso 'invoice' (el abstracto usa '+')
+    journal_entry = models.OneToOneField(
+        JournalEntry,
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='invoice',
+    )
+
     dte_type = models.CharField(_("Tipo DTE"), max_length=25, choices=DTEType.choices)
     sii_document_code = models.IntegerField(
         _("Código SII"),
@@ -51,46 +63,33 @@ class Invoice(models.Model):
         ],
         help_text=_("Código oficial del tipo de DTE según SII de Chile")
     )
-    number = models.CharField(_("Folio"), max_length=20, blank=True)
     document_attachment = models.FileField(
-        _("Adjunto de Documento"), 
-        upload_to=generic_upload_path('invoices/'), 
+        _("Adjunto de Documento"),
+        upload_to=generic_upload_path('invoices/'),
         storage=PrivateMediaStorage(),
         null=True, blank=True,
         validators=[validate_file_size, validate_file_extension]
     )
     date = models.DateField(_("Fecha"), default=get_current_date)
-    
+
     # Links
     sale_order = models.ForeignKey(SaleOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
     purchase_order = models.ForeignKey(PurchaseOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
     corrected_invoice = models.ForeignKey(
-        'self', 
-        on_delete=models.SET_NULL, 
-        null=True, blank=True, 
+        'self',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
         related_name='adjustments',
         verbose_name=_("Factura Rectificada"),
         help_text=_("Documento original que esta nota rectifica")
     )
     contact = models.ForeignKey('contacts.Contact', on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices', verbose_name=_("Contacto"))
-    
-    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
+
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
     attachments = GenericRelation('core.Attachment')
 
-    # Totals
-    total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=0, default=0)
-    total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=0, default=0)
-    total_discount_amount = models.DecimalField(_("Monto Descuento Total"), max_digits=12, decimal_places=0, default=0)
-    total = models.DecimalField(_("Total"), max_digits=12, decimal_places=0, default=0)
-
-    # Accounting
-    journal_entry = models.OneToOneField(
-        JournalEntry,
-        on_delete=models.PROTECT,
-        null=True, blank=True,
-        related_name='invoice'
-    )
+    # Totals (inherited: total_net, total_tax, total — max_digits=14, decimal_places=0)
+    total_discount_amount = models.DecimalField(_("Monto Descuento Total"), max_digits=14, decimal_places=0, default=0)
 
     # Tax Period Control
     tax_period_closed = models.BooleanField(
@@ -99,15 +98,9 @@ class Invoice(models.Model):
         help_text=_("Indica si el período tributario de este documento está cerrado")
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    history = HistoricalRecords()
-
     class Meta:
         verbose_name = _("Factura/Boleta")
         verbose_name_plural = _("Facturas y Boletas")
-        ordering = ['-id']
 
     def __str__(self):
         return self.display_id

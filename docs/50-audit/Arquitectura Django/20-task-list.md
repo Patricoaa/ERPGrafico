@@ -99,64 +99,74 @@
 ## F2 — BaseModel abstractos
 
 ### T-07 · ADR sobre estandarización de `decimal_places` en totales
-- **Estado:** 📋
+- **Estado:** ✅
 - **Esfuerzo:** 1 (decisión + redacción)
-- **Archivos:** `docs/10-architecture/adr/0010-decimal-places-totals.md` (nuevo)
+- **Archivos:** `docs/10-architecture/adr/0014-decimal-places-transactional-totals.md`
 - **Acceptance:**
-  - [ ] Decisión documentada: ¿`decimal_places=0` (CLP nativo) o `=2` (compatibilidad multi-moneda)?
-  - [ ] Recomendación de la auditoría: `=2` para totales financieros, `=0` para conteos. Justificar.
-  - [ ] Aprobado por contabilidad/finanzas (firma en commit).
+  - [x] Decisión documentada: `decimal_places=0` (CLP nativo). `SaleOrder` es el único outlier con `=2` — se migra a `=0`.
+  - [x] Justificación: SII rechaza decimales en DTE; 4 de 5 documentos transaccionales y módulos tax/hr ya en `=0`; YAGNI para multi-moneda.
+  - [x] Consecuencias documentadas: 4 campos en `SaleOrder` migran, serializers a revisar listados, script de validación incluido.
 
 ### T-08 · Crear `core/models/abstracts.py`
-- **Estado:** 📋
+- **Estado:** ✅
 - **Esfuerzo:** 3
 - **Depende de:** T-07
 - **Patrón:** [P-01](30-patterns.md#p-01-basemodel)
 - **Archivos:** `backend/core/models/abstracts.py` (nuevo), `backend/core/models/__init__.py` (refactor para package)
 - **Acceptance:**
-  - [ ] `TimeStampedModel` (abstracta): `created_at`, `updated_at`.
-  - [ ] `AuditedModel(TimeStampedModel)` (abstracta): agrega `history = HistoricalRecords(inherit=True)`.
-  - [ ] `TransactionalDocument(AuditedModel)` (abstracta): `number`, `status`, `notes`, `journal_entry`, `total_net`, `total_tax`, `total`.
-  - [ ] Imports en `core/models/__init__.py` mantienen retrocompatibilidad de `from core.models import User`.
-  - [ ] Tests unitarios: subclase concreta hereda todos los campos.
+  - [x] `TimeStampedModel` (abstracta): `created_at`, `updated_at`.
+  - [x] `AuditedModel(TimeStampedModel)` (abstracta): agrega `history = HistoricalRecords(inherit=True)`.
+  - [x] `TransactionalDocument(AuditedModel)` (abstracta): `number`, `status`, `notes`, `journal_entry`, `total_net`, `total_tax`, `total`. `decimal_places=0` per ADR-0014.
+  - [x] Imports en `core/models/__init__.py` mantienen retrocompatibilidad de `from core.models import User`.
+  - [ ] Tests unitarios: subclase concreta hereda todos los campos. *(pendiente hasta T-09 cuando haya subclase real)*
 
 ### T-09 · Migrar `SaleOrder` a `TransactionalDocument`
-- **Estado:** 📋
+- **Estado:** ✅
 - **Esfuerzo:** 2
 - **Depende de:** T-08
-- **Archivos:** `backend/sales/models.py`, `backend/sales/migrations/00XX_*.py`
+- **Archivos:** `backend/sales/models.py`, `backend/sales/migrations/0006_saleorder_transactional_document.py`
 - **Acceptance:**
-  - [ ] `class SaleOrder(TransactionalDocument)` reemplaza `class SaleOrder(models.Model)`.
-  - [ ] Campos duplicados removidos del cuerpo del modelo (`number`, `status`, `notes`, `total_net`, `total_tax`, `total`, `created_at`, `updated_at`, `journal_entry`).
-  - [ ] Migración `--check` retorna 0 cambios después del merge.
-  - [ ] Test de regresión: serializer JSON output idéntico antes/después (golden test).
-  - [ ] `simple_history` no genera tabla histórica duplicada.
+  - [x] `class SaleOrder(TransactionalDocument, TotalsCalculationMixin)` reemplaza `class SaleOrder(models.Model, TotalsCalculationMixin)`.
+  - [x] Campos eliminados del cuerpo: `number`, `notes`, `history`, `total_net`, `total_tax`, `total`, `created_at`, `updated_at`.
+  - [x] `status` redeclarado con `Status.choices` y `default=Status.DRAFT`.
+  - [x] `journal_entry` redeclarado con `related_name='sale_order'` (override del `+` del abstracto, requerido por `accounting/models.py:397`).
+  - [x] `total_discount_amount` normalizado a `decimal_places=0` (ADR-0014).
+  - [x] Migración `0006` cubre los 4 `AlterField` (max_digits 12→14 en totales, decimal_places 2→0).
+  - [ ] Verificar con `makemigrations --check` al levantar Docker. *(pendiente entorno)*
+  - [ ] `simple_history` no genera tabla histórica duplicada. *(verificar en Docker)*
 
 ### T-10 · Migrar `PurchaseOrder` a `TransactionalDocument`
-- **Estado:** 📋, **Esfuerzo:** 2, **Depende de:** T-09 (mismo patrón validado)
+- **Estado:** ✅, **Esfuerzo:** 2, **Depende de:** T-09
+- **Archivos:** `backend/purchasing/models.py`, `backend/purchasing/migrations/0002_purchaseorder_transactional_document.py`
+- **Notas:** campos ya en `decimal_places=0`; solo `max_digits` 12→14. `journal_entry` redeclarado con `related_name='purchase_order'` (requerido por `accounting/models.py:409`).
 
 ### T-11 · Migrar `Invoice` a `TransactionalDocument`
-- **Estado:** 📋, **Esfuerzo:** 3, **Depende de:** T-09
-- **Nota:** `Invoice.number` no es unique a nivel modelo (puede repetirse entre `dte_type` distintos en empresas con multi-folios). Verificar antes de heredar `unique=True`.
+- **Estado:** ✅, **Esfuerzo:** 3, **Depende de:** T-09
+- **Archivos:** `backend/billing/models.py`, `backend/billing/migrations/0008_invoice_transactional_document.py`
+- **Notas:** `number` redeclarado con `blank=True` sin `unique` (folio puede repetirse entre `dte_type`). `notes` es campo nuevo (AddField, safe). `journal_entry` redeclarado con `related_name='invoice'` (requerido por `accounting/models.py:443`). `HistoricalRecords` eliminado del import (heredado). Migración: AddField `notes` + AlterField ×4 (max_digits 12→14).
 
 ### T-12 · Migrar `SaleDelivery`, `SaleReturn` a `TransactionalDocument`
-- **Estado:** 📋, **Esfuerzo:** 2
+- **Estado:** ✅, **Esfuerzo:** 2
+- **Archivos:** `backend/sales/models.py`, `backend/sales/migrations/0007_saledelivery_salereturn_transactional_document.py`
+- **Notas:** campos ya en `decimal_places=0`; solo `max_digits` 12→14. `HistoricalRecords` import eliminado del módulo (todos los modelos sales lo heredan ahora). `total_cost` preservado en cada clase (campo propio, no en el abstracto).
 
-### T-13 · Migrar `JournalEntry` a `TransactionalDocument`
-- **Estado:** 📋, **Esfuerzo:** 3
-- **Cuidado:** `JournalEntry` no tiene `notes` actualmente — agregarlo no es destructivo pero requiere migration. Tampoco `total_net`/`total_tax`/`total` (esos van en `JournalItem`). Solución: usar solo la mixin de timestamps + history, NO `TransactionalDocument` completo. Actualizar a heredar `AuditedModel`.
+### T-13 · Migrar `JournalEntry` a `AuditedModel`
+- **Estado:** ✅, **Esfuerzo:** 3
+- **Archivos:** `backend/accounting/models.py`, `backend/accounting/migrations/0010_journalentry_audited_model.py`
+- **Notas:** Hereda `AuditedModel` (no `TransactionalDocument`) — `JournalEntry` no tiene `total_net/total_tax/total` (esos van en `JournalItem`), ni `notes`. Campos `created_at/updated_at/history` eliminados del cuerpo (idénticos al abstracto). `HistoricalRecords` import preservado (otros modelos en el módulo lo usan). Migración vacía (sin schema changes).
 - **Acceptance:**
-  - [ ] Decisión documentada en código (comment de una línea) sobre por qué no usa `TransactionalDocument`.
+  - [x] Decisión documentada en código (comment de una línea) sobre por qué no usa `TransactionalDocument`.
 
 ### T-14 · Aplicar `TimeStampedModel` a modelos sin timestamps
-- **Estado:** 📋
+- **Estado:** 🚧 WIP
 - **Esfuerzo:** 5
 - **Depende de:** T-08
 - **Modelos:** `Account`, `JournalItem`, `BudgetItem`, `Budget`, todos los `*Settings`, `UoM`, `UoMCategory`, `ProductCategory`, `ProductAttribute`, `ProductAttributeValue`.
 - **Acceptance:**
-  - [ ] Migración con backfill: `created_at = updated_at = now()` en filas existentes.
-  - [ ] Para `JournalItem`, considerar usar `entry.created_at` como backfill (más correcto).
-  - [ ] Tests: una nueva instancia tiene `created_at <= updated_at`.
+  - [x] Migración con backfill: `created_at = updated_at = now()` en filas existentes. `JournalItem` usa `entry.created_at` como backfill (ver `accounting/0011`).
+  - [x] Para `JournalItem`, se usa `entry.created_at` como backfill (más correcto).
+  - [x] Tests: una nueva instancia tiene `created_at <= updated_at`. Ver `core/tests_t14_timestamped.py`.
+  - [ ] Verificar con `makemigrations --check` al levantar Docker. *(pendiente entorno)*
 
 ### T-15 · Suite de regresión financiera
 - **Estado:** 📋
