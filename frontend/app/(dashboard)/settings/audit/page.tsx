@@ -24,7 +24,6 @@ import { DataCell } from "@/components/ui/data-table-cells";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { ColumnDef } from "@tanstack/react-table";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { LAYOUT_TOKENS } from "@/lib/styles";
 
 interface GlobalAuditLog {
     date: string;

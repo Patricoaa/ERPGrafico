@@ -22,7 +22,7 @@ import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { formatPlainDate } from "@/lib/utils"
 import { TableSkeleton } from "@/components/shared"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+import { PageContainer } from "@/components/shared"
 import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -430,7 +430,7 @@ export default function PurchaseInvoicesPage() {
     ]
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
+        <PageContainer>
             {loading ? (
                 <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-4">
                     <TableSkeleton rows={5} columns={8} />
@@ -598,7 +598,7 @@ export default function PurchaseInvoicesPage() {
                 description="Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?"
                 variant="destructive"
             />
-        </div >
+        </PageContainer>
     )
 }
 

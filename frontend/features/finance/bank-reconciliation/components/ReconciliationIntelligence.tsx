@@ -1,15 +1,42 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useCallback } from "react"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
-import { Button } from "@/components/ui/button"
-import { Info, Brain, Save, Settings2, Calendar, Hash, User, CircleDollarSign, Loader2, Wand2 } from "lucide-react"
+import { Info, Brain, Settings2, Calendar, Hash, User, CircleDollarSign, Loader2, Wand2 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 import { useReconciliationSettingsQuery } from "../hooks/useReconciliationQueries"
 import { useUpdateReconciliationSettingsMutation } from "../hooks/useReconciliationMutations"
+import { AutoSaveStatusBadge } from "@/components/shared"
+import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 import { cn } from "@/lib/utils"
+
+const intelligenceSchema = z.object({
+    amount_weight: z.number().min(0).max(100),
+    date_weight: z.number().min(0).max(100),
+    reference_weight: z.number().min(0).max(100),
+    contact_weight: z.number().min(0).max(100),
+    confidence_threshold: z.number().min(0).max(100),
+    date_range_days: z.number().min(1).max(365),
+    auto_confirm: z.boolean(),
+})
+
+type IntelligenceFormValues = z.infer<typeof intelligenceSchema>
+
+const DEFAULT_VALUES: IntelligenceFormValues = {
+    amount_weight: 40,
+    date_weight: 30,
+    reference_weight: 20,
+    contact_weight: 10,
+    confidence_threshold: 85,
+    date_range_days: 30,
+    auto_confirm: false,
+}
 
 const FieldLabel = ({ title, tooltip }: { title: string; tooltip: string }) => (
     <div className="flex items-center gap-1.5">
@@ -25,7 +52,7 @@ const FieldLabel = ({ title, tooltip }: { title: string; tooltip: string }) => (
     </div>
 )
 
-const WeightControl = ({ icon: Icon, label, value, tooltip, onChange }: { icon: any; label: string; value: number; tooltip: string; onChange: (v: number) => void }) => (
+const WeightControl = ({ icon: Icon, label, value, tooltip, onChange }: { icon: React.ElementType; label: string; value: number; tooltip: string; onChange: (v: number) => void }) => (
     <div className="space-y-3">
         <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
@@ -45,7 +72,7 @@ const WeightControl = ({ icon: Icon, label, value, tooltip, onChange }: { icon: 
     </div>
 )
 
-const ThresholdControl = ({ label, value, suffix, tooltip, onChange, min = 0, max = 100 }: any) => (
+const ThresholdControl = ({ label, value, suffix, tooltip, onChange, min = 0, max = 100 }: { label: string; value: number; suffix: string; tooltip: string; onChange: (v: number) => void; min?: number; max?: number }) => (
     <div className="space-y-2">
         <div className="flex justify-between items-center">
             <FieldLabel title={label} tooltip={tooltip} />
@@ -64,41 +91,69 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
     const { data: settings, isLoading: isLoadingSettings, isFetching: isFetchingSettings } = useReconciliationSettingsQuery("global")
     const updateMutation = useUpdateReconciliationSettingsMutation("global")
 
-    const [localSettings, setLocalSettings] = useState<any>(null)
+    const form = useForm<IntelligenceFormValues>({
+        resolver: zodResolver(intelligenceSchema),
+        defaultValues: DEFAULT_VALUES,
+    })
 
     useEffect(() => {
         if (settings) {
-            setLocalSettings(settings)
+            form.reset({
+                amount_weight: settings.amount_weight ?? DEFAULT_VALUES.amount_weight,
+                date_weight: settings.date_weight ?? DEFAULT_VALUES.date_weight,
+                reference_weight: settings.reference_weight ?? DEFAULT_VALUES.reference_weight,
+                contact_weight: settings.contact_weight ?? DEFAULT_VALUES.contact_weight,
+                confidence_threshold: settings.confidence_threshold ?? DEFAULT_VALUES.confidence_threshold,
+                date_range_days: settings.date_range_days ?? DEFAULT_VALUES.date_range_days,
+                auto_confirm: settings.auto_confirm ?? DEFAULT_VALUES.auto_confirm,
+            })
         }
-    }, [settings])
+    }, [settings, form])
 
-    const handleSave = async () => {
-        if (localSettings) {
-            await updateMutation.mutateAsync(localSettings)
-        }
-    }
+    const onSave = useCallback(async (data: IntelligenceFormValues) => {
+        await updateMutation.mutateAsync({ ...data, id: settings!.id })
+    }, [updateMutation, settings?.id])
 
-    const totalWeight = localSettings ? 
-        localSettings.amount_weight + 
-        localSettings.date_weight + 
-        localSettings.reference_weight + 
-        localSettings.contact_weight : 0
+    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
+        form,
+        onSave,
+        enabled: !isLoadingSettings && !!settings,
+        validate: (v) => {
+            const total = v.amount_weight + v.date_weight + v.reference_weight + v.contact_weight
+            return total === 100 || `Los pesos deben sumar 100 % — actualmente suman ${total} %`
+        },
+    })
+
+    useUnsavedChangesGuard(status)
+
+    // reactive totalWeight for inline badge (independent of autosave status)
+    const [aw, dw, rw, cw] = form.watch(["amount_weight", "date_weight", "reference_weight", "contact_weight"])
+    const totalWeight = aw + dw + rw + cw
 
     return (
         <TooltipProvider>
             <div className="space-y-4 max-w-2xl mx-auto py-2">
-                {(isLoadingSettings || isFetchingSettings) && !localSettings ? (
+                {(isLoadingSettings || isFetchingSettings) && !settings ? (
                     <div className="flex justify-center py-20">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     </div>
-                ) : localSettings && (
+                ) : settings && (
                     <div className="grid gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="flex justify-end">
+                            <AutoSaveStatusBadge
+                                status={status}
+                                invalidReason={invalidReason}
+                                lastSavedAt={lastSavedAt}
+                                onRetry={retry}
+                            />
+                        </div>
+
                         {/* Weight Config */}
                         <Card className="p-4 border-primary/10 shadow-sm relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-4 opacity-[0.02] pointer-events-none">
                                 <Brain className="h-20 w-20" />
                             </div>
-                            
+
                             <div className="flex justify-between items-center mb-6">
                                 <div className="space-y-0.5">
                                     <h3 className="text-sm font-bold flex items-center gap-2">
@@ -107,8 +162,8 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
                                     </h3>
                                     <p className="text-[10px] text-muted-foreground">Importancia de cada dato para el score.</p>
                                 </div>
-                                <Badge 
-                                    variant={totalWeight === 100 ? "success" : "warning"} 
+                                <Badge
+                                    variant={totalWeight === 100 ? "success" : "warning"}
                                     className={cn(
                                         "font-mono text-[10px] px-2 py-0.5",
                                         totalWeight !== 100 && "animate-pulse"
@@ -117,44 +172,29 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
                                     {totalWeight}% / 100%
                                 </Badge>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 gap-y-6">
-                                <WeightControl
-                                    icon={CircleDollarSign}
-                                    label="Monto Exacto"
-                                    value={localSettings.amount_weight}
-                                    tooltip="Prioridad alta si esperas que el banco y el sistema registren siempre el mismo monto."
-                                    onChange={v => setLocalSettings({...localSettings, amount_weight: v})}
-                                />
-                                <WeightControl
-                                    icon={Calendar}
-                                    label="Cercanía de Fecha"
-                                    value={localSettings.date_weight}
-                                    tooltip="Importante si hay desfase entre el pago y el registro bancario (ej: depósitos)."
-                                    onChange={v => setLocalSettings({...localSettings, date_weight: v})}
-                                />
-                                <WeightControl
-                                    icon={Hash}
-                                    label="Referencia / Operación"
-                                    value={localSettings.reference_weight}
-                                    tooltip="ID de transferencia, número de cheque o código de operación único."
-                                    onChange={v => setLocalSettings({...localSettings, reference_weight: v})}
-                                />
-                                <WeightControl
-                                    icon={User}
-                                    label="Coincidencia de Contacto"
-                                    value={localSettings.contact_weight}
-                                    tooltip="Busca el nombre del cliente/proveedor dentro de la glosa descriptiva del banco."
-                                    onChange={v => setLocalSettings({...localSettings, contact_weight: v})}
-                                />
+                                <Controller control={form.control} name="amount_weight" render={({ field }) => (
+                                    <WeightControl icon={CircleDollarSign} label="Monto Exacto" value={field.value}
+                                        tooltip="Prioridad alta si esperas que el banco y el sistema registren siempre el mismo monto."
+                                        onChange={field.onChange} />
+                                )} />
+                                <Controller control={form.control} name="date_weight" render={({ field }) => (
+                                    <WeightControl icon={Calendar} label="Cercanía de Fecha" value={field.value}
+                                        tooltip="Importante si hay desfase entre el pago y el registro bancario (ej: depósitos)."
+                                        onChange={field.onChange} />
+                                )} />
+                                <Controller control={form.control} name="reference_weight" render={({ field }) => (
+                                    <WeightControl icon={Hash} label="Referencia / Operación" value={field.value}
+                                        tooltip="ID de transferencia, número de cheque o código de operación único."
+                                        onChange={field.onChange} />
+                                )} />
+                                <Controller control={form.control} name="contact_weight" render={({ field }) => (
+                                    <WeightControl icon={User} label="Coincidencia de Contacto" value={field.value}
+                                        tooltip="Busca el nombre del cliente/proveedor dentro de la glosa descriptiva del banco."
+                                        onChange={field.onChange} />
+                                )} />
                             </div>
-                            
-                            {totalWeight !== 100 && (
-                                <div className="mt-8 p-3 rounded-md bg-warning/10 border border-warning/20 flex items-center gap-3 text-warning-foreground text-xs font-medium">
-                                    <AlertTriangle className="h-4 w-4 shrink-0" />
-                                    Los pesos deben sumar exactamente 100% para poder guardar la configuración.
-                                </div>
-                            )}
                         </Card>
 
                         {/* Logic Config */}
@@ -164,24 +204,19 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
                                     <Settings2 className="h-3.5 w-3.5 text-primary" />
                                     <h4 className="text-xs font-bold uppercase tracking-wider">Parámetros</h4>
                                 </div>
-                                
-                                <ThresholdControl
-                                    label="Umbral de Confianza"
-                                    value={localSettings.confidence_threshold}
-                                    suffix="%"
-                                    tooltip="Score mínimo para que el sistema sugiera un match en el workbench."
-                                    onChange={v => setLocalSettings({...localSettings, confidence_threshold: v})}
-                                />
 
-                                <ThresholdControl
-                                    label="Rango de Búsqueda"
-                                    value={localSettings.date_range_days}
-                                    suffix=" días"
-                                    min={1}
-                                    max={365}
-                                    tooltip="Días hacia atrás y adelante para buscar candidatos desde la fecha de la línea."
-                                    onChange={v => setLocalSettings({...localSettings, date_range_days: v})}
-                                />
+                                <Controller control={form.control} name="confidence_threshold" render={({ field }) => (
+                                    <ThresholdControl label="Umbral de Confianza" value={field.value} suffix="%"
+                                        tooltip="Score mínimo para que el sistema sugiera un match en el workbench."
+                                        onChange={field.onChange} />
+                                )} />
+
+                                <Controller control={form.control} name="date_range_days" render={({ field }) => (
+                                    <ThresholdControl label="Rango de Búsqueda" value={field.value} suffix=" días"
+                                        min={1} max={365}
+                                        tooltip="Días hacia atrás y adelante para buscar candidatos desde la fecha de la línea."
+                                        onChange={field.onChange} />
+                                )} />
                             </Card>
 
                             <Card className="p-4 flex flex-col justify-between border-primary/5 bg-primary/[0.01]">
@@ -190,34 +225,23 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
                                         <Wand2 className="h-3.5 w-3.5 text-primary" />
                                         <h4 className="text-xs font-bold uppercase tracking-wider">Automatización</h4>
                                     </div>
-                                    <div className="flex items-center justify-between p-4 border rounded-md bg-background shadow-sm hover:border-primary/30 transition-colors cursor-pointer group"
-                                         onClick={() => setLocalSettings({...localSettings, auto_confirm: !localSettings.auto_confirm})}>
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-bold">Auto-Confirmación</p>
-                                            <p className="text-[11px] text-muted-foreground leading-tight max-w-[200px]">
-                                                Conciliar automáticamente si el score supera el {localSettings.confidence_threshold}%.
-                                            </p>
+                                    <Controller control={form.control} name="auto_confirm" render={({ field }) => (
+                                        <div className="flex items-center justify-between p-4 border rounded-md bg-background shadow-sm hover:border-primary/30 transition-colors cursor-pointer group"
+                                            onClick={() => field.onChange(!field.value)}>
+                                            <div className="space-y-1">
+                                                <p className="text-sm font-bold">Auto-Confirmación</p>
+                                                <p className="text-[11px] text-muted-foreground leading-tight max-w-[200px]">
+                                                    Conciliar automáticamente si el score supera el {form.watch("confidence_threshold")}%.
+                                                </p>
+                                            </div>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                                className="group-hover:scale-105 transition-transform"
+                                            />
                                         </div>
-                                        <Switch
-                                            checked={localSettings.auto_confirm}
-                                            onCheckedChange={v => setLocalSettings({...localSettings, auto_confirm: v})}
-                                            className="group-hover:scale-105 transition-transform"
-                                        />
-                                    </div>
+                                    )} />
                                 </div>
-
-                                <Button 
-                                    className="w-full mt-6 h-10 text-xs font-bold shadow-md shadow-primary/10" 
-                                    disabled={updateMutation.isPending || totalWeight !== 100 || isFetchingSettings}
-                                    onClick={handleSave}
-                                >
-                                    {updateMutation.isPending ? (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Save className="mr-2 h-4 w-4" />
-                                    )}
-                                    {updateMutation.isPending ? 'Guardando...' : 'Guardar Perfil de Inteligencia'}
-                                </Button>
                             </Card>
                         </div>
                     </div>
@@ -226,7 +250,3 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
         </TooltipProvider>
     )
 }
-
-const AlertTriangle = ({ className }: { className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-)

@@ -7,13 +7,11 @@ import * as z from "zod"
 import { usePartnerSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField, FormItem } from "@/components/ui/form"
-import { 
-    Building2, 
-    Check, 
-    CloudUpload,
-    Info
-} from "lucide-react"
+import { Building2, Info } from "lucide-react"
+import { AutoSaveStatusBadge } from "@/components/shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 
 const partnerAccountingSchema = z.object({
@@ -31,12 +29,7 @@ interface PartnerAccountingTabProps {
 }
 
 export function PartnerAccountingTab({ onSavingChange }: PartnerAccountingTabProps) {
-    const { settings, saving, updateSettings } = usePartnerSettings()
-
-    // Notify parent of saving state
-    useEffect(() => {
-        onSavingChange?.(saving)
-    }, [saving, onSavingChange])
+    const { settings, updateSettings } = usePartnerSettings()
 
     const form = useForm<PartnerAccountingValues>({
         resolver: zodResolver(partnerAccountingSchema),
@@ -49,17 +42,18 @@ export function PartnerAccountingTab({ onSavingChange }: PartnerAccountingTabPro
         }
     })
 
-    const watchedValues = form.watch()
-    const { isDirty } = form.formState
+    const onSave = useCallback(async (data: PartnerAccountingValues) => {
+        await updateSettings(data)
+    }, [updateSettings])
 
-    const onSubmit = useCallback(async (data: PartnerAccountingValues) => {
-        try {
-            await updateSettings(data)
-            form.reset(data)
-        } catch (error) {
-            console.error(error)
-        }
-    }, [updateSettings, form])
+    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave })
+
+    useUnsavedChangesGuard(status)
+
+    // Notify parent of saving state for backward compat
+    useEffect(() => {
+        onSavingChange?.(status === 'saving' || status === 'dirty')
+    }, [status, onSavingChange])
 
     // Update form when settings are loaded
     useEffect(() => {
@@ -74,18 +68,16 @@ export function PartnerAccountingTab({ onSavingChange }: PartnerAccountingTabPro
         }
     }, [settings, form])
 
-    // Auto-save logic
-    useEffect(() => {
-        if (isDirty) {
-            const timer = setTimeout(() => {
-                form.handleSubmit(onSubmit)()
-            }, 1000)
-            return () => clearTimeout(timer)
-        }
-    }, [watchedValues, isDirty, form, onSubmit])
-
     return (
         <div className="space-y-6">
+            <div className="flex justify-end">
+                <AutoSaveStatusBadge
+                    status={status}
+                    invalidReason={invalidReason}
+                    lastSavedAt={lastSavedAt}
+                    onRetry={retry}
+                />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* 1. Patrimonio Row */}
                 <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card md:col-span-2">

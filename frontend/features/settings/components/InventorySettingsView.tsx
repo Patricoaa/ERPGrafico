@@ -1,25 +1,24 @@
 "use client"
 
 import React, { useEffect, useCallback, useState } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
 import { useInventorySettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
-import { LabeledSelect } from "@/components/shared"
+import { AutoSaveStatusBadge, LabeledSelect } from "@/components/shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { inventorySchema, type InventoryFormValues } from "./InventorySettingsView.schema"
-import { UseFormReturn, Path } from "react-hook-form"
+import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 interface InventorySettingsViewProps {
     activeTab: string
-    onSavingChange?: (saving: boolean) => void
 }
 
-export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ activeTab = "accounts", onSavingChange }) => {
-    const [currentTab, setCurrentTab] = useState(activeTab)
-    const { settings, saving, updateSettings } = useInventorySettings()
+export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ activeTab = "accounts" }) => {
+    const { settings, updateSettings } = useInventorySettings()
 
     const form = useForm<InventoryFormValues>({
         // ... (existing form config)
@@ -38,11 +37,6 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
             inventory_valuation_method: "AVERAGE",
         }
     })
-
-    // Update saving status to parent
-    useEffect(() => {
-        onSavingChange?.(saving)
-    }, [saving, onSavingChange])
 
     // Update form when settings are loaded
     useEffect(() => {
@@ -63,29 +57,24 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
         }
     }, [settings, form])
 
-    const watchedValues = form.watch()
-    const { isDirty } = form.formState
+    const onSave = useCallback(async (data: InventoryFormValues) => {
+        await updateSettings(data)
+    }, [updateSettings])
 
-    const onSubmit = useCallback(async (data: InventoryFormValues) => {
-        try {
-            await updateSettings(data)
-            form.reset(data)
-        } catch {
-            // Error already handled by hook
-        }
-    }, [updateSettings, form])
+    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave })
 
-    useEffect(() => {
-        if (isDirty) {
-            const timer = setTimeout(() => {
-                form.handleSubmit(onSubmit)()
-            }, 1000)
-            return () => clearTimeout(timer)
-        }
-    }, [watchedValues, isDirty, form, onSubmit])
+    useUnsavedChangesGuard(status)
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
+            <div className="flex justify-end">
+                <AutoSaveStatusBadge
+                    status={status}
+                    invalidReason={invalidReason}
+                    lastSavedAt={lastSavedAt}
+                    onRetry={retry}
+                />
+            </div>
             <Form {...form}>
                 <form className="mt-6 space-y-6">
                     {activeTab === "accounts" && (

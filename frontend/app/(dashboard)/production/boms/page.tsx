@@ -16,7 +16,6 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 

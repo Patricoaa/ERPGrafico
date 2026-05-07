@@ -3,7 +3,6 @@
 import { type ReactNode, lazy, Suspense, useState } from "react"
 import { TableSkeleton } from "@/components/shared"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { LAYOUT_TOKENS } from "@/lib/styles"
 import { useSearchParams } from "next/navigation"
 
 // Lazy load the UsersSettingsView component

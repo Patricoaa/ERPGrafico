@@ -5,28 +5,17 @@ import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useBillingSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-
-import { Separator } from "@/components/ui/separator"
-import {
-    Percent,
-    Receipt,
-    Coins,
-    TrendingUp,
-    Check,
-
-} from "lucide-react"
+import { Form, FormField, FormItem } from "@/components/ui/form"
+import { Check } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { LabeledInput } from "@/components/shared"
+import { AutoSaveStatusBadge, LabeledInput } from "@/components/shared"
+import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 import { billingSchema, type BillingFormValues } from "./BillingSettingsView.schema"
 
-export const BillingSettingsView: React.FC<{
-    activeTab?: string,
-    onSavingChange?: (saving: boolean) => void
-}> = ({ activeTab = "accounts", onSavingChange }) => {
-    const [currentTab, setCurrentTab] = useState(activeTab)
-    const { settings, saving, updateSettings } = useBillingSettings()
+export const BillingSettingsView: React.FC<{ activeTab?: string }> = ({ activeTab = "accounts" }) => {
+    const { settings, updateSettings } = useBillingSettings()
 
     const form = useForm<BillingFormValues>({
         // ... (existing form config)
@@ -41,22 +30,13 @@ export const BillingSettingsView: React.FC<{
         }
     })
 
-    // Update saving status to parent
-    useEffect(() => {
-        onSavingChange?.(saving)
-    }, [saving, onSavingChange])
+    const onSave = useCallback(async (data: BillingFormValues) => {
+        await updateSettings(data)
+    }, [updateSettings])
 
-    const watchedValues = form.watch()
-    const { isDirty, errors } = form.formState
+    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave })
 
-    const onSubmit = useCallback(async (data: BillingFormValues) => {
-        try {
-            await updateSettings(data)
-            form.reset(data)
-        } catch {
-            // Error already handled by hook
-        }
-    }, [updateSettings, form])
+    useUnsavedChangesGuard(status)
 
     // Update form when settings are loaded
     useEffect(() => {
@@ -85,17 +65,16 @@ export const BillingSettingsView: React.FC<{
         }
     }, [settings, form])
 
-    useEffect(() => {
-        if (isDirty) {
-            const timer = setTimeout(() => {
-                form.handleSubmit(onSubmit)()
-            }, 1000)
-            return () => clearTimeout(timer)
-        }
-    }, [watchedValues, isDirty, form, onSubmit])
-
     return (
         <div className="max-w-6xl mx-auto space-y-6">
+            <div className="flex justify-end">
+                <AutoSaveStatusBadge
+                    status={status}
+                    invalidReason={invalidReason}
+                    lastSavedAt={lastSavedAt}
+                    onRetry={retry}
+                />
+            </div>
             <Form {...form}>
                 <form className="mt-6 space-y-6">
                     {activeTab === "accounts" && (

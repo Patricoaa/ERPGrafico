@@ -5,7 +5,7 @@ import { toast } from "sonner"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+import { PageContainer } from "@/components/shared"
 import { useSearchParams, useRouter } from "next/navigation"
 import { PartnerAccountingTab } from "@/features/settings"
 import Link from "next/link"
@@ -121,7 +121,7 @@ export default function PartnersPage() {
     ) : null
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
+        <PageContainer>
             <PageHeader
                 title={headerConfig.title}
                 description={headerConfig.description}
@@ -158,6 +158,6 @@ export default function PartnersPage() {
                     )}
                 </Suspense>
             </div>
-        </div>
+        </PageContainer>
     )
 }

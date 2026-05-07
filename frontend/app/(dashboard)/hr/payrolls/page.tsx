@@ -18,7 +18,6 @@ import { Loader2, Eye, Trash2, Coins, CreditCard, Wallet } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { cn } from "@/lib/utils"
 import { PaymentModal } from "@/features/treasury"
-import { LAYOUT_TOKENS } from "@/lib/styles"
 
 
 import { ToolbarCreateButton } from "@/components/shared"

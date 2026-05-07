@@ -1,51 +1,43 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { toast } from "sonner"
 import api from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Form, FormField } from "@/components/ui/form"
 import {
     Settings2,
-    Database,
-    ShieldCheck,
-    Receipt,
     Coins,
     TrendingUp,
     Percent,
+    Receipt,
 } from "lucide-react"
-import { FormSkeleton, LabeledInput, LabeledSelect } from "@/components/shared"
-
+import { AutoSaveStatusBadge, FormSkeleton, LabeledInput, LabeledSelect } from "@/components/shared"
 import { PageHeaderButton } from "@/components/shared/PageHeader"
 import { Separator } from "@/components/ui/separator"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
+import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 import { accountingSchema, defaultsSchema, taxSchema, type AccountingFormValues, type DefaultsFormValues, type TaxFormValues } from "./AccountingSettingsView.schema"
-import { UseFormReturn } from "react-hook-form"
 
 // --- COMPONENT ---
 
-export function AccountingSettingsView({ activeTab = "structure", onSavingChange }: {
-    activeTab?: string,
-    onSavingChange?: (saving: boolean) => void
-}) {
+export function AccountingSettingsView({ activeTab = "structure" }: { activeTab?: string }) {
     return (
         <div className="space-y-6">
-            {activeTab === "structure" && <StructureSettings onSavingChange={onSavingChange} />}
-            {activeTab === "defaults" && <DefaultsSettings onSavingChange={onSavingChange} />}
-            {activeTab === "tax" && <TaxSettings onSavingChange={onSavingChange} />}
+            {activeTab === "structure" && <StructureSettings />}
+            {activeTab === "defaults" && <DefaultsSettings />}
+            {activeTab === "tax" && <TaxSettings />}
         </div>
     )
 }
 
 // --- SUB-COMPONENTS ---
 
-function StructureSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) => void }) {
+function StructureSettings() {
     const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
     const [populating, setPopulating] = useState(false)
 
     const form = useForm<AccountingFormValues>({
@@ -78,8 +70,8 @@ function StructureSettings({ onSavingChange }: { onSavingChange?: (saving: boole
                     }
                 })
                 form.reset(formattedSettings)
-            } catch (error: unknown) {
-                toast.error("Error al cargar configuración")
+            } catch {
+                // badge handles errors
             } finally {
                 setLoading(false)
             }
@@ -87,38 +79,28 @@ function StructureSettings({ onSavingChange }: { onSavingChange?: (saving: boole
         fetchSettings()
     }, [form])
 
-    const watchedValues = form.watch()
-    const { isDirty } = form.formState
+    const onSave = useCallback(async (data: AccountingFormValues) => {
+        await api.patch('/accounting/settings/current/', data)
+    }, [])
 
-    const onSubmit = useCallback(async (data: AccountingFormValues) => {
-        setSaving(true)
-        onSavingChange?.(true)
-        try {
-            await api.patch('/accounting/settings/current/', data)
-            form.reset(data)
-        } catch {
-            toast.error("Error al guardar")
-        } finally {
-            setSaving(false)
-            onSavingChange?.(false)
-        }
-    }, [form, onSavingChange])
+    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
+        form,
+        onSave,
+        enabled: !loading,
+    })
 
-    useEffect(() => {
-        if (!loading && isDirty) {
-            const timer = setTimeout(() => form.handleSubmit(onSubmit)(), 1000)
-            return () => clearTimeout(timer)
-        }
-    }, [watchedValues, loading, isDirty, form, onSubmit])
+    useUnsavedChangesGuard(status)
 
     const handlePopulateIFRS = async () => {
         if (!confirm("¿Está seguro de cargar el plan de cuentas IFRS? Esto creará las cuentas detalladas y configurará todos los mapeos predeterminados automáticamente.")) return
         setPopulating(true)
         try {
             const res = await api.post('/accounting/accounts/populate_ifrs/')
+            const { toast } = await import("sonner")
             toast.success(res.data.message)
             window.location.reload()
-        } catch (error: unknown) {
+        } catch {
+            const { toast } = await import("sonner")
             toast.error("Error al poblar plan de cuentas")
         } finally {
             setPopulating(false)
@@ -129,17 +111,25 @@ function StructureSettings({ onSavingChange }: { onSavingChange?: (saving: boole
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between bg-muted/30 p-4 rounded-lg border border-dashed border-primary/20">
-                <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase text-primary/70 tracking-widest">Plan de Cuentas IFRS</p>
-                    <p className="text-[9px] text-muted-foreground uppercase font-bold">Poblar estructura recomendada automáticamente</p>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between bg-muted/30 p-4 rounded-lg border border-dashed border-primary/20 flex-1 mr-4">
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-black uppercase text-primary/70 tracking-widest">Plan de Cuentas IFRS</p>
+                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Poblar estructura recomendada automáticamente</p>
+                    </div>
+                    <PageHeaderButton
+                        onClick={handlePopulateIFRS}
+                        disabled={populating}
+                        iconName={populating ? "loader-2" : "database"}
+                        label={populating ? "Poblar IFRS" : "Poblar IFRS"}
+                        variant="outline"
+                    />
                 </div>
-                <PageHeaderButton
-                    onClick={handlePopulateIFRS}
-                    disabled={populating}
-                    iconName={populating ? "loader-2" : "database"}
-                    label={populating ? "Poblar IFRS" : "Poblar IFRS"}
-                    variant="outline"
+                <AutoSaveStatusBadge
+                    status={status}
+                    invalidReason={invalidReason}
+                    lastSavedAt={lastSavedAt}
+                    onRetry={retry}
                 />
             </div>
 
@@ -212,9 +202,8 @@ function StructureSettings({ onSavingChange }: { onSavingChange?: (saving: boole
     )
 }
 
-function DefaultsSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) => void }) {
+function DefaultsSettings() {
     const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
 
     const form = useForm<DefaultsFormValues>({
         resolver: zodResolver(defaultsSchema),
@@ -248,8 +237,8 @@ function DefaultsSettings({ onSavingChange }: { onSavingChange?: (saving: boolea
                     }
                 })
                 form.reset(formattedSettings)
-            } catch (error: unknown) {
-                toast.error("Error al cargar configuración")
+            } catch {
+                // badge handles errors
             } finally {
                 setLoading(false)
             }
@@ -257,35 +246,31 @@ function DefaultsSettings({ onSavingChange }: { onSavingChange?: (saving: boolea
         fetchSettings()
     }, [form])
 
-    const watchedValues = form.watch()
-    const { isDirty } = form.formState
+    const onSave = useCallback(async (data: DefaultsFormValues) => {
+        await api.patch('/accounting/settings/current/', data)
+    }, [])
 
-    const onSubmit = useCallback(async (data: DefaultsFormValues) => {
-        setSaving(true)
-        onSavingChange?.(true)
-        try {
-            await api.patch('/accounting/settings/current/', data)
-            form.reset(data)
-        } catch {
-            toast.error("Error al guardar")
-        } finally {
-            setSaving(false)
-            onSavingChange?.(false)
-        }
-    }, [form, onSavingChange])
+    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
+        form,
+        onSave,
+        enabled: !loading,
+    })
 
-    useEffect(() => {
-        if (!loading && isDirty) {
-            const timer = setTimeout(() => form.handleSubmit(onSubmit)(), 1000)
-            return () => clearTimeout(timer)
-        }
-    }, [watchedValues, loading, isDirty, form, onSubmit])
+    useUnsavedChangesGuard(status)
 
     if (loading) return <FormSkeleton fields={4} cards={3} />
 
     return (
         <Form {...form}>
             <form className="space-y-6">
+                <div className="flex justify-end">
+                    <AutoSaveStatusBadge
+                        status={status}
+                        invalidReason={invalidReason}
+                        lastSavedAt={lastSavedAt}
+                        onRetry={retry}
+                    />
+                </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <Card className="border-2 rounded-md">
                         <CardHeader className="pb-4">
@@ -318,7 +303,7 @@ function DefaultsSettings({ onSavingChange }: { onSavingChange?: (saving: boolea
                             <DefaultsAccountField form={form} name="default_expense_account" label="Gastos Generales (Fallback)" accountType="EXPENSE" />
                         </CardContent>
                     </Card>
-                    
+
                     <Card className="border-2 rounded-md lg:col-span-2">
                         <CardHeader className="pb-4">
                             <CardTitle className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2">
@@ -334,7 +319,7 @@ function DefaultsSettings({ onSavingChange }: { onSavingChange?: (saving: boolea
                             <DefaultsAccountField form={form} name="manufactured_cogs_account" label="Costo de Producción Vendida" accountType="EXPENSE" />
                             <Separator className="md:col-span-2" />
                             <DefaultsAccountField form={form} name="adjustment_income_account" label="Ingreso por Ajuste (Sobrantes)" accountType="INCOME" />
-                    <DefaultsAccountField form={form} name="adjustment_expense_account" label="Gasto por Ajuste (Mermas)" accountType="EXPENSE" />
+                            <DefaultsAccountField form={form} name="adjustment_expense_account" label="Gasto por Ajuste (Mermas)" accountType="EXPENSE" />
                         </CardContent>
                     </Card>
                 </div>
@@ -343,9 +328,8 @@ function DefaultsSettings({ onSavingChange }: { onSavingChange?: (saving: boolea
     )
 }
 
-function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) => void }) {
+function TaxSettings() {
     const [loading, setLoading] = useState(true)
-    const [saving, setSaving] = useState(false)
 
     const form = useForm<TaxFormValues>({
         resolver: zodResolver(taxSchema),
@@ -385,8 +369,8 @@ function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) =>
                     }
                 })
                 form.reset(formattedSettings)
-            } catch (error: unknown) {
-                toast.error("Error al cargar configuración")
+            } catch {
+                // badge handles errors
             } finally {
                 setLoading(false)
             }
@@ -394,35 +378,31 @@ function TaxSettings({ onSavingChange }: { onSavingChange?: (saving: boolean) =>
         fetchSettings()
     }, [form])
 
-    const watchedValues = form.watch()
-    const { isDirty } = form.formState
+    const onSave = useCallback(async (data: TaxFormValues) => {
+        await api.patch('/accounting/settings/current/', data)
+    }, [])
 
-    const onSubmit = useCallback(async (data: TaxFormValues) => {
-        setSaving(true)
-        onSavingChange?.(true)
-        try {
-            await api.patch('/accounting/settings/current/', data)
-            form.reset(data)
-        } catch {
-            toast.error("Error al guardar")
-        } finally {
-            setSaving(false)
-            onSavingChange?.(false)
-        }
-    }, [form, onSavingChange])
+    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
+        form,
+        onSave,
+        enabled: !loading,
+    })
 
-    useEffect(() => {
-        if (!loading && isDirty) {
-            const timer = setTimeout(() => form.handleSubmit(onSubmit)(), 1000)
-            return () => clearTimeout(timer)
-        }
-    }, [watchedValues, loading, isDirty, form, onSubmit])
+    useUnsavedChangesGuard(status)
 
     if (loading) return <FormSkeleton fields={4} cards={3} />
 
     return (
         <Form {...form}>
             <form className="space-y-6">
+                <div className="flex justify-end">
+                    <AutoSaveStatusBadge
+                        status={status}
+                        invalidReason={invalidReason}
+                        lastSavedAt={lastSavedAt}
+                        onRetry={retry}
+                    />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Card className="md:col-span-1 border-2 rounded-md">
                         <CardHeader>

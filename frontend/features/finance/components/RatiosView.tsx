@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { LAYOUT_TOKENS } from "@/lib/styles";
+import { PageContainer } from "@/components/shared"
 import {
     PieChart,
     Pie,
@@ -112,7 +112,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
     ] : null;
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
+        <PageContainer>
             {/* Key Metrics Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card">
@@ -330,6 +330,6 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                     </CardContent>
                 </Card>
             </div>
-        </div>
+        </PageContainer>
     );
 };

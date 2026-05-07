@@ -7,10 +7,8 @@ import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useSalesSettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Switch } from "@/components/ui/switch"
+import { Form, FormField } from "@/components/ui/form"
 import {
-
     Percent,
     User as UserIcon,
     Users as UsersIcon,
@@ -18,9 +16,11 @@ import {
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { UserSelector } from "@/components/selectors/UserSelector"
 import { GroupSelector } from "@/components/selectors/GroupSelector"
-import { LabeledInput, LabeledSwitch, LabeledContainer } from "@/components/shared"
+import { AutoSaveStatusBadge, LabeledInput, LabeledSwitch, LabeledContainer } from "@/components/shared"
 import { SalesSettingsUpdatePayload } from "@/features/settings/types"
 import { cn } from "@/lib/utils"
+import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 import { salesSchema, type SalesFormValues } from "./SalesSettingsView.schema"
 
@@ -111,12 +111,8 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
 }
 
 
-export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
-    activeTab?: string,
-    onSavingChange?: (saving: boolean) => void
-}) {
-    const [currentTab, setCurrentTab] = useState(activeTab)
-    const { settings, saving, updateSettings } = useSalesSettings()
+export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string }) {
+    const { settings, updateSettings } = useSalesSettings()
 
     const form = useForm<SalesFormValues>({
         resolver: zodResolver(salesSchema),
@@ -137,11 +133,6 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
             default_uncollectible_expense_account: null,
         }
     })
-
-    // Update saving status to parent
-    useEffect(() => {
-        onSavingChange?.(saving)
-    }, [saving, onSavingChange])
 
     useEffect(() => {
         if (settings) {
@@ -165,29 +156,25 @@ export function SalesSettingsView({ activeTab = "income", onSavingChange }: {
     }, [settings, form])
 
     const watchedValues = form.watch()
-    const { isDirty } = form.formState
 
-    const onSubmit = useCallback(async (data: SalesFormValues) => {
-        try {
-            await updateSettings(data as SalesSettingsUpdatePayload)
-            form.reset(data)
-        } catch (error) {
-            // Error handled by hook
-        }
-    }, [updateSettings, form])
+    const onSave = useCallback(async (data: SalesFormValues) => {
+        await updateSettings(data as SalesSettingsUpdatePayload)
+    }, [updateSettings])
 
+    const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({ form, onSave })
 
-    useEffect(() => {
-        if (isDirty) {
-            const timer = setTimeout(() => {
-                form.handleSubmit(onSubmit)()
-            }, 1000)
-            return () => clearTimeout(timer)
-        }
-    }, [watchedValues, isDirty, form, onSubmit])
+    useUnsavedChangesGuard(status)
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
+            <div className="flex justify-end">
+                <AutoSaveStatusBadge
+                    status={status}
+                    invalidReason={invalidReason}
+                    lastSavedAt={lastSavedAt}
+                    onRetry={retry}
+                />
+            </div>
             <Form {...form}>
                 <form className="mt-6 space-y-6">
                     {activeTab === "income" && (

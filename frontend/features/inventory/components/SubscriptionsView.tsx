@@ -31,7 +31,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { PageHeader, PageHeaderButton, TableSkeleton } from "@/components/shared"
 import { Restriction } from "@/features/inventory/types"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+import { PageContainer } from "@/components/shared"
 import { cn } from "@/lib/utils"
 
 interface Subscription {
@@ -444,7 +444,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
     }
 
     return (
-        <div className={cn(LAYOUT_TOKENS.view, hideHeader && "pt-0")}>
+        <PageContainer className={cn(hideHeader && "pt-0")}>
             {!hideHeader && (
                 <PageHeader
                     title="Suscripciones y Recurrentes"
@@ -611,6 +611,6 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                 onRetry={handleArchive}
                 isRetrying={isRetrying}
             />
-        </div>
+        </PageContainer>
     )
 }

@@ -11,7 +11,7 @@ import { startOfYear, subYears } from "date-fns"
 import { useServerDate } from "@/hooks/useServerDate"
 import { CardSkeleton } from "@/components/shared"
 import { MappingConfigSheet } from "@/features/finance/components/MappingConfigSheet"
-import { LAYOUT_TOKENS } from "@/lib/styles"
+import { PageContainer } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { SlidersHorizontal } from "lucide-react"
 
@@ -60,7 +60,7 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
     }
 
     return (
-        <div className={LAYOUT_TOKENS.view}>
+        <PageContainer>
             <div className="flex flex-wrap items-center justify-end gap-4">
                 {activeTab === "ratios" && (
                     <Button
@@ -112,6 +112,6 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
                 // since RatiosView does its own fetch on mount/date change. 
                 // But saving mappings will take effect on next refresh.
             />
-        </div>
+        </PageContainer>
     )
 }

@@ -19,7 +19,7 @@ const transferSchema = z.object({
     from_account_id: z.string().min(1, "Seleccione una cuenta de origen"),
     to_account_id: z.string().min(1, "Seleccione una cuenta de destino"),
     amount: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, "El monto debe ser mayor a 0"),
-    date: z.date({ required_error: "La fecha es requerida" }),
+    date: z.date({ message: "La fecha es requerida" }),
     notes: z.string().optional(),
 }).refine((data) => data.from_account_id !== data.to_account_id, {
     message: "La cuenta de origen y destino no pueden ser la misma",
