@@ -3,14 +3,13 @@ from django.utils import timezone
 from core.utils import get_current_date
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator
-from core.models import User
+from core.models import User, TransactionalDocument, TimeStampedModel
 from accounting.models import Account
 from core.mixins import TotalsCalculationMixin
 from core.services import SequenceService
-from simple_history.models import HistoricalRecords
 from decimal import Decimal
 
-class SaleOrder(models.Model, TotalsCalculationMixin):
+class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
         CONFIRMED = 'CONFIRMED', _('Confirmado')
@@ -18,7 +17,7 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
         INVOICED = 'INVOICED', _('Facturado')
         PAID = 'PAID', _('Pagado')
         CANCELLED = 'CANCELLED', _('Anulado')
-    
+
     class DeliveryStatus(models.TextChoices):
         PENDING = 'PENDING', _('Pendiente')
         PARTIAL = 'PARTIAL', _('Parcial')
@@ -35,10 +34,18 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
         CREDIT = 'CREDIT', _('Crédito')
         CREDIT_BALANCE = 'CREDIT_BALANCE', _('Saldo a Favor')
 
-    number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
+    # status: redeclarado con choices y default concretos
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
+    # journal_entry: redeclarado para exponer reverso 'sale_order' (el abstracto usa '+')
+    journal_entry = models.OneToOneField(
+        'accounting.JournalEntry',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='sale_order',
+    )
+
     customer = models.ForeignKey('contacts.Contact', on_delete=models.PROTECT, related_name='sale_orders')
     date = models.DateField(_("Fecha"), default=get_current_date)
-    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
     payment_method_ref = models.ForeignKey(
         'treasury.PaymentMethod',
@@ -56,37 +63,19 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
         related_name='sale_orders',
         verbose_name=_("Sesión de Caja")
     )
-    
-    history = HistoricalRecords()
-    
+
     # Delivery fields
     delivery_status = models.CharField(
-        _("Estado de Despacho"), 
-        max_length=20, 
-        choices=DeliveryStatus.choices, 
+        _("Estado de Despacho"),
+        max_length=20,
+        choices=DeliveryStatus.choices,
         default=DeliveryStatus.PENDING
     )
     delivery_date = models.DateField(_("Fecha de Entrega Planificada"), null=True, blank=True)
     immediate_dispatch = models.BooleanField(_("Despacho Inmediato"), default=False)
-    
+
     salesperson = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    notes = models.TextField(_("Notas"), blank=True)
-    
-    total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=2, default=0)
-    total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=2, default=0)
-    total_discount_amount = models.DecimalField(_("Descuento Total"), max_digits=12, decimal_places=2, default=0)
-    total = models.DecimalField(_("Total"), max_digits=12, decimal_places=2, default=0)
-
-    # Link to Accounting
-    journal_entry = models.OneToOneField(
-        'accounting.JournalEntry',
-        on_delete=models.PROTECT,
-        null=True, blank=True,
-        related_name='sale_order'
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    total_discount_amount = models.DecimalField(_("Descuento Total"), max_digits=12, decimal_places=0, default=0)
 
     # Credit Tracking
     class CreditOrigin(models.TextChoices):
@@ -111,7 +100,6 @@ class SaleOrder(models.Model, TotalsCalculationMixin):
     class Meta:
         verbose_name = _("Nota de Venta")
         verbose_name_plural = _("Notas de Venta")
-        ordering = ['-id']
 
     def __str__(self):
         return f"{self.display_id} {self.customer.name}"
@@ -258,7 +246,8 @@ class SaleLine(models.Model):
         """Returns the quantity still pending delivery"""
         return self.quantity - self.quantity_delivered
 
-class SalesSettings(models.Model):
+class SalesSettings(TimeStampedModel):
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     restrict_stock_sales = models.BooleanField(
         _("Restringir Ventas Sin Stock"), 
         default=False,
@@ -318,7 +307,7 @@ class SalesSettings(models.Model):
         return cached_singleton(cls, CACHE_KEY_SALES_SETTINGS)
 # Append to sales/models.py - SaleDelivery and SaleDeliveryLine models
 
-class SaleDelivery(models.Model, TotalsCalculationMixin):
+class SaleDelivery(TransactionalDocument, TotalsCalculationMixin):
     """
     Represents a delivery/dispatch of a sale order.
     Can be partial or complete.
@@ -327,32 +316,26 @@ class SaleDelivery(models.Model, TotalsCalculationMixin):
         DRAFT = 'DRAFT', _('Borrador')
         CONFIRMED = 'CONFIRMED', _('Confirmado')
         CANCELLED = 'CANCELLED', _('Anulado')
-    
-    number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
-    sale_order = models.ForeignKey(SaleOrder, on_delete=models.PROTECT, related_name='deliveries')
-    warehouse = models.ForeignKey(
-        'inventory.Warehouse', 
-        on_delete=models.PROTECT, 
-        related_name='sale_deliveries',
-        help_text="Bodega desde donde se despacha"
-    )
-    
-    delivery_date = models.DateField(_("Fecha de Despacho"))
-    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
-    notes = models.TextField(_("Notas"), blank=True)
-    
-    total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=0, default=0)
-    total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=0, default=0)
-    total = models.DecimalField(_("Total"), max_digits=12, decimal_places=0, default=0)
-    total_cost = models.DecimalField(_("Costo Total (COGS)"), max_digits=12, decimal_places=0, default=0)
 
-    # Link to Accounting (for COGS entry)
+    # status: redeclarado con choices y default concretos
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
+    # journal_entry: redeclarado para exponer reverso 'sale_delivery' (el abstracto usa '+')
     journal_entry = models.OneToOneField(
         'accounting.JournalEntry',
         on_delete=models.PROTECT,
         null=True, blank=True,
-        related_name='sale_delivery'
+        related_name='sale_delivery',
     )
+
+    sale_order = models.ForeignKey(SaleOrder, on_delete=models.PROTECT, related_name='deliveries')
+    warehouse = models.ForeignKey(
+        'inventory.Warehouse',
+        on_delete=models.PROTECT,
+        related_name='sale_deliveries',
+        help_text="Bodega desde donde se despacha"
+    )
+    delivery_date = models.DateField(_("Fecha de Despacho"))
+    total_cost = models.DecimalField(_("Costo Total (COGS)"), max_digits=12, decimal_places=0, default=0)
 
     # Optional link to the Credit/Debit Note if issued
     related_note = models.ForeignKey(
@@ -361,16 +344,10 @@ class SaleDelivery(models.Model, TotalsCalculationMixin):
         null=True, blank=True,
         related_name='sale_deliveries'
     )
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    history = HistoricalRecords()
-    
+
     class Meta:
         verbose_name = _("Despacho de Venta")
         verbose_name_plural = _("Despachos de Venta")
-        ordering = ['-id']
     
     def __str__(self):
         return f"{self.display_id} (NV-{self.sale_order.number})"
@@ -443,43 +420,38 @@ class SaleDeliveryLine(models.Model):
         self.calculate_subtotal()
         super().save(*args, **kwargs)
 
-class SaleReturn(models.Model, TotalsCalculationMixin):
+class SaleReturn(TransactionalDocument, TotalsCalculationMixin):
     """
     Represents a return of goods from a customer (linked to a Sale Order).
     Used to process logistics before or after a Credit Note.
     """
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
-        CONFIRMED = 'CONFIRMED', _('Confirmado') # Stock moves created
+        CONFIRMED = 'CONFIRMED', _('Confirmado')
         CANCELLED = 'CANCELLED', _('Anulado')
-    
-    number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
-    sale_order = models.ForeignKey(SaleOrder, on_delete=models.PROTECT, related_name='returns')
-    warehouse = models.ForeignKey(
-        'inventory.Warehouse', 
-        on_delete=models.PROTECT, 
-        related_name='sale_returns',
-        help_text="Bodega de recepción"
-    )
-    
-    date = models.DateField(_("Fecha de Devolución"))
-    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
-    notes = models.TextField(_("Notas"), blank=True)
-    
-    # Financial Totals (Reference value of returned goods)
-    total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=0, default=0)
-    total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=0, default=0)
-    total = models.DecimalField(_("Total"), max_digits=12, decimal_places=0, default=0)
-    total_cost = models.DecimalField(_("Costo Total (COGS Reverso)"), max_digits=12, decimal_places=0, default=0)
 
-    # Link to Accounting (for COGS reversal entry)
+    # status: redeclarado con choices y default concretos
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
+    # journal_entry: redeclarado para exponer reverso 'sale_return' (el abstracto usa '+')
     journal_entry = models.OneToOneField(
         'accounting.JournalEntry',
         on_delete=models.PROTECT,
         null=True, blank=True,
-        related_name='sale_return'
+        related_name='sale_return',
     )
-    
+
+    sale_order = models.ForeignKey(SaleOrder, on_delete=models.PROTECT, related_name='returns')
+    warehouse = models.ForeignKey(
+        'inventory.Warehouse',
+        on_delete=models.PROTECT,
+        related_name='sale_returns',
+        help_text="Bodega de recepción"
+    )
+    date = models.DateField(_("Fecha de Devolución"))
+
+    # Financial totals specific to this model
+    total_cost = models.DecimalField(_("Costo Total (COGS Reverso)"), max_digits=12, decimal_places=0, default=0)
+
     # Optional link to the Credit Note if issued
     credit_note = models.ForeignKey(
         'billing.Invoice',
@@ -487,16 +459,10 @@ class SaleReturn(models.Model, TotalsCalculationMixin):
         null=True, blank=True,
         related_name='sale_returns'
     )
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    history = HistoricalRecords()
-    
+
     class Meta:
         verbose_name = _("Devolución de Venta")
         verbose_name_plural = _("Devoluciones de Venta")
-        ordering = ['-id']
     
     def __str__(self):
         return f"{self.display_id} (NV-{self.sale_order.number})"

@@ -9,6 +9,20 @@ import uuid
 from core.validators import validate_file_size, validate_file_extension, validate_image_extension
 from core.storages import PublicMediaStorage, PrivateMediaStorage
 
+from .abstracts import TimeStampedModel, AuditedModel, TransactionalDocument
+
+__all__ = [
+    'User',
+    'CompanySettings',
+    'ActionLog',
+    'Attachment',
+    'attachment_upload_path',
+    'TimeStampedModel',
+    'AuditedModel',
+    'TransactionalDocument',
+]
+
+
 class User(AbstractUser):
     pos_pin = models.CharField(
         max_length=128,
@@ -27,10 +41,10 @@ class User(AbstractUser):
         from django.contrib.auth.hashers import check_password
         return check_password(raw_pin, self.pos_pin)
     contact = models.OneToOneField(
-        'contacts.Contact', 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
+        'contacts.Contact',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='system_user',
         help_text=_("Vínculo con la entidad física de Contacto")
     )
@@ -46,27 +60,27 @@ class CompanySettings(models.Model):
     website = models.URLField(_("Sitio Web"), blank=True)
     logo_url = models.URLField(_("URL del Logo"), blank=True)
     logo = models.ImageField(
-        _("Logo"), 
-        upload_to='company/logos/', 
+        _("Logo"),
+        upload_to='company/logos/',
         storage=PublicMediaStorage(),
-        null=True, 
+        null=True,
         blank=True,
         validators=[validate_file_size, validate_image_extension]
     )
-    
+
     # Association with Contact
     contact = models.ForeignKey(
-        'contacts.Contact', 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
+        'contacts.Contact',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='company_settings',
         help_text=_("Vínculo con el contacto que representa a esta empresa")
     )
-    
+
     # Corporate Identity
     business_activity = models.CharField(_("Giro / Actividad Económica"), max_length=255, blank=True)
-    
+
     history = HistoricalRecords()
 
     class Meta:
@@ -129,7 +143,7 @@ class ActionLog(models.Model):
 def attachment_upload_path(instance, filename):
     ext = filename.split('.')[-1]
     name = f"{uuid.uuid4()}.{ext}"
-    
+
     # Try to organize by model name if available
     try:
         if instance.content_type:
@@ -137,26 +151,26 @@ def attachment_upload_path(instance, filename):
             return os.path.join('attachments', model_name, name)
     except:
         pass
-    
+
     return os.path.join('attachments', 'general', name)
 
 class Attachment(models.Model):
     file = models.FileField(
-        _("Archivo"), 
+        _("Archivo"),
         upload_to=attachment_upload_path,
         storage=PrivateMediaStorage(),
         validators=[validate_file_size, validate_file_extension]
     )
     original_filename = models.CharField(_("Nombre Original"), max_length=255)
-    
+
     # Generic Relation
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
-    
+
     uploaded_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='attachments')
-    
+
     # Metadata
     file_size = models.PositiveIntegerField(_("Tamaño (Bytes)"), null=True, blank=True)
     mime_type = models.CharField(_("Tipo MIME"), max_length=100, null=True, blank=True)

@@ -6,6 +6,7 @@ from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from simple_history.models import HistoricalRecords
 from decimal import Decimal
+from core.models import AuditedModel, TimeStampedModel
 
 class AccountType(models.TextChoices):
     ASSET = 'ASSET', _('Activo')
@@ -36,13 +37,14 @@ class BSCategory(models.TextChoices):
     NON_CURRENT_LIABILITY = 'NON_CURRENT_LIABILITY', _('Pasivo No Corriente')
     EQUITY = 'EQUITY', _('Patrimonio')
 
-class Account(models.Model):
+class Account(TimeStampedModel):
     code = models.CharField(_("Código"), max_length=20, unique=True, blank=True, help_text="Ej: 1.1.01.001")
     name = models.CharField(_("Nombre"), max_length=255)
     account_type = models.CharField(_("Tipo"), max_length=20, choices=AccountType.choices)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', verbose_name=_("Cuenta Padre"))
     is_reconcilable = models.BooleanField(_("Conciliable"), default=False)
     history = HistoricalRecords()
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
 
     @property
     def is_selectable(self):
@@ -240,7 +242,7 @@ class Account(models.Model):
                 child.account_type = self.account_type
                 child.save()
 
-class JournalEntry(models.Model):
+class JournalEntry(AuditedModel):
     # NOTE: This class uses "Status" and field name "status" to match the convention of all
     # other transactional models (SaleOrder, Invoice, PurchaseOrder, etc.).
     # The inner class is named both Status AND State (alias) for backwards compatibility.
@@ -273,10 +275,6 @@ class JournalEntry(models.Model):
         help_text=_("Indica si el asiento pertenece a un periodo cerrado")
     )
     
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    history = HistoricalRecords()
-
     class Meta:
         ordering = ['-id']
         verbose_name = _("Asiento Contable")
@@ -466,7 +464,9 @@ class JournalEntry(models.Model):
             }
         return None
 
-class JournalItem(models.Model):
+class JournalItem(TimeStampedModel):
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
+    # Backfill: created_at = updated_at = entry.created_at (ver migración 0011).
     entry = models.ForeignKey(JournalEntry, on_delete=models.CASCADE, related_name='items')
     account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='journal_items')
     partner = models.ForeignKey(
@@ -506,7 +506,8 @@ class JournalItem(models.Model):
 class InventoryValuationMethod(models.TextChoices):
     AVERAGE = 'AVERAGE', _('Promedio Ponderado')
 
-class AccountingSettings(models.Model):
+class AccountingSettings(TimeStampedModel):
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     # Default Accounts
     default_receivable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_receivable')
     default_payable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_payable')
@@ -1120,12 +1121,13 @@ class FiscalYear(models.Model):
 
 # --- Budgeting Models ---
 
-class Budget(models.Model):
+class Budget(TimeStampedModel):
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
+    # Budget ya tenía created_at manual — migrado a TimeStampedModel; se añade updated_at.
     name = models.CharField(_("Nombre del Presupuesto"), max_length=255)
     start_date = models.DateField(_("Fecha Inicio"))
     end_date = models.DateField(_("Fecha Fin"))
     description = models.TextField(_("Descripción"), blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-id']
@@ -1135,7 +1137,8 @@ class Budget(models.Model):
     def __str__(self):
         return f"{self.name} ({self.start_date} - {self.end_date})"
 
-class BudgetItem(models.Model):
+class BudgetItem(TimeStampedModel):
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     budget = models.ForeignKey(Budget, on_delete=models.CASCADE, related_name='items')
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='budget_items')
     year = models.IntegerField(_("Año"), default=2024)

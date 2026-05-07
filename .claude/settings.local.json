@@ -51,7 +51,13 @@
       "Bash(ls -la /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/components/ui/skeleton.tsx)",
       "Bash(echo \"Shared Skeleton Components:\")",
       "Bash(ls -la /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/components/shared/*[Ss]keleton*.tsx)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(python manage.py check)",
+      "Bash(python3 manage.py check)",
+      "Bash(find /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico -name \"activate\" -path \"*/bin/activate\" 2>/dev/null | head -5 *)",
+      "Read(//home/pato/**)",
+      "Bash(pip3 show *)",
+      "Bash(python3.12 -c ' *)"
     ],
     "additionalDirectories": [
       "/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/workflow"

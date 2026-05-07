@@ -4,7 +4,7 @@ from django.utils import timezone
 from core.utils import get_current_date
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator
-from core.models import User
+from core.models import User, TransactionalDocument
 from accounting.models import Account, AccountType
 from inventory.models import Product, Warehouse
 from core.mixins import TotalsCalculationMixin
@@ -12,7 +12,7 @@ from simple_history.models import HistoricalRecords
 from core.services import SequenceService
 from decimal import Decimal
 
-class PurchaseOrder(models.Model, TotalsCalculationMixin):
+class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
         CONFIRMED = 'CONFIRMED', _('Confirmado')
@@ -20,7 +20,7 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
         INVOICED = 'INVOICED', _('Facturado')
         PAID = 'PAID', _('Pagado')
         CANCELLED = 'CANCELLED', _('Anulado')
-    
+
     class ReceivingStatus(models.TextChoices):
         PENDING = 'PENDING', _('Pendiente')
         PARTIAL = 'PARTIAL', _('Parcial')
@@ -36,55 +36,43 @@ class PurchaseOrder(models.Model, TotalsCalculationMixin):
         TRANSFER = 'TRANSFER', _('Transferencia')
         CREDIT = 'CREDIT', _('Crédito')
 
-    number = models.CharField(_("Número Interno"), max_length=20, unique=True, editable=False)
-    supplier_reference = models.CharField(_("Referencia Proveedor"), max_length=50, blank=True, help_text="Ej: Nro Factura Proveedor")
-    
-    supplier = models.ForeignKey('contacts.Contact', on_delete=models.PROTECT, related_name='purchase_orders')
-    date = models.DateField(_("Fecha"), default=get_current_date)
+    # status: redeclarado con choices y default concretos
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
-    payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
-    
-    history = HistoricalRecords()
-    
-    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='purchases', help_text="Bodega de recepción", null=True, blank=True)
-    notes = models.TextField(_("Notas"), blank=True)
-    
-    # Receiving fields
-    receiving_status = models.CharField(
-        _("Estado de Recepción"), 
-        max_length=20, 
-        choices=ReceivingStatus.choices, 
-        default=ReceivingStatus.PENDING
-    )
-    receipt_date = models.DateField(_("Fecha de Recepción Planificada"), null=True, blank=True)
-
-    total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=0, default=0)
-    total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=0, default=0)
-    total = models.DecimalField(_("Total"), max_digits=12, decimal_places=0, default=0)
-
-    # Links
-    work_order = models.ForeignKey(
-        'production.WorkOrder', 
-        on_delete=models.SET_NULL, 
-        null=True, blank=True, 
-        related_name='purchase_orders',
-        verbose_name=_("Orden de Trabajo")
-    )
-    
+    # journal_entry: redeclarado para exponer reverso 'purchase_order' (el abstracto usa '+')
     journal_entry = models.OneToOneField(
         'accounting.JournalEntry',
         on_delete=models.PROTECT,
         null=True, blank=True,
-        related_name='purchase_order'
+        related_name='purchase_order',
     )
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+
+    supplier_reference = models.CharField(_("Referencia Proveedor"), max_length=50, blank=True, help_text="Ej: Nro Factura Proveedor")
+    supplier = models.ForeignKey('contacts.Contact', on_delete=models.PROTECT, related_name='purchase_orders')
+    date = models.DateField(_("Fecha"), default=get_current_date)
+    payment_method = models.CharField(_("Método de Pago"), max_length=20, choices=PaymentMethod.choices, default=PaymentMethod.CREDIT)
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='purchases', help_text="Bodega de recepción", null=True, blank=True)
+
+    # Receiving fields
+    receiving_status = models.CharField(
+        _("Estado de Recepción"),
+        max_length=20,
+        choices=ReceivingStatus.choices,
+        default=ReceivingStatus.PENDING
+    )
+    receipt_date = models.DateField(_("Fecha de Recepción Planificada"), null=True, blank=True)
+
+    # Links
+    work_order = models.ForeignKey(
+        'production.WorkOrder',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='purchase_orders',
+        verbose_name=_("Orden de Trabajo")
+    )
 
     class Meta:
         verbose_name = _("Orden de compras y servicios")
         verbose_name_plural = _("Ordenes de compras y servicios")
-        ordering = ['-id']
 
     def __str__(self):
         return f"{self.display_id} {self.supplier.name}"
