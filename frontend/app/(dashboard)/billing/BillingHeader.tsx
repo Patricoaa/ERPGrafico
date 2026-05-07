@@ -18,7 +18,7 @@ export function BillingHeader() {
         { value: "purchases", label: "Recibidos (Compras)", iconName: "file-badge", href: "/billing/purchases" },
         { 
             value: "config", 
-            label: "Config", 
+            label: "Configuración", 
             iconName: "settings", 
             href: "/billing/settings",
             subTabs: [
@@ -34,7 +34,6 @@ export function BillingHeader() {
         tabs,
         activeValue,
         subActiveValue,
-        configHref: "/billing/settings"
     }
 
     const getHeaderConfig = () => {

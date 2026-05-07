@@ -16,7 +16,7 @@ export function ProductionHeader() {
     const tabs = [
         { value: "orders", label: "Órdenes de Trabajo", iconName: "clipboard-list", href: "/production/orders" },
         { value: "boms", label: "Lista de Materiales", iconName: "layers", href: "/production/boms" },
-        { value: "config", label: "Config", iconName: "settings", href: "/production/settings" },
+        { value: "config", label: "Configuración", iconName: "settings", href: "/production/settings" },
     ]
 
     const navigation = {
@@ -25,7 +25,6 @@ export function ProductionHeader() {
         tabs,
         activeValue,
         subActiveValue,
-        configHref: "/production/settings"
     }
 
     const getHeaderConfig = () => {

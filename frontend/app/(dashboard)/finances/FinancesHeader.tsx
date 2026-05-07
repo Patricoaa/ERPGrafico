@@ -46,6 +46,12 @@ export const FINANCES_TABS = [
             { value: "config", label: "Arquitectura", iconName: "settings", href: "/finances/partners?tab=config" },
         ]
     },
+    {
+        value: "settings",
+        label: "Configuración",
+        iconName: "settings",
+        href: "/finances/settings"
+    },
 ]
 
 export function FinancesHeader() {
@@ -61,12 +67,9 @@ export function FinancesHeader() {
     const navigation = {
         moduleName: "Finanzas",
         moduleHref: "/finances",
-        tabs: activeValue === 'settings' 
-            ? [...FINANCES_TABS, { value: 'settings', label: 'Configuración', iconName: 'settings', href: '/finances/settings' }] 
-            : FINANCES_TABS,
+        tabs: FINANCES_TABS,
         activeValue,
         subActiveValue,
-        configHref: "/finances/settings"
     }
 
     const getHeaderConfig = () => {

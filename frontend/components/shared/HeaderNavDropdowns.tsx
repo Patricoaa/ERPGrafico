@@ -2,7 +2,7 @@
 
 import React from "react"
 import Link from "next/link"
-import { ChevronsUpDown, Settings } from "lucide-react"
+import { ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DynamicIcon } from "@/components/ui/dynamic-icon"
 import {
@@ -22,13 +22,13 @@ interface HeaderNavDropdownsProps {
 /**
  * Railway-style dropdown navigation for the DashboardShell top bar.
  * Replaces horizontal PageTabs with:
- *   [Icon] [Active View ▾]  ·  [Active Sub-view ▾]  ⚙ (config)
+ *   [Icon] [Active View ▾]  ·  [Active Sub-view ▾]
  */
 export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsProps) {
-    const { tabs, activeValue, subActiveValue, configHref, breadcrumbs } = navigation
+    const { tabs, activeValue, subActiveValue, breadcrumbs } = navigation
 
     // Separate config tab from regular tabs
-    const regularTabs = (tabs || []).filter(t => t.value !== "config")
+    const regularTabs = (tabs || [])
     const activeTab = (tabs || []).find(t => t.value === activeValue)
     const activeSubTabs = activeTab?.subTabs
     const activeSubTab = activeSubTabs?.find(s => s.value === subActiveValue)
@@ -81,39 +81,45 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                     sideOffset={8}
                     className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
                 >
-                    {regularTabs.map((tab) => {
+                    {regularTabs.map((tab, idx) => {
                         const isActive = tab.value === activeValue
+                        const isConfig = tab.value === 'config' || tab.value === 'settings'
+                        
                         return (
-                            <DropdownMenuItem
-                                key={tab.value}
-                                className={cn(
-                                    "cursor-pointer rounded-md transition-colors p-0 focus:bg-primary/5",
-                                    isActive && "bg-primary/10"
+                            <React.Fragment key={tab.value}>
+                                {isConfig && idx > 0 && (
+                                    <div className="h-px bg-border/40 my-1 mx-1" />
                                 )}
-                            >
-                                <Link
-                                    href={tab.href}
-                                    className="flex items-center gap-2.5 py-2 px-2.5 w-full"
-                                >
-                                    {tab.iconName && (
-                                        <DynamicIcon
-                                            name={tab.iconName}
-                                            className={cn(
-                                                "h-4 w-4 shrink-0",
-                                                isActive ? "text-primary" : "text-muted-foreground"
-                                            )}
-                                        />
+                                <DropdownMenuItem
+                                    className={cn(
+                                        "cursor-pointer rounded-md transition-colors p-0 focus:bg-primary/5",
+                                        isActive && "bg-primary/10"
                                     )}
-                                    <span
-                                        className={cn(
-                                            "text-xs font-semibold",
-                                            isActive ? "text-primary" : "text-foreground/80"
-                                        )}
+                                >
+                                    <Link
+                                        href={tab.href}
+                                        className="flex items-center gap-2.5 py-2 px-2.5 w-full"
                                     >
-                                        {tab.label}
-                                    </span>
-                                </Link>
-                            </DropdownMenuItem>
+                                        {tab.iconName && (
+                                            <DynamicIcon
+                                                name={tab.iconName}
+                                                className={cn(
+                                                    "h-4 w-4 shrink-0",
+                                                    isActive ? "text-primary" : "text-muted-foreground"
+                                                )}
+                                            />
+                                        )}
+                                        <span
+                                            className={cn(
+                                                "text-xs font-semibold",
+                                                isActive ? "text-primary" : "text-foreground/80"
+                                            )}
+                                        >
+                                            {tab.label}
+                                        </span>
+                                    </Link>
+                                </DropdownMenuItem>
+                            </React.Fragment>
                         )
                     })}
                 </DropdownMenuContent>
@@ -202,24 +208,6 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                     )}
                 </React.Fragment>
             ))}
-
-            {/* ── Config gear icon ── */}
-            {configHref && (
-                <>
-                    <div className="w-px h-4 bg-border/30 mx-2 shrink-0" />
-                    <Link
-                        href={configHref}
-                        className={cn(
-                            "h-7 w-7 flex items-center justify-center rounded-md shrink-0",
-                            "text-muted-foreground/50 hover:text-primary hover:bg-muted/50 transition-colors",
-                            activeValue === "config" && "text-primary bg-primary/10"
-                        )}
-                        title="Configuración del Módulo"
-                    >
-                        <Settings className="h-3.5 w-3.5" />
-                    </Link>
-                </>
-            )}
         </div>
     )
 }

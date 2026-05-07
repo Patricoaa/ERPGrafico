@@ -21,8 +21,6 @@ export interface NavigationConfig {
     tabs: NavigationTabConfig[]
     activeValue: string
     subActiveValue?: string
-    /** Separate href for config/settings gear icon (excluded from main dropdown) */
-    configHref?: string
     /** Optional deep breadcrumbs added after the dropdowns */
     breadcrumbs?: { label: string; href?: string }[]
 }

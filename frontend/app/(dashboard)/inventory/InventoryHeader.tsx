@@ -62,7 +62,7 @@ export function InventoryHeader() {
         { value: "attributes", label: "Atributos", iconName: "tags", href: "/inventory/attributes" },
         {
             value: "config",
-            label: "Config",
+            label: "Configuración",
             iconName: "settings",
             href: "/inventory/settings",
             subTabs: [
@@ -79,7 +79,6 @@ export function InventoryHeader() {
         tabs,
         activeValue,
         subActiveValue,
-        configHref: "/inventory/settings"
     }
 
     const getHeaderConfig = () => {
