@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect } from "react"
 import { TabsContent } from "@/components/ui/tabs"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { TableSkeleton } from "@/components/shared"
 import { PageContainer } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { SlidersHorizontal } from "lucide-react"
-import api, { pollTask } from "@/lib/api"
+
 import { ReportTable } from "@/components/shared/ReportTable"
 import { CashFlowTable } from "@/features/finance/components/CashFlowTable"
 import { MappingConfigSheet } from "@/features/finance/components/MappingConfigSheet"
@@ -24,8 +24,9 @@ interface StatementsViewProps {
     activeTab: string
 }
 
+import { useStatements } from "@/features/finance/hooks/useStatements"
+
 export function StatementsView({ activeTab }: StatementsViewProps) {
-    const [loading, setLoading] = useState(false)
     const [showComparison, setShowComparison] = useState(false)
     const [mappingOpen, setMappingOpen] = useState(false)
 
@@ -55,52 +56,15 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
         }
     }, [serverDate])
 
-    // Data States
-    const [bsData, setBsData] = useState<Record<string, unknown> | null>(null)
-    const [plData, setPlData] = useState<Record<string, unknown> | null>(null)
-    const [cfData, setCfData] = useState<Record<string, unknown> | null>(null)
-
-    const loadData = async () => {
-        setLoading(true)
-        try {
-            const params: Record<string, unknown> = {
-                start_date: date?.from ? format(date.from, 'yyyy-MM-dd') : undefined,
-                end_date: date?.to ? format(date.to, 'yyyy-MM-dd') : undefined,
-                is_async: true
-            }
-
-            if (showComparison && compDate?.from && compDate?.to) {
-                params.comp_start_date = format(compDate.from, 'yyyy-MM-dd')
-                params.comp_end_date = format(compDate.to, 'yyyy-MM-dd')
-            }
-
-            const [bsRes, plRes, cfRes] = await Promise.all([
-                api.get('finances/api/balance-sheet/', { params }),
-                api.get('finances/api/income-statement/', { params }),
-                api.get('finances/api/cash-flow/', { params })
-            ])
-
-            const [bs, pl, cf] = await Promise.all([
-                bsRes.data.task_id ? pollTask(bsRes.data.task_id) : Promise.resolve(bsRes.data),
-                plRes.data.task_id ? pollTask(plRes.data.task_id) : Promise.resolve(plRes.data),
-                cfRes.data.task_id ? pollTask(cfRes.data.task_id) : Promise.resolve(cfRes.data),
-            ])
-
-            setBsData(bs)
-            setPlData(pl)
-            setCfData(cf)
-        } catch (error) {
-            console.error("Error loading finances", error)
-        } finally {
-            setLoading(false)
-        }
+    const statementParams = {
+        start_date: date?.from ? format(date.from, 'yyyy-MM-dd') : undefined,
+        end_date: date?.to ? format(date.to, 'yyyy-MM-dd') : undefined,
+        comp_start_date: compDate?.from ? format(compDate.from, 'yyyy-MM-dd') : undefined,
+        comp_end_date: compDate?.to ? format(compDate.to, 'yyyy-MM-dd') : undefined,
+        showComparison
     }
 
-    useEffect(() => {
-        if (date?.from && date?.to) {
-            loadData()
-        }
-    }, [date, showComparison, compDate])
+    const { balanceSheet: bsData, incomeStatement: plData, cashFlow: cfData, refetch } = useStatements(statementParams)
 
 
     const getPeriodLabel = (range: DateRange | undefined) => {
@@ -236,7 +200,6 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                             compPeriodLabel={compPeriodLabel}
                                                             periodLabel={periodLabel}
                                                             showComparison={showComparison}
-                                                            isLoading={loading}
                                                             accentColor="success"
                                                             embedded
                                                         />
@@ -249,7 +212,6 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                             compPeriodLabel={compPeriodLabel}
                                                             periodLabel={periodLabel}
                                                             showComparison={showComparison}
-                                                            isLoading={loading}
                                                             accentColor="destructive"
                                                             embedded
                                                         />
@@ -262,7 +224,6 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                             compPeriodLabel={compPeriodLabel}
                                                             periodLabel={periodLabel}
                                                             showComparison={showComparison}
-                                                            isLoading={loading}
                                                             accentColor="primary"
                                                             embedded
                                                         />
@@ -272,7 +233,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                         </div>
                                     </div>
                                 ) : (
-                                    <ReportTable data={null} isLoading={loading} showComparison={showComparison} />
+                                    <ReportTable data={null} showComparison={showComparison} />
                                 )}
                             </CardContent>
                         </Card>
@@ -324,7 +285,6 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                         totalValue={section.total}
                                                         totalValueComp={section.total_comp}
                                                         showComparison={showComparison}
-                                                        isLoading={loading}
                                                         accentColor={section.name.toLowerCase().includes('ingreso') ? 'success' : section.name.toLowerCase().includes('gasto') || section.name.toLowerCase().includes('costo') ? 'destructive' : 'primary'}
                                                         embedded
                                                     />
@@ -333,7 +293,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                         })()}
                                     </div>
                                 ) : (
-                                    <ReportTable data={null} isLoading={loading} showComparison={showComparison} />
+                                    <ReportTable data={null} showComparison={showComparison} />
                                 )}
                             </CardContent>
                         </Card>
@@ -369,7 +329,9 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                 open={mappingOpen}
                 onOpenChange={setMappingOpen}
                 mappingType={activeTab === 'pl' ? 'is' : activeTab === 'cf' ? 'cf' : 'bs'}
-                onSaveSuccess={loadData}
+                onSaveSuccess={() => {
+                    refetch()
+                }}
             />
         </PageContainer>
     )

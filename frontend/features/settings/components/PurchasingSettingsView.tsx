@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useCallback } from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import api from "@/lib/api"
@@ -13,38 +13,15 @@ import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 import { purchasingSchema, type PurchasingFormValues } from "./PurchasingSettingsView.schema"
 
+import { useAccountingSettings } from "@/features/settings/hooks/useAccountingSettings"
+
 export function PurchasingSettingsView() {
-    const [loading, setLoading] = useState(true)
+    const { purchasing: settings } = useAccountingSettings()
 
     const form = useForm<PurchasingFormValues>({
         resolver: zodResolver(purchasingSchema),
-        defaultValues: {
-            default_expense_account: null,
-            default_service_expense_account: null,
-            default_subscription_expense_account: null,
-        }
+        defaultValues: settings,
     })
-
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const res = await api.get('/accounting/settings/current/')
-                const settings = res.data
-                const formattedSettings = {} as PurchasingFormValues
-                const fields = Object.keys(purchasingSchema.shape) as (keyof PurchasingFormValues)[]
-                fields.forEach((key) => {
-                    const val = settings[key]
-                    formattedSettings[key] = (val ? val.toString() : null) as never
-                })
-                form.reset(formattedSettings)
-            } catch {
-                // silent — badge handles save errors
-            } finally {
-                setLoading(false)
-            }
-        }
-        fetchSettings()
-    }, [form])
 
     const onSave = useCallback(async (data: PurchasingFormValues) => {
         await api.patch('/accounting/settings/current/', data)
@@ -53,12 +30,10 @@ export function PurchasingSettingsView() {
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
         form,
         onSave,
-        enabled: !loading,
+        enabled: true,
     })
 
     useUnsavedChangesGuard(status)
-
-    if (loading) return <FormSkeleton fields={3} />
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">

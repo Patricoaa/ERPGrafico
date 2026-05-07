@@ -1,75 +1,65 @@
-import { useState, useCallback } from 'react';
+import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { AccountingPeriod } from '../types';
 import { showApiError } from '@/lib/errors';
 
+export const ACCOUNTING_PERIODS_QUERY_KEY = ['accounting-periods'];
+
 export function useAccountingPeriods() {
-    const [data, setData] = useState<AccountingPeriod[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isActionLoading, setIsActionLoading] = useState<number | null>(null);
+    const queryClient = useQueryClient();
 
-    const fetchPeriods = useCallback(async () => {
-        try {
+    const { data, refetch } = useSuspenseQuery({
+        queryKey: ACCOUNTING_PERIODS_QUERY_KEY,
+        queryFn: async () => {
             const response = await api.get('/tax/accounting-periods/?ordering=-year,-month');
-            const results = response.data.results || response.data;
-            setData(results);
-        } catch (error) {
-            console.error('Error fetching periods:', error);
-            showApiError(error, 'Error al cargar los periodos contables');
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+            return response.data.results || response.data;
+        },
+    });
 
-    const closePeriod = async (periodId: number) => {
-        setIsActionLoading(periodId);
-        try {
-            await api.post(`/tax/accounting-periods/${periodId}/close/`);
+    const closeMutation = useMutation({
+        mutationFn: (periodId: number) => api.post(`/tax/accounting-periods/${periodId}/close/`),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
             toast.success('Periodo contable cerrado exitosamente');
-            await fetchPeriods();
-        } catch (error) {
-            showApiError(error, 'Error al cerrar el periodo');
-        } finally {
-            setIsActionLoading(null);
-        }
-    };
+        },
+        onError: (error) => showApiError(error, 'Error al cerrar el periodo'),
+    });
 
-    const reopenPeriod = async (periodId: number) => {
-        setIsActionLoading(periodId);
-        try {
-            await api.post(`/tax/accounting-periods/${periodId}/reopen/`);
+    const reopenMutation = useMutation({
+        mutationFn: (periodId: number) => api.post(`/tax/accounting-periods/${periodId}/reopen/`),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
             toast.success('Periodo contable reabierto exitosamente');
-            await fetchPeriods();
-        } catch (error) {
-            showApiError(error, 'Error al reabrir el periodo');
-        } finally {
-            setIsActionLoading(null);
-        }
-    };
+        },
+        onError: (error) => showApiError(error, 'Error al reabrir el periodo'),
+    });
 
-    const createPeriod = async (year: number, month: number) => {
-        setIsActionLoading(0); // Use 0 for global/new actions
-        try {
-            await api.post('/tax/accounting-periods/', { year, month });
+    const createMutation = useMutation({
+        mutationFn: ({ year, month }: { year: number, month: number }) => api.post('/tax/accounting-periods/', { year, month }),
+        onSuccess: (_, { year, month }) => {
+            queryClient.invalidateQueries({ queryKey: ACCOUNTING_PERIODS_QUERY_KEY });
             toast.success(`Periodo ${month}/${year} inicializado correctamente`);
-            await fetchPeriods();
-            return true;
-        } catch (error) {
-            showApiError(error, 'Error al crear el periodo');
-            return false;
-        } finally {
-            setIsActionLoading(null);
-        }
-    };
+        },
+        onError: (error) => showApiError(error, 'Error al crear el periodo'),
+    });
 
     return {
-        data,
-        isLoading,
-        isActionLoading,
-        fetchPeriods,
-        closePeriod,
-        reopenPeriod,
-        createPeriod
+        data: data as AccountingPeriod[],
+        refetch,
+        isActionLoading: closeMutation.isPending || reopenMutation.isPending || createMutation.isPending,
+        closePeriod: closeMutation.mutateAsync,
+        reopenPeriod: reopenMutation.mutateAsync,
+        createPeriod: async (year: number, month: number) => {
+            try {
+                await createMutation.mutateAsync({ year, month });
+                return true;
+            } catch {
+                return false;
+            }
+        },
+        isCreating: createMutation.isPending,
+        isClosing: closeMutation.isPending,
+        isReopening: reopenMutation.isPending,
     };
 }

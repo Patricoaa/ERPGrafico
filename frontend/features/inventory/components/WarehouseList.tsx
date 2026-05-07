@@ -7,15 +7,13 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
+import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
-import api from "@/lib/api"
 import { WarehouseForm } from "./WarehouseForm"
-import { Pencil, Trash2, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Pencil, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { cn } from "@/lib/utils"
+import type { BulkAction } from "@/components/shared"
 import React from "react"
 
 import { useWarehouses, type Warehouse } from "@/features/inventory/hooks/useWarehouses"
@@ -33,7 +31,6 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [warehouseToDelete, setWarehouseToDelete] = useState<Warehouse | null>(null)
-    const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
 
     const router = useRouter()
     const pathname = usePathname()
@@ -130,23 +127,23 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
         }),
     ], [handleDelete])
 
-    const selectedWarehouses = useMemo(() => {
-        // Use indexes from the selection state to filter the warehouses array
-        return warehouses.filter((_, index) => selectedRows[index])
-    }, [selectedRows, warehouses])
-
-    const handleBulkDelete = async () => {
-        if (selectedWarehouses.length === 0) return
-        if (!confirm(`¿Está seguro de que desea eliminar ${selectedWarehouses.length} almacenes? Esta acción es irreversible.`)) return
-
-        try {
-            await Promise.all(selectedWarehouses.map(w => deleteWarehouse(w.id)))
-            toast.success(`${selectedWarehouses.length} almacenes eliminados`)
-            setSelectedRows({})
-        } catch (error) {
-            showApiError(error, "Error al eliminar los almacenes (algunos podrían estar en uso)")
-        }
-    }
+    const bulkActions = useMemo<BulkAction<Warehouse>[]>(() => [
+        {
+            key: "delete",
+            label: "Eliminar",
+            icon: Trash2,
+            intent: "destructive",
+            onClick: async (items) => {
+                if (!confirm(`¿Está seguro de que desea eliminar ${items.length} almacenes? Esta acción es irreversible.`)) return
+                try {
+                    await Promise.all(items.map(w => deleteWarehouse(w.id)))
+                    toast.success(`${items.length} almacenes eliminados`)
+                } catch (error) {
+                    showApiError(error, "Error al eliminar los almacenes (algunos podrían estar en uso)")
+                }
+            },
+        },
+    ], [deleteWarehouse])
 
     return (
         <div className="space-y-6">
@@ -159,18 +156,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
                 filterColumn="name"
                 searchPlaceholder="Buscar almacén por nombre o código..."
                 globalFilterFields={["name", "code", "address"]}
-                onRowSelectionChange={setSelectedRows}
-                batchActions={
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 text-destructive-foreground hover:bg-destructive/20 gap-2"
-                        onClick={handleBulkDelete}
-                    >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Eliminar
-                    </Button>
-                }
+                bulkActions={bulkActions}
                 createAction={createAction}
             />
 

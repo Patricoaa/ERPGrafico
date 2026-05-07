@@ -6,13 +6,12 @@ import React, { useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
+import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Button } from "@/components/ui/button"
-import { Pencil, Trash2, Search } from "lucide-react"
+import { Pencil, Trash2 } from "lucide-react"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import type { BulkAction } from "@/components/shared"
 import { UoMForm } from "./UoMForm"
 
 import { toast } from "sonner"
@@ -31,7 +30,6 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
     const { uoms, refetch, deleteUoM } = useUoMs()
 
     // Modal State
-    const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
     const [isUoMModalOpen, setIsUoMModalOpen] = useState(false)
     const [editingUoM, setEditingUoM] = useState<Partial<UoM>>({})
 
@@ -143,22 +141,23 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
         }),
     ], [handleDelete])
 
-    const selectedUoMs = useMemo(() => {
-        return uoms.filter((_, index) => selectedRows[index])
-    }, [selectedRows, uoms])
-
-    const handleBulkDelete = async () => {
-        if (selectedUoMs.length === 0) return
-        if (!confirm(`¿Está seguro de que desea eliminar ${selectedUoMs.length} unidades de medida?`)) return
-
-        try {
-            await Promise.all(selectedUoMs.map(u => deleteUoM(u.id)))
-            toast.success(`${selectedUoMs.length} unidades eliminadas`)
-            setSelectedRows({})
-        } catch (error) {
-            showApiError(error, "Error al eliminar las unidades")
-        }
-    }
+    const bulkActions = useMemo<BulkAction<UoM>[]>(() => [
+        {
+            key: "delete",
+            label: "Eliminar",
+            icon: Trash2,
+            intent: "destructive",
+            onClick: async (items) => {
+                if (!confirm(`¿Está seguro de que desea eliminar ${items.length} unidades de medida?`)) return
+                try {
+                    await Promise.all(items.map(u => deleteUoM(u.id)))
+                    toast.success(`${items.length} unidades eliminadas`)
+                } catch (error) {
+                    showApiError(error, "Error al eliminar las unidades")
+                }
+            },
+        },
+    ], [deleteUoM])
 
 
     return (
@@ -170,18 +169,7 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                 filterColumn="name"
                 searchPlaceholder="Buscar unidad..."
                 useAdvancedFilter={true}
-                onRowSelectionChange={setSelectedRows}
-                batchActions={
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 text-destructive-foreground hover:bg-destructive/20 gap-2"
-                        onClick={handleBulkDelete}
-                    >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Eliminar
-                    </Button>
-                }
+                bulkActions={bulkActions}
                 globalFilterFields={["name", "category_name"]}
                 facetedFilters={[
                     {

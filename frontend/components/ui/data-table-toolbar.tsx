@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { X, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown, MoreHorizontal } from "lucide-react"
+import { X, ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal } from "lucide-react"
 import { Table } from "@tanstack/react-table"
 
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,6 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuCheckboxItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Settings2, Check } from "lucide-react"
@@ -42,7 +41,6 @@ interface DataTableToolbarProps<TData> {
     currentView?: string
     onViewChange?: (view: string) => void
     showColumnToggle?: boolean
-    batchActions?: React.ReactNode
     customFilters?: React.ReactNode
     isCustomFiltered?: boolean
     customFilterCount?: number
@@ -108,7 +106,6 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         currentView,
         onViewChange,
         showColumnToggle = true,
-        batchActions,
         customFilters,
         isCustomFiltered,
         customFilterCount,
@@ -117,7 +114,6 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
     } = props
 
     const isFiltered = table.getState().columnFilters.length > 0 || table.getState().globalFilter?.length > 0 || isCustomFiltered
-    const rowSelectionCount = table.getFilteredSelectedRowModel().rows.length
 
     // Get all columns that are sortable
     const sortableColumns = table.getAllColumns().filter(
@@ -133,10 +129,9 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
             {/* ─── UNIFIED TOOLBAR: LEFT (SEARCH) | CENTER (ACTIONS) | RIGHT (TOOLS) ─── */}
             <div className="flex items-center justify-between gap-4 h-9 w-full relative">
 
-                {/* Left Section: Search & Batch Actions (flex-1) */}
+                {/* Left Section: Search (flex-1) */}
                 <div className="flex-1 flex items-center gap-3 min-w-0">
                     {leftAction}
-                    {batchActions}
                     {(filterColumn || globalFilterFields) && !useAdvancedFilter && (
                         <div className="relative w-64 lg:w-72 group shrink-0">
                             <Input
@@ -176,7 +171,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     )}
 
                     <div className="flex h-9 items-center rounded-md border border-border/50 bg-background shadow-sm overflow-hidden">
-                        
+
                         {useAdvancedFilter ? (
                             <>
                                 <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
@@ -331,8 +326,8 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button 
-                                            variant="ghost" 
+                                        <Button
+                                            variant="ghost"
                                             className="h-9 px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0"
                                         >
                                             {(() => {

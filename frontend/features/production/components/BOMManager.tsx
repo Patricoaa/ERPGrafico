@@ -3,12 +3,11 @@
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
-    Plus, Edit, Trash2, Check, Loader2, Workflow, Box, Layers, Copy
+    Plus, Edit, Trash2, Workflow, Box, Layers, Copy
 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { BOMFormModal } from "./BOMFormModal"
-import api from "@/lib/api"
-import { toast } from "sonner"
+
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { LabeledSelect } from "@/components/shared"
@@ -26,62 +25,28 @@ interface BOMManagerProps {
     onBomsChange?: (boms: BOM[]) => void
 }
 
+import { useBOMs, useProductionVariants } from "../hooks/useBOMs"
+
 export function BOMManager({ product, variantMode = false, onBomsChange }: BOMManagerProps) {
-    const [boms, setBoms] = useState<BOM[]>([])
-    const [loading, setLoading] = useState(false)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingBom, setEditingBom] = useState<BOM | undefined>(undefined)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [bomToDelete, setBomToDelete] = useState<BOM | undefined>(undefined)
 
     // Variant support
-    const [variants, setVariants] = useState<ProductMinimal[]>([])
     const [selectedVariantId, setSelectedVariantId] = useState<string>("all")
 
-    const fetchBoms = async () => {
-        if (!product?.id) return
-        setLoading(true)
-        try {
-            const params: Record<string, string | number> = {}
-            if (selectedVariantId && selectedVariantId !== "all") {
-                params.product_id = selectedVariantId
-            } else if (product?.id) {
-                params.parent_id = product.id
-            }
+    const bomParams = selectedVariantId && selectedVariantId !== "all"
+        ? { product_id: selectedVariantId }
+        : { parent_id: product?.id }
 
-            const res = await api.get(`/production/boms/`, { params })
-            setBoms(res.data)
-            onBomsChange?.(res.data)
-        } catch (error) {
-            console.error("Error fetching BOMs:", error)
-            toast.error("Error al cargar listas de materiales")
-        } finally {
-            setLoading(false)
-        }
-    }
+    const { boms, refetch, deleteBom, toggleActive } = useBOMs(bomParams)
+    const { variants } = useProductionVariants(product?.id)
 
-    // Fetch variants
+    // Sync external boms if needed
     useEffect(() => {
-        const loadVariants = async () => {
-            if (product?.has_variants && product?.id) {
-                try {
-                    const res = await api.get(`/inventory/products/?parent_template=${product.id}&show_technical_variants=true`)
-                    setVariants(res.data.results || res.data)
-                } catch (e) {
-                    console.error("Error loading variants", e)
-                }
-            } else {
-                setVariants([])
-            }
-        }
-        loadVariants()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [product?.id, product?.has_variants])
-
-    useEffect(() => {
-        fetchBoms()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [product?.id, selectedVariantId])
+        onBomsChange?.(boms)
+    }, [boms, onBomsChange])
 
     const handleCreate = () => {
         setEditingBom(undefined)
@@ -113,25 +78,19 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         }
 
         try {
-            await api.delete(`/production/boms/${bom.id}/`)
-            toast.success("Lista de Materiales eliminada")
+            await deleteBom(bom.id as number)
             setIsDeleteModalOpen(false)
-            fetchBoms()
-        } catch (error) {
-            console.error("Error deleting BOM:", error)
-            toast.error("Error al eliminar Lista de Materiales")
+        } catch {
+            // Error handled by hook toast
         }
     }
 
     const handleToggleActive = async (bom: BOM) => {
         if (bom.active) return
         try {
-            await api.patch(`/production/boms/${bom.id}/`, { active: true })
-            toast.success("Lista de Materiales establecida como activa")
-            fetchBoms()
-        } catch (error) {
-            console.error("Error updating BOM:", error)
-            toast.error("Error al actualizar estado")
+            await toggleActive(bom.id as number)
+        } catch {
+            // Error handled by hook toast
         }
     }
 
@@ -341,7 +300,6 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 <DataTable
                     columns={columns}
                     data={boms}
-                    isLoading={loading}
                     cardMode={true}
                     toolbarAction={!product?.has_variants ? (
                         <DropdownMenuItem
@@ -367,7 +325,9 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                         : product
                 }
                 bomToEdit={editingBom}
-                onSuccess={fetchBoms}
+                onSuccess={() => {
+                    refetch()
+                }}
             />
 
             <ActionConfirmModal

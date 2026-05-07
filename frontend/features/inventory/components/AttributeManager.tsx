@@ -2,18 +2,18 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, { useEffect, useState, useMemo, useCallback } from "react"
+import React, { useState, useMemo, useCallback } from "react"
 import api from "@/lib/api"
-import { Plus, Trash2, Tag, LayoutDashboard, Eye, X, Loader2 } from "lucide-react"
+import { Plus, Trash2, Tag, Eye, X } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
+import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
+import type { BulkAction } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { cn } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -36,16 +36,16 @@ interface AttributeManagerProps {
     createAction?: React.ReactNode
 }
 
+import { useAttributes } from "@/features/inventory/hooks/useAttributes"
+
 export function AttributeManager({ externalOpen, createAction }: AttributeManagerProps) {
-    const [attributes, setAttributes] = useState<ProductAttribute[]>([])
-    const [loading, setLoading] = useState(true)
+    const { attributes, refetch } = useAttributes()
     const [isAttrModalOpen, setIsAttrModalOpen] = useState(false)
     const [isValueModalOpen, setIsValueModalOpen] = useState(false)
     const [selectedAttribute, setSelectedAttribute] = useState<ProductAttribute | null>(null)
     const [newAttrName, setNewAttrName] = useState("")
     const [newAttrValues, setNewAttrValues] = useState<string[]>([])
     const [newValueName, setNewValueName] = useState("")
-    const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
     const [isSaving, setIsSaving] = useState(false)
 
 
@@ -58,40 +58,11 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
         setSelectedAttribute(null)
         setNewAttrName("")
         setNewAttrValues([])
-        
+
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
-    }
-
-    useEffect(() => {
-        fetchAttributes()
-    }, [])
-
-    const fetchAttributes = async () => {
-        setLoading(true)
-        try {
-            const [attrRes, valRes] = await Promise.all([
-                api.get("/inventory/attributes/"),
-                api.get("/inventory/attribute-values/")
-            ])
-
-            const attrs = attrRes.data.results || attrRes.data
-            const vals = valRes.data.results || valRes.data
-
-            const enrichedAttrs = attrs.map((attr: ProductAttribute) => ({
-                ...attr,
-                values: vals.filter((v: ProductAttributeValue) => v.attribute === attr.id)
-            }))
-
-            setAttributes(enrichedAttrs)
-        } catch (error) {
-            console.error(error)
-            showApiError(error, "Error al cargar atributos")
-        } finally {
-            setLoading(false)
         }
     }
 
@@ -100,7 +71,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
         setIsSaving(true)
         try {
             let attrId: number;
-            
+
             if (selectedAttribute) {
                 // Update existing attribute (only name for now)
                 await api.patch(`/inventory/attributes/${selectedAttribute.id}/`, { name: newAttrName })
@@ -113,7 +84,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
 
             // Create values if there are any new ones
             if (newAttrValues.length > 0) {
-                await Promise.all(newAttrValues.map(val => 
+                await Promise.all(newAttrValues.map(val =>
                     api.post("/inventory/attribute-values/", {
                         attribute: attrId,
                         value: val
@@ -123,7 +94,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
 
             toast.success(selectedAttribute ? "Atributo actualizado" : "Atributo creado")
             handleCloseModal()
-            fetchAttributes()
+            refetch()
         } catch (error) {
             showApiError(error, "Error al guardar atributo")
         } finally {
@@ -151,7 +122,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
             toast.success("Valor añadido")
             setNewValueName("")
             setIsValueModalOpen(false)
-            fetchAttributes()
+            refetch()
         } catch (error) {
             showApiError(error, "Error al añadir valor")
         }
@@ -161,7 +132,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
         try {
             await api.delete(`/inventory/attributes/${id}/`)
             toast.success("Atributo eliminado")
-            fetchAttributes()
+            refetch()
         } catch (error) {
             showApiError(error, "Error al eliminar")
         }
@@ -173,7 +144,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
         try {
             await api.delete(`/inventory/attribute-values/${id}/`)
             toast.success("Valor eliminado")
-            fetchAttributes()
+            refetch()
         } catch (error) {
             showApiError(error, "Error al eliminar valor")
         }
@@ -226,9 +197,9 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                 return (
                     <div className="flex flex-nowrap justify-center gap-1.5 w-full overflow-x-auto scrollbar-hide py-1">
                         {values.map((val) => (
-                            <DataCell.Badge 
-                                key={val.id} 
-                                variant="secondary" 
+                            <DataCell.Badge
+                                key={val.id}
+                                variant="secondary"
                                 className="flex items-center gap-1 px-2.5 py-0.5 h-6 text-[10px] font-bold border-secondary/50"
                             >
                                 {val.value}
@@ -288,23 +259,24 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
         }),
     ], [handleDeleteValue, handleDeleteAttribute])
 
-    const selectedAttributes = useMemo(() => {
-        return attributes.filter((_, index) => selectedRows[index])
-    }, [selectedRows, attributes])
-
-    const handleBulkDelete = async () => {
-        if (selectedAttributes.length === 0) return
-        if (!confirm(`¿Está seguro de que desea eliminar ${selectedAttributes.length} atributos y todos sus valores?`)) return
-
-        try {
-            await Promise.all(selectedAttributes.map(a => api.delete(`/inventory/attributes/${a.id}/`)))
-            toast.success(`${selectedAttributes.length} atributos eliminados`)
-            setSelectedRows({})
-            fetchAttributes()
-        } catch (error) {
-            showApiError(error, "Error al eliminar los atributos")
-        }
-    }
+    const bulkActions = useMemo<BulkAction<ProductAttribute>[]>(() => [
+        {
+            key: "delete",
+            label: "Eliminar",
+            icon: Trash2,
+            intent: "destructive",
+            onClick: async (items) => {
+                if (!confirm(`¿Está seguro de que desea eliminar ${items.length} atributos y todos sus valores?`)) return
+                try {
+                    await Promise.all(items.map(a => api.delete(`/inventory/attributes/${a.id}/`)))
+                    toast.success(`${items.length} atributos eliminados`)
+                    refetch()
+                } catch (error) {
+                    showApiError(error, "Error al eliminar los atributos")
+                }
+            },
+        },
+    ], [])
 
 
     return (
@@ -314,22 +286,10 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                 columns={columns}
                 data={attributes}
                 cardMode
-                isLoading={loading}
                 filterColumn="name"
                 searchPlaceholder="Buscar atributos..."
                 useAdvancedFilter={true}
-                onRowSelectionChange={setSelectedRows}
-                batchActions={
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 text-destructive-foreground hover:bg-destructive/20 gap-2"
-                        onClick={handleBulkDelete}
-                    >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Eliminar
-                    </Button>
-                }
+                bulkActions={bulkActions}
                 createAction={createAction}
             />
 
@@ -387,11 +347,11 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                     {/* Right Side: Activity Sidebar */}
                     {selectedAttribute?.id && (
                         <ActivitySidebar
-                                entityType="attribute"
-                                entityId={selectedAttribute.id}
-                                className="h-full border-none"
-                                title="Historial"
-                            />
+                            entityType="attribute"
+                            entityId={selectedAttribute.id}
+                            className="h-full border-none"
+                            title="Historial"
+                        />
                     )}
                 </div>
             </BaseModal>
@@ -400,12 +360,12 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
             <BaseModal
                 open={isValueModalOpen}
                 onOpenChange={setIsValueModalOpen}
-            title={
-                <div className="flex items-center gap-3">
-                    <Plus className="h-5 w-5 text-muted-foreground" />
-                    <span>Añadir Valor a {selectedAttribute?.name}</span>
-                </div>
-            }
+                title={
+                    <div className="flex items-center gap-3">
+                        <Plus className="h-5 w-5 text-muted-foreground" />
+                        <span>Añadir Valor a {selectedAttribute?.name}</span>
+                    </div>
+                }
                 footer={
                     <div className="flex justify-end gap-2 w-full">
                         <CancelButton onClick={() => setIsValueModalOpen(false)} disabled={isSaving} />

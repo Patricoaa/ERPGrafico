@@ -6,20 +6,19 @@ import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { TableRow, TableCell } from "@/components/ui/table"
-import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
+
+import { ColumnDef } from "@tanstack/react-table"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import type { BulkAction } from "@/components/shared"
 import { ProductForm } from "./ProductForm"
 import { Pencil, Archive, ChevronRight, ChevronDown, Plus, AlertTriangle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { cn, translateProductType, formatCurrency } from "@/lib/utils"
+import { cn, translateProductType } from "@/lib/utils"
 import { resolveMediaUrl } from "@/lib/api"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Checkbox } from "@/components/ui/checkbox"
-import { LayoutGrid, List, Download, Trash2, Archive as ArchiveIcon } from "lucide-react"
+import { LayoutGrid, List, Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
@@ -50,7 +49,6 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [expandedTemplates, setExpandedTemplates] = useState<Set<number>>(new Set())
     const [view, setView] = useState("table")
-    const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
 
 
     const router = useRouter()
@@ -61,7 +59,7 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
         setIsFormOpen(false)
         setEditingProduct(null)
         onExternalOpenChange?.(false)
-        
+
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
@@ -232,10 +230,10 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                                     {product.name}
                                 </DataCell.Text>
                                 {!product.active && (
-                                    <StatusBadge 
-                                        status="inactive" 
-                                        label="ARCHIVADO" 
-                                        size="sm" 
+                                    <StatusBadge
+                                        status="inactive"
+                                        label="ARCHIVADO"
+                                        size="sm"
                                         className="h-3.5"
                                     />
                                 )}
@@ -275,8 +273,8 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                 return value.includes(String(rowValue))
             },
             cell: ({ row }) => (
-                <DataCell.Status 
-                    status={row.original.active ? "active" : "inactive"} 
+                <DataCell.Status
+                    status={row.original.active ? "active" : "inactive"}
                     label={row.original.active ? "Activo" : "Archivado"}
                 />
             ),
@@ -379,47 +377,40 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
     const globalFilterFields = useMemo(() => ["name", "code", "internal_code"], [])
     const initialColumnVisibility = useMemo(() => ({ active: false }), [])
 
-    const selectedProducts = useMemo(() => {
-        const ids = Object.keys(selectedRows).map(Number)
-        // Note: we need to find the products in displayProducts because displayProducts contains variants too
-        return displayProducts.filter((_, index) => selectedRows[index])
-    }, [selectedRows, displayProducts])
-
-    const canArchiveAll = useMemo(() => {
-        if (selectedProducts.length === 0) return false
-        return selectedProducts.every(p => p.active)
-    }, [selectedProducts])
-
-    const canRestoreAll = useMemo(() => {
-        if (selectedProducts.length === 0) return false
-        return selectedProducts.every(p => !p.active)
-    }, [selectedProducts])
-
-    const handleBulkArchive = async () => {
-        if (selectedProducts.length === 0) return
-        const action = "archivar"
-        try {
-            await Promise.all(selectedProducts.map(p => updateProduct({ id: p.id, payload: { active: false } })))
-            toast.success(`${selectedProducts.length} productos archivados correctamente.`)
-            setSelectedRows({})
-            refetch()
-        } catch (error) {
-            showApiError(error, `Error al ${action} los productos.`)
-        }
-    }
-
-    const handleBulkRestore = async () => {
-        if (selectedProducts.length === 0) return
-        const action = "restaurar"
-        try {
-            await Promise.all(selectedProducts.map(p => updateProduct({ id: p.id, payload: { active: true } })))
-            toast.success(`${selectedProducts.length} productos restaurados correctamente.`)
-            setSelectedRows({})
-            refetch()
-        } catch (error) {
-            toast.error(`Error al ${action} los productos.`)
-        }
-    }
+    const bulkActions = useMemo<BulkAction<Product>[]>(() => [
+        {
+            key: "restore",
+            label: "Restaurar",
+            icon: Plus,
+            intent: "success",
+            disabled: (items) => items.length === 0 || !items.every(p => !p.active),
+            onClick: async (items) => {
+                try {
+                    await Promise.all(items.map(p => updateProduct({ id: p.id, payload: { active: true } })))
+                    toast.success(`${items.length} productos restaurados correctamente.`)
+                    refetch()
+                } catch (error) {
+                    toast.error("Error al restaurar los productos.")
+                }
+            },
+        },
+        {
+            key: "archive",
+            label: "Archivar",
+            icon: ArchiveIcon,
+            intent: "destructive",
+            disabled: (items) => items.length === 0 || !items.every(p => p.active),
+            onClick: async (items) => {
+                try {
+                    await Promise.all(items.map(p => updateProduct({ id: p.id, payload: { active: false } })))
+                    toast.success(`${items.length} productos archivados correctamente.`)
+                    refetch()
+                } catch (error) {
+                    showApiError(error, "Error al archivar los productos.")
+                }
+            },
+        },
+    ], [updateProduct, refetch])
 
 
     return (
@@ -438,31 +429,7 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                     ]}
                     currentView={view}
                     onViewChange={setView}
-                    onRowSelectionChange={setSelectedRows}
-                    batchActions={
-                        <>
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 text-white hover:bg-white/10 gap-2 disabled:opacity-30"
-                                onClick={handleBulkRestore}
-                                disabled={!canRestoreAll}
-                            >
-                                <Plus className="h-3.5 w-3.5" />
-                                Restaurar
-                            </Button>
-                            <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-8 text-destructive-foreground hover:bg-destructive/20 gap-2 disabled:opacity-30"
-                                onClick={handleBulkArchive}
-                                disabled={!canArchiveAll}
-                            >
-                                <ArchiveIcon className="h-3.5 w-3.5" />
-                                Archivar
-                            </Button>
-                        </>
-                    }
+                    bulkActions={bulkActions}
                     facetedFilters={[
                         {
                             column: "category_name",

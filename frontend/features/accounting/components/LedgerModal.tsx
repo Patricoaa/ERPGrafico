@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useServerDate } from "@/hooks/useServerDate"
 import { BaseDrawer } from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { Book, Calendar, ArrowUpRight, ArrowDownRight, Scale, Calculator, Eye, Trash2 } from "lucide-react"
+import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator, Eye, Trash2 } from "lucide-react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -182,101 +182,18 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                 icon={Book}
                 height="full"
             >
-                <div className="flex flex-col gap-6 pt-4">
-
-                    {loading ? (
-                        <CardSkeleton count={4} variant="grid" />
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <Card className="bg-muted/30 border-none shadow-none">
-                                <CardContent className="pt-6">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-xs font-medium text-muted-foreground uppercase">Saldo Inicial</p>
-                                        <Calculator className="h-4 w-4 text-muted-foreground" />
-                                    </div>
-                                    <div className={`text-xl font-bold mt-1 ${data?.opening_balance && data.opening_balance < 0 ? 'text-destructive' : ''}`}>
-                                        ${data?.opening_balance?.toLocaleString() || '0'}
-                                    </div>
-                                    <p className="text-[10px] text-muted-foreground mt-1">
-                                        Al {dateRange?.from ? format(dateRange.from, "PPP", { locale: es }) : '-'}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-success/5 border-none shadow-none">
-                                <CardContent className="pt-6">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-xs font-medium text-success uppercase">Cargos (Debe)</p>
-                                        <ArrowUpRight className="h-4 w-4 text-success" />
-                                    </div>
-                                    <div className="text-xl font-bold mt-1 text-success">
-                                        ${data?.period_debit?.toLocaleString() || '0'}
-                                    </div>
-                                    <p className="text-[10px] text-success/70 mt-1">Total del periodo</p>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-destructive/5 border-none shadow-none">
-                                <CardContent className="pt-6">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-xs font-medium text-destructive uppercase">Abonos (Haber)</p>
-                                        <ArrowDownRight className="h-4 w-4 text-destructive" />
-                                    </div>
-                                    <div className="text-xl font-bold mt-1 text-destructive">
-                                        ${data?.period_credit?.toLocaleString() || '0'}
-                                    </div>
-                                    <p className="text-[10px] text-destructive/70 mt-1">Total del periodo</p>
-                                </CardContent>
-                            </Card>
-                            <Card className="bg-primary/5 border-none shadow-none">
-                                <CardContent className="pt-6">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-xs font-medium text-primary uppercase">Saldo Final</p>
-                                        <Scale className="h-4 w-4 text-primary" />
-                                    </div>
-                                    <div className={`text-xl font-bold mt-1 ${data?.closing_balance && data.closing_balance < 0 ? 'text-destructive' : 'text-primary'}`}>
-                                        ${data?.closing_balance?.toLocaleString() || '0'}
-                                    </div>
-                                    <p className="text-[10px] text-muted-foreground mt-1">
-                                        Al {dateRange?.to ? format(dateRange.to, "PPP", { locale: es }) : '-'}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    )}
-
-                    <DataTable
-                        columns={columns}
-                        data={data?.movements || []}
-                        cardMode
-                        isLoading={loading}
-                        useAdvancedFilter={true}
-                        globalFilterFields={["description", "partner", "reference"]}
-                        searchPlaceholder="Filtrar movimientos..."
-                        defaultPageSize={100}
-                        customFilters={
-                            <div className="px-1 py-1">
-                                <DateRangeFilter
-                                    onDateChange={(range) => {
-                                        if (range?.from && range?.to) {
-                                            setDateRange({ from: range.from, to: range.to })
-                                        }
-                                    }}
-                                    defaultRange={dateRange || undefined}
-                                />
-                            </div>
-                        }
-                        isCustomFiltered={!!dateRange}
-                        onReset={() => {
-                            if (serverDate) {
-                                setDateRange({
-                                    from: new Date(serverDate.getFullYear(), serverDate.getMonth(), 1),
-                                    to: serverDate
-                                })
-                            } else {
-                                setDateRange(undefined)
-                            }
-                        }}
-                    />
-                </div>
+                {open && dateRange && (
+                    <React.Suspense fallback={<CardSkeleton count={4} variant="grid" />}>
+                        <LedgerContent
+                            accountId={accountId}
+                            startDate={format(dateRange.from, 'yyyy-MM-dd')}
+                            endDate={format(dateRange.to, 'yyyy-MM-dd')}
+                            dateRange={dateRange}
+                            setDateRange={setDateRange}
+                            onDeleteEntry={handleDeleteEntry}
+                        />
+                    </React.Suspense>
+                )}
             </BaseDrawer>
 
             {viewingEntry && (
@@ -297,5 +214,217 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                 variant="destructive"
             />
         </>
+    )
+}
+
+function LedgerContent({
+    accountId,
+    startDate,
+    endDate,
+    dateRange,
+    setDateRange,
+    onDeleteEntry
+}: {
+    accountId: number;
+    startDate: string;
+    endDate: string;
+    dateRange: { from: Date; to: Date };
+    setDateRange: (range: { from: Date; to: Date } | undefined) => void;
+    onDeleteEntry: (id: number) => void;
+}) {
+    const { serverDate } = useServerDate()
+    const { data } = useLedger(accountId, startDate, endDate)
+    const [viewingEntry, setViewingEntry] = useState<{ id: number | string } | null>(null)
+
+    const columns: ColumnDef<LedgerMovement>[] = [
+        {
+            accessorKey: "date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <span className="text-xs">{format(new Date(row.original.date), 'dd/MM/yyyy')}</span>
+                </div>
+            )
+        },
+        {
+            accessorKey: "description",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
+            ),
+            cell: ({ row }) => {
+                const mov = row.original
+                const glosa = mov.label || mov.description
+                return (
+                    <div className="flex justify-center w-full">
+                        <div className="max-w-[400px] text-xs leading-relaxed text-center" title={glosa}>
+                            {glosa}
+                        </div>
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: "debit",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Debe" className="justify-center" />
+            ),
+            cell: ({ row }) => {
+                const val = parseFloat(row.getValue("debit"))
+                return (
+                    <div className="flex justify-center w-full">
+                        <MoneyDisplay amount={val} showZeroAsDash />
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: "credit",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Haber" className="justify-center" />
+            ),
+            cell: ({ row }) => {
+                const val = parseFloat(row.getValue("credit"))
+                return (
+                    <div className="flex justify-center w-full">
+                        <MoneyDisplay amount={val} showZeroAsDash />
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: "balance",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Saldo" className="justify-center" />
+            ),
+            cell: ({ row }) => {
+                const val = parseFloat(row.getValue("balance"))
+                return (
+                    <div className="flex justify-center w-full">
+                        <MoneyDisplay amount={val} showColor={true} />
+                    </div>
+                )
+            },
+        },
+        createActionsColumn<LedgerMovement>({
+            renderActions: (mov) => (
+                <>
+                    <DataCell.Action
+                        icon={Eye}
+                        title="Ver Asiento"
+                        color="text-primary"
+                        onClick={() => setViewingEntry({ id: mov.entry_id })}
+                    />
+                    <DataCell.Action
+                        icon={Trash2}
+                        title="Eliminar Asiento"
+                        className="text-destructive"
+                        onClick={() => onDeleteEntry(mov.entry_id)}
+                    />
+                </>
+            ),
+        })
+    ]
+
+    return (
+        <div className="flex flex-col gap-6 pt-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card className="bg-muted/30 border-none shadow-none">
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <p className="text-xs font-medium text-muted-foreground uppercase">Saldo Inicial</p>
+                            <Calculator className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className={`text-xl font-bold mt-1 ${data?.opening_balance && data.opening_balance < 0 ? 'text-destructive' : ''}`}>
+                            ${data?.opening_balance?.toLocaleString() || '0'}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                            Al {dateRange?.from ? format(dateRange.from, "PPP", { locale: es }) : '-'}
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card className="bg-success/5 border-none shadow-none">
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <p className="text-xs font-medium text-success uppercase">Cargos (Debe)</p>
+                            <ArrowUpRight className="h-4 w-4 text-success" />
+                        </div>
+                        <div className="text-xl font-bold mt-1 text-success">
+                            ${data?.period_debit?.toLocaleString() || '0'}
+                        </div>
+                        <p className="text-[10px] text-success/70 mt-1">Total del periodo</p>
+                    </CardContent>
+                </Card>
+                <Card className="bg-destructive/5 border-none shadow-none">
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <p className="text-xs font-medium text-destructive uppercase">Abonos (Haber)</p>
+                            <ArrowDownRight className="h-4 w-4 text-destructive" />
+                        </div>
+                        <div className="text-xl font-bold mt-1 text-destructive">
+                            ${data?.period_credit?.toLocaleString() || '0'}
+                        </div>
+                        <p className="text-[10px] text-destructive/70 mt-1">Total del periodo</p>
+                    </CardContent>
+                </Card>
+                <Card className="bg-primary/5 border-none shadow-none">
+                    <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                            <p className="text-xs font-medium text-primary uppercase">Saldo Final</p>
+                            <Scale className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className={`text-xl font-bold mt-1 ${data?.closing_balance && data.closing_balance < 0 ? 'text-destructive' : 'text-primary'}`}>
+                            ${data?.closing_balance?.toLocaleString() || '0'}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                            Al {dateRange?.to ? format(dateRange.to, "PPP", { locale: es }) : '-'}
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <DataTable
+                columns={columns}
+                data={data?.movements || []}
+                cardMode
+                useAdvancedFilter={true}
+                globalFilterFields={["description", "partner", "reference"]}
+                searchPlaceholder="Filtrar movimientos..."
+                defaultPageSize={100}
+                customFilters={
+                    <div className="px-1 py-1">
+                        <DateRangeFilter
+                            onDateChange={(range) => {
+                                if (range?.from && range?.to) {
+                                    setDateRange({ from: range.from, to: range.to })
+                                }
+                            }}
+                            defaultRange={dateRange || undefined}
+                        />
+                    </div>
+                }
+                isCustomFiltered={!!dateRange}
+                onReset={() => {
+                    if (serverDate) {
+                        setDateRange({
+                            from: new Date(serverDate.getFullYear(), serverDate.getMonth(), 1),
+                            to: serverDate
+                        })
+                    } else {
+                        setDateRange(undefined)
+                    }
+                }}
+            />
+
+            {viewingEntry && (
+                <TransactionViewModal
+                    open={!!viewingEntry}
+                    onOpenChange={(open) => !open && setViewingEntry(null)}
+                    type="journal_entry"
+                    id={viewingEntry.id}
+                />
+            )}
+        </div>
     )
 }

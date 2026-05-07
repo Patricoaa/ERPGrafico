@@ -1,9 +1,9 @@
 "use client"
 
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback } from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { toast } from "sonner"
+
 import api from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
@@ -39,39 +39,15 @@ const DEFAULT_VALUES: TreasuryFormValues = {
     pos_other_outflow_account: null,
 }
 
+import { useTreasurySettings } from "@/features/settings/hooks/useTreasurySettings"
+
 export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySettingsViewProps) {
-    const [loading, setLoading] = useState(true)
+    const { settings } = useTreasurySettings()
 
     const form = useForm<TreasuryFormValues>({
         resolver: zodResolver(treasurySchema),
-        defaultValues: DEFAULT_VALUES,
+        defaultValues: settings || DEFAULT_VALUES,
     })
-
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const res = await api.get('/accounting/settings/current/')
-                const settings = res.data
-                const formattedSettings: Partial<TreasuryFormValues> = {}
-
-                const keys = Object.keys(treasurySchema.shape) as (keyof TreasuryFormValues)[]
-                keys.forEach((key) => {
-                    const val = settings[key]
-                    formattedSettings[key] = (val ? val.toString() : null) as never
-                })
-
-                form.reset(formattedSettings as TreasuryFormValues)
-            } catch (error: unknown) {
-                const err = error as { response?: { status?: number } }
-                if (err.response?.status !== 404) {
-                    toast.error("Error al cargar configuración")
-                }
-            } finally {
-                setLoading(false)
-            }
-        }
-        fetchSettings()
-    }, [form])
 
     const onSave = useCallback(async (data: TreasuryFormValues) => {
         await api.patch('/accounting/settings/current/', data)
@@ -80,12 +56,10 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
         form,
         onSave,
-        enabled: !loading,
+        enabled: true,
     })
 
     useUnsavedChangesGuard(status)
-
-    if (loading) return <FormSkeleton hasTabs tabs={3} fields={4} />
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">

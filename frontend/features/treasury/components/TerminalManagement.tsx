@@ -28,7 +28,7 @@ interface TerminalManagementProps {
 import { ActionSlideButton } from "@/components/shared";
 
 export function TerminalManagement({ externalOpen, onExternalOpenChange, createAction }: TerminalManagementProps) {
-    const { terminals, toggleActive, deleteTerminal, refetch, isLoading } = useTerminals()
+    const { terminals, toggleActive, deleteTerminal, refetch } = useTerminals()
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingTerminal, setEditingTerminal] = useState<Terminal | null>(null)
 
@@ -76,9 +76,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                     {createAction}
                 </div>
             )}
-            {isLoading ? (
-                <CardSkeleton count={3} variant="grid" />
-            ) : terminals.length === 0 ? (
+            {terminals.length === 0 ? (
                 <EmptyState
                     context="finance"
                     title="No hay cajas POS configuradas"

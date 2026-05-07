@@ -7,7 +7,6 @@ import { FiscalYearCard } from './FiscalYearCard';
 import { FiscalYearClosingWizard } from './FiscalYearClosingWizard';
 import { NewFiscalYearModal } from './NewFiscalYearModal';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { CardSkeleton } from '@/components/shared';
 import { AccountingPeriod, FiscalYearPreviewResult } from '../../types';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 
@@ -21,23 +20,21 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
     const router = useRouter();
     const pathname = usePathname();
 
-    const { 
-        data: fiscalYears, 
-        isLoading: isLoadingYrs, 
-        isActionLoading: actionLoadingYr, 
-        fetchFiscalYears, 
-        previewClosing, 
-        closeFiscalYear, 
-        reopenFiscalYear, 
-        generateOpeningEntry 
+    const {
+        data: fiscalYears,
+        isActionLoading: actionLoadingYr,
+        refetch: fetchFiscalYears,
+        previewClosing,
+        closeFiscalYear,
+        reopenFiscalYear,
+        generateOpeningEntry
     } = useFiscalYears();
 
-    const { 
-        data: periods, 
-        isLoading: isLoadingPeriods, 
-        isActionLoading: actionLoadingPeriod, 
-        fetchPeriods, 
-        closePeriod, 
+    const {
+        data: periods,
+        isActionLoading: actionLoadingPeriod,
+        refetch: fetchPeriods,
+        closePeriod,
         reopenPeriod,
         createPeriod
     } = useAccountingPeriods();
@@ -49,11 +46,6 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
     const [activeYearToClose, setActiveYearToClose] = useState<number | null>(null);
 
     useEffect(() => {
-        fetchFiscalYears();
-        fetchPeriods();
-    }, [fetchFiscalYears, fetchPeriods]);
-
-    useEffect(() => {
         if (externalOpen) {
             requestAnimationFrame(() => setNewFYModalOpen(true));
         }
@@ -62,7 +54,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
     const handleCloseNewFY = () => {
         setNewFYModalOpen(false);
         onExternalOpenChange?.(false);
-        
+
         // Cleanup URL if modal was opened via query param
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString());
@@ -83,7 +75,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
 
     const groupedData = useMemo(() => {
         const grouped = new Map<number, AccountingPeriod[]>();
-        
+
         // Group periods by year
         periods.forEach(p => {
             if (!grouped.has(p.year)) {
@@ -105,7 +97,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
                 // Sort periods by month ascending
                 const sortedPeriods = [...yearPeriods].sort((a, b) => a.month - b.month);
                 const fyModel = fiscalYears.find(fy => fy.year === year);
-                
+
                 return {
                     year,
                     periods: sortedPeriods,
@@ -133,10 +125,6 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
             fetchPeriods();
         }
     };
-
-    if (isLoadingYrs || isLoadingPeriods) {
-        return <CardSkeleton variant="grid" count={3} />;
-    }
 
     if (groupedData.length === 0) {
         return (

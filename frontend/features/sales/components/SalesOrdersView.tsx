@@ -44,7 +44,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             pos_session: posSessionId || undefined
         }
     })
-    const { data: notes, isLoading: loadingNotes, refetch: refetchNotes } = useSalesNotes()
+    const { data: notes, refetch: refetchNotes } = useSalesNotes()
 
     const handleActionSuccess = () => {
         // Refetch both to ensure cards background update
@@ -259,7 +259,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     currentView={currentView}
                     onViewChange={(v) => setCurrentView(v as 'list' | 'card')}
                     viewOptions={viewOptions}
-                    isLoading={viewMode === 'notes' ? loadingNotes : false}
                     filterColumn={viewMode === 'orders' ? "customer_name" : "number"}
                     searchPlaceholder={viewMode === 'orders' ? "Buscar por cliente..." : "Buscar por número..."}
                     facetedFilters={[

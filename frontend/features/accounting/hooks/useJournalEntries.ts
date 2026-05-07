@@ -1,8 +1,40 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
 import { accountingApi } from '../api/accountingApi'
 import { LEDGER_QUERY_KEY } from './useLedger'
+
+export const JOURNAL_ENTRIES_QUERY_KEY = ['journal-entries']
+
+export interface JournalEntry {
+    id: number
+    number: string
+    date: string
+    description: string
+    reference: string
+    state: string
+    source_documents?: {
+        type: string
+        id: number | string
+        name: string
+        url: string
+    }[]
+}
+
+export function useJournalEntries() {
+    const { data: entries, refetch } = useSuspenseQuery({
+        queryKey: JOURNAL_ENTRIES_QUERY_KEY,
+        queryFn: async () => {
+            const data = await accountingApi.getEntries()
+            return data.results || data
+        },
+    })
+
+    return {
+        entries,
+        refetch,
+    }
+}
 
 export function useDeleteJournalEntry(options?: { onSuccess?: () => void }) {
     const queryClient = useQueryClient()
