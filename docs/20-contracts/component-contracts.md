@@ -118,6 +118,39 @@ Regla clave: usar wrappers estáticos para first-load, `SkeletonShell` para refe
 
 ---
 
+## ActionDock 🟡
+
+Floating taskbar for multi-selection actions and summary statistics. Automatically adjusts its horizontal position when Hub or Inbox panels are open.
+
+```tsx
+<ActionDock isVisible={selectedIds.length > 0}>
+  <ActionDock.Stats>
+    <ActionDock.Stat label="Seleccionados" value={selectedIds.length} />
+    <ActionDock.Stat label="Total" value={formatCurrency(total)} colorClass="text-primary" />
+  </ActionDock.Stats>
+  
+  <ActionDock.Actions>
+    <Button onClick={handleBatchAction}>Procesar</Button>
+  </ActionDock.Actions>
+</ActionDock>
+```
+
+### ActionDock Props
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `isVisible` | `boolean` | ✅ | — | Triggers entrance/exit animation |
+| `className` | `string` | ❌ | — | Merged into main container |
+
+### Sub-components
+- **`ActionDock.Section`**: Generic container for custom tools (e.g. suggestions).
+- **`ActionDock.Stats`**: Rounded container for numeric data.
+- **`ActionDock.Stat`**: Individual metric (`label` | `value` | `colorClass?`).
+- **`ActionDock.Actions`**: Button container with left border separator.
+
+States handled: entry/exit animations via `AnimatePresence`. Responsive centering via `MutationObserver` on `body`.
+
+---
+
 ## PageHeader 🟢
 
 | prop | type | required | notes |

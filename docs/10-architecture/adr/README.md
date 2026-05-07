@@ -73,6 +73,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | 0007 | Feature-Sliced Design frontend structure | Accepted |
 | 0008 | DRF ViewSets + service layer | Accepted |
 | 0009 | Celery for async side effects | Accepted |
-| 0010 | JWT auth via `/api/token/` | Accepted |
+| 0012 | Unified system versioning | Accepted |
+| 0013 | ActionDock pattern for floating tasks | Proposed |
 
 (Create individual files lazily as decisions are revisited or disputed.)

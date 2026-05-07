@@ -15,7 +15,7 @@ import { SplitAllocationDialog } from "./SplitAllocationDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 
-import { LabeledSelect, LabeledInput, TableSkeleton } from "@/components/shared"
+import { LabeledSelect, LabeledInput, TableSkeleton, ActionDock } from "@/components/shared"
 import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -890,8 +890,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                     {React.cloneElement(children as React.ReactElement<any>, {
                                                         className: cn(
                                                             (children.props as any).className,
-                                                            "group transition-all duration-200",
-                                                            isSuggested && "[&_td]:!bg-warning/15 [&_td]:!border-y [&_td]:!border-warning/30",
+                                                            "group transition-all duration-300",
+                                                            isSuggested && "[&_td]:!bg-warning/[0.08] [&_td]:!border-y [&_td]:!border-warning/40 shadow-[inset_0_0_20px_rgba(245,158,11,0.05)]",
                                                             isExcluded && "opacity-40 grayscale-[0.5] [&_td]:!bg-muted/30"
                                                         )
                                                     })}
@@ -955,8 +955,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                     {React.cloneElement(children as React.ReactElement<any>, {
                                                         className: cn(
                                                             (children.props as any).className,
-                                                            "group",
-                                                            isSuggested && "[&_td]:!bg-warning/20 [&_td]:!border-y [&_td]:!border-warning/40"
+                                                            "group transition-all duration-300",
+                                                            isSuggested && "[&_td]:!bg-warning/[0.12] [&_td]:!border-y [&_td]:!border-warning/50 shadow-[inset_0_0_20px_rgba(245,158,11,0.08)]"
                                                         )
                                                     })}
                                                 </DraggablePayment>
@@ -1319,166 +1319,157 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 />
 
                 {/* Floating Bottom Taskbar */}
-                {(selectedLines.length > 0 || selectedPayments.length > 0) && (
-                    <div
-                        className={cn(
-                            "fixed bottom-6 z-[100] bg-card border shadow-elevated rounded-full px-6 py-3 flex items-center gap-8 animate-in slide-in-from-bottom-8 transition-all duration-300",
-                            isHubOpen ? "left-[calc(50%-200px)] -translate-x-1/2" : "left-1/2 -translate-x-1/2"
-                        )}
-                    >
-                        {/* Suggestions Section */}
-                        {selectedLines.length === 1 && suggestions.length > 0 && !(
-                            suggestions.length === 1 && selectedPayments.some(p => p.id === (suggestions[0].is_batch ? suggestions[0].batch_data?.id : suggestions[0].payment_data?.id))
-                        ) ? (
-                            <div className="flex items-center gap-2 mr-2">
-                                {suggestions.length === 1 ? (
-                                    <button
-                                        onClick={() => {
-                                            const s = suggestions[0]
-                                            const paymentId = s.is_batch ? s.batch_data?.id : s.payment_data?.id
-                                            const item = unreconciledPayments.find(p => p.id === paymentId)
-                                            if (item) {
-                                                setSelectedPayments([item])
-                                            } else if (s.is_batch && s.batch_data) {
-                                                // Map batch data if not found in current page
-                                                setSelectedPayments([{
-                                                    id: s.batch_data.id, // Using batch ID as primary for selection if movement not in list
-                                                    amount: s.difference, // Fallback amount
-                                                    date: statement?.statement_date || "",
-                                                    contact_name: s.batch_data.name || "Lote Terminal",
-                                                    terminal_batch_id: s.batch_data.id,
-                                                    display_id: s.batch_data.id.toString()
-                                                } as any])
-                                            } else if (s.payment_data) {
-                                                setSelectedPayments([s.payment_data as any])
-                                            }
-                                        }}
-                                        className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-colors rounded-full py-1.5 pl-4 pr-2 group"
-                                    >
-                                        <div className="flex flex-col items-start leading-none">
-                                            <span className="text-[8px] font-black uppercase text-warning/70 mb-0.5 tracking-wider">Usar Sugerencia</span>
-                                            <span className="text-[11px] font-bold truncate max-w-[180px]">{suggestions[0].payment_data?.contact_name || suggestions[0].batch_data?.display_id || suggestions[0].batch_data?.name}</span>
-                                        </div>
-                                        <div className="h-7 w-7 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
-                                            <ChevronRight className="h-4 w-4 text-warning group-hover:translate-x-0.5 transition-transform" />
-                                        </div>
-                                    </button>
-                                ) : (
-                                    <div className="flex items-center gap-3 bg-warning/10 border border-warning/20 rounded-full py-1.5 pl-4 pr-4">
-                                        <div className="flex flex-col items-start">
-                                            <span className="text-[11px] font-bold text-warning">{suggestions.length} Sugerencias</span>
-                                        </div>
-                                        <Sparkles className="h-4 w-4 text-warning animate-pulse" />
-                                    </div>
-                                )}
+                <ActionDock isVisible={selectedLines.length > 0 || selectedPayments.length > 0}>
+                    {/* Suggestions Section */}
+                    {selectedLines.length === 1 && suggestions.length > 0 && !(
+                        suggestions.length === 1 && selectedPayments.some(p => p.id === (suggestions[0].is_batch ? suggestions[0].batch_data?.id : suggestions[0].payment_data?.id))
+                    ) ? (
+                        <ActionDock.Section className="mr-2 flex flex-col items-start gap-0">
+                            <div className="flex items-center gap-1.5 mb-1">
+                                <Sparkles className="h-3 w-3 text-warning animate-pulse" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-warning/80">Sugerencias Disponibles</span>
                             </div>
-                        ) : selectedPayments.length === 1 && lineSuggestions.length > 0 && !(
-                            lineSuggestions.length === 1 && selectedLines.some(l => l.id === lineSuggestions[0].line_data?.id)
-                        ) ? (
-                            <div className="flex items-center gap-2 mr-2">
-                                {lineSuggestions.length === 1 ? (
-                                    <button
-                                        onClick={() => {
-                                            const s = lineSuggestions[0]
-                                            const lineId = s.line_data?.id
-                                            const item = unreconciledLines.find(l => l.id === lineId)
-                                            if (item) {
-                                                setSelectedLines([item])
-                                            } else if (s.line_data) {
-                                                setSelectedLines([s.line_data as any])
-                                            }
-                                        }}
-                                        className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-colors rounded-full py-1.5 pr-4 pl-2 group"
-                                    >
-                                        <div className="h-7 w-7 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
-                                            <ChevronLeft className="h-4 w-4 text-warning group-hover:-translate-x-0.5 transition-transform" />
-                                        </div>
-                                        <div className="flex flex-col items-end leading-none text-right">
-                                            <span className="text-[8px] font-black uppercase text-warning/70 mb-0.5 tracking-wider">Usar Sugerencia</span>
-                                            <span className="text-[11px] font-bold truncate max-w-[180px]">{lineSuggestions[0].line_data?.description}</span>
-                                        </div>
-                                    </button>
-                                ) : (
-                                    <div className="flex items-center gap-3 bg-warning/10 border border-warning/20 rounded-full py-1.5 pl-4 pr-4">
-                                        <div className="flex flex-col items-start">
-                                            <span className="text-[11px] font-bold text-warning">{lineSuggestions.length} Sugerencias</span>
-                                        </div>
-                                        <Sparkles className="h-4 w-4 text-warning animate-pulse" />
-                                    </div>
-                                )}
-                            </div>
-                        ) : null}
-
-                        {/* Summary Stats (Always Visible - Unified Unit) */}
-                        <div className="flex items-center gap-8 bg-muted/40 px-8 py-2.5 rounded-full border border-border/40 shadow-inner">
-                            <div className="flex flex-col border-r border-border/40 pr-8 last:border-0 h-8 justify-center">
-                                <span className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-1.5">Banco ({selectedLines.length})</span>
-                                <span className="text-sm font-mono font-bold text-info leading-none">
-                                    {formatCurrency(safeSum(selectedLines.map(l => Math.abs(safeDifference(safeParseFloat(l.credit), safeParseFloat(l.debit))))))}
-                                </span>
-                            </div>
-                            <div className="flex flex-col border-r border-border/40 pr-8 last:border-0 h-8 justify-center">
-                                <span className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-1.5">Tesorería ({selectedPayments.length})</span>
-                                <span className="text-sm font-mono font-bold text-primary leading-none">
-                                    {formatCurrency(safeSum(selectedPayments.map(p => Math.abs(safeParseFloat(p.amount)))))}
-                                </span>
-                            </div>
-                            <div className="flex flex-col items-end last:border-0 h-8 justify-center pl-2">
-                                <span className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-1.5">Diferencia</span>
-                                <span className={cn(
-                                    "text-sm font-mono font-bold leading-none",
-                                    (() => {
-                                        const lineTotal = safeSum(selectedLines.map(l => Math.abs(safeDifference(safeParseFloat(l.credit), safeParseFloat(l.debit)))))
-                                        const payTotal = safeSum(selectedPayments.map(p => Math.abs(safeParseFloat(p.amount))))
-                                        const diff = safeDifference(lineTotal, payTotal)
-                                        return isZeroTolerance(diff) ? "text-success" : "text-warning"
-                                    })()
-                                )}>
-                                    {formatCurrency(
-                                        safeDifference(
-                                            safeSum(selectedLines.map(l => Math.abs(safeDifference(safeParseFloat(l.credit), safeParseFloat(l.debit))))),
-                                            safeSum(selectedPayments.map(p => Math.abs(safeParseFloat(p.amount))))
-                                        )
-                                    )}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 border-l pl-6 py-1">
-                            {selectedLines.length > 0 && selectedPayments.length === 0 && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-9 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive rounded-full px-4"
-                                    onClick={() => setActionDialog({ open: true, type: 'bulk_exclude' })}
+                            {suggestions.length === 1 ? (
+                                <button
+                                    onClick={() => {
+                                        const s = suggestions[0]
+                                        const paymentId = s.is_batch ? s.batch_data?.id : s.payment_data?.id
+                                        const item = unreconciledPayments.find(p => p.id === paymentId)
+                                        if (item) {
+                                            setSelectedPayments([item])
+                                        } else if (s.is_batch && s.batch_data) {
+                                            setSelectedPayments([{
+                                                id: s.batch_data.id,
+                                                amount: s.difference,
+                                                date: statement?.statement_date || "",
+                                                contact_name: s.batch_data.name || "Lote Terminal",
+                                                terminal_batch_id: s.batch_data.id,
+                                                display_id: s.batch_data.id.toString()
+                                            } as any])
+                                        } else if (s.payment_data) {
+                                            setSelectedPayments([s.payment_data as any])
+                                        }
+                                    }}
+                                    className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1.5 pl-4 pr-2 group shadow-sm hover:shadow-md"
                                 >
-                                    <Ban className="h-3 w-3 mr-1.5" />
-                                    Excluir Seleccionados
-                                </Button>
+                                    <div className="flex flex-col items-start leading-none">
+                                        <span className="text-[8px] font-black uppercase text-warning/70 mb-0.5 tracking-wider">Vincular con</span>
+                                        <span className="text-[11px] font-bold truncate max-w-[180px]">{suggestions[0].payment_data?.contact_name || suggestions[0].batch_data?.display_id || suggestions[0].batch_data?.name}</span>
+                                    </div>
+                                    <div className="h-7 w-7 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
+                                        <ChevronRight className="h-4 w-4 text-warning group-hover:translate-x-0.5 transition-transform" />
+                                    </div>
+                                </button>
+                            ) : (
+                                <div className="flex items-center gap-3 bg-warning/10 border border-warning/20 rounded-full py-1.5 px-4 shadow-sm">
+                                    <span className="text-[11px] font-bold text-warning">Hemos encontrado {suggestions.length} posibles coincidencias</span>
+                                </div>
                             )}
+                        </ActionDock.Section>
+                    ) : selectedPayments.length === 1 && lineSuggestions.length > 0 && !(
+                        lineSuggestions.length === 1 && selectedLines.some(l => l.id === lineSuggestions[0].line_data?.id)
+                    ) ? (
+                        <ActionDock.Section className="mr-2 flex flex-col items-end gap-0">
+                            <div className="flex items-center gap-1.5 mb-1">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-warning/80">Sugerencias Disponibles</span>
+                                <Sparkles className="h-3 w-3 text-warning animate-pulse" />
+                            </div>
+                            {lineSuggestions.length === 1 ? (
+                                <button
+                                    onClick={() => {
+                                        const s = lineSuggestions[0]
+                                        const lineId = s.line_data?.id
+                                        const item = unreconciledLines.find(l => l.id === lineId)
+                                        if (item) {
+                                            setSelectedLines([item])
+                                        } else if (s.line_data) {
+                                            setSelectedLines([s.line_data as any])
+                                        }
+                                    }}
+                                    className="flex items-center gap-3 bg-warning/10 border border-warning/20 hover:bg-warning/20 transition-all rounded-full py-1.5 pr-4 pl-2 group shadow-sm hover:shadow-md"
+                                >
+                                    <div className="h-7 w-7 rounded-full bg-warning/20 flex items-center justify-center group-hover:bg-warning/30 transition-all duration-300">
+                                        <ChevronLeft className="h-4 w-4 text-warning group-hover:-translate-x-0.5 transition-transform" />
+                                    </div>
+                                    <div className="flex flex-col items-end leading-none text-right">
+                                        <span className="text-[8px] font-black uppercase text-warning/70 mb-0.5 tracking-wider">Vincular con</span>
+                                        <span className="text-[11px] font-bold truncate max-w-[180px]">{lineSuggestions[0].line_data?.description}</span>
+                                    </div>
+                                </button>
+                            ) : (
+                                <div className="flex items-center gap-3 bg-warning/10 border border-warning/20 rounded-full py-1.5 px-4 shadow-sm">
+                                    <span className="text-[11px] font-bold text-warning">Hemos encontrado {lineSuggestions.length} posibles coincidencias</span>
+                                </div>
+                            )}
+                        </ActionDock.Section>
+                    ) : null}
 
+                    {/* Summary Stats */}
+                    <ActionDock.Stats>
+                        <ActionDock.Stat
+                            label={`Banco (${selectedLines.length})`}
+                            value={(() => {
+                                return formatCurrency(safeSum(selectedLines.map(l => Math.abs(safeDifference(safeParseFloat(l.credit), safeParseFloat(l.debit))))))
+                            })()}
+                            colorClass="text-info"
+                        />
+                        <ActionDock.Stat
+                            label={`Tesorería (${selectedPayments.length})`}
+                            value={(() => {
+                                return formatCurrency(safeSum(selectedPayments.map(p => Math.abs(safeParseFloat(p.amount)))))
+                            })()}
+                            colorClass="text-primary"
+                        />
+                        <ActionDock.Stat
+                            label="Diferencia"
+                            value={(() => {
+                                const lineTotal = safeSum(selectedLines.map(l => Math.abs(safeDifference(safeParseFloat(l.credit), safeParseFloat(l.debit)))))
+                                const payTotal = safeSum(selectedPayments.map(p => Math.abs(safeParseFloat(p.amount))))
+                                return formatCurrency(safeDifference(lineTotal, payTotal))
+                            })()}
+                            colorClass={(() => {
+                                const lineTotal = safeSum(selectedLines.map(l => Math.abs(safeDifference(safeParseFloat(l.credit), safeParseFloat(l.debit)))))
+                                const payTotal = safeSum(selectedPayments.map(p => Math.abs(safeParseFloat(p.amount))))
+                                const diff = safeDifference(lineTotal, payTotal)
+                                return isZeroTolerance(diff) ? "text-success" : "text-warning"
+                            })()}
+                        />
+                    </ActionDock.Stats>
+
+                    <ActionDock.Actions>
+                        {selectedLines.length > 0 && selectedPayments.length === 0 && (
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-9 text-xs text-muted-foreground hover:bg-muted rounded-full px-4"
-                                onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}
+                                className="h-9 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive rounded-full px-4"
+                                onClick={() => setActionDialog({ open: true, type: 'bulk_exclude' })}
                             >
-                                <X className="h-3 w-3 mr-1.5" />
-                                Limpiar
+                                <Ban className="h-3 w-3 mr-1.5" />
+                                Excluir Seleccionados
                             </Button>
+                        )}
 
-                            <Button
-                                size="sm"
-                                className="h-9 px-6 text-xs font-bold shadow-sm transition-transform active:scale-95 rounded-full"
-                                onClick={() => setActionDialog({ open: true, type: 'confirm_match' })}
-                                disabled={matching || selectedLines.length === 0 || selectedPayments.length === 0}
-                            >
-                                {matching ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                                Conciliar
-                            </Button>
-                        </div>
-                    </div>
-                )}
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-9 text-xs text-muted-foreground hover:bg-muted rounded-full px-4"
+                            onClick={() => { setSelectedLines([]); setSelectedPayments([]); }}
+                        >
+                            <X className="h-3 w-3 mr-1.5" />
+                            Limpiar
+                        </Button>
+
+                        <Button
+                            size="sm"
+                            className="h-9 px-6 text-xs font-bold shadow-sm transition-transform active:scale-95 rounded-full"
+                            onClick={() => setActionDialog({ open: true, type: 'confirm_match' })}
+                            disabled={matching || selectedLines.length === 0 || selectedPayments.length === 0}
+                        >
+                            {matching ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                            Conciliar
+                        </Button>
+                    </ActionDock.Actions>
+                </ActionDock>
 
                 <ActionConfirmModal
                     open={actionDialog.open && actionDialog.type === 'confirm_match'}
