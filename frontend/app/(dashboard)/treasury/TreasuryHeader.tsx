@@ -62,7 +62,7 @@ export function TreasuryHeader() {
         },
         {
             value: "config",
-            label: "Config",
+            label: "Configuración",
             iconName: "settings",
             href: "/treasury/settings",
             subTabs: [
@@ -79,7 +79,6 @@ export function TreasuryHeader() {
         tabs,
         activeValue,
         subActiveValue,
-        configHref: "/treasury/settings"
     }
 
     const getHeaderConfig = () => {

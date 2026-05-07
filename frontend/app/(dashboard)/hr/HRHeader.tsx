@@ -27,7 +27,7 @@ export function HRHeader() {
         { value: "payrolls", label: "Liquidaciones", iconName: "file-spreadsheet", href: "/hr/payrolls" },
         { 
             value: "config", 
-            label: "Config", 
+            label: "Configuración", 
             iconName: "settings", 
             href: "/hr/settings",
             subTabs: [
@@ -44,7 +44,6 @@ export function HRHeader() {
         tabs,
         activeValue,
         subActiveValue,
-        configHref: "/hr/settings"
     }
 
     const getHeaderConfig = () => {

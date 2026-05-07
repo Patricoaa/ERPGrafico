@@ -84,7 +84,7 @@ export function SalesHeader() {
         },
         {
             value: "config",
-            label: "Config",
+            label: "Configuración",
             iconName: "settings",
             href: "/sales/settings",
             subTabs: [
@@ -102,7 +102,6 @@ export function SalesHeader() {
         tabs,
         activeValue,
         subActiveValue,
-        configHref: "/sales/settings"
     }
 
     const getHeaderConfig = () => {

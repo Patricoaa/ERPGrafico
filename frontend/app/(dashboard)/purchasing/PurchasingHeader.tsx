@@ -16,7 +16,7 @@ export function PurchasingHeader() {
     const tabs = [
         { value: "orders", label: "Órdenes", iconName: "shopping-cart", href: "/purchasing/orders" },
         { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: "/purchasing/notes" },
-        { value: "config", label: "Config", iconName: "settings", href: "/purchasing/settings" },
+        { value: "config", label: "Configuración", iconName: "settings", href: "/purchasing/settings" },
     ]
 
     const navigation = {
@@ -25,7 +25,6 @@ export function PurchasingHeader() {
         tabs,
         activeValue,
         subActiveValue,
-        configHref: "/purchasing/settings"
     }
 
     const getHeaderConfig = () => {

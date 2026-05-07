@@ -28,7 +28,7 @@ export function AccountingHeader() {
         { value: "tax", label: "Impuestos mensuales (F29)", iconName: "landmark", href: "/accounting/tax" },
         {
             value: "config",
-            label: "Config",
+            label: "Configuración",
             iconName: "settings",
             href: "/accounting/settings",
             subTabs: [
@@ -45,7 +45,6 @@ export function AccountingHeader() {
         tabs,
         activeValue,
         subActiveValue,
-        configHref: "/accounting/settings"
     }
 
     const getHeaderConfig = () => {
