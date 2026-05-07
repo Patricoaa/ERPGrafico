@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
+
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -11,7 +11,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FileText, Lock } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { cn } from "@/lib/utils"
+
 import { POSReport } from "@/features/pos/components/POSReport"
 import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
 
@@ -42,33 +42,17 @@ interface POSSessionsViewProps {
     hideHeader?: boolean
 }
 
+import { usePOSSessions } from "@/features/pos/hooks/usePOSSessions"
+
 export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) => {
     const router = useRouter()
-    const [sessions, setSessions] = useState<POSSession[]>([])
-    const [loading, setLoading] = useState(true)
+    const { sessions, refetch } = usePOSSessions()
 
     const [selectedSession, setSelectedSession] = useState<POSSession | null>(null)
     const [reportDialogOpen, setReportDialogOpen] = useState(false)
     const [reportData, setReportData] = useState<Record<string, unknown> | null>(null)
     const [reportType, setReportType] = useState<"X" | "Z">("X")
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
-
-    useEffect(() => {
-        fetchSessions()
-    }, [])
-
-    const fetchSessions = async () => {
-        try {
-            setLoading(true)
-            const response = await api.get('/treasury/pos-sessions/')
-            setSessions(response.data)
-        } catch (error) {
-            console.error('Error fetching sessions:', error)
-            toast.error("Error al cargar las sesiones")
-        } finally {
-            setLoading(false)
-        }
-    }
 
     const handleShowReport = async (session: POSSession, type: "X" | "Z") => {
         try {
@@ -89,7 +73,7 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
             setReportData(summaryResponse.data)
             setReportType("Z")
             setReportDialogOpen(true)
-            fetchSessions()
+            refetch()
         } catch (error) {
             console.error("Error fetching Z report:", error)
         }
@@ -176,7 +160,6 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                     columns={columns}
                     data={sessions}
                     cardMode
-                    isLoading={loading}
                     globalFilterFields={["user_name", "status_display", "id"]}
                     searchPlaceholder="Buscar por cajero..."
                     facetedFilters={[{ column: "status", title: "Estado", options: [{ label: "Abierta", value: "OPEN" }, { label: "Cerrada", value: "CLOSED" }, { label: "Cerrando", value: "CLOSING" }] }]}

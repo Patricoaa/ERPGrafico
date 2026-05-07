@@ -24,6 +24,7 @@ import {
 } from "@/components/shared"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { Column } from "@tanstack/react-table";
+import { useBanks, usePaymentMethods, Bank, PaymentMethod } from "@/features/treasury/hooks/useMasterData"
 
 // --- Schemas ---
 
@@ -48,14 +49,6 @@ type PaymentMethodFormValues = z.infer<typeof paymentMethodSchema>
 
 // --- Bank Management ---
 
-interface Bank {
-    id: number
-    name: string
-    code: string | null
-    swift_code?: string | null
-    is_active: boolean
-}
-
 interface BankManagementProps {
     externalOpen?: boolean
     onOpenChange?: (open: boolean) => void
@@ -63,32 +56,15 @@ interface BankManagementProps {
 }
 
 export function BankManagement({ externalOpen, onOpenChange, createAction }: BankManagementProps) {
-    const [banks, setBanks] = useState<Bank[]>([])
-    const [loading, setLoading] = useState(true)
+    const { banks, refetch } = useBanks()
     const [dialogOpen, setDialogOpen] = useState(false)
     const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
-
-    const fetchBanks = async () => {
-        setLoading(true)
-        try {
-            const response = await api.get("/treasury/banks/")
-            setBanks(response.data)
-        } catch (error) {
-            toast.error("Error al cargar bancos")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        requestAnimationFrame(() => fetchBanks())
-    }, [])
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/treasury/banks/${id}/`)
             toast.success("Banco eliminado")
-            fetchBanks()
+            refetch()
         } catch (error) {
             toast.error("Error al eliminar banco")
         }
@@ -164,7 +140,6 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                 columns={columns}
                 data={banks}
                 cardMode
-                isLoading={loading}
                 searchPlaceholder="Buscar bancos..."
                 filterColumn="name"
                 useAdvancedFilter={true}
@@ -186,7 +161,7 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                 onSuccess={() => {
                     setDialogOpen(false)
                     onOpenChange?.(false)
-                    fetchBanks()
+                    refetch()
                 }}
             />
 
@@ -355,20 +330,6 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
 
 // --- Payment Method Management ---
 
-interface PaymentMethod {
-    id: number
-    name: string
-    method_type: string
-    method_type_display: string
-    treasury_account: number | { id: number; name?: string }
-    treasury_account_name: string
-    is_active: boolean
-    requires_reference: boolean
-    allow_for_sales: boolean
-    allow_for_purchases: boolean
-    is_terminal_integration?: boolean
-}
-
 interface PaymentMethodManagementProps {
     externalOpen?: boolean
     onOpenChange?: (open: boolean) => void
@@ -376,32 +337,15 @@ interface PaymentMethodManagementProps {
 }
 
 export function PaymentMethodManagement({ externalOpen, onOpenChange, createAction }: PaymentMethodManagementProps) {
-    const [methods, setMethods] = useState<PaymentMethod[]>([])
-    const [loading, setLoading] = useState(true)
+    const { methods, refetch } = usePaymentMethods()
     const [dialogOpen, setDialogOpen] = useState(false)
     const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
-
-    const fetchMethods = async () => {
-        setLoading(true)
-        try {
-            const response = await api.get("/treasury/payment-methods/")
-            setMethods(response.data)
-        } catch (error) {
-            toast.error("Error al cargar métodos")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        requestAnimationFrame(() => fetchMethods())
-    }, [])
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/treasury/payment-methods/${id}/`)
             toast.success("Método eliminado")
-            fetchMethods()
+            refetch()
         } catch (error) {
             toast.error("Error al eliminar")
         }
@@ -465,7 +409,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                         {row.original.allow_for_sales && (
                             <DataCell.Badge
                                 variant="outline"
-                                className="text-[10px] px-1 h-3.5 bg-income/5 text-income border-income/10 font-black uppercase tracking-tighter" // intentional: badge density
+                                className="text-[10px] px-1 h-3.5 bg-income/5 text-income border-income/10 font-black uppercase tracking-tighter"
                             >
                                 Ventas
                             </DataCell.Badge>
@@ -473,7 +417,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                         {row.original.allow_for_purchases && (
                             <DataCell.Badge
                                 variant="outline"
-                                className="text-[10px] px-1 h-3.5 bg-asset/5 text-asset border-asset/10 font-black uppercase tracking-tighter" // intentional: badge density
+                                className="text-[10px] px-1 h-3.5 bg-asset/5 text-asset border-asset/10 font-black uppercase tracking-tighter"
                             >
                                 Compras
                             </DataCell.Badge>
@@ -528,7 +472,6 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                 columns={columns}
                 data={methods}
                 cardMode
-                isLoading={loading}
                 searchPlaceholder="Buscar por nombre o cuenta..."
                 filterColumn="name"
                 useAdvancedFilter={true}
@@ -550,7 +493,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                 onSuccess={() => {
                     setDialogOpen(false)
                     onOpenChange?.(false)
-                    fetchMethods()
+                    refetch()
                 }}
             />
 
@@ -756,5 +699,3 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
         </BaseModal>
     )
 }
-
-

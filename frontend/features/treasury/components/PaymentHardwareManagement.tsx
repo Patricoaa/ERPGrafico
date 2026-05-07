@@ -48,8 +48,8 @@ export function PaymentHardwareManagement({
         }
     }, [externalActiveTab])
 
-    const { providers, isLoading: loadingProviders, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
-    const { devices, isLoading: loadingDevices, refetch: refetchDevices, deleteDevice } = useTerminalDevices()
+    const { providers, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
+    const { devices, refetch: refetchDevices, deleteDevice } = useTerminalDevices()
 
     const [providerDialogOpen, setProviderDialogOpen] = useState(false)
     const [editingProvider, setEditingProvider] = useState<PaymentTerminalProvider | null>(null)
@@ -106,7 +106,6 @@ export function PaymentHardwareManagement({
         } catch (error) { }
     })
 
-    const isLoading = loadingProviders || loadingDevices
 
     return (
         <div className="space-y-6">
@@ -117,11 +116,7 @@ export function PaymentHardwareManagement({
             )}
             {activeTab === "providers" ? (
                 <div className="m-0 outline-none">
-                    {loadingProviders ? (
-                        <div className="flex items-center justify-center p-12">
-                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground opacity-20" />
-                        </div>
-                    ) : providers.length === 0 ? (
+                    {providers.length === 0 ? (
                         <EmptyState
                             context="finance"
                             title="No hay proveedores configurados"
@@ -143,11 +138,7 @@ export function PaymentHardwareManagement({
                 </div>
             ) : (
                 <div className="m-0 outline-none">
-                    {loadingDevices ? (
-                        <div className="flex items-center justify-center p-12">
-                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground opacity-20" />
-                        </div>
-                    ) : devices.length === 0 ? (
+                    {devices.length === 0 ? (
                         <EmptyState
                             context="production"
                             title="No hay dispositivos registrados"

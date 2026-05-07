@@ -2,17 +2,14 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react"
 
-import { toast } from "sonner"
-import api from "@/lib/api"
-import { Button } from "@/components/ui/button"
+
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Edit, Trash2 } from "lucide-react"
+import { Edit } from "lucide-react"
 import { UserForm } from "@/features/users/components/UserForm"
-import { GroupForm } from "@/features/users/components/GroupForm"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/features/settings/components/GroupManagement"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
@@ -23,25 +20,11 @@ interface UsersSettingsViewProps {
     activeTab: string
 }
 
+import { useUsers } from "@/features/users/hooks/useUsers"
+
 export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
-    const [loading, setLoading] = useState(true)
-    const [users, setUsers] = useState<AppUser[]>([])
+    const { users, refetch } = useUsers()
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
-
-    const fetchUsers = useCallback(async () => {
-        try {
-            const res = await api.get('/core/users/')
-            setUsers(res.data.results || res.data)
-        } catch (error) {
-            toast.error("Error al cargar usuarios")
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        fetchUsers()
-    }, [fetchUsers])
 
     const columns: ColumnDef<AppUser>[] = useMemo(() => [
         {
@@ -111,8 +94,8 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
             accessorKey: "is_active",
             header: "Estado",
             cell: ({ row }) => (
-                <StatusBadge 
-                    status={row.original.is_active ? "active" : "inactive"} 
+                <StatusBadge
+                    status={row.original.is_active ? "active" : "inactive"}
                 />
             ),
         },
@@ -125,20 +108,20 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                 return (
                     <UserForm
                         initialData={transformedUser}
-                        onSuccess={fetchUsers}
+                        onSuccess={refetch}
                         trigger={<DataCell.Action icon={Edit} title="Editar" />}
                     />
                 )
             }
         })
-    ], [fetchUsers])
+    ], [refetch])
 
     const usersCreateAction = useMemo(() => (
         <UserForm
-            onSuccess={fetchUsers}
+            onSuccess={refetch}
             trigger={<ToolbarCreateButton label="Nuevo Usuario" />}
         />
-    ), [fetchUsers])
+    ), [refetch])
 
 
 
@@ -169,7 +152,6 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                     <DataTable
                         columns={columns}
                         data={users}
-                        isLoading={loading}
                         cardMode
                         globalFilterFields={["username", "email", "first_name", "last_name"]}
                         searchPlaceholder="Buscar usuario por nombre, email o username..."

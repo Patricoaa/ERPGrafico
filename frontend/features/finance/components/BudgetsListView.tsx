@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import api from "@/lib/api"
-import { Plus, Pencil, Search, FileText, Calendar, Wallet } from "lucide-react"
+
+import { Plus, Pencil, FileText, Calendar, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { LabeledInput } from "@/components/shared"
 import { toast } from "sonner"
@@ -12,8 +12,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
-import { EmptyState } from "@/components/shared/EmptyState"
+
 import { BudgetEditor } from "@/features/finance/components/BudgetEditor"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 
@@ -33,12 +32,14 @@ interface BudgetsListViewProps {
     createAction?: React.ReactNode
 }
 
+import { useBudgets, type Budget } from "@/features/finance/hooks/useBudgets"
+
 export function BudgetsListView({ externalOpen, onExternalOpenChange, createAction }: BudgetsListViewProps) {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const [budgets, setBudgets] = useState<Budget[]>([])
-    const [loading, setLoading] = useState(true)
+
+    const { budgets, refetch, createBudget } = useBudgets()
 
     // Create Modal State
     const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -74,34 +75,14 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
     const [isEditorOpen, setIsEditorOpen] = useState(false)
     const [budgetToEdit, setBudgetToEdit] = useState<Budget | null>(null)
 
-    useEffect(() => {
-        loadBudgets()
-    }, [])
-
-    const loadBudgets = async () => {
-        setLoading(true)
-        try {
-            const res = await api.get("/accounting/budgets/")
-            setBudgets(res.data)
-        } catch (err) {
-            console.error(err)
-            toast.error("Error al cargar presupuestos")
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const handleCreate = async () => {
         try {
-            await api.post("/accounting/budgets/", newBudget)
-            toast.success("Presupuesto creado exitosamente")
+            await createBudget(newBudget)
             setIsCreateOpen(false)
-            handleCreateOpenChange(false) // Ensure clean closure
-            loadBudgets()
+            handleCreateOpenChange(false)
             setNewBudget({ name: "", start_date: "", end_date: "", description: "" })
-        } catch (err) {
-            console.error(err)
-            toast.error("Error al crear presupuesto")
+        } catch {
+            // Error handled by hook toast
         }
     }
 
@@ -170,7 +151,6 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
             <DataTable
                 columns={columns}
                 data={budgets}
-                isLoading={loading}
                 cardMode
                 globalFilterFields={["name"]}
                 searchPlaceholder="Buscar presupuestos..."
@@ -229,7 +209,7 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
                     onOpenChange={setIsEditorOpen}
                     budget={budgetToEdit}
                     onSave={() => {
-                        loadBudgets() // Optional: refresh if metadata changes, mostly for consistency
+                        refetch() // Optional: refresh if metadata changes, mostly for consistency
                         toast.success("Presupuesto actualizado")
                     }}
                 />

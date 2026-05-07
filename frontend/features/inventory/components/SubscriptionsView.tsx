@@ -4,12 +4,11 @@ import { showApiError } from "@/lib/errors"
 
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
 import {
-    ColumnDef,
-    RowSelectionState
+    ColumnDef
 } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
+import type { BulkAction } from "@/components/shared"
 import {
     Pause,
     Play,
@@ -76,7 +75,6 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
     const [stats, setStats] = useState<Stats | null>(null)
     const [loading, setLoading] = useState(true)
-    const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
 
 
     // Form & Actions state
@@ -389,59 +387,58 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
         }),
     ], [handlePause, handleResume, openEditForm, handleArchive])
 
-    const selectedSubscriptions = useMemo(() => {
-        return subscriptions.filter((_, index) => selectedRows[index])
-    }, [selectedRows, subscriptions])
-
-    const canPauseAll = useMemo(() => {
-        if (selectedSubscriptions.length === 0) return false
-        return selectedSubscriptions.every(s => s.status === "ACTIVE")
-    }, [selectedSubscriptions])
-
-    const canResumeAll = useMemo(() => {
-        if (selectedSubscriptions.length === 0) return false
-        return selectedSubscriptions.every(s => s.status === "PAUSED")
-    }, [selectedSubscriptions])
-
-    const canArchiveAllActive = useMemo(() => {
-        if (selectedSubscriptions.length === 0) return false
-        return selectedSubscriptions.every(s => s.status === "ACTIVE" || s.status === "PAUSED")
-    }, [selectedSubscriptions])
-
-    const handleBulkPause = async () => {
-        try {
-            await Promise.all(selectedSubscriptions.map(s => api.post(`/inventory/subscriptions/${s.id}/pause/`)))
-            toast.success(`${selectedSubscriptions.length} suscripciones pausadas`)
-            setSelectedRows({})
-            fetchSubscriptions()
-            fetchStats()
-        } catch (error) {
-            showApiError(error, "Error al pausar suscripciones")
-        }
-    }
-
-    const handleBulkResume = async () => {
-        try {
-            await Promise.all(selectedSubscriptions.map(s => api.post(`/inventory/subscriptions/${s.id}/resume/`)))
-            toast.success(`${selectedSubscriptions.length} suscripciones reactivadas`)
-            setSelectedRows({})
-            fetchSubscriptions()
-            fetchStats()
-        } catch (error) {
-            showApiError(error, "Error al reactivar suscripciones")
-        }
-    }
-
-    const handleBulkArchive = async () => {
-        try {
-            await Promise.all(selectedSubscriptions.map(s => api.patch(`/inventory/products/${s.product}/`, { active: false })))
-            toast.success(`${selectedSubscriptions.length} productos de suscripción archivados`)
-            setSelectedRows({})
-            fetchSubscriptions()
-        } catch (error) {
-            showApiError(error, "Error al archivar suscripciones")
-        }
-    }
+    const bulkActions = useMemo<BulkAction<Subscription>[]>(() => [
+        {
+            key: "pause",
+            label: "Pausar",
+            icon: Pause,
+            intent: "warning",
+            disabled: (items) => items.length === 0 || !items.every(s => s.status === "ACTIVE"),
+            onClick: async (items) => {
+                try {
+                    await Promise.all(items.map(s => api.post(`/inventory/subscriptions/${s.id}/pause/`)))
+                    toast.success(`${items.length} suscripciones pausadas`)
+                    fetchSubscriptions()
+                    fetchStats()
+                } catch (error) {
+                    showApiError(error, "Error al pausar suscripciones")
+                }
+            },
+        },
+        {
+            key: "resume",
+            label: "Reanudar",
+            icon: Play,
+            intent: "success",
+            disabled: (items) => items.length === 0 || !items.every(s => s.status === "PAUSED"),
+            onClick: async (items) => {
+                try {
+                    await Promise.all(items.map(s => api.post(`/inventory/subscriptions/${s.id}/resume/`)))
+                    toast.success(`${items.length} suscripciones reactivadas`)
+                    fetchSubscriptions()
+                    fetchStats()
+                } catch (error) {
+                    showApiError(error, "Error al reactivar suscripciones")
+                }
+            },
+        },
+        {
+            key: "archive",
+            label: "Archivar",
+            icon: Archive,
+            intent: "destructive",
+            disabled: (items) => items.length === 0 || !items.every(s => s.status === "ACTIVE" || s.status === "PAUSED"),
+            onClick: async (items) => {
+                try {
+                    await Promise.all(items.map(s => api.patch(`/inventory/products/${s.product}/`, { active: false })))
+                    toast.success(`${items.length} productos de suscripción archivados`)
+                    fetchSubscriptions()
+                } catch (error) {
+                    showApiError(error, "Error al archivar suscripciones")
+                }
+            },
+        },
+    ], [fetchSubscriptions, fetchStats])
 
     return (
         <PageContainer className={cn(hideHeader && "pt-0")}>
@@ -517,41 +514,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                             ]}
                             useAdvancedFilter={true}
                             defaultPageSize={20}
-                            onRowSelectionChange={setSelectedRows}
-                            batchActions={
-                                <>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="h-8 rounded-sm text-warning hover:bg-warning/10 gap-2 disabled:opacity-30"
-                                        onClick={handleBulkPause}
-                                        disabled={!canPauseAll}
-                                    >
-                                        <Pause className="h-3.5 w-3.5" />
-                                        Pausar
-                                    </Button>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="h-8 rounded-sm text-success hover:bg-success/10 gap-2 disabled:opacity-30"
-                                        onClick={handleBulkResume}
-                                        disabled={!canResumeAll}
-                                    >
-                                        <Play className="h-3.5 w-3.5" />
-                                        Reanudar
-                                    </Button>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="h-8 rounded-sm text-destructive-foreground hover:bg-destructive/10 gap-2 disabled:opacity-30"
-                                        onClick={handleBulkArchive}
-                                        disabled={!canArchiveAllActive}
-                                    >
-                                        <Archive className="h-3.5 w-3.5" />
-                                        Archivar
-                                    </Button>
-                                </>
-                            }
+                            bulkActions={bulkActions}
                             createAction={createAction}
                         />
                     </div>

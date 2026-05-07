@@ -1,20 +1,19 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
-import api from "@/lib/api"
-import { Button } from "@/components/ui/button"
+
 import { Eye, ArrowRightLeft, Plus } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { CancelButton, SubmitButton, FormFooter } from "@/components/shared"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { cn } from "@/lib/utils"
+
 import { TransactionType } from "@/types/transactions"
 
 interface StockMove {
@@ -34,16 +33,16 @@ interface StockMove {
         name: string
     }>
 }
-
 interface MovementListProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
 }
 
+import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
+
 export function MovementList({ externalOpen, onExternalOpenChange, createAction }: MovementListProps) {
-    const [moves, setMoves] = useState<StockMove[]>([])
-    const [loading, setLoading] = useState(true)
+    const { moves, refetch } = useStockMoves()
     const [viewingTransaction, setViewingTransaction] = useState<{ type: TransactionType, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [showAdjustmentModal, setShowAdjustmentModal] = useState(false)
     const [isFormLoading, setIsFormLoading] = useState(false)
@@ -55,29 +54,13 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
     const handleCloseModal = () => {
         setShowAdjustmentModal(false)
         onExternalOpenChange?.(false)
-        
+
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
             router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         }
     }
-
-    const fetchMoves = async () => {
-        setLoading(true)
-        try {
-            const response = await api.get('/inventory/moves/')
-            setMoves(response.data.results || response.data)
-        } catch (error) {
-            console.error("Failed to fetch stock moves", error)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchMoves()
-    }, [])
 
     const columns = useMemo<ColumnDef<StockMove>[]>(() => [
         {
@@ -123,10 +106,10 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
             accessorKey: "quantity",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cantidad" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.NumericFlow 
-                    value={row.getValue("quantity")} 
-                    unit={row.original.uom_name} 
-                    showSign={true} 
+                <DataCell.NumericFlow
+                    value={row.getValue("quantity")}
+                    unit={row.original.uom_name}
+                    showSign={true}
                 />
             ),
             size: 100,
@@ -168,7 +151,6 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
                 columns={columns}
                 data={moves}
                 cardMode
-                isLoading={loading}
                 filterColumn="product_name"
                 searchPlaceholder="Filtrar por producto o almacén..."
                 useAdvancedFilter={true}
@@ -239,7 +221,7 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
                     onLoadingChange={setIsFormLoading}
                     onSuccess={() => {
                         handleCloseModal();
-                        fetchMoves();
+                        refetch();
                     }}
                     onCancel={handleCloseModal}
                 />

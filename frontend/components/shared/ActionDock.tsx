@@ -86,24 +86,21 @@ ActionDock.Stats = function ActionDockStats({ children, className }: { children:
     )
 }
 
-/**
- * Individual statistic with a label and a value.
- */
 ActionDock.Stat = function ActionDockStat({ 
     label, 
     value, 
     colorClass = "text-foreground" 
 }: { 
-    label: string, 
+    label: React.ReactNode, 
     value: React.ReactNode, 
     colorClass?: string 
 }) {
     return (
-        <div className="flex flex-col border-r border-border/40 pr-8 last:border-0 h-8 justify-center">
-            <span className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-1.5">{label}</span>
-            <span className={cn("text-sm font-mono font-bold leading-none", colorClass)}>
+        <div className="flex flex-col border-r border-border/40 pr-8 last:border-0 justify-center">
+            <div className="text-[9px] font-black uppercase text-muted-foreground/60 tracking-widest leading-none mb-1.5 whitespace-nowrap">{label}</div>
+            <div className={cn("text-sm font-mono font-bold leading-none", colorClass)}>
                 {value}
-            </span>
+            </div>
         </div>
     )
 }

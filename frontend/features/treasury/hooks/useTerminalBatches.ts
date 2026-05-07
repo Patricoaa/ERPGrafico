@@ -1,4 +1,4 @@
-import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
+import { useQueryClient, useMutation, useSuspenseQuery } from '@tanstack/react-query'
 import { treasuryApi } from '../api/treasuryApi'
 import { toast } from 'sonner'
 
@@ -10,7 +10,7 @@ const BATCHES_KEYS = {
 export function useTerminalBatches() {
     const queryClient = useQueryClient()
 
-    const { data: batches = [], refetch, isLoading } = useQuery({
+    const { data: batches = [], refetch } = useSuspenseQuery({
         queryKey: BATCHES_KEYS.list(),
         queryFn: treasuryApi.getTerminalBatches,
     })
@@ -18,6 +18,5 @@ export function useTerminalBatches() {
     return {
         batches,
         refetch,
-        isLoading
     }
 }

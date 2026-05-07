@@ -8,11 +8,10 @@ import api from "@/lib/api"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { ColumnDef, RowSelectionState } from "@tanstack/react-table"
+import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Button } from "@/components/ui/button"
-import { CancelButton, SubmitButton, LabeledInput } from "@/components/shared"
-import { Plus, Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2 } from "lucide-react"
+import type { BulkAction } from "@/components/shared"
 import { UoMCategoryForm } from "./UoMCategoryForm"
 import { toast } from "sonner"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
@@ -31,15 +30,14 @@ interface UoMCategoryListProps {
     createAction?: React.ReactNode
 }
 
+import { useUoMs } from "@/features/inventory/hooks/useUoMs"
+
 export function UoMCategoryList({ externalOpen, onExternalOpenChange, createAction }: UoMCategoryListProps) {
-    const [categories, setCategories] = useState<UoMCategory[]>([])
-    const [loading, setLoading] = useState(true)
+    const { categories, refetch } = useUoMs()
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false)
-    const [selectedRows, setSelectedRows] = useState<RowSelectionState>({})
     const [currentCategory, setCurrentCategory] = useState<Partial<UoMCategory>>({})
-    const [isSaving, setIsSaving] = useState(false)
 
     const router = useRouter()
     const pathname = usePathname()
@@ -57,27 +55,10 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
         }
     }
 
-    const fetchCategories = async () => {
-        setLoading(true)
-        try {
-            const res = await api.get('/inventory/uom-categories/')
-            setCategories(res.data.results || res.data)
-        } catch (error) {
-            console.error(error)
-            showApiError(error, "Error al cargar categorías de medida")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchCategories()
-    }, [])
-
     const handleSave = async (category?: UoMCategory) => {
         setIsModalOpen(false)
         if (category) {
-            fetchCategories()
+            refetch()
         }
     }
 
@@ -85,7 +66,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
         try {
             await api.delete(`/inventory/uom-categories/${id}/`)
             toast.success("Categoría eliminada")
-            fetchCategories()
+            refetch()
         } catch (error) {
             showApiError(error, "Error al eliminar (puede estar en uso)")
         }
@@ -133,23 +114,24 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
         }),
     ], [])
 
-    const selectedCategories = useMemo(() => {
-        return categories.filter((_, index) => selectedRows[index])
-    }, [selectedRows, categories])
-
-    const handleBulkDelete = async () => {
-        if (selectedCategories.length === 0) return
-        if (!confirm(`¿Está seguro de que desea eliminar ${selectedCategories.length} categorías de unidades?`)) return
-
-        try {
-            await Promise.all(selectedCategories.map(c => api.delete(`/inventory/uom-categories/${c.id}/`)))
-            toast.success(`${selectedCategories.length} categorías eliminadas`)
-            setSelectedRows({})
-            fetchCategories()
-        } catch (error) {
-            showApiError(error, "Error al eliminar las categorías (pueden tener unidades asociadas)")
-        }
-    }
+    const bulkActions = useMemo<BulkAction<UoMCategory>[]>(() => [
+        {
+            key: "delete",
+            label: "Eliminar",
+            icon: Trash2,
+            intent: "destructive",
+            onClick: async (items) => {
+                if (!confirm(`¿Está seguro de que desea eliminar ${items.length} categorías de unidades?`)) return
+                try {
+                    await Promise.all(items.map(c => api.delete(`/inventory/uom-categories/${c.id}/`)))
+                    toast.success(`${items.length} categorías eliminadas`)
+                    refetch()
+                } catch (error) {
+                    showApiError(error, "Error al eliminar las categorías (pueden tener unidades asociadas)")
+                }
+            },
+        },
+    ], [])
 
 
     return (
@@ -157,23 +139,11 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
             <DataTable
                 columns={columns}
                 data={categories}
-                isLoading={loading}
                 cardMode
                 filterColumn="name"
                 pageSizeOptions={[10, 20]}
                 useAdvancedFilter={true}
-                onRowSelectionChange={setSelectedRows}
-                batchActions={
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-8 text-destructive-foreground hover:bg-destructive/20 gap-2"
-                        onClick={handleBulkDelete}
-                    >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Eliminar
-                    </Button>
-                }
+                bulkActions={bulkActions}
                 createAction={createAction}
             />
 

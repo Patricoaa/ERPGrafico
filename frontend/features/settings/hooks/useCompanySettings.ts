@@ -22,7 +22,6 @@ export function useCompanySettings(): UseCompanySettingsReturn {
     const { data: settings, refetch, isLoading } = useQuery({
         queryKey: COMPANY_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getCompanySettings,
-        enabled: typeof window !== 'undefined',
     })
 
     const updateMutation = useMutation({

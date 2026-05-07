@@ -66,20 +66,10 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
 }
 
 export function useSalesNotes({ filters }: { filters?: { date_after?: string, date_before?: string } } = {}) {
-    // Using useQuery since notes are in a separate tab and might not need suspense immediately if lazy loaded, 
-    // but consistency suggests useSuspenseQuery if we want suspense fallback.
-    // However, SalesOrdersView uses tabs. If we use suspense, switching tabs will suspend.
-    // Let's use useQuery for now to match current behavior or useSuspenseQuery if we wrap tabs in Suspense.
-    // Current behavior in view: `useEffect` fetches based on tab.
-    // We can use `useSuspenseQuery` and let the parent handle suspense, or use `useQuery` with `enabled`.
-    // Given the goal of "Suspense-First", let's try `useSuspenseQuery` but maybe checking if we are in that view mode?
-    // Actually, if we use `useSuspenseQuery` it will fetch immediately.
-    // Let's use `useQuery` to allow manual fetching or enabled flag?
-    // No, the goal is to remove manual fetching.
-    // If we use separate components for each tab, we can use suspense in each.
-
-    return useQuery({
+    const { data, refetch } = useSuspenseQuery({
         queryKey: SALES_KEYS.notes(filters || {}),
         queryFn: () => salesApi.getSalesNotes(filters),
     })
+
+    return { data, refetch }
 }

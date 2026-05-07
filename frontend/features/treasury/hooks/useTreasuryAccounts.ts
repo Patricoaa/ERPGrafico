@@ -1,5 +1,5 @@
 import { showApiError } from "@/lib/errors"
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
 import type { TreasuryAccount } from '../types'
@@ -14,16 +14,12 @@ interface UseTreasuryAccountsReturn {
     deleteAccount: (id: number) => Promise<void>
     isCreating: boolean
     isUpdating: boolean
-    isLoading: boolean
 }
 
-/**
- * Custom hook for managing treasury accounts using React Query
- */
 export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
     const queryClient = useQueryClient()
 
-    const { data: accounts = [], refetch, isLoading } = useQuery({
+    const { data: accounts, refetch } = useSuspenseQuery({
         queryKey: ACCOUNTS_QUERY_KEY,
         queryFn: treasuryApi.getAccounts,
     })
@@ -72,13 +68,12 @@ export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
     }
 
     return {
-        accounts,
+        accounts: accounts as TreasuryAccount[],
         refetch,
         createAccount: createMutation.mutateAsync,
         updateAccount: updateMutation.mutateAsync,
         deleteAccount,
         isCreating: createMutation.isPending,
-        isUpdating: updateMutation.isPending,
-        isLoading
+        isUpdating: updateMutation.isPending
     }
 }

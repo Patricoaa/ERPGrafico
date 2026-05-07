@@ -17,31 +17,12 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
-interface JournalEntry {
-    id: number
-    number: string
-    date: string
-    description: string
-    reference: string
-    state: string
-    source_documents?: {
-        type: string
-        id: number | string
-        name: string
-        url: string
-    }[]
-}
-
-interface EntriesPageProps {
-    externalOpen?: boolean
-    onExternalOpenChange?: (open: boolean) => void
-    createAction?: React.ReactNode
-}
+import { useJournalEntries, type JournalEntry } from "@/features/accounting/hooks/useJournalEntries"
+import { useAccountingAccounts } from "@/features/accounting/hooks/useAccounts" // I'll update this hook next
 
 export default function EntriesPage({ externalOpen, onExternalOpenChange, createAction }: EntriesPageProps) {
-    const [entries, setEntries] = useState<JournalEntry[]>([])
-    const [accounts, setAccounts] = useState<Record<string, unknown>[]>([])
-    const [loading, setLoading] = useState(true)
+    const { entries, refetch } = useJournalEntries()
+    const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
     const [viewingTransaction, setViewingTransaction] = useState<{ type: 'journal_entry', id: number | string } | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null)
@@ -91,49 +72,11 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         setIsFormOpen(true)
     }
 
-
-    const fetchEntries = async () => {
-        // Only set loading if not already loading to avoid jitter
-        if (!loading) {
-            setLoading(true)
-        }
-
-        try {
-            const response = await api.get('/accounting/entries/')
-            if (isMounted.current) {
-                setEntries(response.data.results || response.data)
-            }
-        } catch (error) {
-            console.error("Failed to fetch entries", error)
-        } finally {
-            if (isMounted.current) {
-                setLoading(false)
-            }
-        }
-    }
-
-    const fetchAccounts = async () => {
-        try {
-            const response = await api.get('/accounting/accounts/?is_leaf=true')
-            if (isMounted.current) {
-                setAccounts(response.data.results || response.data)
-            }
-        } catch (error) {
-            console.error("Failed to fetch accounts", error)
-            toast.error("Error al cargar las cuentas contables.")
-        }
-    }
-
-    useEffect(() => {
-        fetchEntries()
-        fetchAccounts() // Fetch accounts when component mounts
-    }, [])
-
     const handlePost = async (id: number) => {
         try {
             await api.post(`/accounting/entries/${id}/post_entry/`)
             toast.success("Asiento publicado exitosamente")
-            fetchEntries()
+            refetch()
         } catch (error) {
             console.error("Error posting entry:", error)
             toast.error("Error al publicar el asiento")
@@ -145,7 +88,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         try {
             await api.delete(`/accounting/entries/${id}/`)
             toast.success("Asiento eliminado exitosamente")
-            fetchEntries()
+            refetch()
         } catch (error) {
             console.error("Error deleting entry:", error)
             toast.error("Error al eliminar el asiento")
@@ -238,7 +181,6 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                 <DataTable
                     columns={columns}
                     data={entries}
-                    isLoading={loading}
                     cardMode
                     filterColumn="description"
                     searchPlaceholder="Buscar por descripción..."
@@ -258,10 +200,10 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                 />
 
                 <JournalEntryForm
-                    accounts={accounts}
+                    accounts={accounts as any}
                     initialData={editingEntry as unknown as import('@/types/forms').JournalEntryInitialData | undefined}
                     onSuccess={() => {
-                        fetchEntries()
+                        refetch()
                         handleFormOpenChange(false)
                     }}
                     open={isFormOpen}

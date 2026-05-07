@@ -1,24 +1,23 @@
 "use client"
 
-import React, { useState } from "react"
+import React from "react"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { SlidersHorizontal, AlertCircle, Search, Save, Tag } from "lucide-react"
+import { SlidersHorizontal, AlertCircle, Save, Tag } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAccountMappings, MappingType } from "@/features/finance/hooks/useAccountMappings"
-import { 
-    IS_CATEGORIES, 
-    CF_CATEGORIES, 
-    BS_CATEGORIES, 
-    Account 
+import {
+    IS_CATEGORIES,
+    CF_CATEGORIES,
+    BS_CATEGORIES,
+    Account
 } from "@/features/accounting/types"
 import { Checkbox } from "@/components/ui/checkbox"
-
-import { RowSelectionState } from "@tanstack/react-table"
+import { BulkActionDock, ActionDock } from "@/components/shared"
 import { cn } from "@/lib/utils"
 
 interface MappingConfigSheetProps {
@@ -43,8 +42,6 @@ export function MappingConfigSheet({
         saveAll,
         hasChanges
     } = useAccountMappings(mappingType)
-    const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
-
     const getCategories = () => {
         switch (mappingType) {
             case 'is': return IS_CATEGORIES
@@ -87,10 +84,9 @@ export function MappingConfigSheet({
         }
     }
 
-    const handleBulkUpdate = (value: string) => {
-        const selectedIds = Object.keys(rowSelection).map(idx => accounts[parseInt(idx)].id)
-        selectedIds.forEach(id => updateMapping(id, value === "none" ? null : value))
-        setRowSelection({})
+    const handleBulkUpdate = (items: Account[], value: string, clear: () => void) => {
+        items.forEach(item => updateMapping(item.id, value === "none" ? null : value))
+        clear()
     }
 
     const columns: ColumnDef<Account>[] = [
@@ -240,26 +236,27 @@ export function MappingConfigSheet({
                         cardMode={false}
                         searchPlaceholder="Filtrar por nombre de cuenta..."
                         filterColumn="name"
-                        onRowSelectionChange={setRowSelection}
                         useAdvancedFilter={true}
-                        batchActions={
-                            <div className="flex items-center gap-2">
-                                <Select onValueChange={handleBulkUpdate}>
-                                    <SelectTrigger className="h-7 bg-white/10 border-white/20 text-white text-[10px] font-black uppercase tracking-widest w-[180px] hover:bg-white/20 transition-colors">
-                                        <Tag className="mr-2 h-3.5 w-3.5" />
-                                        <SelectValue placeholder="Asignar Categoría" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none" className="text-muted-foreground italic">Quitar mapeo</SelectItem>
-                                        {getCategories().map(cat => (
-                                            <SelectItem key={cat.value} value={cat.value}>
-                                                {cat.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        }
+                        bulkDock={(items, clear) => (
+                            <BulkActionDock selectedCount={items.length} onClear={clear}>
+                                <ActionDock.Actions>
+                                    <Select onValueChange={(value) => handleBulkUpdate(items, value, clear)}>
+                                        <SelectTrigger className="h-9 rounded-full border-border/40 bg-muted/30 text-[10px] font-black uppercase tracking-widest w-[200px] hover:bg-muted/50 transition-colors">
+                                            <Tag className="mr-2 h-3.5 w-3.5" />
+                                            <SelectValue placeholder="Asignar Categoría" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none" className="text-muted-foreground italic">Quitar mapeo</SelectItem>
+                                            {getCategories().map(cat => (
+                                                <SelectItem key={cat.value} value={cat.value}>
+                                                    {cat.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </ActionDock.Actions>
+                            </BulkActionDock>
+                        )}
                     />
                 </div>
             </SheetContent>

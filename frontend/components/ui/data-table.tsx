@@ -19,12 +19,12 @@ import {
 } from "@tanstack/react-table"
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
 import { TableSkeleton as SharedTableSkeleton } from "@/components/shared/TableSkeleton"
 import { cn } from "@/lib/utils"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { SearchX, CheckCircle2, ChevronRight, X, LucideIcon } from "lucide-react"
+import { SearchX, LucideIcon } from "lucide-react"
 import { EmptyStateContext } from "@/components/shared/EmptyState"
+import { BulkActionDock, BulkActionButtons, type BulkAction } from "@/components/shared"
 
 import { DataTablePagination } from "./data-table-pagination"
 import { DataTableToolbar } from "./data-table-toolbar"
@@ -65,7 +65,18 @@ interface DataTableProps<TData, TValue> {
     hidePagination?: boolean
     toolbarClassName?: string
     noBorder?: boolean
-    batchActions?: React.ReactNode
+    /**
+     * Declarative bulk actions rendered in a floating BulkActionDock when
+     * one or more rows are selected. For custom layouts (stats, dropdowns)
+     * use `bulkDock` instead.
+     */
+    bulkActions?: BulkAction<TData>[]
+    /**
+     * Escape hatch: full control over the floating dock. Receives the
+     * selected items and a `clear` callback. Wraps content with
+     * `BulkActionDock` to keep visual consistency.
+     */
+    bulkDock?: (items: TData[], clear: () => void) => React.ReactNode
     viewOptions?: { label: string; value: string; icon: React.ComponentType<{ className?: string }> }[]
     currentView?: string
     onViewChange?: (view: string) => void
@@ -125,7 +136,8 @@ export function DataTable<TData, TValue>({
     hidePagination = false,
     toolbarClassName,
     noBorder = false,
-    batchActions,
+    bulkActions,
+    bulkDock,
     viewOptions,
     currentView,
     onViewChange,
@@ -229,6 +241,21 @@ export function DataTable<TData, TValue>({
 
     const showToolbar = filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction || createAction
     const selectedRows = table.getSelectedRowModel().rows
+    const selectedItems = React.useMemo(() => selectedRows.map(r => r.original), [selectedRows])
+    const clearSelection = React.useCallback(() => table.resetRowSelection(), [table])
+
+    const dockNode = (() => {
+        if (selectedRows.length === 0) return null
+        if (bulkDock) return bulkDock(selectedItems, clearSelection)
+        if (bulkActions && bulkActions.length > 0) {
+            return (
+                <BulkActionDock selectedCount={selectedRows.length} onClear={clearSelection}>
+                    <BulkActionButtons actions={bulkActions} items={selectedItems} />
+                </BulkActionDock>
+            )
+        }
+        return null
+    })()
 
     if (cardMode) {
         const tableBody = isLoading ? (
@@ -338,27 +365,6 @@ export function DataTable<TData, TValue>({
                             isCustomFiltered={isCustomFiltered}
                             customFilterCount={customFilterCount}
                             createAction={createAction}
-                            batchActions={batchActions && selectedRows.length > 0 ? (
-                                <div className="flex items-center gap-3 bg-foreground text-background px-3 py-1.5 rounded-md shadow-sm border border-white/10 animate-in fade-in slide-in-from-left-2 duration-300">
-                                    <div className="flex items-center gap-2 pr-3 border-r border-white/20">
-                                        <div className="bg-primary p-0.5 rounded-full">
-                                            <CheckCircle2 className="h-3 w-3 text-primary-foreground" />
-                                        </div>
-                                        <span className="text-[10px] font-black font-heading uppercase tracking-wider">{selectedRows.length} Seleccionados</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 grayscale hover:grayscale-0 transition-all">
-                                        {batchActions}
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => table.toggleAllRowsSelected(false)}
-                                            className="h-6 w-6 hover:bg-white/10 text-white/50 hover:text-white rounded-sm"
-                                        >
-                                            <X className="h-3 w-3" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            ) : null}
                         />
                     </div>
                 )}
@@ -408,6 +414,8 @@ export function DataTable<TData, TValue>({
                         <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
                     </div>
                 )}
+
+                {dockNode}
             </div>
         )
     }
@@ -437,13 +445,6 @@ export function DataTable<TData, TValue>({
                         isCustomFiltered={isCustomFiltered}
                         customFilterCount={customFilterCount}
                         createAction={createAction}
-                        batchActions={batchActions && selectedRows.length > 0 ? (
-                            <div className="flex items-center gap-2 bg-foreground text-background px-3 py-1 rounded-md shadow-sm text-xs font-bold font-heading uppercase tracking-wider animate-in fade-in slide-in-from-left-2 duration-300">
-                                <span>{selectedRows.length} Sel.</span>
-                                <div className="mx-1 h-3 w-px bg-white/20" />
-                                {batchActions}
-                            </div>
-                        ) : null}
                     />
                 </div>
             )}
@@ -557,6 +558,7 @@ export function DataTable<TData, TValue>({
                 </div>
             )}
             {!hidePagination && <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />}
+            {dockNode}
         </div>
     )
 }

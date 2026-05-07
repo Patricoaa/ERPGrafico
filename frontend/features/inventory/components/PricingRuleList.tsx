@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, { useEffect, useState, useMemo } from "react"
+import React, { useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -11,10 +11,10 @@ import { ColumnDef } from "@tanstack/react-table"
 import api from "@/lib/api"
 import { PricingRuleForm } from "@/features/sales/components/PricingRuleForm"
 import { Pencil, Trash2, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
 import { toast } from "sonner"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
@@ -49,9 +49,10 @@ interface PricingRuleListProps {
     createAction?: React.ReactNode
 }
 
+import { usePricingRules } from "@/features/inventory/hooks/usePricingRules"
+
 export function PricingRuleList({ externalOpen, onExternalOpenChange, createAction }: PricingRuleListProps) {
-    const [rules, setRules] = useState<PricingRule[]>([])
-    const [loading, setLoading] = useState(true)
+    const { rules, refetch } = usePricingRules()
     const [editingRule, setEditingRule] = useState<PricingRule | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
 
@@ -63,7 +64,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
         setIsFormOpen(false)
         setEditingRule(null)
         onExternalOpenChange?.(false)
-        
+
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
@@ -71,35 +72,16 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
         }
     }
 
-    const fetchRules = async () => {
-        setLoading(true)
-        try {
-            const response = await api.get('/inventory/pricing-rules/')
-            setRules(response.data.results || response.data)
-        } catch (error) {
-            console.error("Failed to fetch rules", error)
-            showApiError(error, "Error al cargar las reglas de precio.")
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/inventory/pricing-rules/${id}/`)
             toast.success("Regla eliminada correctamente.")
-            fetchRules()
+            refetch()
         } catch (error) {
             console.error("Error deleting rule:", error)
             showApiError(error, "Error al eliminar la regla.")
         }
     })
-
-    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
-
-    useEffect(() => {
-        fetchRules()
-    }, [])
 
     const columns = useMemo<ColumnDef<PricingRule>[]>(() => [
         {
@@ -210,8 +192,8 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <StatusBadge 
-                        status={row.getValue("active") ? "SUCCESS" : "ERROR"} 
+                    <StatusBadge
+                        status={row.getValue("active") ? "SUCCESS" : "ERROR"}
                         label={row.getValue("active") ? "Activo" : "Inactivo"}
                     />
                 </div>
@@ -232,7 +214,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
         <div className="space-y-4">
             <PricingRuleForm
                 initialData={editingRule || undefined}
-                onSuccess={fetchRules}
+                onSuccess={refetch}
                 open={isFormOpen || !!externalOpen}
                 onOpenChange={(open: boolean) => {
                     if (!open) {
@@ -248,7 +230,6 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
                     columns={columns}
                     data={rules}
                     cardMode
-                    isLoading={loading}
                     globalFilterFields={["name"]}
                     searchPlaceholder="Buscar por nombre o producto..."
                     facetedFilters={[

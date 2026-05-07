@@ -2,12 +2,12 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useMemo } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowRightLeft, History } from "lucide-react"
-import api from "@/lib/api"
+
 
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -17,38 +17,13 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { PageContainer } from "@/components/shared"
 import { cn, formatCurrency } from "@/lib/utils"
 
+import { useStockReport } from "@/features/inventory/hooks/useStockReport"
+
 export function StockReport() {
-    const [report, setReport] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
+    const { report, refetch } = useStockReport()
     const [adjustingProduct, setAdjustingProduct] = useState<any | null>(null)
     const [insightsProduct, setInsightsProduct] = useState<any | null>(null)
     const [isFormLoading, setIsFormLoading] = useState(false)
-
-    const fetchReport = React.useCallback(async () => {
-        setLoading(true)
-        try {
-            const res = await api.get('/inventory/products/stock_report/')
-            setReport(res.data)
-        } catch (error) {
-            showApiError(error, "Error al cargar el reporte de stock")
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        let isMounted = true
-
-        const load = async () => {
-            if (isMounted) await fetchReport()
-        }
-
-        load()
-
-        return () => {
-            isMounted = false
-        }
-    }, [fetchReport])
 
     const columns = useMemo<ColumnDef<any>[]>(() => [
         {
@@ -165,7 +140,6 @@ export function StockReport() {
                 globalFilterFields={globalFilterFields}
                 useAdvancedFilter={true}
                 defaultPageSize={50}
-                isLoading={loading}
             />
 
             <BaseModal
@@ -209,7 +183,7 @@ export function StockReport() {
                         preSelectedProduct={adjustingProduct.id.toString()}
                         onSuccess={() => {
                             setAdjustingProduct(null);
-                            fetchReport();
+                            refetch();
                         }}
                         onCancel={() => setAdjustingProduct(null)}
                     />

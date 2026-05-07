@@ -24,6 +24,7 @@ export * from './ActionSlideButton';
 export * from './ToolbarCreateButton';
 export * from './ActionButtons';
 export * from './ActionDock';
+export * from './BulkActionDock';
 
 // Cards & Containers
 

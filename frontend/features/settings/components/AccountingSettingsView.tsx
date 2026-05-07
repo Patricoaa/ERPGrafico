@@ -36,48 +36,16 @@ export function AccountingSettingsView({ activeTab = "structure" }: { activeTab?
 
 // --- SUB-COMPONENTS ---
 
+import { useAccountingSettings } from "@/features/settings/hooks/useAccountingSettings"
+
 function StructureSettings() {
-    const [loading, setLoading] = useState(true)
+    const { structure: settings, refetch } = useAccountingSettings()
     const [populating, setPopulating] = useState(false)
 
     const form = useForm<AccountingFormValues>({
         resolver: zodResolver(accountingSchema),
-        defaultValues: {
-            hierarchy_levels: 4,
-            code_separator: ".",
-            asset_prefix: "1",
-            liability_prefix: "2",
-            equity_prefix: "3",
-            income_prefix: "4",
-            expense_prefix: "5",
-        }
+        defaultValues: settings,
     })
-
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const res = await api.get('/accounting/settings/current/')
-                const settings = res.data
-                const formattedSettings = {} as AccountingFormValues
-                const keys = Object.keys(accountingSchema.shape) as (keyof AccountingFormValues)[]
-
-                keys.forEach((key) => {
-                    const val = settings[key]
-                    if (val === null || val === undefined) {
-                        (formattedSettings as Record<string, unknown>)[key] = (key.includes('prefix') || key === 'code_separator' ? "" : (key === 'hierarchy_levels' ? 4 : null))
-                    } else {
-                        (formattedSettings as Record<string, unknown>)[key] = (typeof val === 'number' ? val : val.toString())
-                    }
-                })
-                form.reset(formattedSettings)
-            } catch {
-                // badge handles errors
-            } finally {
-                setLoading(false)
-            }
-        }
-        fetchSettings()
-    }, [form])
 
     const onSave = useCallback(async (data: AccountingFormValues) => {
         await api.patch('/accounting/settings/current/', data)
@@ -86,7 +54,7 @@ function StructureSettings() {
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
         form,
         onSave,
-        enabled: !loading,
+        enabled: true,
     })
 
     useUnsavedChangesGuard(status)
@@ -106,8 +74,6 @@ function StructureSettings() {
             setPopulating(false)
         }
     }
-
-    if (loading) return <FormSkeleton fields={3} />
 
     return (
         <div className="space-y-6">
@@ -203,48 +169,12 @@ function StructureSettings() {
 }
 
 function DefaultsSettings() {
-    const [loading, setLoading] = useState(true)
+    const { defaults: settings } = useAccountingSettings()
 
     const form = useForm<DefaultsFormValues>({
         resolver: zodResolver(defaultsSchema),
-        defaultValues: {
-            default_receivable_account: null,
-            default_payable_account: null,
-            default_revenue_account: null,
-            default_expense_account: null,
-            merchandise_cogs_account: null,
-            manufactured_cogs_account: null,
-            adjustment_income_account: null,
-            adjustment_expense_account: null,
-        }
+        defaultValues: settings,
     })
-
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const res = await api.get('/accounting/settings/current/')
-                const settings = res.data
-                const formattedSettings = {} as DefaultsFormValues
-                const fields = Object.keys(defaultsSchema.shape)
-
-                fields.forEach((key) => {
-                    const val = settings[key]
-                    const typedKey = key as keyof DefaultsFormValues
-                    if (val === null || val === undefined) {
-                        (formattedSettings as Record<string, unknown>)[typedKey] = null
-                    } else {
-                        (formattedSettings as Record<string, unknown>)[typedKey] = val.toString()
-                    }
-                })
-                form.reset(formattedSettings)
-            } catch {
-                // badge handles errors
-            } finally {
-                setLoading(false)
-            }
-        }
-        fetchSettings()
-    }, [form])
 
     const onSave = useCallback(async (data: DefaultsFormValues) => {
         await api.patch('/accounting/settings/current/', data)
@@ -253,12 +183,10 @@ function DefaultsSettings() {
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
         form,
         onSave,
-        enabled: !loading,
+        enabled: true,
     })
 
     useUnsavedChangesGuard(status)
-
-    if (loading) return <FormSkeleton fields={4} cards={3} />
 
     return (
         <Form {...form}>
@@ -329,54 +257,12 @@ function DefaultsSettings() {
 }
 
 function TaxSettings() {
-    const [loading, setLoading] = useState(true)
+    const { tax: settings } = useAccountingSettings()
 
     const form = useForm<TaxFormValues>({
         resolver: zodResolver(taxSchema),
-        defaultValues: {
-            default_vat_rate: 19.00,
-            vat_payable_account: null,
-            vat_carryforward_account: null,
-            withholding_tax_account: null,
-            ppm_account: null,
-            second_category_tax_account: null,
-            correction_income_account: null,
-            default_tax_receivable_account: null,
-            default_tax_payable_account: null,
-            loan_retention_account: null,
-            ila_tax_account: null,
-            vat_withholding_account: null,
-        }
+        defaultValues: settings,
     })
-
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const res = await api.get('/accounting/settings/current/')
-                const settings = res.data
-                const formattedSettings = {} as TaxFormValues
-                const fields = Object.keys(taxSchema.shape)
-
-                fields.forEach((key) => {
-                    const val = settings[key]
-                    const typedKey = key as keyof TaxFormValues
-                    if (val === null || val === undefined) {
-                        (formattedSettings as Record<string, unknown>)[typedKey] = (key === 'default_vat_rate' ? 19.00 : null)
-                    } else if (key === 'default_vat_rate') {
-                        (formattedSettings as Record<string, unknown>)[typedKey] = parseFloat(val.toString())
-                    } else {
-                        (formattedSettings as Record<string, unknown>)[typedKey] = val.toString()
-                    }
-                })
-                form.reset(formattedSettings)
-            } catch {
-                // badge handles errors
-            } finally {
-                setLoading(false)
-            }
-        }
-        fetchSettings()
-    }, [form])
 
     const onSave = useCallback(async (data: TaxFormValues) => {
         await api.patch('/accounting/settings/current/', data)
@@ -385,12 +271,10 @@ function TaxSettings() {
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
         form,
         onSave,
-        enabled: !loading,
+        enabled: true,
     })
 
     useUnsavedChangesGuard(status)
-
-    if (loading) return <FormSkeleton fields={4} cards={3} />
 
     return (
         <Form {...form}>

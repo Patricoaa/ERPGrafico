@@ -41,7 +41,7 @@ export function TerminalBatchesManagement({
     onExternalOpenInvoiceChange,
     createAction
 }: TerminalBatchesManagementProps) {
-    const { batches, refetch, isLoading } = useTerminalBatches()
+    const { batches, refetch } = useTerminalBatches()
     const [openCreate, setOpenCreate] = useState(false)
     const [openInvoice, setOpenInvoice] = useState(false)
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -141,7 +141,6 @@ export function TerminalBatchesManagement({
             <DataTable
                 columns={columns}
                 data={batches}
-                isLoading={!isMounted || isLoading}
                 cardMode
                 useAdvancedFilter={true}
                 facetedFilters={[

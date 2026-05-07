@@ -60,10 +60,12 @@ interface PurchasingOrdersClientViewProps {
     createAction?: React.ReactNode
 }
 
+import { usePurchasingOrders, usePurchasingNotes } from "../../../features/purchasing/hooks/usePurchasing"
+
 export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction }: PurchasingOrdersClientViewProps) {
-    const [orders, setOrders] = useState<PurchaseOrder[]>([])
-    const [notes, setNotes] = useState<Order[]>([])
-    const [loading, setLoading] = useState(true)
+    const { orders, refetch: fetchOrders, deleteOrder } = usePurchasingOrders()
+    const { notes, refetch: fetchNotes } = usePurchasingNotes()
+
     const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
     const [invoicingOrder, setInvoicingOrder] = useState<PurchaseOrder | null>(null)
@@ -103,7 +105,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         }
     }, [searchParams])
 
-    const filteredOrders = orders.filter(order => {
+    const filteredOrders = orders.filter((order: any) => {
         if (!dateRange || !dateRange.from) return true
 
         const orderDate = parseISO(order.date)
@@ -113,24 +115,9 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         return isWithinInterval(orderDate, { start, end })
     })
 
-
-    const fetchOrders = async () => {
-        try {
-            const response = await api.get('/purchasing/orders/')
-            setOrders(response.data.results || response.data)
-        } catch (error) {
-            console.error("Failed to fetch purchase orders", error)
-            toast.error("Error al cargar las órdenes de compra.")
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.delete(`/purchasing/orders/${id}/`)
-            toast.success("Orden de Compra eliminada correctamente.")
-            fetchOrders()
+            await deleteOrder(id)
         } catch (error: unknown) {
             console.error("Error deleting order:", error)
             showApiError(error, "Error al eliminar la orden de compra.")
@@ -204,36 +191,13 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         }
     }
 
-    const fetchNotes = async () => {
-        setLoading(true)
-        try {
-            const response = await api.get('/billing/invoices/', {
-                params: {
-                    dte_type__in: 'NOTA_CREDITO,NOTA_DEBITO',
-                    purchase_order__isnull: false
-                }
-            })
-            const results = response.data.results || response.data
-            // Ensure they are strictly notes and related to purchases
-            const purchaseNotes = results.filter((inv: any) =>
-                ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(inv.dte_type || '') && inv.purchase_order
-            )
-            setNotes(purchaseNotes as Order[])
-        } catch (error) {
-            console.error("Failed to fetch notes", error)
-            toast.error("Error al cargar las notas.")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        if (viewMode === 'orders') {
-            fetchOrders()
-        } else {
-            fetchNotes()
-        }
-    }, [viewMode])
+    const filteredNotes = notes.filter((note: any) => {
+        if (!dateRange || !dateRange.from) return true
+        const noteDate = parseISO(note.date || new Date().toISOString())
+        const start = startOfDay(dateRange.from)
+        const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from)
+        return isWithinInterval(noteDate, { start, end })
+    })
 
     const noteColumns: ColumnDef<Order>[] = [
         {
@@ -481,10 +445,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 />
             )}
 
-            {loading ? (
-                <LoadingFallback variant="list" className="pt-2" />
-            ) : (
-                <Tabs value={viewMode} className="w-full">
+            <Tabs value={viewMode} className="w-full">
                     <DataTable
                     columns={(viewMode === 'orders' ? columns : noteColumns) as any}
                     data={(viewMode === 'orders' ? filteredOrders : filteredNotes) as any}
@@ -611,7 +572,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         createAction={createAction}
                     />
                 </Tabs>
-            )}
 
             {viewingTransaction && (
                 <TransactionViewModal

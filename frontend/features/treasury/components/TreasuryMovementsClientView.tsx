@@ -62,30 +62,14 @@ interface TreasuryMovementsClientViewProps {
     createAction?: React.ReactNode
 }
 
+import { useTreasuryMovements } from "@/features/treasury/hooks/useTreasuryMovements"
+
 export function TreasuryMovementsClientView({ externalOpen, createAction }: TreasuryMovementsClientViewProps) {
     const { openContact, openTreasuryAccount } = useGlobalModalActions()
-    const [movements, setMovements] = useState<TreasuryMovement[]>([])
-    const [loading, setLoading] = useState(true)
+    const { movements, refetch } = useTreasuryMovements()
     const [openModal, setOpenModal] = useState(false)
     const [detailsOpen, setDetailsOpen] = useState(false)
     const [selectedMovementId, setSelectedMovementId] = useState<number | string>(0)
-
-    const fetchMovements = async () => {
-        try {
-            setLoading(true)
-            const response = await api.get('/treasury/movements/')
-            setMovements(response.data.results || response.data)
-        } catch (error) {
-            console.error("Failed to fetch movements", error)
-            toast.error("Error al cargar los movimientos.")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchMovements()
-    }, [])
 
     useEffect(() => {
         if (externalOpen) {
@@ -302,7 +286,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 <CashMovementModal
                     open={openModal}
                     onOpenChange={(open: boolean) => setOpenModal(open)}
-                    onSuccess={fetchMovements}
+                    onSuccess={refetch}
                 />
             </Suspense>
 
@@ -310,7 +294,6 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 columns={columns}
                 data={movements}
                 cardMode
-                isLoading={loading}
                 globalFilterFields={["notes", "reference", "partner_name", "from_account_name", "to_account_name"]}
                 searchPlaceholder="Buscar movimientos..."
                 useAdvancedFilter={true}
