@@ -12,3 +12,29 @@ class AccountingConfig(AppConfig):
             ])
         except ImportError:
             pass
+
+        try:
+            from core.registry import UniversalRegistry, SearchableEntity
+            from accounting.models import Account, JournalEntry
+            UniversalRegistry.register(SearchableEntity(
+                model=Account,
+                label='accounting.account',
+                icon='book-open',
+                search_fields=('code', 'name'),
+                display_template='{code} · {name}',
+                list_url='/contabilidad/plan-cuentas',
+                detail_url_pattern='/contabilidad/plan-cuentas/{id}',
+                permission='accounting.view_account',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=JournalEntry,
+                label='accounting.journalentry',
+                icon='notebook-pen',
+                search_fields=('number',),
+                display_template='AS-{number}',
+                list_url='/contabilidad/asientos',
+                detail_url_pattern='/contabilidad/asientos/{id}',
+                permission='accounting.view_journalentry',
+            ))
+        except Exception:
+            pass

@@ -16,7 +16,7 @@
 ## F1 — Universal Registry
 
 ### T-01 · Crear el módulo `core/registry.py`
-- **Estado:** 📋
+- **Estado:** ✅
 - **Esfuerzo:** 3
 - **Patrón:** [P-05](30-patterns.md#p-05-universal-registry)
 - **Archivos:** `backend/core/registry.py` (nuevo)
@@ -28,7 +28,7 @@
   - [ ] Tests unitarios cubren registro, búsqueda básica, filtrado por permisos.
 
 ### T-02 · Endpoint `/api/search/`
-- **Estado:** 📋
+- **Estado:** ✅
 - **Esfuerzo:** 2
 - **Depende de:** T-01
 - **Archivos:** `backend/core/api/search.py` (nuevo), `backend/core/urls.py`
@@ -39,7 +39,7 @@
   - [ ] Test E2E: usuario `staff` ve más resultados que usuario `viewer`.
 
 ### T-03 · Registrar 12 apps en `apps.py::ready()`
-- **Estado:** 📋
+- **Estado:** ✅
 - **Esfuerzo:** 5
 - **Depende de:** T-01
 - **Archivos:** `backend/{app}/apps.py` × 12 (modificar)
@@ -61,7 +61,7 @@
   - [ ] `permission` correcto (Django permissions estándar `<app>.view_<model>`).
 
 ### T-04 · Componente frontend `<UniversalSearch />`
-- **Estado:** 📋
+- **Estado:** ✅
 - **Esfuerzo:** 5
 - **Archivos:** `frontend/components/shared/UniversalSearch.tsx` (nuevo), barrel export
 - **Acceptance:**
@@ -74,7 +74,7 @@
   - [ ] Test Vitest cubre selección por teclado.
 
 ### T-05 · Integración en layout principal
-- **Estado:** 📋
+- **Estado:** ✅
 - **Esfuerzo:** 1
 - **Depende de:** T-04
 - **Archivos:** `frontend/app/layout.tsx` o equivalente shell

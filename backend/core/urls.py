@@ -5,6 +5,7 @@ from .views import (
     CurrentUserView, MyProfileView, ChangePasswordView, ChangePinView, GroupViewSet, server_time,
     MyProfilePayrollPreviewView, system_status
 )
+from .api.search import universal_search
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -22,4 +23,5 @@ urlpatterns = [
     path('audit/global/', GlobalAuditLogView.as_view(), name='global-audit-log'),
     path('server-time/', server_time, name='server-time'),
     path('status/', system_status, name='system-status'),
+    path('search/', universal_search, name='universal-search'),
 ]
