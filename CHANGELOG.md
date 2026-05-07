@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.15](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.14...v0.1.15) (2026-05-07)
+
+
+### ✨ Features
+
+* skelleton refactor & reconcliation panel + ([8b8e601](https://github.com/Patricoaa/ERPGrafico/commit/8b8e601a7579b66504b47ed34f9b080cfa4ee781))
+
 ### [0.1.14](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.13...v0.1.14) (2026-05-07)
 
 
