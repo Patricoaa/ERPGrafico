@@ -18,3 +18,19 @@ class WorkflowConfig(AppConfig):
             ])
         except ImportError:
             pass
+
+        try:
+            from core.registry import UniversalRegistry, SearchableEntity
+            from workflow.models import Task
+            UniversalRegistry.register(SearchableEntity(
+                model=Task,
+                label='workflow.task',
+                icon='circle-check',
+                search_fields=('title', 'description'),
+                display_template='{title}',
+                list_url='/tareas',
+                detail_url_pattern='/tareas/{id}',
+                permission='workflow.view_task',
+            ))
+        except Exception:
+            pass

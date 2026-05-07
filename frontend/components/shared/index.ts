@@ -6,6 +6,9 @@
 // not from individual component files.
 // ─────────────────────────────────────────────────────────
 
+// Search
+export * from './UniversalSearch';
+
 // Modals & Sheets
 export * from './ActionConfirmModal';
 export * from './BaseModal';
