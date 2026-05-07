@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.16](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.15...v0.1.16) (2026-05-07)
+
+
+### ✨ Features
+
+* ajuste de boton de config pageheader ([00daa06](https://github.com/Patricoaa/ERPGrafico/commit/00daa06a0def557bf2cb95c5a91b8a6463922fe0))
+* sugerencias bidereccionales en reconciliación bancaria ([b0dcf77](https://github.com/Patricoaa/ERPGrafico/commit/b0dcf77ef40506ff8c241296478dd1faa2fcdbcc))
+
 ### [0.1.15](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.14...v0.1.15) (2026-05-07)
 
 
