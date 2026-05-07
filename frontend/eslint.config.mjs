@@ -121,6 +121,21 @@ const eslintConfig = defineConfig([
     },
   },
 
+  // Block direct @/components/ui/skeleton imports outside of components/shared (where it's implemented)
+  // Excludes **/skeletons/** — those files ARE skeleton implementations and may use the primitive.
+  {
+    files: ["features/**/*.ts", "features/**/*.tsx", "app/**/*.ts", "app/**/*.tsx"],
+    ignores: ["features/**/skeletons/**"],
+    rules: {
+      "no-restricted-imports": ["error", {
+        paths: [{
+          name: "@/components/ui/skeleton",
+          message: "Import skeleton components from @/components/shared barrel, not @/components/ui/skeleton directly.",
+        }],
+      }],
+    },
+  },
+
   // UI component data fetching and formatting restrictions
   {
     files: ["components/**/*.tsx", "features/*/components/**/*.tsx"],

@@ -1,13 +1,12 @@
 "use client"
 
-import { showApiError } from "@/lib/errors"
+
 import * as React from "react"
 import dynamic from "next/dynamic"
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { TableCell, TableRow } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -23,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 import {
     Ban, CheckCircle2, ChevronRight, ChevronLeft, FileText,
-    Loader2, Search, Sparkles, X, Wand2, SplitSquareHorizontal, Calculator, RotateCcw, Brain
+    Loader2, Search, Sparkles, X, Wand2, SplitSquareHorizontal, Calculator, RotateCcw, Brain, Plus
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -55,6 +54,7 @@ import {
     useExcludeMutation,
     useBulkExcludeMutation,
     useCreateAndMatchMutation,
+    useCreateMovementMutation,
     useUnmatchMutation,
     useRestoreMutation
 } from "../hooks/useReconciliationMutations"
@@ -72,7 +72,7 @@ const TransactionViewModal = dynamic(() =>
 import { ColumnDef, RowSelectionState, PaginationState, Updater } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
-import { Textarea } from "@/components/ui/textarea"
+
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 
@@ -179,7 +179,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const reconciledGroups = useMemo(() => {
         if (!reconciledData?.results) return []
         const groups: Record<number, { id: number, group: any, lines: BankStatementLine[] }> = {}
-        
+
         reconciledData.results.forEach(line => {
             const groupId = line.reconciliation_group_data?.id
             if (groupId) {
@@ -189,7 +189,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 groups[groupId].lines.push(line)
             }
         })
-        
+
         return Object.values(groups)
     }, [reconciledData])
     const unreconciledLines: BankStatementLine[] = bankData?.results || []
@@ -233,6 +233,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const [createMatchDialog, setCreateMatchDialog] = useState<{ open: boolean, line: BankStatementLine | null }>({
         open: false, line: null
     })
+    const [isCreateMovementOpen, setIsCreateMovementOpen] = useState(false)
     const createAndMatchMutation = useCreateAndMatchMutation(statementId, treasuryAccountId)
 
     // S4.8: Async auto-match progress state
@@ -451,6 +452,28 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         }
     }
 
+    const handleCreateMovement = async (data: MovementData) => {
+        const movement_type = data.impact === 'TRANSFER' ? 'TRANSFER' : (data.impact === 'IN' ? 'INBOUND' : 'OUTBOUND');
+
+        const payload = {
+            movement_type: movement_type,
+            amount: data.amount,
+            from_account: data.fromAccountId || null,
+            to_account: data.toAccountId || null,
+            contact: data.contactId || null,
+            notes: data.notes,
+            justify_reason: data.moveType !== 'TRANSFER' ? data.moveType : null,
+            payment_method: 'CASH', // Legacy
+        }
+
+        try {
+            await createMovementMutation.mutateAsync(payload)
+            setIsCreateMovementOpen(false)
+        } catch (error) {
+            throw error
+        }
+    }
+
     // ─── Column Definitions ───────────────────────────────────────────────────
 
     const bankColumns = useMemo<ColumnDef<BankStatementLine>[]>(() => [
@@ -565,17 +588,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         onClick={(e) => { e.stopPropagation(); setActionDialog({ open: true, type: 'exclude', lineId: item.id }) }}
                     />
                 ),
-                <DataCell.Action
-                    key="create-match"
-                    icon={Calculator}
-                    title="Registrar Pago"
-                    className="text-primary hover:text-primary/80"
-                    disabled={item.reconciliation_status === 'EXCLUDED'}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setCreateMatchDialog({ open: true, line: item })
-                    }}
-                />
             ]
         })
     ], [lineSuggestions, setActionDialog, setCreateMatchDialog])
@@ -618,7 +630,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             accessorKey: "contact_name",
             header: "Entidad / Concepto",
             cell: ({ row }) => {
-                const isSuggested = suggestions.some((s: PaymentSuggestion) => 
+                const isSuggested = suggestions.some((s: PaymentSuggestion) =>
                     s.is_batch ? s.batch_data?.id === row.original.terminal_batch_id : s.payment_data?.id === row.original.id
                 )
                 const isSettlement = row.original.terminal_batch_id != null
@@ -718,14 +730,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     {/* Left: Navigation */}
                     <div className="flex items-center gap-4 shrink-0">
                         <TabsList className="bg-muted/30 p-0.5 rounded-md border border-border/40 h-7 gap-0.5 overflow-hidden items-center">
-                            <TabsTrigger 
-                                value="unreconciled" 
+                            <TabsTrigger
+                                value="unreconciled"
                                 className="text-[9px] font-black uppercase tracking-wider px-2.5 h-5 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
                             >
                                 Pendientes
                             </TabsTrigger>
-                            <TabsTrigger 
-                                value="reconciled" 
+                            <TabsTrigger
+                                value="reconciled"
                                 className="text-[9px] font-black uppercase tracking-wider px-2.5 h-5 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
                             >
                                 Conciliados
@@ -841,276 +853,285 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
 
 
-                    <TabsContent value="unreconciled">
-                        <div className="flex gap-6 relative min-h-[600px] items-start pb-24">
-                            {/* Tables Container */}
-                            <div className="flex-1 transition-all duration-500 ease-[var(--ease-premium)] min-w-0">
-                                {/* ─── Grid with Section Headers ─── */}
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                    {/* Left: Bank */}
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between px-1">
-                                            <div className="flex items-center gap-2">
-                                                <div className="h-2 w-2 rounded-full bg-info" />
-                                                <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Cartola Bancaria</span>
-                                            </div>
-                                            <span className="text-[10px] font-mono text-muted-foreground">{bankData?.count || 0} pendientes</span>
+                <TabsContent value="unreconciled">
+                    <div className="flex gap-6 relative min-h-[600px] items-start pb-24">
+                        {/* Tables Container */}
+                        <div className="flex-1 transition-all duration-500 ease-[var(--ease-premium)] min-w-0">
+                            {/* ─── Grid with Section Headers ─── */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                {/* Left: Bank */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between px-1">
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-2 w-2 rounded-full bg-info" />
+                                            <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Cartola Bancaria</span>
                                         </div>
-                                        <DataTable
-                                            columns={bankColumns}
-                                            data={unreconciledLines}
-                                            cardMode
-                                            searchPlaceholder="Buscar movimiento..."
-                                            rowSelection={bankRowSelection}
-                                            onRowSelectionChange={handleLineSelectionChange}
-                                            skeletonRows={10}
-                                            pageSizeOptions={[50, 100]}
-                                            defaultPageSize={50}
-                                            renderRow={(row, children) => {
-                                                const line = row.original as BankStatementLine
-                                                const isSuggested = lineSuggestions.some((s: any) => s.line_data?.id === line.id)
-                                                const isExcluded = line.reconciliation_status === 'EXCLUDED' || (line as any).reconciliation_state === 'EXCLUDED'
-
-                                                if (!React.isValidElement(children)) return children as any
-
-                                                return (
-                                                    <DroppableBankLine id={line.id}>
-                                                        {React.cloneElement(children as React.ReactElement<any>, {
-                                                            className: cn(
-                                                                (children.props as any).className,
-                                                                "group transition-all duration-200",
-                                                                isSuggested && "[&_td]:!bg-warning/15 [&_td]:!border-y [&_td]:!border-warning/30",
-                                                                isExcluded && "opacity-40 grayscale-[0.5] [&_td]:!bg-muted/30"
-                                                            )
-                                                        })}
-                                                    </DroppableBankLine>
-                                                )
-                                            }}
-                                            onPaginationChange={(updater: Updater<PaginationState>) => {
-                                                if (typeof updater === 'function') {
-                                                    const newState = updater({ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 })
-                                                    setBankParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
-                                                } else {
-                                                    setBankParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
-                                                }
-                                            }}
-                                            manualPagination
-                                            pageCount={Math.ceil((bankData?.count || 0) / (bankParams.pageSize || 50))}
-                                            pagination={{ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 }}
-                                        />
+                                        <span className="text-[10px] font-mono text-muted-foreground">{bankData?.count || 0} pendientes</span>
                                     </div>
+                                    <DataTable
+                                        columns={bankColumns}
+                                        data={unreconciledLines}
+                                        cardMode
+                                        searchPlaceholder="Buscar movimiento..."
+                                        rowSelection={bankRowSelection}
+                                        onRowSelectionChange={handleLineSelectionChange}
+                                        skeletonRows={10}
+                                        pageSizeOptions={[50, 100]}
+                                        defaultPageSize={50}
+                                        renderRow={(row, children) => {
+                                            const line = row.original as BankStatementLine
+                                            const isSuggested = lineSuggestions.some((s: any) => s.line_data?.id === line.id)
+                                            const isExcluded = line.reconciliation_status === 'EXCLUDED' || (line as any).reconciliation_state === 'EXCLUDED'
 
-                                    {/* Right: Treasury (Renamed from System) */}
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-between px-1">
-                                            <div className="flex items-center gap-2">
-                                                <div className="h-2 w-2 rounded-full bg-primary" />
-                                                <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Movimientos del Sistema</span>
-                                            </div>
-                                            <span className="text-[10px] font-mono text-muted-foreground">{systemData?.count || 0} disponibles</span>
+                                            if (!React.isValidElement(children)) return children as any
+
+                                            return (
+                                                <DroppableBankLine id={line.id}>
+                                                    {React.cloneElement(children as React.ReactElement<any>, {
+                                                        className: cn(
+                                                            (children.props as any).className,
+                                                            "group transition-all duration-200",
+                                                            isSuggested && "[&_td]:!bg-warning/15 [&_td]:!border-y [&_td]:!border-warning/30",
+                                                            isExcluded && "opacity-40 grayscale-[0.5] [&_td]:!bg-muted/30"
+                                                        )
+                                                    })}
+                                                </DroppableBankLine>
+                                            )
+                                        }}
+                                        onPaginationChange={(updater: Updater<PaginationState>) => {
+                                            if (typeof updater === 'function') {
+                                                const newState = updater({ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 })
+                                                setBankParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
+                                            } else {
+                                                setBankParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
+                                            }
+                                        }}
+                                        manualPagination
+                                        pageCount={Math.ceil((bankData?.count || 0) / (bankParams.pageSize || 50))}
+                                        pagination={{ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 }}
+                                    />
+                                </div>
+
+                                {/* Right: Treasury (Renamed from System) */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between px-1">
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-2 w-2 rounded-full bg-primary" />
+                                            <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Movimientos del Sistema</span>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 text-primary hover:bg-primary/10 rounded-full"
+                                                onClick={() => setIsCreateMovementOpen(true)}
+                                                title="Crear Movimiento de Tesorería"
+                                            >
+                                                <Plus className="h-4 w-4" />
+                                            </Button>
                                         </div>
-                                        <DataTable
-                                            columns={paymentColumns}
-                                            data={unreconciledPayments}
-                                            cardMode
-                                            searchPlaceholder="Buscar pago..."
-                                            rowSelection={systemRowSelection}
-                                            onRowSelectionChange={handlePaymentSelectionChange}
-                                            skeletonRows={10}
-                                            pageSizeOptions={[50, 100]}
-                                            defaultPageSize={50}
-                                            renderRow={(row, children) => {
-                                                const item = row.original as ReconciliationSystemItem
-                                                const isSuggested = suggestions.some((s: any) => {
-                                                    if (s.is_batch) {
-                                                        return s.batch_data?.id === item.terminal_batch_id
-                                                    }
-                                                    return s.payment_data?.id === item.id
-                                                })
-                                                if (!React.isValidElement(children)) return children as any
-
-                                                return (
-                                                    <DraggablePayment id={item.id}>
-                                                        {React.cloneElement(children as React.ReactElement<any>, {
-                                                            className: cn(
-                                                                (children.props as any).className,
-                                                                "group",
-                                                                isSuggested && "[&_td]:!bg-warning/20 [&_td]:!border-y [&_td]:!border-warning/40"
-                                                            )
-                                                        })}
-                                                    </DraggablePayment>
-                                                )
-                                            }}
-                                            onPaginationChange={(updater: Updater<PaginationState>) => {
-                                                if (typeof updater === 'function') {
-                                                    const newState = updater({ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 })
-                                                    setSystemParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
-                                                } else {
-                                                    setSystemParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
-                                                }
-                                            }}
-                                            manualPagination
-                                            pageCount={Math.ceil((systemData?.count || 0) / (systemParams.pageSize || 50))}
-                                            pagination={{ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 }}
-                                        />
+                                        <span className="text-[10px] font-mono text-muted-foreground">{systemData?.count || 0} disponibles</span>
                                     </div>
+                                    <DataTable
+                                        columns={paymentColumns}
+                                        data={unreconciledPayments}
+                                        cardMode
+                                        searchPlaceholder="Buscar pago..."
+                                        rowSelection={systemRowSelection}
+                                        onRowSelectionChange={handlePaymentSelectionChange}
+                                        skeletonRows={10}
+                                        pageSizeOptions={[50, 100]}
+                                        defaultPageSize={50}
+                                        renderRow={(row, children) => {
+                                            const item = row.original as ReconciliationSystemItem
+                                            const isSuggested = suggestions.some((s: any) => {
+                                                if (s.is_batch) {
+                                                    return s.batch_data?.id === item.terminal_batch_id
+                                                }
+                                                return s.payment_data?.id === item.id
+                                            })
+                                            if (!React.isValidElement(children)) return children as any
+
+                                            return (
+                                                <DraggablePayment id={item.id}>
+                                                    {React.cloneElement(children as React.ReactElement<any>, {
+                                                        className: cn(
+                                                            (children.props as any).className,
+                                                            "group",
+                                                            isSuggested && "[&_td]:!bg-warning/20 [&_td]:!border-y [&_td]:!border-warning/40"
+                                                        )
+                                                    })}
+                                                </DraggablePayment>
+                                            )
+                                        }}
+                                        onPaginationChange={(updater: Updater<PaginationState>) => {
+                                            if (typeof updater === 'function') {
+                                                const newState = updater({ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 })
+                                                setSystemParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
+                                            } else {
+                                                setSystemParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
+                                            }
+                                        }}
+                                        manualPagination
+                                        pageCount={Math.ceil((systemData?.count || 0) / (systemParams.pageSize || 50))}
+                                        pagination={{ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 }}
+                                    />
                                 </div>
                             </div>
                         </div>
-                    </TabsContent>
+                    </div>
+                </TabsContent>
 
-                    <TabsContent value="reconciled">
-                        <div className="grid grid-cols-1 gap-4 pb-24">
-                            {reconciledGroups.map((groupItem) => {
-                                const { group, lines } = groupItem;
-                                
-                                // Totals for the whole group
-                                const movements = group?.movements || [];
-                                const batches = group?.batches || [];
-                                const diffAmount = group?.difference_amount || 0;
-                                const diffTypeRaw = group?.difference_type || "OTHER";
-                                
-                                const translationMap: Record<string, string> = {
-                                    'COMMISSION': 'Comisión',
-                                    'TAX': 'Impuesto',
-                                    'ROUNDING': 'Redondeo',
-                                    'OTHER': 'Ajuste de Diferencia'
-                                };
-                                const diffType = translationMap[diffTypeRaw] || group?.difference_type_display || "Ajuste de Diferencia";
+                <TabsContent value="reconciled">
+                    <div className="grid grid-cols-1 gap-4 pb-24">
+                        {reconciledGroups.map((groupItem) => {
+                            const { group, lines } = groupItem;
 
-                                return (
-                                    <div key={groupItem.id} className="group/card bg-transparent border border-border/40 hover:border-primary/20 rounded-md overflow-hidden transition-all duration-300">
-                                        <div className="flex">
-                                            {/* Left Column: Bank Side (Can have multiple lines) */}
-                                            <div className="w-[40%] p-6 flex flex-col justify-start border-r border-border/40 relative">
-                                                {/* Connecting Visual Resource */}
-                                                <div className="absolute top-1/2 -right-3 -translate-y-1/2 z-10">
-                                                    <div className="h-6 w-6 rounded-full bg-background border border-border/40 flex items-center justify-center text-primary shadow-sm group-hover/card:border-primary/40 transition-all">
-                                                        <CheckCircle2 className="h-3.5 w-3.5" />
-                                                    </div>
-                                                </div>
+                            // Totals for the whole group
+                            const movements = group?.movements || [];
+                            const batches = group?.batches || [];
+                            const diffAmount = group?.difference_amount || 0;
+                            const diffTypeRaw = group?.difference_type || "OTHER";
 
-                                                <div className="space-y-4">
-                                                    <div className="flex items-center justify-between px-1">
-                                                        <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Cartola Bancaria ({lines.length})</span>
-                                                    </div>
+                            const translationMap: Record<string, string> = {
+                                'COMMISSION': 'Comisión',
+                                'TAX': 'Impuesto',
+                                'ROUNDING': 'Redondeo',
+                                'OTHER': 'Ajuste de Diferencia'
+                            };
+                            const diffType = translationMap[diffTypeRaw] || group?.difference_type_display || "Ajuste de Diferencia";
 
-                                                    <div className="space-y-2">
-                                                        {lines.map((line) => {
-                                                            const isBankCredit = parseFloat(line.credit) > parseFloat(line.debit);
-                                                            const bankAmount = Math.abs(parseFloat(line.credit) - parseFloat(line.debit));
-                                                            
-                                                            return (
-                                                                <div key={line.id} className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-md hover:border-primary/20 transition-all shadow-sm">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="h-8 w-8 rounded-sm bg-background border border-border/40 flex items-center justify-center text-muted-foreground shrink-0">
-                                                                            <FileText className="h-4 w-4" />
-                                                                        </div>
-                                                                        <div className="flex flex-col min-w-0">
-                                                                            <span className="text-[9px] font-mono font-black uppercase text-muted-foreground opacity-60">Línea: {line.line_number}</span>
-                                                                            <h3 className="text-xs font-bold leading-tight text-foreground/90 truncate max-w-[200px]">{line.description}</h3>
-                                                                        </div>
-                                                                    </div>
-                                                                    
-                                                                    <div className="text-right shrink-0">
-                                                                        <span className="text-[9px] font-mono font-bold text-muted-foreground/60 uppercase block mb-0.5">
-                                                                            {format(new Date(line.transaction_date), 'dd MMM yyyy', { locale: es })}
-                                                                        </span>
-                                                                        <span className={cn(
-                                                                            "text-sm font-mono font-black tracking-tighter leading-none",
-                                                                            isBankCredit ? "text-success" : "text-destructive"
-                                                                        )}>
-                                                                            {formatCurrency(bankAmount)}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
+                            return (
+                                <div key={groupItem.id} className="group/card bg-transparent border border-border/40 hover:border-primary/20 rounded-md overflow-hidden transition-all duration-300">
+                                    <div className="flex">
+                                        {/* Left Column: Bank Side (Can have multiple lines) */}
+                                        <div className="w-[40%] p-6 flex flex-col justify-start border-r border-border/40 relative">
+                                            {/* Connecting Visual Resource */}
+                                            <div className="absolute top-1/2 -right-3 -translate-y-1/2 z-10">
+                                                <div className="h-6 w-6 rounded-full bg-background border border-border/40 flex items-center justify-center text-primary shadow-sm group-hover/card:border-primary/40 transition-all">
+                                                    <CheckCircle2 className="h-3.5 w-3.5" />
                                                 </div>
                                             </div>
-                                            {/* Right Column: System Side */}
-                                            <div className="flex-1 p-6">
+
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between px-1">
+                                                    <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Cartola Bancaria ({lines.length})</span>
+                                                </div>
+
                                                 <div className="space-y-2">
-                                                    <div className="flex items-center justify-between px-1">
-                                                        <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Movimientos del Sistema ({movements.length + batches.length})</span>
-                                                    </div>
-                                                    
-                                                    <div className="space-y-1.5">
-                                                        {movements.map((m: any) => (
-                                                            <div 
-                                                                key={m.id} 
-                                                                onClick={() => openTransactionDetail(m.id, 'payment')}
-                                                                className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-md hover:bg-muted/50 hover:border-primary/20 transition-all cursor-pointer"
-                                                            >
+                                                    {lines.map((line) => {
+                                                        const isBankCredit = parseFloat(line.credit) > parseFloat(line.debit);
+                                                        const bankAmount = Math.abs(parseFloat(line.credit) - parseFloat(line.debit));
+
+                                                        return (
+                                                            <div key={line.id} className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-md hover:border-primary/20 transition-all shadow-sm">
                                                                 <div className="flex items-center gap-3">
-                                                                    <div className="h-8 w-8 rounded-sm bg-background border border-border/40 flex items-center justify-center text-muted-foreground group-hover/card:text-primary transition-colors">
+                                                                    <div className="h-8 w-8 rounded-sm bg-background border border-border/40 flex items-center justify-center text-muted-foreground shrink-0">
                                                                         <FileText className="h-4 w-4" />
                                                                     </div>
-                                                                    <div className="flex flex-col">
-                                                                        <span className="text-xs font-bold uppercase tracking-tight text-foreground/80">
-                                                                            {m.movement_type_display || 'Movimiento'} #{m.id}
-                                                                        </span>
-                                                                        <span className="text-[10px] text-muted-foreground font-medium truncate max-w-[200px]">
-                                                                            {m.notes || m.reference || 'Sin concepto'}
-                                                                        </span>
+                                                                    <div className="flex flex-col min-w-0">
+                                                                        <span className="text-[9px] font-mono font-black uppercase text-muted-foreground opacity-60">Línea: {line.line_number}</span>
+                                                                        <h3 className="text-xs font-bold leading-tight text-foreground/90 truncate max-w-[200px]">{line.description}</h3>
                                                                     </div>
                                                                 </div>
-                                                                <span className="text-sm font-mono font-bold text-foreground/90">
-                                                                    {formatCurrency(m.amount)}
-                                                                </span>
-                                                            </div>
-                                                        ))}
 
-                                                        {batches.map((b: any) => (
-                                                            <div 
-                                                                key={b.id} 
-                                                                onClick={() => openTransactionDetail(b.id, 'terminal_batch')}
-                                                                className="flex items-center justify-between p-3 bg-primary/5 border border-primary/10 rounded-md hover:bg-primary/10 transition-all cursor-pointer"
-                                                            >
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="h-8 w-8 rounded-sm bg-primary/10 flex items-center justify-center text-primary">
-                                                                        <Wand2 className="h-4 w-4" />
-                                                                    </div>
-                                                                    <div className="flex flex-col">
-                                                                        <span className="text-xs font-black uppercase tracking-widest text-primary">Lote Terminal</span>
-                                                                        <span className="text-[10px] text-primary/70 font-bold">{b.terminal_name || 'Terminal'} - {b.display_id}</span>
-                                                                    </div>
+                                                                <div className="text-right shrink-0">
+                                                                    <span className="text-[9px] font-mono font-bold text-muted-foreground/60 uppercase block mb-0.5">
+                                                                        {format(new Date(line.transaction_date), 'dd MMM yyyy', { locale: es })}
+                                                                    </span>
+                                                                    <span className={cn(
+                                                                        "text-sm font-mono font-black tracking-tighter leading-none",
+                                                                        isBankCredit ? "text-success" : "text-destructive"
+                                                                    )}>
+                                                                        {formatCurrency(bankAmount)}
+                                                                    </span>
                                                                 </div>
-                                                                <span className="text-sm font-mono font-bold text-primary">
-                                                                    {formatCurrency(b.net_amount)}
-                                                                </span>
                                                             </div>
-                                                        ))}
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {/* Right Column: System Side */}
+                                        <div className="flex-1 p-6">
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between px-1">
+                                                    <span className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Movimientos del Sistema ({movements.length + batches.length})</span>
+                                                </div>
 
-                                                        {Math.abs(diffAmount) > 0.01 && (
-                                                            <div 
-                                                                onClick={() => group?.difference_journal_entry && openTransactionDetail(group.difference_journal_entry, 'journal_entry')}
-                                                                className="flex items-center justify-between p-3 bg-warning/5 border border-warning/20 border-dashed rounded-md hover:bg-warning/10 transition-all cursor-pointer"
-                                                            >
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="h-8 w-8 rounded-sm bg-warning/10 flex items-center justify-center text-warning">
-                                                                        <Calculator className="h-4 w-4" />
-                                                                    </div>
-                                                                    <div className="flex flex-col">
-                                                                        <span className="text-xs font-black uppercase tracking-widest text-warning">{diffType}</span>
-                                                                        <span className="text-[10px] text-warning/70 font-bold italic">Ajuste automático de diferencia</span>
-                                                                    </div>
+                                                <div className="space-y-1.5">
+                                                    {movements.map((m: any) => (
+                                                        <div
+                                                            key={m.id}
+                                                            onClick={() => openTransactionDetail(m.id, 'payment')}
+                                                            className="flex items-center justify-between p-3 bg-muted/30 border border-border/40 rounded-md hover:bg-muted/50 hover:border-primary/20 transition-all cursor-pointer"
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="h-8 w-8 rounded-sm bg-background border border-border/40 flex items-center justify-center text-muted-foreground group-hover/card:text-primary transition-colors">
+                                                                    <FileText className="h-4 w-4" />
                                                                 </div>
-                                                                <span className="text-sm font-mono font-bold text-warning">
-                                                                    {formatCurrency(diffAmount)}
-                                                                </span>
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-xs font-bold uppercase tracking-tight text-foreground/80">
+                                                                        {m.movement_type_display || 'Movimiento'} #{m.id}
+                                                                    </span>
+                                                                    <span className="text-[10px] text-muted-foreground font-medium truncate max-w-[200px]">
+                                                                        {m.notes || m.reference || 'Sin concepto'}
+                                                                    </span>
+                                                                </div>
                                                             </div>
-                                                        )}
-                                                    </div>
+                                                            <span className="text-sm font-mono font-bold text-foreground/90">
+                                                                {formatCurrency(m.amount)}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+
+                                                    {batches.map((b: any) => (
+                                                        <div
+                                                            key={b.id}
+                                                            onClick={() => openTransactionDetail(b.id, 'terminal_batch')}
+                                                            className="flex items-center justify-between p-3 bg-primary/5 border border-primary/10 rounded-md hover:bg-primary/10 transition-all cursor-pointer"
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="h-8 w-8 rounded-sm bg-primary/10 flex items-center justify-center text-primary">
+                                                                    <Wand2 className="h-4 w-4" />
+                                                                </div>
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-xs font-black uppercase tracking-widest text-primary">Lote Terminal</span>
+                                                                    <span className="text-[10px] text-primary/70 font-bold">{b.terminal_name || 'Terminal'} - {b.display_id}</span>
+                                                                </div>
+                                                            </div>
+                                                            <span className="text-sm font-mono font-bold text-primary">
+                                                                {formatCurrency(b.net_amount)}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+
+                                                    {Math.abs(diffAmount) > 0.01 && (
+                                                        <div
+                                                            onClick={() => group?.difference_journal_entry && openTransactionDetail(group.difference_journal_entry, 'journal_entry')}
+                                                            className="flex items-center justify-between p-3 bg-warning/5 border border-warning/20 border-dashed rounded-md hover:bg-warning/10 transition-all cursor-pointer"
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="h-8 w-8 rounded-sm bg-warning/10 flex items-center justify-center text-warning">
+                                                                    <Calculator className="h-4 w-4" />
+                                                                </div>
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-xs font-black uppercase tracking-widest text-warning">{diffType}</span>
+                                                                    <span className="text-[10px] text-warning/70 font-bold italic">Ajuste automático de diferencia</span>
+                                                                </div>
+                                                            </div>
+                                                            <span className="text-sm font-mono font-bold text-warning">
+                                                                {formatCurrency(diffAmount)}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </TabsContent>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </TabsContent>
 
                 {/* ─── Modals ─── */}
                 <ExclusionModal
@@ -1267,6 +1288,18 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         onCancel={() => setCreateMatchDialog({ open: false, line: null })}
                     />
                 )}
+
+                {/* ─── General Treasury Movement Wizard ─── */}
+                <MovementWizard
+                    open={isCreateMovementOpen}
+                    onOpenChange={setIsCreateMovementOpen}
+                    context="treasury"
+                    variant="standard"
+                    initialAccountName={statement?.treasury_account_name || "Cuenta Banco"}
+                    fixedAccountId={treasuryAccountId}
+                    onComplete={handleCreateMovement}
+                    onCancel={() => setIsCreateMovementOpen(false)}
+                />
 
                 {/* ─── S4.8: Auto-Match Progress with Polling ─── */}
                 <AutoMatchProgressModal
@@ -1488,12 +1521,12 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             transition={{ type: "spring", stiffness: 300, damping: 30 }}
                             className={cn(
                                 "fixed top-20 h-[calc(100vh-6rem)] w-[400px] z-[55] border border-white/5 bg-sidebar dark flex flex-col pointer-events-auto rounded-lg shadow-2xl overflow-hidden transition-all duration-500 ease-[var(--ease-premium)]",
-                                globalPanelStates.inbox && globalPanelStates.hub 
-                                    ? "right-[calc(320px+360px+3rem)]" 
-                                    : globalPanelStates.hub 
-                                        ? "right-[calc(360px+2rem)]" 
-                                        : globalPanelStates.inbox 
-                                            ? "right-[calc(320px+2rem)]" 
+                                globalPanelStates.inbox && globalPanelStates.hub
+                                    ? "right-[calc(320px+360px+3rem)]"
+                                    : globalPanelStates.hub
+                                        ? "right-[calc(360px+2rem)]"
+                                        : globalPanelStates.inbox
+                                            ? "right-[calc(320px+2rem)]"
                                             : "right-4"
                             )}
                         >
@@ -1507,10 +1540,10 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Configuración de Matching</span>
                                     </div>
                                 </div>
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors" 
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
                                     onClick={() => setIntelOpen(false)}
                                 >
                                     <X className="h-4 w-4" />

@@ -8,8 +8,7 @@ import { useState, useEffect, useCallback } from "react"
 import { getMyProfile } from '@/features/profile/api/profileApi'
 import { toast } from "sonner"
 import type { MyProfile } from "@/types/profile"
-import { Loader2 } from "lucide-react"
-import { Skeleton } from "@/components/ui/skeleton"
+import { CardSkeleton, FormSkeleton } from "@/components/shared"
 
 export default function ProfilePage() {
     const searchParams = useSearchParams()
@@ -33,23 +32,8 @@ export default function ProfilePage() {
     if (loading) {
         return (
             <PageContainer>
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                        <Skeleton className="h-10 w-10 rounded-md" />
-                        <div className="space-y-2">
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-3 w-48" />
-                        </div>
-                    </div>
-                </div>
-                <div className="flex gap-4 mb-4">
-                    <Skeleton className="h-10 w-32 rounded-md" />
-                    <Skeleton className="h-10 w-32 rounded-md" />
-                </div>
-                <div className="pt-4">
-                    <ProfileView activeTab={activeTab} />
-                </div>
-
+                <CardSkeleton variant="compact" count={1} className="mb-6 border-0 bg-transparent p-0" />
+                <FormSkeleton hasTabs tabs={2} fields={4} className="pt-0" />
                 <ProfileSidePanel profile={null} />
             </PageContainer>
         )
@@ -101,7 +85,7 @@ export default function ProfilePage() {
     return (
         <PageContainer>
             <PageHeader title={title} description={description} iconName={iconName} variant="minimal" navigation={navigation} />
-            
+
             <div className="pt-4">
                 <ProfileView activeTab={activeTab} initialProfile={profile ?? undefined} />
             </div>

@@ -299,3 +299,25 @@ export function useAllocateMutation(movementId: number, treasuryAccountId?: numb
         }
     })
 }
+
+/**
+ * Crea un movimiento de tesorería sin realizar match inmediato
+ */
+export function useCreateMovementMutation(treasuryAccountId: number) {
+    const queryClient = useQueryClient()
+
+    return useMutation({
+        mutationFn: async (movementData: any) => {
+            return api.post('/treasury/movements/', movementData)
+        },
+        onSuccess: () => {
+            toast.success("Movimiento creado correctamente")
+        },
+        onError: (err) => {
+            showApiError(err, "Error al crear movimiento")
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments', treasuryAccountId] })
+        }
+    })
+}

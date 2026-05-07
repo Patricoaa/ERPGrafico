@@ -44,7 +44,14 @@
       "Bash(python3 -c \"import ast; ast.parse\\(open\\('/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/backend/treasury/models.py'\\).read\\(\\)\\); print\\('models OK'\\)\")",
       "Bash(python3 -c \"import ast; ast.parse\\(open\\('/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/backend/treasury/migrations/0041_paymentterminalprovider_iva_account_required.py'\\).read\\(\\)\\); print\\('migration OK'\\)\")",
       "Bash(python3 -c \"import ast; ast.parse\\(open\\('/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/backend/treasury/views.py'\\).read\\(\\)\\); print\\('OK'\\)\")",
-      "Bash(mkdir -p /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/workflow/hooks)"
+      "Bash(mkdir -p /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/workflow/hooks)",
+      "Bash(sed 's/:.*$//')",
+      "Bash(echo \"\")",
+      "Bash(echo \"Base Skeleton Component:\")",
+      "Bash(ls -la /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/components/ui/skeleton.tsx)",
+      "Bash(echo \"Shared Skeleton Components:\")",
+      "Bash(ls -la /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/components/shared/*[Ss]keleton*.tsx)",
+      "Bash(npx eslint *)"
     ],
     "additionalDirectories": [
       "/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/workflow"

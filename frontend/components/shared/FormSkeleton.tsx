@@ -19,6 +19,7 @@ interface FormSkeletonProps {
     hasTabs?: boolean
     /** Number of tab buttons in the tabs bar */
     tabs?: number
+    ariaLabel?: string
 }
 
 export function FormSkeleton({
@@ -27,9 +28,10 @@ export function FormSkeleton({
     cards = 1,
     hasTabs = false,
     tabs = 3,
+    ariaLabel = 'Cargando formulario',
 }: FormSkeletonProps) {
     return (
-        <div className={cn("space-y-4", className)}>
+        <div role="status" aria-label={ariaLabel} className={cn("space-y-4", className)}>
             {hasTabs && (
                 <div className="flex gap-1 h-12 p-1 bg-muted/50 rounded-md border-2">
                     {Array.from({ length: tabs }).map((_, i) => (
