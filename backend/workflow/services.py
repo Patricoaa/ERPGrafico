@@ -456,16 +456,36 @@ class WorkflowService:
         """
         Notify all users in the specific group about a new unassigned task (Pool).
         """
-        # Notifications disabled to focus only on credit approvals and subscription OCS
-        pass
+        from django.contrib.auth.models import Group
+        try:
+            group = Group.objects.get(name=group_name)
+            WorkflowService.send_notification(
+                notification_type='TASK_GROUP_ASSIGNMENT',
+                title=f"Nueva tarea grupal: {task.title}",
+                message=f"Se ha asignado una nueva tarea al grupo {group_name}: {task.description}",
+                link=WorkflowService._get_link_for_task(task),
+                content_object=task,
+                level=Notification.Type.INFO,
+                data={'task_id': task.id, 'group_name': group_name}
+            )
+        except Group.DoesNotExist:
+            pass
 
     @staticmethod
     def notify_assignment(task):
         """
         Creates an in-app notification for the user assigned to the task.
         """
-        # Notifications disabled to focus only on credit approvals and subscription OCS
-        pass
+        if task.assigned_to:
+            WorkflowService.send_notification(
+                notification_type='TASK_ASSIGNMENT',
+                title=f"Nueva tarea asignada: {task.title}",
+                message=f"Se te ha asignado una nueva tarea: {task.description}",
+                link=WorkflowService._get_link_for_task(task),
+                content_object=task,
+                level=Notification.Type.INFO,
+                data={'task_id': task.id}
+            )
 
     @staticmethod
     def auto_complete_approval_tasks(content_object, user):
@@ -531,69 +551,85 @@ class WorkflowService:
         return reset_count
 
     @staticmethod
-    def send_notification(notification_type, title, message, link="", creator=None, content_object=None, level=Notification.Type.INFO):
+    def send_notification(notification_type, title, message, link="", creator=None, content_object=None, level=Notification.Type.INFO, data=None):
         """
         Sends notifications based on configured NotificationRules.
+        Uses a list to collect notifications and saves them individually to trigger signals.
         """
+        notification_data = data or {}
+        notifications_to_create = []
+
         try:
             rule = NotificationRule.objects.get(notification_type=notification_type)
             
             # 1. Notify Creator?
             if rule.notify_creator and creator:
-                Notification.objects.create(
+                notifications_to_create.append(Notification(
                     user=creator,
                     title=title,
                     message=message,
                     link=link,
                     type=level,
-                    content_object=content_object
-                )
+                    content_object=content_object,
+                    data=notification_data,
+                    notification_type=notification_type
+                ))
             
             # 2. Notify assigned user?
             if rule.assigned_user:
-                Notification.objects.create(
+                notifications_to_create.append(Notification(
                     user=rule.assigned_user,
                     title=title,
                     message=message,
                     link=link,
                     type=level,
-                    content_object=content_object
-                )
+                    content_object=content_object,
+                    data=notification_data,
+                    notification_type=notification_type
+                ))
             
             # 3. Notify assigned group?
             if rule.assigned_group:
                 users = rule.assigned_group.user_set.all()
                 for u in users:
-                    Notification.objects.create(
+                    notifications_to_create.append(Notification(
                         user=u,
                         title=title,
                         message=message,
                         link=link,
                         type=level,
-                        content_object=content_object
-                    )
+                        content_object=content_object,
+                        data=notification_data
+                    ))
                     
         except NotificationRule.DoesNotExist:
             # Fallback for credit approvals if no rule defined: notify creator
             if notification_type == 'POS_CREDIT_APPROVAL' and creator:
-                Notification.objects.create(
+                notifications_to_create.append(Notification(
                     user=creator,
                     title=title,
                     message=message,
                     link=link,
                     type=level,
-                    content_object=content_object
-                )
+                    content_object=content_object,
+                    data=notification_data
+                ))
             # Fallback for subscription OC if no rule: notify superusers
             elif notification_type == 'SUBSCRIPTION_OC_CREATED':
                 from core.models import User
                 superusers = User.objects.filter(is_superuser=True)
                 for su in superusers:
-                    Notification.objects.create(
+                    notifications_to_create.append(Notification(
                         user=su,
                         title=title,
                         message=message,
                         link=link,
                         type=level,
-                        content_object=content_object
-                    )
+                        content_object=content_object,
+                        data=notification_data
+                    ))
+
+        if notifications_to_create:
+            # We save them individually so that post_save signals fire for real-time updates.
+            for n in notifications_to_create:
+                n.save()
