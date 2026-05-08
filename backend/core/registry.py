@@ -96,21 +96,28 @@ class UniversalRegistry:
             if q_filter is None:
                 continue
 
-            qs = entity.model.objects.filter(q_filter, **entity.extra_filters)[:limit]
+            try:
+                qs = entity.model.objects.filter(q_filter, **entity.extra_filters)[:limit]
 
-            for instance in qs:
-                results.append(
-                    {
-                        "label": label,
-                        "icon": entity.icon,
-                        "id": instance.pk,
-                        "display": cls._render(entity.display_template, instance),
-                        "list_url": entity.list_url,
-                        "detail_url": entity.detail_url_pattern.replace("{id}", str(instance.pk)),
-                    }
-                )
-                if len(results) >= limit:
-                    return results
+                for instance in qs:
+                    results.append(
+                        {
+                            "label": label,
+                            "icon": entity.icon,
+                            "id": instance.pk,
+                            "display": cls._render(entity.display_template, instance),
+                            "list_url": entity.list_url,
+                            "detail_url": entity.detail_url_pattern.replace("{id}", str(instance.pk)),
+                        }
+                    )
+                    if len(results) >= limit:
+                        return results
+            except Exception as e:
+                # Log error but continue searching other entities
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error searching entity {label}: {e}")
+                continue
 
         return results
 
