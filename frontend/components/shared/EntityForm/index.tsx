@@ -28,10 +28,26 @@ export interface EntityFormProps {
     className?: string;
 }
 
-function deriveApiPath(modelLabel: string): string {
+export function deriveApiPath(modelLabel: string): string {
     const [app, model] = modelLabel.split(".");
-    // Simple pluralisation — assumes Django default (add "s")
-    return `/${app}/${model}s/`;
+    
+    const irregulars: Record<string, string> = {
+        'auditlog': 'auditlogs',
+    };
+
+    let pluralModel = model;
+    
+    if (irregulars[model]) {
+        pluralModel = irregulars[model];
+    } else if (model.endsWith('y') && !['a', 'e', 'i', 'o', 'u'].includes(model.charAt(model.length - 2))) {
+        pluralModel = model.slice(0, -1) + 'ies';
+    } else if (model.endsWith('s') || model.endsWith('x') || model.endsWith('z') || model.endsWith('ch') || model.endsWith('sh')) {
+        pluralModel = model + 'es';
+    } else {
+        pluralModel = model + 's';
+    }
+
+    return `/${app}/${pluralModel}/`;
 }
 
 export const EntityForm: React.FC<EntityFormProps> = ({

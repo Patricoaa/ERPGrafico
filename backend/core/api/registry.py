@@ -27,6 +27,6 @@ def model_schema(request, model_label: str):
 
     schema = build_schema(model, user=request.user)
     
-    # Expiration: 1 hora, o invalidado manual si cambia el schema/permisos
-    cache.set(cache_key, schema, timeout=3600)
+    # Expiration: 5 minutos (300s) según regla P-06, previene stale schemas
+    cache.set(cache_key, schema, timeout=300)
     return Response(schema)
