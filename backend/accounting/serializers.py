@@ -21,15 +21,15 @@ class AccountSerializer(serializers.ModelSerializer):
         }
 
 class AccountingSettingsSerializer(serializers.ModelSerializer):
-    default_uncollectible_expense_account_name = serializers.CharField(source='default_uncollectible_expense_account.name', read_only=True)
-    partner_capital_social_account_name = serializers.CharField(source='partner_capital_social_account.name', read_only=True)
-    partner_capital_contribution_account_name = serializers.CharField(source='partner_capital_contribution_account.name', read_only=True)
-    partner_withdrawal_account_name = serializers.CharField(source='partner_withdrawal_account.name', read_only=True)
-    partner_provisional_withdrawal_account_name = serializers.CharField(source='partner_provisional_withdrawal_account.name', read_only=True)
-    partner_retained_earnings_account_name = serializers.CharField(source='partner_retained_earnings_account.name', read_only=True)
-    partner_current_year_earnings_account_name = serializers.CharField(source='partner_current_year_earnings_account.name', read_only=True)
-    partner_dividends_payable_account_name = serializers.CharField(source='partner_dividends_payable_account.name', read_only=True)
-    partner_capital_receivable_account_name = serializers.CharField(source='partner_capital_receivable_account.name', read_only=True)
+    default_uncollectible_expense_account_name = serializers.CharField(source='default_uncollectible_expense_account.name', read_only=True, default=None)
+    partner_capital_social_account_name = serializers.CharField(source='partner_capital_social_account.name', read_only=True, default=None)
+    partner_capital_contribution_account_name = serializers.CharField(source='partner_capital_contribution_account.name', read_only=True, default=None)
+    partner_withdrawal_account_name = serializers.CharField(source='partner_withdrawal_account.name', read_only=True, default=None)
+    partner_provisional_withdrawal_account_name = serializers.CharField(source='partner_provisional_withdrawal_account.name', read_only=True, default=None)
+    partner_retained_earnings_account_name = serializers.CharField(source='partner_retained_earnings_account.name', read_only=True, default=None)
+    partner_current_year_earnings_account_name = serializers.CharField(source='partner_current_year_earnings_account.name', read_only=True, default=None)
+    partner_dividends_payable_account_name = serializers.CharField(source='partner_dividends_payable_account.name', read_only=True, default=None)
+    partner_capital_receivable_account_name = serializers.CharField(source='partner_capital_receivable_account.name', read_only=True, default=None)
 
 
     class Meta:

@@ -1,13 +1,27 @@
-from django.db.models import Q, QuerySet, Sum
+from django.db.models import Q, QuerySet, Sum, FilteredRelation
+
 
 from .models import Account, AccountType
 
 
 def list_accounts(*, params: dict) -> QuerySet:
-    """Base account list. Supports ?is_leaf=true to return only leaf (posting) accounts."""
+    """Base account list with optimized totals annotation."""
     queryset = Account.objects.all()
+    
+    # Annotate with posted totals to avoid N+1 queries during serialization
+    queryset = queryset.annotate(
+        posted_items=FilteredRelation(
+            'journal_items',
+            condition=Q(journal_items__entry__status='POSTED')
+        )
+    ).annotate(
+        annotated_debit_total=Sum('posted_items__debit'),
+        annotated_credit_total=Sum('posted_items__credit'),
+    )
+
     if params.get("is_leaf", "").lower() == "true":
         queryset = queryset.filter(children__isnull=True)
+    
     return queryset
 
 

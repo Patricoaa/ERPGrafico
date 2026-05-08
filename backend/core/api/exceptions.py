@@ -2,6 +2,7 @@ from rest_framework.views import exception_handler
 from rest_framework.response import Response
 from rest_framework import status
 from core.exceptions import ERPGraficoError
+from django.conf import settings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -55,7 +56,7 @@ def erpgrafico_exception_handler(exc, context):
             "error": {
                 "message": "Ocurrió un error inesperado en el servidor.",
                 "code": "INTERNAL_SERVER_ERROR",
-                "details": str(exc) if hasattr(exc, "__dict__") else {},
+                "details": str(exc) if settings.DEBUG else {},
                 "status_code": 500
             }
         }
