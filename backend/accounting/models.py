@@ -1,4 +1,6 @@
 from django.db import models
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from core.utils import get_current_date
 from django.utils.translation import gettext_lazy as _
@@ -274,6 +276,12 @@ class JournalEntry(AuditedModel):
         default=False,
         help_text=_("Indica si el asiento pertenece a un periodo cerrado")
     )
+
+    source_content_type = models.ForeignKey(
+        ContentType, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    source_object_id = models.PositiveIntegerField(null=True, blank=True)
+    source_document = GenericForeignKey('source_content_type', 'source_object_id')
     
     class Meta:
         ordering = ['-id']
@@ -360,104 +368,34 @@ class JournalEntry(AuditedModel):
 
     @property
     def get_source_documents(self):
-        docs = []
-        # Invoice
-        try:
-            if hasattr(self, 'invoice') and self.invoice:
-                docs.append({
-                    'type': 'invoice',
-                    'id': self.invoice.id,
-                    'name': str(self.invoice),
-                    'url': f'/billing/{"sales" if self.invoice.sale_order_id else "purchases"}'
-                })
-        except (ObjectDoesNotExist, AttributeError):
-            pass
-
-        # Payment
-        try:
-            if hasattr(self, 'payment') and self.payment:
-                docs.append({
-                    'type': 'payment',
-                    'id': self.payment.id,
-                    'name': str(self.payment),
-                    'url': '/treasury/payments'
-                })
-        except (ObjectDoesNotExist, AttributeError):
-            pass
-
-        # Sale Order
-        try:
-            if hasattr(self, 'sale_order') and self.sale_order:
-                docs.append({
-                    'type': 'sale_order',
-                    'id': self.sale_order.id,
-                    'name': str(self.sale_order),
-                    'url': '/sales/orders'
-                })
-        except (ObjectDoesNotExist, AttributeError):
-            pass
-
-        # Purchase Order
-        try:
-            if hasattr(self, 'purchase_order') and self.purchase_order:
-                docs.append({
-                    'type': 'purchase_order',
-                    'id': self.purchase_order.id,
-                    'name': str(self.purchase_order),
-                    'url': '/purchasing/orders'
-                })
-        except (ObjectDoesNotExist, AttributeError):
-            pass
-
-        # Stock Moves
-        try:
-            moves = self.stock_moves.all()
-            if moves.exists():
-                for move in moves:
-                    docs.append({
-                        'type': 'inventory',
-                        'id': move.id,
-                        'name': f"MOV-{str(move.id).zfill(6)}",
-                        'url': '/inventory/movements'
-                    })
-        except (ObjectDoesNotExist, AttributeError):
-            pass
-            
-        return docs
+        # Mantenemos por retrocompatibilidad momentánea mientras migramos vistas.
+        # Retorna una lista con la nueva información de source.
+        info = self.source_info
+        return [info] if info else []
 
     @property
     def get_source_document(self):
-        try:
-            if hasattr(self, 'invoice'):
-                return {
-                    'type': 'invoice',
-                    'id': self.invoice.id,
-                    'name': str(self.invoice),
-                    'url': f'/billing/{"sales" if self.invoice.sale_order else "purchases"}' # Simplified URL
-                }
-        except ObjectDoesNotExist:
-            pass
+        return self.source_document
 
-        try:
-            if hasattr(self, 'payment'):
-                return {
-                    'type': 'payment',
-                    'id': self.payment.id,
-                    'name': f"Pago {self.payment.id}",
-                    'url': '/treasury/payments'
-                }
-        except ObjectDoesNotExist:
-            pass
-
-        if self.stock_moves.exists():
-            move = self.stock_moves.first()
-            return {
-                'type': 'inventory',
-                'id': move.id,
-                'name': f"Mov. Stock {move.id}",
-                'url': '/inventory/movements'
+    @property
+    def source_info(self) -> dict | None:
+        if not self.source_document:
+            return None
+        from core.registry import UniversalRegistry
+        entity = UniversalRegistry.get_for_model(type(self.source_document))
+        if not entity:
+             return {
+                'type': self.source_content_type.model,
+                'id': self.source_object_id,
+                'name': str(self.source_document),
+                'url': '#'
             }
-        return None
+        return {
+            'type': entity.label,
+            'id': self.source_document.pk,
+            'name': str(self.source_document),
+            'url': entity.detail_url_pattern.format(id=self.source_document.pk),
+        }
 
 class JournalItem(TimeStampedModel):
     # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).

@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from accounting.models import Account, AccountType
 # from sales.models import SaleOrder
 # from purchasing.models import PurchaseOrder
@@ -170,7 +172,14 @@ class TreasuryMovement(models.Model):
     # Unified contact field
     contact = models.ForeignKey('contacts.Contact', on_delete=models.SET_NULL, null=True, blank=True, related_name='treasury_movements')
     
-    # Allocation
+    # Allocation (GFK)
+    allocated_content_type = models.ForeignKey(
+        ContentType, null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+    )
+    allocated_object_id = models.PositiveIntegerField(null=True, blank=True)
+    allocated_to = GenericForeignKey('allocated_content_type', 'allocated_object_id')
+
+    # Legacy Allocation fields
     invoice = models.ForeignKey('billing.Invoice', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
     sale_order = models.ForeignKey('sales.SaleOrder', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
     purchase_order = models.ForeignKey('purchasing.PurchaseOrder', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
