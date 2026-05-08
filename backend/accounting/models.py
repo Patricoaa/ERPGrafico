@@ -53,6 +53,8 @@ class Account(TimeStampedModel):
         """
         An account is selectable for postings if it has no children.
         """
+        if hasattr(self, 'annotated_children_count'):
+            return self.annotated_children_count == 0
         return not self.children.exists()
     
     # Reporting Mapping
