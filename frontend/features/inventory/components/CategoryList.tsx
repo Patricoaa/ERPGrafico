@@ -2,16 +2,18 @@
 
 import { showApiError } from "@/lib/errors"
 
-import { useEffect, useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
-import api from "@/lib/api"
+
 import { CategoryForm } from "./CategoryForm"
-import { Pencil, Trash2, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { EntityForm } from "@/components/shared/EntityForm"
+import { BaseModal } from "@/components/shared/BaseModal"
+import { Pencil, Trash2 } from "lucide-react"
+
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import React from "react"
@@ -28,7 +30,8 @@ interface CategoryListProps {
 export function CategoryList({ externalOpen, onExternalOpenChange, createAction }: CategoryListProps) {
     const { categories, refetch, deleteCategory } = useCategories()
     const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-    const [isFormOpen, setIsFormOpen] = useState(false)
+    const [isCreateOpen, setIsCreateOpen] = useState(false)  // EntityForm modal
+    const [isFormOpen, setIsFormOpen] = useState(false)       // CategoryForm (edit)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null)
 
@@ -38,9 +41,10 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
 
     const handleCloseModal = () => {
         setIsFormOpen(false)
+        setIsCreateOpen(false)
         setEditingCategory(null)
         onExternalOpenChange?.(false)
-        
+
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
@@ -78,7 +82,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
                     <div className="flex items-center justify-center w-full">
                         <div className="flex items-center justify-center h-8 w-8 rounded-md bg-muted/30 border border-muted-foreground/10 transition-colors">
                             {(() => {
-                const Icon = (LucideIcons as unknown as Record<string, React.ElementType>)[iconName] ?? LucideIcons.Package
+                                const Icon = (LucideIcons as unknown as Record<string, React.ElementType>)[iconName] ?? LucideIcons.Package
                                 return <Icon className="h-4 w-4 text-muted-foreground/70" />
                             })()}
                         </div>
@@ -106,6 +110,11 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
         }),
     ], [handleDelete])
 
+    // Sync external trigger (toolbar button) → create modal (EntityForm)
+    React.useEffect(() => {
+        if (externalOpen) setIsCreateOpen(true)
+    }, [externalOpen])
+
 
     const globalFilterFields = useMemo(() => ["name", "parent_name"], [])
 
@@ -115,22 +124,35 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
                 columns={columns}
                 data={categories}
                 cardMode
-                
+
                 searchPlaceholder="Buscar categoría por nombre..."
                 globalFilterFields={globalFilterFields}
                 useAdvancedFilter={true}
                 createAction={createAction}
             />
 
+            {/* Create Modal — EntityForm (T-36) */}
+            <BaseModal
+                open={isCreateOpen}
+                onOpenChange={(open) => { if (!open) handleCloseModal(); else setIsCreateOpen(true) }}
+                size="sm"
+                title="Nueva Categoría"
+            >
+                <EntityForm
+                    modelLabel="inventory.productcategory"
+                    apiBasePath="/inventory/categories/"
+                    onSuccess={() => { void refetch(); handleCloseModal() }}
+                    onCancel={() => handleCloseModal()}
+                />
+            </BaseModal>
+
+            {/* Edit Modal — CategoryForm keeps rich selectors + audit */}
             <CategoryForm
                 onSuccess={() => { void refetch() }}
-                open={isFormOpen || !!externalOpen}
+                open={isFormOpen}
                 onOpenChange={(open) => {
-                    if (!open) {
-                        handleCloseModal()
-                    } else {
-                        setIsFormOpen(true)
-                    }
+                    if (!open) handleCloseModal()
+                    else setIsFormOpen(true)
                 }}
                 initialData={editingCategory || undefined}
             />

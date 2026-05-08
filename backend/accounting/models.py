@@ -1124,6 +1124,13 @@ class Budget(TimeStampedModel):
     end_date = models.DateField(_("Fecha Fin"))
     description = models.TextField(_("Descripción"), blank=True)
 
+    class FormMeta:
+        ui_layout = {
+            'tabs': [
+                {'id': 'main', 'label': 'General', 'fields': ['name', 'start_date', 'end_date', 'description']}
+            ]
+        }
+
     class Meta:
         ordering = ['-id']
         verbose_name = _("Presupuesto")
@@ -1140,6 +1147,13 @@ class BudgetItem(TimeStampedModel):
     month = models.IntegerField(_("Mes"), default=1, help_text="Mes del presupuesto (1-12)")
     amount = models.DecimalField(_("Monto Presupuestado"), max_digits=20, decimal_places=0, validators=[MinValueValidator(0)])
     
+    class FormMeta:
+        ui_layout = {
+            'tabs': [
+                {'id': 'main', 'label': 'General', 'fields': ['budget', 'account', 'year', 'month', 'amount']}
+            ]
+        }
+
     class Meta:
         unique_together = ['budget', 'account', 'year', 'month']
         verbose_name = _("Item de Presupuesto")

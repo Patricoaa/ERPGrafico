@@ -41,13 +41,8 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def confirm(self, request, pk=None):
         order = self.get_object()
         if order.status == 'DRAFT':
-            order.status = 'CONFIRMED'
-            order.save()
-            
-            # Create HUB stage tasks for the inbox
-            from workflow.services import WorkflowService
-            WorkflowService.sync_hub_tasks(order)
-            
+            from core.services.document import DocumentRegistry
+            DocumentRegistry.for_instance(order).confirm(order, user=request.user)
             return Response({'status': 'confirmed'})
         return Response({'error': 'Order not in draft'}, status=400)
 
@@ -247,8 +242,10 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def annul(self, request, pk=None):
         order = self.get_object()
         force = request.data.get('force', False)
+        reason = request.data.get('reason', '')
         try:
-            PurchasingService.annul_purchase_order(order, force=force)
+            from core.services.document import DocumentRegistry
+            DocumentRegistry.for_instance(order).cancel(order, user=request.user, reason=reason, force=force)
             return Response(PurchaseOrderSerializer(order).data)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

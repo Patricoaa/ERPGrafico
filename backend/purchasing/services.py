@@ -939,36 +939,10 @@ class PurchasingService:
         return receipt
 
     @staticmethod
-    @transaction.atomic
     def annul_purchase_order(order: PurchaseOrder, force: bool = False):
-        """
-        Annuls a purchase order and all its associated documents (Invoices, Receipts, Payments).
-        """
-        if order.status == PurchaseOrder.Status.CANCELLED:
-             return order
-
-        from billing.models import Invoice
-        from billing.services import BillingService
-        from treasury.services import TreasuryService
-
-        # 1. Annul Invoices (Bills)
-        for invoice in order.invoices.all():
-            if invoice.status != Invoice.Status.CANCELLED:
-                 BillingService.annul_invoice(invoice, force=force)
-        
-        # 2. Annul Receipts
-        for receipt in order.receipts.all():
-            if receipt.status != PurchaseReceipt.Status.CANCELLED:
-                 PurchasingService.annul_receipt(receipt)
-        
-        # 3. Annul stand-alone Payments
-        for movement in order.payments.all():
-            if movement.journal_entry and movement.journal_entry.status == 'POSTED':
-                 TreasuryService.annul_movement(movement)
-
-        order.status = PurchaseOrder.Status.CANCELLED
-        order.save()
-        return order
+        """Deprecated: Use PurchaseOrderService().cancel() instead."""
+        from core.services.document import DocumentRegistry
+        return DocumentRegistry.for_instance(order).cancel(order, user=None, force=force)
 
     @staticmethod
     def purchase_checkout(*args, **kwargs):
@@ -1152,3 +1126,63 @@ class PurchasingService:
             
         # 4. Delete Order
         order.delete()
+
+from core.services.document import DocumentService, DocumentRegistry
+
+@DocumentRegistry.register('purchasing.purchaseorder')
+class PurchaseOrderService(DocumentService):
+    @transaction.atomic
+    def confirm(self, document, *, user, **kwargs):
+        """
+        Confirms a purchase order.
+        """
+        order = document
+        if order.status == PurchaseOrder.Status.DRAFT:
+            # Calculate totals if strategy exists
+            if hasattr(order, 'totals_strategy') and order.totals_strategy:
+                order.totals_strategy().compute(order)
+                
+            order.status = PurchaseOrder.Status.CONFIRMED
+            order.save()
+            
+            # Create HUB stage tasks for the inbox
+            from workflow.services import WorkflowService
+            WorkflowService.sync_hub_tasks(order)
+            
+        return order
+
+    @transaction.atomic
+    def cancel(self, document, *, user, reason: str = '', **kwargs):
+        """
+        Annuls a purchase order and all its associated documents.
+        """
+        order = document
+        force = kwargs.get('force', False)
+        
+        if order.status == PurchaseOrder.Status.CANCELLED:
+             return order
+
+        from billing.models import Invoice
+        from billing.services import BillingService
+        from treasury.services import TreasuryService
+
+        # 1. Annul Invoices (Bills)
+        for invoice in order.invoices.all():
+            if invoice.status != Invoice.Status.CANCELLED:
+                 BillingService.annul_invoice(invoice, force=force)
+        
+        # 2. Annul Receipts
+        for receipt in order.receipts.all():
+            if receipt.status != PurchaseReceipt.Status.CANCELLED:
+                 PurchasingService.annul_receipt(receipt)
+        
+        # 3. Annul stand-alone Payments
+        for movement in order.payments.all():
+            if movement.journal_entry and movement.journal_entry.status == 'POSTED':
+                 TreasuryService.annul_movement(movement)
+
+        order.status = PurchaseOrder.Status.CANCELLED
+        if reason:
+            order.notes = (order.notes or '') + f"\nAnulado: {reason}"
+        order.save()
+        return order
