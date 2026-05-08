@@ -38,3 +38,8 @@ class AccountingConfig(AppConfig):
             ))
         except Exception:
             pass
+
+        try:
+            import accounting.signals
+        except ImportError:
+            pass

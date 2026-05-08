@@ -105,24 +105,21 @@ class Invoice(TransactionalDocument):
     def __str__(self):
         return self.display_id
 
+    def dte_strategy(self):
+        """Devuelve la estrategia DTE correspondiente a este documento."""
+        from billing.strategies.dte import get_dte_strategy
+        return get_dte_strategy(self.dte_type)
+
     @property
     def sii_code(self) -> int:
         """Retorna el código SII numérico del documento"""
         if self.sii_document_code:
             return self.sii_document_code
         
-        # Fallback para documentos antiguos sin código asignado
-        code_map = {
-            'FACTURA': 33,
-            'FACTURA_EXENTA': 34,
-            'BOLETA': 39,
-            'BOLETA_EXENTA': 41,
-            'COMPROBANTE_PAGO': 48,
-            'NOTA_DEBITO': 56,
-            'NOTA_CREDITO': 61,
-            'PURCHASE_INV': 33,  # Asumir factura afecta por defecto
-        }
-        return code_map.get(self.dte_type, 0)
+        try:
+            return self.dte_strategy().sii_document_code
+        except KeyError:
+            return 0
     
     @property
     def is_tax_exempt(self) -> bool:
@@ -135,13 +132,10 @@ class Invoice(TransactionalDocument):
     @property
     def display_id(self):
         """Retorna ID del documento con prefijo apropiado"""
-        prefix = 'FAC'
-        if self.dte_type == 'NOTA_CREDITO': prefix = 'NC'
-        elif self.dte_type == 'NOTA_DEBITO': prefix = 'ND'
-        elif self.dte_type == 'BOLETA': prefix = 'BOL'
-        elif self.dte_type == 'BOLETA_EXENTA': prefix = 'BE'
-        elif self.dte_type == 'FACTURA_EXENTA': prefix = 'FAC-EX'
-        elif self.dte_type == 'COMPROBANTE_PAGO': prefix = 'CPE'
+        try:
+            prefix = self.dte_strategy().display_prefix
+        except KeyError:
+            prefix = 'DOC'
         return f"{prefix}-{self.number or 'Draft'}"
 
     @property

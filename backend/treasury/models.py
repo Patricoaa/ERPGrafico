@@ -345,14 +345,8 @@ class TreasuryMovement(models.Model):
             pass
 
         super().save(*args, **kwargs)
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('treasury')
-        invalidate_report_cache('contacts')
 
     def delete(self, *args, **kwargs):
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('treasury')
-        invalidate_report_cache('contacts')
         super().delete(*args, **kwargs)
 
 class TreasuryAccountManager(models.Manager):

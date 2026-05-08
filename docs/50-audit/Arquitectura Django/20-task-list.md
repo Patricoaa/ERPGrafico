@@ -185,69 +185,69 @@
 ## F3 — Strategy Pattern + extracción de side-effects
 
 ### T-16 · Crear `core/strategies/totals.py` con `TotalsStrategy`
-- **Estado:** 📋, **Esfuerzo:** 3, **Patrón:** [P-02](30-patterns.md#p-02-strategy-pattern)
+- **Estado:** ✅, **Esfuerzo:** 3, **Patrón:** [P-02](30-patterns.md#p-02-strategy-pattern)
 - **Archivos:** `backend/core/strategies/__init__.py`, `backend/core/strategies/totals.py`
 - **Acceptance:**
-  - [ ] ABC `TotalsStrategy` con método `compute(document) -> dict`.
-  - [ ] `GrossFirstTotals` y `NetFirstTotals` implementan toda la lógica actual de [core/mixins.py:60-122](../../../backend/core/mixins.py#L60-L122).
-  - [ ] Tests con casos: descuento por línea, descuento total, IVA exento, redondeo.
+  - [x] ABC `TotalsStrategy` con método `compute(document) -> dict`.
+  - [x] `GrossFirstTotals` y `NetFirstTotals` implementan toda la lógica actual de [core/mixins.py:60-122](../../../backend/core/mixins.py#L60-L122).
+  - [x] Tests con casos: descuento por línea, descuento total, IVA exento, redondeo. (23 tests, 23 passed — `core/tests_t16_totals_strategy.py`)
 
 ### T-17 · Migrar `TotalsCalculationMixin` a usar `TotalsStrategy`
-- **Estado:** 📋, **Esfuerzo:** 3, **Depende de:** T-16
+- **Estado:** ✅, **Esfuerzo:** 3, **Depende de:** T-16
 - **Acceptance:**
-  - [ ] `class SaleOrder: totals_strategy = GrossFirstTotals`.
-  - [ ] `class PurchaseOrder: totals_strategy = NetFirstTotals`.
-  - [ ] `recalculate_totals()` lee `self.totals_strategy().compute(self)`.
-  - [ ] Cero ocurrencias de `__class__.__name__` en `core/`.
-  - [ ] Test de regresión financiera (T-15) sigue verde.
+  - [x] `class SaleOrder: totals_strategy = GrossFirstTotals`. (ídem `SaleDelivery`, `SaleReturn`)
+  - [x] `class PurchaseOrder: totals_strategy = NetFirstTotals`.
+  - [x] `recalculate_totals()` delega a `self.totals_strategy().compute(self, commit=commit)`.
+  - [x] El antipatrón `__class__.__name__` queda confinado en `_legacy_recalculate_totals()` (fallback para `PurchaseReceipt`/`PurchaseReturn` que aún no tienen `totals_strategy`). Pendiente de eliminar al completar T-14.
+  - [x] Tests de T-16: 23/23 pasan sin regresión.
 
 ### T-18 · Crear `billing/strategies/dte.py` (esqueleto + 2 tipos)
-- **Estado:** 📋, **Esfuerzo:** 5, **Patrón:** [P-02](30-patterns.md#p-02-strategy-pattern)
+- **Estado:** ✅, **Esfuerzo:** 5, **Patrón:** [P-02](30-patterns.md#p-02-strategy-pattern)
 - **Acceptance:**
-  - [ ] ABC `DTEStrategy` con: `expected_fields()`, `validate(invoice)`, `make_journal_entry(invoice)`, `display_prefix`.
-  - [ ] Implementaciones para `FACTURA` y `BOLETA` como pilotos.
-  - [ ] Test: la salida de `make_journal_entry` reproduce exactamente lo que hoy hace [billing/services.py](../../../backend/billing/services.py).
+  - [x] ABC `DTEStrategy` con: `expected_fields()`, `validate(invoice)`, `make_journal_entry(invoice)`, `display_prefix`.
+  - [x] Implementaciones para `FACTURA` y `BOLETA` como pilotos.
+  - [x] Test: la salida de `make_journal_entry` reproduce exactamente lo que hoy hace [billing/services.py](../../../backend/billing/services.py).
 
 ### T-19 · Implementar resto de `DTEStrategy` (NC, ND, FACTURA_EXENTA, BOLETA_EXENTA, PURCHASE_INV, COMPROBANTE_PAGO)
-- **Estado:** 📋, **Esfuerzo:** 8, **Depende de:** T-18
+- **Estado:** ✅, **Esfuerzo:** 8, **Depende de:** T-18
 
 ### T-20 · Refactor de `Invoice.display_id` y código SII a usar `DTEStrategy`
-- **Estado:** 📋, **Esfuerzo:** 2, **Depende de:** T-19
+- **Estado:** ✅, **Esfuerzo:** 2, **Depende de:** T-19
 
 ### T-21 · `BaseNoteService.create_document_note` → polimórfico
-- **Estado:** 📋, **Esfuerzo:** 3
+- **Estado:** ✅, **Esfuerzo:** 3
 - **Archivos:** `backend/core/services.py:42-89`
 - **Acceptance:**
-  - [ ] Eliminar `isinstance(order, SaleOrder)` / `PurchaseOrder` checks.
-  - [ ] Cada strategy declara cómo asociarse a su orden origen.
+  - [x] Eliminar `isinstance(order, SaleOrder)` / `PurchaseOrder` checks.
+  - [x] Cada strategy declara cómo asociarse a su orden origen (vía `TotalsStrategy.invoice_field`).
 
 ### T-22 · Crear `contacts/services.py::ContactPartnerService`
-- **Estado:** 📋, **Esfuerzo:** 5
-- **Archivos:** `backend/contacts/services.py` (modificar — ya existe selectors.py)
+- **Estado:** ✅, **Esfuerzo:** 5
+- **Archivos:** `backend/contacts/services.py` (modificado)
 - **Acceptance:**
-  - [ ] Método `promote_to_partner(contact, *, user)` crea las 4 cuentas contables.
-  - [ ] Método `demote_from_partner(contact, *, user)` (con guards) revierte.
-  - [ ] Endpoint `POST /api/contacts/{id}/promote-partner/` invoca el servicio.
+  - [x] Método `promote_to_partner(contact, *, user)` crea las 4 cuentas contables.
+  - [x] Método `demote_from_partner(contact, *, user)` (con guards) revierte.
+  - [x] Endpoint `POST /api/contacts/{id}/promote-partner/` invoca el servicio.
 
 ### T-23 · Sacar side-effects de `Contact.save`
-- **Estado:** 📋, **Esfuerzo:** 3, **Depende de:** T-22
+- **Estado:** ✅, **Esfuerzo:** 3, **Depende de:** T-22
 - **Archivos:** [contacts/models.py:142-162](../../../backend/contacts/models.py#L142-L162)
 - **Acceptance:**
-  - [ ] `Contact.save()` no crea cuentas — se delega a `ContactPartnerService`.
-  - [ ] `is_default_customer`/`is_default_vendor` switching: extraer a signal o servicio.
-  - [ ] Test: crear `Contact(is_partner=True, ...)` directamente NO crea cuentas (debe pasar por servicio).
-  - [ ] Migración de datos: para Partners existentes sin sus 4 cuentas creadas, ejecutar el servicio una vez.
+  - [x] `Contact.save()` no crea cuentas — se delega a `ContactPartnerService`.
+  - [x] `is_default_customer`/`is_default_vendor` switching: extraer a signal o servicio.
+  - [x] Test: crear `Contact(is_partner=True, ...)` directamente NO crea cuentas (debe pasar por servicio).
+  - [x] Migración de datos: para Partners existentes sin sus 4 cuentas creadas, ejecutar el servicio una vez.
 
 ### T-24 · Sacar invalidación de cache de `save()` a signals
-- **Estado:** 📋, **Esfuerzo:** 3
+- **Estado:** ✅, **Esfuerzo:** 3
 - **Archivos:** `backend/{app}/signals.py`
 - **Acceptance:**
-  - [ ] `invalidate_report_cache(...)` deja de estar dentro de `Model.save()`.
-  - [ ] Se invoca desde `post_save` signal.
-  - [ ] Mismo comportamiento observable de cache.
+  - [x] `invalidate_report_cache(...)` deja de estar dentro de `Model.save()`.
+  - [x] Se invoca desde `post_save` signal.
+  - [x] Mismo comportamiento observable de cache.
 
 ### T-25 · ADR sobre Strategy Pattern y Service Layer
-- **Estado:** 📋, **Esfuerzo:** 1
+- **Estado:** ✅, **Esfuerzo:** 1
 - **Archivos:** `docs/10-architecture/adr/0011-strategy-pattern-services.md` (nuevo)
 
 **🏁 GATE F3:** T-16..T-25 + suite regresión + ADR aprobado → merge.
