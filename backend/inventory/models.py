@@ -14,6 +14,52 @@ from imagekit.processors import ResizeToFill
 from core.models import TimeStampedModel
 
 
+class ProductManufacturingProfile(models.Model):
+    """
+    Perfil de fabricación para productos de tipo MANUFACTURABLE.
+    Extrae los campos mfg_* de Product a un modelo 1:1 opcional.
+    T-44: https://docs.arquitectura-django/#t-44
+    """
+    product = models.OneToOneField(
+        'Product',
+        on_delete=models.CASCADE,
+        related_name='manufacturing_profile',
+        verbose_name=_("Producto"),
+    )
+
+    # Stage Enablers
+    mfg_auto_finalize = models.BooleanField(
+        _("Finalizar Automáticamente"), default=False,
+        help_text=_("Si se activa, la OT se marcará como Terminada automáticamente al generarse (Flujo Express)")
+    )
+    mfg_enable_prepress = models.BooleanField(_("Habilitar Pre-Impresión"), default=False)
+    mfg_enable_press = models.BooleanField(_("Habilitar Impresión"), default=False)
+    mfg_enable_postpress = models.BooleanField(_("Habilitar Post-Impresión"), default=False)
+
+    # Pre-Press Options
+    mfg_prepress_design = models.BooleanField(_("Pre-Impresión: Diseño Requerido"), default=False)
+    mfg_prepress_specs = models.BooleanField(_("Pre-Impresión: Especificaciones"), default=False)
+    mfg_prepress_folio = models.BooleanField(_("Pre-Impresión: Folio"), default=False)
+
+    # Press Options
+    mfg_press_offset = models.BooleanField(_("Impresión: Offset"), default=False)
+    mfg_press_digital = models.BooleanField(_("Impresión: Digital"), default=False)
+    mfg_press_special = models.BooleanField(_("Impresión: Especial"), default=False)
+
+    # Post-Press Options
+    mfg_postpress_finishing = models.BooleanField(_("Post-Impresión: Acabados"), default=False)
+    mfg_postpress_binding = models.BooleanField(_("Post-Impresión: Encuadernación/Troquelado"), default=False)
+
+    class Meta:
+        verbose_name = _("Perfil de Fabricación")
+        verbose_name_plural = _("Perfiles de Fabricación")
+
+    def __str__(self):
+        return f"MfgProfile → {self.product_id}"
+
+
+
+
 class ProductCategory(TimeStampedModel):
     # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     name = models.CharField(_("Nombre"), max_length=100)
@@ -593,11 +639,23 @@ class Product(models.Model):
 
         super().save(*args, **kwargs)
 
+    # T-44: Forward mfg_* access to ProductManufacturingProfile if it exists.
+    # The legacy fields on Product remain active during the deprecation window.
+    # Code should prefer `product.manufacturing_profile.mfg_auto_finalize` going forward.
+    @property
+    def mfg_profile(self):
+        """Returns the associated ProductManufacturingProfile, or None."""
+        try:
+            return self.manufacturing_profile
+        except Exception:
+            return None
+
     # BOM-related helpers
     @property
     def is_express_variant(self):
         """Check if this is an Express variant (has parent and is Express)."""
         return self.parent_template is not None and self.mfg_auto_finalize
+
 
     def has_active_bom(self):
         """Check if this product has an active BOM assigned."""

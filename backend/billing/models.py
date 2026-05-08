@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from accounting.models import JournalEntry
 from sales.models import SaleOrder
@@ -72,7 +73,14 @@ class Invoice(TransactionalDocument):
     )
     date = models.DateField(_("Fecha"), default=get_current_date)
 
-    # Links
+    # Links (GFK)
+    source_content_type = models.ForeignKey(
+        ContentType, null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+    )
+    source_object_id = models.PositiveIntegerField(null=True, blank=True)
+    source_order = GenericForeignKey('source_content_type', 'source_object_id')
+
+    # Legacy Links
     sale_order = models.ForeignKey(SaleOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
     purchase_order = models.ForeignKey(PurchaseOrder, on_delete=models.SET_NULL, null=True, blank=True, related_name='invoices')
     corrected_invoice = models.ForeignKey(

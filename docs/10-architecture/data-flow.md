@@ -105,3 +105,87 @@ Hooks do NOT expose `error` (the Error object) — UI gets toast via `showApiErr
 ## Real-time (future)
 
 Reserved: Django Channels + WebSocket for workflow transitions. Not yet implemented. Place ADR before adding.
+
+---
+
+## F5 — Modelo de datos post-refactor (actualizado 2026-05-08)
+
+### Relaciones polimórficas via GenericForeignKey
+
+Tres modelos ahora usan GFK para expresar relaciones polimórficas de origen:
+
+```
+JournalEntry
+  └─ source_content_type → ContentType   (FK, indexed)
+  └─ source_object_id    → int
+  └─ source_document     → GFK           ← acceso read
+
+TreasuryMovement
+  └─ allocated_content_type → ContentType
+  └─ allocated_object_id    → int
+  └─ allocated_to            → GFK
+
+Invoice
+  └─ source_content_type → ContentType
+  └─ source_object_id    → int
+  └─ source_order         → GFK
+```
+
+**Queries eficientes con GFK:**
+```python
+# En lugar de N queries hasattr:
+entries = JournalEntry.objects.select_related('source_content_type')[:100]
+for e in entries:
+    info = e.source_info  # 0 queries adicionales (ct ya cargado)
+
+# Para listados masivos, agrupar por tipo:
+from django.contrib.contenttypes.models import ContentType
+invoice_ct = ContentType.objects.get_for_model(Invoice)
+invoice_entries = entries.filter(source_content_type=invoice_ct)
+invoices = Invoice.objects.in_bulk(invoice_entries.values_list('source_object_id', flat=True))
+```
+
+**Columnas legacy (ventana de deprecación):**
+
+Las siguientes columnas siguen existiendo en DB pero no reciben datos nuevos:
+- `accounting_journalentry.invoice_id`, `.payment_id`, `.sale_order_id`, `.purchase_order_id`
+- `treasury_treasurymovement.invoice_id`, `.sale_order_id`, `.purchase_order_id`, `.payroll_id`
+- `billing_invoice.sale_order_id`, `.purchase_order_id`
+
+Se eliminarán en una migration separada (sprint +1) tras verificar con `grep` que ningún código las referencia directamente.
+
+---
+
+### ProductTypeStrategy — routing de lógica por tipo de producto
+
+```python
+# inventory/strategies/product_type.py
+strategy = get_product_type_strategy(product.product_type)
+
+# En vez de: if product.product_type == 'STORABLE': ...
+account = strategy.get_asset_account(product)
+strategy.validate(product)  # lanza ValidationError si inconsistente
+```
+
+| Tipo | tracks_inventory | can_have_bom | costing |
+|------|-----------------|--------------|---------|
+| CONSUMABLE | No | No | none |
+| STORABLE | Sí | No | average |
+| MANUFACTURABLE | Sí | Sí | average |
+| SERVICE | No | No | none |
+| SUBSCRIPTION | No | No | none |
+
+---
+
+### ProductManufacturingProfile — campos mfg_* extraídos
+
+Para productos MANUFACTURABLE, los campos de configuración de fabricación viven en:
+```python
+product.manufacturing_profile.mfg_auto_finalize
+product.manufacturing_profile.mfg_enable_prepress
+# ... etc.
+# Shortcut: product.mfg_profile (property, retorna None si no existe)
+```
+
+Los campos `Product.mfg_*` (legacy) permanecen en DB durante la ventana de deprecación.
+
