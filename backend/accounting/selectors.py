@@ -101,7 +101,7 @@ def get_account_ledger(*, account: Account, start_date: str | None, end_date: st
                 "balance": float(balance),
                 "partner": item.partner.name if item.partner else "",
                 "label": item.label or "",
-                "source_document": item.entry.get_source_document,
+                "source": item.entry.source_info,
             }
         )
 
