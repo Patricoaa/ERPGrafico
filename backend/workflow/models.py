@@ -198,7 +198,7 @@ class WorkflowSettings(TimeStampedModel):
         verbose_name_plural = _("Configuración de Flujos")
 
     class FormMeta:
-        exclude_fields = []
+        exclude_fields = []  # Sin campos sensibles — días de ciclo y umbrales numéricos.
 
     def __str__(self):
         return "Configuración de Flujo Global"

@@ -235,6 +235,17 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
         """
         return None
 
+    # --- T-57 ampliado: Polymorphic treasury hooks ---
+    # Eliminan isinstance(allocated, SaleOrder/PurchaseOrder/Invoice) de treasury/services.py.
+
+    def is_sale_document(self) -> bool:
+        """Indica si el documento corresponde a una venta (no una compra). SaleOrder → True."""
+        return True
+
+    def get_customer_for_payment(self):
+        """Retorna el contacto cliente relevante para resolver la cuenta contable en el pago."""
+        return self.customer
+
     def delete(self, *args, **kwargs):
         super().delete(*args, **kwargs)
 
@@ -368,7 +379,7 @@ class SalesSettings(TimeStampedModel):
         verbose_name_plural = _("Configuración de Ventas")
 
     class FormMeta:
-        exclude_fields = []
+        exclude_fields = []  # Sin campos sensibles — booleanos de configuración POS y FKs de usuario.
 
     def __str__(self):
         return "Configuración de Ventas"

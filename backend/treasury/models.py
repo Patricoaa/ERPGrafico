@@ -998,8 +998,8 @@ class ReconciliationSettings(TimeStampedModel):
         verbose_name_plural = _("Inteligencia de Conciliación")
 
     class FormMeta:
-        exclude_fields = []
-    
+        exclude_fields = []  # Sin campos sensibles — pesos de scoring y umbrales numéricos.
+
     @classmethod
     def get_for_account(cls, account=None):
         """

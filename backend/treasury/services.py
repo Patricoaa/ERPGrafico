@@ -147,16 +147,19 @@ class TreasuryService:
         if purchase_order and not invoice: targets.append(purchase_order)
         if payroll: targets.append(payroll)
         
-        # If arguments are missing, try to resolve from movement
+        # If arguments are missing, try to resolve from movement's GFK allocated_to.
+        # Use _meta.model_name (stable string) instead of isinstance to avoid coupling.
         allocated = getattr(movement, 'allocated_to', None)
-        from billing.models import Invoice
-        from sales.models import SaleOrder
-        from purchasing.models import PurchaseOrder
-        from hr.models import Payroll
-        if not invoice and isinstance(allocated, Invoice): targets.append(allocated)
-        if not sale_order and isinstance(allocated, SaleOrder) and not isinstance(allocated, Invoice): targets.append(allocated)
-        if not purchase_order and isinstance(allocated, PurchaseOrder) and not isinstance(allocated, Invoice): targets.append(allocated)
-        if not payroll and isinstance(allocated, Payroll): targets.append(allocated)
+        if allocated is not None:
+            model_name = allocated._meta.model_name
+            if not invoice and model_name == 'invoice':
+                targets.append(allocated)
+            elif not sale_order and model_name == 'saleorder':
+                targets.append(allocated)
+            elif not purchase_order and model_name == 'purchaseorder':
+                targets.append(allocated)
+            elif not payroll and model_name == 'payroll':
+                targets.append(allocated)
 
         targets = list(set(targets)) # unique
 
@@ -228,9 +231,7 @@ class TreasuryService:
         
         amount = movement.amount
         allocated = getattr(movement, 'allocated_to', None)
-        from billing.models import Invoice
-        from sales.models import SaleOrder
-        is_sale = isinstance(allocated, SaleOrder) or (isinstance(allocated, Invoice) and isinstance(allocated.source_order, SaleOrder))
+        is_sale = allocated is not None and allocated.is_sale_document()
 
         if movement.movement_type == TreasuryMovement.Type.INBOUND:
              if is_sale:
@@ -331,22 +332,13 @@ class TreasuryService:
 
             if not source_acc:
                 allocated = getattr(movement, 'allocated_to', None)
-                from billing.models import Invoice
-                from sales.models import SaleOrder
-                if isinstance(allocated, (Invoice, SaleOrder)):
+                if allocated is not None and allocated._meta.model_name in ('invoice', 'saleorder'):
                     # Resolve customer from the document itself, not movement.contact —
                     # they can diverge in some flows (e.g. POS guest sales) and any
                     # divergence breaks the receivable offset against Stage 1.1's invoice
                     # entry. Fall back to movement.contact only when the document has no
                     # explicit customer.
-                    doc_customer = None
-                    if isinstance(allocated, Invoice) and isinstance(allocated.source_order, SaleOrder):
-                        doc_customer = allocated.source_order.customer
-                    elif isinstance(allocated, SaleOrder):
-                        doc_customer = allocated.customer
-                    elif isinstance(allocated, Invoice):
-                        doc_customer = getattr(allocated, 'contact', None)
-                    customer = doc_customer or movement.contact
+                    customer = allocated.get_customer_for_payment() or movement.contact
                     source_acc = (customer.account_receivable if customer else None) or settings.default_receivable_account
                 elif movement.justify_reason:
                     # Operational Reasons (Tips, Adjustments)
@@ -376,11 +368,8 @@ class TreasuryService:
 
              if not target_acc:
                  allocated = getattr(movement, 'allocated_to', None)
-                 if allocated:
-                      from billing.models import Invoice
-                      from sales.models import SaleOrder
-                      is_sale = isinstance(allocated, SaleOrder) or (isinstance(allocated, Invoice) and isinstance(allocated.source_order, SaleOrder))
-                      if is_sale:
+                 if allocated is not None:
+                      if allocated.is_sale_document():
                           target_acc = (movement.contact.account_receivable if movement.contact else None) or settings.default_receivable_account
                       else:
                           # Supplier Account

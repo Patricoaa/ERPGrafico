@@ -90,7 +90,7 @@ class CompanySettings(models.Model):
         verbose_name_plural = _("Configuración de Empresa")
 
     class FormMeta:
-        exclude_fields = []
+        exclude_fields = []  # No sensitive fields — logo_url/logo son públicos por diseño.
 
     def __str__(self):
         return self.name
