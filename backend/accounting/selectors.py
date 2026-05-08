@@ -1,4 +1,4 @@
-from django.db.models import Q, QuerySet, Sum, FilteredRelation
+from django.db.models import Q, QuerySet, Sum, FilteredRelation, Count
 
 
 from .models import Account, AccountType
@@ -10,13 +10,15 @@ def list_accounts(*, params: dict) -> QuerySet:
     
     # Annotate with posted totals to avoid N+1 queries during serialization
     queryset = queryset.annotate(
-        posted_items=FilteredRelation(
-            'journal_items',
-            condition=Q(journal_items__entry__status='POSTED')
-        )
-    ).annotate(
-        annotated_debit_total=Sum('posted_items__debit'),
-        annotated_credit_total=Sum('posted_items__credit'),
+        annotated_debit_total=Sum(
+            'journal_items__debit',
+            filter=Q(journal_items__entry__status='POSTED')
+        ),
+        annotated_credit_total=Sum(
+            'journal_items__credit',
+            filter=Q(journal_items__entry__status='POSTED')
+        ),
+        annotated_children_count=Count('children'),
     )
 
     if params.get("is_leaf", "").lower() == "true":
