@@ -58,7 +58,7 @@ export function useSchema(modelLabel: string) {
     return useQuery<EntitySchema>({
         queryKey: ['schema', modelLabel],
         queryFn: async () => {
-            const { data } = await api.get(`/registry/${modelLabel}/schema/`);
+            const { data } = await api.get(`/core/registry/${modelLabel}/schema/`);
             return data;
         },
         staleTime: 5 * 60 * 1000, // 5 minutos cache
