@@ -25,10 +25,11 @@
 | **F3** | Strategy Pattern (Totals, DTE) + extracción de side-effects | 2 sprints (3-4 semanas) | Medio | F2 mergeada |
 | **F4** | DocumentService + Metadata Schema endpoint | 2 sprints (3-4 semanas) | Medio-alto | F3 estable |
 | **F5** | GenericForeignKey selectivo + ProductTypeStrategy | 3 sprints (5-6 semanas) | Alto | F4 estable, datos migrados |
+| **F6** | Hardening operacional y cierre de gates pendientes | 2 sprints (3-4 semanas) | Medio | F5 mergeada |
 
-**Esfuerzo total estimado:** 10-12 sprints (~5-6 meses con 1 ingeniero senior dedicado, o 3 meses con 2).
+**Esfuerzo total estimado:** 12-14 sprints (~6-7 meses con 1 ingeniero senior dedicado, o 3-4 meses con 2).
 
-**Hito de "Generic Form Injection mínimo viable":** fin de F4. F5 es enabler para escalar.
+**Hito de "Generic Form Injection mínimo viable":** fin de F4. F5 es enabler para escalar. **F6 es prerequisito para declarar la refactorización oficialmente cerrada.**
 
 ---
 
@@ -204,31 +205,88 @@
 
 ---
 
+## F6 — Hardening operacional y cierre de gates pendientes
+
+> **Origen:** auditoría de la rama `refactor/registry&arquitecturemodels` del 2026-05-08 detectó que F1..F5 implementaron los seis patrones (P-01..P-06) pero dejaron sin cumplir **gates operacionales documentados** y **tareas marcadas como TODO** en F2/F3.
+> **Sin nueva funcionalidad.** F6 NO agrega features. Solo cierra deuda del plan original.
+
+### Objetivos
+
+- Cerrar la suite de regresión financiera (T-15) que el plan calificó como "no negociable" y que sigue sin existir.
+- Eliminar las ocurrencias residuales del antipatrón `__class__.__name__` / `isinstance(SaleOrder|PurchaseOrder|...)` en `core/` y `services/` (gate F3 explícito).
+- Migrar `PurchaseReceipt` y `PurchaseReturn` a `TransactionalDocument` para retirar `_legacy_recalculate_totals` del mixin (cierra T-14 WIP).
+- Aplicar `R-03` (campos sensibles): `FormMeta.exclude_fields` en `User` y `*Settings`, más test que valide allowlist.
+- Cerrar la decisión sobre feature flags: o implementarlos retroactivamente para los endpoints/strategies activos, o publicar ADR explícito que justifique la omisión y el riesgo aceptado.
+- Completar el registro `UniversalRegistry` según T-03 (entidades de `core`, `accounting`, `inventory`, `treasury`, `tax` faltantes).
+- Escribir los **tests arquitectónicos** prescritos en [50-testing-strategy.md](50-testing-strategy.md#linters-arquitectónicos-custom) para que la regresión de patrones falle CI automáticamente.
+- Validar empíricamente los benchmarks de F1 (T-06) y F5 (T-52) con dataset realista; los resultados actuales se documentaron sobre datasets de desarrollo (2 entries) y no son evidencia válida.
+
+### Entregables
+
+- `backend/core/tests/fixtures/financial_baseline.py` + `backend/core/tests/test_financial_baseline.py` con ≥75 snapshots versionados en git.
+- `backend/core/tests/test_architectural_invariants.py` con tests `test_no_class_name_discrimination`, `test_no_isinstance_for_polymorphism`, `test_no_secret_fields_exposed`, `test_all_apps_register_at_least_one_entity`.
+- Refactor de [billing/services.py:967-1128](../../../backend/billing/services.py#L967) eliminando los 5 `isinstance(invoice.source_order, ...)` (delegar a `DTEStrategy` o método polimórfico del propio `source_order`).
+- Migración de `PurchaseReceipt` y `PurchaseReturn` a `TransactionalDocument`; retiro de `_legacy_recalculate_totals` y de la rama `is_sales = self.__class__.__name__ in [...]` en [core/mixins.py:107](../../../backend/core/mixins.py#L107).
+- `FormMeta.exclude_fields` en `User`, `CompanySettings`, `AccountingSettings`, `SalesSettings`, `GlobalHRSettings`, `WorkflowSettings`, `ReconciliationSettings`.
+- ADR-0017 (uno de): _"Feature flags retroactivos para arch_*"_ ó _"Omisión justificada de feature flags en la refactorización 2026"_.
+- `apps.py::ready()` de `core`, `accounting`, `inventory`, `treasury`, `tax` con las entidades faltantes registradas (ver T-03 original).
+- Playwright o equivalente con tests E2E para los 4 flujos críticos de [50-testing-strategy.md §Tests E2E](50-testing-strategy.md#tests-e2e-5--solo-flujos-críticos).
+- Benchmark de F1 con dataset ≥50k contactos + 100k movimientos; benchmark de F5 con auxiliar de proveedores sobre ≥100k entries. Resultados versionados en `docs/40-quality/benchmarks/`.
+- Hardening del endpoint de schema: cache TTL ajustado a 300s (per [30-patterns.md](30-patterns.md#p-06-metadata-schema)) y prueba de invalidación.
+
+### Gate de salida
+
+- [ ] `pytest backend/core/tests/test_financial_baseline.py` produce 0 divergencias contra snapshots.
+- [ ] `pytest backend/core/tests/test_architectural_invariants.py` pasa al 100%; en CI obligatorio.
+- [ ] `grep -rn "__class__\.__name__" backend/core backend/services backend/*/services.py` retorna 0 ocurrencias en código ejecutable (whitelist solo en tests/migraciones documentadas).
+- [ ] `grep -rn "isinstance(.*\(SaleOrder\|PurchaseOrder\|Invoice\|TreasuryMovement\))" backend/core backend/billing backend/sales backend/purchasing` retorna 0 fuera de `serializers.py`/`admin.py`.
+- [ ] T-14 cerrada: todos los consumidores de `TotalsCalculationMixin` declaran `totals_strategy`; `_legacy_recalculate_totals` eliminado.
+- [ ] `GET /api/registry/core.user/schema/` no expone `pos_pin` ni `password`. Test E2E lo verifica.
+- [ ] ADR-0017 mergeado.
+- [ ] `len(UniversalRegistry._entities) >= 20` con todas las apps de la matriz T-03 cubiertas.
+- [ ] Suite Playwright pasa para los 4 flujos críticos.
+- [ ] Reporte de benchmark publicado en `docs/40-quality/benchmarks/2026-XX-baseline.md` con p50/p95 medidos sobre dataset realista.
+
+### Tareas asociadas
+
+`T-56` a `T-67` en [20-task-list.md](20-task-list.md).
+
+### Riesgos clave
+
+- `R-09`: La suite de regresión financiera, al construirse **después** del refactor, fija el comportamiento *post-F5* como baseline en lugar del comportamiento legacy original. **Mitigación:** ejecutar la suite también contra el último commit pre-F2 (`git checkout` + run) y exportar esos snapshots como referencia adicional. Si divergen, abrir issue por cada diferencia y decidir caso por caso (regresión vs. mejora intencional documentada en ADR).
+- `R-10`: La eliminación de `_legacy_recalculate_totals` rompe `PurchaseReceipt`/`PurchaseReturn` si la migración a `TransactionalDocument` se hace sin atención al `decimal_places`. **Mitigación:** repetir el playbook de F2 (ADR-0014, migration aditiva, validación pre-merge sobre dataset real).
+- `R-11`: La refactorización de `isinstance(source_order, X)` en `billing/services.py` debe preservar la semántica de revertir el documento origen al estado correcto al cancelar la factura. **Mitigación:** golden test de `BillingService.cancel_invoice` para cada combinación (sale_order/purchase_order × DRAFT/POSTED/PAID).
+
+---
+
 ## Diagrama de dependencias
 
 ```
 F1 ──┐
-     ├──> F2 ──> F3 ──> F4 ──> F5
+     ├──> F2 ──> F3 ──> F4 ──> F5 ──> F6
      │        (paralelo: tests caracterización)
 F1 termina antes de F2 (porque F1 no toca modelos y entrega valor)
 F3 puede empezar cuando F2 mergea
 F4 requiere F3 (Strategy + side-effects limpios) para que Service Layer sea limpia
 F5 requiere F4 estable (DocumentService maneja la abstracción durante la migración)
+F6 cierra los gates de F1..F5 que quedaron pendientes; sin features nuevas
 ```
 
 ---
 
 ## Métricas de éxito (cómo sabremos que funcionó)
 
-| Métrica | Línea base actual | Objetivo fin F5 |
-|---------|-------------------|-----------------|
-| Líneas duplicadas en `Model.save()` | ~600 (estimado por inspección) | <100 |
-| Ocurrencias de `__class__.__name__` o `isinstance` para discriminación | 8 conocidas | 0 |
-| Apps registradas en UniversalRegistry | 0 | 12 |
-| Modelos con CRUD via `<EntityForm />` (sin frontend custom) | 0 | ≥10 |
-| Coverage de `core/strategies/` | n/a | >90% |
-| Tiempo medio para agregar nueva entidad CRUD simple | ~3 días (hoy) | <1 día |
-| Tests de caracterización financiera | 0 | >50 (cubriendo Balance, ER, Mayor, Auxiliar) |
+| Métrica | Línea base actual | Objetivo fin F5 | Objetivo fin F6 |
+|---------|-------------------|-----------------|-----------------|
+| Líneas duplicadas en `Model.save()` | ~600 (estimado por inspección) | <100 | <100 |
+| Ocurrencias de `__class__.__name__` o `isinstance` para discriminación | 8 conocidas | 0 (gate F3) | **0 verificado por test arquitectónico en CI** |
+| Apps registradas en UniversalRegistry | 0 | 12 | 12 (todas las entidades T-03 cubiertas) |
+| Modelos con CRUD via `<EntityForm />` (sin frontend custom) | 0 | ≥10 | ≥10 |
+| Coverage de `core/strategies/` | n/a | >90% | >90% |
+| Tiempo medio para agregar nueva entidad CRUD simple | ~3 días (hoy) | <1 día | <1 día |
+| Tests de caracterización financiera | 0 | >50 | **≥75 snapshots versionados, CI obligatorio** |
+| Tests E2E de flujos críticos | 0 | n/a | **4 flujos cubiertos (Venta, POS, Compra, Cierre)** |
+| Schema endpoint expone campos sensibles (`pos_pin`, etc.) | n/a | sin validar | **0 — validado por test** |
 
 ---
 

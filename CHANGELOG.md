@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### [0.1.17](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.16...v0.1.17) (2026-05-07)
 
+### ⚙️ Refactors
+
+* **architecture:** document feature flags omission decision and big-bang rollback strategy in ADR-0017.
 ### [0.1.16](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.15...v0.1.16) (2026-05-07)
 
 

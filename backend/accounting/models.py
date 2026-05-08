@@ -287,6 +287,9 @@ class JournalEntry(AuditedModel):
         ordering = ['-id']
         verbose_name = _("Asiento Contable")
         verbose_name_plural = _("Libro Diario")
+        indexes = [
+            models.Index(fields=['source_content_type', 'source_object_id']),
+        ]
 
     def __str__(self):
         return self.display_id
@@ -971,6 +974,9 @@ class AccountingSettings(TimeStampedModel):
     class Meta:
         verbose_name = _("Configuración Contable")
         verbose_name_plural = _("Configuración Contable")
+
+    class FormMeta:
+        exclude_fields = []
 
     def __str__(self):
         return "Configuración Contable Global"

@@ -1,0 +1,505 @@
+{
+  "net_income": -9304347.0,
+  "net_income_comp": 0.0,
+  "sections": [
+    {
+      "name": "Ingresos Operacionales",
+      "total": 20508220.0,
+      "total_comp": 0.0,
+      "tree": [
+        {
+          "balance": 20508220.0,
+          "children": [
+            {
+              "balance": 20508220.0,
+              "children": [],
+              "code": "4.1.01",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Venta de Productos",
+              "type": "INCOME",
+              "variance": 20508220.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "4.1.02",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Venta de Servicios",
+              "type": "INCOME",
+              "variance": 0.0
+            }
+          ],
+          "code": "4.1",
+          "comp_balance": 0.0,
+          "id": "<id>",
+          "name": "Ingresos de Actividades Ordinarias",
+          "type": "INCOME",
+          "variance": 20508220.0
+        }
+      ]
+    },
+    {
+      "name": "Costo de Ventas",
+      "total": -187433.0,
+      "total_comp": 0.0,
+      "tree": [
+        {
+          "balance": -187433.0,
+          "children": [
+            {
+              "balance": -187433.0,
+              "children": [],
+              "code": "5.1.01",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Costo de Mercaderías Vendidas",
+              "type": "EXPENSE",
+              "variance": -187433.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.1.02",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Costo de Productos Fabricados",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.1.03",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Costo de Servicios Prestados",
+              "type": "EXPENSE",
+              "variance": 0.0
+            }
+          ],
+          "code": "5.1",
+          "comp_balance": 0.0,
+          "id": "<id>",
+          "name": "Costo de Ventas",
+          "type": "EXPENSE",
+          "variance": -187433.0
+        }
+      ]
+    },
+    {
+      "is_total": true,
+      "name": "Resultado Bruto",
+      "total": 20695653.0,
+      "total_comp": 0.0
+    },
+    {
+      "name": "Gastos Operacionales",
+      "total": 30000000.0,
+      "total_comp": 0.0,
+      "tree": [
+        {
+          "balance": 30000000.0,
+          "children": [
+            {
+              "balance": 18000000.0,
+              "children": [
+                {
+                  "balance": 18000000.0,
+                  "children": [],
+                  "code": "5.2.01.01",
+                  "comp_balance": 0.0,
+                  "id": "<id>",
+                  "name": "Sueldo Base y Gratificaciones",
+                  "type": "EXPENSE",
+                  "variance": 18000000.0
+                },
+                {
+                  "balance": 0.0,
+                  "children": [],
+                  "code": "5.2.01.02",
+                  "comp_balance": 0.0,
+                  "id": "<id>",
+                  "name": "Cotizaciones Previsionales Patronales",
+                  "type": "EXPENSE",
+                  "variance": 0.0
+                }
+              ],
+              "code": "5.2.01",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Sueldos y Remuneraciones",
+              "type": "EXPENSE",
+              "variance": 18000000.0
+            },
+            {
+              "balance": 12000000.0,
+              "children": [],
+              "code": "5.2.02",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Arriendos",
+              "type": "EXPENSE",
+              "variance": 12000000.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.03",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Servicios Básicos (Agua, Luz, Tel)",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.04",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Honorarios Profesionales",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.05",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Materiales y Suministros Consumibles",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.06",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Gastos Generales",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.07",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Pérdida por Ajuste de Inventario",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.08",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Publicidad y Propaganda",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.09",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Seguros",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.10",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Comisiones Bancarias",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.11",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Ajuste por Redondeo",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.12",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Ajuste por Error",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.13",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Comisión Tarjeta / Transbank",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.14",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Faltante por Robo",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.15",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Otros Egresos POS",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.16",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Redondeo y Vueltos POS (Ajuste)",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.17",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Errores de Conteo y Sistema POS",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.18",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Asignaciones y Bonos No Imponibles",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.2.99",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Otros Gastos Varios",
+              "type": "EXPENSE",
+              "variance": 0.0
+            }
+          ],
+          "code": "5.2",
+          "comp_balance": 0.0,
+          "id": "<id>",
+          "name": "Gastos de Administración y Ventas",
+          "type": "EXPENSE",
+          "variance": 30000000.0
+        }
+      ]
+    },
+    {
+      "is_total": true,
+      "name": "Resultado Operacional",
+      "total": -9304347.0,
+      "total_comp": 0.0
+    },
+    {
+      "name": "Ingresos No Operacionales",
+      "total": 0.0,
+      "total_comp": 0.0,
+      "tree": [
+        {
+          "balance": 0.0,
+          "children": [
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "4.2.01",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Ajuste de Precios / Otros Ingresos",
+              "type": "INCOME",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "4.2.02",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Ganancia por Ajuste de Inventario",
+              "type": "INCOME",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "4.2.03",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Intereses Ganados",
+              "type": "INCOME",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "4.2.04",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Diferencia de Cambio (Ganancia)",
+              "type": "INCOME",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "4.2.05",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Otros Ingresos POS",
+              "type": "INCOME",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "4.2.06",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Propinas POS",
+              "type": "INCOME",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "4.2.07",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Ingreso por Corrección Monetaria",
+              "type": "INCOME",
+              "variance": 0.0
+            }
+          ],
+          "code": "4.2",
+          "comp_balance": 0.0,
+          "id": "<id>",
+          "name": "Otros Ingresos",
+          "type": "INCOME",
+          "variance": 0.0
+        }
+      ]
+    },
+    {
+      "name": "Gastos No Operacionales",
+      "total": 0.0,
+      "total_comp": 0.0,
+      "tree": [
+        {
+          "balance": 0.0,
+          "children": [
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.3.01",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Gastos Financieros / Intereses",
+              "type": "EXPENSE",
+              "variance": 0.0
+            },
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.3.02",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Diferencia de Cambio (Pérdida)",
+              "type": "EXPENSE",
+              "variance": 0.0
+            }
+          ],
+          "code": "5.3",
+          "comp_balance": 0.0,
+          "id": "<id>",
+          "name": "Otros Gastos (No Operacionales)",
+          "type": "EXPENSE",
+          "variance": 0.0
+        }
+      ]
+    },
+    {
+      "is_total": true,
+      "name": "Resultado No Operacional",
+      "total": 0.0,
+      "total_comp": 0.0
+    },
+    {
+      "is_total": true,
+      "name": "Utilidad Antes de Impuestos",
+      "total": -9304347.0,
+      "total_comp": 0.0
+    },
+    {
+      "name": "Impuesto a la Renta",
+      "total": 0.0,
+      "total_comp": 0.0,
+      "tree": [
+        {
+          "balance": 0.0,
+          "children": [
+            {
+              "balance": 0.0,
+              "children": [],
+              "code": "5.4.01",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Gasto Impuesto a la Renta (Provisionado)",
+              "type": "EXPENSE",
+              "variance": 0.0
+            }
+          ],
+          "code": "5.4",
+          "comp_balance": 0.0,
+          "id": "<id>",
+          "name": "Impuesto a la Renta",
+          "type": "EXPENSE",
+          "variance": 0.0
+        }
+      ]
+    },
+    {
+      "is_total": true,
+      "name": "Utilidad Neta",
+      "total": -9304347.0,
+      "total_comp": 0.0
+    }
+  ]
+}

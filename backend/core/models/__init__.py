@@ -50,6 +50,8 @@ class User(AbstractUser):
     )
     history = HistoricalRecords()
 
+    class FormMeta:
+        exclude_fields = ['pos_pin', 'password', 'last_login', 'is_superuser', 'user_permissions', 'groups']
 class CompanySettings(models.Model):
     name = models.CharField(_("Razón Social"), max_length=255)
     trade_name = models.CharField(_("Nombre de Fantasía"), max_length=255, blank=True)
@@ -86,6 +88,9 @@ class CompanySettings(models.Model):
     class Meta:
         verbose_name = _("Configuración de Empresa")
         verbose_name_plural = _("Configuración de Empresa")
+
+    class FormMeta:
+        exclude_fields = []
 
     def __str__(self):
         return self.name

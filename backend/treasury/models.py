@@ -996,6 +996,9 @@ class ReconciliationSettings(TimeStampedModel):
     class Meta:
         verbose_name = _("Inteligencia de Conciliación")
         verbose_name_plural = _("Inteligencia de Conciliación")
+
+    class FormMeta:
+        exclude_fields = []
     
     @classmethod
     def get_for_account(cls, account=None):

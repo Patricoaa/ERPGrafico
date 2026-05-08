@@ -49,6 +49,9 @@ class GlobalHRSettings(TimeStampedModel):
         verbose_name = _("Parámetros Globales RRHH")
         verbose_name_plural = _("Parámetros Globales RRHH")
 
+    class FormMeta:
+        exclude_fields = []
+
     def __str__(self):
         return "Configuración Global RRHH"
 

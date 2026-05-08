@@ -387,6 +387,198 @@
 
 ---
 
+## F6 — Hardening operacional y cierre de gates pendientes
+
+> **Origen:** auditoría de la rama `refactor/registry&arquitecturemodels` del 2026-05-08 detectó deuda en gates documentados de F1..F5.
+> **Restricción:** F6 NO agrega funcionalidad. Solo cierra obligaciones pendientes del plan original.
+> **Patrón de trabajo:** una tarea por PR. Code review obligatorio por ingeniero externo a la fase.
+
+### T-56 · Suite de regresión financiera con snapshots versionados
+- **Estado:** ✅ DONE (Fases 1 y 2 completas — 27 snapshots versionados en git)
+- **Esfuerzo:** 13
+- **Patrón:** [Testing Strategy — Caracterización Financiera](50-testing-strategy.md#tests-de-caracterización-financiera-suite-obligatoria)
+- **Cierra:** T-15 (que quedó marcada `📋 TODO` desde F2)
+- **Archivos:**
+  - [`backend/core/tests/fixtures/financial_baseline.py`](../../../backend/core/tests/fixtures/financial_baseline.py) ✅ creado
+  - [`backend/core/tests/test_financial_baseline.py`](../../../backend/core/tests/test_financial_baseline.py) ✅ creado
+  - [`backend/core/tests/SNAPSHOTS.md`](../../../backend/core/tests/SNAPSHOTS.md) ✅ creado (operación)
+  - `backend/core/tests/snapshots/*.json` ✅ **27 snapshots versionados en git** (generados 2026-05-08)
+  - `backend/contacts/selectors.py` ✅ `customer_aging_report` + `supplier_aging_report` agregados
+- **Bugfix descubierto durante fase 1:**
+  - [x] [`backend/accounting/migrations/0014_t41_gfk_data_migration.py`](../../../backend/accounting/migrations/0014_t41_gfk_data_migration.py) no declaraba dependencias cross-app sobre las migraciones que crean `journal_entry` en `Invoice`/`SaleOrder`/`PurchaseOrder`/`StockMove`/`TreasuryMovement`. Esto rompía la creación de la DB de tests desde cero (`FieldError: Cannot resolve keyword 'journal_entry' into field`). Fix: agregadas dependencias explícitas (`billing/0008`, `sales/0006`, `purchasing/0002`, `inventory/0001_initial`, `treasury/0001_initial`) + guard defensivo `_has_journal_entry()` para tolerar futuros cambios de schema. Bug latente en producción (la prod nunca recreaba la DB), expuesto solo al construir el baseline para snapshots.
+- **Progreso fase 1 (completada):**
+  - [x] `build_baseline_dataset(seed=42)` implementado con dataset determinístico:
+    - 8 contactos (5 clientes + 3 proveedores con `tax_id` fijo)
+    - COA IFRS estándar via `AccountingService.populate_ifrs_coa()`
+    - 100 `SaleOrder` con asientos POSTED (60% PAID, 30% CONFIRMED, 10% CANCELLED)
+    - 50 `PurchaseOrder` con asientos POSTED
+    - 30 NC sobre ventas, 20 ND sobre compras
+    - 100 `TreasuryMovement` (50 INBOUND + 50 OUTBOUND) con asientos
+    - 50 asientos manuales (capital + 12 depreciaciones + 12 nóminas + 12 arriendos + 12 ajustes)
+    - Total: ≥500 `JournalItem`s en el dataset
+  - [x] Helper `_SnapshotMixin.assertSnapshot` con soporte de `UPDATE_SNAPSHOTS=1` y normalización de IDs.
+  - [x] Tests para 4 reportes core: `balance_sheet`, `income_statement`, `cash_flow`, `trial_balance`.
+  - [x] Test del Mayor por cuenta hoja con movimientos (~15-20 snapshots `ledger_<code>` automáticos).
+  - [x] Tests trimestrales (Q1/Q2/Q3 BS, H1/H2 ER, Q4 CF) para detectar bugs de filtrado por fecha.
+  - [x] Test de ratios (`financial_analysis`).
+- **Progreso fase 2 (completada 2026-05-08):**
+  - [x] `customer_aging_report(*, cutoff_date, limit)` implementado en `contacts/selectors.py`.
+  - [x] `supplier_aging_report(*, cutoff_date, limit)` implementado en `contacts/selectors.py`.
+  - [x] `FinancialBaselineAgingTests` agregada: `test_customer_aging` + `test_supplier_aging` con snapshot.
+  - [x] `_normalise()` extendido: `contact_id` ahora en la blacklist de IDs.
+  - [x] 14/14 tests pasan en Docker (`Ran 14 tests in 17.4s OK`).
+- **Acceptance pendiente (fase 3 — menor prioridad):**
+  - [ ] Extender con F29 (libro IVA débito + crédito) — usar selectors de `tax/`.
+  - [ ] CI corre la suite en cada PR (configuración pendiente — depende de pipeline existente).
+  - [ ] R-09 mitigado: snapshots adicionales generados desde el commit pre-F2 (`git checkout 62cd4a34`, ejecutar, exportar a `snapshots/legacy/`); divergencias documentadas en ADR.
+
+### T-57 · Eliminar `isinstance(invoice.source_order, ...)` en billing/services.py
+- **Estado:** ✅ DONE (2026-05-08)
+- **Esfuerzo:** 5
+- **Depende de:** T-56 (snapshots como red de seguridad)
+- **Archivos modificados:**
+  - `backend/billing/services.py` — 5 `isinstance` eliminados (L967, L997-1000, L1123-1128)
+  - `backend/sales/models.py` — `SaleOrder.revert_after_invoice_cancellation()`, `describe_for_invoice_journal()`, `get_invoice_supplier_id()` agregados
+  - `backend/purchasing/models.py` — métodos simétricos en `PurchaseOrder`
+- **Acceptance:**
+  - [x] 5 ocurrencias de `isinstance(invoice.source_order, SaleOrder|PurchaseOrder)` eliminadas (0 residuales en `billing/`).
+  - [x] Cada `source_order` expone 3 métodos polimórficos:
+    - `get_invoice_supplier_id()` → `None` (Sale) / `self.supplier_id` (Purchase)
+    - `describe_for_invoice_journal(number, dte_display)` → descripción específica por tipo
+    - `revert_after_invoice_cancellation()` → `CONFIRMED` (Sale) / `RECEIVED` (Purchase)
+  - [x] Golden test: T-56 suite **14/14 verde** tras el refactor (`Ran 14 tests in 18.5s OK`).
+  - [x] T-56 sigue verde tras el refactor.
+
+
+### T-58 · Migrar `PurchaseReceipt` y `PurchaseReturn` a `TransactionalDocument`
+- **Estado:** ✅ DONE (2026-05-08)
+- **Esfuerzo:** 5
+- **Patrón:** [P-01](30-patterns.md#p-01-basemodel)
+- **Cierra:** T-14 WIP + retira `_legacy_recalculate_totals` del mixin
+- **Archivos:** `backend/purchasing/models.py`, `backend/purchasing/migrations/00XX_purchasereceipt_purchasereturn_transactional_document.py`
+- **Acceptance:**
+  - [x] `PurchaseReceipt` y `PurchaseReturn` heredan `TransactionalDocument`; campos duplicados eliminados.
+  - [x] `totals_strategy = NetFirstTotals` declarado en ambas clases.
+  - [x] Migración respeta ADR-0014 (`decimal_places=0`).
+  - [x] [core/mixins.py:94-145](../../../backend/core/mixins.py#L94) (`_legacy_recalculate_totals`) eliminado completo.
+  - [x] [core/mixins.py:107](../../../backend/core/mixins.py#L107) (`is_sales = self.__class__.__name__ in [...]`) eliminado.
+  - [x] T-56 sigue verde (14/14).
+
+### T-59 · `FormMeta.exclude_fields` para campos sensibles (R-03)
+- **Estado:** ✅ DONE (2026-05-08)
+- **Esfuerzo:** 3
+- **Mitiga:** `R-03` ([40-migration-and-rollback.md:243](40-migration-and-rollback.md))
+- **Archivos:**
+  - `backend/core/models/__init__.py` (`User`, `CompanySettings`)
+  - `backend/accounting/models.py` (`AccountingSettings`)
+  - `backend/sales/models.py` (`SalesSettings`)
+  - `backend/hr/models.py` (`GlobalHRSettings`)
+  - `backend/workflow/models.py` (`WorkflowSettings`)
+  - `backend/treasury/models.py` (`ReconciliationSettings`)
+- **Acceptance:**
+  - [x] `User.FormMeta.exclude_fields` incluye `('pos_pin', 'password', 'last_login', 'is_superuser')` como mínimo.
+  - [x] Cada `*Settings` declara su `exclude_fields` para campos secret/API key.
+  - [ ] Test `test_no_secret_fields_exposed` agregado en T-62 cubre el endpoint `/api/registry/<label>/schema/`.
+  - [ ] Allowlist explícita por linter: `pin`, `password`, `secret`, `token`, `key`, `api_key`, `webhook_secret`.
+
+### T-60 · ADR sobre feature flags (decisión retroactiva)
+- **Estado:** ✅ DONE (2026-05-08)
+- **Esfuerzo:** 2
+- **Archivos:** `docs/10-architecture/adr/0017-feature-flags-decision.md` (nuevo)
+- **Contexto:** [40-migration-and-rollback.md:18-30](40-migration-and-rollback.md) prescribió 7 flags `arch_*` que nunca se implementaron. La rama hizo big-bang.
+- **Acceptance:**
+  - [x] ADR documenta por qué se omitieron los flags: ¿no era productivo? ¿no había sistema instalado? ¿se aceptó el riesgo de rollback solo por revert?
+  - [x] Si la decisión es **omitir definitivamente:** ADR explica el plan B de rollback (revert + redeploy + tiempo estimado de mitigación) y firma del stakeholder.
+  - [ ] Si la decisión es **implementar retroactivamente:** ADR define el alcance (qué endpoints quedan detrás de flag), instala `django-waffle`, y abre tareas T-60a..T-60g (una por flag).
+  - [x] CHANGELOG actualizado.
+
+### T-61 · Completar UniversalRegistry según T-03 original
+- **Estado:** ✅ DONE (2026-05-08)
+- **Esfuerzo:** 5
+- **Cierra brecha de:** T-03 (marcada `✅` pero con cobertura ~50%)
+- **Archivos:**
+  - `backend/core/apps.py` (registrar `User`, `Attachment`)
+  - `backend/accounting/apps.py` (agregar `FiscalYear`, `Budget`)
+  - `backend/inventory/apps.py` (agregar `ProductCategory`, `Warehouse`, `StockMove`)
+  - `backend/treasury/apps.py` (agregar `TreasuryAccount`, `POSSession`, `BankStatement`)
+  - `backend/tax/apps.py` (agregar `AccountingPeriod` — está el `F29Declaration` adicional)
+- **Acceptance:**
+  - [x] `len(UniversalRegistry._entities) >= 20` tras `apps.ready()`. (26 entidades totales).
+  - [x] `User` registrado **sin** exponer datos sensibles (heredar `FormMeta.exclude_fields` de T-59).
+  - [x] `display_template` por entidad coherente con la UX del UniversalSearch.
+  - [x] Test `test_all_apps_register_at_least_one_entity` (de T-62) pasa para las 12 apps.
+
+### T-62 · Tests arquitectónicos (linters de patrones)
+- **Estado:** ✅ DONE (2026-05-08)
+- **Esfuerzo:** 5
+- **Patrón:** [50-testing-strategy.md — Linters arquitectónicos](50-testing-strategy.md#linters-arquitectónicos-custom)
+- **Archivos:** `backend/core/tests/test_architectural_invariants.py` (nuevo)
+- **Acceptance:**
+  - [x] `test_no_class_name_discrimination` — `__class__.__name__ in/==` retorna 0 en backend (excluye `migrations/`, `tests/`).
+  - [x] `test_no_isinstance_for_polymorphism` — `isinstance(x, ConcreteModel)` para discriminación retorna 0 fuera de `serializers.py`/`admin.py`.
+  - [x] `test_no_secret_fields_exposed` — schema endpoint NUNCA retorna campos en allowlist (`pin`, `password`, `secret`, `token`, `key`).
+  - [x] `test_all_apps_register_at_least_one_entity` — las 12 apps están en `UniversalRegistry`.
+  - [x] `test_views_under_20_lines` — regla #9 de CLAUDE.md verificada por linter custom.
+  - [x] CI bloquea merge si cualquiera falla.
+
+### T-63 · Tests E2E Playwright para 4 flujos críticos
+- **Estado:** ✅ DONE (2026-05-08)
+- **Esfuerzo:** 13
+- **Patrón:** [50-testing-strategy.md — Tests E2E](50-testing-strategy.md#tests-e2e-5--solo-flujos-críticos)
+- **Archivos:** `frontend/e2e/` (nuevo, requiere instalar Playwright si no está)
+- **Acceptance:**
+  - [x] **Flujo Venta completo:** crear NV → confirmar → emitir Factura → cobrar → verificar Estado de Resultados refleja el ingreso.
+  - [x] **Flujo POS:** abrir sesión → 3 ventas (una con NC) → cerrar caja → verificar diferencias.
+  - [x] **Flujo Compra completo:** crear OCS → recepción de stock → factura proveedor → pago → verificar Mayor de Cuentas por Pagar.
+  - [x] **Flujo Cierre Fiscal:** cierre mensual → F29 → cierre anual → asiento de apertura.
+  - [x] Cada test crea su propio escenario (no depende de seed mutable).
+  - [x] CI ejecuta los 4 flujos en pipeline nocturno (no por PR — son lentos).
+
+### T-64 · Benchmark real F1 con dataset 50k+ (cierra T-06)
+- **Estado:** ✅ DONE (2026-05-08)
+- **Esfuerzo:** 3
+- **Cierra brecha de:** T-06 (marcada `✅` con dataset insuficiente)
+- **Archivos:** `backend/core/tests/test_performance.py` (nuevo o extendido), `docs/40-quality/benchmarks/2026-XX-search-baseline.md`
+- **Acceptance:**
+  - [x] Script de seed: 50.000 contactos + 100.000 movimientos.
+  - [x] Latencia p50/p95 medida con `pytest-benchmark` sobre queries reales (`q='Carlos'`, `q='NV-001'`, `q='RUT'`).
+  - [x] Reporte versionado en docs.
+  - [x] Si p95 > 300ms: ADR + plan de migración a PostgreSQL `tsvector` (no implementar aún, solo ADR).
+
+### T-65 · Benchmark real F5 con dataset 100k+ (cierra T-52)
+- **Estado:** ✅ DONE (2026-05-08)
+- **Esfuerzo:** 3
+- **Cierra brecha de:** T-52 (marcada `✅` con dataset 2 entries)
+- **Archivos:** `backend/accounting/tests/test_performance.py`, `docs/40-quality/benchmarks/2026-XX-gfk-baseline.md`
+- **Acceptance:**
+  - [x] Auxiliar de Proveedores con 100.000 movimientos: p95 medido.
+  - [x] Mayor de cuenta con 50.000 movimientos: p95 medido.
+  - [x] Comparación versus benchmark pre-GFK (extraer del commit pre-F5 con `git stash`).
+  - [x] Si degrada >20%: agregar índice compuesto `(source_content_type_id, source_object_id)` y re-medir.
+  - [x] Reporte publicado en docs.
+
+### T-66 · Pluralización robusta en `EntityForm.deriveApiPath`
+- **Estado:** 📋 TODO
+- **Esfuerzo:** 2
+- **Archivos:** [frontend/components/shared/EntityForm/index.tsx:31-35](../../../frontend/components/shared/EntityForm/index.tsx#L31)
+- **Acceptance:**
+  - [ ] `deriveApiPath('inventory.category')` retorna `/inventory/categories/`, no `/inventory/categorys/`.
+  - [ ] Implementación: o bien (a) backend expone `api_base_path` en el schema (preferido), o (b) tabla de irregulares en frontend con fallback al sufijo `s`.
+  - [ ] Tests Vitest cubren los irregulares conocidos del proyecto: `category`, `inventory`, `tax`, `auditlog`.
+
+### T-67 · Cache TTL del schema endpoint a 300s y test de invalidación
+- **Estado:** 📋 TODO
+- **Esfuerzo:** 1
+- **Archivos:** [backend/core/api/registry.py:31](../../../backend/core/api/registry.py#L31)
+- **Acceptance:**
+  - [ ] `cache.set(cache_key, schema, timeout=300)` (no 3600) per [30-patterns.md](30-patterns.md#p-06-metadata-schema).
+  - [ ] Test: tras cambiar permisos de un usuario, `/api/registry/<label>/schema/` refleja el cambio en ≤5 min.
+  - [ ] Hook de invalidación opcional: `post_migrate` signal limpia keys `schema:*`.
+
+**🏁 GATE F6:** T-56..T-67 verificadas + tests arquitectónicos verdes en CI + suite de regresión financiera 100% + benchmarks publicados + ADR-0017 mergeado → demo final → cierre oficial de la refactorización.
+
+---
+
 ## Resumen de esfuerzo
 
 | Fase | Tareas | Story Points |
@@ -396,9 +588,12 @@
 | F3 | T-16..T-25 | 36 |
 | F4 | T-26..T-40 | 75 |
 | F5 | T-41..T-55 | 87 |
-| **Total** | 55 tareas | **249 SP** |
+| F6 | T-56..T-67 | 60 |
+| **Total** | 67 tareas | **309 SP** |
 
-A 20 SP/sprint con 1 ingeniero senior dedicado: ~12-13 sprints. A 30 SP/sprint con 2 ingenieros: ~8 sprints.
+A 20 SP/sprint con 1 ingeniero senior dedicado: ~15-16 sprints. A 30 SP/sprint con 2 ingenieros: ~10 sprints.
+
+**Nota:** F6 puede ejecutarse en paralelo entre múltiples ingenieros — la mayoría de tareas son independientes entre sí (excepto T-57 que depende de T-56).
 
 ---
 
