@@ -62,6 +62,13 @@ class UniversalRegistry:
         return list(cls._entities.keys())
 
     @classmethod
+    def get_for_model(cls, model: type[models.Model]) -> SearchableEntity | None:
+        for entity in cls._entities.values():
+            if entity.model == model:
+                return entity
+        return None
+
+    @classmethod
     def search(
         cls,
         query: str,
