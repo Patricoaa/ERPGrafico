@@ -59,62 +59,85 @@ class AuditHistoryMixin:
 
 class TotalsCalculationMixin:
     """
-    Mixin to automatically calculate totals based on related lines.
+    Mixin que delega el cálculo de totales a una ``TotalsStrategy`` declarada
+    en la clase concreta.
+
+    Cada subclase DEBE declarar:
+        totals_strategy: type[TotalsStrategy]  # e.g. GrossFirstTotals
+
+    Si la subclase no declara ``totals_strategy`` (modelos legacy o modelos
+    sin campos total_net/total_tax/total), se usa el método legacy
+    ``_legacy_recalculate_totals()`` como fallback.
+
     Expects:
     - a 'lines' reverse relationship.
     - fields: total_net, total_tax, total.
     """
+
+    # Las subclases concretas sobreescriben este atributo.
+    # None significa: usar _legacy_recalculate_totals() como fallback.
+    totals_strategy = None
+
     def recalculate_totals(self, commit=True):
+        """
+        Calcula y persiste total_net, total_tax, total.
+
+        Delega a ``self.totals_strategy`` si está declarada;
+        de lo contrario usa la implementación legacy.
+        """
+        if self.totals_strategy is not None:
+            from core.strategies.totals import TotalsStrategy
+            return self.totals_strategy().compute(self, commit=commit)
+        # Fallback: lógica legacy para modelos que no declaran strategy
+        return self._legacy_recalculate_totals(commit=commit)
+
+    def _legacy_recalculate_totals(self, commit=True):
+        """
+        Implementación original pre-T-17. Se mantiene mientras los modelos
+        ``PurchaseReceipt`` y ``PurchaseReturn`` no tengan sus campos de
+        totales estandarizados (pendiente T-14 / F2 completa).
+
+        TODO: Eliminar cuando todos los consumidores de TotalsCalculationMixin
+        declaren ``totals_strategy``. Tracking: T-17 acceptance criteria.
+        """
         from decimal import Decimal
-        import math
-        
-        # Check if this document uses Gross-first logic (Sales)
+
+        # Antipatrón a eliminar: solo vive aquí hasta que todos los modelos
+        # declaren su strategy (ver docs/50-audit/Arquitectura Django/30-patterns.md).
         is_sales = self.__class__.__name__ in ['SaleOrder', 'SaleDelivery', 'DraftCart']
-        
+
         total_sum = Decimal('0.00')
-        
+
         # Sum all line subtotals
         for line in self.lines.all():
-            # If line has its own calculation logic, trigger it
             if hasattr(line, 'calculate_subtotal'):
                 line.calculate_subtotal()
-            
             subtotal = getattr(line, 'subtotal', Decimal('0.00'))
             total_sum += subtotal
-        
+
         # Get tax rate from first line (all lines should have same rate)
         tax_rate = Decimal('19.00')
         first_line = self.lines.first()
         if first_line and hasattr(first_line, 'tax_rate'):
             tax_rate = getattr(first_line, 'tax_rate', Decimal('19.00'))
-        
+
         if is_sales:
             # GROSS-first calculation (Sales/POS)
-            # total_sum is already GROSS (Quantity * UnitPriceGross)
-            
-            # Apply total discount if it exists (only for SaleOrder)
             total_discount = getattr(self, 'total_discount_amount', Decimal('0.00'))
             self.total = max(Decimal('0'), total_sum - total_discount)
-            
-            # Extract Net: Net = Gross / 1.19
             net_val = (self.total / (Decimal('1') + (tax_rate / Decimal('100.0'))))
             self.total_net = net_val.quantize(Decimal('1'), rounding='ROUND_HALF_UP')
-            # IVA is the difference
             self.total_tax = self.total - self.total_net
         else:
             # NET-first calculation (Purchases)
-            # total_sum is NET (Quantity * UnitCostNet)
             self.total_net = total_sum
-            # Calculate VAT on total net amount (Chilean DTE requirement)
             total_tax_calc = self.total_net * (tax_rate / Decimal('100.0'))
-            # Round to nearest peso (Chilean tax regulation for DTE)
             self.total_tax = total_tax_calc.quantize(Decimal('1'), rounding='ROUND_HALF_UP')
             self.total = self.total_net + self.total_tax
-        
+
         if commit:
-            # We only update total fields to avoid recursion or side effects
             self.save(update_fields=['total_net', 'total_tax', 'total'])
-        
+
         return {
             'net': self.total_net,
             'tax': self.total_tax,

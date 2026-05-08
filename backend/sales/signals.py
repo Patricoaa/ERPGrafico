@@ -39,3 +39,10 @@ def notify_draft_delete(sender, instance, **kwargs):
             }
         }
     )
+
+from .models import SaleOrder
+@receiver(post_save, sender=SaleOrder)
+@receiver(post_delete, sender=SaleOrder)
+def handle_sale_order_cache_invalidation(sender, instance, **kwargs):
+    from core.cache import invalidate_report_cache
+    invalidate_report_cache('contacts')

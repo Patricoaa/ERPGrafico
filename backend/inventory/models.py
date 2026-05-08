@@ -1013,12 +1013,8 @@ class StockMove(models.Model):
             pass
 
         super().save(*args, **kwargs)
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('inventory')
 
     def delete(self, *args, **kwargs):
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('inventory')
         super().delete(*args, **kwargs)
 
 class PricingRule(models.Model):

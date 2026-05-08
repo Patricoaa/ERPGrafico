@@ -353,14 +353,9 @@ class JournalEntry(AuditedModel):
                     self.number = '000001'
             else:
                 self.number = '000001'
-        
         super().save(*args, **kwargs)
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('finances')
 
     def delete(self, *args, **kwargs):
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('finances')
         super().delete(*args, **kwargs)
 
     @property
@@ -495,12 +490,8 @@ class JournalItem(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('finances')
 
     def delete(self, *args, **kwargs):
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('finances')
         super().delete(*args, **kwargs)
 
 class InventoryValuationMethod(models.TextChoices):
@@ -925,15 +916,19 @@ class AccountingSettings(TimeStampedModel):
         old_sep = "."
 
         if not is_new:
-            old_obj = AccountingSettings.objects.get(pk=self.pk)
-            old_prefixes = {
-                'ASSET': old_obj.asset_prefix,
-                'LIABILITY': old_obj.liability_prefix,
-                'EQUITY': old_obj.equity_prefix,
-                'INCOME': old_obj.income_prefix,
-                'EXPENSE': old_obj.expense_prefix,
-            }
-            old_sep = old_obj.code_separator
+            try:
+                old_obj = AccountingSettings.objects.get(pk=self.pk)
+                old_prefixes = {
+                    'ASSET': old_obj.asset_prefix,
+                    'LIABILITY': old_obj.liability_prefix,
+                    'EQUITY': old_obj.equity_prefix,
+                    'INCOME': old_obj.income_prefix,
+                    'EXPENSE': old_obj.expense_prefix,
+                }
+                old_sep = old_obj.code_separator
+            except AccountingSettings.DoesNotExist:
+                # If get_solo created it but it wasn't saved, it might not exist yet
+                pass
 
         super().save(*args, **kwargs)
 

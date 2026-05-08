@@ -68,12 +68,8 @@ class BaseNoteService:
             'status': Invoice.Status.POSTED
         }
         
-        from sales.models import SaleOrder
-        from purchasing.models import PurchaseOrder
-        if isinstance(order, SaleOrder):
-            invoice_data['sale_order'] = order
-        elif isinstance(order, PurchaseOrder):
-            invoice_data['purchase_order'] = order
+        invoice_field = order.totals_strategy.invoice_field
+        invoice_data[invoice_field] = order
             
         invoice = Invoice.objects.create(**invoice_data)
         

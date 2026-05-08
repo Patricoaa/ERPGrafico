@@ -29,3 +29,5 @@ class ContactsConfig(AppConfig):
             ))
         except Exception:
             pass
+            
+        import contacts.signals

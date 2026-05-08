@@ -8,6 +8,7 @@ from core.models import User, TransactionalDocument
 from accounting.models import Account, AccountType
 from inventory.models import Product, Warehouse
 from core.mixins import TotalsCalculationMixin
+from core.strategies.totals import NetFirstTotals
 from simple_history.models import HistoricalRecords
 from core.services import SequenceService
 from decimal import Decimal
@@ -35,6 +36,9 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
         CARD = 'CARD', _('Tarjeta')
         TRANSFER = 'TRANSFER', _('Transferencia')
         CREDIT = 'CREDIT', _('Crédito')
+
+    # T-17 — Strategy Pattern (P-02.A): reemplaza el antipatrón __class__.__name__
+    totals_strategy = NetFirstTotals
 
     # status: redeclarado con choices y default concretos
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)

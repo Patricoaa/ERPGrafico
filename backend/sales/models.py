@@ -6,6 +6,7 @@ from django.core.validators import MinValueValidator
 from core.models import User, TransactionalDocument, TimeStampedModel
 from accounting.models import Account
 from core.mixins import TotalsCalculationMixin
+from core.strategies.totals import GrossFirstTotals
 from core.services import SequenceService
 from decimal import Decimal
 
@@ -33,6 +34,9 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
         TRANSFER = 'TRANSFER', _('Transferencia')
         CREDIT = 'CREDIT', _('Crédito')
         CREDIT_BALANCE = 'CREDIT_BALANCE', _('Saldo a Favor')
+
+    # T-17 — Strategy Pattern (P-02.A): reemplaza el antipatrón __class__.__name__
+    totals_strategy = GrossFirstTotals
 
     # status: redeclarado con choices y default concretos
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
@@ -164,12 +168,8 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
             from core.services import SequenceService
             self.number = SequenceService.get_next_number(SaleOrder)
         super().save(*args, **kwargs)
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('contacts')
 
     def delete(self, *args, **kwargs):
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('contacts')
         super().delete(*args, **kwargs)
 
 class SaleLine(models.Model):
@@ -317,6 +317,9 @@ class SaleDelivery(TransactionalDocument, TotalsCalculationMixin):
         CONFIRMED = 'CONFIRMED', _('Confirmado')
         CANCELLED = 'CANCELLED', _('Anulado')
 
+    # T-17 — Strategy Pattern (P-02.A)
+    totals_strategy = GrossFirstTotals
+
     # status: redeclarado con choices y default concretos
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
     # journal_entry: redeclarado para exponer reverso 'sale_delivery' (el abstracto usa '+')
@@ -429,6 +432,9 @@ class SaleReturn(TransactionalDocument, TotalsCalculationMixin):
         DRAFT = 'DRAFT', _('Borrador')
         CONFIRMED = 'CONFIRMED', _('Confirmado')
         CANCELLED = 'CANCELLED', _('Anulado')
+
+    # T-17 — Strategy Pattern (P-02.A)
+    totals_strategy = GrossFirstTotals
 
     # status: redeclarado con choices y default concretos
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
