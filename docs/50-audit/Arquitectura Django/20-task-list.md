@@ -558,22 +558,22 @@
   - [x] Reporte publicado en docs.
 
 ### T-66 · Pluralización robusta en `EntityForm.deriveApiPath`
-- **Estado:** 📋 TODO
+- **Estado:** ✅ DONE (2026-05-08)
 - **Esfuerzo:** 2
 - **Archivos:** [frontend/components/shared/EntityForm/index.tsx:31-35](../../../frontend/components/shared/EntityForm/index.tsx#L31)
 - **Acceptance:**
-  - [ ] `deriveApiPath('inventory.category')` retorna `/inventory/categories/`, no `/inventory/categorys/`.
-  - [ ] Implementación: o bien (a) backend expone `api_base_path` en el schema (preferido), o (b) tabla de irregulares en frontend con fallback al sufijo `s`.
-  - [ ] Tests Vitest cubren los irregulares conocidos del proyecto: `category`, `inventory`, `tax`, `auditlog`.
+  - [x] `deriveApiPath('inventory.category')` retorna `/inventory/categories/`, no `/inventory/categorys/`.
+  - [x] Implementación: o bien (a) backend expone `api_base_path` en el schema (preferido), o (b) tabla de irregulares en frontend con fallback al sufijo `s`.
+  - [x] Tests Vitest cubren los irregulares conocidos del proyecto: `category`, `inventory`, `tax`, `auditlog`.
 
 ### T-67 · Cache TTL del schema endpoint a 300s y test de invalidación
-- **Estado:** 📋 TODO
+- **Estado:** ✅ DONE (2026-05-08)
 - **Esfuerzo:** 1
 - **Archivos:** [backend/core/api/registry.py:31](../../../backend/core/api/registry.py#L31)
 - **Acceptance:**
-  - [ ] `cache.set(cache_key, schema, timeout=300)` (no 3600) per [30-patterns.md](30-patterns.md#p-06-metadata-schema).
-  - [ ] Test: tras cambiar permisos de un usuario, `/api/registry/<label>/schema/` refleja el cambio en ≤5 min.
-  - [ ] Hook de invalidación opcional: `post_migrate` signal limpia keys `schema:*`.
+  - [x] `cache.set(cache_key, schema, timeout=300)` (no 3600) per [30-patterns.md](30-patterns.md#p-06-metadata-schema).
+  - [x] Test: tras cambiar permisos de un usuario, `/api/registry/<label>/schema/` refleja el cambio en ≤5 min.
+  - [x] Hook de invalidación opcional: `post_migrate` signal limpia keys `schema:*`.
 
 **🏁 GATE F6:** T-56..T-67 verificadas + tests arquitectónicos verdes en CI + suite de regresión financiera 100% + benchmarks publicados + ADR-0017 mergeado → demo final → cierre oficial de la refactorización.
 

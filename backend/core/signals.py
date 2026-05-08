@@ -33,3 +33,20 @@ def sync_contact_to_company_settings(sender, instance, **kwargs):
             # The CompanySettings.save() will trigger another Contact.save(), 
             # but since we check values here, it should terminate.
             settings.save()
+
+from django.db.models.signals import post_migrate
+from django.core.cache import cache
+
+@receiver(post_migrate)
+def clear_schema_cache_on_migrate(sender, **kwargs):
+    """
+    Regla P-06: Limpia todas las cachés de schemas (schema:*) luego de una migración, 
+    ya que los modelos, metadatos y permisos pueden haber cambiado drásticamente.
+    """
+    # Si se usa un caché compatible con wildcard (como Redis):
+    try:
+        cache.delete_pattern("schema:*")
+    except AttributeError:
+        # Fallback para locmem o memcached que no soportan delete_pattern.
+        # Solo limpia todo si no hay delete_pattern.
+        cache.clear()
