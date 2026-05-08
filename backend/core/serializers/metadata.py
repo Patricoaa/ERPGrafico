@@ -60,7 +60,11 @@ def build_schema(model: type[models.Model], user=None) -> dict:
         if field.name in excluded:
             continue
         if hasattr(field, 'attname'):  # excluye reverse relations
-            fields_dict[field.name] = field_to_json(field)
+            f_json = field_to_json(field)
+            if form_meta and hasattr(form_meta, 'field_config'):
+                if field.name in form_meta.field_config:
+                    f_json.update(form_meta.field_config[field.name])
+            fields_dict[field.name] = f_json
 
     schema = {
         'label': model._meta.label_lower,

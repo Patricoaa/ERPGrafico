@@ -359,10 +359,10 @@
 - **Archivo:** `backend/inventory/strategies/product_type.py` con ABC `ProductTypeStrategy` + registry `PRODUCT_TYPE_STRATEGIES`.
 
 ### T-50 · `<EntityForm />` para `Invoice` con DTE conditional fields
-- **Estado:** 📋, **Esfuerzo:** 8, **Depende de:** T-43, T-19
+- **Estado:** ✅, **Esfuerzo:** 8, **Depende de:** T-43, T-19
 
 ### T-51 · `<EntityForm />` para `Product` con conditional fields por tipo
-- **Estado:** 📋, **Esfuerzo:** 8, **Depende de:** T-49
+- **Estado:** ✅, **Esfuerzo:** 8, **Depende de:** T-49
 
 ### T-52 · Benchmark de queries con GFK vs antes
 - **Estado:** ✅, **Esfuerzo:** 3
@@ -383,7 +383,7 @@
 - **Estado:** ✅, **Esfuerzo:** 2
 - **Archivos:** [`docs/10-architecture/adr/0016-post-refactor-architecture-f5.md`](../../10-architecture/adr/0016-post-refactor-architecture-f5.md) — documenta D-01 (GFK), D-02 (ProductManufacturingProfile), D-03 (ProductTypeStrategy), anti-objetivos y métricas post-F5.
 
-**✅ GATE F5 — 2026-05-08:** T-41..T-49 + T-52..T-55 verificadas. Migraciones aditivas aplicadas, backwards functions implementadas, ADR-0016 mergeado, docs actualizados. T-50 y T-51 (EntityForm para Invoice y Product) quedan pendientes por complejidad frontend (DTE conditional fields + variant UI) — no bloquean el GATE de backend.
+**✅ GATE F5 — 2026-05-08:** T-41..T-49 + T-52..T-55 verificadas. Migraciones aditivas aplicadas, backwards functions implementadas, ADR-0016 mergeado, docs actualizados. T-50 y T-51 completadas (EntityForm para Invoice y Product) usando condicionales desde el backend vía FormMeta.
 
 ---
 

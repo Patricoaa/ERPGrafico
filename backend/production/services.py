@@ -134,7 +134,8 @@ class WorkOrderService:
         )
 
         # Create OT_CREATION task if not auto-finalized
-        if not product.mfg_auto_finalize:
+        auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
+        if not auto_finalize:
             WorkflowService.create_task(
                 task_type='OT_CREATION',
                 title=f"Asignación materiales: {work_order.display_id}",
@@ -150,7 +151,8 @@ class WorkOrderService:
             )
 
         # Express Flow: Auto-finalize if product is configured for it
-        if product.mfg_auto_finalize:
+        auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
+        if auto_finalize:
             try:
                 # Use a savepoint to rollback only the transition if it fails
                 with transaction.atomic():
@@ -291,7 +293,8 @@ class WorkOrderService:
         sale_line = delivery_line.sale_line
         
         # Only for express manufacturable products
-        if not (product and product.product_type == Product.Type.MANUFACTURABLE and product.mfg_auto_finalize):
+        auto_finalize = product.mfg_profile.mfg_auto_finalize if product and product.product_type == Product.Type.MANUFACTURABLE and product.mfg_profile else False
+        if not (product and product.product_type == Product.Type.MANUFACTURABLE and auto_finalize):
             return None
         
         # Validate BOM requirement for Express products/variants
@@ -371,7 +374,8 @@ class WorkOrderService:
         )
 
         # Create OT_CREATION task if not auto-finalized
-        if not product.mfg_auto_finalize:
+        auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
+        if not auto_finalize:
             WorkflowService.create_task(
                 task_type='OT_CREATION',
                 title=f"Asignación materiales: {work_order.display_id}",
@@ -387,7 +391,8 @@ class WorkOrderService:
             )
 
         # Express Flow: Auto-finalize
-        if product.mfg_auto_finalize:
+        auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
+        if auto_finalize:
             try:
                 with transaction.atomic():
                     WorkOrderService.transition_to(

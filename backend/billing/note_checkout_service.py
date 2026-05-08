@@ -666,7 +666,7 @@ class NoteCheckoutService:
                     work_order.related_note = workflow.invoice
                     work_order.save()
                     print(f"DEBUG: Created ADVANCED OT-{work_order.number} for debit note {workflow.invoice.number}")
-            elif product.mfg_auto_finalize:
+            elif product.mfg_profile and product.mfg_profile.mfg_auto_finalize:
                 # Express product - OT will be created during dispatch
                 print(f"DEBUG: Skipping EXPRESS product {product.internal_code} - OT will be created at dispatch")
     

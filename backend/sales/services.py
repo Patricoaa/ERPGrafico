@@ -49,7 +49,8 @@ class SalesService:
                 # Case 1: Advanced Manufacturing (Needs Finished OT)
                 if product.product_type == 'MANUFACTURABLE' and product.requires_advanced_manufacturing:
                     # Check if all associated OTs are finished (unless auto-finalize/express)
-                    if not product.mfg_auto_finalize:
+                    auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
+                    if not auto_finalize:
                         ots = sale_line.work_orders.exclude(status='CANCELLED')
                         if not ots.exists() or not all(ot.current_stage == 'FINISHED' for ot in ots):
                              raise ValidationError(
@@ -59,7 +60,8 @@ class SalesService:
 
                 # Case 2: Simple/Express Manufacturing (Needs BOM components stock)
                 elif product.product_type == 'MANUFACTURABLE' and not product.requires_advanced_manufacturing:
-                    if product.has_bom and not product.mfg_auto_finalize:
+                    auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
+                    if product.has_bom and not auto_finalize:
                         manufacturable_qty = product.get_manufacturable_quantity()
                         # get_manufacturable_quantity returns None if no BOM or no constraints
                         if manufacturable_qty is not None and manufacturable_qty < requested_qty:
@@ -225,7 +227,8 @@ class SalesService:
             if product:
                 # Case 1: Advanced Manufacturing (Needs Finished OT)
                 if product.product_type == 'MANUFACTURABLE' and product.requires_advanced_manufacturing:
-                    if not product.mfg_auto_finalize:
+                    auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
+                    if not auto_finalize:
                         ots = sale_line.work_orders.exclude(status='CANCELLED')
                         if not ots.exists() or not all(ot.current_stage == 'FINISHED' for ot in ots):
                              raise ValidationError(
@@ -235,7 +238,8 @@ class SalesService:
 
                 # Case 2: Simple/Express Manufacturing (Needs BOM components stock)
                 elif product.product_type == 'MANUFACTURABLE' and not product.requires_advanced_manufacturing:
-                    if product.has_bom and not product.mfg_auto_finalize:
+                    auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
+                    if product.has_bom and not auto_finalize:
                         manufacturable_qty = product.get_manufacturable_quantity()
                         if manufacturable_qty is not None and manufacturable_qty < quantity:
                             raise ValidationError(
@@ -340,7 +344,8 @@ class SalesService:
                     continue
                 
                 # Create OT for express products
-                if product.mfg_auto_finalize:
+                auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
+                if auto_finalize:
                     print(f"DEBUG: Creating OT for EXPRESS product {product.internal_code} in delivery {delivery.number}")
                     work_order = WorkOrderService.create_ot_for_delivery_line(
                         delivery_line=line,

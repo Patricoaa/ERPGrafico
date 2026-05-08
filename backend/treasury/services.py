@@ -148,10 +148,15 @@ class TreasuryService:
         if payroll: targets.append(payroll)
         
         # If arguments are missing, try to resolve from movement
-        if not invoice and movement.invoice: targets.append(movement.invoice)
-        if not sale_order and movement.sale_order and not movement.invoice: targets.append(movement.sale_order)
-        if not purchase_order and movement.purchase_order and not movement.invoice: targets.append(movement.purchase_order)
-        if not payroll and movement.payroll: targets.append(movement.payroll)
+        allocated = getattr(movement, 'allocated_to', None)
+        from billing.models import Invoice
+        from sales.models import SaleOrder
+        from purchasing.models import PurchaseOrder
+        from hr.models import Payroll
+        if not invoice and isinstance(allocated, Invoice): targets.append(allocated)
+        if not sale_order and isinstance(allocated, SaleOrder) and not isinstance(allocated, Invoice): targets.append(allocated)
+        if not purchase_order and isinstance(allocated, PurchaseOrder) and not isinstance(allocated, Invoice): targets.append(allocated)
+        if not payroll and isinstance(allocated, Payroll): targets.append(allocated)
 
         targets = list(set(targets)) # unique
 
@@ -222,7 +227,10 @@ class TreasuryService:
         if pos_session.status != 'OPEN': return
         
         amount = movement.amount
-        is_sale = bool(movement.invoice or movement.sale_order)
+        allocated = getattr(movement, 'allocated_to', None)
+        from billing.models import Invoice
+        from sales.models import SaleOrder
+        is_sale = isinstance(allocated, SaleOrder) or (isinstance(allocated, Invoice) and isinstance(allocated.source_order, SaleOrder))
 
         if movement.movement_type == TreasuryMovement.Type.INBOUND:
              if is_sale:
@@ -322,19 +330,22 @@ class TreasuryService:
                     source_acc = partner.partner_contribution_account or settings.partner_capital_contribution_account
 
             if not source_acc:
-                if movement.invoice or movement.sale_order:
+                allocated = getattr(movement, 'allocated_to', None)
+                from billing.models import Invoice
+                from sales.models import SaleOrder
+                if isinstance(allocated, (Invoice, SaleOrder)):
                     # Resolve customer from the document itself, not movement.contact —
                     # they can diverge in some flows (e.g. POS guest sales) and any
                     # divergence breaks the receivable offset against Stage 1.1's invoice
                     # entry. Fall back to movement.contact only when the document has no
                     # explicit customer.
                     doc_customer = None
-                    if movement.invoice and getattr(movement.invoice, 'sale_order', None):
-                        doc_customer = movement.invoice.sale_order.customer
-                    elif movement.sale_order:
-                        doc_customer = movement.sale_order.customer
-                    elif movement.invoice:
-                        doc_customer = getattr(movement.invoice, 'contact', None)
+                    if isinstance(allocated, Invoice) and isinstance(allocated.source_order, SaleOrder):
+                        doc_customer = allocated.source_order.customer
+                    elif isinstance(allocated, SaleOrder):
+                        doc_customer = allocated.customer
+                    elif isinstance(allocated, Invoice):
+                        doc_customer = getattr(allocated, 'contact', None)
                     customer = doc_customer or movement.contact
                     source_acc = (customer.account_receivable if customer else None) or settings.default_receivable_account
                 elif movement.justify_reason:
@@ -364,8 +375,11 @@ class TreasuryService:
                       target_acc = partner.partner_provisional_withdrawal_account or settings.partner_withdrawal_account or settings.pos_partner_withdrawal_account
 
              if not target_acc:
-                 if movement.invoice or movement.purchase_order or movement.sale_order:
-                      is_sale = bool(movement.sale_order or (movement.invoice and movement.invoice.sale_order))
+                 allocated = getattr(movement, 'allocated_to', None)
+                 if allocated:
+                      from billing.models import Invoice
+                      from sales.models import SaleOrder
+                      is_sale = isinstance(allocated, SaleOrder) or (isinstance(allocated, Invoice) and isinstance(allocated.source_order, SaleOrder))
                       if is_sale:
                           target_acc = (movement.contact.account_receivable if movement.contact else None) or settings.default_receivable_account
                       else:

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Control, useController } from 'react-hook-form';
+import { Control, useController, useWatch } from 'react-hook-form';
 import { FieldSchema } from '../hooks/useSchema';
 import { LabeledInput } from '@/components/shared/LabeledInput';
 import { LabeledSelect } from '@/components/shared/LabeledSelect';
@@ -21,6 +21,21 @@ export const DynamicField: React.FC<DynamicFieldProps> = ({ name, fieldDef, cont
         control,
         defaultValue: fieldDef.type === 'boolean' ? false : '',
     });
+    
+    const dependencyValue = useWatch({
+        control,
+        name: fieldDef.visible_if?.field || '',
+    });
+
+    if (fieldDef.visible_if) {
+        const cond = fieldDef.visible_if;
+        if (cond.equals !== undefined && dependencyValue !== cond.equals) {
+            return null;
+        }
+        if (cond.in !== undefined && !cond.in.includes(dependencyValue)) {
+            return null;
+        }
+    }
 
     if (fieldDef.readonly) {
         return (

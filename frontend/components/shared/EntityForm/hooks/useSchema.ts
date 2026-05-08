@@ -13,6 +13,11 @@ export interface FieldSchema {
     decimal_places?: number;
     target?: string;
     limit_choices_to?: Record<string, any>;
+    visible_if?: {
+        field: string;
+        equals?: any;
+        in?: any[];
+    };
 }
 
 export interface ChildCollectionSchema {

@@ -963,8 +963,9 @@ class BillingService:
 
         # Validate Uniqueness
         supplier_id = None
-        if invoice.purchase_order:
-            supplier_id = invoice.purchase_order.supplier_id
+        from purchasing.models import PurchaseOrder
+        if isinstance(invoice.source_order, PurchaseOrder):
+            supplier_id = invoice.source_order.supplier_id
             
         BillingService._validate_document_uniqueness(
             number, 
@@ -991,10 +992,12 @@ class BillingService:
             from accounting.services import JournalEntryService
             from accounting.models import JournalEntry
             # 1. Update Description
-            if invoice.purchase_order:
-                entry.description = f"{invoice.get_dte_type_display()} Compra {number} - OC {invoice.purchase_order.number}"
-            elif invoice.sale_order:
-                entry.description = f"{invoice.get_dte_type_display()} {number} - Pedido {invoice.sale_order.number}"
+            from purchasing.models import PurchaseOrder
+            from sales.models import SaleOrder
+            if isinstance(invoice.source_order, PurchaseOrder):
+                entry.description = f"{invoice.get_dte_type_display()} Compra {number} - OC {invoice.source_order.number}"
+            elif isinstance(invoice.source_order, SaleOrder):
+                entry.description = f"{invoice.get_dte_type_display()} {number} - Pedido {invoice.source_order.number}"
             
             entry.reference = f"{invoice.dte_type[:3]}-{number}"
             entry.save()
@@ -1004,10 +1007,8 @@ class BillingService:
                 JournalEntryService.post_entry(entry)
 
         from workflow.services import WorkflowService
-        if invoice.sale_order:
-            WorkflowService.sync_hub_tasks(invoice.sale_order)
-        elif invoice.purchase_order:
-            WorkflowService.sync_hub_tasks(invoice.purchase_order)
+        if invoice.source_order:
+            WorkflowService.sync_hub_tasks(invoice.source_order)
 
         return invoice
 
@@ -1117,11 +1118,13 @@ class BillingService:
         invoice.save()
 
         # 4. Update Order Status
-        if invoice.sale_order:
-            invoice.sale_order.status = SaleOrder.Status.CONFIRMED # Revert to confirmed
-            invoice.sale_order.save()
-        elif invoice.purchase_order:
-             invoice.purchase_order.status = PurchaseOrder.Status.RECEIVED # Revert to received
-             invoice.purchase_order.save()
+        from sales.models import SaleOrder
+        from purchasing.models import PurchaseOrder
+        if isinstance(invoice.source_order, SaleOrder):
+            invoice.source_order.status = SaleOrder.Status.CONFIRMED # Revert to confirmed
+            invoice.source_order.save()
+        elif isinstance(invoice.source_order, PurchaseOrder):
+             invoice.source_order.status = PurchaseOrder.Status.RECEIVED # Revert to received
+             invoice.source_order.save()
         
         return invoice
