@@ -50,7 +50,7 @@ class GlobalHRSettings(TimeStampedModel):
         verbose_name_plural = _("Parámetros Globales RRHH")
 
     class FormMeta:
-        exclude_fields = []
+        exclude_fields = []  # Sin campos sensibles — sólo valores UF/UTM y cuentas contables FK.
 
     def __str__(self):
         return "Configuración Global RRHH"

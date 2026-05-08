@@ -982,7 +982,7 @@ class AccountingSettings(TimeStampedModel):
         verbose_name_plural = _("Configuración Contable")
 
     class FormMeta:
-        exclude_fields = []
+        exclude_fields = []  # Sin campos sensibles — cuentas contables FK y parámetros de tasas.
 
     def __str__(self):
         return "Configuración Contable Global"

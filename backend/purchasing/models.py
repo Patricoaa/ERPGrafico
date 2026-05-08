@@ -226,6 +226,16 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
         """
         return self.supplier_id
 
+    # --- T-57 ampliado: Polymorphic treasury hooks ---
+
+    def is_sale_document(self) -> bool:
+        """Indica si el documento corresponde a una venta. PurchaseOrder → False."""
+        return False
+
+    def get_customer_for_payment(self):
+        """Retorna el contacto cliente relevante para la cuenta contable. PurchaseOrder → None (es proveedor)."""
+        return None
+
 
 class PurchaseLine(models.Model):
     order = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name='lines')

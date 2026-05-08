@@ -160,6 +160,28 @@ class Invoice(TransactionalDocument):
         """Calculates the remaining amount to be paid for this invoice"""
         return self.total - self.total_paid
 
+    # --- T-57 ampliado: Polymorphic treasury hooks ---
+
+    def is_sale_document(self) -> bool:
+        """
+        Indica si la factura corresponde a una venta.
+        Verdadero si source_order es un SaleOrder (o si no hay source_order — facturas standalone son de venta).
+        """
+        source = self.source_order
+        if source is None:
+            return True
+        return source._meta.model_name == 'saleorder'
+
+    def get_customer_for_payment(self):
+        """
+        Retorna el contacto cliente para resolver la cuenta contable en el pago.
+        Prioriza el customer del documento origen sobre el contact de la factura.
+        """
+        source = self.source_order
+        if source is not None:
+            return getattr(source, 'customer', None)
+        return self.contact
+
     class FormMeta:
         ui_layout = {
             'tabs': [
