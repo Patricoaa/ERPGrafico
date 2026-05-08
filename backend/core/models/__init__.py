@@ -175,6 +175,13 @@ class Attachment(models.Model):
     file_size = models.PositiveIntegerField(_("Tamaño (Bytes)"), null=True, blank=True)
     mime_type = models.CharField(_("Tipo MIME"), max_length=100, null=True, blank=True)
 
+    class FormMeta:
+        ui_layout = {
+            'tabs': [
+                {'id': 'main', 'label': 'General', 'fields': ['file', 'original_filename']}
+            ]
+        }
+
     class Meta:
         verbose_name = _("Adjunto")
         verbose_name_plural = _("Adjuntos")

@@ -101,6 +101,42 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
         verbose_name=_("Tarea de Aprobación de Crédito")
     )
 
+    class FormMeta:
+        ui_layout = {
+            'tabs': [
+                {
+                    'id': 'header',
+                    'label': 'Encabezado',
+                    'fields': ['customer', 'date', 'payment_method_ref', 'delivery_date', 'immediate_dispatch', 'salesperson']
+                },
+                {
+                    'id': 'lines',
+                    'label': 'Líneas',
+                    'child_collection': {
+                        'related_name': 'lines',
+                        'model': 'sales.saleline',
+                        'label': 'Líneas de Venta',
+                        'columns': ['product', 'description', 'quantity', 'uom', 'unit_price_gross', 'discount_percentage', 'subtotal'],
+                    }
+                },
+            ]
+        }
+        exclude_fields = [
+            'status', 'channel', 'number', 'subtotal', 'total', 'tax', 'net',
+            'journal_entry', 'pos_session', 'credit_assignment_origin', 'credit_approval_task',
+            'total_discount_amount', 'delivery_status',
+        ]
+        actions = [
+            {'id': 'confirm', 'label': 'Confirmar', 'icon': 'CheckCircle', 'variant': 'default',
+             'condition': {'status': ['DRAFT']}},
+            {'id': 'cancel',  'label': 'Anular',    'icon': 'XCircle',     'variant': 'destructive',
+             'condition': {'status': ['DRAFT', 'CONFIRMED']}},
+        ]
+        transitions = {
+            'DRAFT':     ['CONFIRMED', 'CANCELLED'],
+            'CONFIRMED': ['INVOICED', 'PAID', 'CANCELLED'],
+        }
+
     class Meta:
         verbose_name = _("Nota de Venta")
         verbose_name_plural = _("Notas de Venta")
@@ -209,7 +245,15 @@ class SaleLine(models.Model):
         null=True, blank=True,
         help_text=_("Metadatos capturados para fabricación avanzada (diseño, fechas, contactos, etc.)")
     )
-    
+
+    class FormMeta:
+        ui_layout = {
+            'tabs': [
+                {'id': 'main', 'label': 'Línea', 'fields': ['product', 'description', 'quantity', 'uom', 'unit_price_gross', 'discount_percentage']}
+            ]
+        }
+        exclude_fields = ['subtotal', 'quantity_delivered', 'manufacturing_data', 'related_note', 'order']
+
     related_note = models.ForeignKey(
         'billing.Invoice',
         on_delete=models.SET_NULL,

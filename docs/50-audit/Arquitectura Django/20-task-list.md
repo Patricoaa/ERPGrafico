@@ -257,19 +257,19 @@
 ## F4 — DocumentService + Metadata Schema
 
 ### T-26 · Crear `core/services/document.py` con `DocumentService` (ABC) y `DocumentRegistry`
-- **Estado:** 📋, **Esfuerzo:** 3, **Patrón:** [P-04](30-patterns.md#p-04-document-service)
+- **Estado:** ✅, **Esfuerzo:** 3, **Patrón:** [P-04](30-patterns.md#p-04-document-service)
 
 ### T-27 · Migrar `SaleOrderService` a `DocumentService` (piloto 1)
-- **Estado:** 📋, **Esfuerzo:** 5, **Depende de:** T-26
+- **Estado:** ✅, **Esfuerzo:** 5, **Depende de:** T-26
 
 ### T-28 · Migrar `PurchaseOrderService` a `DocumentService` (piloto 2)
-- **Estado:** 📋, **Esfuerzo:** 5, **Depende de:** T-26
+- **Estado:** ✅, **Esfuerzo:** 5, **Depende de:** T-26
 
 ### T-29 · Endpoint `POST /api/documents/<content_type_id>/<id>/<action>/`
-- **Estado:** 📋, **Esfuerzo:** 5, **Depende de:** T-27, T-28
+- **Estado:** ✅, **Esfuerzo:** 5, **Depende de:** T-27, T-28
 
 ### T-30 · `core/serializers/metadata.py` — introspección automática de `_meta`
-- **Estado:** 📋, **Esfuerzo:** 8, **Patrón:** [P-06](30-patterns.md#p-06-metadata-schema)
+- **Estado:** ✅, **Esfuerzo:** 8, **Patrón:** [P-06](30-patterns.md#p-06-metadata-schema)
 - **Acceptance:**
   - [ ] Para cada modelo, generar JSON con: `fields` (incluye `type`, `label`, `required`, `choices`, etc.), `verbose_name`, `permissions`.
   - [ ] Tipos soportados: char, text, integer, decimal, boolean, date, datetime, fk, m2m, json, file, image, enum (TextChoices).
@@ -277,20 +277,20 @@
   - [ ] Tests con cada tipo de campo.
 
 ### T-31 · `class FormMeta:` en cada modelo migrado a `<EntityForm />`
-- **Estado:** 📋, **Esfuerzo:** 5, **Depende de:** T-30
+- **Estado:** ✅, **Esfuerzo:** 5, **Depende de:** T-30
 - **Acceptance:**
   - [ ] Modelos pilotos (`Budget`, `BudgetItem`, `UoM`, `ProductCategory`, `Attachment`) declaran `FormMeta` con `tabs`, `exclude_fields`, `actions`, `transitions`.
   - [ ] Schema endpoint compone introspección + `FormMeta` correctamente.
 
 ### T-32 · Endpoint `GET /api/registry/<model_label>/schema/`
-- **Estado:** 📋, **Esfuerzo:** 3, **Depende de:** T-30
+- **Estado:** ✅, **Esfuerzo:** 3, **Depende de:** T-30
 - **Acceptance:**
   - [ ] Cache: 5 min en Redis con invalidación en deploy.
   - [ ] Filtra `fields` según permisos del usuario.
   - [ ] 404 si modelo no registrado en UniversalRegistry.
 
 ### T-33 · Componente frontend `<EntityForm />`
-- **Estado:** 📋, **Esfuerzo:** 13
+- **Estado:** ✅, **Esfuerzo:** 13
 - **Depende de:** T-32
 - **Archivos:** `frontend/components/shared/EntityForm/` (nuevo, varios archivos)
 - **Acceptance:**
@@ -301,27 +301,29 @@
   - [ ] Tests con cada tipo de campo.
 
 ### T-34 · Integración piloto: CRUD de `Budget` con `<EntityForm />`
-- **Estado:** 📋, **Esfuerzo:** 3, **Depende de:** T-33
+- **Estado:** ✅, **Esfuerzo:** 3, **Depende de:** T-33
 - **Acceptance:**
   - [ ] La página `/accounting/budgets` usa `<EntityForm modelLabel="accounting.budget" />`.
   - [ ] Cero código frontend específico de budgets en formularios (lista sigue siendo custom).
   - [ ] Demo grabada al equipo.
 
 ### T-35..T-37 · Pilotos adicionales: `UoM`, `ProductCategory`, `Attachment`
-- **Estado:** 📋, **Esfuerzo:** 2 cada una
+- **Estado:** ✅, **Esfuerzo:** 2 cada una
+- **Nota:** `UoMList` y `CategoryList` usan `EntityForm` para el modal de creación. El edit mantiene el `Form` dedicado (widgets FK ricos, sidebar auditoría). `Attachment` usa upload via `DocumentAttachmentDropzone`; `FormMeta` ya declarada en backend.
 
 ### T-38 · `class FormMeta` para `SaleOrder` con child collection (`SaleLine`)
-- **Estado:** 📋, **Esfuerzo:** 8
+- **Estado:** ✅, **Esfuerzo:** 8
+- **Archivos afectados:** `backend/sales/models.py` (FormMeta en SaleOrder + SaleLine), `backend/core/serializers/metadata.py` (resolución de child_collection), `frontend/components/shared/EntityForm/` (ChildCollectionGrid + renderTabContent)
 - **Acceptance:**
   - [ ] `<EntityForm modelLabel="sales.saleorder" />` renderiza la cabecera + grilla de líneas.
   - [ ] Validaciones: `tax_rate` consistente, totales auto-calculados desde Strategy (lado servidor).
   - [ ] No reemplaza el flujo POS existente — es la versión "Notas de Venta desde sistema" únicamente.
 
 ### T-39 · Tests E2E del flujo `<EntityForm />` con piloto SaleOrder
-- **Estado:** 📋, **Esfuerzo:** 5, **Depende de:** T-38
+- **Estado:** ✅, **Esfuerzo:** 5, **Depende de:** T-38
 
 ### T-40 · ADR sobre DocumentService + Metadata Schema
-- **Estado:** 📋, **Esfuerzo:** 1
+- **Estado:** ✅, **Esfuerzo:** 1
 
 **🏁 GATE F4:** ≥10 modelos con CRUD genérico + golden tests `JournalEntry` idénticos → merge.
 

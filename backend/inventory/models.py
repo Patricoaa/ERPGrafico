@@ -36,6 +36,13 @@ class ProductCategory(TimeStampedModel):
         limit_choices_to={'account_type': AccountType.EXPENSE}
     )
 
+    class FormMeta:
+        ui_layout = {
+            'tabs': [
+                {'id': 'main', 'label': 'General', 'fields': ['name', 'prefix', 'icon', 'parent', 'asset_account', 'income_account', 'expense_account']}
+            ]
+        }
+
     class Meta:
         verbose_name = _("Categoría de Producto")
         verbose_name_plural = _("Categorías de Producto")
@@ -72,6 +79,13 @@ class UoM(TimeStampedModel):
     active = models.BooleanField(default=True)
     history = HistoricalRecords()
     
+    class FormMeta:
+        ui_layout = {
+            'tabs': [
+                {'id': 'main', 'label': 'General', 'fields': ['name', 'category', 'uom_type', 'ratio', 'rounding', 'active']}
+            ]
+        }
+
     class Meta:
         verbose_name = _("Unidad de Medida")
         verbose_name_plural = _("Unidades de Medida")
