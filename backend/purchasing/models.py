@@ -196,6 +196,37 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
             except Exception as e:
                 print(f"Error advancing subscription for PO {self.number}: {str(e)}")
 
+    # --- T-57: Polymorphic invoice hooks ---
+    # Estos métodos eliminan los isinstance(invoice.source_order, SaleOrder/PurchaseOrder)
+    # de billing/services.py. Cada modelo sabe cómo comportarse en contexto de facturación.
+
+    def revert_after_invoice_cancellation(self) -> None:
+        """
+        Revierte el estado de la orden al anular su factura asociada.
+        Para PurchaseOrder: vuelve a RECEIVED (mercadería recibida, sin factura activa).
+        Invocado por BillingService.annul_invoice().
+        """
+        self.status = self.Status.RECEIVED
+        self.save()
+
+    def describe_for_invoice_journal(self, number: str, dte_display: str) -> str:
+        """
+        Genera la descripción del asiento contable al confirmar la factura.
+        Para PurchaseOrder: '<DTE_display> Compra <folio> - OC <OCS_number>'.
+        Invocado por BillingService.confirm_invoice().
+        """
+        return f"{dte_display} Compra {number} - OC {self.number}"
+
+    def get_invoice_supplier_id(self):
+        """
+        Retorna el supplier_id relevante para validar unicidad de folio.
+        Para PurchaseOrder: self.supplier_id (los folios de compra son únicos por proveedor).
+        Para SaleOrder: None.
+        Invocado por BillingService.confirm_invoice().
+        """
+        return self.supplier_id
+
+
 class PurchaseLine(models.Model):
     order = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name='lines')
     product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name='purchase_lines')
@@ -249,7 +280,7 @@ class PurchaseLine(models.Model):
         """Returns the quantity still pending receipt"""
         return self.quantity - self.quantity_received
 
-class PurchaseReceipt(models.Model, TotalsCalculationMixin):
+class PurchaseReceipt(TransactionalDocument, TotalsCalculationMixin):
     """
     Represents a receipt of a purchase order.
     Can be partial or complete.
@@ -259,7 +290,16 @@ class PurchaseReceipt(models.Model, TotalsCalculationMixin):
         CONFIRMED = 'CONFIRMED', _('Confirmado')
         CANCELLED = 'CANCELLED', _('Anulado')
     
-    number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
+    totals_strategy = NetFirstTotals
+
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
+    journal_entry = models.OneToOneField(
+        'accounting.JournalEntry',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='purchase_receipt'
+    )
+
     purchase_order = models.ForeignKey(PurchaseOrder, on_delete=models.PROTECT, related_name='receipts')
     warehouse = models.ForeignKey(
         Warehouse, 
@@ -270,17 +310,7 @@ class PurchaseReceipt(models.Model, TotalsCalculationMixin):
     
     receipt_date = models.DateField(_("Fecha de Recepción"))
     delivery_reference = models.CharField(_("Referencia de Despacho/Guía"), max_length=100, blank=True)
-    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
-    notes = models.TextField(_("Notas"), blank=True)
     
-    # Link to Accounting (if needed for cost adjustments or accruals)
-    journal_entry = models.OneToOneField(
-        'accounting.JournalEntry',
-        on_delete=models.PROTECT,
-        null=True, blank=True,
-        related_name='purchase_receipt'
-    )
-
     # Optional link to the Credit/Debit Note if issued
     related_note = models.ForeignKey(
         'billing.Invoice',
@@ -288,12 +318,6 @@ class PurchaseReceipt(models.Model, TotalsCalculationMixin):
         null=True, blank=True,
         related_name='purchase_receipts'
     )
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    history = HistoricalRecords()
     
     class Meta:
         verbose_name = _("Recepción de Compra")
@@ -374,7 +398,7 @@ class PurchaseReceiptLine(models.Model):
         self.calculate_total_cost()
         super().save(*args, **kwargs)
 
-class PurchaseReturn(models.Model, TotalsCalculationMixin):
+class PurchaseReturn(TransactionalDocument, TotalsCalculationMixin):
     """
     Represents a return of goods to a supplier (linked to a Purchase Order).
     Used to process logistics before or after a Credit Note.
@@ -384,7 +408,16 @@ class PurchaseReturn(models.Model, TotalsCalculationMixin):
         CONFIRMED = 'CONFIRMED', _('Confirmado') # Stock moves created
         CANCELLED = 'CANCELLED', _('Anulado')
     
-    number = models.CharField(_("Número"), max_length=20, unique=True, editable=False)
+    totals_strategy = NetFirstTotals
+
+    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
+    journal_entry = models.OneToOneField(
+        'accounting.JournalEntry',
+        on_delete=models.PROTECT,
+        null=True, blank=True,
+        related_name='purchase_return'
+    )
+
     purchase_order = models.ForeignKey(PurchaseOrder, on_delete=models.PROTECT, related_name='returns')
     warehouse = models.ForeignKey(
         Warehouse, 
@@ -394,23 +427,10 @@ class PurchaseReturn(models.Model, TotalsCalculationMixin):
     )
     
     date = models.DateField(_("Fecha de Devolución"))
-    status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
-    notes = models.TextField(_("Notas"), blank=True)
     
     # Financial Totals (Reference value of returned goods)
-    total_net = models.DecimalField(_("Neto"), max_digits=12, decimal_places=0, default=0)
-    total_tax = models.DecimalField(_("Impuesto"), max_digits=12, decimal_places=0, default=0)
-    total = models.DecimalField(_("Total"), max_digits=12, decimal_places=0, default=0)
     total_cost = models.DecimalField(_("Costo Total (COGS Reverso)"), max_digits=12, decimal_places=0, default=0)
 
-    # Link to Accounting (for COGS reversal entry if purchase was expensed)
-    journal_entry = models.OneToOneField(
-        'accounting.JournalEntry',
-        on_delete=models.PROTECT,
-        null=True, blank=True,
-        related_name='purchase_return'
-    )
-    
     # Optional link to the Credit Note if issued
     credit_note = models.ForeignKey(
         'billing.Invoice',
@@ -418,11 +438,6 @@ class PurchaseReturn(models.Model, TotalsCalculationMixin):
         null=True, blank=True,
         related_name='purchase_returns'
     )
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    history = HistoricalRecords()
     
     class Meta:
         verbose_name = _("Devolución de Compra")

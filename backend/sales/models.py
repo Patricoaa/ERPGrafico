@@ -205,8 +205,39 @@ class SaleOrder(TransactionalDocument, TotalsCalculationMixin):
             self.number = SequenceService.get_next_number(SaleOrder)
         super().save(*args, **kwargs)
 
+    # --- T-57: Polymorphic invoice hooks ---
+    # Estos métodos eliminan los isinstance(invoice.source_order, SaleOrder/PurchaseOrder)
+    # de billing/services.py. Cada modelo sabe cómo comportarse en contexto de facturación.
+
+    def revert_after_invoice_cancellation(self) -> None:
+        """
+        Revierte el estado de la orden al anular su factura asociada.
+        Para SaleOrder: vuelve a CONFIRMED (pedido confirmado, sin factura activa).
+        Invocado por BillingService.annul_invoice().
+        """
+        self.status = self.Status.CONFIRMED
+        self.save()
+
+    def describe_for_invoice_journal(self, number: str, dte_display: str) -> str:
+        """
+        Genera la descripción del asiento contable al confirmar la factura.
+        Para SaleOrder: '<DTE_display> <folio> - Pedido <NV_number>'.
+        Invocado por BillingService.confirm_invoice().
+        """
+        return f"{dte_display} {number} - Pedido {self.number}"
+
+    def get_invoice_supplier_id(self):
+        """
+        Retorna el supplier_id relevante para validar unicidad de folio.
+        Para SaleOrder: None (las facturas de venta no tienen proveedor).
+        Para PurchaseOrder: self.supplier_id.
+        Invocado por BillingService.confirm_invoice().
+        """
+        return None
+
     def delete(self, *args, **kwargs):
         super().delete(*args, **kwargs)
+
 
 class SaleLine(models.Model):
     order = models.ForeignKey(SaleOrder, on_delete=models.CASCADE, related_name='lines')
@@ -335,6 +366,9 @@ class SalesSettings(TimeStampedModel):
     class Meta:
         verbose_name = _("Configuración de Ventas")
         verbose_name_plural = _("Configuración de Ventas")
+
+    class FormMeta:
+        exclude_fields = []
 
     def __str__(self):
         return "Configuración de Ventas"

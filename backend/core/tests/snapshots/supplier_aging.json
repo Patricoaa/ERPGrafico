@@ -1,0 +1,38 @@
+[
+  {
+    "contact_id": "<id>",
+    "credit_days": 30,
+    "current": "477190",
+    "name": "Tintas Industriales SpA",
+    "overdue_30": "1820700",
+    "overdue_60": "235620",
+    "overdue_90": "819910",
+    "overdue_90plus": "5889310",
+    "tax_id": "77200002-2",
+    "total": "9242730"
+  },
+  {
+    "contact_id": "<id>",
+    "credit_days": 30,
+    "current": "96390",
+    "name": "Servicios Gráficos del Norte",
+    "overdue_30": "0",
+    "overdue_60": "708050",
+    "overdue_90": "443870",
+    "overdue_90plus": "7261380",
+    "tax_id": "77200003-3",
+    "total": "8509690"
+  },
+  {
+    "contact_id": "<id>",
+    "credit_days": 30,
+    "current": "0",
+    "name": "Papeles y Cartón Chile",
+    "overdue_30": "604520",
+    "overdue_60": "404600",
+    "overdue_90": "911540",
+    "overdue_90plus": "3821090",
+    "tax_id": "77200001-1",
+    "total": "5741750"
+  }
+]

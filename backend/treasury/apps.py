@@ -17,7 +17,7 @@ class TreasuryConfig(AppConfig):
 
         try:
             from core.registry import UniversalRegistry, SearchableEntity
-            from treasury.models import TreasuryMovement
+            from treasury.models import TreasuryMovement, TreasuryAccount, POSSession, BankStatement
             UniversalRegistry.register(SearchableEntity(
                 model=TreasuryMovement,
                 label='treasury.treasurymovement',
@@ -27,6 +27,36 @@ class TreasuryConfig(AppConfig):
                 list_url='/tesoreria',
                 detail_url_pattern='/tesoreria/{id}',
                 permission='treasury.view_treasurymovement',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=TreasuryAccount,
+                label='treasury.treasuryaccount',
+                icon='piggy-bank',
+                search_fields=('name', 'account_number'),
+                display_template='{name}',
+                list_url='/tesoreria/cuentas',
+                detail_url_pattern='/tesoreria/cuentas/{id}',
+                permission='treasury.view_treasuryaccount',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=POSSession,
+                label='treasury.possession',
+                icon='calculator',
+                search_fields=('terminal__name',),
+                display_template='Sesión POS {id}',
+                list_url='/tesoreria/cajas',
+                detail_url_pattern='/tesoreria/cajas/{id}',
+                permission='treasury.view_possession',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=BankStatement,
+                label='treasury.bankstatement',
+                icon='file-spreadsheet',
+                search_fields=('treasury_account__name', 'statement_date'),
+                display_template='Cartola {treasury_account.name} {statement_date}',
+                list_url='/tesoreria/cartolas',
+                detail_url_pattern='/tesoreria/cartolas/{id}',
+                permission='treasury.view_bankstatement',
             ))
         except Exception:
             pass

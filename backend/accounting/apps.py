@@ -15,7 +15,7 @@ class AccountingConfig(AppConfig):
 
         try:
             from core.registry import UniversalRegistry, SearchableEntity
-            from accounting.models import Account, JournalEntry
+            from accounting.models import Account, JournalEntry, FiscalYear, Budget
             UniversalRegistry.register(SearchableEntity(
                 model=Account,
                 label='accounting.account',
@@ -35,6 +35,26 @@ class AccountingConfig(AppConfig):
                 list_url='/contabilidad/asientos',
                 detail_url_pattern='/contabilidad/asientos/{id}',
                 permission='accounting.view_journalentry',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=FiscalYear,
+                label='accounting.fiscalyear',
+                icon='calendar',
+                search_fields=('year',),
+                display_template='Año Fiscal {year}',
+                list_url='/contabilidad/periodos',
+                detail_url_pattern='/contabilidad/periodos/{id}',
+                permission='accounting.view_fiscalyear',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=Budget,
+                label='accounting.budget',
+                icon='wallet',
+                search_fields=('name',),
+                display_template='Presupuesto {name}',
+                list_url='/contabilidad/presupuestos',
+                detail_url_pattern='/contabilidad/presupuestos/{id}',
+                permission='accounting.view_budget',
             ))
         except Exception:
             pass

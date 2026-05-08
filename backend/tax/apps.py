@@ -11,7 +11,7 @@ class TaxConfig(AppConfig):
 
         try:
             from core.registry import UniversalRegistry, SearchableEntity
-            from tax.models import F29Declaration
+            from tax.models import F29Declaration, AccountingPeriod
             UniversalRegistry.register(SearchableEntity(
                 model=F29Declaration,
                 label='tax.f29declaration',
@@ -21,6 +21,16 @@ class TaxConfig(AppConfig):
                 list_url='/tributario/f29',
                 detail_url_pattern='/tributario/f29/{id}',
                 permission='tax.view_f29declaration',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=AccountingPeriod,
+                label='tax.accountingperiod',
+                icon='calendar-clock',
+                search_fields=('year', 'month'),
+                display_template='Periodo {month}/{year}',
+                list_url='/tributario/periodos',
+                detail_url_pattern='/tributario/periodos/{id}',
+                permission='tax.view_accountingperiod',
             ))
         except Exception:
             pass

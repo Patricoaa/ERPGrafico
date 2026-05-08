@@ -962,11 +962,7 @@ class BillingService:
             )
 
         # Validate Uniqueness
-        supplier_id = None
-        from purchasing.models import PurchaseOrder
-        if isinstance(invoice.source_order, PurchaseOrder):
-            supplier_id = invoice.source_order.supplier_id
-            
+        supplier_id = invoice.source_order.get_invoice_supplier_id() if invoice.source_order else None
         BillingService._validate_document_uniqueness(
             number, 
             invoice.dte_type, 
@@ -992,12 +988,10 @@ class BillingService:
             from accounting.services import JournalEntryService
             from accounting.models import JournalEntry
             # 1. Update Description
-            from purchasing.models import PurchaseOrder
-            from sales.models import SaleOrder
-            if isinstance(invoice.source_order, PurchaseOrder):
-                entry.description = f"{invoice.get_dte_type_display()} Compra {number} - OC {invoice.source_order.number}"
-            elif isinstance(invoice.source_order, SaleOrder):
-                entry.description = f"{invoice.get_dte_type_display()} {number} - Pedido {invoice.source_order.number}"
+            if invoice.source_order:
+                entry.description = invoice.source_order.describe_for_invoice_journal(
+                    number, invoice.get_dte_type_display()
+                )
             
             entry.reference = f"{invoice.dte_type[:3]}-{number}"
             entry.save()
@@ -1118,13 +1112,7 @@ class BillingService:
         invoice.save()
 
         # 4. Update Order Status
-        from sales.models import SaleOrder
-        from purchasing.models import PurchaseOrder
-        if isinstance(invoice.source_order, SaleOrder):
-            invoice.source_order.status = SaleOrder.Status.CONFIRMED # Revert to confirmed
-            invoice.source_order.save()
-        elif isinstance(invoice.source_order, PurchaseOrder):
-             invoice.source_order.status = PurchaseOrder.Status.RECEIVED # Revert to received
-             invoice.source_order.save()
+        if invoice.source_order:
+            invoice.source_order.revert_after_invoice_cancellation()
         
         return invoice

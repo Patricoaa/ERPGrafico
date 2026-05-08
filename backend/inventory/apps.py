@@ -16,7 +16,7 @@ class InventoryConfig(AppConfig):
 
         try:
             from core.registry import UniversalRegistry, SearchableEntity
-            from inventory.models import Product
+            from inventory.models import Product, ProductCategory, Warehouse, StockMove
             UniversalRegistry.register(SearchableEntity(
                 model=Product,
                 label='inventory.product',
@@ -26,6 +26,36 @@ class InventoryConfig(AppConfig):
                 list_url='/inventario/productos',
                 detail_url_pattern='/inventario/productos/{id}',
                 permission='inventory.view_product',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=ProductCategory,
+                label='inventory.productcategory',
+                icon='folder-tree',
+                search_fields=('name', 'code'),
+                display_template='{code} · {name}',
+                list_url='/inventario/categorias',
+                detail_url_pattern='/inventario/categorias/{id}',
+                permission='inventory.view_productcategory',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=Warehouse,
+                label='inventory.warehouse',
+                icon='warehouse',
+                search_fields=('name', 'code'),
+                display_template='{code} · {name}',
+                list_url='/inventario/bodegas',
+                detail_url_pattern='/inventario/bodegas/{id}',
+                permission='inventory.view_warehouse',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=StockMove,
+                label='inventory.stockmove',
+                icon='arrow-right-left',
+                search_fields=('number', 'reference'),
+                display_template='MOV-{number}',
+                list_url='/inventario/movimientos',
+                detail_url_pattern='/inventario/movimientos/{id}',
+                permission='inventory.view_stockmove',
             ))
         except Exception:
             pass
