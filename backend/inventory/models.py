@@ -531,6 +531,63 @@ class Product(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class FormMeta:
+        ui_layout = {
+            'tabs': [
+                {
+                    'id': 'main',
+                    'label': 'General',
+                    'fields': [
+                        'name', 'code', 'category', 'product_type',
+                        'sale_price', 'sale_price_gross', 'can_be_sold', 'can_be_purchased',
+                        'income_account', 'expense_account', 'active'
+                    ]
+                },
+                {
+                    'id': 'logistics',
+                    'label': 'Logística',
+                    'fields': ['uom', 'track_inventory', 'receiving_warehouse', 'sale_uom', 'purchase_uom', 'preferred_supplier']
+                },
+                {
+                    'id': 'manufacturing',
+                    'label': 'Fabricación',
+                    'fields': ['has_bom', 'requires_advanced_manufacturing']
+                },
+                {
+                    'id': 'subscription',
+                    'label': 'Suscripción',
+                    'fields': [
+                        'subscription_supplier', 'subscription_amount', 'recurrence_period',
+                        'subscription_start_date', 'auto_activate_subscription', 'is_indefinite',
+                        'contract_end_date', 'default_invoice_type', 'payment_day_type',
+                        'payment_day', 'payment_interval_days', 'renewal_notice_days'
+                    ]
+                }
+            ]
+        }
+        field_config = {
+            'has_bom': {'visible_if': {'field': 'product_type', 'equals': 'MANUFACTURABLE'}},
+            'requires_advanced_manufacturing': {'visible_if': {'field': 'product_type', 'equals': 'MANUFACTURABLE'}},
+            'uom': {'visible_if': {'field': 'product_type', 'in': ['STORABLE', 'MANUFACTURABLE']}},
+            'track_inventory': {'visible_if': {'field': 'product_type', 'in': ['STORABLE', 'MANUFACTURABLE']}},
+            'receiving_warehouse': {'visible_if': {'field': 'product_type', 'in': ['STORABLE', 'MANUFACTURABLE']}},
+            'sale_uom': {'visible_if': {'field': 'product_type', 'in': ['STORABLE', 'MANUFACTURABLE']}},
+            'purchase_uom': {'visible_if': {'field': 'product_type', 'in': ['STORABLE', 'MANUFACTURABLE']}},
+            'preferred_supplier': {'visible_if': {'field': 'product_type', 'in': ['STORABLE', 'MANUFACTURABLE']}},
+            'subscription_supplier': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'subscription_amount': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'subscription_start_date': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'auto_activate_subscription': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'is_indefinite': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'contract_end_date': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'default_invoice_type': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'payment_day_type': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'payment_day': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'payment_interval_days': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'renewal_notice_days': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'recurrence_period': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+        }
+
     class Meta:
         verbose_name = _("Producto")
         verbose_name_plural = _("Productos")

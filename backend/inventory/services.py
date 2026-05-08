@@ -732,20 +732,17 @@ class ProductService:
                     sale_price=template.sale_price,
                     cost_price=template.cost_price,
                     requires_advanced_manufacturing=template.requires_advanced_manufacturing,
-                    mfg_auto_finalize=template.mfg_auto_finalize,
-                    mfg_enable_prepress=template.mfg_enable_prepress,
-                    mfg_enable_press=template.mfg_enable_press,
-                    mfg_enable_postpress=template.mfg_enable_postpress,
-                    mfg_prepress_design=template.mfg_prepress_design,
-                    mfg_prepress_specs=template.mfg_prepress_specs,
-                    mfg_prepress_folio=template.mfg_prepress_folio,
-                    mfg_press_offset=template.mfg_press_offset,
-                    mfg_press_digital=template.mfg_press_digital,
-                    mfg_postpress_finishing=template.mfg_postpress_finishing,
-                    mfg_postpress_binding=template.mfg_postpress_binding,
                 )
                 variant.attribute_values.set(combo)
                 variant.save()  # Triggers display name generation
+                
+                if getattr(template, 'manufacturing_profile', None):
+                    from inventory.models import ProductManufacturingProfile
+                    profile = ProductManufacturingProfile.objects.get(product=template)
+                    profile.pk = None
+                    profile.product = variant
+                    profile.save()
+                    
                 created_count += 1
                 
         return {

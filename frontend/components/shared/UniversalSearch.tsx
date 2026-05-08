@@ -22,7 +22,7 @@ import {
     Wrench,
     type LucideIcon,
 } from "lucide-react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUniversalSearch } from "@/features/search"
 
@@ -120,6 +120,7 @@ export function UniversalSearch() {
                     className="max-w-lg gap-0 overflow-hidden p-0"
                     aria-label="Búsqueda universal"
                 >
+                    <DialogTitle className="sr-only">Búsqueda universal</DialogTitle>
                     <div className="flex items-center border-b border-border px-4 py-3">
                         <Search className="mr-3 size-4 shrink-0 text-muted-foreground" aria-hidden />
                         <input

@@ -159,3 +159,30 @@ class Invoice(TransactionalDocument):
     def pending_amount(self):
         """Calculates the remaining amount to be paid for this invoice"""
         return self.total - self.total_paid
+
+    class FormMeta:
+        ui_layout = {
+            'tabs': [
+                {
+                    'id': 'main',
+                    'label': 'General',
+                    'fields': [
+                        'dte_type', 'status', 'date', 'contact', 'payment_method',
+                        'sii_document_code', 'document_attachment', 'corrected_invoice',
+                        'total_net', 'total_tax', 'total_discount_amount', 'total'
+                    ]
+                }
+            ]
+        }
+        field_config = {
+            'sii_document_code': {
+                'visible_if': {'field': 'dte_type', 'in': ['FACTURA', 'FACTURA_EXENTA', 'BOLETA', 'BOLETA_EXENTA', 'NOTA_CREDITO', 'NOTA_DEBITO']}
+            },
+            'document_attachment': {
+                'visible_if': {'field': 'dte_type', 'in': ['FACTURA', 'FACTURA_EXENTA', 'BOLETA', 'BOLETA_EXENTA', 'NOTA_CREDITO', 'NOTA_DEBITO']}
+            },
+            'corrected_invoice': {
+                'visible_if': {'field': 'dte_type', 'in': ['NOTA_CREDITO', 'NOTA_DEBITO']}
+            }
+        }
+
