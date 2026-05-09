@@ -20,6 +20,11 @@ export const accountingApi = {
         return data
     },
 
+    getEntries: async (params?: Record<string, unknown>) => {
+        const { data } = await api.get('/accounting/entries/', { params })
+        return data
+    },
+
     createEntry: async (payload: Record<string, unknown>): Promise<unknown> => {
         const { data } = await api.post('/accounting/entries/', payload)
         return data

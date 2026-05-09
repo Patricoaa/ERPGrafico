@@ -1,4 +1,4 @@
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import React, { useState, useEffect, lazy, Suspense } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useContacts, type Contact } from "@/features/contacts"
 import { LoadingFallback, StatusBadge } from "@/components/shared"
 import { cn } from "@/lib/utils"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 // Lazy load heavy components
 const ContactModal = lazy(() => import("./ContactModal"))
@@ -33,6 +34,11 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
     const [contactToDelete, setContactToDelete] = useState<Contact | null>(null)
     const router = useRouter()
     const searchParams = useSearchParams()
+    const pathname = usePathname()
+
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Contact>({
+        endpoint: '/contacts'
+    })
 
     // Sync modal with props from URL
     useEffect(() => {
@@ -44,10 +50,19 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
         }
     }, [isNewModalOpen])
 
+    // Sync modal with selected entity from URL (deep-link)
+    useEffect(() => {
+        if (selectedFromUrl) {
+            setSelectedContact(selectedFromUrl)
+            setModalOpen(true)
+        }
+    }, [selectedFromUrl])
+
     const handleCloseModal = (open: boolean) => {
         setModalOpen(open)
         if (!open) {
             setSelectedContact(null)
+            clearSelection()
             // Clear URL params if it was a 'new' modal
             if (searchParams.get("modal") === "new") {
                 const params = new URLSearchParams(searchParams.toString())
@@ -174,8 +189,9 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                         icon={Edit}
                         title="Editar"
                         onClick={() => {
-                            setSelectedContact(contact)
-                            setModalOpen(true)
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.set('selected', String(contact.id))
+                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
                         }}
                     />
                     {!contact.is_default_customer && !contact.is_default_vendor && (

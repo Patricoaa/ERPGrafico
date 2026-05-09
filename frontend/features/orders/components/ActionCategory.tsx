@@ -57,7 +57,47 @@ export const ActionCategory = forwardRef(({
     headless = false
 }: ActionCategoryProps, ref) => {
     const router = useRouter()
+    const searchParams = import("next/navigation").then(m => {
+        try {
+            return m.useSearchParams()
+        } catch {
+            return null
+        }
+    })
+    
+    // We import statically on top or use the router
+    const { useSearchParams, usePathname } = require("next/navigation")
+    const pathname = usePathname()
+    const currentSearchParams = useSearchParams()
+
+    const transactionId = currentSearchParams.get('transaction')
+    const transactionType = currentSearchParams.get('transactionType')
+
     const [activeModal, setActiveModal] = useState<string | null>(null)
+    const [viewConfig, setViewConfig] = useState<{ type: string, id: number | string } | null>(null)
+
+    useEffect(() => {
+        if (transactionId && transactionType && activeModal !== 'transaction-view') {
+            setViewConfig({ type: transactionType, id: transactionId })
+            setActiveModal('transaction-view')
+        }
+    }, [transactionId, transactionType])
+
+    const openTransaction = (type: string, id: number | string) => {
+        const params = new URLSearchParams(currentSearchParams.toString())
+        params.set('transaction', String(id))
+        params.set('transactionType', type)
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const closeTransaction = () => {
+        const params = new URLSearchParams(currentSearchParams.toString())
+        params.delete('transaction')
+        params.delete('transactionType')
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        setActiveModal(null)
+        setViewConfig(null)
+    }
     const [isProcessing, setIsProcessing] = useState(false)
     const [hasNotifiedOpen, setHasNotifiedOpen] = useState(false)
     const [confirmModal, setConfirmModal] = useState<{
@@ -99,7 +139,6 @@ export const ActionCategory = forwardRef(({
     const isPurchase = !!order?.supplier_name || !!order?.supplier || !!order?.purchase_order
 
     const resolvedInvoices = (order?.dte_type ? [order] : (order?.related_documents?.invoices || order?.invoices)) || []
-    const [viewConfig, setViewConfig] = useState<{ type: string, id: number | string } | null>(null)
 
     const handleActionClick = (actionId: string) => {
         if (!order) {
@@ -162,8 +201,7 @@ export const ActionCategory = forwardRef(({
                 }
 
                 console.log(`[ActionEngine] Opening transaction view for:`, { viewType, viewId });
-                setViewConfig({ type: viewType, id: viewId })
-                setActiveModal('transaction-view')
+                openTransaction(viewType, viewId)
                 break
             case 'regenerate-document':
                 handleRegenerateDocument()
@@ -467,7 +505,7 @@ export const ActionCategory = forwardRef(({
             {activeModal === 'transaction-view' && viewConfig && (
                 <TransactionViewModal
                     open={true}
-                    onOpenChange={closeModal}
+                    onOpenChange={(open) => !open && closeTransaction()}
                     type={viewConfig.type as any}
                     id={viewConfig.id as any}
                 />
@@ -480,8 +518,7 @@ export const ActionCategory = forwardRef(({
                     type="work_orders"
                     data={(order?.work_orders || []) as any}
                     onItemClick={(type, id) => {
-                        setViewConfig({ type, id })
-                        setActiveModal('transaction-view')
+                        openTransaction(type, id)
                     }}
                 />
             )}

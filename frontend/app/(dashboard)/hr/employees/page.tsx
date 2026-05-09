@@ -12,28 +12,41 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { useSearchParams, usePathname } from "next/navigation"
 import { Pencil } from "lucide-react"
-import { useSearchParams } from "next/navigation"
 import { ToolbarCreateButton } from "@/components/shared"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 // Employee schemas and types moved to features/hr/components/EmployeeFormDialog
 
 export default function EmployeesPage() {
     const createAction = <ToolbarCreateButton label="Nuevo Empleado" href="/hr/employees?modal=new" />
     const router = useRouter()
+    const pathname = usePathname()
     const searchParams = useSearchParams()
     const [employees, setEmployees] = useState<Employee[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState("")
+
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Employee>({
+        endpoint: '/hr/employees'
+    })
     
     // Dialog state synchronized with URL or local edit
     const isNewModalOpen = searchParams.get("modal") === "new"
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
-    const dialogOpen = isNewModalOpen || !!editingEmployee
+    const dialogOpen = isNewModalOpen || !!editingEmployee || !!selectedFromUrl
+
+    useEffect(() => {
+        if (selectedFromUrl && (!editingEmployee || editingEmployee.id !== selectedFromUrl.id)) {
+            setEditingEmployee(selectedFromUrl)
+        }
+    }, [selectedFromUrl])
 
     const setDialogOpen = (open: boolean) => {
         if (!open) {
             setEditingEmployee(null)
+            clearSelection()
             if (isNewModalOpen) {
                 const params = new URLSearchParams(searchParams.toString())
                 params.delete("modal")
@@ -128,7 +141,12 @@ export default function EmployeesPage() {
                 <DataCell.Action
                     icon={Pencil}
                     title="Editar Empleado"
-                    onClick={(e) => { e.stopPropagation(); setEditingEmployee(employee); setDialogOpen(true); }}
+                    onClick={(e) => { 
+                        e.stopPropagation(); 
+                        const params = new URLSearchParams(searchParams.toString())
+                        params.set('selected', String(employee.id))
+                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                    }}
                 />
             )
         }),

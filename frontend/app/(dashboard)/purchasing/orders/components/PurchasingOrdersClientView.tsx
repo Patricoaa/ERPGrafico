@@ -13,7 +13,6 @@ import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/features/purchasing/components/PurchaseOrderForm"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { DocumentRegistrationModal } from "@/features/purchasing/components/DocumentRegistrationModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { PurchaseCheckoutWizard } from "@/features/purchasing/components/PurchaseCheckoutWizard"
@@ -67,7 +66,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const { notes, refetch: fetchNotes } = usePurchasingNotes()
 
     const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null)
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: any, id: number | string, view: 'details' | 'history' } | null>(null)
     const [invoicingOrder, setInvoicingOrder] = useState<PurchaseOrder | null>(null)
     const [completingInvoice, setCompletingInvoice] = useState<{ id: number, type: string } | null>(null)
     const [checkoutOpen, setCheckoutOpen] = useState(false)
@@ -537,17 +535,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         createAction={createAction}
                     />
                 </Tabs>
-
-            {viewingTransaction && (
-                <TransactionViewModal
-                    open={!!viewingTransaction}
-                    onOpenChange={(open) => !open && setViewingTransaction(null)}
-                    type={viewingTransaction.type}
-                    id={viewingTransaction.id}
-                    view={viewingTransaction.view}
-                />
-            )
-            }
 
             {
                 invoicingOrder && (

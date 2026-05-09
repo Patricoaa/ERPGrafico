@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { useRef } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { CardSkeleton, MoneyDisplay } from "@/components/shared"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -34,6 +35,9 @@ export function TaskInbox() {
     const { openWorkOrder, openContact } = useGlobalModalActions()
     const { openHub } = useHubPanel()
     const { user } = useAuth()
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const selectedId = searchParams.get('selected')
     
     // Track counts for notifications
     const lastApprovalsCount = useRef<number | null>(null)
@@ -87,6 +91,23 @@ export function TaskInbox() {
         const interval = setInterval(() => fetchTasks(true), 30000)
         return () => clearInterval(interval)
     }, [])
+
+    // Handle deep-linked task (ADR-0020)
+    useEffect(() => {
+        if (selectedId && !loading) {
+            const task = [...approvalTasks, ...operationalTasks].find(t => t.id === parseInt(selectedId))
+            if (task) {
+                navigateToTask(task)
+                // Clear selection after navigation to avoid infinite loops if it redirects back
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete('selected')
+                router.replace(`?${params.toString()}`, { scroll: false })
+            } else if (!loading) {
+                 // If not found in current list, try to fetch it specifically or handle error
+                 // For now, we assume it will be in the list after fetchTasks
+            }
+        }
+    }, [selectedId, loading, approvalTasks, operationalTasks])
 
     const navigateToTask = (task: Task) => {
         // Smart navigation based on task type

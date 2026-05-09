@@ -11,26 +11,20 @@ class TaxConfig(AppConfig):
 
         try:
             from core.registry import UniversalRegistry, SearchableEntity
-            from tax.models import F29Declaration, AccountingPeriod
+            from tax.models import F29Declaration
+            # F29Declaration: visible en búsqueda universal, vive en /accounting/tax
+            # AccountingPeriod: modelo interno del cierre fiscal — NO se expone en búsqueda.
+            # Su URL (/tax/periods) colisiona con TaxPeriod (modelo distinto); los IDs
+            # de ambas tablas no son comparables. Decisión F9/T-100: eliminar del registry.
             UniversalRegistry.register(SearchableEntity(
                 model=F29Declaration,
                 label='tax.f29declaration',
                 icon='file-badge',
                 search_fields=('folio_number',),
                 display_template='F29 Folio {folio_number}',
-                list_url='/tax/f29',
+                list_url='/accounting/tax',          # ruta real (T-99)
                 detail_url_pattern='/tax/f29/{id}',
                 permission='tax.view_f29declaration',
-            ))
-            UniversalRegistry.register(SearchableEntity(
-                model=AccountingPeriod,
-                label='tax.accountingperiod',
-                icon='calendar-clock',
-                search_fields=('year', 'month'),
-                display_template='Periodo {month}/{year}',
-                list_url='/tax/periods',
-                detail_url_pattern='/tax/periods/{id}',
-                permission='tax.view_accountingperiod',
             ))
         except Exception:
             pass

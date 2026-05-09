@@ -20,6 +20,7 @@ import { ChevronRight, ChevronDown } from "lucide-react"
 import { buildAccountTree } from "../utils/accountTree"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ActivitySidebar } from "@/features/audit/components"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 interface AccountsClientViewProps {
     externalOpen?: boolean
@@ -53,24 +54,19 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Account>({
+        endpoint: '/accounting/accounts'
+    })
+
     // Open edit form if ?selected= is present (ADR-0020)
     useEffect(() => {
-        const selectedId = searchParams.get('selected')
-        if (selectedId && flatAccounts.length > 0) {
-            const acc = flatAccounts.find(a => a.id === parseInt(selectedId))
-            if (acc && (!isFormOpen || editingAccount?.id !== acc.id)) {
-                setEditingAccount(acc)
-                setIsFormOpen(true)
-            }
+        if (selectedFromUrl && (!isFormOpen || editingAccount?.id !== selectedFromUrl.id)) {
+            setEditingAccount(selectedFromUrl)
+            setIsFormOpen(true)
         }
-    }, [searchParams, flatAccounts])
+    }, [selectedFromUrl, isFormOpen, editingAccount])
 
-    const clearSelection = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('selected')
-        const query = params.toString()
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    }
+
 
     const handleCloseModal = () => {
         setIsFormOpen(false)

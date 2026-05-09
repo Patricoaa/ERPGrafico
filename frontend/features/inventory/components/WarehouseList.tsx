@@ -17,6 +17,7 @@ import type { BulkAction } from "@/components/shared"
 import React from "react"
 
 import { useWarehouses, type Warehouse } from "@/features/inventory/hooks/useWarehouses"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 interface WarehouseListProps {
     externalOpen?: boolean
@@ -36,24 +37,18 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
+    // T-106: clearSelection viene directamente del hook — no re-declarar localmente (ADR-0020)
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Warehouse>({
+        endpoint: '/inventory/warehouses'
+    })
+
     // Open edit form if ?selected= is present (ADR-0020)
     useEffect(() => {
-        const selectedId = searchParams.get('selected')
-        if (selectedId && warehouses && warehouses.length > 0) {
-            const wh = warehouses.find(w => w.id === parseInt(selectedId))
-            if (wh && (!isFormOpen || editingWarehouse?.id !== wh.id)) {
-                setEditingWarehouse(wh)
-                setIsFormOpen(true)
-            }
+        if (selectedFromUrl && (!isFormOpen || editingWarehouse?.id !== selectedFromUrl.id)) {
+            setEditingWarehouse(selectedFromUrl)
+            setIsFormOpen(true)
         }
-    }, [searchParams, warehouses])
-
-    const clearSelection = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('selected')
-        const query = params.toString()
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    }
+    }, [selectedFromUrl, isFormOpen, editingWarehouse])
 
     const handleCloseModal = () => {
         setIsFormOpen(false)

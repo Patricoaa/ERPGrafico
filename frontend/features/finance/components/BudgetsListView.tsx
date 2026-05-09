@@ -25,6 +25,7 @@ interface BudgetsListViewProps {
 }
 
 import { useBudgets, type Budget } from "@/features/finance/hooks/useBudgets"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 export function BudgetsListView({ externalOpen, onExternalOpenChange, createAction }: BudgetsListViewProps) {
     const router = useRouter()
@@ -32,6 +33,10 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
     const searchParams = useSearchParams()
 
     const { budgets, refetch, createBudget } = useBudgets()
+
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Budget>({
+        endpoint: '/accounting/budgets'
+    })
 
     // Create Modal State
     const [isCreateOpen, setIsCreateOpen] = useState(false)
@@ -69,15 +74,11 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
 
     // Open edit form if ?selected= is present (ADR-0020)
     useEffect(() => {
-        const selectedId = searchParams.get('selected')
-        if (selectedId && budgets.length > 0) {
-            const b = budgets.find((b: Budget) => b.id === parseInt(selectedId))
-            if (b && (!isEditorOpen || budgetToEdit?.id !== b.id)) {
-                setBudgetToEdit(b)
-                setIsEditorOpen(true)
-            }
+        if (selectedFromUrl && (!isEditorOpen || budgetToEdit?.id !== selectedFromUrl.id)) {
+            setBudgetToEdit(selectedFromUrl)
+            setIsEditorOpen(true)
         }
-    }, [searchParams, budgets])
+    }, [selectedFromUrl, isEditorOpen, budgetToEdit])
 
     const clearSelection = () => {
         const params = new URLSearchParams(searchParams.toString())
