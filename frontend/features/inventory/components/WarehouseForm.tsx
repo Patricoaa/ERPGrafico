@@ -32,9 +32,11 @@ interface WarehouseFormProps {
     initialData?: WarehouseInitialData
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    inline?: boolean
+    onLoadingChange?: (loading: boolean) => void
 }
 
-export function WarehouseForm({ sidebar,  onSuccess, initialData, open: openProp, onOpenChange }: WarehouseFormProps) {
+export function WarehouseForm({ sidebar, onSuccess, initialData, open: openProp, onOpenChange, inline = false, onLoadingChange }: WarehouseFormProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
@@ -81,6 +83,7 @@ export function WarehouseForm({ sidebar,  onSuccess, initialData, open: openProp
 
     async function onSubmit(data: WarehouseFormValues) {
         setLoading(true)
+        if (onLoadingChange) onLoadingChange(true)
         try {
             if (initialData) {
                 await api.put(`/inventory/warehouses/${initialData.id}/`, data)
@@ -95,7 +98,81 @@ export function WarehouseForm({ sidebar,  onSuccess, initialData, open: openProp
             showApiError(error, "Error al guardar el almacén")
         } finally {
             setLoading(false)
+            if (onLoadingChange) onLoadingChange(false)
         }
+    }
+
+    const formContent = (
+        <FormSplitLayout
+            sidebar={initialData?.id ? (
+                <ActivitySidebar 
+                    entityId={initialData.id} 
+                    entityType="warehouse" 
+                />
+            ) : undefined}
+            showSidebar={!!initialData?.id}
+        >
+            <Form {...form}>
+                <form 
+                    id="warehouse-form" 
+                    onSubmit={form.handleSubmit(onSubmit)} 
+                    className="space-y-6 px-4 pb-4 pt-2"
+                >
+
+                            <div className="grid grid-cols-4 gap-4">
+                                <div className="col-span-3">
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Nombre de Bodega"
+                                                required
+                                                placeholder="Ej: Bodega Central"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                                <div className="col-span-1">
+                                    <FormField
+                                        control={form.control}
+                                        name="code"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Código Interno"
+                                                required
+                                                placeholder="Ej: BOD-01"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                <div className="col-span-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="address"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Dirección Física"
+                                                placeholder="Ej: Av. Industrial 1234, Santiago"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                </form>
+            </Form>
+        </FormSplitLayout>
+    )
+
+    if (inline) {
+        return <>{formContent}</>
     }
 
     return (
@@ -139,73 +216,8 @@ export function WarehouseForm({ sidebar,  onSuccess, initialData, open: openProp
                     />
                 }
             >
-            <FormSplitLayout
-                sidebar={initialData?.id ? (
-                    <ActivitySidebar 
-                        entityId={initialData.id} 
-                        entityType="warehouse" 
-                    />
-                ) : undefined}
-                showSidebar={!!initialData?.id}
-            >
-                <Form {...form}>
-                    <form 
-                        id="warehouse-form" 
-                        onSubmit={form.handleSubmit(onSubmit)} 
-                        className="space-y-6 px-4 pb-4 pt-2"
-                    >
-
-                                <div className="grid grid-cols-4 gap-4">
-                                    <div className="col-span-3">
-                                        <FormField
-                                            control={form.control}
-                                            name="name"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Nombre de Bodega"
-                                                    required
-                                                    placeholder="Ej: Bodega Central"
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            )}
-                                        />
-                                    </div>
-                                    <div className="col-span-1">
-                                        <FormField
-                                            control={form.control}
-                                            name="code"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Código Interno"
-                                                    required
-                                                    placeholder="Ej: BOD-01"
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            )}
-                                        />
-                                    </div>
-
-                                    <div className="col-span-4">
-                                        <FormField
-                                            control={form.control}
-                                            name="address"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Dirección Física"
-                                                    placeholder="Ej: Av. Industrial 1234, Santiago"
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            )}
-                                        />
-                                    </div>
-                                </div>
-                    </form>
-                </Form>
-            </FormSplitLayout>
-        </BaseModal>
+                {formContent}
+            </BaseModal>
         </>
     )
 }

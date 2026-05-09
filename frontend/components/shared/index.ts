@@ -62,7 +62,9 @@ export * from './PageContainer';
 export * from './FormTabs';
 export * from './FormFooter';
 export * from './FormSplitLayout';
+export * from './EntityDetailPage';
 export * from './EmptyState';
+
 
 // Industrial Identity
 export * from './CropFrame';

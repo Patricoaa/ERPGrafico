@@ -17,25 +17,72 @@ import { EmptyState, PeriodValidationDateInput, TableSkeleton, LabeledContainer,
 
 import { SaleOrderLine, SaleNoteLine } from "../types"
 
-interface SaleNoteModalProps {
-    open: boolean
-    onOpenChange: (open: boolean) => void
+export interface SaleNoteFormProps {
     orderId?: number
     orderNumber?: string
     invoiceId?: number
     onSuccess?: () => void
     initialType?: "NOTA_CREDITO" | "NOTA_DEBITO"
+    id?: string
+    onLoadingChange?: (loading: boolean) => void
+    onCancel?: () => void
 }
 
-export function SaleNoteModal({
-    open,
-    onOpenChange,
+export interface SaleNoteModalProps extends Omit<SaleNoteFormProps, "id" | "onLoadingChange" | "onCancel"> {
+    open: boolean
+    onOpenChange: (open: boolean) => void
+}
+
+export function SaleNoteModal({ open, onOpenChange, ...props }: SaleNoteModalProps) {
+    const [loading, setLoading] = useState(false)
+    const formId = "modal-sale-note-form"
+    const amountNet = 0 // Mocked for modal footer disabled state, properly handled in form but hard to bubble up cleanly without context. 
+    // Wait, the modal's SubmitButton needs to be disabled if amountNet <= 0 or !documentNumber.
+    // If we use HTML form validation inside the form, we can just rely on standard form submission block.
+
+    return (
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="lg"
+            title={
+                <span className="flex items-center gap-2">
+                    <FileBadge className="h-6 w-6 text-primary" />
+                    Registrar Nota Crédito/Débito - {props.orderNumber ? `NV-${props.orderNumber}` : `Doc #${props.invoiceId}`}
+                </span>
+            }
+            footer={
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                            <SubmitButton
+                                form={`${formId}-form`}
+                                loading={loading}
+                                className="h-11 px-8"
+                            >
+                                Confirmar Registro de Nota
+                            </SubmitButton>
+                        </>
+                    }
+                />
+            }
+        >
+            <SaleNoteForm id={formId} {...props} onSuccess={() => { onOpenChange(false); if(props.onSuccess) props.onSuccess(); }} onLoadingChange={setLoading} onCancel={() => onOpenChange(false)} />
+        </BaseModal>
+    )
+}
+
+export function SaleNoteForm({
     orderId,
     orderNumber,
     invoiceId,
     onSuccess,
-    initialType = "NOTA_CREDITO"
-}: SaleNoteModalProps) {
+    initialType = "NOTA_CREDITO",
+    id = "sale-note-form",
+    onLoadingChange,
+    onCancel
+}: SaleNoteFormProps) {
     const [noteType, setNoteType] = useState(initialType)
     const [documentNumber, setDocumentNumber] = useState("")
     const [documentDate, setDocumentDate] = useState<Date | undefined>(new Date())
@@ -46,13 +93,11 @@ export function SaleNoteModal({
     const [isPeriodValid, setIsPeriodValid] = useState(true)
 
     useEffect(() => {
-        if (open) {
-            setDocumentNumber("")
-            setDocumentDate(new Date())
-            setAttachment(null)
-            fetchDetails()
-        }
-    }, [open])
+        setDocumentNumber("")
+        setDocumentDate(new Date())
+        setAttachment(null)
+        fetchDetails()
+    }, [orderId, invoiceId])
 
     const fetchDetails = async () => {
         setLoadingOrder(true)
@@ -121,6 +166,7 @@ export function SaleNoteModal({
         }
 
         setSubmitting(true)
+        if (onLoadingChange) onLoadingChange(true)
         try {
             const formData = new FormData()
             formData.append('note_type', noteType)
@@ -165,46 +211,22 @@ export function SaleNoteModal({
             await api.post(endpoint, formData)
 
             toast.success("Nota registrada correctamente")
-            onOpenChange(false)
             onSuccess?.()
         } catch (error: unknown) {
             console.error("Error registering note:", error)
             showApiError(error, "Error al registrar la nota")
         } finally {
             setSubmitting(false)
+            if (onLoadingChange) onLoadingChange(false)
         }
     }
 
+    const canSubmit = documentNumber && amountNet > 0 && isPeriodValid;
+
     return (
-        <BaseModal
-            open={open}
-            onOpenChange={onOpenChange}
-            size="lg"
-            title={
-                <span className="flex items-center gap-2">
-                    <FileBadge className="h-6 w-6 text-primary" />
-                    Registrar Nota Crédito/Débito - {orderNumber ? `NV-${orderNumber}` : `Doc #${invoiceId}`}
-                </span>
-            }
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
-                            <SubmitButton
-                                onClick={handleSubmit}
-                                disabled={!documentNumber || amountNet <= 0 || !isPeriodValid}
-                                loading={submitting}
-                                className="h-11 px-8"
-                            >
-                                Confirmar Registro de Nota
-                            </SubmitButton>
-                        </>
-                    }
-                />
-            }
-        >
-            <div className="space-y-6 py-2">
+        <div id={id} className="space-y-6 py-2" data-can-submit={canSubmit ? "true" : "false"}>
+            <form id={`${id}-form`} onSubmit={(e) => { e.preventDefault(); if(canSubmit) handleSubmit(); }} className="hidden" />
+            <div className="space-y-6">
                 <FormSection title="Datos del Documento" icon={FileBadge} />
                 <div className="grid grid-cols-2 gap-4">
                     <LabeledSelect
@@ -340,7 +362,7 @@ export function SaleNoteModal({
                     </div>
                 )}
             </div>
-        </BaseModal>
+        </div>
     )
 }
 

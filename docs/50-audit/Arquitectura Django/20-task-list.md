@@ -638,16 +638,19 @@
   - [x] Frontmatter `last_review: 2026-05-08` actualizado.
 
 ### T-71 · Componente shell `EntityDetailPage`
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-08)
 - **Esfuerzo:** 5
 - **Depende de:** T-70
-- **Archivos:** `frontend/components/shared/EntityDetailPage.tsx` (nuevo), barrel export en `frontend/components/shared/index.ts`
+- **Archivos:**
+  - `frontend/components/shared/EntityDetailPage.tsx` (creado)
+  - `frontend/components/shared/EntityDetailPage.test.tsx` (creado — 18 tests)
+  - `frontend/components/shared/index.ts` (barrel export añadido)
 - **Acceptance:**
-  - [ ] Props: `entityType` (para registrar `ActivitySidebar`), `title`, `displayId?`, `icon`, `breadcrumb`, `actions?`, `sidebar?` (default = `<ActivitySidebar entityType={entityType} entityId={id} />`), `readonly?`, `children`.
-  - [ ] Layout: header sticky (icono + display + breadcrumb), main `flex` con `children` a la izquierda y sidebar a la derecha (`hidden lg:flex w-72 border-l`), footer opcional con acciones.
-  - [ ] Manejo de `notFound()` cuando el id no existe (delegado al consumer; el shell asume el server-component ya resolvió la entidad).
-  - [ ] Test Vitest cubre render con/sin sidebar, modo readonly.
-  - [ ] Storybook story con 3 variantes: edit (con sidebar), create (sin sidebar), readonly.
+  - [x] Props: `entityType`, `title`, `displayId?`, `icon`, `breadcrumb`, `instanceId?`, `sidebar?` (default = `<ActivitySidebar>` cuando `instanceId` presente, `null` para suprimir), `footer?`, `readonly?`, `children`.
+  - [x] Layout: header sticky (icono + displayId + breadcrumb), `FormSplitLayout` con `children` + sidebar (`hidden lg:flex w-72 border-l`), footer sticky opcional.
+  - [x] `notFound()` delegado al server-component consumer — el shell asume que la entidad ya fue resuelta.
+  - [x] Test Vitest 18/18: render básico, header, title, displayId, icon, breadcrumb, sidebar automático con `instanceId`, sidebar custom, sidebar=null suprime sidebar, footer presente/ausente, modo readonly (badge, footer oculto, children visibles).
+  - [x] Storybook story con 3 variantes: edit (con sidebar), create (sin sidebar), readonly.
 
 ### T-72 · Migrar entidades `sales` a rutas `[id]`
 - **Estado:** 📋
@@ -664,16 +667,16 @@
   - [ ] Test Playwright: navegar a `/sales/orders/<seed_id>` desde Universal Search no produce 404.
 
 ### T-73 · Migrar entidades `purchasing` + `billing` a rutas `[id]`
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-08)
 - **Esfuerzo:** 5
 - **Depende de:** T-71
 - **Archivos:**
   - `frontend/app/(dashboard)/purchasing/orders/[id]/page.tsx`
   - `frontend/app/(dashboard)/billing/sales/[id]/page.tsx`, `frontend/app/(dashboard)/billing/purchases/[id]/page.tsx`
 - **Acceptance:**
-  - [ ] PurchaseOrder, Invoice (sales/purchases) accesibles vía URL.
-  - [ ] Invoice resuelve `dte_type` → ruta correcta (`billing/sales/[id]` vs `billing/purchases/[id]`); apps.py registra el patrón unificado y la page hace el split server-side.
-  - [ ] Test Playwright equivalente a T-72.
+  - [x] PurchaseOrder, Invoice (sales/purchases) accesibles vía URL.
+  - [x] Invoice resuelve `dte_type` → ruta correcta (`billing/sales/[id]` vs `billing/purchases/[id]`); apps.py registra el patrón unificado y la page hace el split server-side.
+  - [x] Test Playwright equivalente a T-72.
 
 ### T-74 · Migrar entidades `inventory` a rutas `[id]`
 - **Estado:** 📋

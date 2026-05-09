@@ -40,9 +40,11 @@ interface ProductFormProps {
     onSuccess: () => void
     lockedType?: string
     variantMode?: boolean
+    inline?: boolean
+    onLoadingChange?: (loading: boolean) => void
 }
 
-export function ProductForm({ sidebar, open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false }: ProductFormProps) {
+export function ProductForm({ sidebar, open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false, inline = false, onLoadingChange }: ProductFormProps) {
     const [loading, setLoading] = useState(false)
     const [uoms, setUoms] = useState<UoM[]>([])
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
@@ -462,6 +464,7 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
 
     const onSubmit = async (data: ProductFormValues) => {
         setLoading(true)
+        if (onLoadingChange) onLoadingChange(true)
         try {
             const formData = new FormData()
             if (data.code && data.code.trim()) {
@@ -593,6 +596,7 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             showApiError(error, "No se pudo guardar el producto.")
         } finally {
             setLoading(false)
+            if (onLoadingChange) onLoadingChange(false)
         }
     }
 
@@ -796,6 +800,26 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             />
         </>
     )
+
+    if (inline) {
+        return (
+            <>
+                {formContent}
+                <ActionConfirmModal
+                    open={confirmCloseOpen}
+                    onOpenChange={setConfirmCloseOpen}
+                    title="Descartar cambios"
+                    description="Hay cambios sin guardar. ¿Está seguro que desea cerrar y perder los cambios?"
+                    variant="destructive"
+                    confirmText="Descartar y Cerrar"
+                    onConfirm={() => {
+                        setConfirmCloseOpen(false)
+                        onOpenChange(false)
+                    }}
+                />
+            </>
+        )
+    }
 
     return (
         <BaseModal

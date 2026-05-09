@@ -40,10 +40,16 @@ interface UoM {
 
 import { saleOrderSchema, type SaleOrderFormValues } from "./schema"
 
-interface SaleOrderFormProps {
+export interface SaleOrderFormProps {
     onSuccess?: (order?: SaleOrder) => void
     onConfirmCheckout?: (data: SaleOrderPayload) => void
     initialData?: SaleOrder | Partial<SaleOrder>
+    id?: string
+    onLoadingChange?: (loading: boolean) => void
+    onCancel?: () => void
+}
+
+export interface SaleOrderModalProps extends Omit<SaleOrderFormProps, "id" | "onLoadingChange" | "onCancel"> {
     open?: boolean
     onOpenChange?: (open: boolean) => void
     triggerVariant?: "default" | "circular"
@@ -87,11 +93,7 @@ const OrderTotals = ({ control }: { control: Control<SaleOrderFormValues> }) => 
     )
 }
 
-export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open: openProp, onOpenChange, triggerVariant = "default" }: SaleOrderFormProps) {
-    const [openState, setOpenState] = useState(false)
-    const open = openProp !== undefined ? openProp : openState
-    const setOpen = onOpenChange || setOpenState
-
+export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, id = "sale-order-form", onLoadingChange, onCancel }: SaleOrderFormProps) {
     const [loading, setLoading] = useState(false)
     const [products, setProducts] = useState<Product[]>([])
     const [uoms, setUoMs] = useState<UoM[]>([])
@@ -161,19 +163,12 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
     }
 
     const lastResetId = useRef<number | undefined>(undefined)
-    const wasOpen = useRef(false)
 
     useEffect(() => {
-        if (!open) {
-            wasOpen.current = false
-            return
-        }
-
         const currentId = initialData?.id
-        const isNewOpen = !wasOpen.current
-        const isNewData = currentId !== lastResetId.current
+        const isNewData = currentId !== lastResetId.current || lastResetId.current === undefined
 
-        if (isNewOpen || isNewData) {
+        if (isNewData) {
             fetchData()
             if (initialData) {
                 form.reset({
@@ -199,9 +194,8 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                 })
             }
             lastResetId.current = currentId
-            wasOpen.current = true
         }
-    }, [open, initialData, form])
+    }, [initialData, form])
 
     async function onSubmit(data: SaleOrderFormValues) {
         // Validation for dynamic pricing
@@ -277,11 +271,11 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                 customer: (initialData as any)?.customer || null,
                 date: new Date().toISOString()
             });
-            setOpen(false)
             return
         }
 
         setLoading(true)
+        if (onLoadingChange) onLoadingChange(true)
         try {
             let res;
             if (initialData) {
@@ -292,51 +286,20 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                 toast.success("Nota de Venta creada correctamente")
             }
             form.reset()
-            setOpen(false)
             if (onSuccess) onSuccess(res?.data)
         } catch (error: unknown) {
             console.error("Error saving sale order:", error)
             showApiError(error, "Error al guardar la Nota de Venta")
         } finally {
             setLoading(false)
+            if (onLoadingChange) onLoadingChange(false)
         }
     }
 
     return (
-        <>
-            {!initialData && (
-                <div onClick={() => setOpen(true)}>
-                    {triggerVariant === "circular" ? (
-                        <Button size="icon" className="rounded-full h-8 w-8" title="Nueva Nota de Venta">
-                            <Plus className="h-4 w-4" />
-                        </Button>
-                    ) : (
-                        <Button>Nueva Nota de Venta</Button>
-                    )}
-                </div>
-            )}
-            <BaseModal
-                open={open}
-                onOpenChange={setOpen}
-                size="xl"
-                title={initialData ? "Editar Nota de Venta" : "Cerrar Venta"}
-                description={initialData ? "Modifique los datos de la nota de venta." : "Ingrese los productos la venta e ir al checkout."}
-                footer={
-                    <FormFooter
-                        actions={
-                            <>
-                                <CancelButton onClick={() => setOpen(false)} />
-                                <SubmitButton type="submit" form="sale-order-form" loading={loading}>
-                                    {initialData ? "Guardar Cambios" : "Confirmar Venta"}
-                                </SubmitButton>
-                            </>
-                        }
-                    />
-                }
-            >
-                <Form {...form}>
-                    <form id="sale-order-form" onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-10 py-6">
-                        <div className="space-y-6">
+        <Form {...form}>
+            <form id={id} onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-10 py-6">
+                <div className="space-y-6">
                             <div className="space-y-4">
                                 <FormSection title="Líneas de Venta" icon={Plus} />
 
@@ -647,9 +610,54 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, open:
                         </div>
                     </form>
                 </Form>
+    )
+}
+
+export function SaleOrderModal({ onSuccess, onConfirmCheckout, initialData, open: openProp, onOpenChange, triggerVariant = "default" }: SaleOrderModalProps) {
+    const [openState, setOpenState] = useState(false)
+    const open = openProp !== undefined ? openProp : openState
+    const setOpen = onOpenChange || setOpenState
+    const [loading, setLoading] = useState(false)
+    const formId = "modal-sale-order-form"
+
+    return (
+        <>
+            {!initialData && (
+                <div onClick={() => setOpen(true)}>
+                    {triggerVariant === "circular" ? (
+                        <Button size="icon" className="rounded-full h-8 w-8" title="Nueva Nota de Venta">
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    ) : (
+                        <Button>Nueva Nota de Venta</Button>
+                    )}
+                </div>
+            )}
+            <BaseModal
+                open={open}
+                onOpenChange={setOpen}
+                size="xl"
+                title={initialData ? "Editar Nota de Venta" : "Cerrar Venta"}
+                description={initialData ? "Modifique los datos de la nota de venta." : "Ingrese los productos la venta e ir al checkout."}
+                footer={
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setOpen(false)} />
+                                <SubmitButton type="submit" form={formId} loading={loading}>
+                                    {initialData ? "Guardar Cambios" : "Confirmar Venta"}
+                                </SubmitButton>
+                            </>
+                        }
+                    />
+                }
+            >
+                {open && (
+                    <SaleOrderForm id={formId} initialData={initialData} onSuccess={(data) => { setOpen(false); if(onSuccess) onSuccess(data); }} onConfirmCheckout={(data) => { setOpen(false); if(onConfirmCheckout) onConfirmCheckout(data); }} onLoadingChange={setLoading} onCancel={() => setOpen(false)} />
+                )}
             </BaseModal>
         </>
     )
 }
 
-export default SaleOrderForm
+export default SaleOrderModal

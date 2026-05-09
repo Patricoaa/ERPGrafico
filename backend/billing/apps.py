@@ -22,8 +22,8 @@ class BillingConfig(AppConfig):
                 icon='file-text',
                 search_fields=('number', 'contact__name', 'contact__tax_id'),
                 display_template='{dte_type} {number} · {contact.name}',
-                list_url='/facturacion',
-                detail_url_pattern='/facturacion/{id}',
+                list_url='/billing/sales',
+                detail_url_pattern='/billing/invoices/{id}',
                 permission='billing.view_invoice',
             ))
         except Exception:
