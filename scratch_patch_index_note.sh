@@ -1,0 +1,1 @@
+sed -i "s/export { default as SaleNoteModal } from '.\/components\/SaleNoteModal'/export { default as SaleNoteModal, SaleNoteForm } from '.\/components\/SaleNoteModal'/g" frontend/features/sales/index.ts

@@ -1,0 +1,122 @@
+--- frontend/features/sales/components/DeliveryModal.tsx
++++ frontend/features/sales/components/DeliveryModal.tsx
+@@ -62,7 +62,14 @@
+ }
+ 
+-interface DeliveryModalProps {
++export interface DeliveryFormProps {
++    orderId: number
++    onSuccess?: () => void
++    id?: string
++    onLoadingChange?: (loading: boolean) => void
++    onCancel?: () => void
++}
++
++export interface DeliveryModalProps extends Omit<DeliveryFormProps, "id" | "onLoadingChange" | "onCancel"> {
+     open: boolean
+     onOpenChange: (open: boolean) => void
+-    orderId: number
+-    onSuccess?: () => void
+ }
+ 
+@@ -88,4 +95,4 @@
+ 
+-function DeliveryModalInner({ open, onOpenChange, orderId, onSuccess }: DeliveryModalProps) {
++export function DeliveryForm({ orderId, onSuccess, id = "delivery-form", onLoadingChange, onCancel }: DeliveryFormProps) {
+     const { dateString } = useServerDate()
+     const { order, warehouses } = useDeliveryData(orderId)
+@@ -236,8 +243,7 @@
+ 
+             toast.success("Despacho registrado correctamente")
+-            onOpenChange(false)
+             onSuccess?.()
+         } catch (error: unknown) {
+             console.error("Error dispatching order:", error)
+             showApiError(error, "Error al registrar el despacho")
+         } finally {
+             setSubmitting(false)
++            if (onLoadingChange) onLoadingChange(false)
+         }
+     }
+@@ -289,33 +295,4 @@
+ 
+     return (
+-        <BaseModal
+-            open={open}
+-            onOpenChange={onOpenChange}
+-            size="xl"
+-            title={`Despachar Orden NV-${order?.number}`}
+-            description={`Cliente: ${order?.customer_name}`}
+-            footer={
+-                <FormFooter
+-                    actions={
+-                        <>
+-                            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
+-                            <SubmitButton
+-                                onClick={handleDispatch}
+-                                loading={submitting}
+-                                disabled={
+-                                    !selectedWarehouse ||
+-                                    order?.lines.some((line: any) => {
+-                                        const qty = deliveryQuantities[line.id] || 0
+-                                        if (qty <= 0) return false
+-                                        const status = getStockStatus(line)
+-                                        return status?.type === 'error'
+-                                    })
+-                                }
+-                            >
+-                                Confirmar Despacho
+-                            </SubmitButton>
+-                        </>
+-                    }
+-                />
+-            }
+-        >
+-            <div className="space-y-4">
++        <div id={id} className="space-y-4" data-can-submit={selectedWarehouse && !order?.lines.some((line: any) => { const qty = deliveryQuantities[line.id] || 0; if (qty <= 0) return false; const status = getStockStatus(line); return status?.type === 'error'; }) ? "true" : "false"}>
++            <form id={`${id}-form`} onSubmit={(e) => { e.preventDefault(); handleDispatch(); }} className="hidden" />
+                 <FormSection title="Configuración de Entrega" icon={Package} />
+                 <div className="grid grid-cols-2 gap-4">
+@@ -483,6 +460,40 @@
+                 )}
+             </div>
+-        </BaseModal>
+     )
+ }
++
++function DeliveryModalInner({ open, onOpenChange, orderId, onSuccess }: DeliveryModalProps) {
++    const [loading, setLoading] = useState(false)
++    const formId = "modal-delivery-form"
++
++    // We need a way to check if submit is disabled from the form.
++    // Let's rely on standard form submit and HTML validation or just let the form handle validation internally when submitted
++
++    return (
++        <BaseModal
++            open={open}
++            onOpenChange={onOpenChange}
++            size="xl"
++            title={`Despachar Orden`}
++            description={`Ingrese los productos a despachar.`}
++            footer={
++                <FormFooter
++                    actions={
++                        <>
++                            <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
++                            <SubmitButton
++                                form={`${formId}-form`}
++                                loading={loading}
++                            >
++                                Confirmar Despacho
++                            </SubmitButton>
++                        </>
++                    }
++                />
++            }
++        >
++            <DeliveryForm id={formId} orderId={orderId} onSuccess={() => { onOpenChange(false); if(onSuccess) onSuccess(); }} onLoadingChange={setLoading} onCancel={() => onOpenChange(false)} />
++        </BaseModal>
++    )
++}
+ 
+ export default DeliveryModal

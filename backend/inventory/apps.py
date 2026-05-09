@@ -23,18 +23,18 @@ class InventoryConfig(AppConfig):
                 icon='package',
                 search_fields=('name', 'code', 'internal_code'),
                 display_template='{name} · {code}',
-                list_url='/inventario/productos',
-                detail_url_pattern='/inventario/productos/{id}',
+                list_url='/inventory/products',
+                detail_url_pattern='/inventory/products/{id}',
                 permission='inventory.view_product',
             ))
             UniversalRegistry.register(SearchableEntity(
                 model=ProductCategory,
                 label='inventory.productcategory',
                 icon='folder-tree',
-                search_fields=('name', 'code'),
-                display_template='{code} · {name}',
-                list_url='/inventario/categorias',
-                detail_url_pattern='/inventario/categorias/{id}',
+                search_fields=('name', 'prefix'),
+                display_template='{prefix} · {name}',
+                list_url='/inventory/categories',
+                detail_url_pattern='/inventory/categories/{id}',
                 permission='inventory.view_productcategory',
             ))
             UniversalRegistry.register(SearchableEntity(
@@ -43,18 +43,18 @@ class InventoryConfig(AppConfig):
                 icon='warehouse',
                 search_fields=('name', 'code'),
                 display_template='{code} · {name}',
-                list_url='/inventario/bodegas',
-                detail_url_pattern='/inventario/bodegas/{id}',
+                list_url='/inventory/settings?tab=warehouses',
+                detail_url_pattern='/inventory/warehouses/{id}',
                 permission='inventory.view_warehouse',
             ))
             UniversalRegistry.register(SearchableEntity(
                 model=StockMove,
                 label='inventory.stockmove',
                 icon='arrow-right-left',
-                search_fields=('number', 'reference'),
-                display_template='MOV-{number}',
-                list_url='/inventario/movimientos',
-                detail_url_pattern='/inventario/movimientos/{id}',
+                search_fields=('id', 'description', 'adjustment_reason'),
+                display_template='MOV-{id}',
+                list_url='/inventory/moves',
+                detail_url_pattern='/inventory/moves/{id}',
                 permission='inventory.view_stockmove',
             ))
         except Exception:
