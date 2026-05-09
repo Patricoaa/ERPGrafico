@@ -41,11 +41,12 @@
 | "what is X", "domain term", "glossary" | [domain-glossary.md](00-context/domain-glossary.md) | 00 |
 | "architecture", "folder structure", "where does X go" | [frontend-fsd.md](10-architecture/frontend-fsd.md) / [backend-apps.md](10-architecture/backend-apps.md) | 10 |
 | "which component", "component decision", "what to use" | [component-decision-tree.md](20-contracts/component-decision-tree.md) | 20 |
-| "Schema-driven form", "EntityForm", "backend form" | [schema-driven-forms.md](20-contracts/schema-driven-forms.md) | 20 |
+| "Schema-driven form", "EntityForm", "backend form" | ~~[schema-driven-forms.md](20-contracts/schema-driven-forms.md)~~ — **superseded** por [ADR-0020](10-architecture/adr/0020-modal-on-list-edit-ux.md). No usar `EntityForm` en código nuevo. | 20 |
 | "component API", "prop signature", "StatusBadge usage" | [component-contracts.md](20-contracts/component-contracts.md) | 20 |
 | "selector component", "entity search", "combobox", "AccountSelector" | [component-selectors.md](20-contracts/component-selectors.md) | 20 |
 | "module layout", "navigation pattern", "dynamic header", "module tabs" | [module-layout-navigation.md](20-contracts/module-layout-navigation.md) | 20 |
 | "form size", "form pattern", "when to use tabs", "wizard vs form", "form surface", "form layout" | [component-form-patterns.md](20-contracts/component-form-patterns.md) | 20 |
+| "edit modal", "list edit", "?selected param", "open modal from search", "detail from search" | [list-modal-edit-pattern.md](20-contracts/list-modal-edit-pattern.md) | 20 |
 | "hook signature", "return shape" | [hook-contracts.md](20-contracts/hook-contracts.md) | 20 |
 | "entity state", "status values" | [state-map.md](20-contracts/state-map.md) | 20 |
 | "testing strategy", "coverage", "fixtures" | [testing.md](40-quality/testing.md) | 40 |

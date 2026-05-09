@@ -1,11 +1,11 @@
-import { WarehouseDetailClient } from "@/features/inventory/components/WarehouseDetailClient"
-import { Metadata } from "next"
+import { redirect } from 'next/navigation'
+import { searchableEntityRoutes } from '@/lib/searchableEntityRoutes'
 
-export const metadata: Metadata = {
-    title: "Detalle de Bodega | ERP",
-    description: "Ver y editar detalle de bodega",
-}
-
-export default function WarehouseDetailPage({ params }: { params: { id: string } }) {
-    return <WarehouseDetailClient warehouseId={params.id} />
+// T-88: Warehouse → /inventory/warehouses?selected=<id>
+// Opción A (ADR-0020): redirige a la lista con ?selected=<id>
+// El modal de edición se abre en la lista con initialData fetcheado por useSelectedEntity.
+export default async function DetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
+    const listUrl = searchableEntityRoutes['inventory.warehouse']
+    redirect(`${listUrl}?selected=${id}`)
 }

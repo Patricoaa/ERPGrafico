@@ -1,10 +1,11 @@
-import { PurchaseOrderDetailClient } from "@/features/purchasing/components"
+import { redirect } from 'next/navigation'
+import { searchableEntityRoutes } from '@/lib/searchableEntityRoutes'
 
-interface PageProps {
-    params: Promise<{ id: string }>
-}
-
-export default async function PurchaseOrderDetailPage({ params }: PageProps) {
+// T-88: PurchaseOrder → /purchasing/orders?selected=<id>
+// Opción A (ADR-0020): redirige a la lista con ?selected=<id>
+// El modal de edición se abre en la lista con initialData fetcheado por useSelectedEntity.
+export default async function DetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
-    return <PurchaseOrderDetailClient orderId={id} />
+    const listUrl = searchableEntityRoutes['purchasing.purchaseorder']
+    redirect(`${listUrl}?selected=${id}`)
 }

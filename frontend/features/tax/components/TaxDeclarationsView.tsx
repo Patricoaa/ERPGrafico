@@ -50,16 +50,15 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     const handleCloseModal = () => {
         setIsWizardOpen(false)
         setIsPaymentOpen(false)
+        setSelectedPeriodId(undefined)
+        setSelectedDeclaration(null)
         onExternalOpenChange?.(false)
         
-        if (externalOpen || searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            params.delete("year")
-            params.delete("month")
-            params.delete("action")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("selected")
+        params.delete("action")
+        params.delete("modal")
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const handleWizardOpenChange = (open: boolean) => {
@@ -77,19 +76,16 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
             const fetchedPeriods = (response.data as { results?: TaxPeriod[] }).results || (response.data as TaxPeriod[])
             setPeriods(fetchedPeriods)
             
-            const year = searchParams.get('year')
-            const month = searchParams.get('month')
+            const selectedId = searchParams.get('selected')
             const action = searchParams.get('action')
 
-            if (year && month && fetchedPeriods.length > 0) {
-                const target = fetchedPeriods.find((p: TaxPeriod) => 
-                    p.year.toString() === year && p.month.toString() === month
-                )
+            if (selectedId && fetchedPeriods.length > 0) {
+                const target = fetchedPeriods.find((p: TaxPeriod) => p.id === parseInt(selectedId))
                 if (target) {
                     if (action === 'pay') {
-                        handleOpenPayment(target)
+                        if (!isPaymentOpen) openPaymentModal(target)
                     } else {
-                        handleOpenWizard(target)
+                        if (!isWizardOpen) openWizardModal(target)
                     }
                 }
             }
@@ -111,12 +107,47 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
         }
     }, [externalOpen])
 
+    // State watchers for URL params without re-fetching
+    useEffect(() => {
+        const selectedId = searchParams.get('selected')
+        const action = searchParams.get('action')
+
+        if (selectedId && periods.length > 0) {
+            const target = periods.find((p) => p.id === parseInt(selectedId))
+            if (target) {
+                if (action === 'pay') {
+                    if (!isPaymentOpen && selectedDeclaration?.tax_period_year !== target.year) {
+                        openPaymentModal(target)
+                    }
+                } else {
+                    if (!isWizardOpen && selectedPeriodId !== target.id) {
+                        openWizardModal(target)
+                    }
+                }
+            }
+        }
+    }, [searchParams, periods])
+
     const handleOpenWizard = (period: TaxPeriod) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('selected', String(period.id))
+        params.delete('action')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const openWizardModal = (period: TaxPeriod) => {
         setSelectedPeriodId(period.id)
         setIsWizardOpen(true)
     }
 
-    const handleOpenPayment = async (period: TaxPeriod) => {
+    const handleOpenPayment = (period: TaxPeriod) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('selected', String(period.id))
+        params.set('action', 'pay')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const openPaymentModal = async (period: TaxPeriod) => {
         if (period.declaration_summary) {
             setSelectedDeclaration({
                 id: period.declaration_summary.id,

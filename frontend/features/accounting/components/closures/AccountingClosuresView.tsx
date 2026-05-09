@@ -55,13 +55,36 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
         setNewFYModalOpen(false);
         onExternalOpenChange?.(false);
 
-        // Cleanup URL if modal was opened via query param
-        if (externalOpen || searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString());
-            params.delete("modal");
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-        }
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete("modal");
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     };
+
+    const clearSelection = () => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete('selected');
+        const query = params.toString();
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    };
+
+    const fetchPreviewData = async (year: number) => {
+        setActiveYearToClose(year);
+        setPreviewLoading(true);
+        setPreviewModalOpen(true);
+        const data = await previewClosing(year);
+        setPreviewData(data);
+        setPreviewLoading(false);
+    };
+
+    useEffect(() => {
+        const selectedId = searchParams.get('selected');
+        if (selectedId) {
+            const year = parseInt(selectedId);
+            if (!previewModalOpen && activeYearToClose !== year) {
+                fetchPreviewData(year);
+            }
+        }
+    }, [searchParams, previewModalOpen, activeYearToClose]);
 
     const handleCreateFY = async (year: number) => {
         // We initialize the year by creating the first month (January)
@@ -107,13 +130,10 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
             .sort((a, b) => b.year - a.year);
     }, [periods, fiscalYears]);
 
-    const handlePreviewClosing = async (year: number) => {
-        setActiveYearToClose(year);
-        setPreviewLoading(true);
-        setPreviewModalOpen(true);
-        const data = await previewClosing(year);
-        setPreviewData(data);
-        setPreviewLoading(false);
+    const handlePreviewClosing = (year: number) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('selected', String(year));
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
     };
 
     const handleConfirmClosing = async () => {
@@ -121,6 +141,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
             await closeFiscalYear(activeYearToClose);
             setPreviewModalOpen(false);
             setActiveYearToClose(null);
+            clearSelection();
             // Re-fetch periods to update their UI as well if needed
             fetchPeriods();
         }
@@ -148,17 +169,20 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
                     periods={yearPeriods}
                     onClosePeriod={closePeriod}
                     onReopenPeriod={reopenPeriod}
-                    isPeriodActionLoading={actionLoadingPeriod !== null}
+                    isPeriodActionLoading={actionLoadingPeriod}
                     onPreviewClosing={handlePreviewClosing}
                     onReopenFiscalYear={reopenFiscalYear}
                     onGenerateOpening={generateOpeningEntry}
-                    isFiscalYearLoading={actionLoadingYr === year}
+                    isFiscalYearLoading={actionLoadingYr}
                 />
             ))}
 
             <FiscalYearClosingWizard
                 isOpen={previewModalOpen}
-                onClose={() => setPreviewModalOpen(false)}
+                onClose={() => {
+                    setPreviewModalOpen(false);
+                    clearSelection();
+                }}
                 onConfirm={handleConfirmClosing}
                 year={activeYearToClose || 0}
                 preview={previewData}
@@ -169,7 +193,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
                 isOpen={newFYModalOpen}
                 onClose={handleCloseNewFY}
                 onConfirm={handleCreateFY}
-                isLoading={actionLoadingPeriod === 0}
+                isLoading={actionLoadingPeriod}
                 existingYears={fiscalYears.map(fy => fy.year)}
                 hasOpenPeriods={periods.some(p => p.status === 'OPEN')}
             />

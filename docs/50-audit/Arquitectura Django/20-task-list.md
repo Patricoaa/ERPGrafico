@@ -770,10 +770,14 @@
 
 ---
 
-## F8 — Schema-Driven Forms: reversión + expansión + contrato visual
+## F8 — Unificación del flujo de edición sobre query-param (Opción A)
 
-> **Origen del bloque:** auditoría 2026-05-08 sobre commit `9387cb91` (Phase 4). La migración de Budget/ProductCategory/UoM a `EntityForm` produjo bifurcación crear/editar y regresión visual. El contrato del schema (`FormMeta` con sólo `tabs/fields/actions/transitions`) es insuficiente para expresar el vocabulario real (sections, grid, widgets ricos, conditional fields, sidebar).
-> **Decisión:** Opción B+A — revertir las tres migraciones, publicar nuevo contrato `schema-driven-forms.md` alineado con los contratos UI existentes, expandir backend + frontend, y re-migrar con paridad visual probada.
+> **Origen del bloque:** decisión 2026-05-09. Tras implementar F7 + T-80..T-85, se confirmó que (a) los formularios existentes ya cumplen los contratos UI del proyecto y no necesitan ser sustituidos por un EntityForm schema-driven; (b) el shell `EntityDetailPage` + `*DetailClient` produce una segunda UI de edición que coexiste con el modal local de la lista, generando duplicación. El usuario prefiere que el deeplink abra el modal local existente sobre la lista, no una página completa.
+> **Decisión:** Opción A — URL-state pattern. El registry mantiene URLs limpias `/<module>/<entity>/{id}`; cada `[id]/page.tsx` se convierte en `redirect()` server-side a `<list_url>?selected={id}`. La lista lee el query param y abre su modal local con `initialData` fetcheado.
+> **Estado de las T-80..T-93 originales:**
+> - T-80..T-83: ✅ DONE — se mantienen (los reverts de Phase 4 son parte de la solución).
+> - T-84..T-93 (Widget Registry, EntityForm v2, re-migración schema-driven): 🚫 CANCELLED — superseded por las nuevas T-84..T-95.
+> - Los archivos generados por T-84/T-85 originales (`schema-driven-forms.md`, ampliación parcial de `FormMeta`) se conservan como nota histórica deprecada (frontmatter `status: superseded`); no se borran ni se completan.
 
 ### T-80 · ADR-0019 — Reversión de Phase 4 + estrategia de expansión
 - **Estado:** ✅ DONE (2026-05-09)
@@ -816,142 +820,198 @@
   - [x] La acción "Crear UoM" usa `UoMForm` (mismo componente que la edición).
   - [x] Cero referencias a `EntityForm` desde `UoMList`.
 
-### T-84 · Nuevo contrato `schema-driven-forms.md`
-- **Estado:** ✅ DONE (2026-05-09)
+### T-84 · Nuevo contrato `schema-driven-forms.md` (✅ ahora SUPERSEDED)
+- **Estado:** ✅ DONE (2026-05-09) — _superseded por T-85 (ADR-0020) el 2026-05-09_
 - **Esfuerzo:** 5
 - **Depende de:** T-80
 - **Archivos:**
-  - `docs/20-contracts/schema-driven-forms.md` (nuevo)
-  - `docs/20-contracts/component-decision-tree.md` (modificar — agregar enlace)
-  - `docs/30-playbooks/add-feature.md` (modificar — agregar enlace)
-  - `docs/README.md` (modificar — agregar a routing table)
-- **Acceptance:**
-  - [x] Frontmatter con `precondition: [form-layout-architecture.md, component-form-patterns.md, component-selectors.md, component-visual-hierarchy.md]` para anclar la dependencia.
-  - [x] Sección 1 — **Vocabulario**: `sections` (lista de `{id, title, icon, fields}`), `grid_cols` (4 \| 12), `field_widget` por campo, `widget_props`, `visible_if` (`{field, equals|in}`), `sidebar` (`{entity_type}`), `actions` (botones extra del footer), `tabs` (existente, ahora opcional).
-  - [x] Sección 2 — **Mapping `widget` → componente** con tabla canónica.
-  - [x] Sección 3 — **Reglas de coherencia con contratos UI base**: cómo `sections` mapea a `FormSection`, `grid_cols=4` a `grid grid-cols-4 gap-4`, `sidebar` a `FormSplitLayout` + `ActivitySidebar`, `actions` a `FormFooter`. Cero invención de primitives.
-  - [x] Sección 4 — **Decision tree (cuándo SÍ / cuándo NO)**: regla "si necesita widget custom no listado → form especializado, NO schema-driven" + lista negra explícita.
-  - [x] Sección 5 — **Ejemplos canónicos**: 3 casos completos (Micro: `UoMCategory`; Estándar: `Budget`; Ficha Maestra con sidebar y secciones condicionales: `ProductCategory`).
-  - [x] Sección 6 — **Versionado del contrato**: cualquier extensión del vocabulario requiere ADR; cualquier widget nuevo requiere actualizar la tabla §2 + registro en frontend (T-86).
-  - [x] Routing table en `docs/README.md` actualizado: nuevo intent "Schema-driven form / EntityForm" → `schema-driven-forms.md`.
+  - `docs/20-contracts/schema-driven-forms.md` (creado — pendiente de marcar `status: superseded` en T-85)
+  - `docs/20-contracts/component-decision-tree.md` (enlace agregado — pendiente quitar en T-85)
+  - `docs/30-playbooks/add-feature.md` (enlace agregado — pendiente quitar en T-85)
+  - `docs/README.md` (routing table — pendiente quitar en T-85)
+- **Nota:** el contrato se conserva como nota histórica (frontmatter `status: superseded`, link al ADR-0020) — no se borra ni se completa. T-85..T-93 originales (Widget Registry, EntityForm v2, re-migración) **descartadas**; reemplazadas por las nuevas T-85..T-96 que implementan Opción A.
 
-### T-85 · Backend — extender `FormMeta` y `build_schema()`
-- **Estado:** 📋
-- **Esfuerzo:** 5
-- **Depende de:** T-84
-- **Archivos:**
-  - [backend/core/serializers/metadata.py](../../../backend/core/serializers/metadata.py)
-  - `backend/core/tests/test_metadata_schema.py` (nuevo o extendido)
-- **Acceptance:**
-  - [ ] `build_schema()` lee `FormMeta.sections` y emite `ui_layout.sections` con shape `{id, title, icon, fields, grid_cols?, visible_if?}`.
-  - [ ] `FormMeta.field_config[field_name]` admite las claves `widget`, `widget_props`, `visible_if`, `grid_span` (1..4 \| 1..12).
-  - [ ] `FormMeta.sidebar = {'entity_type': 'category'}` propaga al schema.
-  - [ ] `FormMeta.actions = [{'id': 'duplicate', 'label': 'Duplicar', 'method': 'POST', 'endpoint': '...'}]` propaga al schema (footer extra).
-  - [ ] Cache schema (300s) invalidada en cambio de `FormMeta` via `post_migrate`/manual flush.
-  - [ ] Test cubre: schema con sections+grid+widgets+visible_if+sidebar para un modelo de fixture; campo no listado en sections cae en `__default__` section.
-
-### T-86 · Frontend — Widget Registry
-- **Estado:** 📋
-- **Esfuerzo:** 5
-- **Depende de:** T-84
-- **Archivos:**
-  - `frontend/components/shared/EntityForm/widgets/registry.ts` (nuevo)
-  - `frontend/components/shared/EntityForm/widgets/{AccountWidget,ProductWidget,CategoryWidget,UoMWidget,ContactWidget,IconPickerWidget,SwitchWidget,FkAsyncWidget}.tsx` (nuevos — wrappers thin sobre los selectores existentes)
-- **Acceptance:**
-  - [ ] `WidgetRegistry.register(name, component, propsSchema)` + `WidgetRegistry.resolve(name)` con fallback a `LabeledInput` y log de warning.
-  - [ ] Los 8 widgets de la tabla §2 del contrato registrados.
-  - [ ] Cada widget recibe `value, onChange, error, fieldDef, widgetProps` y delega al componente de selectores existente sin reimplementar.
-  - [ ] Test Vitest: `WidgetRegistry.resolve('account_selector')(<AccountSelector accountType="ASSET">)` renderiza correctamente.
-
-### T-87 · Frontend — `EntityForm v2`
-- **Estado:** 📋
-- **Esfuerzo:** 8
-- **Depende de:** T-85, T-86
-- **Archivos:** [frontend/components/shared/EntityForm/](../../../frontend/components/shared/EntityForm/) (refactor mayor)
-- **Acceptance:**
-  - [ ] Soporta `sections` con `FormSection` por sección (icono + título), `grid_cols` aplicado a `grid grid-cols-N gap-4`, `grid_span` por campo (`col-span-N`).
-  - [ ] Soporta `visible_if` con animación `animate-in fade-in slide-in-from-top-2 duration-300` (alineado con `CategoryForm`).
-  - [ ] Soporta `sidebar` con `FormSplitLayout` + `ActivitySidebar` cuando `instanceId` está presente.
-  - [ ] Soporta `actions` extras renderizadas en `FormFooter`.
-  - [ ] Compatibilidad backward: si el schema sólo tiene `tabs` (legacy), funciona igual que la versión actual.
-  - [ ] Cada campo se renderiza vía `WidgetRegistry.resolve(fieldDef.widget ?? defaultByType)`.
-  - [ ] Test Vitest cubre: render de sections+grid, visible_if dinámico, sidebar en edit mode, action click dispara endpoint.
-
-### T-88 · Frontend — `ActivitySidebar` integration en EntityForm
-- **Estado:** 📋
+### T-85 · ADR-0020 + supersedence de T-84
+- **Estado:** ✅ DONE (2026-05-09)
 - **Esfuerzo:** 2
+- **Archivos:**
+  - `docs/10-architecture/adr/0020-modal-on-list-edit-ux.md` (nuevo)
+  - `docs/10-architecture/adr/0019-schema-driven-forms-revert-and-expand.md` (modificar — nota "expansión schema-driven supersedida por ADR-0020; reverts de Phase 4 vigentes")
+  - `docs/20-contracts/schema-driven-forms.md` (modificar frontmatter → `status: superseded`, header con link al ADR-0020)
+  - `docs/20-contracts/component-decision-tree.md` (quitar enlace a `schema-driven-forms.md`)
+  - `docs/30-playbooks/add-feature.md` (quitar enlace a `schema-driven-forms.md`)
+  - `docs/README.md` (quitar de routing table el intent schema-driven)
+- **Acceptance:**
+  - [ ] ADR-0020 documenta la decisión de Opción A: el flujo canónico de edición es el modal local existente sobre la lista; el deeplink emite `<list_url>?selected={id}`; la ruta `[id]/page.tsx` redirige server-side al list+param.
+  - [ ] Justifica Opción A sobre Opción B (parallel + intercepting routes): intercepting routes sólo intercepta navegación interna a la ruta — el Universal Search desde otro módulo no dispara intercept, por lo que B no resuelve el caso de uso central.
+  - [ ] Documenta los trade-offs aceptados: (a) la lista debe mountar para abrir el modal — mitigado con paginación y skeleton sobre el modal; (b) acoplamiento lista↔modal — mitigado por la regla de desacoplamiento del contrato T-86.
+  - [ ] Marca explícitamente qué partes de ADR-0019 quedan vigentes (los reverts de Phase 4) y qué partes quedan superseded (la expansión schema-driven).
+  - [ ] CHANGELOG actualizado.
+
+### T-86 · Contrato nuevo `list-modal-edit-pattern.md`
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 3
+- **Depende de:** T-85
+- **Archivos:**
+  - `docs/20-contracts/list-modal-edit-pattern.md` (nuevo)
+  - `docs/20-contracts/component-decision-tree.md` (agregar enlace al nuevo contrato)
+  - `docs/20-contracts/module-layout-navigation.md` (cross-reference desde la sección "Searchable Entity Detail Route" a este contrato)
+  - `docs/30-playbooks/add-feature.md` (sección "edición de entidad existente" → este contrato)
+  - `docs/README.md` (routing table — intent "Edit modal / detail view of entity" → este contrato)
+- **Acceptance:**
+  - [ ] Frontmatter con `precondition: [module-layout-navigation.md, component-form-patterns.md, form-layout-architecture.md]`.
+  - [ ] Sección 1 — **Forma del query param**: nombre canónico `selected`, tipo string (id de la entidad), una sola entidad seleccionable a la vez por lista.
+  - [ ] Sección 2 — **Responsabilidades**:
+    - Lista: lee `searchParams.selected`, llama a `useSelectedEntity(endpoint)` (T-87) que fetchea la entidad, monta el modal de edición existente con `initialData`.
+    - Modal: al cerrar invoca `clearSelection()` que hace `router.replace(pathname)` (sin el param).
+    - `useSelectedEntity`: prefetch contra cache de TanStack Query si la entidad ya estaba en la lista; 404 → toast + clearSelection; 403 → redirect a list root con toast permission-denied.
+  - [ ] Sección 3 — **Regla de desacoplamiento**: el modal de edición debe ser un componente independiente (`<EntityEditModal entityId onClose>`), no un bloque inline en la lista. La lista lo monta como uno de N consumidores. _Hoy_ no se exige refactor de los modales que aún están inline; se exige cuando aparezca el segundo consumidor.
+  - [ ] Sección 4 — **Permisos / 404 / 403**: comportamiento estándar (toast + cleanup) ilustrado con código canónico.
+  - [ ] Sección 5 — **Ejemplo canónico**: `CategoryList` antes/después + el modal `<CategoryForm>` reutilizado tal cual (sin tocar nada del form).
+  - [ ] Sección 6 — **Anti-patrones**: no usar `?id=` ni `?edit=` (canónico es `?selected=`); no abrir el modal vía estado local `useState` cuando hay query param disponible; no duplicar el form en una página detalle separada.
+  - [ ] Routing table de `docs/README.md` actualizado.
+
+### T-87 · Hook compartido `useSelectedEntity`
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 3
+- **Depende de:** T-86
+- **Archivos:** `frontend/hooks/useSelectedEntity.ts` (nuevo); `frontend/hooks/useSelectedEntity.test.tsx` (nuevo — 8 tests)
+- **Acceptance:**
+  - [x] API: `useSelectedEntity<T>({ endpoint, paramName?: 'selected' }) → { entity: T | null, isLoading, clearSelection: () => void }`.
+  - [x] Lee `useSearchParams().get('selected')`; si null → retorna `entity: null` sin fetch.
+  - [x] Si presente → `useQuery({ queryKey: [endpoint, id], queryFn })` con TanStack — reutiliza cache si la lista ya hizo fetch.
+  - [x] 404 → `toast.error('No encontrado')` + `clearSelection()`.
+  - [x] 403 → `toast.error('Sin permiso')` + `router.replace('<base list path>')` (deriva del `pathname` actual).
+  - [x] `clearSelection` hace `router.replace(pathname)` sin el param y preserva otros params existentes.
+  - [x] Tests: 8/8 — presence/absence del param, cache hit (staleTime:Infinity), fetch exitoso, 404, 403, cleanup de URL, paramName personalizado, isLoading false sin param.
+
+### T-88 · Convertir `[id]/page.tsx` en redirects server-side
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 3
 - **Depende de:** T-87
-- **Archivos:** `frontend/components/shared/EntityForm/index.tsx`
+- **Archivos:**
+  - los 29 `frontend/app/(dashboard)/**/[id]/page.tsx` (modificar — reducir a redirect)
+  - `frontend/lib/searchableEntityRoutes.ts` (nuevo — mapa centralizado `module → list_url`)
 - **Acceptance:**
-  - [ ] Si `instanceId` definido y `schema.ui_layout.sidebar?.entity_type` definido, renderiza `<FormSplitLayout sidebar={<ActivitySidebar entityId={id} entityType={...} />} showSidebar />`.
-  - [ ] Si `instanceId` no definido (create mode), no renderiza sidebar.
-  - [ ] `entity_type` validado contra la lista de [form-layout-architecture.md §5](../../20-contracts/form-layout-architecture.md) — error en build si valor desconocido.
+  - [ ] Cada archivo se reduce a un server-component que invoca `redirect(\`${listUrl}?selected=${params.id}\`)`.
+  - [ ] El mapa `module → list_url` se centraliza en `searchableEntityRoutes.ts`; los 29 redirects lo importan, así un cambio de slug futuro toca un solo archivo.
+  - [ ] Excepciones documentadas en el mapa: rutas que NO redirigen (ej: `treasury/reconciliation/[id]/workbench` — vista de trabajo distinta del modal de reconciliación). Listadas explícitamente.
+  - [ ] Test Playwright: navegar directo a `/inventory/categories/<id>` produce navegación final a `/inventory/categories?selected=<id>` sin parpadeo perceptible.
 
-### T-89 · Re-migrar Budget con `EntityForm v2`
+### T-89 · Listas — `sales` (orders, deliveries, returns)
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 3
+- **Depende de:** T-87
+- **Archivos:**
+  - `frontend/app/(dashboard)/sales/orders/page.tsx` + componente lista
+  - `frontend/app/(dashboard)/sales/deliveries/page.tsx` + componente lista
+  - `frontend/app/(dashboard)/sales/returns/page.tsx` + componente lista
+- **Acceptance:**
+  - [x] Cada lista usa `useSelectedEntity` y monta el modal/form de edición existente con `initialData`.
+  - [x] Acción "Editar" del row hace `router.push(\`?selected=\${id}\`)` (no abre modal vía estado local).
+  - [x] Acción "Crear" sigue abriendo el modal vía estado local — no usa `selected`.
+  - [x] Cierre del modal → `clearSelection()` y URL limpia.
+  - [x] Test Playwright por entidad: search → modal → cerrar → URL limpia.
+
+### T-90 · Listas — `purchasing` + `billing`
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 3
+- **Depende de:** T-87
+- **Archivos:**
+  - `frontend/app/(dashboard)/purchasing/orders/page.tsx`
+  - `frontend/app/(dashboard)/purchasing/orders/components/PurchasingOrdersClientView.tsx`
+  - `frontend/app/(dashboard)/billing/sales/page.tsx`
+  - `frontend/app/(dashboard)/billing/purchases/page.tsx`
+  - `frontend/features/billing/components/SalesInvoicesClientView.tsx`
+- **Acceptance:**
+  - [x] `purchasing/orders`: `?selected=<id>` abre HubPanel type=purchase; click en fila usa `router.push('?selected=id')`.
+  - [x] `billing/sales`: `?selected=<id>` abre HubPanel type=sale con invoiceId; click en fila usa `router.push('?selected=id')`.
+  - [x] `billing/purchases`: `?selected=<id>` abre HubPanel type=purchase con invoiceId.
+  - [x] URL limpia al cerrar Hub en los tres módulos.
+  - [x] Acción Crear sigue usando estado local.
+
+### T-91 · Listas — `inventory`
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 3
+- **Depende de:** T-87
+- **Archivos:**
+  - `frontend/features/inventory/components/ProductList.tsx`
+  - `frontend/features/inventory/components/CategoryList.tsx`
+  - `frontend/features/inventory/components/WarehouseList.tsx`
+  - `frontend/features/inventory/components/MovementList.tsx`
+- **Acceptance:**
+  - [x] Mismo patrón que T-89 (implementado con `?selected=id`).
+  - [x] StockMove abre un modal/drawer readonly cuando hay `?selected=`.
+
+### T-92 · Listas — `accounting` + `tax`
 - **Estado:** 📋
 - **Esfuerzo:** 5
-- **Depende de:** T-87, T-88
+- **Depende de:** T-87
 - **Archivos:**
-  - [backend/accounting/models.py](../../../backend/accounting/models.py) (Budget — extender `FormMeta`)
-  - [frontend/features/finance/components/BudgetsListView.tsx](../../../frontend/features/finance/components/BudgetsListView.tsx)
+  - `frontend/features/accounting/components/{AccountList,JournalEntryList}.tsx` (o equivalentes)
+  - `frontend/features/accounting/components/closures/*` (FiscalYear)
+  - `frontend/features/finance/components/BudgetsListView.tsx`
+  - `frontend/features/tax/components/{TaxPeriodList,F29DeclarationList}.tsx`
 - **Acceptance:**
-  - [ ] `Budget.FormMeta` declara sections, grid_cols, widgets, sidebar (`entity_type='budget'` — agregar a la lista de entityType válidos en T-90 si falta).
-  - [ ] `BudgetsListView` usa `<EntityForm modelLabel="accounting.budget" />` para crear y editar (sin bifurcación).
-  - [ ] `BudgetEditor` se mantiene **sólo** si maneja `BudgetItem` (líneas) — la cabecera pasa por EntityForm; las líneas siguen en editor especializado.
-  - [ ] Storybook story `Budget — EntityForm v2` con visual diff <2% vs. snapshot pre-`9387cb91` del create form.
+  - [ ] Mismo patrón que T-89, sobre 6 entidades.
+  - [ ] Account respeta `is_selectable` (sólo cuentas hoja editables); cuentas con hijos abren modal readonly.
+  - [ ] JournalEntry respeta lock de período cerrado.
+  - [ ] Budget reutiliza `BudgetEditor` que ya soporta editar.
 
-### T-90 · Re-migrar ProductCategory con `EntityForm v2`
-- **Estado:** 📋
-- **Esfuerzo:** 5
-- **Depende de:** T-87, T-88
-- **Archivos:**
-  - [backend/inventory/models.py](../../../backend/inventory/models.py) (ProductCategory — extender `FormMeta`)
-  - [frontend/features/inventory/components/CategoryList.tsx](../../../frontend/features/inventory/components/CategoryList.tsx)
-- **Acceptance:**
-  - [ ] `ProductCategory.FormMeta` declara: sección "General" (name, prefix, icon con `widget=icon_picker`, parent con `widget=category_selector`), sección "Cuentas Contables" con `visible_if={field: 'has_custom_accounting', equals: true}` y los 3 selectores `account_selector` con `widget_props.account_type`.
-  - [ ] `CategoryList` usa `<EntityForm modelLabel="inventory.productcategory" />` para crear y editar.
-  - [ ] `CategoryForm` legacy deprecado con warning en CI; eliminación en sprint siguiente si paridad confirmada.
-  - [ ] Visual diff <2% vs. snapshot pre-Phase 4 de `CategoryForm`.
-
-### T-91 · Re-migrar UoM con `EntityForm v2`
+### T-93 · Listas — `treasury`
 - **Estado:** 📋
 - **Esfuerzo:** 3
-- **Depende de:** T-87, T-88
+- **Depende de:** T-87
 - **Archivos:**
-  - [backend/inventory/models.py](../../../backend/inventory/models.py) (UoM — extender `FormMeta`)
-  - [frontend/features/inventory/components/UoMList.tsx](../../../frontend/features/inventory/components/UoMList.tsx)
+  - `frontend/features/treasury/components/{TreasuryMovementList,TreasuryAccountList,POSSessionList,BankStatementList}.tsx` (o equivalentes)
 - **Acceptance:**
-  - [ ] `UoM.FormMeta` declara grid 4-col + widgets adecuados.
-  - [ ] `UoMList` usa `<EntityForm modelLabel="inventory.uom" />` para crear y editar.
-  - [ ] `UoMForm` legacy deprecado.
-  - [ ] Visual diff <2% vs. snapshot pre-Phase 4.
+  - [ ] Mismo patrón que T-89, sobre 4 entidades.
+  - [ ] POSSession y BankStatement abren modal readonly cuando corresponde.
 
-### T-92 · Pilotos verdaderamente simples
+### T-94 · Listas — `hr` + `production` + `contacts` + `workflow` + `core`
 - **Estado:** 📋
 - **Esfuerzo:** 5
 - **Depende de:** T-87
 - **Archivos:**
-  - `backend/inventory/models.py` (UoMCategory, ProductAttribute, ProductAttributeValue — agregar `FormMeta` mínimo)
-  - `backend/core/models/__init__.py` (Attachment — agregar `FormMeta` mínimo)
-  - Reemplazar usos en frontend si existen (probable: ninguno hoy, son entidades nuevas para EntityForm)
+  - `frontend/features/hr/components/{EmployeeList,PayrollList}.tsx`
+  - `frontend/features/production/components/ProductionOrderList.tsx`
+  - `frontend/features/contacts/components/ContactList.tsx`
+  - `frontend/features/workflow/components/TaskList.tsx`
+  - `frontend/features/users/components/UserList.tsx`, `frontend/features/files/components/FileList.tsx`
 - **Acceptance:**
-  - [ ] Las 4 entidades renderizan crear+editar con `EntityForm` cero código frontend custom.
-  - [ ] Cumplen con el "5 modelos simples" del plan original (de hecho: 4 simples + 3 re-migrados de Phase 4 = 7 entidades schema-driven con paridad visual).
+  - [ ] Mismo patrón que T-89, sobre 7 entidades.
+  - [ ] Contact respeta el form especializado por `is_partner`.
+  - [ ] Attachment abre preview readonly.
 
-### T-93 · Test arquitectónico `test_schema_widgets_resolve`
+### T-95 · Decommission de DetailClients y `EntityDetailPage`
 - **Estado:** 📋
 - **Esfuerzo:** 3
-- **Depende de:** T-86, T-89..T-92
+- **Depende de:** T-88..T-94
 - **Archivos:**
-  - `backend/core/tests/test_architectural_invariants.py` (extender)
-  - `frontend/components/shared/EntityForm/__tests__/widgets-registry.test.ts` (extender)
+  - `frontend/features/**/components/*DetailClient.tsx` (eliminar — 23 archivos)
+  - `frontend/components/shared/EntityDetailPage.tsx` (eliminar)
+  - `frontend/components/shared/index.ts` (limpiar exports)
+  - `frontend/features/**/components/*Form.tsx` (limpiar prop `inline?` y rama `if (inline) return ...` — dead code post-T-88..T-94)
 - **Acceptance:**
-  - [ ] Test backend itera todos los `FormMeta` declarados en modelos y extrae widgets usados; falla si algún widget no está en la tabla canónica de `schema-driven-forms.md` §2.
-  - [ ] Test frontend itera el `WidgetRegistry` y verifica que cada widget de la tabla canónica está registrado.
-  - [ ] Test backend verifica que ningún modelo de la lista negra (`Account`, `JournalEntry`, `Contact`, `Product` manufacturable, `WorkOrder`) declara `FormMeta.sections` (señal de uso indebido del schema-driven path).
+  - [ ] `find frontend/features -name "*DetailClient*"` retorna 0 resultados.
+  - [ ] `frontend/components/shared/EntityDetailPage.tsx` no existe.
+  - [ ] `grep -rn "inline?:" frontend/features/**/components/*Form.tsx` retorna 0 resultados.
+  - [ ] `npm run build` y `npm run type-check` verdes.
+  - [ ] El test arquitectónico `test_search_routes_match_app_router` (T-79) actualizado para validar el patrón redirect en lugar de la página completa, o reemplazado por `test_search_results_route_to_list_with_param` (T-96).
+
+### T-96 · Tests arquitectónicos + Playwright `universal-search-opens-modal`
+- **Estado:** 📋
+- **Esfuerzo:** 3
+- **Depende de:** T-88..T-95
+- **Archivos:**
+  - `backend/core/tests/test_architectural_invariants.py` (extender — `test_search_results_route_to_list_with_param`)
+  - `frontend/e2e/universal-search-opens-modal.spec.ts` (nuevo — reemplaza `e2e/universal-search-routes.spec.ts` de T-79)
+- **Acceptance:**
+  - [ ] Test Django itera `UniversalRegistry._entities` y, vía mapa de redirects de `searchableEntityRoutes.ts` (T-88), valida que cada `detail_url_pattern` resuelve a `<list_url>?selected={id}`.
+  - [ ] Test Playwright: por cada entidad searchable, abre Universal Search → tipea término que matchea el seed → click en el primer resultado → URL contiene `?selected=<id>` → modal visible (`role=dialog`) → `Escape` cierra → URL queda limpia (sin `selected`).
   - [ ] CI bloquea merge si cualquiera falla.
 
-**🏁 GATE F8:** T-80..T-93 verificadas + tres reverts limpios sin bifurcación crear/editar + contrato `schema-driven-forms.md` mergeado y referenciado desde decision-tree y add-feature + 7 entidades en producción con `EntityForm v2` y paridad visual probada + tests arquitectónicos verdes en CI + ADR-0019 mergeado → demo (agregar campo `cost_center` a `Budget` se refleja sin tocar frontend) → cierre de fase.
+**🏁 GATE F8:** T-80..T-83 ✅ DONE (reverts de Phase 4) + T-84 ✅ DONE pero superseded + T-85..T-96 verificadas + ADR-0020 mergeado + contrato `list-modal-edit-pattern.md` publicado y referenciado + 23 DetailClients y `EntityDetailPage` eliminados + suite Playwright `universal-search-opens-modal` verde sobre las 26 entidades searchables + test arquitectónico `test_search_results_route_to_list_with_param` en CI → demo (buscar "NV-001" desde el dashboard abre el modal de SaleOrder sobre `/sales/orders` sin parpadeo de página intermedia, y editar "NV-002" desde la lista produce idéntico flujo) → cierre de fase y de la refactorización.
 
 ---
 
@@ -966,12 +1026,13 @@
 | F5 | T-41..T-55 | 87 |
 | F6 | T-56..T-67 | 60 |
 | F7 | T-68..T-79 | 51 |
-| F8 | T-80..T-93 | 54 |
-| **Total** | 93 tareas | **414 SP** |
+| F8 (original 14 SP gastados en T-80..T-84) | T-80..T-84 | 14 (ejecutado) |
+| F8 (Opción A — pivote 2026-05-09) | T-85..T-96 | 39 |
+| **Total** | 96 tareas | **413 SP** (original 414 − T-85..T-93 schema-driven 40 SP descartado + T-85..T-96 Opción A 39 SP) |
 
 A 20 SP/sprint con 1 ingeniero senior dedicado: ~21 sprints. A 30 SP/sprint con 2 ingenieros: ~14 sprints.
 
-**Nota:** F6 puede ejecutarse en paralelo entre múltiples ingenieros — la mayoría de tareas son independientes entre sí (excepto T-57 que depende de T-56). En F7 las 6 tareas de migración por app (T-72..T-77) son independientes entre sí y se pueden paralelizar tras T-71. En F8 las tres tareas de revert (T-81/T-82/T-83) son independientes entre sí; las re-migraciones T-89/T-90/T-91 también; el contrato T-84 es bloqueante de todo lo demás.
+**Nota:** F6 puede ejecutarse en paralelo entre múltiples ingenieros — la mayoría de tareas son independientes entre sí (excepto T-57 que depende de T-56). En F7 las 6 tareas de migración por app (T-72..T-77) son independientes entre sí y se pueden paralelizar tras T-71. En F8 (Opción A): T-85 (ADR) y T-86 (contrato) son secuenciales y bloqueantes; T-87 (hook) puede arrancar tras T-86; T-88 (redirects) puede correr en paralelo con T-87; las tareas de listas T-89..T-94 son independientes entre sí y se pueden paralelizar tras T-87. T-95 (decommission) y T-96 (tests) cierran la fase.
 
 ---
 

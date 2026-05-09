@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -50,6 +50,21 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
+
+    // Open detail modal if ?selected= is present (ADR-0020)
+    useEffect(() => {
+        const selectedId = searchParams.get('selected')
+        if (selectedId && !viewingTransaction) {
+            setViewingTransaction({ type: 'inventory', id: selectedId })
+        }
+    }, [searchParams, viewingTransaction])
+
+    const clearSelection = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('selected')
+        const query = params.toString()
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    }
 
     const handleCloseModal = () => {
         setShowAdjustmentModal(false)
@@ -139,7 +154,11 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
                     icon={Eye}
                     title="Ver Detalles"
                     color="text-primary"
-                    onClick={() => setViewingTransaction({ type: 'inventory', id: item.id })}
+                    onClick={() => {
+                        const params = new URLSearchParams(searchParams.toString())
+                        params.set('selected', String(item.id))
+                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                    }}
                 />
             ),
         }),
@@ -171,7 +190,12 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
             {viewingTransaction && (
                 <TransactionViewModal
                     open={!!viewingTransaction}
-                    onOpenChange={(open) => !open && setViewingTransaction(null)}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setViewingTransaction(null)
+                            clearSelection()
+                        }
+                    }}
                     type={viewingTransaction.type}
                     id={viewingTransaction.id}
                     view={viewingTransaction.view}

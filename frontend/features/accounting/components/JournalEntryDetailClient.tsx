@@ -39,7 +39,7 @@ export function JournalEntryDetailClient({ entryId }: JournalEntryDetailClientPr
 
     return (
         <EntityDetailPage
-            entityType="journalentry"
+            entityType="journal_entry"
             title="Asiento Contable"
             displayId={entry.reference || `AS-${entry.number}`}
             icon="notebook-pen"

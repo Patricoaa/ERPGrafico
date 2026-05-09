@@ -281,7 +281,7 @@ export function JournalEntryForm({
 
                         <FormSection title="Líneas del Asiento" />
 
-                        <AccountingLinesTable control={form.control} name="items" />
+                        <AccountingLinesTable control={form.control as any} name="items" />
 
                         <FormMessage className="text-right" />
                         {form.formState.errors.items?.root && (

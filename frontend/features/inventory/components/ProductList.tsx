@@ -136,26 +136,27 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
 
     // Initial fetch handled by Suspense
 
+    // Open edit form if ?selected= is present (ADR-0020)
     useEffect(() => {
-        const action = searchParams.get('action')
-        const idParam = searchParams.get('id')
+        const selectedId = searchParams.get('selected')
 
-        if (action === 'edit' && idParam && products && products.length > 0) {
-            const productId = parseInt(idParam)
+        if (selectedId && products && products.length > 0) {
+            const productId = parseInt(selectedId)
             const targetProduct = products.find(p => p.id === productId)
 
             if (targetProduct && (!isFormOpen || editingProduct?.id !== productId)) {
                 setEditingProduct(targetProduct)
                 setIsFormOpen(true)
-
-                // Clean up the URL parameters so it doesn't reopen unnecessarily on refresh
-                const newParams = new URLSearchParams(searchParams.toString())
-                newParams.delete('action')
-                newParams.delete('id')
-                router.replace(`${pathname}?${newParams.toString()}`, { scroll: false })
             }
         }
-    }, [searchParams, products, isFormOpen, editingProduct, router, pathname])
+    }, [searchParams, products, isFormOpen, editingProduct])
+
+    const clearSelection = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('selected')
+        const query = params.toString()
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    }
 
     const columns = useMemo<ColumnDef<Product>[]>(() => [
         {
@@ -361,7 +362,11 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                     <DataCell.Action
                         icon={Pencil}
                         title="Editar"
-                        onClick={() => { setEditingProduct(item); setIsFormOpen(true); }}
+                        onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.set('selected', String(item.id))
+                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                        }}
                     />
                     <DataCell.Action
                         icon={item.active ? Archive : Plus}
@@ -465,6 +470,7 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                 open={isFormOpen || !!externalOpen}
                 onOpenChange={(open) => {
                     if (!open) {
+                        clearSelection()
                         handleCloseModal()
                     } else {
                         setIsFormOpen(true)

@@ -36,16 +36,30 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
+    // Open edit form if ?selected= is present (ADR-0020)
+    useEffect(() => {
+        const selectedId = searchParams.get('selected')
+        if (selectedId && warehouses && warehouses.length > 0) {
+            const wh = warehouses.find(w => w.id === parseInt(selectedId))
+            if (wh && (!isFormOpen || editingWarehouse?.id !== wh.id)) {
+                setEditingWarehouse(wh)
+                setIsFormOpen(true)
+            }
+        }
+    }, [searchParams, warehouses])
+
+    const clearSelection = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('selected')
+        const query = params.toString()
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    }
+
     const handleCloseModal = () => {
         setIsFormOpen(false)
         setEditingWarehouse(null)
         onExternalOpenChange?.(false)
-        
-        if (externalOpen || searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
+        clearSelection()
     }
 
     const handleDelete = async (warehouse: Warehouse | null, isConfirmed = false) => {
@@ -120,7 +134,11 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
         createActionsColumn<Warehouse>({
             renderActions: (item) => (
                 <>
-                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => { setEditingWarehouse(item); setIsFormOpen(true) }} />
+                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => {
+                        const params = new URLSearchParams(searchParams.toString())
+                        params.set('selected', String(item.id))
+                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                    }} />
                     <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item)} />
                 </>
             ),

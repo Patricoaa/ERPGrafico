@@ -34,6 +34,21 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
+    // Open detail modal if ?selected= is present (ADR-0020)
+    useEffect(() => {
+        const selectedId = searchParams.get('selected')
+        if (selectedId && !viewingTransaction) {
+            setViewingTransaction({ type: 'journal_entry', id: selectedId })
+        }
+    }, [searchParams, viewingTransaction])
+
+    const clearSelection = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('selected')
+        const query = params.toString()
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    }
+
     const handleCloseModal = () => {
         const params = new URLSearchParams(searchParams.toString())
         params.delete("modal")
@@ -146,7 +161,11 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     <DataCell.Action
                         icon={Eye}
                         title="Ver Detalle"
-                        onClick={() => setViewingTransaction({ type: 'journal_entry', id: entry.id })}
+                        onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.set('selected', String(entry.id))
+                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                        }}
                     />
                     {entry.state === 'DRAFT' && (
                         <>
@@ -213,7 +232,12 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                 {viewingTransaction && (
                     <TransactionViewModal
                         open={!!viewingTransaction}
-                        onOpenChange={(open) => !open && setViewingTransaction(null)}
+                        onOpenChange={(open) => {
+                            if (!open) {
+                                setViewingTransaction(null)
+                                clearSelection()
+                            }
+                        }}
                         type={viewingTransaction.type}
                         id={viewingTransaction.id}
                     />

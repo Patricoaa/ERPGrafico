@@ -1,15 +1,11 @@
-import { Metadata } from "next"
-import { JournalEntryDetailClient } from "@/features/accounting/components/JournalEntryDetailClient"
+import { redirect } from 'next/navigation'
+import { searchableEntityRoutes } from '@/lib/searchableEntityRoutes'
 
-export const metadata: Metadata = {
-    title: "Asiento Contable | ERP Gráfico",
-}
-
-interface PageProps {
-    params: Promise<{ id: string }>
-}
-
-export default async function JournalEntryDetailPage({ params }: PageProps) {
+// T-88: JournalEntry → /accounting/entries?selected=<id>
+// Opción A (ADR-0020): redirige a la lista con ?selected=<id>
+// El modal de edición se abre en la lista con initialData fetcheado por useSelectedEntity.
+export default async function DetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
-    return <JournalEntryDetailClient entryId={id} />
+    const listUrl = searchableEntityRoutes['accounting.journalentry']
+    redirect(`${listUrl}?selected=${id}`)
 }

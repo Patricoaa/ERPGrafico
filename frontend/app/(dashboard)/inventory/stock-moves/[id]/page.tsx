@@ -1,11 +1,11 @@
-import { StockMoveDetailClient } from "@/features/inventory/components/StockMoveDetailClient"
-import { Metadata } from "next"
+import { redirect } from 'next/navigation'
+import { searchableEntityRoutes } from '@/lib/searchableEntityRoutes'
 
-export const metadata: Metadata = {
-    title: "Detalle de Movimiento | ERP",
-    description: "Ver detalle de movimiento de stock",
-}
-
-export default function StockMoveDetailPage({ params }: { params: { id: string } }) {
-    return <StockMoveDetailClient moveId={params.id} />
+// T-88: StockMove → /inventory/stock-moves?selected=<id>
+// Opción A (ADR-0020): redirige a la lista con ?selected=<id>
+// El modal de edición se abre en la lista con initialData fetcheado por useSelectedEntity.
+export default async function DetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
+    const listUrl = searchableEntityRoutes['inventory.stockmove']
+    redirect(`${listUrl}?selected=${id}`)
 }

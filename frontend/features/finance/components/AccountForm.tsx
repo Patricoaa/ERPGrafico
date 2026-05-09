@@ -46,6 +46,7 @@ interface AccountFormProps {
     onOpenChange?: (open: boolean) => void
     inline?: boolean
     onLoadingChange?: (loading: boolean) => void
+    readonly?: boolean
 }
 
 export function AccountForm({
@@ -59,7 +60,8 @@ export function AccountForm({
     onOpenChange,
     auditSidebar,
     inline = false,
-    onLoadingChange
+    onLoadingChange,
+    readonly = false
 }: AccountFormProps) {
     const [internalOpen, setInternalOpen] = useState(false)
     const open = openProp !== undefined ? openProp : internalOpen
@@ -174,7 +176,7 @@ export function AccountForm({
                                     <LabeledInput
                                         label="Código"
                                         placeholder="Auto"
-                                        disabled
+                                        disabled={true}
                                         hint="Jerárquico"
                                         {...field}
                                     />
@@ -191,6 +193,7 @@ export function AccountForm({
                                         required
                                         placeholder="Ej: Caja Chica"
                                         error={fieldState.error?.message}
+                                        disabled={readonly}
                                         {...field}
                                     />
                                 )}
@@ -207,7 +210,7 @@ export function AccountForm({
                                         value={field.value}
                                         onChange={field.onChange}
                                         error={fieldState.error?.message}
-                                        disabled={!!parentId && parentId !== "__none__" && parentId !== "none"}
+                                        disabled={readonly || (!!parentId && parentId !== "__none__" && parentId !== "none")}
                                         options={[
                                             { value: "ASSET", label: "Activo" },
                                             { value: "LIABILITY", label: "Pasivo" },
@@ -231,6 +234,7 @@ export function AccountForm({
                                         showAll={true}
                                         placeholder="Sin padre (Raíz)"
                                         error={fieldState.error?.message}
+                                        disabled={readonly}
                                     />
                                 )}
                             />
@@ -272,16 +276,18 @@ export function AccountForm({
                     </div>
                 }
                 footer={
-                    <FormFooter
-                        actions={
-                            <>
-                                <CancelButton onClick={() => setOpen(false)} />
-                                <ActionSlideButton type="submit" form="account-form" loading={loading}>
-                                    {initialData ? "Guardar Cambios" : "Crear Cuenta"}
-                                </ActionSlideButton>
-                            </>
-                        }
-                    />
+                    !readonly ? (
+                        <FormFooter
+                            actions={
+                                <>
+                                    <CancelButton onClick={() => setOpen(false)} />
+                                    <ActionSlideButton type="submit" form="account-form" loading={loading}>
+                                        {initialData ? "Guardar Cambios" : "Crear Cuenta"}
+                                    </ActionSlideButton>
+                                </>
+                            }
+                        />
+                    ) : undefined
                 }
             >
                 {formContent}

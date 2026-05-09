@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -37,6 +37,25 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
+
+    // Open edit form if ?selected= is present (ADR-0020)
+    useEffect(() => {
+        const selectedId = searchParams.get('selected')
+        if (selectedId && categories && categories.length > 0) {
+            const cat = categories.find(c => c.id === parseInt(selectedId))
+            if (cat && (!isFormOpen || editingCategory?.id !== cat.id)) {
+                setEditingCategory(cat)
+                setIsFormOpen(true)
+            }
+        }
+    }, [searchParams, categories])
+
+    const clearSelection = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('selected')
+        const query = params.toString()
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    }
 
     const handleCloseModal = () => {
         setIsFormOpen(false)
@@ -102,7 +121,11 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
         createActionsColumn<Category>({
             renderActions: (item) => (
                 <>
-                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => { setEditingCategory(item); setIsFormOpen(true) }} />
+                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => {
+                        const params = new URLSearchParams(searchParams.toString())
+                        params.set('selected', String(item.id))
+                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                    }} />
                     <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item)} />
                 </>
             ),
@@ -135,7 +158,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
                 onSuccess={() => { void refetch(); handleCloseModal() }}
                 open={isFormOpen || isCreateOpen}
                 onOpenChange={(open) => {
-                    if (!open) handleCloseModal()
+                    if (!open) { clearSelection(); handleCloseModal() }
                     else {
                         if (isCreateOpen) setIsCreateOpen(true)
                         if (isFormOpen) setIsFormOpen(true)

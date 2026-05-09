@@ -3,6 +3,8 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { useState, useEffect } from "react"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
+import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -17,7 +19,6 @@ import { PurchaseNoteModal } from "@/features/purchasing/components/PurchaseNote
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { Progress } from "@/components/ui/progress"
 import { DataTable } from "@/components/ui/data-table"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { formatPlainDate } from "@/lib/utils"
@@ -82,8 +83,32 @@ export default function PurchaseInvoicesPage() {
     const [notingDoc, setNotingDoc] = useState<PurchaseDocument | null>(null)
     const [completingDoc, setCompletingDoc] = useState<PurchaseDocument | null>(null)
 
-    // Hub Panel
-    const { openHub } = useHubPanel()
+    // Hub Panel + URL-state (?selected)
+    const { openHub, isHubOpen } = useHubPanel()
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const pathname = usePathname()
+    const selectedId = searchParams.get('selected')
+    const [hubEverOpened, setHubEverOpened] = useState(false)
+
+    // Open Hub if ?selected= is present (ADR-0020)
+    useEffect(() => {
+        if (selectedId) openHub({ invoiceId: Number(selectedId), orderId: null, type: 'purchase' })
+    }, [selectedId, openHub])
+
+    useEffect(() => {
+        if (isHubOpen && selectedId) setHubEverOpened(true)
+    }, [isHubOpen, selectedId])
+
+    useEffect(() => {
+        if (hubEverOpened && !isHubOpen && selectedId) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.delete('selected')
+            const query = params.toString()
+            setHubEverOpened(false)
+            router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+        }
+    }, [isHubOpen, hubEverOpened, selectedId, pathname, searchParams, router])
 
     useEffect(() => {
         fetchDocuments()
