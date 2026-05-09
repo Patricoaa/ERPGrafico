@@ -1,6 +1,7 @@
 import os
 import re
 import ast
+from pathlib import Path
 import pytest
 from django.conf import settings
 from django.apps import apps
@@ -151,4 +152,60 @@ class TestArchitecturalInvariants:
         assert not violations, (
             f"Se encontraron {len(violations)} vistas con >20 líneas. "
             "Extrae la lógica a services.py o añade el nombre a VIEW_DEBT_WHITELIST con justificación."
+        )
+
+    def test_search_routes_match_app_router(self):
+        """
+        T-79: cada SearchableEntity.detail_url_pattern en el UniversalRegistry
+        debe corresponder a un page.tsx real en el App Router de Next.js.
+
+        Algoritmo:
+        1. Descubrir todos los page.tsx bajo frontend/app/(dashboard)/.
+        2. Convertir la ruta de filesystem a patrón de URL canónico:
+           - segmentos [xxx] se normalizan a {id}.
+        3. Para cada entidad, verificar que su detail_url_pattern coincide.
+        """
+        from core.registry import UniversalRegistry
+
+        # BASE_DIR → directorio backend. Frontend está un nivel arriba.
+        backend_dir = Path(settings.BASE_DIR)
+        frontend_dir = backend_dir.parent / 'frontend' / 'app' / '(dashboard)'
+
+        if not frontend_dir.exists():
+            pytest.skip(f"Directorio frontend no encontrado: {frontend_dir}")
+
+        # Construir mapa: ruta_filesystem → patrón_url_canónico
+        # Ejemplo: sales/orders/[id]/page.tsx → /sales/orders/{id}
+        dynamic_segment_re = re.compile(r'^\[.+\]$')
+        router_patterns: set[str] = set()
+
+        for page_file in frontend_dir.rglob('page.tsx'):
+            rel = page_file.parent.relative_to(frontend_dir)
+            parts = rel.parts  # () para la raíz, ('sales', 'orders', '[id]') etc.
+            if not parts:
+                router_patterns.add('/')
+                continue
+            normalised = '/'.join(
+                '{id}' if dynamic_segment_re.match(p) else p
+                for p in parts
+            )
+            router_patterns.add(f'/{normalised}')
+
+        # Validar cada entidad registrada
+        violations: list[str] = []
+        for label, entity in UniversalRegistry._entities.items():
+            pattern = entity.detail_url_pattern
+            if not pattern:
+                violations.append(f"  {label}: detail_url_pattern vacío")
+                continue
+            if pattern not in router_patterns:
+                sample = sorted(r for r in router_patterns if '{id}' in r)[:6]
+                violations.append(
+                    f"  {label}: '{pattern}' no coincide con ninguna ruta real.\n"
+                    f"    Rutas con [id] disponibles (muestra): {sample}"
+                )
+
+        assert not violations, (
+            f"T-79 — {len(violations)} entidad(es) con detail_url_pattern sin página real:\n"
+            + '\n'.join(violations)
         )

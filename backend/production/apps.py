@@ -23,8 +23,8 @@ class ProductionConfig(AppConfig):
                 icon='wrench',
                 search_fields=('number', 'description', 'contact__name'),
                 display_template='OT-{number} · {description}',
-                list_url='/produccion/ordenes',
-                detail_url_pattern='/produccion/ordenes/{id}',
+                list_url='/production/orders',
+                detail_url_pattern='/production/orders/{id}',
                 permission='production.view_workorder',
             ))
         except Exception:

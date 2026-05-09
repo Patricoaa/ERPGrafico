@@ -22,8 +22,8 @@ class PurchasingConfig(AppConfig):
                 icon='shopping-cart',
                 search_fields=('number', 'supplier__name', 'supplier__tax_id'),
                 display_template='OCS-{number} · {supplier.name}',
-                list_url='/compras/ordenes',
-                detail_url_pattern='/compras/ordenes/{id}',
+                list_url='/purchasing/orders',
+                detail_url_pattern='/purchasing/orders/{id}',
                 permission='purchasing.view_purchaseorder',
             ))
         except Exception:
