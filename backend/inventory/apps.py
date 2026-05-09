@@ -53,8 +53,8 @@ class InventoryConfig(AppConfig):
                 icon='arrow-right-left',
                 search_fields=('id', 'description', 'adjustment_reason'),
                 display_template='MOV-{id}',
-                list_url='/inventory/moves',
-                detail_url_pattern='/inventory/moves/{id}',
+                list_url='/inventory/stock-moves',
+                detail_url_pattern='/inventory/stock-moves/{id}',
                 permission='inventory.view_stockmove',
             ))
         except Exception:

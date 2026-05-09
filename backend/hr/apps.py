@@ -16,8 +16,8 @@ class HrConfig(AppConfig):
                 icon='user-check',
                 search_fields=('contact__name', 'contact__tax_id', 'code'),
                 display_template='{contact.name} ({code})',
-                list_url='/rrhh/empleados',
-                detail_url_pattern='/rrhh/empleados/{id}',
+                list_url='/hr/employees',
+                detail_url_pattern='/hr/employees/{id}',
                 permission='hr.view_employee',
             ))
             UniversalRegistry.register(SearchableEntity(
@@ -26,8 +26,8 @@ class HrConfig(AppConfig):
                 icon='wallet',
                 search_fields=('number', 'employee__contact__name'),
                 display_template='LIQ-{number} · {employee.contact.name}',
-                list_url='/rrhh/liquidaciones',
-                detail_url_pattern='/rrhh/liquidaciones/{id}',
+                list_url='/hr/payrolls',
+                detail_url_pattern='/hr/payrolls/{id}',
                 permission='hr.view_payroll',
             ))
         except Exception:

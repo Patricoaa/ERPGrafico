@@ -16,8 +16,8 @@ class CoreConfig(AppConfig):
                 icon='user',
                 search_fields=('first_name', 'last_name', 'email'),
                 display_template='{first_name} {last_name}',
-                list_url='/configuracion/usuarios',
-                detail_url_pattern='/configuracion/usuarios/{id}',
+                list_url='/settings/users',
+                detail_url_pattern='/settings/users/{id}',
                 permission='core.view_user',
             ))
             UniversalRegistry.register(SearchableEntity(
@@ -26,8 +26,8 @@ class CoreConfig(AppConfig):
                 icon='paperclip',
                 search_fields=('original_filename', 'file'),
                 display_template='{original_filename}',
-                list_url='/archivos',
-                detail_url_pattern='/archivos/{id}',
+                list_url='/files',
+                detail_url_pattern='/files/{id}',
                 permission='core.view_attachment',
             ))
         except Exception:

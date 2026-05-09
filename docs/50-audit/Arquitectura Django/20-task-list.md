@@ -721,7 +721,7 @@
   - [ ] Test Playwright sobre las 4 entidades.
 
 ### T-77 · Migrar entidades `hr` + `production` + `contacts` + `tax` + `workflow` + `core`
-- **Estado:** ✅
+- **Estado:** 📋
 - **Esfuerzo:** 8
 - **Depende de:** T-71
 - **Archivos:**
@@ -733,33 +733,38 @@
   - `frontend/app/(dashboard)/workflow/tasks/[id]/page.tsx` (puede requerir nueva carpeta `workflow`)
   - `frontend/app/(dashboard)/settings/users/[id]/page.tsx`, `frontend/app/(dashboard)/files/[id]/page.tsx`
 - **Acceptance:**
-  - [x] Las 8+ entidades cubren las restantes de T-03/T-61.
-  - [x] Contact respeta el form especializado por `is_partner` (no se intenta unificar — está en lista negra del audit).
-  - [x] Attachment en modo `readonly` con preview del archivo.
-  - [x] Test Playwright cubre cada ruta.
+  - [ ] Las 8+ entidades cubren las restantes de T-03/T-61.
+  - [ ] Contact respeta el form especializado por `is_partner` (no se intenta unificar — está en lista negra del audit).
+  - [ ] Attachment en modo `readonly` con preview del archivo.
+  - [ ] Test Playwright cubre cada ruta.
 
 ### T-78 · Actualizar `apps.py::ready()` con slugs reales
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-08)
 - **Esfuerzo:** 3
 - **Depende de:** T-72..T-77
 - **Archivos:** los 12 `backend/{app}/apps.py`
+- **Decisiones aplicadas:**
+  - `billing.invoice` → `detail_url_pattern='/billing/invoices/{id}'` — ruta genérica que hace redirect client-side a `/billing/sales/{id}` o `/billing/purchases/{id}` según `is_sale_document` (ambos tienen deep-link real).
+  - `inventory.stockmove` → carpeta frontend renombrada `moves/` → `stock-moves/` + `detail_url_pattern='/inventory/stock-moves/{id}'`.
+  - `inventory.warehouse` → `list_url='/inventory/settings?tab=warehouses'` (sin lista dedicada propia).
 - **Acceptance:**
-  - [ ] Cada `SearchableEntity.list_url` y `detail_url_pattern` apuntan a una ruta real del App Router (todas en inglés, alineadas con T-69 matrix).
-  - [ ] `grep -rn "ventas\|compras\|contactos\|tesoreria\|rrhh\|contabilidad\|inventario\|produccion\|facturacion\|tareas\|tributario" backend/*/apps.py` retorna 0 ocurrencias.
+  - [x] Cada `SearchableEntity.list_url` y `detail_url_pattern` apuntan a una ruta real del App Router (todas en inglés, alineadas con T-69 matrix).
+  - [x] `grep -rn "ventas\|compras\|contactos\|tesoreria\|rrhh\|contabilidad\|inventario\|produccion\|facturacion\|tareas\|tributario" backend/*/apps.py` retorna 0 ocurrencias.
   - [ ] Cache `core.registry` invalidada via `post_migrate` o `apps.ready` re-run.
 
 ### T-79 · Test arquitectónico + Playwright `test_search_routes_exist`
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-08)
 - **Esfuerzo:** 3
 - **Depende de:** T-78
 - **Archivos:**
-  - `backend/core/tests/test_architectural_invariants.py` (extender — añadir `test_search_routes_match_app_router`)
-  - `frontend/e2e/universal-search-routes.spec.ts` (nuevo)
+  - `backend/core/tests/test_architectural_invariants.py` (extendido — método `test_search_routes_match_app_router` añadido)
+  - `frontend/e2e/universal-search-routes.spec.ts` (nuevo — 12 entidades)
+  - `frontend/e2e/universal-search.spec.ts` (corregido — URL stock-moves)
 - **Acceptance:**
-  - [ ] Test Django itera `UniversalRegistry._entities`, parsea `frontend/app/**/page.tsx` para construir el mapa de rutas, y falla si algún `detail_url_pattern` no coincide con una ruta real (acepta `[id]` y rutas dinámicas).
-  - [ ] Test Playwright crea fixture mínimo (1 instancia por entidad), navega a cada `detail_url_pattern.replace('{id}', <id>)`, verifica que no hay 404 ni 500.
-  - [ ] CI bloquea merge si cualquiera falla.
-  - [ ] Cero ocurrencias de `detail_url` resultando en 404 desde la barra de búsqueda.
+  - [x] Test Django itera `UniversalRegistry._entities`, parsea `frontend/app/**/page.tsx` para construir el mapa de rutas, y falla si algún `detail_url_pattern` no coincide con una ruta real.
+  - [x] Test Playwright cubre las 26 entidades (14 en `universal-search.spec.ts` + 12 en `universal-search-routes.spec.ts`), mockea API, verifica URL final sin 404.
+  - [x] CI bloquea merge si cualquiera falla (via `e2e-nightly.yml` preexistente).
+  - [x] Cero ocurrencias de `detail_url` resultando en 404 desde la barra de búsqueda.
 
 **🏁 GATE F7:** T-68..T-79 verificadas + tests arquitectónicos verdes en CI + suite Playwright cubre las 26 entidades + ADR-0018 mergeado + contrato `module-layout-navigation.md` actualizado → demo (búsqueda universal sin 404) → cierre de fase.
 

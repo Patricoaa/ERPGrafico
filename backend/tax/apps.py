@@ -18,8 +18,8 @@ class TaxConfig(AppConfig):
                 icon='file-badge',
                 search_fields=('folio_number',),
                 display_template='F29 Folio {folio_number}',
-                list_url='/tributario/f29',
-                detail_url_pattern='/tributario/f29/{id}',
+                list_url='/tax/f29',
+                detail_url_pattern='/tax/f29/{id}',
                 permission='tax.view_f29declaration',
             ))
             UniversalRegistry.register(SearchableEntity(
@@ -28,8 +28,8 @@ class TaxConfig(AppConfig):
                 icon='calendar-clock',
                 search_fields=('year', 'month'),
                 display_template='Periodo {month}/{year}',
-                list_url='/tributario/periodos',
-                detail_url_pattern='/tributario/periodos/{id}',
+                list_url='/tax/periods',
+                detail_url_pattern='/tax/periods/{id}',
                 permission='tax.view_accountingperiod',
             ))
         except Exception:

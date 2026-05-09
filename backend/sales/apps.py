@@ -27,8 +27,8 @@ class SalesConfig(AppConfig):
                 icon='receipt-text',
                 search_fields=('number', 'customer__name', 'customer__tax_id'),
                 display_template='NV-{number} · {customer.name}',
-                list_url='/ventas/ordenes',
-                detail_url_pattern='/ventas/ordenes/{id}',
+                list_url='/sales/orders',
+                detail_url_pattern='/sales/orders/{id}',
                 permission='sales.view_saleorder',
             ))
             UniversalRegistry.register(SearchableEntity(
@@ -37,8 +37,8 @@ class SalesConfig(AppConfig):
                 icon='truck',
                 search_fields=('number', 'sale_order__customer__name'),
                 display_template='DES-{number}',
-                list_url='/ventas/despachos',
-                detail_url_pattern='/ventas/despachos/{id}',
+                list_url='/sales/deliveries',
+                detail_url_pattern='/sales/deliveries/{id}',
                 permission='sales.view_saledelivery',
             ))
             UniversalRegistry.register(SearchableEntity(
@@ -47,8 +47,8 @@ class SalesConfig(AppConfig):
                 icon='undo-2',
                 search_fields=('number', 'sale_order__customer__name'),
                 display_template='DEV-{number}',
-                list_url='/ventas/devoluciones',
-                detail_url_pattern='/ventas/devoluciones/{id}',
+                list_url='/sales/returns',
+                detail_url_pattern='/sales/returns/{id}',
                 permission='sales.view_salereturn',
             ))
         except Exception:

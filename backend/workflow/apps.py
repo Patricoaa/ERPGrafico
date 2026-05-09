@@ -28,8 +28,8 @@ class WorkflowConfig(AppConfig):
                 icon='circle-check',
                 search_fields=('title', 'description'),
                 display_template='{title}',
-                list_url='/tareas',
-                detail_url_pattern='/tareas/{id}',
+                list_url='/workflow/tasks',
+                detail_url_pattern='/workflow/tasks/{id}',
                 permission='workflow.view_task',
             ))
         except Exception:

@@ -23,8 +23,8 @@ class ContactsConfig(AppConfig):
                 icon='users',
                 search_fields=('name', 'tax_id', 'contact_name', 'code'),
                 display_template='{name} · {tax_id}',
-                list_url='/contactos',
-                detail_url_pattern='/contactos/{id}',
+                list_url='/contacts',
+                detail_url_pattern='/contacts/{id}',
                 permission='contacts.view_contact',
             ))
         except Exception:
