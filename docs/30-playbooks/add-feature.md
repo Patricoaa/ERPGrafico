@@ -124,6 +124,32 @@ app/(dashboard)/[name]/
   [id]/page.tsx # detail
 ```
 
+> **Si la entidad está registrada en el `UniversalRegistry`** (aparece en la barra de búsqueda global), la ruta `[id]/page.tsx` DEBE usar el shell `EntityDetailPage` como contenedor. Ver [module-layout-navigation.md §7](../20-contracts/module-layout-navigation.md#7-searchable-entity-detail-route) para la convención completa, la tabla de módulos y el contrato de props.
+
+```tsx
+// app/(dashboard)/[module]/[entity-plural]/[id]/page.tsx
+import { notFound } from 'next/navigation'
+import { EntityDetailPage } from '@/components/shared'
+import { [Name]Form } from '@/features/[name]'
+
+export default async function [Name]DetailPage({ params }: { params: { id: string } }) {
+  const entity = await fetch[Name](params.id)  // server-side fetch
+  if (!entity) notFound()
+
+  return (
+    <EntityDetailPage
+      entityType="[name]"
+      title={entity.display_id}
+      icon="[lucide-icon]"
+      breadcrumb={[{ label: '[Module]', href: '/[module]' }, { label: '[Entities]', href: '/[module]/[entities]' }]}
+    >
+      <[Name]Form initialData={entity} />
+    </EntityDetailPage>
+  )
+}
+```
+
+
 ### 7. Tests
 
 - Hook: mock `lib/api`, assert query key + invalidation.

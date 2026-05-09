@@ -26,10 +26,12 @@
 | **F4** | DocumentService + Metadata Schema endpoint | 2 sprints (3-4 semanas) | Medio-alto | F3 estable |
 | **F5** | GenericForeignKey selectivo + ProductTypeStrategy | 3 sprints (5-6 semanas) | Alto | F4 estable, datos migrados |
 | **F6** | Hardening operacional y cierre de gates pendientes | 2 sprints (3-4 semanas) | Medio | F5 mergeada |
+| **F7** | Detail routes reales para entidades searchable (corrige rutas inexistentes del Universal Search) | 2 sprints (3-4 semanas) | Medio | F6 mergeada |
+| **F8** | Reversión de migraciones EntityForm + expansión del schema contract + contrato visual documentado | 3 sprints (5-6 semanas) | Medio-alto | F7 estable |
 
-**Esfuerzo total estimado:** 12-14 sprints (~6-7 meses con 1 ingeniero senior dedicado, o 3-4 meses con 2).
+**Esfuerzo total estimado:** 17-19 sprints (~8-9 meses con 1 ingeniero senior dedicado, o 4-5 meses con 2).
 
-**Hito de "Generic Form Injection mínimo viable":** fin de F4. F5 es enabler para escalar. **F6 es prerequisito para declarar la refactorización oficialmente cerrada.**
+**Hito de "Generic Form Injection mínimo viable":** fin de F4. F5 es enabler para escalar. F6 cierra deuda operacional. **F7 corrige las rutas inexistentes del Universal Search (Opción B documentada en la auditoría 2026-05-08).** **F8 revierte la migración prematura de formularios (Phase 4) y reconstruye sobre un contrato de schema alineado con los contratos de UI existentes.**
 
 ---
 
@@ -259,34 +261,131 @@
 
 ---
 
+## F7 — Detail routes reales para entidades searchable (Universal Search Opción B)
+
+> **Origen:** auditoría del 2026-05-08 detectó que **ninguna** de las 26 rutas declaradas en `apps.py::ready()` coincide con una ruta real del App Router de Next.js. Dos defectos compuestos: (1) los segmentos están en español (`/ventas/ordenes`, `/contactos`, `/tesoreria/cuentas`) y el App Router está en inglés (`/sales/orders`, `/contacts`, `/treasury/accounts`); (2) sólo 4 entidades tienen rutas `[id]` reales (`finances/budgets/[id]`, `hr/payrolls/[id]`, `treasury/reconciliation/[id]`, `accounting/ledger/[id]`); el resto exponen detalle vía modal sobre la lista, sin URL canónica.
+> **Decisión:** Opción B — convertir el detalle en URL deep-linkeable creando rutas `[id]` reales para **todas** las entidades registradas. La página `[id]` reutiliza el modal/form existente como contenido de página completa (no se reescribe lógica de form, solo se monta en `EntityDetailPage`).
+> **Sin tocar modelos.** Sólo cambios en frontend + un ajuste de `apps.py::ready()` por app.
+
+### Objetivos
+
+- Cero rutas 404 desde resultados del Universal Search.
+- Convención única: cada entidad searchable es accesible en `/<module>/<entity-plural>/[id]`.
+- Cada `apps.py::ready()` declara `list_url` y `detail_url_pattern` en **inglés** alineados con los segmentos reales del App Router.
+- Las páginas `[id]` reutilizan los formularios actuales (`SaleOrderForm`, `ProductForm`, `ContactForm`, etc.) embebidos en una shell `EntityDetailPage` con header, breadcrumb, acciones y `ActivitySidebar` opcional.
+
+### Entregables
+
+- ADR-0018: convención de "Searchable Entity Detail Route" (slugs en inglés, plurales canónicos, `[id]` como segmento).
+- Contrato actualizado [docs/20-contracts/module-layout-navigation.md](../../20-contracts/module-layout-navigation.md) con la nueva sección "Searchable Entity Detail Route".
+- `frontend/components/shared/EntityDetailPage.tsx` — shell con header, breadcrumb, slot principal, slot sidebar.
+- 22 nuevas rutas `[id]/page.tsx` en App Router (ver matriz en [20-task-list.md](20-task-list.md#f7--detail-routes-para-universal-search)).
+- 12 `apps.py::ready()` actualizados con `list_url`/`detail_url_pattern` reales.
+- Test E2E (Playwright) que itera cada `SearchableEntity` registrada y verifica que `detail_url_pattern.replace('{id}', '<seed_id>')` no devuelve 404 ni 500.
+- Test arquitectónico `test_search_routes_exist` que falla CI si una entidad declara un `detail_url_pattern` no resoluble.
+
+### Gate de salida
+
+- [ ] Cada entidad listada en `T-03/T-61` tiene su ruta `[id]` real y carga sin error con un id de fixture.
+- [ ] `grep -r "/ventas\|/compras\|/contactos\|/tesoreria\|/rrhh\|/contabilidad\|/inventario\|/produccion\|/facturacion\|/tareas\|/tributario" backend/*/apps.py` retorna 0 ocurrencias.
+- [ ] Suite Playwright `e2e/universal-search-routes.spec.ts` verde sobre las 26 entidades.
+- [ ] Test arquitectónico `test_search_routes_exist` corre en CI; CI bloquea merge si una nueva entidad registra una ruta inexistente.
+- [ ] Demo: buscar "NV-001" en la barra global y aterrizar en `/sales/orders/123` con la ficha completa renderizada.
+
+### Tareas asociadas
+
+`T-68` a `T-79` en [20-task-list.md](20-task-list.md#f7--detail-routes-para-universal-search).
+
+### Riesgos clave
+
+- `R-12`: algunas entidades (POSSession, BankStatement, StockMove) no tienen un formulario de edición tradicional — su "detalle" hoy es read-only. **Mitigación:** la shell `EntityDetailPage` admite modo `readonly` que muestra una vista de detalle sin formulario; documentado en el contrato T-70.
+- `R-13`: el patrón de "modal sobre lista con `?selected=id`" coexistirá con `[id]` durante la migración. **Mitigación:** la lista detecta `id` en la URL y, si la ruta `[id]` ya existe, redirige; si no, abre el modal histórico. Removido al final de F7.
+- `R-14`: rutas `[id]` con permisos finos (ej: ver factura ajena del mismo cliente) requieren guardas server-side. **Mitigación:** cada page server-component valida permiso vía endpoint existente antes de renderizar; mismo guard que el modal usaba.
+
+---
+
+## F8 — Schema-Driven Forms: reversión + expansión del contract + contrato visual documentado
+
+> **Origen:** auditoría del 2026-05-08 detectó que la migración de formularios de Phase 4 (commit `9387cb91`) sustituyó tres formularios con estructura rica (`BudgetEditor`/`CategoryForm`/`UoMForm` — secciones, grid 4-col, switches con expansión condicional animada, selectores async filtrados, icon picker, `ActivitySidebar`) por `EntityForm` minimal que solo conoce `tabs` lineales y trata FK como input numérico de id. Esto produjo (1) bifurcación crear/editar (la creación usa el form genérico, la edición sigue usando el form rico original — usuarios encuentran dos UIs distintas para la misma entidad) y (2) regresión de UX en los flujos migrados sin haber siquiera entregado el "5 modelos simples sin código frontend" prometido.
+> **Decisión:** Opción B+A — **revertir** las tres migraciones de Phase 4 y, en paralelo, **expandir** el contrato del schema (`FormMeta` backend + `EntityForm` frontend) hasta que pueda expresar el vocabulario visual real del proyecto, anclado a los contratos de UI ya existentes ([form-layout-architecture.md](../../20-contracts/form-layout-architecture.md), [component-form-patterns.md](../../20-contracts/component-form-patterns.md), [component-selectors.md](../../20-contracts/component-selectors.md), [component-visual-hierarchy.md](../../20-contracts/component-visual-hierarchy.md)). Sólo entonces re-migrar.
+> **Sin tocar modelos de negocio.** Cambios concentrados en `core/serializers/metadata.py`, `frontend/components/shared/EntityForm/`, y los `FormMeta` de los modelos piloto.
+
+### Objetivos
+
+- Revertir los tres flujos de creación migrados en Phase 4 a su forma rica original (estado pre-`9387cb91`), conservando `BudgetEditor`/`CategoryForm`/`UoMForm` como fuente única para crear+editar.
+- Publicar un nuevo contrato `docs/20-contracts/schema-driven-forms.md` que defina el vocabulario del schema (`sections`, `grid_cols`, `widget`, `widget_props`, `visible_if`, `sidebar`, `actions`) y su mapeo determinístico a los componentes ya contractuados (`FormSection`, `FormSplitLayout`, `LabeledInput`, selectores async, etc.). El contrato es **derivado**: no inventa primitives nuevos, sólo declara cómo el JSON los invoca.
+- Implementar `EntityForm v2` que consume el contrato extendido y delega a un `Widget Registry` frontend (`AccountSelector`, `ProductSelector`, `CategorySelector`, `UoMSelector`, `ContactSelector`, `IconPicker`, `LabeledSwitch`, FK genérico async).
+- Re-migrar las tres entidades con paridad visual probada (snapshot/Storybook) **antes** de declarar la migración cerrada; sólo entonces deprecar los forms legacy.
+- Migrar también los pilotos verdaderamente simples del plan original (`UoMCategory`, `ProductAttribute`, `ProductAttributeValue`, `Attachment`) que sí cumplen con el alcance "schema-driven sin código custom".
+
+### Entregables
+
+- ADR-0019: reversión de Phase 4 + estrategia de expansión del schema. Justifica por qué la migración previa fue prematura (gap de contrato), define qué clase de formulario es candidato a schema-driven y cuál NO ([audit-report §2.1 — bloqueantes](00-audit-report.md#21--bloqueantes--formulario-especializado-siempre)).
+- **Reversión** de [BudgetsListView.tsx](../../../frontend/features/finance/components/BudgetsListView.tsx), [CategoryList.tsx](../../../frontend/features/inventory/components/CategoryList.tsx), [UoMList.tsx](../../../frontend/features/inventory/components/UoMList.tsx) al patrón pre-Phase 4 (mismo form para crear y editar). Tres reverts limpios via `git revert -p` + ajuste de imports.
+- **Nuevo contrato** [docs/20-contracts/schema-driven-forms.md](../../20-contracts/schema-driven-forms.md) declarando: vocabulario del JSON, tabla `widget → componente`, reglas de coherencia con los contratos UI existentes, ejemplos canónicos para los 3 niveles de complejidad (Micro / Estándar / Ficha Maestra), criterios de "este formulario NO califica para schema-driven".
+- Backend: ampliación de `FormMeta` y `build_schema()` ([backend/core/serializers/metadata.py](../../../backend/core/serializers/metadata.py)) con `sections`, `grid_cols`, `field_widget`, `widget_props`, `visible_if`, `sidebar` (entityType para `ActivitySidebar`).
+- Frontend: `EntityForm v2` ([frontend/components/shared/EntityForm/](../../../frontend/components/shared/EntityForm/)) — section grouping, grid 4-col, widget registry, `visible_if` con `animate-in fade-in`, integración condicional con `FormSplitLayout` + `ActivitySidebar`.
+- Re-migración de Budget/ProductCategory/UoM con paridad visual probada (Storybook story por entidad + screenshot diff vs. el form legacy en commit pre-`9387cb91`).
+- Migración nueva de UoMCategory, ProductAttribute, ProductAttributeValue, Attachment (entidades verdaderamente simples — pilotos correctos del plan original).
+- Test arquitectónico `test_schema_widgets_resolve` que verifica que cada `widget` declarado en algún `FormMeta` existe en el frontend Widget Registry.
+- Suite de visual regression (Storybook + Chromatic o Playwright screenshot) para los formularios re-migrados.
+
+### Gate de salida
+
+- [ ] `git diff master -- frontend/features/{finance,inventory}` no contiene `EntityForm` para Budget/ProductCategory/UoM en estado parcialmente migrado (o todo migrado, o nada — sin bifurcación crear/editar).
+- [ ] [docs/20-contracts/schema-driven-forms.md](../../20-contracts/schema-driven-forms.md) mergeado y referenciado desde [docs/20-contracts/component-decision-tree.md](../../20-contracts/component-decision-tree.md) y desde [docs/30-playbooks/add-feature.md](../../30-playbooks/add-feature.md).
+- [ ] Snapshot visual del `BudgetEditor` re-migrado coincide con el snapshot del commit pre-Phase 4 (tolerancia <2% diff píxel).
+- [ ] `test_schema_widgets_resolve` corre en CI; falla si un `FormMeta` declara un `widget` no registrado.
+- [ ] 7 modelos en producción usan `EntityForm v2` con cero código frontend custom y zero regresión visual: Budget, ProductCategory, UoM, UoMCategory, ProductAttribute, ProductAttributeValue, Attachment.
+- [ ] Forms legacy (`BudgetEditor`, `CategoryForm`, `UoMForm`) deprecados (warning en CI) o eliminados según ADR-0019.
+- [ ] Demo: agregar un campo nuevo a `Budget` (ej: `cost_center`) sólo requiere editar el modelo Django + migración; el form lo renderiza automáticamente con la sección y widget correctos.
+
+### Tareas asociadas
+
+`T-80` a `T-93` en [20-task-list.md](20-task-list.md#f8--schema-driven-forms-reversión--expansión--contrato-visual).
+
+### Riesgos clave
+
+- `R-15`: el contrato `schema-driven-forms.md` puede divergir de `form-layout-architecture.md` y producir dos fuentes de verdad sobre layouts. **Mitigación:** el contrato nuevo es **derivado** — declara cómo el JSON invoca primitives, no redefine primitives. Se incluye en `precondition` frontmatter de `schema-driven-forms.md` la dependencia explícita a los 4 contratos UI base; cualquier cambio incompatible requiere ADR.
+- `R-16`: la paridad visual de la re-migración puede ser difícil de garantizar (animaciones, focus management, comportamiento del icon picker). **Mitigación:** aceptar que entidades con widgets verdaderamente custom (`Contact` con sus 50+ properties, `Account` con jerarquía) **nunca** califiquen para schema-driven y permanecen con form especializado. Documentar la frontera en el contrato T-84.
+- `R-17`: la reversión puede chocar con cambios posteriores a `9387cb91` sobre los mismos archivos. **Mitigación:** revisar `git log frontend/features/{finance,inventory}` antes de iniciar T-81..T-83 y resolver conflictos manualmente; no hacer revert ciego.
+- `R-18`: introducir `sections` y `visible_if` en `FormMeta` puede tentar a equipos a usar schema-driven en formularios complejos donde no aplica. **Mitigación:** el contrato T-84 incluye un "decision tree" explícito (cuándo SÍ, cuándo NO) y un test arquitectónico que falla si un modelo de la lista negra (`Account`, `JournalEntry`, `Contact`, `Product` manufacturable, `WorkOrder`) declara `FormMeta.ui_layout` con uso del schema-driven path.
+
+---
+
 ## Diagrama de dependencias
 
 ```
 F1 ──┐
-     ├──> F2 ──> F3 ──> F4 ──> F5 ──> F6
+     ├──> F2 ──> F3 ──> F4 ──> F5 ──> F6 ──> F7 ──> F8
      │        (paralelo: tests caracterización)
 F1 termina antes de F2 (porque F1 no toca modelos y entrega valor)
 F3 puede empezar cuando F2 mergea
 F4 requiere F3 (Strategy + side-effects limpios) para que Service Layer sea limpia
 F5 requiere F4 estable (DocumentService maneja la abstracción durante la migración)
 F6 cierra los gates de F1..F5 que quedaron pendientes; sin features nuevas
+F7 corrige las rutas inexistentes del Universal Search creando [id] reales
+F8 revierte la migración prematura de Phase 4 y reconstruye sobre un contrato visual documentado
 ```
 
 ---
 
 ## Métricas de éxito (cómo sabremos que funcionó)
 
-| Métrica | Línea base actual | Objetivo fin F5 | Objetivo fin F6 |
-|---------|-------------------|-----------------|-----------------|
-| Líneas duplicadas en `Model.save()` | ~600 (estimado por inspección) | <100 | <100 |
-| Ocurrencias de `__class__.__name__` o `isinstance` para discriminación | 8 conocidas | 0 (gate F3) | **0 verificado por test arquitectónico en CI** |
-| Apps registradas en UniversalRegistry | 0 | 12 | 12 (todas las entidades T-03 cubiertas) |
-| Modelos con CRUD via `<EntityForm />` (sin frontend custom) | 0 | ≥10 | ≥10 |
-| Coverage de `core/strategies/` | n/a | >90% | >90% |
-| Tiempo medio para agregar nueva entidad CRUD simple | ~3 días (hoy) | <1 día | <1 día |
-| Tests de caracterización financiera | 0 | >50 | **≥75 snapshots versionados, CI obligatorio** |
-| Tests E2E de flujos críticos | 0 | n/a | **4 flujos cubiertos (Venta, POS, Compra, Cierre)** |
-| Schema endpoint expone campos sensibles (`pos_pin`, etc.) | n/a | sin validar | **0 — validado por test** |
+| Métrica | Línea base actual | Objetivo fin F5 | Objetivo fin F6 | Objetivo fin F7 | Objetivo fin F8 |
+|---------|-------------------|-----------------|-----------------|-----------------|-----------------|
+| Líneas duplicadas en `Model.save()` | ~600 (estimado por inspección) | <100 | <100 | <100 | <100 |
+| Ocurrencias de `__class__.__name__` o `isinstance` para discriminación | 8 conocidas | 0 (gate F3) | **0 verificado por test arquitectónico en CI** | 0 | 0 |
+| Apps registradas en UniversalRegistry | 0 | 12 | 12 (todas las entidades T-03 cubiertas) | 12 | 12 |
+| Modelos con CRUD via `<EntityForm />` (sin frontend custom) | 0 | ≥10 | ≥10 | ≥10 | **≥7 con paridad visual probada (post-revert)** |
+| Coverage de `core/strategies/` | n/a | >90% | >90% | >90% | >90% |
+| Tiempo medio para agregar nueva entidad CRUD simple | ~3 días (hoy) | <1 día | <1 día | <1 día | <1 día |
+| Tests de caracterización financiera | 0 | >50 | **≥75 snapshots versionados, CI obligatorio** | ≥75 | ≥75 |
+| Tests E2E de flujos críticos | 0 | n/a | **4 flujos cubiertos (Venta, POS, Compra, Cierre)** | **+1 (Universal Search routes)** | +1 |
+| Schema endpoint expone campos sensibles (`pos_pin`, etc.) | n/a | sin validar | **0 — validado por test** | 0 | 0 |
+| Rutas registradas en UniversalRegistry que devuelven 404 | n/a | n/a | 26 (todas) | **0 — validado por Playwright** | 0 |
+| Bifurcación crear/editar (entidades con dos UIs distintas) | 0 | 0 | 3 (Budget, Category, UoM) | 3 | **0 — eliminado por reversión + re-migración** |
+| Contratos UI publicados en `docs/20-contracts/` | 18 | 18 | 18 | **19 (+module-layout extension)** | **20 (+schema-driven-forms.md)** |
 
 ---
 

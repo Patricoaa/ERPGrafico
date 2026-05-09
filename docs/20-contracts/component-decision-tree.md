@@ -76,7 +76,9 @@ graph TD
 - **`PageTabs`**: Para navegación secundaria dentro de una página.
 - **`CollapsibleSheet`**: Cuando necesites un panel lateral con contenido secundario (ej. Ver el detalle de una orden al lado de un listado).
 - **`BaseDrawer`**: Panel inferior (bottom drawer) para subvistas secundarias ricas en datos (tablas, históricos, libros mayores) **cuando el usuario no debe perder el contexto visual de la página principal**. El drawer se superpone parcialmente sin tapar la UI subyacente. No usar para formularios — solo para lectura/navegación de datos relacionados.
+- **`EntityDetailPage`**: Shell de página completa para rutas `[id]` de entidades del Universal Registry. Provee header sticky (icono + displayId + breadcrumb), slot de form (`children`), sidebar opcional (`ActivitySidebar`) y footer de acciones. Usar cuando el detalle de una entidad vive en `/[module]/[entity-plural]/[id]`. Soporta prop `readonly` para entidades sin form editable. Ver [module-layout-navigation.md §7](./module-layout-navigation.md#7-searchable-entity-detail-route).
 - **Skeletons (`SkeletonShell`, `CardSkeleton`, `TableSkeleton`)**: Úsalos durante el renderizado inicial y las transiciones asíncronas para evitar el salto de layout (CLS).
+
 
 ## 5. Formularios y Surfaces
 
