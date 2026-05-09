@@ -679,7 +679,7 @@
   - [x] Test Playwright equivalente a T-72.
 
 ### T-74 · Migrar entidades `inventory` a rutas `[id]`
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-08)
 - **Esfuerzo:** 5
 - **Depende de:** T-71
 - **Archivos:**
@@ -688,27 +688,27 @@
   - `frontend/app/(dashboard)/inventory/warehouses/[id]/page.tsx`
   - `frontend/app/(dashboard)/inventory/stock-moves/[id]/page.tsx` (modo `readonly`)
 - **Acceptance:**
-  - [ ] StockMove en modo `readonly` (no tiene form editable).
-  - [ ] Product reusa el `ProductForm` existente de mayor complejidad.
-  - [ ] Test Playwright sobre las 4 entidades.
+  - [x] StockMove en modo `readonly` (no tiene form editable).
+  - [x] Product reusa el `ProductForm` existente de mayor complejidad.
+  - [x] Test Playwright sobre las 4 entidades.
 
 ### T-75 · Migrar entidades `accounting` a rutas `[id]`
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-08)
 - **Esfuerzo:** 5
 - **Depende de:** T-71
 - **Archivos:**
-  - `frontend/app/(dashboard)/accounting/ledger/[id]/page.tsx` — **ya existe** parcialmente como `accounting/ledger/[id]/ledger/page.tsx`; auditar y consolidar.
+  - `frontend/app/(dashboard)/accounting/accounts/[id]/page.tsx` — consolidado (la antigua `ledger/[id]/ledger/page.tsx` se movió a `accounts/[id]/ledger/page.tsx`).
   - `frontend/app/(dashboard)/accounting/entries/[id]/page.tsx` (nuevo)
   - `frontend/app/(dashboard)/accounting/closures/[id]/page.tsx` (FiscalYear)
   - `frontend/app/(dashboard)/finances/budgets/[id]/page.tsx` — ya existe; verificar consistencia.
 - **Acceptance:**
-  - [ ] Account ficha: respeta cuentas hoja (no editable si tiene hijos), redirige a libro mayor desde la ficha.
-  - [ ] JournalEntry ficha: respeta lock de período cerrado.
-  - [ ] FiscalYear ficha: muestra estado del cierre.
-  - [ ] Test Playwright sobre las 4 entidades.
+  - [x] Account ficha: respeta cuentas hoja (no editable si tiene hijos), redirige a libro mayor desde la ficha.
+  - [x] JournalEntry ficha: respeta lock de período cerrado.
+  - [x] FiscalYear ficha: muestra estado del cierre.
+  - [x] Test Playwright sobre las 4 entidades.
 
 ### T-76 · Migrar entidades `treasury` a rutas `[id]`
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-08)
 - **Esfuerzo:** 5
 - **Depende de:** T-71
 - **Archivos:**
