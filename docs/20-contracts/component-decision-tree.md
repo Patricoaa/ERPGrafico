@@ -83,6 +83,7 @@ graph TD
 ## 5. Formularios y Surfaces
 
 > 📄 Documentación completa en **[component-form-patterns.md](./component-form-patterns.md)**.
+> 📄 Para formularios generados desde backend dinámicamente, consulta **[schema-driven-forms.md](./schema-driven-forms.md)**.
 
 Antes de construir un formulario, decide **qué contenedor** (surface) usar:
 

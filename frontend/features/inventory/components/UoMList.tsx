@@ -13,8 +13,6 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import type { BulkAction } from "@/components/shared"
 import { UoMForm } from "./UoMForm"
-import { EntityForm } from "@/components/shared/EntityForm"
-import { BaseModal } from "@/components/shared/BaseModal"
 
 import { toast } from "sonner"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -31,8 +29,6 @@ interface UoMListProps {
 export function UoMList({ externalOpen, onExternalOpenChange, createAction }: UoMListProps) {
     const { uoms, refetch, deleteUoM } = useUoMs()
 
-    // Modal State — separate create (EntityForm) from edit (UoMForm)
-    const [isCreateOpen, setIsCreateOpen] = useState(false)
     const [isUoMModalOpen, setIsUoMModalOpen] = useState(false)
     const [editingUoM, setEditingUoM] = useState<Partial<UoM>>({})
 
@@ -42,7 +38,6 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
 
     const handleCloseModal = () => {
         setIsUoMModalOpen(false)
-        setIsCreateOpen(false)
         setEditingUoM({})
         onExternalOpenChange?.(false)
 
@@ -189,28 +184,7 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                 createAction={createAction}
             />
 
-            {/* Create Modal — EntityForm (T-35) */}
-            <BaseModal
-                open={isCreateOpen}
-                onOpenChange={(open) => {
-                    if (!open) handleCloseModal()
-                    else setIsCreateOpen(true)
-                }}
-                size="sm"
-                title="Nueva Unidad de Medida"
-            >
-                <EntityForm
-                    modelLabel="inventory.uom"
-                    apiBasePath="/inventory/uoms/"
-                    onSuccess={() => {
-                        refetch()
-                        handleCloseModal()
-                    }}
-                    onCancel={() => handleCloseModal()}
-                />
-            </BaseModal>
-
-            {/* Edit Modal — UoMForm keeps rich FK + audit widgets */}
+            {/* Unified Modal — UoMForm keeps rich FK + audit widgets for both create and edit */}
             <UoMForm
                 open={isUoMModalOpen || !!externalOpen}
                 onOpenChange={(open) => {
@@ -221,7 +195,7 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                     }
                 }}
                 initialData={editingUoM.id ? editingUoM : undefined}
-                onSuccess={refetch}
+                onSuccess={() => { refetch(); handleCloseModal() }}
             />
 
             <ActionConfirmModal

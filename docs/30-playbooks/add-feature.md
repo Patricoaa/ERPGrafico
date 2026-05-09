@@ -103,7 +103,7 @@ Hooks import from `./api/[name]Api`, never from `@/lib/api` directly. See [front
 
 - Three states mandatory: loading (Skeleton), empty (EmptyState), error (toast handled by hook).
 - Status: `StatusBadge` only.
-- Forms: `react-hook-form` + `zodResolver(schema)`.
+- Forms: `react-hook-form` + `zodResolver(schema)`. Si la entidad es simple, revisa si aplica para el contrato [schema-driven-forms.md](../20-contracts/schema-driven-forms.md).
 - Colors: semantic tokens only.
 
 ### 5. Write barrel
