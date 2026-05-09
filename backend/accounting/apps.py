@@ -22,8 +22,8 @@ class AccountingConfig(AppConfig):
                 icon='book-open',
                 search_fields=('code', 'name'),
                 display_template='{code} · {name}',
-                list_url='/contabilidad/plan-cuentas',
-                detail_url_pattern='/contabilidad/plan-cuentas/{id}',
+                list_url='/accounting/accounts',
+                detail_url_pattern='/accounting/accounts/{id}',
                 permission='accounting.view_account',
             ))
             UniversalRegistry.register(SearchableEntity(
@@ -32,8 +32,8 @@ class AccountingConfig(AppConfig):
                 icon='notebook-pen',
                 search_fields=('number',),
                 display_template='AS-{number}',
-                list_url='/contabilidad/asientos',
-                detail_url_pattern='/contabilidad/asientos/{id}',
+                list_url='/accounting/entries',
+                detail_url_pattern='/accounting/entries/{id}',
                 permission='accounting.view_journalentry',
             ))
             UniversalRegistry.register(SearchableEntity(
@@ -42,8 +42,8 @@ class AccountingConfig(AppConfig):
                 icon='calendar',
                 search_fields=('year',),
                 display_template='Año Fiscal {year}',
-                list_url='/contabilidad/periodos',
-                detail_url_pattern='/contabilidad/periodos/{id}',
+                list_url='/accounting/closures',
+                detail_url_pattern='/accounting/closures/{id}',
                 permission='accounting.view_fiscalyear',
             ))
             UniversalRegistry.register(SearchableEntity(
@@ -52,8 +52,8 @@ class AccountingConfig(AppConfig):
                 icon='wallet',
                 search_fields=('name',),
                 display_template='Presupuesto {name}',
-                list_url='/contabilidad/presupuestos',
-                detail_url_pattern='/contabilidad/presupuestos/{id}',
+                list_url='/finances/budgets',
+                detail_url_pattern='/finances/budgets/{id}',
                 permission='accounting.view_budget',
             ))
         except Exception:
