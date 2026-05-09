@@ -18,6 +18,7 @@ import { useGlobalModalActions } from "@/components/providers/GlobalModalProvide
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 interface TreasuryAccountsViewProps {
     activeTab: string
@@ -36,10 +37,21 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryAccount>({
+        endpoint: '/treasury/accounts'
+    })
+
+    useEffect(() => {
+        if (selectedFromUrl) {
+            openTreasuryAccount(selectedFromUrl.id)
+        }
+    }, [selectedFromUrl, openTreasuryAccount])
+
     const handleCloseModal = () => {
         setIsBankModalOpen(false)
         setIsMethodModalOpen(false)
         setIsLocalAccountModalOpen(false)
+        clearSelection()
 
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
@@ -53,7 +65,9 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     }
 
     const handleEdit = (account: TreasuryAccount) => {
-        openTreasuryAccount(account.id)
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('selected', String(account.id))
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const handleExternalAction = () => {
@@ -74,11 +88,13 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         }
     }
 
+    // T-105: cancelAnimationFrame cleanup prevents setState on unmounted component
     useEffect(() => {
         if (externalOpen) {
-            requestAnimationFrame(() => handleExternalAction());
+            const handle = requestAnimationFrame(() => handleExternalAction())
+            return () => cancelAnimationFrame(handle)
         }
-    }, [externalOpen]);
+    }, [externalOpen])
 
     const handleDelete = async (id: number) => {
         try {

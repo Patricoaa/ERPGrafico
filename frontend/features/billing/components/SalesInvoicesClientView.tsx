@@ -25,7 +25,6 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 export function SalesInvoicesClientView() {
     const { invoices, refetch, annulInvoice } = useInvoices()
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: string, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
     const [currentView, setCurrentView] = useState<'card' | 'list'>('card')
@@ -226,18 +225,6 @@ export function SalesInvoicesClientView() {
                     )
                 } : undefined}
             />
-
-
-
-            {viewingTransaction && (
-                <TransactionViewModal
-                    open={!!viewingTransaction}
-                    onOpenChange={(open) => !open && setViewingTransaction(null)}
-                    type={viewingTransaction.type as any}
-                    id={viewingTransaction.id}
-                    view={viewingTransaction.view}
-                />
-            )}
 
             {notingInvoice && (
                 <SaleNoteModal

@@ -3,6 +3,7 @@
 import { FormSkeleton } from "@/components/shared"
 
 import { useState, useEffect } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Table,
@@ -99,9 +100,55 @@ interface ProductInsights {
 export function ProductInsightsModal({ productId, productName, open, onOpenChange }: ProductInsightsModalProps) {
     const [data, setData] = useState<ProductInsights | null>(null)
     const [loading, setLoading] = useState(false)
+    const [activeTab, setActiveTab] = useState("overview")
+
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const transactionId = searchParams.get('transaction')
+    const transactionType = searchParams.get('transactionType') as import("@/types/transactions").TransactionType | null
+    const workOrderId = searchParams.get('workOrder')
+
     const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: import("@/types/transactions").TransactionType } | null>(null)
     const [activeWorkOrderId, setActiveWorkOrderId] = useState<number | null>(null)
-    const [activeTab, setActiveTab] = useState("overview")
+
+    useEffect(() => {
+        if (transactionId && transactionType && !selectedTransaction) {
+            setSelectedTransaction({ id: transactionId, type: transactionType })
+        }
+        if (workOrderId && !activeWorkOrderId) {
+            setActiveWorkOrderId(Number(workOrderId))
+        }
+    }, [transactionId, transactionType, workOrderId, selectedTransaction, activeWorkOrderId])
+
+    const openTransaction = (id: number | string, type: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('transaction', String(id))
+        params.set('transactionType', type)
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const closeTransaction = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('transaction')
+        params.delete('transactionType')
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        setSelectedTransaction(null)
+    }
+
+    const openWorkOrder = (id: number) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('workOrder', String(id))
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const closeWorkOrder = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('workOrder')
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        setActiveWorkOrderId(null)
+    }
 
     useEffect(() => {
         if (open && productId) {
@@ -382,9 +429,9 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                                             className="h-8 w-8 text-primary"
                                                             onClick={() => {
                                                                 if (move.related_type === 'work_order') {
-                                                                    setActiveWorkOrderId(move.related_id)
+                                                                    openWorkOrder(move.related_id)
                                                                 } else {
-                                                                    setSelectedTransaction({ id: move.related_id, type: move.related_type as import("@/types/transactions").TransactionType })
+                                                                    openTransaction(move.related_id, move.related_type)
                                                                 }
                                                             }}
                                                         >
@@ -436,7 +483,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                                             variant="ghost"
                                                             size="icon"
                                                             className="h-8 w-8 text-primary"
-                                                            onClick={() => setActiveWorkOrderId(usage.ot_id)}
+                                                            onClick={() => openWorkOrder(usage.ot_id)}
                                                         >
                                                             <Eye className="h-4 w-4" />
                                                         </Button>
@@ -462,7 +509,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
             {selectedTransaction && (
                 <TransactionViewModal
                     open={!!selectedTransaction}
-                    onOpenChange={(open) => !open && setSelectedTransaction(null)}
+                    onOpenChange={(open) => !open && closeTransaction()}
                     type={selectedTransaction.type}
                     id={selectedTransaction.id}
                 />
@@ -472,7 +519,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                 <WorkOrderWizard
                     orderId={activeWorkOrderId}
                     open={!!activeWorkOrderId}
-                    onOpenChange={(open) => !open && setActiveWorkOrderId(null)}
+                    onOpenChange={(open) => !open && closeWorkOrder()}
                     onSuccess={() => fetchInsights()}
                 />
             )}

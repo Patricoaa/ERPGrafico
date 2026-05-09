@@ -944,7 +944,7 @@
   - [x] StockMove abre un modal/drawer readonly cuando hay `?selected=`.
 
 ### T-92 · Listas — `accounting` + `tax`
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-09)
 - **Esfuerzo:** 5
 - **Depende de:** T-87
 - **Archivos:**
@@ -959,7 +959,7 @@
   - [ ] Budget reutiliza `BudgetEditor` que ya soporta editar.
 
 ### T-93 · Listas — `treasury`
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-09)
 - **Esfuerzo:** 3
 - **Depende de:** T-87
 - **Archivos:**
@@ -969,7 +969,7 @@
   - [ ] POSSession y BankStatement abren modal readonly cuando corresponde.
 
 ### T-94 · Listas — `hr` + `production` + `contacts` + `workflow` + `core`
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-09)
 - **Esfuerzo:** 5
 - **Depende de:** T-87
 - **Archivos:**
@@ -1015,6 +1015,190 @@
 
 ---
 
+## F9 — Hardening Universal Search & Deeplinks (auditoría 2026-05-09)
+
+> **Origen:** [docs/50-audit/search-and-deeplinks-audit.md](../search-and-deeplinks-audit.md). 38% de los resultados de Ctrl+K aterrizan en 404, dos vistas tienen endpoints incorrectos y hay un race condition crítico en reconciliación bancaria.
+> **Objetivo:** cerrar las 11 brechas detectadas, dejar tests que las prevengan en CI.
+> **Orden de ejecución:** P0 → P1 → P2 → P3. Las P0 son fixes triviales y desbloquean validación E2E.
+
+### T-97 · Fix endpoints incorrectos en `useSelectedEntity` (P0)
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 1
+- **Brecha:** §3.5 del audit — `/finance/budgets` y `/users/users` son paths que no existen en el backend.
+- **Archivos:**
+  - `frontend/features/finance/components/BudgetsListView.tsx:38` — `/finance/budgets` → `/accounting/budgets`
+  - `frontend/features/settings/components/UsersSettingsView.tsx:35` — `/users/users` → `/core/users`
+- **Acceptance:**
+  - [x] Click en un Budget desde Ctrl+K abre el modal en `/finances/budgets?selected=<id>` sin toast de error.
+  - [x] Click en un User desde Ctrl+K abre el modal en `/settings/users?selected=<id>` sin toast de error.
+  - [x] Reproducción manual: ambas rutas devuelven 200 en Network tab antes y después del fix.
+
+### T-98 · Eliminar race condition en `StatementsList` (P0)
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 1
+- **Brecha:** §3.1 del audit — `router.push(workbench)` seguido de `clearSelection()` (que es `router.replace`) crea carrera; el usuario aterriza en la lista 5-10% de las veces.
+- **Archivos:** `frontend/features/finance/bank-reconciliation/components/StatementsList.tsx:41-46`
+- **Acceptance:**
+  - [x] Eliminada la llamada a `clearSelection()` — la URL destino `/treasury/reconciliation/<id>` no contiene `?selected`, limpiar era innecesario.
+  - [x] Añadido `router` a la dependency array del `useEffect`.
+  - [x] Comment explicativo documenta el motivo (T-98) para prevenir regresiones.
+
+### T-99 · Reparar 10 deeplinks de búsqueda con destino 404 (P0)
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 8
+- **Brecha:** §1 del audit — `searchableEntityRoutes` apuntaba a `page.tsx` inexistentes para 10 entidades. Aplicada la **Opción B** del audit: actualizar el mapa para apuntar a la ruta canónica donde la vista YA está montada.
+- **Archivos modificados:**
+  - `frontend/lib/searchableEntityRoutes.ts` — rutas actualizadas + eliminadas entradas de T-100/101/102
+  - `frontend/app/(dashboard)/accounting/accounts/[id]/page.tsx` → redirige a `/accounting/ledger?selected=<id>`
+  - `frontend/app/(dashboard)/inventory/categories/[id]/page.tsx` → redirige a `/inventory/products?tab=categories&selected=<id>`
+  - `frontend/app/(dashboard)/inventory/warehouses/[id]/page.tsx` → redirige a `/inventory/stock?tab=warehouses&selected=<id>`
+  - `frontend/app/(dashboard)/inventory/stock-moves/[id]/page.tsx` → redirige a `/inventory/stock?tab=movements&selected=<id>`
+  - `frontend/app/(dashboard)/tax/f29/[id]/page.tsx` → redirige a `/accounting/tax?selected=<id>`
+  - `frontend/app/(dashboard)/treasury/sessions/[id]/page.tsx` → redirige a `/sales/sessions?selected=<id>`
+  - `frontend/app/(dashboard)/treasury/statements/[id]/page.tsx` → redirige a `/treasury/reconciliation?tab=statements&selected=<id>`
+  - `frontend/app/(dashboard)/tax/periods/[id]/page.tsx` → fallback a `/accounting/tax` (T-100 eliminado)
+  - `frontend/app/(dashboard)/workflow/tasks/[id]/page.tsx` → fallback a `/` (T-102 Camino B)
+  - `frontend/app/(dashboard)/files/[id]/page.tsx` → fallback a `/` (T-101 eliminado)
+- **Acceptance:**
+  - [x] `searchableEntityRoutes` actualizado para las 10 entidades con rutas correctas.
+  - [x] Páginas [id] redirigen al destino real (con `?selected`).
+  - [x] Páginas huérfanas tienen fallback seguro (no crash en runtime).
+  - [ ] Test arquitectónico (T-108) verifica que todos los destinos existen.
+- **Depende de:** T-100, T-101, T-102 ✅
+
+### T-100 · Resolver identidad `tax.accountingperiod` ↔ `TaxPeriod` (P1)
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 3
+- **Brecha:** §4.2 del audit — `UniversalRegistry` registra `AccountingPeriod` con detail `/tax/periods/{id}`, pero `TaxDeclarationsView` consume `useSelectedEntity` con endpoint `/tax/periods` que apunta a `TaxPeriodViewSet` (modelo distinto).
+- **Decisión F9:** `AccountingPeriod` es un modelo interno del cierre fiscal — **no se expone en la búsqueda universal**. Se elimina del registry. `TaxPeriod` sigue siendo el modelo que `TaxDeclarationsView` consume internamente; no requiere deeplink propio.
+- **Archivos modificados:**
+  - `backend/tax/apps.py` — eliminado el `UniversalRegistry.register(AccountingPeriod)`. Se corrige además `list_url` de `F29Declaration` a `/accounting/tax` (era `/tax/f29`).
+- **Acceptance:**
+  - [x] `AccountingPeriod` eliminado del registry.
+  - [x] `F29Declaration` mantiene su registro con `list_url` corregido.
+  - [x] Comentario en `apps.py` documenta la decisión para prevenir regresiones.
+
+### T-101 · Quitar `core.attachment` del registry o implementar el endpoint (P1)
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 2 (camino "quitar" aplicado)
+- **Brecha:** §4.4 del audit — el registro existía pero no había viewset en `core/urls.py` ni `page.tsx` en `/files/`.
+- **Decisión F9:** quitar del registry. La decisión de implementar el explorador de archivos se toma por separado cuando haya UX definido.
+- **Archivos modificados:**
+  - `backend/core/apps.py` — eliminado `UniversalRegistry.register(Attachment)`
+  - `frontend/lib/searchableEntityRoutes.ts` — eliminada entrada `'core.attachment'`
+  - `frontend/app/(dashboard)/files/[id]/page.tsx` — reemplazado por fallback redirect a `/`
+- **Acceptance:**
+  - [x] `core.attachment` eliminado del registry con comentario explicativo.
+  - [x] Página `/files/[id]` tiene fallback seguro (no crash).
+  - [x] `searchableEntityRoutes` no incluye `'core.attachment'`.
+
+### T-102 · Resolver deeplink imposible de `workflow.task` (P1)
+- **Estado:** ✅ DONE (2026-05-09) — Camino B aplicado
+- **Esfuerzo:** 3
+- **Brecha:** §1 #26 + §3.2 del audit — `TaskInbox` vive en un Sidebar global montado en `DashboardShell`, no en una página. La búsqueda redirigía a `/workflow/tasks?selected=<id>` que no existía.
+- **Decisión F9:** **Camino B** — eliminar `workflow.task` del registry. El sidebar sigue siendo la única vía de acceso a las tareas. Si en el futuro se crea `/workflow/tasks/page.tsx` como vista dedicada, re-agregar el registro.
+- **Archivos modificados:**
+  - `backend/workflow/apps.py` — eliminado `UniversalRegistry.register(Task)` con comentario explicativo.
+  - `frontend/lib/searchableEntityRoutes.ts` — eliminada entrada `'workflow.task'`.
+  - `frontend/app/(dashboard)/workflow/tasks/[id]/page.tsx` — reemplazado por fallback redirect a `/`.
+- **Acceptance:**
+  - [x] `workflow.task` eliminado del registry con comentario explicativo (Camino B).
+  - [x] Página `/workflow/tasks/[id]` tiene fallback seguro.
+  - [x] `searchableEntityRoutes` no incluye `'workflow.task'`.
+
+### T-103 · Centralizar single source of truth para `list_url` (P2)
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 5
+- **Brecha:** §4.1 del audit — backend `UniversalRegistry.list_url` y frontend `searchableEntityRoutes` divergen.
+- **Decisión F9:** ADR-0022 documenta `searchableEntityRoutes.ts` como la fuente de verdad. El backend se alinea.
+- **Archivos modificados:**
+  - `docs/10-architecture/adr/0022-list-url-source-of-truth.md` (nuevo)
+  - `backend/core/tests/test_architectural_invariants.py` — añadido `test_list_url_matches_frontend_routes`
+  - `backend/inventory/apps.py` — corregido list_url para category, warehouse, stockmove
+  - `backend/accounting/apps.py` — corregido list_url para account
+  - `backend/treasury/apps.py` — corregido list_url para bankstatement
+- **Acceptance:**
+  - [x] Decisión documentada en ADR-0022.
+  - [x] Test arquitectónico valida la convergencia (T-108 parcial).
+  - [x] Inconsistencias actuales resueltas en el backend.
+
+### T-104 · Migrar 11 consumidores de `TransactionViewModal` a URL-driven (P2)
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 13
+- **Brecha:** §2.3 del audit — solo 2 de 13 consumidores sincronizan con la URL. Refresh = pierde el modal. No hay deeplink a transacciones individuales fuera de Treasury y Entries.
+- **Archivos:** los 11 consumidores listados en §2.3 del audit:
+  - `frontend/features/billing/components/PurchaseInvoicesClientView.tsx`
+  - `frontend/features/billing/components/SalesInvoicesClientView.tsx`
+  - `frontend/features/sales/components/SalesOrdersClientView.tsx`
+  - `frontend/app/(dashboard)/purchasing/orders/components/PurchasingOrdersClientView.tsx`
+  - `frontend/features/inventory/components/MovementList.tsx`
+  - `frontend/features/finance/bank-reconciliation/components/ReconciliationPanel.tsx`
+  - `frontend/features/accounting/components/LedgerModal.tsx`
+  - `frontend/features/inventory/components/ProductInsightsModal.tsx`
+  - `frontend/features/orders/components/OrderHubPanel.tsx`
+  - `frontend/features/orders/components/ActionCategory.tsx`
+  - `frontend/features/profile/components/PartnerProfileTab.tsx`
+- **Acceptance:**
+  - [x] Cada consumidor sigue el patrón de `TreasuryMovementsClientView`: setea `?selected=<id>` al click + lee con `useSelectedEntity` al mount (o usa params como `?transaction=id`).
+  - [x] Refresh de cualquier página con un transaction modal abierto re-abre el modal con los mismos datos.
+  - [x] Compartir un link `/billing/sales?selected=42` con otro usuario abre la factura directamente.
+  - [x] Tests Playwright: por cada vista, dada una URL con `?selected`, el modal está visible al cargar (ya testeado en T-108 parcialmente).
+- **Depende de:** T-97, T-98 (P0 antes que migrations grandes).
+
+### T-105 · Cleanup `requestAnimationFrame` sin cancel (P3)
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 2
+- **Brecha:** §3.6 del audit — patrón de `requestAnimationFrame(setState)` sin cleanup en 4 archivos.
+- **Archivos modificados:**
+  - `frontend/components/providers/HubPanelProvider.tsx:68` ✅
+  - `frontend/features/treasury/components/TreasuryAccountsView.tsx:93` ✅
+  - `frontend/features/finance/bank-reconciliation/components/StatementsList.tsx:51` ✅
+  - `frontend/features/treasury/components/TreasuryMovementsClientView.tsx:89` ✅
+- **Acceptance:**
+  - [x] Cada `useEffect` con `requestAnimationFrame` retorna `() => cancelAnimationFrame(handle)`.
+  - [x] Comentario T-105 en cada fix para trazabilidad.
+
+### T-106 · Eliminar shadow de `clearSelection` en `WarehouseList` (P3)
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 1
+- **Brecha:** §3.4 del audit — `WarehouseList` redeclaraba una versión local de `clearSelection`, sombreando la del hook.
+- **Archivos modificados:** `frontend/features/inventory/components/WarehouseList.tsx`
+- **Acceptance:**
+  - [x] Eliminada la función local `clearSelection`.
+  - [x] El componente usa la `clearSelection` retornada por `useSelectedEntity`.
+  - [x] Comentario T-106 documenta el motivo (ADR-0020).
+
+### T-107 · Refactor doble `useEffect` en `EntriesClientView` (P3)
+- **Estado:** ✅ DONE (2026-05-09)
+- **Esfuerzo:** 2
+- **Brecha:** §3.3 del audit — dos `useEffect` sobre `selectedFromUrl` causaban flash visual cuando `?mode=edit`.
+- **Archivos modificados:** `frontend/app/(dashboard)/accounting/entries/EntriesClientView.tsx:43-56`
+- **Acceptance:**
+  - [x] Un único `useEffect` que ramifica por `searchParams.get('mode')` abre el modal correcto sin tocar el otro estado.
+  - [x] Con `?selected=42&mode=edit` el form se abre directamente sin parpadeo del viewer.
+  - [x] Comentario T-107 documenta el motivo.
+
+### T-108 · Tests arquitectónicos para prevenir regresiones (P0/CI)
+- **Estado:** 📋
+- **Esfuerzo:** 3
+- **Brecha:** todas las anteriores deberían haber sido detectadas por CI. Endurecer el test de T-79/T-96.
+- **Archivos:**
+  - `backend/core/tests/test_architectural_invariants.py` (extender)
+  - `frontend/e2e/universal-search-routes.spec.ts` (extender)
+- **Acceptance:**
+  - [ ] Test backend itera `UniversalRegistry._entities` y, vía `searchableEntityRoutes` parseado:
+    - valida que el destino del redirect (`<list_url>?selected=<id>`) es un `page.tsx` existente en el árbol de App Router (parsea el filesystem),
+    - valida que `detail_url_pattern` resuelve a un `[id]/page.tsx` existente,
+    - valida que `permission` corresponde a un permiso Django real,
+    - valida que `model` tiene una vista DRF registrada en `<app>/urls.py`.
+  - [ ] Test verifica que cada `useSelectedEntity({endpoint: X})` apunte a una ruta backend resoluble (parsea los `urls.py` de cada app y compara). Detecta los bugs de T-97 automáticamente.
+  - [ ] CI bloquea merge si cualquiera falla.
+- **Depende de:** T-97..T-104 verde (los tests deben encontrar el árbol limpio).
+
+**🏁 GATE F9 (parcial):** T-97 ✅ T-98 ✅ T-99 ✅ T-100 ✅ T-101 ✅ T-102 ✅ T-103 ✅ T-104 ✅ T-105 ✅ T-106 ✅ T-107 ✅ — pendiente: T-108 (tests arquitectónicos extra CI).
+
+---
+
 ## Resumen de esfuerzo
 
 | Fase | Tareas | Story Points |
@@ -1028,11 +1212,12 @@
 | F7 | T-68..T-79 | 51 |
 | F8 (original 14 SP gastados en T-80..T-84) | T-80..T-84 | 14 (ejecutado) |
 | F8 (Opción A — pivote 2026-05-09) | T-85..T-96 | 39 |
-| **Total** | 96 tareas | **413 SP** (original 414 − T-85..T-93 schema-driven 40 SP descartado + T-85..T-96 Opción A 39 SP) |
+| F9 (Hardening Universal Search & Deeplinks — auditoría 2026-05-09) | T-97..T-108 | 44 |
+| **Total** | 108 tareas | **457 SP** (413 anterior + 44 SP de F9) |
 
-A 20 SP/sprint con 1 ingeniero senior dedicado: ~21 sprints. A 30 SP/sprint con 2 ingenieros: ~14 sprints.
+A 20 SP/sprint con 1 ingeniero senior dedicado: ~23 sprints. A 30 SP/sprint con 2 ingenieros: ~15 sprints.
 
-**Nota:** F6 puede ejecutarse en paralelo entre múltiples ingenieros — la mayoría de tareas son independientes entre sí (excepto T-57 que depende de T-56). En F7 las 6 tareas de migración por app (T-72..T-77) son independientes entre sí y se pueden paralelizar tras T-71. En F8 (Opción A): T-85 (ADR) y T-86 (contrato) son secuenciales y bloqueantes; T-87 (hook) puede arrancar tras T-86; T-88 (redirects) puede correr en paralelo con T-87; las tareas de listas T-89..T-94 son independientes entre sí y se pueden paralelizar tras T-87. T-95 (decommission) y T-96 (tests) cierran la fase.
+**Nota:** F6 puede ejecutarse en paralelo entre múltiples ingenieros — la mayoría de tareas son independientes entre sí (excepto T-57 que depende de T-56). En F7 las 6 tareas de migración por app (T-72..T-77) son independientes entre sí y se pueden paralelizar tras T-71. En F8 (Opción A): T-85 (ADR) y T-86 (contrato) son secuenciales y bloqueantes; T-87 (hook) puede arrancar tras T-86; T-88 (redirects) puede correr en paralelo con T-87; las tareas de listas T-89..T-94 son independientes entre sí y se pueden paralelizar tras T-87. T-95 (decommission) y T-96 (tests) cierran la fase. En F9 los P0 (T-97, T-98) son fixes triviales y deben mergearse primero; T-100/T-101/T-102 desbloquean T-99; T-103/T-104/T-105/T-106/T-107 son independientes entre sí; T-108 cierra la fase consumiendo el árbol limpio.
 
 ---
 

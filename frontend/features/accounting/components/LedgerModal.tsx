@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { BaseDrawer } from "@/components/shared"
 import { Button } from "@/components/ui/button"
@@ -34,7 +35,6 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
     const { serverDate } = useServerDate()
     const [open, setOpen] = useState(false)
     const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>(undefined)
-    const [viewingEntry, setViewingEntry] = useState<{ id: number | string } | null>(null)
 
     useEffect(() => {
         if (serverDate && !dateRange) {
@@ -97,17 +97,6 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                     </React.Suspense>
                 )}
             </BaseDrawer>
-
-            {viewingEntry && (
-                <TransactionViewModal
-                    open={!!viewingEntry}
-                    onOpenChange={(open) => !open && setViewingEntry(null)}
-                    type="journal_entry"
-                    id={viewingEntry.id}
-                />
-            )}
-
-
         </>
     )
 }
@@ -127,7 +116,31 @@ function LedgerContent({
 }) {
     const { serverDate } = useServerDate()
     const { data, refetch } = useLedger(accountId, startDate, endDate)
+    
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+    const entryId = searchParams.get('entry')
     const [viewingEntry, setViewingEntry] = useState<{ id: number | string } | null>(null)
+
+    useEffect(() => {
+        if (entryId && !viewingEntry) {
+            setViewingEntry({ id: entryId })
+        }
+    }, [entryId, viewingEntry])
+
+    const openEntry = (id: number | string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('entry', String(id))
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const closeEntry = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('entry')
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        setViewingEntry(null)
+    }
 
     const deleteMutation = useDeleteJournalEntry({ onSuccess: refetch })
     const deleteConfirm = useConfirmAction<number>((entryId) => deleteMutation.mutateAsync(entryId))
@@ -211,7 +224,7 @@ function LedgerContent({
                         icon={Eye}
                         title="Ver Asiento"
                         color="text-primary"
-                        onClick={() => setViewingEntry({ id: mov.entry_id })}
+                        onClick={() => openEntry(mov.entry_id)}
                     />
                     <DataCell.Action
                         icon={Trash2}
@@ -317,7 +330,7 @@ function LedgerContent({
             {viewingEntry && (
                 <TransactionViewModal
                     open={!!viewingEntry}
-                    onOpenChange={(open) => !open && setViewingEntry(null)}
+                    onOpenChange={(open) => !open && closeEntry()}
                     type="journal_entry"
                     id={viewingEntry.id}
                 />

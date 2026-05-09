@@ -27,6 +27,7 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TaxPeriod, TaxDeclaration, TaxPaymentData } from "../types"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { Row } from "@tanstack/react-table"
 import { CardSkeleton, TableSkeleton } from "@/components/shared"
 
@@ -46,6 +47,10 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     const [isPaymentOpen, setIsPaymentOpen] = useState(false)
     const [selectedPeriodId, setSelectedPeriodId] = useState<number | undefined>(undefined)
     const [selectedDeclaration, setSelectedDeclaration] = useState<TaxDeclaration | null>(null)
+
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TaxPeriod>({
+        endpoint: '/tax/periods'
+    })
 
     const handleCloseModal = () => {
         setIsWizardOpen(false)
@@ -76,19 +81,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
             const fetchedPeriods = (response.data as { results?: TaxPeriod[] }).results || (response.data as TaxPeriod[])
             setPeriods(fetchedPeriods)
             
-            const selectedId = searchParams.get('selected')
-            const action = searchParams.get('action')
-
-            if (selectedId && fetchedPeriods.length > 0) {
-                const target = fetchedPeriods.find((p: TaxPeriod) => p.id === parseInt(selectedId))
-                if (target) {
-                    if (action === 'pay') {
-                        if (!isPaymentOpen) openPaymentModal(target)
-                    } else {
-                        if (!isWizardOpen) openWizardModal(target)
-                    }
-                }
-            }
+            // The effect above will handle the modal opening based on selectedFromUrl
         } catch (error) {
             console.error("Error fetching tax periods:", error)
             toast.error("Error al cargar los períodos tributarios")
@@ -109,24 +102,19 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
 
     // State watchers for URL params without re-fetching
     useEffect(() => {
-        const selectedId = searchParams.get('selected')
-        const action = searchParams.get('action')
-
-        if (selectedId && periods.length > 0) {
-            const target = periods.find((p) => p.id === parseInt(selectedId))
-            if (target) {
-                if (action === 'pay') {
-                    if (!isPaymentOpen && selectedDeclaration?.tax_period_year !== target.year) {
-                        openPaymentModal(target)
-                    }
-                } else {
-                    if (!isWizardOpen && selectedPeriodId !== target.id) {
-                        openWizardModal(target)
-                    }
+        if (selectedFromUrl) {
+            const action = searchParams.get('action')
+            if (action === 'pay') {
+                if (!isPaymentOpen && selectedDeclaration?.tax_period_year !== selectedFromUrl.year) {
+                    openPaymentModal(selectedFromUrl)
+                }
+            } else {
+                if (!isWizardOpen && selectedPeriodId !== selectedFromUrl.id) {
+                    openWizardModal(selectedFromUrl)
                 }
             }
         }
-    }, [searchParams, periods])
+    }, [selectedFromUrl, searchParams])
 
     const handleOpenWizard = (period: TaxPeriod) => {
         const params = new URLSearchParams(searchParams.toString())

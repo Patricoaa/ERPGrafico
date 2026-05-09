@@ -705,7 +705,7 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                                                 </div>
                                             )
                                         }
-                                        showSidebar={true}
+                                        showSidebar={!!initialData?.id}
                                     >
                                         <div className="space-y-8 pr-2 pb-8">
                                             <ProductBasicInfo

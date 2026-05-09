@@ -209,3 +209,76 @@ class TestArchitecturalInvariants:
             f"T-79 — {len(violations)} entidad(es) con detail_url_pattern sin página real:\n"
             + '\n'.join(violations)
         )
+
+    def test_list_url_matches_frontend_routes(self):
+        """
+        T-103 / ADR-0022: UniversalRegistry.list_url debe coincidir con
+        searchableEntityRoutes.ts (fuente de verdad del frontend).
+
+        Excepciones — entidades con vistas standalone (no modal-on-list):
+          - accounting.budget  → /finances/budgets  (BudgetEditor standalone)
+          - hr.payroll         → /hr/payrolls        (PayrollDetailContent standalone)
+          - billing.invoice*   → split client-side por is_sale_document
+
+        Para añadir una excepción: documentarla en ADR-0022 y añadir al set.
+        """
+        from core.registry import UniversalRegistry
+
+        # Excepciones documentadas en ADR-0022 — NO añadir sin actualizar el ADR.
+        STANDALONE_EXCEPTIONS: set[str] = {
+            'accounting.budget',  # Vista standalone /finances/budgets/[id]
+            'hr.payroll',         # Vista standalone /hr/payrolls/[id]
+            'billing.invoice',    # Split client-side por is_sale_document
+        }
+
+        backend_dir = Path(settings.BASE_DIR)
+        routes_file = backend_dir.parent / 'frontend' / 'lib' / 'searchableEntityRoutes.ts'
+
+        if not routes_file.exists():
+            pytest.skip(f"searchableEntityRoutes.ts no encontrado: {routes_file}")
+
+        # Parsear el objeto TypeScript — formato: 'label.key': '/some/path',
+        # Líneas de comentario (//) no hacen match porque no tienen el patrón de comillas.
+        ts_content = routes_file.read_text(encoding='utf-8')
+        entry_re = re.compile(
+            r"""['"]([a-z]+\.[a-z]+)['"]\s*:\s*['"]([^'"]+)['"]""",
+            re.MULTILINE,
+        )
+        frontend_routes: dict[str, str] = {
+            m.group(1): m.group(2)
+            for m in entry_re.finditer(ts_content)
+        }
+
+        assert frontend_routes, (
+            "No se pudo parsear searchableEntityRoutes.ts — "
+            "verificar que el formato sigue siendo 'label': 'url'."
+        )
+
+        violations: list[str] = []
+        for label, entity in UniversalRegistry._entities.items():
+            if any(label.startswith(exc) for exc in STANDALONE_EXCEPTIONS):
+                continue
+
+            backend_url = entity.list_url
+            frontend_url = frontend_routes.get(label)
+
+            if frontend_url is None:
+                violations.append(
+                    f"  {label}: en UniversalRegistry (list_url='{backend_url}') "
+                    f"pero AUSENTE en searchableEntityRoutes.ts.\n"
+                    f"    → Agregar la entrada o documentar como excepción standalone en ADR-0022."
+                )
+            elif backend_url != frontend_url:
+                violations.append(
+                    f"  {label}: list_url divergente.\n"
+                    f"    backend  : '{backend_url}'\n"
+                    f"    frontend : '{frontend_url}'\n"
+                    f"    → Actualizar el desincronizado y registrar en ADR-0022."
+                )
+
+        assert not violations, (
+            f"T-103/ADR-0022 — {len(violations)} entidad(es) con list_url divergente "
+            f"entre UniversalRegistry y searchableEntityRoutes.ts:\n"
+            + '\n'.join(violations)
+        )
+

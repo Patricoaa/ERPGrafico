@@ -19,6 +19,7 @@ import React from "react"
 
 import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
 import * as LucideIcons from "lucide-react"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 interface CategoryListProps {
     externalOpen?: boolean
@@ -38,30 +39,24 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Category>({
+        endpoint: '/inventory/categories'
+    })
+
     // Open edit form if ?selected= is present (ADR-0020)
     useEffect(() => {
-        const selectedId = searchParams.get('selected')
-        if (selectedId && categories && categories.length > 0) {
-            const cat = categories.find(c => c.id === parseInt(selectedId))
-            if (cat && (!isFormOpen || editingCategory?.id !== cat.id)) {
-                setEditingCategory(cat)
-                setIsFormOpen(true)
-            }
+        if (selectedFromUrl && (!isFormOpen || editingCategory?.id !== selectedFromUrl.id)) {
+            setEditingCategory(selectedFromUrl)
+            setIsFormOpen(true)
         }
-    }, [searchParams, categories])
-
-    const clearSelection = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('selected')
-        const query = params.toString()
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    }
+    }, [selectedFromUrl, isFormOpen, editingCategory])
 
     const handleCloseModal = () => {
         setIsFormOpen(false)
         setIsCreateOpen(false)
         setEditingCategory(null)
         onExternalOpenChange?.(false)
+        clearSelection()
 
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
@@ -158,7 +153,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
                 onSuccess={() => { void refetch(); handleCloseModal() }}
                 open={isFormOpen || isCreateOpen}
                 onOpenChange={(open) => {
-                    if (!open) { clearSelection(); handleCloseModal() }
+                    if (!open) { handleCloseModal() }
                     else {
                         if (isCreateOpen) setIsCreateOpen(true)
                         if (isFormOpen) setIsFormOpen(true)

@@ -1,9 +1,10 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { Eye } from "lucide-react"
 import { useStatementsQuery } from "../hooks/useReconciliationQueries"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import type { BankStatement } from "../types"
 import { StatementImportModal } from "@/features/treasury"
 import { DataTable } from "@/components/ui/data-table"
@@ -21,7 +22,11 @@ interface StatementsListProps {
 export function StatementsList({ externalOpen = false, createAction }: StatementsListProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
+    const pathname = usePathname()
     const { data: statements = [], isLoading, refetch } = useStatementsQuery()
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<BankStatement>({
+        endpoint: '/treasury/statements'
+    })
     const [importModalOpen, setImportModalOpen] = useState(false)
 
     const initialFilters = React.useMemo(() => {
@@ -32,10 +37,23 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
         return filters
     }, [searchParams])
 
+    // Handle deep-linked statement selection (ADR-0020)
+    // NOTE: clearSelection() is intentionally omitted — the destination URL
+    // (/treasury/reconciliation/<id>) does NOT contain ?selected, so calling
+    // router.replace here would race with the router.push and cause the user
+    // to land on the list instead of the workbench ~5-10% of the time. (T-98)
+    useEffect(() => {
+        if (selectedFromUrl) {
+            router.push(`/treasury/reconciliation/${selectedFromUrl.id}`)
+        }
+    }, [selectedFromUrl, router])
+
     // Open import dialog when triggered via URL (?modal=import)
+    // T-105: cancelAnimationFrame cleanup prevents setState on unmounted component
     useEffect(() => {
         if (externalOpen) {
-            requestAnimationFrame(() => setImportModalOpen(true))
+            const handle = requestAnimationFrame(() => setImportModalOpen(true))
+            return () => cancelAnimationFrame(handle)
         }
     }, [externalOpen])
 
@@ -154,7 +172,11 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
                 <DataCell.Action
                     icon={Eye}
                     title="Ver"
-                    onClick={() => router.push(`/treasury/reconciliation/${item.id}`)}
+                    onClick={() => {
+                        const params = new URLSearchParams(searchParams.toString())
+                        params.set('selected', String(item.id))
+                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                    }}
                 />
             )
         })

@@ -22,7 +22,7 @@ class AccountingConfig(AppConfig):
                 icon='book-open',
                 search_fields=('code', 'name'),
                 display_template='{code} · {name}',
-                list_url='/accounting/accounts',
+                list_url='/accounting/ledger',  # T-103: AccountsClientView vive en /accounting/ledger (era /accounting/accounts)
                 detail_url_pattern='/accounting/accounts/{id}',
                 permission='accounting.view_account',
             ))

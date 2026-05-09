@@ -9,6 +9,7 @@ import { NewFiscalYearModal } from './NewFiscalYearModal';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { AccountingPeriod, FiscalYearPreviewResult } from '../../types';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { useSelectedEntity } from '@/hooks/useSelectedEntity';
 
 interface AccountingClosuresViewProps {
     externalOpen?: boolean;
@@ -29,6 +30,10 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
         reopenFiscalYear,
         generateOpeningEntry
     } = useFiscalYears();
+
+    const { entity: selectedFromUrl, clearSelection: clearUrlSelection } = useSelectedEntity<FiscalYearPreviewResult>({
+        endpoint: '/accounting/fiscal-years'
+    });
 
     const {
         data: periods,
@@ -61,10 +66,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
     };
 
     const clearSelection = () => {
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete('selected');
-        const query = params.toString();
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+        clearUrlSelection();
     };
 
     const fetchPreviewData = async (year: number) => {
@@ -77,14 +79,15 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
     };
 
     useEffect(() => {
-        const selectedId = searchParams.get('selected');
-        if (selectedId) {
-            const year = parseInt(selectedId);
+        if (selectedFromUrl) {
+            const year = selectedFromUrl.year;
             if (!previewModalOpen && activeYearToClose !== year) {
-                fetchPreviewData(year);
+                setActiveYearToClose(year);
+                setPreviewData(selectedFromUrl);
+                setPreviewModalOpen(true);
             }
         }
-    }, [searchParams, previewModalOpen, activeYearToClose]);
+    }, [selectedFromUrl, previewModalOpen, activeYearToClose]);
 
     const handleCreateFY = async (year: number) => {
         // We initialize the year by creating the first month (January)

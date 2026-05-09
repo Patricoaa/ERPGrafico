@@ -33,7 +33,7 @@ class InventoryConfig(AppConfig):
                 icon='folder-tree',
                 search_fields=('name', 'prefix'),
                 display_template='{prefix} · {name}',
-                list_url='/inventory/categories',
+                list_url='/inventory/products?tab=categories',  # T-103: tab real (era /inventory/categories)
                 detail_url_pattern='/inventory/categories/{id}',
                 permission='inventory.view_productcategory',
             ))
@@ -43,7 +43,7 @@ class InventoryConfig(AppConfig):
                 icon='warehouse',
                 search_fields=('name', 'code'),
                 display_template='{code} · {name}',
-                list_url='/inventory/settings?tab=warehouses',
+                list_url='/inventory/stock?tab=warehouses',  # T-103: tab real (era /inventory/settings?tab=warehouses)
                 detail_url_pattern='/inventory/warehouses/{id}',
                 permission='inventory.view_warehouse',
             ))
@@ -53,7 +53,7 @@ class InventoryConfig(AppConfig):
                 icon='arrow-right-left',
                 search_fields=('id', 'description', 'adjustment_reason'),
                 display_template='MOV-{id}',
-                list_url='/inventory/stock-moves',
+                list_url='/inventory/stock?tab=movements',  # T-103: tab real (era /inventory/stock-moves)
                 detail_url_pattern='/inventory/stock-moves/{id}',
                 permission='inventory.view_stockmove',
             ))

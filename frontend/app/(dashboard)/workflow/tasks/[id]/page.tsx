@@ -1,11 +1,8 @@
 import { redirect } from 'next/navigation'
-import { searchableEntityRoutes } from '@/lib/searchableEntityRoutes'
 
-// T-88: Task → /workflow/tasks?selected=<id>
-// Opción A (ADR-0020): redirige a la lista con ?selected=<id>
-// El modal de edición se abre en la lista con initialData fetcheado por useSelectedEntity.
-export default async function DetailPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params
-    const listUrl = searchableEntityRoutes['workflow.task']
-    redirect(`${listUrl}?selected=${id}`)
+// T-102 (F9): workflow.Task fue eliminado del UniversalRegistry (Camino B).
+// TaskInbox vive en el sidebar global del DashboardShell, no como página de ruta propia.
+// El deeplink no es resoluble — redirigir al dashboard como fallback.
+export default async function DetailPage({ params: _params }: { params: Promise<{ id: string }> }) {
+    redirect('/')
 }

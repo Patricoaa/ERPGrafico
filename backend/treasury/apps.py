@@ -55,8 +55,8 @@ class TreasuryConfig(AppConfig):
                 icon='file-spreadsheet',
                 search_fields=('treasury_account__name', 'statement_date'),
                 display_template='Cartola {treasury_account.name} {statement_date}',
-                # List lives under reconciliation module; detail has own canonical route
-                list_url='/treasury/reconciliation',
+                # T-103: list_url alineado con frontend searchableEntityRoutes (era /treasury/reconciliation)
+                list_url='/treasury/reconciliation?tab=statements',
                 detail_url_pattern='/treasury/statements/{id}',
                 permission='treasury.view_bankstatement',
             ))

@@ -62,25 +62,41 @@ interface TreasuryMovementsClientViewProps {
     createAction?: React.ReactNode
 }
 
-import { useTreasuryMovements } from "@/features/treasury/hooks/useTreasuryMovements"
-
 export function TreasuryMovementsClientView({ externalOpen, createAction }: TreasuryMovementsClientViewProps) {
     const { openContact, openTreasuryAccount } = useGlobalModalActions()
     const { movements, refetch } = useTreasuryMovements()
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const pathname = usePathname()
+
     const [openModal, setOpenModal] = useState(false)
     const [detailsOpen, setDetailsOpen] = useState(false)
-    const [selectedMovementId, setSelectedMovementId] = useState<number | string>(0)
+    const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
+
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryMovement>({
+        endpoint: '/treasury/movements'
+    })
 
     useEffect(() => {
+        if (selectedFromUrl) {
+            setSelectedMovementId(selectedFromUrl.id)
+            setDetailsOpen(true)
+        }
+    }, [selectedFromUrl])
+
+    // T-105: cancelAnimationFrame cleanup prevents setState on unmounted component
+    useEffect(() => {
         if (externalOpen) {
-            requestAnimationFrame(() => setOpenModal(true))
+            const handle = requestAnimationFrame(() => setOpenModal(true))
+            return () => cancelAnimationFrame(handle)
         }
     }, [externalOpen])
 
     const handleViewDetails = React.useCallback((id: number) => {
-        setSelectedMovementId(id)
-        setDetailsOpen(true)
-    }, [])
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('selected', String(id))
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [searchParams, pathname, router])
 
     const columns = React.useMemo<ColumnDef<TreasuryMovement>[]>(() => [
         {
@@ -321,7 +337,10 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
             <Suspense fallback={<FormSkeleton />}>
                 <TransactionViewModal
                     open={detailsOpen}
-                    onOpenChange={setDetailsOpen}
+                    onOpenChange={(open) => {
+                        setDetailsOpen(open)
+                        if (!open) clearSelection()
+                    }}
                     type="payment"
                     id={selectedMovementId}
                     view="details"

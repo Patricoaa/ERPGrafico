@@ -24,6 +24,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { Product, Restriction } from "@/features/inventory/types"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 
 
@@ -55,10 +56,15 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
+    const { entity: selectedFromUrl, clearSelection: clearUrlSelection } = useSelectedEntity<Product>({
+        endpoint: '/inventory/products'
+    })
+
     const handleCloseModal = () => {
         setIsFormOpen(false)
         setEditingProduct(null)
         onExternalOpenChange?.(false)
+        clearUrlSelection()
 
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
@@ -138,18 +144,11 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
 
     // Open edit form if ?selected= is present (ADR-0020)
     useEffect(() => {
-        const selectedId = searchParams.get('selected')
-
-        if (selectedId && products && products.length > 0) {
-            const productId = parseInt(selectedId)
-            const targetProduct = products.find(p => p.id === productId)
-
-            if (targetProduct && (!isFormOpen || editingProduct?.id !== productId)) {
-                setEditingProduct(targetProduct)
-                setIsFormOpen(true)
-            }
+        if (selectedFromUrl && (!isFormOpen || editingProduct?.id !== selectedFromUrl.id)) {
+            setEditingProduct(selectedFromUrl)
+            setIsFormOpen(true)
         }
-    }, [searchParams, products, isFormOpen, editingProduct])
+    }, [selectedFromUrl, isFormOpen, editingProduct])
 
     const clearSelection = () => {
         const params = new URLSearchParams(searchParams.toString())
@@ -470,7 +469,6 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                 open={isFormOpen || !!externalOpen}
                 onOpenChange={(open) => {
                     if (!open) {
-                        clearSelection()
                         handleCloseModal()
                     } else {
                         setIsFormOpen(true)

@@ -18,7 +18,8 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 import { useJournalEntries, type JournalEntry } from "@/features/accounting/hooks/useJournalEntries"
-import { useAccountingAccounts } from "@/features/accounting/hooks/useAccounts" // I'll update this hook next
+import { useAccountingAccounts } from "@/features/accounting/hooks/useAccounts" 
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 export default function EntriesPage({ externalOpen, onExternalOpenChange, createAction }: EntriesPageProps) {
     const { entries, refetch } = useJournalEntries()
@@ -34,17 +35,28 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    // Open detail modal if ?selected= is present (ADR-0020)
-    useEffect(() => {
-        const selectedId = searchParams.get('selected')
-        if (selectedId && !viewingTransaction) {
-            setViewingTransaction({ type: 'journal_entry', id: selectedId })
-        }
-    }, [searchParams, viewingTransaction])
+    const { entity: selectedFromUrl, clearSelection: clearUrlSelected } = useSelectedEntity<JournalEntry>({
+        endpoint: '/accounting/entries'
+    })
 
+    // T-107: un solo efecto que ramifica por mode — evita flash visual cuando ambos
+    // efectos disparaban en el mismo render al recibir ?selected=42&mode=edit (ADR-0020)
+    useEffect(() => {
+        if (!selectedFromUrl) return
+        if (searchParams.get('mode') === 'edit') {
+            // Modo edición: abre el form directamente, cierra el viewer si estaba abierto
+            setEditingEntry(selectedFromUrl)
+            setIsFormOpen(true)
+            setViewingTransaction(null)
+        } else {
+            // Modo detalle: abre el viewer de transacción
+            setViewingTransaction({ type: 'journal_entry', id: selectedFromUrl.id })
+        }
+    }, [selectedFromUrl, searchParams])
     const clearSelection = () => {
         const params = new URLSearchParams(searchParams.toString())
         params.delete('selected')
+        params.delete('mode')
         const query = params.toString()
         router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
@@ -78,7 +90,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         if (!open) {
             setEditingEntry(null)
             onExternalOpenChange?.(false)
-            handleCloseModal()
+            clearSelection()
         }
     }
 
@@ -172,7 +184,12 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                             <DataCell.Action
                                 icon={Pencil}
                                 title="Editar"
-                                onClick={() => handleEditEntry(entry)}
+                                onClick={() => {
+                                    const params = new URLSearchParams(searchParams.toString())
+                                    params.set('selected', String(entry.id))
+                                    params.set('mode', 'edit') // Add a mode param to distinguish
+                                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                                }}
                             />
                             <DataCell.Action
                                 icon={CheckCircle}
