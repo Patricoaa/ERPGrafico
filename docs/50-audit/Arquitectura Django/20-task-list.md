@@ -596,6 +596,368 @@
 
 ---
 
+## F7 — Detail routes para Universal Search
+
+> **Origen del bloque:** auditoría 2026-05-08. Universal Search registra 26 entidades pero **ninguna** ruta `detail_url_pattern` corresponde a una ruta real del App Router (defectos compuestos: español vs. inglés + ausencia de páginas `[id]`).
+> **Decisión:** Opción B — crear rutas `[id]` reales para todas las entidades searchable. La página `[id]` reusa el form/modal existente envuelto en `EntityDetailPage`.
+
+### T-68 · ADR-0019 — Convención "Searchable Entity Detail Route"
+- **Estado:** ✅ DONE (2026-05-08)
+- **Esfuerzo:** 2
+- **Archivos:** `docs/10-architecture/adr/0019-entity-detail-route-convention.md` (creado)
+- **Nota:** Numerado `0019` porque `0018` ya estaba ocupado por `0018-postgresql-tsvector-migration.md` generado en T-64.
+- **Acceptance:**
+  - [x] ADR formaliza la convención: cada entidad searchable tiene ruta `/[module]/[entity-plural]/[id]` con plurales canónicos en inglés.
+  - [x] Tabla `app → módulo` (ej: `sales → /sales`, `purchasing → /purchasing`, `treasury → /treasury`) cierra la ambigüedad para los 12 apps (D-02).
+  - [x] Justifica preferir `[id]` real sobre el patrón `?selected=id` (Opción A descartada): URL deep-linkeable, compartible, stateful, no depende de SSR estado de modal (§Contexto).
+  - [x] Define qué hacer cuando una entidad no tiene formulario de edición (read-only): la shell `EntityDetailPage` admite modo `readonly` (D-05).
+  - [ ] CHANGELOG actualizado.
+
+### T-69 · Auditoría e inventario de gap actual
+- **Estado:** ✅ DONE (2026-05-08)
+- **Esfuerzo:** 2
+- **Depende de:** T-68
+- **Archivos:** `docs/50-audit/Arquitectura Django/F7-route-matrix.md` (creado)
+- **Acceptance:**
+  - [x] Matriz con 26 filas (una por entidad registrada) y columnas: `app.model`, `actual_list_route`, `actual_detail_route_or_modal`, `target_list_url`, `target_detail_url_pattern`, `current_form_component`, `notes`.
+  - [x] Identifica entidades read-only (sin form de edición tradicional): `StockMove`, `BankStatement`, `POSSession` cerrada, `Attachment`.
+  - [x] Identifica entidades cuya `[id]` ya existe: `finances/budgets/[id]` ✅ y `hr/payrolls/[id]` ✅. La de `accounting/ledger/[id]/ledger/` tiene estructura anidada incorrecta (T-75 consolida).
+  - [x] Plan de adopción priorizado en 4 etapas: P1 transaccionales (quick wins), P2 maestros de alto tráfico, P3 read-only + módulos existentes, P4 módulos nuevos (`tax/`, `workflow/`, `files/`).
+
+### T-70 · Extensión del contrato `module-layout-navigation.md`
+- **Estado:** ✅ DONE (2026-05-08)
+- **Esfuerzo:** 3
+- **Depende de:** T-68
+- **Archivos:** [docs/20-contracts/module-layout-navigation.md](../../20-contracts/module-layout-navigation.md) (modificado)
+- **Acceptance:**
+  - [x] Nueva sección "§7. Searchable Entity Detail Route" documenta el patrón `/[module]/[entity-plural]/[id]`.
+  - [x] Tabla con los 26 patrones canónicos (§7.3 — resultado de T-69, con tarea asignada a cada una).
+  - [x] Documenta el shell `EntityDetailPage` (§7.4): header sticky con icono + display + breadcrumb, slot principal (form), slot sidebar (`ActivitySidebar` opcional), footer de acciones.
+  - [x] Documenta el modo `readonly` para entidades sin form de edición (§7.5).
+  - [x] Cross-references: link desde `component-decision-tree.md` §4 y desde `add-feature.md` §6 (con snippet de uso).
+  - [x] Frontmatter `last_review: 2026-05-08` actualizado.
+
+### T-71 · Componente shell `EntityDetailPage`
+- **Estado:** 📋
+- **Esfuerzo:** 5
+- **Depende de:** T-70
+- **Archivos:** `frontend/components/shared/EntityDetailPage.tsx` (nuevo), barrel export en `frontend/components/shared/index.ts`
+- **Acceptance:**
+  - [ ] Props: `entityType` (para registrar `ActivitySidebar`), `title`, `displayId?`, `icon`, `breadcrumb`, `actions?`, `sidebar?` (default = `<ActivitySidebar entityType={entityType} entityId={id} />`), `readonly?`, `children`.
+  - [ ] Layout: header sticky (icono + display + breadcrumb), main `flex` con `children` a la izquierda y sidebar a la derecha (`hidden lg:flex w-72 border-l`), footer opcional con acciones.
+  - [ ] Manejo de `notFound()` cuando el id no existe (delegado al consumer; el shell asume el server-component ya resolvió la entidad).
+  - [ ] Test Vitest cubre render con/sin sidebar, modo readonly.
+  - [ ] Storybook story con 3 variantes: edit (con sidebar), create (sin sidebar), readonly.
+
+### T-72 · Migrar entidades `sales` a rutas `[id]`
+- **Estado:** 📋
+- **Esfuerzo:** 5
+- **Depende de:** T-71
+- **Archivos:**
+  - `frontend/app/(dashboard)/sales/orders/[id]/page.tsx` (nuevo)
+  - `frontend/app/(dashboard)/sales/deliveries/[id]/page.tsx` (nuevo + posible nueva carpeta `deliveries`)
+  - `frontend/app/(dashboard)/sales/returns/[id]/page.tsx` (nuevo)
+- **Acceptance:**
+  - [ ] Cada page server-component fetch la entidad via API y renderiza `<EntityDetailPage entityType="sale_order" />` con el form/editor existente como children.
+  - [ ] 404 si el id no existe; 403 si el usuario no tiene `sales.view_*`.
+  - [ ] Redirect desde `/sales/orders?id=123` (patrón legacy) a `/sales/orders/123` durante 1 sprint.
+  - [ ] Test Playwright: navegar a `/sales/orders/<seed_id>` desde Universal Search no produce 404.
+
+### T-73 · Migrar entidades `purchasing` + `billing` a rutas `[id]`
+- **Estado:** 📋
+- **Esfuerzo:** 5
+- **Depende de:** T-71
+- **Archivos:**
+  - `frontend/app/(dashboard)/purchasing/orders/[id]/page.tsx`
+  - `frontend/app/(dashboard)/billing/sales/[id]/page.tsx`, `frontend/app/(dashboard)/billing/purchases/[id]/page.tsx`
+- **Acceptance:**
+  - [ ] PurchaseOrder, Invoice (sales/purchases) accesibles vía URL.
+  - [ ] Invoice resuelve `dte_type` → ruta correcta (`billing/sales/[id]` vs `billing/purchases/[id]`); apps.py registra el patrón unificado y la page hace el split server-side.
+  - [ ] Test Playwright equivalente a T-72.
+
+### T-74 · Migrar entidades `inventory` a rutas `[id]`
+- **Estado:** 📋
+- **Esfuerzo:** 5
+- **Depende de:** T-71
+- **Archivos:**
+  - `frontend/app/(dashboard)/inventory/products/[id]/page.tsx`
+  - `frontend/app/(dashboard)/inventory/categories/[id]/page.tsx` (puede requerir nueva carpeta)
+  - `frontend/app/(dashboard)/inventory/warehouses/[id]/page.tsx`
+  - `frontend/app/(dashboard)/inventory/stock-moves/[id]/page.tsx` (modo `readonly`)
+- **Acceptance:**
+  - [ ] StockMove en modo `readonly` (no tiene form editable).
+  - [ ] Product reusa el `ProductForm` existente de mayor complejidad.
+  - [ ] Test Playwright sobre las 4 entidades.
+
+### T-75 · Migrar entidades `accounting` a rutas `[id]`
+- **Estado:** 📋
+- **Esfuerzo:** 5
+- **Depende de:** T-71
+- **Archivos:**
+  - `frontend/app/(dashboard)/accounting/ledger/[id]/page.tsx` — **ya existe** parcialmente como `accounting/ledger/[id]/ledger/page.tsx`; auditar y consolidar.
+  - `frontend/app/(dashboard)/accounting/entries/[id]/page.tsx` (nuevo)
+  - `frontend/app/(dashboard)/accounting/closures/[id]/page.tsx` (FiscalYear)
+  - `frontend/app/(dashboard)/finances/budgets/[id]/page.tsx` — ya existe; verificar consistencia.
+- **Acceptance:**
+  - [ ] Account ficha: respeta cuentas hoja (no editable si tiene hijos), redirige a libro mayor desde la ficha.
+  - [ ] JournalEntry ficha: respeta lock de período cerrado.
+  - [ ] FiscalYear ficha: muestra estado del cierre.
+  - [ ] Test Playwright sobre las 4 entidades.
+
+### T-76 · Migrar entidades `treasury` a rutas `[id]`
+- **Estado:** 📋
+- **Esfuerzo:** 5
+- **Depende de:** T-71
+- **Archivos:**
+  - `frontend/app/(dashboard)/treasury/movements/[id]/page.tsx`
+  - `frontend/app/(dashboard)/treasury/accounts/[id]/page.tsx`
+  - `frontend/app/(dashboard)/treasury/sessions/[id]/page.tsx` (POSSession, modo `readonly` cuando cerrada)
+  - `frontend/app/(dashboard)/treasury/statements/[id]/page.tsx` (BankStatement, modo `readonly`)
+- **Acceptance:**
+  - [ ] TreasuryMovement respeta el split de `Type × Method × JustifyReason` (form especializado existente).
+  - [ ] Test Playwright sobre las 4 entidades.
+
+### T-77 · Migrar entidades `hr` + `production` + `contacts` + `tax` + `workflow` + `core`
+- **Estado:** 📋
+- **Esfuerzo:** 8
+- **Depende de:** T-71
+- **Archivos:**
+  - `frontend/app/(dashboard)/hr/employees/[id]/page.tsx`
+  - `frontend/app/(dashboard)/hr/payrolls/[id]/page.tsx` — ya existe; consolidar.
+  - `frontend/app/(dashboard)/production/orders/[id]/page.tsx`
+  - `frontend/app/(dashboard)/contacts/[id]/page.tsx`
+  - `frontend/app/(dashboard)/tax/periods/[id]/page.tsx`, `frontend/app/(dashboard)/tax/f29/[id]/page.tsx`
+  - `frontend/app/(dashboard)/workflow/tasks/[id]/page.tsx` (puede requerir nueva carpeta `workflow`)
+  - `frontend/app/(dashboard)/settings/users/[id]/page.tsx`, `frontend/app/(dashboard)/files/[id]/page.tsx`
+- **Acceptance:**
+  - [ ] Las 8+ entidades cubren las restantes de T-03/T-61.
+  - [ ] Contact respeta el form especializado por `is_partner` (no se intenta unificar — está en lista negra del audit).
+  - [ ] Attachment en modo `readonly` con preview del archivo.
+  - [ ] Test Playwright cubre cada ruta.
+
+### T-78 · Actualizar `apps.py::ready()` con slugs reales
+- **Estado:** 📋
+- **Esfuerzo:** 3
+- **Depende de:** T-72..T-77
+- **Archivos:** los 12 `backend/{app}/apps.py`
+- **Acceptance:**
+  - [ ] Cada `SearchableEntity.list_url` y `detail_url_pattern` apuntan a una ruta real del App Router (todas en inglés, alineadas con T-69 matrix).
+  - [ ] `grep -rn "ventas\|compras\|contactos\|tesoreria\|rrhh\|contabilidad\|inventario\|produccion\|facturacion\|tareas\|tributario" backend/*/apps.py` retorna 0 ocurrencias.
+  - [ ] Cache `core.registry` invalidada via `post_migrate` o `apps.ready` re-run.
+
+### T-79 · Test arquitectónico + Playwright `test_search_routes_exist`
+- **Estado:** 📋
+- **Esfuerzo:** 3
+- **Depende de:** T-78
+- **Archivos:**
+  - `backend/core/tests/test_architectural_invariants.py` (extender — añadir `test_search_routes_match_app_router`)
+  - `frontend/e2e/universal-search-routes.spec.ts` (nuevo)
+- **Acceptance:**
+  - [ ] Test Django itera `UniversalRegistry._entities`, parsea `frontend/app/**/page.tsx` para construir el mapa de rutas, y falla si algún `detail_url_pattern` no coincide con una ruta real (acepta `[id]` y rutas dinámicas).
+  - [ ] Test Playwright crea fixture mínimo (1 instancia por entidad), navega a cada `detail_url_pattern.replace('{id}', <id>)`, verifica que no hay 404 ni 500.
+  - [ ] CI bloquea merge si cualquiera falla.
+  - [ ] Cero ocurrencias de `detail_url` resultando en 404 desde la barra de búsqueda.
+
+**🏁 GATE F7:** T-68..T-79 verificadas + tests arquitectónicos verdes en CI + suite Playwright cubre las 26 entidades + ADR-0018 mergeado + contrato `module-layout-navigation.md` actualizado → demo (búsqueda universal sin 404) → cierre de fase.
+
+---
+
+## F8 — Schema-Driven Forms: reversión + expansión + contrato visual
+
+> **Origen del bloque:** auditoría 2026-05-08 sobre commit `9387cb91` (Phase 4). La migración de Budget/ProductCategory/UoM a `EntityForm` produjo bifurcación crear/editar y regresión visual. El contrato del schema (`FormMeta` con sólo `tabs/fields/actions/transitions`) es insuficiente para expresar el vocabulario real (sections, grid, widgets ricos, conditional fields, sidebar).
+> **Decisión:** Opción B+A — revertir las tres migraciones, publicar nuevo contrato `schema-driven-forms.md` alineado con los contratos UI existentes, expandir backend + frontend, y re-migrar con paridad visual probada.
+
+### T-80 · ADR-0019 — Reversión de Phase 4 + estrategia de expansión
+- **Estado:** 📋
+- **Esfuerzo:** 2
+- **Archivos:** `docs/10-architecture/adr/0019-schema-driven-forms-revert-and-expand.md` (nuevo)
+- **Acceptance:**
+  - [ ] ADR documenta por qué la migración de Phase 4 fue prematura: el schema no podía expresar `sections`, `grid_cols`, widgets ricos ni `visible_if`; el resultado fue bifurcación crear/editar.
+  - [ ] Define el alcance del revert: Budget create, ProductCategory create, UoM create — los tres vuelven a usar el form rico para todas las operaciones.
+  - [ ] Define el alcance de la expansión: vocabulario nuevo en `FormMeta`, Widget Registry frontend, contrato derivado.
+  - [ ] Lista negra explícita de modelos que **nunca** califican para schema-driven (Account, JournalEntry, Contact, Product manufacturable, WorkOrder) — con justificación.
+  - [ ] CHANGELOG actualizado; firma stakeholder.
+
+### T-81 · Revertir Budget create
+- **Estado:** 📋
+- **Esfuerzo:** 2
+- **Depende de:** T-80
+- **Archivos:** [frontend/features/finance/components/BudgetsListView.tsx](../../../frontend/features/finance/components/BudgetsListView.tsx)
+- **Acceptance:**
+  - [ ] Restaurar bloque create con `LabeledInput` (estado pre-`9387cb91`) o consolidar usando `BudgetEditor` para crear+editar.
+  - [ ] Cero referencias a `EntityForm` y `apiBasePath="/accounting/budgets/"` desde este componente.
+  - [ ] El flujo "Crear Presupuesto Anual" produce el mismo resultado que el editor de edición.
+  - [ ] Snapshot Storybook coincide con el snapshot del commit `9387cb91^`.
+
+### T-82 · Revertir ProductCategory create
+- **Estado:** 📋
+- **Esfuerzo:** 2
+- **Depende de:** T-80
+- **Archivos:** [frontend/features/inventory/components/CategoryList.tsx](../../../frontend/features/inventory/components/CategoryList.tsx)
+- **Acceptance:**
+  - [ ] La acción "Crear Categoría" usa `CategoryForm` (mismo componente que la edición) — sin bifurcación.
+  - [ ] Cero referencias a `EntityForm` desde `CategoryList`.
+  - [ ] `RichIconSelector`, `CategorySelector`, `AccountSelector`, `LabeledSwitch has_custom_accounting` con expansión condicional animada — todos disponibles también en creación.
+
+### T-83 · Revertir UoM create
+- **Estado:** 📋
+- **Esfuerzo:** 2
+- **Depende de:** T-80
+- **Archivos:** [frontend/features/inventory/components/UoMList.tsx](../../../frontend/features/inventory/components/UoMList.tsx)
+- **Acceptance:**
+  - [ ] La acción "Crear UoM" usa `UoMForm` (mismo componente que la edición).
+  - [ ] Cero referencias a `EntityForm` desde `UoMList`.
+
+### T-84 · Nuevo contrato `schema-driven-forms.md`
+- **Estado:** 📋
+- **Esfuerzo:** 5
+- **Depende de:** T-80
+- **Archivos:**
+  - `docs/20-contracts/schema-driven-forms.md` (nuevo)
+  - `docs/20-contracts/component-decision-tree.md` (modificar — agregar enlace)
+  - `docs/30-playbooks/add-feature.md` (modificar — agregar enlace)
+  - `docs/README.md` (modificar — agregar a routing table)
+- **Acceptance:**
+  - [ ] Frontmatter con `precondition: [form-layout-architecture.md, component-form-patterns.md, component-selectors.md, component-visual-hierarchy.md]` para anclar la dependencia.
+  - [ ] Sección 1 — **Vocabulario**: `sections` (lista de `{id, title, icon, fields}`), `grid_cols` (4 \| 12), `field_widget` por campo, `widget_props`, `visible_if` (`{field, equals|in}`), `sidebar` (`{entity_type}`), `actions` (botones extra del footer), `tabs` (existente, ahora opcional).
+  - [ ] Sección 2 — **Mapping `widget` → componente** con tabla canónica:
+    | widget | componente | widget_props |
+    |--------|------------|--------------|
+    | `account_selector` | `AccountSelector` | `account_type`, `is_reconcilable`, `show_all` |
+    | `product_selector` | `ProductSelector` | `product_type`, `allowed_types`, `restrict_stock` |
+    | `category_selector` | `CategorySelector` | `exclude_id`, `allow_none` |
+    | `uom_selector` | `UoMSelector` | `category_id` |
+    | `contact_selector` | `ContactSelector` | `is_partner`, `is_customer`, `is_supplier` |
+    | `icon_picker` | `RichIconSelector` | `categories[]` |
+    | `labeled_switch` | `LabeledSwitch` | `description_on`, `description_off` |
+    | `fk_async` | `AsyncSelect` (genérico) | `endpoint`, `display_field` |
+    | `string`/`text`/`enum`/`date`/`decimal` | `LabeledInput`/`LabeledSelect`/`DatePicker` | (ninguno) |
+  - [ ] Sección 3 — **Reglas de coherencia con contratos UI base**: cómo `sections` mapea a `FormSection`, `grid_cols=4` a `grid grid-cols-4 gap-4`, `sidebar` a `FormSplitLayout` + `ActivitySidebar`, `actions` a `FormFooter`. Cero invención de primitives.
+  - [ ] Sección 4 — **Decision tree (cuándo SÍ / cuándo NO)**: regla "si necesita widget custom no listado → form especializado, NO schema-driven" + lista negra explícita.
+  - [ ] Sección 5 — **Ejemplos canónicos**: 3 casos completos (Micro: `UoMCategory`; Estándar: `Budget`; Ficha Maestra con sidebar y secciones condicionales: `ProductCategory`).
+  - [ ] Sección 6 — **Versionado del contrato**: cualquier extensión del vocabulario requiere ADR; cualquier widget nuevo requiere actualizar la tabla §2 + registro en frontend (T-86).
+  - [ ] Routing table en `docs/README.md` actualizado: nuevo intent "Schema-driven form / EntityForm" → `schema-driven-forms.md`.
+
+### T-85 · Backend — extender `FormMeta` y `build_schema()`
+- **Estado:** 📋
+- **Esfuerzo:** 5
+- **Depende de:** T-84
+- **Archivos:**
+  - [backend/core/serializers/metadata.py](../../../backend/core/serializers/metadata.py)
+  - `backend/core/tests/test_metadata_schema.py` (nuevo o extendido)
+- **Acceptance:**
+  - [ ] `build_schema()` lee `FormMeta.sections` y emite `ui_layout.sections` con shape `{id, title, icon, fields, grid_cols?, visible_if?}`.
+  - [ ] `FormMeta.field_config[field_name]` admite las claves `widget`, `widget_props`, `visible_if`, `grid_span` (1..4 \| 1..12).
+  - [ ] `FormMeta.sidebar = {'entity_type': 'category'}` propaga al schema.
+  - [ ] `FormMeta.actions = [{'id': 'duplicate', 'label': 'Duplicar', 'method': 'POST', 'endpoint': '...'}]` propaga al schema (footer extra).
+  - [ ] Cache schema (300s) invalidada en cambio de `FormMeta` via `post_migrate`/manual flush.
+  - [ ] Test cubre: schema con sections+grid+widgets+visible_if+sidebar para un modelo de fixture; campo no listado en sections cae en `__default__` section.
+
+### T-86 · Frontend — Widget Registry
+- **Estado:** 📋
+- **Esfuerzo:** 5
+- **Depende de:** T-84
+- **Archivos:**
+  - `frontend/components/shared/EntityForm/widgets/registry.ts` (nuevo)
+  - `frontend/components/shared/EntityForm/widgets/{AccountWidget,ProductWidget,CategoryWidget,UoMWidget,ContactWidget,IconPickerWidget,SwitchWidget,FkAsyncWidget}.tsx` (nuevos — wrappers thin sobre los selectores existentes)
+- **Acceptance:**
+  - [ ] `WidgetRegistry.register(name, component, propsSchema)` + `WidgetRegistry.resolve(name)` con fallback a `LabeledInput` y log de warning.
+  - [ ] Los 8 widgets de la tabla §2 del contrato registrados.
+  - [ ] Cada widget recibe `value, onChange, error, fieldDef, widgetProps` y delega al componente de selectores existente sin reimplementar.
+  - [ ] Test Vitest: `WidgetRegistry.resolve('account_selector')(<AccountSelector accountType="ASSET">)` renderiza correctamente.
+
+### T-87 · Frontend — `EntityForm v2`
+- **Estado:** 📋
+- **Esfuerzo:** 8
+- **Depende de:** T-85, T-86
+- **Archivos:** [frontend/components/shared/EntityForm/](../../../frontend/components/shared/EntityForm/) (refactor mayor)
+- **Acceptance:**
+  - [ ] Soporta `sections` con `FormSection` por sección (icono + título), `grid_cols` aplicado a `grid grid-cols-N gap-4`, `grid_span` por campo (`col-span-N`).
+  - [ ] Soporta `visible_if` con animación `animate-in fade-in slide-in-from-top-2 duration-300` (alineado con `CategoryForm`).
+  - [ ] Soporta `sidebar` con `FormSplitLayout` + `ActivitySidebar` cuando `instanceId` está presente.
+  - [ ] Soporta `actions` extras renderizadas en `FormFooter`.
+  - [ ] Compatibilidad backward: si el schema sólo tiene `tabs` (legacy), funciona igual que la versión actual.
+  - [ ] Cada campo se renderiza vía `WidgetRegistry.resolve(fieldDef.widget ?? defaultByType)`.
+  - [ ] Test Vitest cubre: render de sections+grid, visible_if dinámico, sidebar en edit mode, action click dispara endpoint.
+
+### T-88 · Frontend — `ActivitySidebar` integration en EntityForm
+- **Estado:** 📋
+- **Esfuerzo:** 2
+- **Depende de:** T-87
+- **Archivos:** `frontend/components/shared/EntityForm/index.tsx`
+- **Acceptance:**
+  - [ ] Si `instanceId` definido y `schema.ui_layout.sidebar?.entity_type` definido, renderiza `<FormSplitLayout sidebar={<ActivitySidebar entityId={id} entityType={...} />} showSidebar />`.
+  - [ ] Si `instanceId` no definido (create mode), no renderiza sidebar.
+  - [ ] `entity_type` validado contra la lista de [form-layout-architecture.md §5](../../20-contracts/form-layout-architecture.md) — error en build si valor desconocido.
+
+### T-89 · Re-migrar Budget con `EntityForm v2`
+- **Estado:** 📋
+- **Esfuerzo:** 5
+- **Depende de:** T-87, T-88
+- **Archivos:**
+  - [backend/accounting/models.py](../../../backend/accounting/models.py) (Budget — extender `FormMeta`)
+  - [frontend/features/finance/components/BudgetsListView.tsx](../../../frontend/features/finance/components/BudgetsListView.tsx)
+- **Acceptance:**
+  - [ ] `Budget.FormMeta` declara sections, grid_cols, widgets, sidebar (`entity_type='budget'` — agregar a la lista de entityType válidos en T-90 si falta).
+  - [ ] `BudgetsListView` usa `<EntityForm modelLabel="accounting.budget" />` para crear y editar (sin bifurcación).
+  - [ ] `BudgetEditor` se mantiene **sólo** si maneja `BudgetItem` (líneas) — la cabecera pasa por EntityForm; las líneas siguen en editor especializado.
+  - [ ] Storybook story `Budget — EntityForm v2` con visual diff <2% vs. snapshot pre-`9387cb91` del create form.
+
+### T-90 · Re-migrar ProductCategory con `EntityForm v2`
+- **Estado:** 📋
+- **Esfuerzo:** 5
+- **Depende de:** T-87, T-88
+- **Archivos:**
+  - [backend/inventory/models.py](../../../backend/inventory/models.py) (ProductCategory — extender `FormMeta`)
+  - [frontend/features/inventory/components/CategoryList.tsx](../../../frontend/features/inventory/components/CategoryList.tsx)
+- **Acceptance:**
+  - [ ] `ProductCategory.FormMeta` declara: sección "General" (name, prefix, icon con `widget=icon_picker`, parent con `widget=category_selector`), sección "Cuentas Contables" con `visible_if={field: 'has_custom_accounting', equals: true}` y los 3 selectores `account_selector` con `widget_props.account_type`.
+  - [ ] `CategoryList` usa `<EntityForm modelLabel="inventory.productcategory" />` para crear y editar.
+  - [ ] `CategoryForm` legacy deprecado con warning en CI; eliminación en sprint siguiente si paridad confirmada.
+  - [ ] Visual diff <2% vs. snapshot pre-Phase 4 de `CategoryForm`.
+
+### T-91 · Re-migrar UoM con `EntityForm v2`
+- **Estado:** 📋
+- **Esfuerzo:** 3
+- **Depende de:** T-87, T-88
+- **Archivos:**
+  - [backend/inventory/models.py](../../../backend/inventory/models.py) (UoM — extender `FormMeta`)
+  - [frontend/features/inventory/components/UoMList.tsx](../../../frontend/features/inventory/components/UoMList.tsx)
+- **Acceptance:**
+  - [ ] `UoM.FormMeta` declara grid 4-col + widgets adecuados.
+  - [ ] `UoMList` usa `<EntityForm modelLabel="inventory.uom" />` para crear y editar.
+  - [ ] `UoMForm` legacy deprecado.
+  - [ ] Visual diff <2% vs. snapshot pre-Phase 4.
+
+### T-92 · Pilotos verdaderamente simples
+- **Estado:** 📋
+- **Esfuerzo:** 5
+- **Depende de:** T-87
+- **Archivos:**
+  - `backend/inventory/models.py` (UoMCategory, ProductAttribute, ProductAttributeValue — agregar `FormMeta` mínimo)
+  - `backend/core/models/__init__.py` (Attachment — agregar `FormMeta` mínimo)
+  - Reemplazar usos en frontend si existen (probable: ninguno hoy, son entidades nuevas para EntityForm)
+- **Acceptance:**
+  - [ ] Las 4 entidades renderizan crear+editar con `EntityForm` cero código frontend custom.
+  - [ ] Cumplen con el "5 modelos simples" del plan original (de hecho: 4 simples + 3 re-migrados de Phase 4 = 7 entidades schema-driven con paridad visual).
+
+### T-93 · Test arquitectónico `test_schema_widgets_resolve`
+- **Estado:** 📋
+- **Esfuerzo:** 3
+- **Depende de:** T-86, T-89..T-92
+- **Archivos:**
+  - `backend/core/tests/test_architectural_invariants.py` (extender)
+  - `frontend/components/shared/EntityForm/__tests__/widgets-registry.test.ts` (extender)
+- **Acceptance:**
+  - [ ] Test backend itera todos los `FormMeta` declarados en modelos y extrae widgets usados; falla si algún widget no está en la tabla canónica de `schema-driven-forms.md` §2.
+  - [ ] Test frontend itera el `WidgetRegistry` y verifica que cada widget de la tabla canónica está registrado.
+  - [ ] Test backend verifica que ningún modelo de la lista negra (`Account`, `JournalEntry`, `Contact`, `Product` manufacturable, `WorkOrder`) declara `FormMeta.sections` (señal de uso indebido del schema-driven path).
+  - [ ] CI bloquea merge si cualquiera falla.
+
+**🏁 GATE F8:** T-80..T-93 verificadas + tres reverts limpios sin bifurcación crear/editar + contrato `schema-driven-forms.md` mergeado y referenciado desde decision-tree y add-feature + 7 entidades en producción con `EntityForm v2` y paridad visual probada + tests arquitectónicos verdes en CI + ADR-0019 mergeado → demo (agregar campo `cost_center` a `Budget` se refleja sin tocar frontend) → cierre de fase.
+
+---
+
 ## Resumen de esfuerzo
 
 | Fase | Tareas | Story Points |
@@ -606,11 +968,13 @@
 | F4 | T-26..T-40 | 75 |
 | F5 | T-41..T-55 | 87 |
 | F6 | T-56..T-67 | 60 |
-| **Total** | 67 tareas | **309 SP** |
+| F7 | T-68..T-79 | 51 |
+| F8 | T-80..T-93 | 54 |
+| **Total** | 93 tareas | **414 SP** |
 
-A 20 SP/sprint con 1 ingeniero senior dedicado: ~15-16 sprints. A 30 SP/sprint con 2 ingenieros: ~10 sprints.
+A 20 SP/sprint con 1 ingeniero senior dedicado: ~21 sprints. A 30 SP/sprint con 2 ingenieros: ~14 sprints.
 
-**Nota:** F6 puede ejecutarse en paralelo entre múltiples ingenieros — la mayoría de tareas son independientes entre sí (excepto T-57 que depende de T-56).
+**Nota:** F6 puede ejecutarse en paralelo entre múltiples ingenieros — la mayoría de tareas son independientes entre sí (excepto T-57 que depende de T-56). En F7 las 6 tareas de migración por app (T-72..T-77) son independientes entre sí y se pueden paralelizar tras T-71. En F8 las tres tareas de revert (T-81/T-82/T-83) son independientes entre sí; las re-migraciones T-89/T-90/T-91 también; el contrato T-84 es bloqueante de todo lo demás.
 
 ---
 

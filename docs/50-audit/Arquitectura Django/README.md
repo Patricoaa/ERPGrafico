@@ -1,8 +1,8 @@
 # Auditoría de Arquitectura Django — Generic Form Injection & Universal Registry
 
-> **Estado:** Auditoría inicial completa · Pendiente de aprobación para fase 1.
-> **Última actualización:** 2026-05-07
-> **Alcance:** Backend Django (12 apps · ~7.800 líneas de modelos)
+> **Estado:** F1..F6 ejecutadas. F7 (corrección de rutas Universal Search) y F8 (reversión Phase 4 + expansión schema) **planificadas** — pendientes de aprobación para inicio.
+> **Última actualización:** 2026-05-08
+> **Alcance:** Backend Django (12 apps · ~7.800 líneas de modelos) + frontend Next.js
 > **Objetivo:** Validar y planificar la refactorización hacia formularios genéricos data-driven y un registro universal de entidades.
 
 ---
@@ -82,6 +82,11 @@ Esta es una **refactorización mayor** que se ejecutará por fases a lo largo de
 
 ## Estado del trabajo
 
-Sprint actual: **Pre-aprobación** — la auditoría está finalizada, pendiente decisión de stakeholders sobre si proceder con Fase 1.
+Sprint actual: **F1..F6 cerradas** (2026-05-08). **F7 y F8 planificadas** tras auditoría del 2026-05-08 que detectó dos brechas no cubiertas por F1..F6:
+
+1. **Universal Search → 404:** las 26 rutas declaradas en `apps.py::ready()` no coinciden con el App Router (slugs en español vs. rutas en inglés; sólo 4 entidades tienen `[id]` real).
+2. **Phase 4 forms → bifurcación crear/editar:** `EntityForm` no puede expresar `sections`, grid, widgets ricos ni `visible_if`; las migraciones de Budget/ProductCategory/UoM dejaron dos UIs distintas para la misma entidad y regresión visual.
+
+F7 corrige (1) creando rutas `[id]` reales para todas las entidades searchable (Opción B). F8 revierte (2), expande el contrato del schema y publica un nuevo contrato visual (`docs/20-contracts/schema-driven-forms.md`) anclado a los contratos UI existentes.
 
 Para actualizar el estado de cada tarea, edita [20-task-list.md](20-task-list.md). Para reportar bloqueos, agrégalos en la sección "Riesgos activos" de [40-migration-and-rollback.md](40-migration-and-rollback.md).
