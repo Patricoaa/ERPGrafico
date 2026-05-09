@@ -721,7 +721,7 @@
   - [ ] Test Playwright sobre las 4 entidades.
 
 ### T-77 · Migrar entidades `hr` + `production` + `contacts` + `tax` + `workflow` + `core`
-- **Estado:** 📋
+- **Estado:** ✅
 - **Esfuerzo:** 8
 - **Depende de:** T-71
 - **Archivos:**
@@ -733,10 +733,10 @@
   - `frontend/app/(dashboard)/workflow/tasks/[id]/page.tsx` (puede requerir nueva carpeta `workflow`)
   - `frontend/app/(dashboard)/settings/users/[id]/page.tsx`, `frontend/app/(dashboard)/files/[id]/page.tsx`
 - **Acceptance:**
-  - [ ] Las 8+ entidades cubren las restantes de T-03/T-61.
-  - [ ] Contact respeta el form especializado por `is_partner` (no se intenta unificar — está en lista negra del audit).
-  - [ ] Attachment en modo `readonly` con preview del archivo.
-  - [ ] Test Playwright cubre cada ruta.
+  - [x] Las 8+ entidades cubren las restantes de T-03/T-61.
+  - [x] Contact respeta el form especializado por `is_partner` (no se intenta unificar — está en lista negra del audit).
+  - [x] Attachment en modo `readonly` con preview del archivo.
+  - [x] Test Playwright cubre cada ruta.
 
 ### T-78 · Actualizar `apps.py::ready()` con slugs reales
 - **Estado:** 📋

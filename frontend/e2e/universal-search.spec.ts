@@ -657,4 +657,86 @@ test.describe('Universal Search Navigation', () => {
         await expect(page.locator('text=Cartola Bancaria').first()).toBeVisible();
         await expect(page.locator('text=Solo lectura').first()).toBeVisible();
     });
+
+    // T-77 Tests
+    test('Navigates to employee detail page correctly', async ({ page }) => {
+        await page.route('**/api/search/universal/?q=Juan', async route => {
+            const json = {
+                results: [
+                    {
+                        id: 801,
+                        type: 'hr.employee',
+                        display: 'Juan Perez',
+                        detail_url: '/hr/employees/801',
+                        icon: 'user',
+                        label: 'hr.employee'
+                    }
+                ]
+            };
+            await route.fulfill({ json });
+        });
+
+        await page.route('**/api/hr/employees/801/', async route => {
+            const json = {
+                id: 801,
+                display_id: 'EMP-001',
+                contact_detail: { name: 'Juan Perez', tax_id: '12345678-9' },
+                position: 'Developer',
+                department: 'IT',
+                base_salary: '1000000',
+                contract_type: 'INDEFINITE'
+            };
+            await route.fulfill({ json });
+        });
+
+        await page.goto('/');
+        await page.keyboard.press('Control+k');
+        await page.keyboard.type('Juan');
+        const result = page.locator('text=Juan Perez').first();
+        await expect(result).toBeVisible();
+        await result.click();
+        await expect(page).toHaveURL(/.*\/hr\/employees\/801/);
+        await expect(page.locator('text=Ficha de Empleado').first()).toBeVisible();
+    });
+
+    test('Navigates to production order detail page correctly', async ({ page }) => {
+        await page.route('**/api/search/universal/?q=OT-001', async route => {
+            const json = {
+                results: [
+                    {
+                        id: 802,
+                        type: 'production.workorder',
+                        display: 'OT-001',
+                        detail_url: '/production/orders/802',
+                        icon: 'factory',
+                        label: 'production.workorder'
+                    }
+                ]
+            };
+            await route.fulfill({ json });
+        });
+
+        await page.route('**/api/production/orders/802/', async route => {
+            const json = {
+                id: 802,
+                number: 'OT-001',
+                description: 'Cajas personalizadas',
+                current_stage: 'PREPRESS',
+                status: 'IN_PROGRESS',
+                start_date: '2026-05-01',
+                due_date: '2026-05-15',
+                sale_customer_name: 'Empresa SpA'
+            };
+            await route.fulfill({ json });
+        });
+
+        await page.goto('/');
+        await page.keyboard.press('Control+k');
+        await page.keyboard.type('OT-001');
+        const result = page.locator('text=OT-001').first();
+        await expect(result).toBeVisible();
+        await result.click();
+        await expect(page).toHaveURL(/.*\/production\/orders\/802/);
+        await expect(page.locator('text=Orden de Trabajo').first()).toBeVisible();
+    });
 });
