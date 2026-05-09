@@ -721,7 +721,7 @@
   - [ ] Test Playwright sobre las 4 entidades.
 
 ### T-77 · Migrar entidades `hr` + `production` + `contacts` + `tax` + `workflow` + `core`
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-09)
 - **Esfuerzo:** 8
 - **Depende de:** T-71
 - **Archivos:**
@@ -733,10 +733,10 @@
   - `frontend/app/(dashboard)/workflow/tasks/[id]/page.tsx` (puede requerir nueva carpeta `workflow`)
   - `frontend/app/(dashboard)/settings/users/[id]/page.tsx`, `frontend/app/(dashboard)/files/[id]/page.tsx`
 - **Acceptance:**
-  - [ ] Las 8+ entidades cubren las restantes de T-03/T-61.
-  - [ ] Contact respeta el form especializado por `is_partner` (no se intenta unificar — está en lista negra del audit).
-  - [ ] Attachment en modo `readonly` con preview del archivo.
-  - [ ] Test Playwright cubre cada ruta.
+  - [x] Las 8+ entidades cubren las restantes de T-03/T-61.
+  - [x] Contact respeta el form especializado por `is_partner` (no se intenta unificar — está en lista negra del audit).
+  - [x] Attachment en modo `readonly` con preview del archivo.
+  - [x] Test Playwright cubre cada ruta.
 
 ### T-78 · Actualizar `apps.py::ready()` con slugs reales
 - **Estado:** ✅ DONE (2026-05-08)
@@ -776,48 +776,48 @@
 > **Decisión:** Opción B+A — revertir las tres migraciones, publicar nuevo contrato `schema-driven-forms.md` alineado con los contratos UI existentes, expandir backend + frontend, y re-migrar con paridad visual probada.
 
 ### T-80 · ADR-0019 — Reversión de Phase 4 + estrategia de expansión
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-09)
 - **Esfuerzo:** 2
 - **Archivos:** `docs/10-architecture/adr/0019-schema-driven-forms-revert-and-expand.md` (nuevo)
 - **Acceptance:**
-  - [ ] ADR documenta por qué la migración de Phase 4 fue prematura: el schema no podía expresar `sections`, `grid_cols`, widgets ricos ni `visible_if`; el resultado fue bifurcación crear/editar.
-  - [ ] Define el alcance del revert: Budget create, ProductCategory create, UoM create — los tres vuelven a usar el form rico para todas las operaciones.
-  - [ ] Define el alcance de la expansión: vocabulario nuevo en `FormMeta`, Widget Registry frontend, contrato derivado.
-  - [ ] Lista negra explícita de modelos que **nunca** califican para schema-driven (Account, JournalEntry, Contact, Product manufacturable, WorkOrder) — con justificación.
-  - [ ] CHANGELOG actualizado; firma stakeholder.
+  - [x] ADR documenta por qué la migración de Phase 4 fue prematura: el schema no podía expresar `sections`, `grid_cols`, widgets ricos ni `visible_if`; el resultado fue bifurcación crear/editar.
+  - [x] Define el alcance del revert: Budget create, ProductCategory create, UoM create — los tres vuelven a usar el form rico para todas las operaciones.
+  - [x] Define el alcance de la expansión: vocabulario nuevo en `FormMeta`, Widget Registry frontend, contrato derivado.
+  - [x] Lista negra explícita de modelos que **nunca** califican para schema-driven (Account, JournalEntry, Contact, Product manufacturable, WorkOrder) — con justificación.
+  - [x] CHANGELOG actualizado; firma stakeholder.
 
 ### T-81 · Revertir Budget create
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-09)
 - **Esfuerzo:** 2
 - **Depende de:** T-80
 - **Archivos:** [frontend/features/finance/components/BudgetsListView.tsx](../../../frontend/features/finance/components/BudgetsListView.tsx)
 - **Acceptance:**
-  - [ ] Restaurar bloque create con `LabeledInput` (estado pre-`9387cb91`) o consolidar usando `BudgetEditor` para crear+editar.
-  - [ ] Cero referencias a `EntityForm` y `apiBasePath="/accounting/budgets/"` desde este componente.
-  - [ ] El flujo "Crear Presupuesto Anual" produce el mismo resultado que el editor de edición.
-  - [ ] Snapshot Storybook coincide con el snapshot del commit `9387cb91^`.
+  - [x] Restaurar bloque create con `LabeledInput` (estado pre-`9387cb91`) o consolidar usando `BudgetEditor` para crear+editar.
+  - [x] Cero referencias a `EntityForm` y `apiBasePath="/accounting/budgets/"` desde este componente.
+  - [x] El flujo "Crear Presupuesto Anual" produce el mismo resultado que el editor de edición.
+  - [x] Snapshot Storybook coincide con el snapshot del commit `9387cb91^`.
 
 ### T-82 · Revertir ProductCategory create
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-09)
 - **Esfuerzo:** 2
 - **Depende de:** T-80
 - **Archivos:** [frontend/features/inventory/components/CategoryList.tsx](../../../frontend/features/inventory/components/CategoryList.tsx)
 - **Acceptance:**
-  - [ ] La acción "Crear Categoría" usa `CategoryForm` (mismo componente que la edición) — sin bifurcación.
-  - [ ] Cero referencias a `EntityForm` desde `CategoryList`.
-  - [ ] `RichIconSelector`, `CategorySelector`, `AccountSelector`, `LabeledSwitch has_custom_accounting` con expansión condicional animada — todos disponibles también en creación.
+  - [x] La acción "Crear Categoría" usa `CategoryForm` (mismo componente que la edición) — sin bifurcación.
+  - [x] Cero referencias a `EntityForm` desde `CategoryList`.
+  - [x] `RichIconSelector`, `CategorySelector`, `AccountSelector`, `LabeledSwitch has_custom_accounting` con expansión condicional animada — todos disponibles también en creación.
 
 ### T-83 · Revertir UoM create
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-09)
 - **Esfuerzo:** 2
 - **Depende de:** T-80
 - **Archivos:** [frontend/features/inventory/components/UoMList.tsx](../../../frontend/features/inventory/components/UoMList.tsx)
 - **Acceptance:**
-  - [ ] La acción "Crear UoM" usa `UoMForm` (mismo componente que la edición).
-  - [ ] Cero referencias a `EntityForm` desde `UoMList`.
+  - [x] La acción "Crear UoM" usa `UoMForm` (mismo componente que la edición).
+  - [x] Cero referencias a `EntityForm` desde `UoMList`.
 
 ### T-84 · Nuevo contrato `schema-driven-forms.md`
-- **Estado:** 📋
+- **Estado:** ✅ DONE (2026-05-09)
 - **Esfuerzo:** 5
 - **Depende de:** T-80
 - **Archivos:**
@@ -826,25 +826,14 @@
   - `docs/30-playbooks/add-feature.md` (modificar — agregar enlace)
   - `docs/README.md` (modificar — agregar a routing table)
 - **Acceptance:**
-  - [ ] Frontmatter con `precondition: [form-layout-architecture.md, component-form-patterns.md, component-selectors.md, component-visual-hierarchy.md]` para anclar la dependencia.
-  - [ ] Sección 1 — **Vocabulario**: `sections` (lista de `{id, title, icon, fields}`), `grid_cols` (4 \| 12), `field_widget` por campo, `widget_props`, `visible_if` (`{field, equals|in}`), `sidebar` (`{entity_type}`), `actions` (botones extra del footer), `tabs` (existente, ahora opcional).
-  - [ ] Sección 2 — **Mapping `widget` → componente** con tabla canónica:
-    | widget | componente | widget_props |
-    |--------|------------|--------------|
-    | `account_selector` | `AccountSelector` | `account_type`, `is_reconcilable`, `show_all` |
-    | `product_selector` | `ProductSelector` | `product_type`, `allowed_types`, `restrict_stock` |
-    | `category_selector` | `CategorySelector` | `exclude_id`, `allow_none` |
-    | `uom_selector` | `UoMSelector` | `category_id` |
-    | `contact_selector` | `ContactSelector` | `is_partner`, `is_customer`, `is_supplier` |
-    | `icon_picker` | `RichIconSelector` | `categories[]` |
-    | `labeled_switch` | `LabeledSwitch` | `description_on`, `description_off` |
-    | `fk_async` | `AsyncSelect` (genérico) | `endpoint`, `display_field` |
-    | `string`/`text`/`enum`/`date`/`decimal` | `LabeledInput`/`LabeledSelect`/`DatePicker` | (ninguno) |
-  - [ ] Sección 3 — **Reglas de coherencia con contratos UI base**: cómo `sections` mapea a `FormSection`, `grid_cols=4` a `grid grid-cols-4 gap-4`, `sidebar` a `FormSplitLayout` + `ActivitySidebar`, `actions` a `FormFooter`. Cero invención de primitives.
-  - [ ] Sección 4 — **Decision tree (cuándo SÍ / cuándo NO)**: regla "si necesita widget custom no listado → form especializado, NO schema-driven" + lista negra explícita.
-  - [ ] Sección 5 — **Ejemplos canónicos**: 3 casos completos (Micro: `UoMCategory`; Estándar: `Budget`; Ficha Maestra con sidebar y secciones condicionales: `ProductCategory`).
-  - [ ] Sección 6 — **Versionado del contrato**: cualquier extensión del vocabulario requiere ADR; cualquier widget nuevo requiere actualizar la tabla §2 + registro en frontend (T-86).
-  - [ ] Routing table en `docs/README.md` actualizado: nuevo intent "Schema-driven form / EntityForm" → `schema-driven-forms.md`.
+  - [x] Frontmatter con `precondition: [form-layout-architecture.md, component-form-patterns.md, component-selectors.md, component-visual-hierarchy.md]` para anclar la dependencia.
+  - [x] Sección 1 — **Vocabulario**: `sections` (lista de `{id, title, icon, fields}`), `grid_cols` (4 \| 12), `field_widget` por campo, `widget_props`, `visible_if` (`{field, equals|in}`), `sidebar` (`{entity_type}`), `actions` (botones extra del footer), `tabs` (existente, ahora opcional).
+  - [x] Sección 2 — **Mapping `widget` → componente** con tabla canónica.
+  - [x] Sección 3 — **Reglas de coherencia con contratos UI base**: cómo `sections` mapea a `FormSection`, `grid_cols=4` a `grid grid-cols-4 gap-4`, `sidebar` a `FormSplitLayout` + `ActivitySidebar`, `actions` a `FormFooter`. Cero invención de primitives.
+  - [x] Sección 4 — **Decision tree (cuándo SÍ / cuándo NO)**: regla "si necesita widget custom no listado → form especializado, NO schema-driven" + lista negra explícita.
+  - [x] Sección 5 — **Ejemplos canónicos**: 3 casos completos (Micro: `UoMCategory`; Estándar: `Budget`; Ficha Maestra con sidebar y secciones condicionales: `ProductCategory`).
+  - [x] Sección 6 — **Versionado del contrato**: cualquier extensión del vocabulario requiere ADR; cualquier widget nuevo requiere actualizar la tabla §2 + registro en frontend (T-86).
+  - [x] Routing table en `docs/README.md` actualizado: nuevo intent "Schema-driven form / EntityForm" → `schema-driven-forms.md`.
 
 ### T-85 · Backend — extender `FormMeta` y `build_schema()`
 - **Estado:** 📋

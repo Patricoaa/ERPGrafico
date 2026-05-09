@@ -4,17 +4,27 @@ import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
-import { Pencil, FileText, Calendar, Wallet } from "lucide-react"
+import { Plus, Pencil, FileText, Calendar, Wallet } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { LabeledInput } from "@/components/shared"
+import { toast } from "sonner"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { EntityForm } from "@/components/shared/EntityForm"
 
 import { BudgetEditor } from "@/features/finance/components/BudgetEditor"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 
 import { useSearchParams, usePathname } from "next/navigation"
+
+interface Budget {
+    id: number
+    name: string
+    start_date: string
+    end_date: string
+    description?: string
+}
 
 interface BudgetsListViewProps {
     externalOpen?: boolean
@@ -29,10 +39,16 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const { budgets, refetch } = useBudgets()
+    const { budgets, refetch, createBudget } = useBudgets()
 
     // Create Modal State
     const [isCreateOpen, setIsCreateOpen] = useState(false)
+    const [newBudget, setNewBudget] = useState({
+        name: "",
+        start_date: `${new Date().getFullYear()}-01-01`,
+        end_date: `${new Date().getFullYear()}-12-31`,
+        description: ""
+    })
 
     const handleCloseModal = () => {
         const params = new URLSearchParams(searchParams.toString())
@@ -58,6 +74,17 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
     // Edit Modal State
     const [isEditorOpen, setIsEditorOpen] = useState(false)
     const [budgetToEdit, setBudgetToEdit] = useState<Budget | null>(null)
+
+    const handleCreate = async () => {
+        try {
+            await createBudget(newBudget)
+            setIsCreateOpen(false)
+            handleCreateOpenChange(false)
+            setNewBudget({ name: "", start_date: "", end_date: "", description: "" })
+        } catch {
+            // Error handled by hook toast
+        }
+    }
 
     const columns: ColumnDef<Budget>[] = [
         {
@@ -131,22 +158,48 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
                 createAction={createAction}
             />
 
-            {/* Create Modal — driven by EntityForm (T-34) */}
+            {/* Create Modal */}
             <BaseModal
                 open={isCreateOpen}
                 onOpenChange={handleCreateOpenChange}
                 size="md"
                 title="Crear Nuevo Presupuesto"
+                footer={
+                    <Button onClick={handleCreate} className="w-full">Crear Presupuesto Anual</Button>
+                }
             >
-                <EntityForm
-                    modelLabel="accounting.budget"
-                    apiBasePath="/accounting/budgets/"
-                    onSuccess={() => {
-                        refetch()
-                        handleCreateOpenChange(false)
-                    }}
-                    onCancel={() => handleCreateOpenChange(false)}
-                />
+                <div className="space-y-4">
+                    <LabeledInput
+                        label="Nombre o Referencia"
+                        value={newBudget.name}
+                        onChange={e => setNewBudget({ ...newBudget, name: e.target.value })}
+                        placeholder="Ej: Presupuesto Operativo"
+                    />
+                    <div>
+                        <LabeledInput
+                            label="Año del Presupuesto"
+                            type="number"
+                            min={2020}
+                            max={2100}
+                            defaultValue={new Date().getFullYear()}
+                            onChange={e => {
+                                const year = e.target.value
+                                setNewBudget({
+                                    ...newBudget,
+                                    name: newBudget.name || `Presupuesto ${year}`,
+                                    start_date: `${year}-01-01`,
+                                    end_date: `${year}-12-31`
+                                })
+                            }}
+                        />
+                        <p className="text-[10px] text-muted-foreground mt-1">Los presupuestos se restringen obligatoriamente a un año completo (01 Ene - 31 Dic).</p>
+                    </div>
+                    <LabeledInput
+                        label="Descripción"
+                        value={newBudget.description}
+                        onChange={e => setNewBudget({ ...newBudget, description: e.target.value })}
+                    />
+                </div>
             </BaseModal>
 
             {/* Editor Modal */}
@@ -156,7 +209,8 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
                     onOpenChange={setIsEditorOpen}
                     budget={budgetToEdit}
                     onSave={() => {
-                        refetch()
+                        refetch() // Optional: refresh if metadata changes, mostly for consistency
+                        toast.success("Presupuesto actualizado")
                     }}
                 />
             )}

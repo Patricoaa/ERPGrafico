@@ -10,7 +10,6 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 
 import { CategoryForm } from "./CategoryForm"
-import { EntityForm } from "@/components/shared/EntityForm"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Pencil, Trash2 } from "lucide-react"
 
@@ -131,28 +130,16 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
                 createAction={createAction}
             />
 
-            {/* Create Modal — EntityForm (T-36) */}
-            <BaseModal
-                open={isCreateOpen}
-                onOpenChange={(open) => { if (!open) handleCloseModal(); else setIsCreateOpen(true) }}
-                size="sm"
-                title="Nueva Categoría"
-            >
-                <EntityForm
-                    modelLabel="inventory.productcategory"
-                    apiBasePath="/inventory/categories/"
-                    onSuccess={() => { void refetch(); handleCloseModal() }}
-                    onCancel={() => handleCloseModal()}
-                />
-            </BaseModal>
-
-            {/* Edit Modal — CategoryForm keeps rich selectors + audit */}
+            {/* Unified Modal — CategoryForm keeps rich selectors + audit for both create and edit */}
             <CategoryForm
-                onSuccess={() => { void refetch() }}
-                open={isFormOpen}
+                onSuccess={() => { void refetch(); handleCloseModal() }}
+                open={isFormOpen || isCreateOpen}
                 onOpenChange={(open) => {
                     if (!open) handleCloseModal()
-                    else setIsFormOpen(true)
+                    else {
+                        if (isCreateOpen) setIsCreateOpen(true)
+                        if (isFormOpen) setIsFormOpen(true)
+                    }
                 }}
                 initialData={editingCategory || undefined}
             />

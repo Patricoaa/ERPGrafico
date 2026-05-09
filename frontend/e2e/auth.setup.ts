@@ -10,8 +10,8 @@ setup('authenticate', async ({ page }) => {
   await page.goto('/login');
   await page.waitForLoadState('networkidle');
 
-  await page.getByLabel('Usuario').fill(username);
-  await page.getByLabel('Contraseña').fill(password);
+  await page.locator('input[name="username"]').fill(username);
+  await page.locator('input[name="password"]').fill(password);
   await page.getByRole('button', { name: /iniciar sesión/i }).click();
 
   // Esperar redirección al dashboard (confirma login exitoso)
