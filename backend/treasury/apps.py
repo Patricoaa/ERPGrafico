@@ -24,8 +24,8 @@ class TreasuryConfig(AppConfig):
                 icon='landmark',
                 search_fields=('transaction_number', 'contact__name', 'contact__tax_id'),
                 display_template='{transaction_number} · {contact.name}',
-                list_url='/tesoreria',
-                detail_url_pattern='/tesoreria/{id}',
+                list_url='/treasury/movements',
+                detail_url_pattern='/treasury/movements/{id}',
                 permission='treasury.view_treasurymovement',
             ))
             UniversalRegistry.register(SearchableEntity(
@@ -34,8 +34,8 @@ class TreasuryConfig(AppConfig):
                 icon='piggy-bank',
                 search_fields=('name', 'account_number'),
                 display_template='{name}',
-                list_url='/tesoreria/cuentas',
-                detail_url_pattern='/tesoreria/cuentas/{id}',
+                list_url='/treasury/accounts',
+                detail_url_pattern='/treasury/accounts/{id}',
                 permission='treasury.view_treasuryaccount',
             ))
             UniversalRegistry.register(SearchableEntity(
@@ -44,8 +44,9 @@ class TreasuryConfig(AppConfig):
                 icon='calculator',
                 search_fields=('terminal__name',),
                 display_template='Sesión POS {id}',
-                list_url='/tesoreria/cajas',
-                detail_url_pattern='/tesoreria/cajas/{id}',
+                # List lives under sales module (POS context); detail has own canonical route
+                list_url='/sales/sessions',
+                detail_url_pattern='/treasury/sessions/{id}',
                 permission='treasury.view_possession',
             ))
             UniversalRegistry.register(SearchableEntity(
@@ -54,8 +55,9 @@ class TreasuryConfig(AppConfig):
                 icon='file-spreadsheet',
                 search_fields=('treasury_account__name', 'statement_date'),
                 display_template='Cartola {treasury_account.name} {statement_date}',
-                list_url='/tesoreria/cartolas',
-                detail_url_pattern='/tesoreria/cartolas/{id}',
+                # List lives under reconciliation module; detail has own canonical route
+                list_url='/treasury/reconciliation',
+                detail_url_pattern='/treasury/statements/{id}',
                 permission='treasury.view_bankstatement',
             ))
         except Exception:
