@@ -69,7 +69,7 @@ export function FiscalYearDetailClient({ fiscalYearId }: FiscalYearDetailClientP
 
     return (
         <EntityDetailPage
-            entityType="fiscalyear"
+            entityType="fiscal_year"
             title="Año Fiscal"
             displayId={fiscalYear.year.toString()}
             icon="calendar"
@@ -91,7 +91,7 @@ export function FiscalYearDetailClient({ fiscalYearId }: FiscalYearDetailClientP
                     onPreviewClosing={handlePreviewClosing}
                     onReopenFiscalYear={reopenFiscalYear}
                     onGenerateOpening={generateOpeningEntry}
-                    isFiscalYearLoading={actionLoadingYr === fiscalYear.year}
+                    isFiscalYearLoading={actionLoadingYr}
                 />
 
                 <FiscalYearClosingWizard

@@ -27,11 +27,11 @@
 | **F5** | GenericForeignKey selectivo + ProductTypeStrategy | 3 sprints (5-6 semanas) | Alto | F4 estable, datos migrados |
 | **F6** | Hardening operacional y cierre de gates pendientes | 2 sprints (3-4 semanas) | Medio | F5 mergeada |
 | **F7** | Detail routes reales para entidades searchable (corrige rutas inexistentes del Universal Search) | 2 sprints (3-4 semanas) | Medio | F6 mergeada |
-| **F8** | Reversión de migraciones EntityForm + expansión del schema contract + contrato visual documentado | 3 sprints (5-6 semanas) | Medio-alto | F7 estable |
+| **F8** | Unificación del flujo de edición sobre query-param (Opción A: modal-on-list canónico) | 1-2 sprints (2-3 semanas) | Bajo-medio | F7 estable |
 
-**Esfuerzo total estimado:** 17-19 sprints (~8-9 meses con 1 ingeniero senior dedicado, o 4-5 meses con 2).
+**Esfuerzo total estimado:** 15-16 sprints (~7-8 meses con 1 ingeniero senior dedicado, o 4 meses con 2).
 
-**Hito de "Generic Form Injection mínimo viable":** fin de F4. F5 es enabler para escalar. F6 cierra deuda operacional. **F7 corrige las rutas inexistentes del Universal Search (Opción B documentada en la auditoría 2026-05-08).** **F8 revierte la migración prematura de formularios (Phase 4) y reconstruye sobre un contrato de schema alineado con los contratos de UI existentes.**
+**Hito de "Generic Form Injection mínimo viable":** fin de F4. F5 es enabler para escalar. F6 cierra deuda operacional. **F7 corrige las rutas inexistentes del Universal Search creando rutas `[id]` reales.** **F8 (reorientada 2026-05-09):** la migración a EntityForm schema-driven se descarta — los formularios existentes ya cumplen los contratos UI del proyecto. F8 ahora consiste en hacer que el deeplink _no_ abra una página completa sino el modal de edición existente sobre la lista, vía URL-state pattern (`?selected=<id>`).
 
 ---
 
@@ -304,52 +304,57 @@
 
 ---
 
-## F8 — Schema-Driven Forms: reversión + expansión del contract + contrato visual documentado
+## F8 — Unificación del flujo de edición sobre query-param (Opción A: modal-on-list canónico)
 
-> **Origen:** auditoría del 2026-05-08 detectó que la migración de formularios de Phase 4 (commit `9387cb91`) sustituyó tres formularios con estructura rica (`BudgetEditor`/`CategoryForm`/`UoMForm` — secciones, grid 4-col, switches con expansión condicional animada, selectores async filtrados, icon picker, `ActivitySidebar`) por `EntityForm` minimal que solo conoce `tabs` lineales y trata FK como input numérico de id. Esto produjo (1) bifurcación crear/editar (la creación usa el form genérico, la edición sigue usando el form rico original — usuarios encuentran dos UIs distintas para la misma entidad) y (2) regresión de UX en los flujos migrados sin haber siquiera entregado el "5 modelos simples sin código frontend" prometido.
-> **Decisión:** Opción B+A — **revertir** las tres migraciones de Phase 4 y, en paralelo, **expandir** el contrato del schema (`FormMeta` backend + `EntityForm` frontend) hasta que pueda expresar el vocabulario visual real del proyecto, anclado a los contratos de UI ya existentes ([form-layout-architecture.md](../../20-contracts/form-layout-architecture.md), [component-form-patterns.md](../../20-contracts/component-form-patterns.md), [component-selectors.md](../../20-contracts/component-selectors.md), [component-visual-hierarchy.md](../../20-contracts/component-visual-hierarchy.md)). Sólo entonces re-migrar.
-> **Sin tocar modelos de negocio.** Cambios concentrados en `core/serializers/metadata.py`, `frontend/components/shared/EntityForm/`, y los `FormMeta` de los modelos piloto.
+> **Origen:** decisión 2026-05-09 tras implementar F7 y la primera mitad de F8 (T-80..T-85). La auditoría confirmó que: (a) los formularios existentes ya cumplen los contratos UI del proyecto y no necesitan ser sustituidos por schema-driven; (b) el shell `EntityDetailPage` + `*DetailClient` introducido en F7 produce una segunda UI de edición (página completa) que coexiste con el modal local de la lista, generando duplicación y divergencia futura. El usuario quiere que el deeplink **no** abra página completa sino que muestre directamente el modal de edición existente sobre la lista.
+> **Decisión:** Opción A (URL-state pattern). El registry sigue emitiendo `/<module>/<entity>/{id}` (URLs limpias). Cada `[id]/page.tsx` se convierte en `redirect()` server-side a `<list_url>?selected={id}`. La página de lista lee `searchParams.selected`, fetchea la entidad y abre su modal local. Una sola UI canónica para editar (el modal existente), sea desde la lista, desde el Universal Search o desde un link compartido.
+> **Sin tocar formularios ni modelos.** Cambios concentrados en `[id]/page.tsx` (redirects), las páginas de lista (lectura de query param) y un hook compartido `useSelectedEntity`.
+> **Estado:** T-80..T-83 (reverts de Phase 4) ya ejecutadas y se mantienen. T-84..T-93 originales (Widget Registry, EntityForm v2, re-migración schema-driven) **descartadas** — superseded por las nuevas T-84..T-95 que implementan la Opción A. El contrato `schema-driven-forms.md` queda como nota histórica deprecada (ver T-84).
 
 ### Objetivos
 
-- Revertir los tres flujos de creación migrados en Phase 4 a su forma rica original (estado pre-`9387cb91`), conservando `BudgetEditor`/`CategoryForm`/`UoMForm` como fuente única para crear+editar.
-- Publicar un nuevo contrato `docs/20-contracts/schema-driven-forms.md` que defina el vocabulario del schema (`sections`, `grid_cols`, `widget`, `widget_props`, `visible_if`, `sidebar`, `actions`) y su mapeo determinístico a los componentes ya contractuados (`FormSection`, `FormSplitLayout`, `LabeledInput`, selectores async, etc.). El contrato es **derivado**: no inventa primitives nuevos, sólo declara cómo el JSON los invoca.
-- Implementar `EntityForm v2` que consume el contrato extendido y delega a un `Widget Registry` frontend (`AccountSelector`, `ProductSelector`, `CategorySelector`, `UoMSelector`, `ContactSelector`, `IconPicker`, `LabeledSwitch`, FK genérico async).
-- Re-migrar las tres entidades con paridad visual probada (snapshot/Storybook) **antes** de declarar la migración cerrada; sólo entonces deprecar los forms legacy.
-- Migrar también los pilotos verdaderamente simples del plan original (`UoMCategory`, `ProductAttribute`, `ProductAttributeValue`, `Attachment`) que sí cumplen con el alcance "schema-driven sin código custom".
+- Una sola UI canónica de edición por entidad: el modal local existente. Sin shell de página completa, sin EntityForm schema-driven, sin DetailClient.
+- Deeplink `/inventory/categories/123` (interno o externo) abre el modal sobre la lista, no una página completa.
+- La lista responde tanto a clicks internos (acción "Editar" del row) como a deeplinks externos con la misma UX.
+- Cero código frontend duplicado entre "editar desde lista" y "editar desde search/deeplink".
 
 ### Entregables
 
-- ADR-0019: reversión de Phase 4 + estrategia de expansión del schema. Justifica por qué la migración previa fue prematura (gap de contrato), define qué clase de formulario es candidato a schema-driven y cuál NO ([audit-report §2.1 — bloqueantes](00-audit-report.md#21--bloqueantes--formulario-especializado-siempre)).
-- **Reversión** de [BudgetsListView.tsx](../../../frontend/features/finance/components/BudgetsListView.tsx), [CategoryList.tsx](../../../frontend/features/inventory/components/CategoryList.tsx), [UoMList.tsx](../../../frontend/features/inventory/components/UoMList.tsx) al patrón pre-Phase 4 (mismo form para crear y editar). Tres reverts limpios via `git revert -p` + ajuste de imports.
-- **Nuevo contrato** [docs/20-contracts/schema-driven-forms.md](../../20-contracts/schema-driven-forms.md) declarando: vocabulario del JSON, tabla `widget → componente`, reglas de coherencia con los contratos UI existentes, ejemplos canónicos para los 3 niveles de complejidad (Micro / Estándar / Ficha Maestra), criterios de "este formulario NO califica para schema-driven".
-- Backend: ampliación de `FormMeta` y `build_schema()` ([backend/core/serializers/metadata.py](../../../backend/core/serializers/metadata.py)) con `sections`, `grid_cols`, `field_widget`, `widget_props`, `visible_if`, `sidebar` (entityType para `ActivitySidebar`).
-- Frontend: `EntityForm v2` ([frontend/components/shared/EntityForm/](../../../frontend/components/shared/EntityForm/)) — section grouping, grid 4-col, widget registry, `visible_if` con `animate-in fade-in`, integración condicional con `FormSplitLayout` + `ActivitySidebar`.
-- Re-migración de Budget/ProductCategory/UoM con paridad visual probada (Storybook story por entidad + screenshot diff vs. el form legacy en commit pre-`9387cb91`).
-- Migración nueva de UoMCategory, ProductAttribute, ProductAttributeValue, Attachment (entidades verdaderamente simples — pilotos correctos del plan original).
-- Test arquitectónico `test_schema_widgets_resolve` que verifica que cada `widget` declarado en algún `FormMeta` existe en el frontend Widget Registry.
-- Suite de visual regression (Storybook + Chromatic o Playwright screenshot) para los formularios re-migrados.
+- ADR-0020: _"Modal-on-list as canonical edit UX"_. Supersede el plan de expansión schema-driven de ADR-0019; conserva sólo la parte de revert de Phase 4. Justifica la Opción A frente a B (parallel + intercepting routes), documenta los trade-offs aceptados.
+- Contrato nuevo `docs/20-contracts/list-modal-edit-pattern.md` documentando el patrón URL-state: forma del query param (`?selected=<id>`), responsabilidad del list page (lectura, fetch, mount del modal), responsabilidad del modal (cleanup del param al cerrar), manejo de 404/403 (toast + `router.replace`), prefetch desde TanStack cache, regla de desacoplamiento (cómo extraer el modal a un componente standalone si en el futuro debe abrirse desde otro contexto).
+- Conversión de los 29 `[id]/page.tsx` en `redirect()` server-side a `<list_url>?selected={id}`.
+- Hook compartido `useSelectedEntity<T>(endpoint)` ([frontend/hooks/useSelectedEntity.ts](../../../frontend/hooks/useSelectedEntity.ts), nuevo) que lee `searchParams.selected`, fetchea la entidad (con cache TanStack), expone `clearSelection()` que hace `router.replace` quitando el param.
+- Las ~20 páginas de lista actualizadas para consumir `useSelectedEntity` y abrir su modal de edición existente con `initialData` y `open`.
+- Decommission: 23 `*DetailClient.tsx` y `EntityDetailPage` shell marcados como deprecated y removidos al final de la fase. El prop `inline` de los formularios queda como dead code (también removido).
+- Marcar `docs/20-contracts/schema-driven-forms.md` como deprecated (frontmatter `status: superseded`, link al ADR-0020).
+- Test Playwright `e2e/universal-search-opens-modal.spec.ts` que verifica para cada entidad searchable: click en search → URL `?selected=<id>` → modal visible sobre la lista → cerrar → param removido → URL limpia.
+- Test arquitectónico `test_search_results_route_to_list_with_param` que valida que cada `SearchableEntity.detail_url_pattern` corresponde a una ruta `[id]` que redirige a `<list_url>?selected={id}`.
 
 ### Gate de salida
 
-- [ ] `git diff master -- frontend/features/{finance,inventory}` no contiene `EntityForm` para Budget/ProductCategory/UoM en estado parcialmente migrado (o todo migrado, o nada — sin bifurcación crear/editar).
-- [ ] [docs/20-contracts/schema-driven-forms.md](../../20-contracts/schema-driven-forms.md) mergeado y referenciado desde [docs/20-contracts/component-decision-tree.md](../../20-contracts/component-decision-tree.md) y desde [docs/30-playbooks/add-feature.md](../../30-playbooks/add-feature.md).
-- [ ] Snapshot visual del `BudgetEditor` re-migrado coincide con el snapshot del commit pre-Phase 4 (tolerancia <2% diff píxel).
-- [ ] `test_schema_widgets_resolve` corre en CI; falla si un `FormMeta` declara un `widget` no registrado.
-- [ ] 7 modelos en producción usan `EntityForm v2` con cero código frontend custom y zero regresión visual: Budget, ProductCategory, UoM, UoMCategory, ProductAttribute, ProductAttributeValue, Attachment.
-- [ ] Forms legacy (`BudgetEditor`, `CategoryForm`, `UoMForm`) deprecados (warning en CI) o eliminados según ADR-0019.
-- [ ] Demo: agregar un campo nuevo a `Budget` (ej: `cost_center`) sólo requiere editar el modelo Django + migración; el form lo renderiza automáticamente con la sección y widget correctos.
+- [ ] Buscar "NV-001" en Universal Search desde cualquier ruta y aterrizar en `/sales/orders?selected=<id>` con el modal `<SaleOrderForm initialData={...} />` abierto sobre la lista.
+- [ ] Refresh de `/sales/orders/<id>` redirige a `/sales/orders?selected=<id>` y abre el modal — sin parpadeo de página intermedia perceptible.
+- [ ] Click en acción "Editar" de cualquier lista navega a `?selected=<id>` (mismo flujo que search) — no abre el modal vía estado local.
+- [ ] Cerrar el modal hace `router.replace` quitando el param; URL queda limpia y la lista visible.
+- [ ] `find frontend/features -name "*DetailClient*"` retorna 0 resultados.
+- [ ] `frontend/components/shared/EntityDetailPage.tsx` eliminado.
+- [ ] `grep -rn "inline?:" frontend/features/**/components/*Form.tsx` retorna 0 resultados (prop dead code).
+- [ ] `docs/20-contracts/list-modal-edit-pattern.md` mergeado y referenciado desde [docs/20-contracts/component-decision-tree.md](../../20-contracts/component-decision-tree.md), [docs/20-contracts/module-layout-navigation.md](../../20-contracts/module-layout-navigation.md) y [docs/30-playbooks/add-feature.md](../../30-playbooks/add-feature.md).
+- [ ] `docs/20-contracts/schema-driven-forms.md` con frontmatter `status: superseded` y link al ADR-0020.
+- [ ] Suite Playwright `e2e/universal-search-opens-modal.spec.ts` verde sobre las 26 entidades searchables.
+- [ ] Test arquitectónico `test_search_results_route_to_list_with_param` corre en CI.
+- [ ] ADR-0020 mergeado.
 
 ### Tareas asociadas
 
-`T-80` a `T-93` en [20-task-list.md](20-task-list.md#f8--schema-driven-forms-reversión--expansión--contrato-visual).
+`T-80` a `T-95` en [20-task-list.md](20-task-list.md#f8--unificación-del-flujo-de-edición-sobre-query-param-opción-a). Las T-80..T-83 (reverts) están ✅ DONE y se mantienen sin cambios. Las T-84..T-93 originales se descartan; las nuevas T-84..T-95 implementan la Opción A.
 
 ### Riesgos clave
 
-- `R-15`: el contrato `schema-driven-forms.md` puede divergir de `form-layout-architecture.md` y producir dos fuentes de verdad sobre layouts. **Mitigación:** el contrato nuevo es **derivado** — declara cómo el JSON invoca primitives, no redefine primitives. Se incluye en `precondition` frontmatter de `schema-driven-forms.md` la dependencia explícita a los 4 contratos UI base; cualquier cambio incompatible requiere ADR.
-- `R-16`: la paridad visual de la re-migración puede ser difícil de garantizar (animaciones, focus management, comportamiento del icon picker). **Mitigación:** aceptar que entidades con widgets verdaderamente custom (`Contact` con sus 50+ properties, `Account` con jerarquía) **nunca** califiquen para schema-driven y permanecen con form especializado. Documentar la frontera en el contrato T-84.
-- `R-17`: la reversión puede chocar con cambios posteriores a `9387cb91` sobre los mismos archivos. **Mitigación:** revisar `git log frontend/features/{finance,inventory}` antes de iniciar T-81..T-83 y resolver conflictos manualmente; no hacer revert ciego.
-- `R-18`: introducir `sections` y `visible_if` en `FormMeta` puede tentar a equipos a usar schema-driven en formularios complejos donde no aplica. **Mitigación:** el contrato T-84 incluye un "decision tree" explícito (cuándo SÍ, cuándo NO) y un test arquitectónico que falla si un modelo de la lista negra (`Account`, `JournalEntry`, `Contact`, `Product` manufacturable, `WorkOrder`) declara `FormMeta.ui_layout` con uso del schema-driven path.
+- `R-15` (revisado): la lista debe estar mountada para que el modal abra. Si una lista trae 500+ filas con filtros costosos, el deeplink paga ese costo de mount sólo para ver una entidad. **Mitigación:** la lista ya tiene paginación/lazy load; el modal abre con su propio fetch del id en paralelo y muestra skeleton. Documentado en el contrato T-85 como trade-off aceptado.
+- `R-16` (nuevo): si en el futuro el modal de edición debe abrirse desde otro contexto (panel lateral del dashboard, drawer de notificación), el acoplamiento lista↔modal estorba. **Mitigación:** el contrato T-85 incluye una regla de desacoplamiento: el componente que renderiza el modal debe ser exportable como `<EntityEditModal entityId={id} onClose={...} />` independiente, y la lista lo monta como uno más de sus consumidores. No se exige extraer hoy; se exige extraer cuando aparezca el segundo consumidor.
+- `R-17` (nuevo): permisos/404 en deeplink — un usuario llega con `?selected=999` que no existe o no puede ver. **Mitigación:** `useSelectedEntity` maneja 404 con toast + `router.replace` quitando el param (no queda modal vacío); 403 redirige al list root con toast permission-denied. Incluido en T-86.
+- `R-18` (descartado del original): el riesgo de que `FormMeta.sections` tiente a usar schema-driven en formularios complejos ya no aplica — el path schema-driven se cancela.
 
 ---
 
@@ -365,7 +370,7 @@ F4 requiere F3 (Strategy + side-effects limpios) para que Service Layer sea limp
 F5 requiere F4 estable (DocumentService maneja la abstracción durante la migración)
 F6 cierra los gates de F1..F5 que quedaron pendientes; sin features nuevas
 F7 corrige las rutas inexistentes del Universal Search creando [id] reales
-F8 revierte la migración prematura de Phase 4 y reconstruye sobre un contrato visual documentado
+F8 (reorientada): unifica el flujo de edición sobre query-param — el deeplink abre el modal local existente sobre la lista, no una página completa
 ```
 
 ---
@@ -377,15 +382,16 @@ F8 revierte la migración prematura de Phase 4 y reconstruye sobre un contrato v
 | Líneas duplicadas en `Model.save()` | ~600 (estimado por inspección) | <100 | <100 | <100 | <100 |
 | Ocurrencias de `__class__.__name__` o `isinstance` para discriminación | 8 conocidas | 0 (gate F3) | **0 verificado por test arquitectónico en CI** | 0 | 0 |
 | Apps registradas en UniversalRegistry | 0 | 12 | 12 (todas las entidades T-03 cubiertas) | 12 | 12 |
-| Modelos con CRUD via `<EntityForm />` (sin frontend custom) | 0 | ≥10 | ≥10 | ≥10 | **≥7 con paridad visual probada (post-revert)** |
+| Modelos con CRUD via `<EntityForm />` (sin frontend custom) | 0 | ≥10 | ≥10 | ≥10 | **0 (path schema-driven cancelado en F8 — todos los forms usan el patrón modal-on-list existente)** |
 | Coverage de `core/strategies/` | n/a | >90% | >90% | >90% | >90% |
 | Tiempo medio para agregar nueva entidad CRUD simple | ~3 días (hoy) | <1 día | <1 día | <1 día | <1 día |
 | Tests de caracterización financiera | 0 | >50 | **≥75 snapshots versionados, CI obligatorio** | ≥75 | ≥75 |
 | Tests E2E de flujos críticos | 0 | n/a | **4 flujos cubiertos (Venta, POS, Compra, Cierre)** | **+1 (Universal Search routes)** | +1 |
 | Schema endpoint expone campos sensibles (`pos_pin`, etc.) | n/a | sin validar | **0 — validado por test** | 0 | 0 |
 | Rutas registradas en UniversalRegistry que devuelven 404 | n/a | n/a | 26 (todas) | **0 — validado por Playwright** | 0 |
-| Bifurcación crear/editar (entidades con dos UIs distintas) | 0 | 0 | 3 (Budget, Category, UoM) | 3 | **0 — eliminado por reversión + re-migración** |
-| Contratos UI publicados en `docs/20-contracts/` | 18 | 18 | 18 | **19 (+module-layout extension)** | **20 (+schema-driven-forms.md)** |
+| Bifurcación crear/editar (entidades con dos UIs distintas) | 0 | 0 | 3 (Budget, Category, UoM) | 3 | **0 — eliminado por reversión (T-81..T-83 done)** |
+| UIs distintas para editar la misma entidad (modal lista vs. página detalle) | 0 | 0 | 0 | 23 (DetailClient + modal lista) | **0 — DetailClient eliminado, modal canónico** |
+| Contratos UI publicados en `docs/20-contracts/` | 18 | 18 | 18 | **19 (+module-layout extension)** | **20 (+list-modal-edit-pattern.md)** |
 
 ---
 

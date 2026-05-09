@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef, Row } from "@tanstack/react-table"
@@ -32,6 +33,23 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
     const [currentView, setCurrentView] = useState<'card' | 'list'>('card')
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    const pathname = usePathname()
+
+    const toggleSelection = (id: number) => {
+        const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
+        const params = new URLSearchParams(searchParams.toString())
+        
+        if (isSelected && isHubOpen) {
+            params.delete('selected')
+        } else {
+            params.set('selected', String(id))
+        }
+        
+        const query = params.toString()
+        router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    }
 
     const viewOptions = [
         { label: "Lista", value: "list", icon: List },
@@ -157,13 +175,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                                     ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300" 
                                     : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5"
                             )}
-                            onClick={() => {
-                                if (isSelected) {
-                                    closeHub()
-                                } else {
-                                    openHub({ orderId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
-                                }
-                            }}
+                            onClick={() => toggleSelection(item.id)}
                         />
                     </div>
                 )
@@ -223,13 +235,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                                     ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300" 
                                     : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5"
                             )}
-                            onClick={() => {
-                                if (isSelected) {
-                                    closeHub()
-                                } else {
-                                    openHub({ orderId: null, invoiceId: item.id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
-                                }
-                            }}
+                            onClick={() => toggleSelection(item.id)}
                         />
                     </div>
                 )
@@ -242,19 +248,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             <DataTable
                 columns={(viewMode === 'orders' ? columns : noteColumns) as any}
                 data={(viewMode === 'orders' ? filteredOrders : filteredNotes) as any}
-                onRowClick={(row: any) => {
-                    const id = row.original.id
-                    const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
-                    if (isSelected && isHubOpen) {
-                        closeHub()
-                    } else {
-                        if (viewMode === "orders") {
-                            openHub({ orderId: id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
-                        } else {
-                            openHub({ orderId: null, invoiceId: id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
-                        }
-                    }
-                }}
+                onRowClick={(row: any) => toggleSelection(row.original.id)}
                 cardMode={true}
                     currentView={currentView}
                     onViewChange={(v) => setCurrentView(v as 'list' | 'card')}
@@ -360,15 +354,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                                             type={viewMode === 'orders' ? 'sale' : 'note'}
                                             hideStatus={hideStatusInCards}
                                             visibleColumns={table.getState().columnVisibility}
-                                            onClick={() => {
-                                                if (isSelected) {
-                                                    closeHub()
-                                                } else if (viewMode === 'orders') {
-                                                    openHub({ orderId: id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
-                                                } else {
-                                                    openHub({ orderId: null, invoiceId: id, type: 'sale', posSessionId, onActionSuccess: handleActionSuccess })
-                                                }
-                                            }}
+                                            onClick={() => toggleSelection(id)}
                                         />
                                     )
                                 })}

@@ -18,7 +18,7 @@ import { useEntityHistory } from "@/features/audit/hooks/useEntityHistory"
 
 interface ActivitySidebarProps {
     entityId: number | string
-    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule' | 'treasuryaccount' | 'bank' | 'paymentmethod' | 'terminal' | 'category' | 'warehouse' | 'uom' | 'uom_category' | 'attribute' | 'account' | 'bank_journal' | 'employee' | 'salaryadvance'
+    entityType: 'product' | 'contact' | 'sale_order' | 'purchase_order' | 'invoice' | 'payment' | 'sale_delivery' | 'sale_return' | 'purchase_receipt' | 'user' | 'company_settings' | 'work_order' | 'journal_entry' | 'stock_move' | 'pricing_rule' | 'reordering_rule' | 'treasuryaccount' | 'bank' | 'paymentmethod' | 'terminal' | 'category' | 'warehouse' | 'uom' | 'uom_category' | 'attribute' | 'account' | 'bank_journal' | 'employee' | 'salaryadvance' | 'fiscal_year' | 'tax_period' | 'f29_declaration' | 'task' | 'attachment'
     className?: string
     title?: string
 }

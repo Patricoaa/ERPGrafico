@@ -1,10 +1,11 @@
-import { DeliveryDetailClient } from "@/features/sales"
+import { redirect } from 'next/navigation'
+import { searchableEntityRoutes } from '@/lib/searchableEntityRoutes'
 
-interface PageProps {
-    params: Promise<{ id: string }>
-}
-
-export default async function DeliveryDetailPage({ params }: PageProps) {
+// T-88: SaleDelivery → /sales/deliveries?selected=<id>
+// Opción A (ADR-0020): redirige a la lista con ?selected=<id>
+// El modal de edición se abre en la lista con initialData fetcheado por useSelectedEntity.
+export default async function DetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
-    return <DeliveryDetailClient orderId={id} />
+    const listUrl = searchableEntityRoutes['sales.saledelivery']
+    redirect(`${listUrl}?selected=${id}`)
 }

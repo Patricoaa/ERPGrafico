@@ -53,17 +53,31 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
+    // Open edit form if ?selected= is present (ADR-0020)
+    useEffect(() => {
+        const selectedId = searchParams.get('selected')
+        if (selectedId && flatAccounts.length > 0) {
+            const acc = flatAccounts.find(a => a.id === parseInt(selectedId))
+            if (acc && (!isFormOpen || editingAccount?.id !== acc.id)) {
+                setEditingAccount(acc)
+                setIsFormOpen(true)
+            }
+        }
+    }, [searchParams, flatAccounts])
+
+    const clearSelection = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('selected')
+        const query = params.toString()
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    }
+
     const handleCloseModal = () => {
         setIsFormOpen(false)
         setEditingAccount(null)
         setFormParentId(null)
         onExternalOpenChange?.(false)
-
-        if (externalOpen || searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
+        clearSelection()
     }
 
     const handleAddAccount = (parentId?: string) => {
@@ -73,9 +87,9 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     }
 
     const handleEditAccount = (account: Account) => {
-        setEditingAccount(account)
-        setFormParentId(null)
-        setIsFormOpen(true)
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('selected', String(account.id))
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     // Synchronize external modal trigger
@@ -276,6 +290,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                         <ActivitySidebar entityId={editingAccount.id} entityType="account" />
                     ) : undefined
                 }
+                readonly={editingAccount ? !editingAccount.is_selectable : false}
                 onSuccess={() => {
                     refetch()
                     handleCloseModal()

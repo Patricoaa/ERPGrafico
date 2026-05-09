@@ -1,15 +1,11 @@
-import { Metadata } from "next"
-import { AccountDetailClient } from "@/features/finance/components/AccountDetailClient"
+import { redirect } from 'next/navigation'
+import { searchableEntityRoutes } from '@/lib/searchableEntityRoutes'
 
-export const metadata: Metadata = {
-    title: "Detalle de Cuenta | ERP Gráfico",
-}
-
-interface PageProps {
-    params: Promise<{ id: string }>
-}
-
-export default async function AccountDetailPage({ params }: PageProps) {
+// T-88: Account → /accounting/accounts?selected=<id>
+// Opción A (ADR-0020): redirige a la lista con ?selected=<id>
+// El modal de edición se abre en la lista con initialData fetcheado por useSelectedEntity.
+export default async function DetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
-    return <AccountDetailClient accountId={id} />
+    const listUrl = searchableEntityRoutes['accounting.account']
+    redirect(`${listUrl}?selected=${id}`)
 }

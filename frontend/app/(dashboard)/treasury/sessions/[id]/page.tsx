@@ -1,22 +1,11 @@
-import { Metadata } from "next"
-import { Suspense } from "react"
-import { FormSkeleton } from "@/components/shared"
-import { POSSessionDetailClient } from "@/features/treasury/components/POSSessionDetailClient"
+import { redirect } from 'next/navigation'
+import { searchableEntityRoutes } from '@/lib/searchableEntityRoutes'
 
-export const metadata: Metadata = {
-    title: "Sesión de Caja | ERP Gráfico",
-    description: "Detalle de una sesión de caja POS.",
-}
-
-interface PageProps {
-    params: Promise<{ id: string }>
-}
-
-export default async function POSSessionDetailPage({ params }: PageProps) {
+// T-88: POSSession → /treasury/sessions?selected=<id>
+// Opción A (ADR-0020): redirige a la lista con ?selected=<id>
+// El modal de edición se abre en la lista con initialData fetcheado por useSelectedEntity.
+export default async function DetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
-    return (
-        <Suspense fallback={<div className="p-8"><FormSkeleton /></div>}>
-            <POSSessionDetailClient sessionId={id} />
-        </Suspense>
-    )
+    const listUrl = searchableEntityRoutes['treasury.possession']
+    redirect(`${listUrl}?selected=${id}`)
 }

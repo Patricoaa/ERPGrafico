@@ -1,11 +1,11 @@
-import { ProductDetailClient } from "@/features/inventory/components/ProductDetailClient"
-import { Metadata } from "next"
+import { redirect } from 'next/navigation'
+import { searchableEntityRoutes } from '@/lib/searchableEntityRoutes'
 
-export const metadata: Metadata = {
-    title: "Detalle de Producto | ERP",
-    description: "Ver y editar detalle de producto",
-}
-
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
-    return <ProductDetailClient productId={params.id} />
+// T-88: Product → /inventory/products?selected=<id>
+// Opción A (ADR-0020): redirige a la lista con ?selected=<id>
+// El modal de edición se abre en la lista con initialData fetcheado por useSelectedEntity.
+export default async function DetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
+    const listUrl = searchableEntityRoutes['inventory.product']
+    redirect(`${listUrl}?selected=${id}`)
 }

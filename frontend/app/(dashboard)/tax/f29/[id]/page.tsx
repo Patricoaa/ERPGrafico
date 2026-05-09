@@ -1,22 +1,11 @@
-import { Metadata } from "next"
-import { Suspense } from "react"
-import { FormSkeleton } from "@/components/shared"
-import { F29DeclarationDetailClient } from "@/features/tax/components/F29DeclarationDetailClient"
+import { redirect } from 'next/navigation'
+import { searchableEntityRoutes } from '@/lib/searchableEntityRoutes'
 
-export const metadata: Metadata = {
-    title: "Declaración F29 | ERP Gráfico",
-    description: "Detalle de declaración F29.",
-}
-
-interface PageProps {
-    params: Promise<{ id: string }>
-}
-
-export default async function F29DeclarationDetailPage({ params }: PageProps) {
+// T-88: F29Declaration → /tax/f29?selected=<id>
+// Opción A (ADR-0020): redirige a la lista con ?selected=<id>
+// El modal de edición se abre en la lista con initialData fetcheado por useSelectedEntity.
+export default async function DetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
-    return (
-        <Suspense fallback={<div className="p-8"><FormSkeleton /></div>}>
-            <F29DeclarationDetailClient f29Id={id} />
-        </Suspense>
-    )
+    const listUrl = searchableEntityRoutes['tax.f29declaration']
+    redirect(`${listUrl}?selected=${id}`)
 }

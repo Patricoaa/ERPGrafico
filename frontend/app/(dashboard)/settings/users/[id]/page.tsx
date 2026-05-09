@@ -1,22 +1,11 @@
-import { Metadata } from "next"
-import { Suspense } from "react"
-import { FormSkeleton } from "@/components/shared"
-import { UserDetailClient } from "@/features/users/components/UserDetailClient"
+import { redirect } from 'next/navigation'
+import { searchableEntityRoutes } from '@/lib/searchableEntityRoutes'
 
-export const metadata: Metadata = {
-    title: "Usuario | ERP Gráfico",
-    description: "Detalle de perfil de usuario.",
-}
-
-interface PageProps {
-    params: Promise<{ id: string }>
-}
-
-export default async function UserDetailPage({ params }: PageProps) {
+// T-88: User → /settings/users?selected=<id>
+// Opción A (ADR-0020): redirige a la lista con ?selected=<id>
+// El modal de edición se abre en la lista con initialData fetcheado por useSelectedEntity.
+export default async function DetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
-    return (
-        <Suspense fallback={<div className="p-8"><FormSkeleton /></div>}>
-            <UserDetailClient userId={id} />
-        </Suspense>
-    )
+    const listUrl = searchableEntityRoutes['core.user']
+    redirect(`${listUrl}?selected=${id}`)
 }

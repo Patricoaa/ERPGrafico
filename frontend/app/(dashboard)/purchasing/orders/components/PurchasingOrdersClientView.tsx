@@ -2,7 +2,7 @@
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useEffect, useState, useRef } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
@@ -60,7 +60,7 @@ interface PurchasingOrdersClientViewProps {
     createAction?: React.ReactNode
 }
 
-import { usePurchasingOrders, usePurchasingNotes } from "../../../features/purchasing/hooks/usePurchasing"
+import { usePurchasingOrders, usePurchasingNotes } from "@/features/purchasing/hooks/usePurchasing"
 
 export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction }: PurchasingOrdersClientViewProps) {
     const { orders, refetch: fetchOrders, deleteOrder } = usePurchasingOrders()
@@ -86,24 +86,28 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
 
     const searchParams = useSearchParams()
-    const hubOpenedFromUrl = useRef(false)
+    const router = useRouter()
+    const pathname = usePathname()
+
+    const toggleSelection = (id: number) => {
+        const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
+        const params = new URLSearchParams(searchParams.toString())
+        
+        if (isSelected && isHubOpen) {
+            params.delete('selected')
+        } else {
+            params.set('selected', String(id))
+        }
+        
+        const query = params.toString()
+        router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    }
 
     useEffect(() => {
         if (externalOpenCheckout) {
             setCheckoutOpen(true)
         }
     }, [externalOpenCheckout])
-
-    useEffect(() => {
-        const openHubStr = searchParams.get('openHub')
-        if (openHubStr && !hubOpenedFromUrl.current) {
-            const id = parseInt(openHubStr, 10)
-            if (!isNaN(id)) {
-                hubOpenedFromUrl.current = true
-                openHub({ orderId: id, type: 'purchase', onActionSuccess: fetchOrders })
-            }
-        }
-    }, [searchParams])
 
     const filteredOrders = orders.filter((order: any) => {
         if (!dateRange || !dateRange.from) return true
@@ -283,13 +287,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 hover:bg-transparent"
-                            onClick={() => {
-                                if (isSelected && isHubOpen) {
-                                    closeHub()
-                                } else {
-                                    openHub({ orderId: null, invoiceId: item.id, type: 'purchase', onActionSuccess: fetchNotes })
-                                }
-                            }}
+                            onClick={() => toggleSelection(item.id)}
                         >
                             {isSelected && isHubOpen ? (
                                 <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
@@ -404,13 +402,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 hover:bg-transparent"
-                            onClick={() => {
-                                if (isSelected) {
-                                    closeHub()
-                                } else {
-                                    openHub({ orderId: item.id, type: 'purchase', onActionSuccess: fetchOrders })
-                                }
-                            }}
+                            onClick={() => toggleSelection(item.id)}
                         >
                             {isSelected && isHubOpen ? (
                                 <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
@@ -423,14 +415,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             },
         },
     ]
-
-    const filteredNotes = notes.filter(note => {
-        if (!dateRange || !dateRange.from) return true
-        const noteDate = parseISO(note.date || new Date().toISOString())
-        const start = startOfDay(dateRange.from)
-        const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from)
-        return isWithinInterval(noteDate, { start, end })
-    })
 
     return (
         <div className="space-y-6">
@@ -449,18 +433,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                     <DataTable
                     columns={(viewMode === 'orders' ? columns : noteColumns) as any}
                     data={(viewMode === 'orders' ? filteredOrders : filteredNotes) as any}
-                    onRowClick={(row: any) => {
-                            const isSelected = viewMode === "orders" ? hubConfig?.orderId === row.id : hubConfig?.invoiceId === row.id
-                            if (isSelected && isHubOpen) {
-                                closeHub()
-                            } else {
-                                if (viewMode === "orders") {
-                                    openHub({ orderId: row.id, type: 'purchase', onActionSuccess: fetchOrders })
-                                } else {
-                                    openHub({ orderId: null, invoiceId: row.id, type: 'purchase', onActionSuccess: fetchNotes })
-                                }
-                            }
-                        }}
+                    onRowClick={(row: any) => toggleSelection(row.id)}
                         cardMode={true}
                         currentView={currentView}
                         onViewChange={(v: string) => setCurrentView(v as 'card' | 'list')}
@@ -554,15 +527,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                                                 item={item}
                                                 isSelected={isSelected}
                                                 type={viewMode === 'orders' ? 'purchase' : 'note'}
-                                                onClick={() => {
-                                                    if (isSelected) {
-                                                        closeHub()
-                                                    } else if (viewMode === 'orders') {
-                                                        openHub({ orderId: item.id, type: 'purchase', onActionSuccess: fetchOrders })
-                                                    } else {
-                                                        openHub({ orderId: null, invoiceId: item.id, type: 'purchase', onActionSuccess: fetchNotes })
-                                                    }
-                                                }}
+                                                onClick={() => toggleSelection(item.id)}
                                             />
                                         )
                                     })}
@@ -604,7 +569,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         onOpenChange={(open) => !open && setCompletingInvoice(null)}
                         invoiceId={completingInvoice.id}
                         invoiceType={completingInvoice.type}
-                        contactId={invoicingOrder?.supplier || orders.find(o => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === completingInvoice.id))?.supplier || undefined}
+                        contactId={invoicingOrder?.supplier || orders.find((o: PurchaseOrder) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === completingInvoice.id))?.supplier || undefined}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
@@ -640,7 +605,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         onOpenChange={setFolioModalOpen}
                         invoiceId={selectedInvoice.id}
                         invoiceType={selectedInvoice.type}
-                        contactId={invoicingOrder?.supplier || orders.find(o => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === selectedInvoice.id))?.supplier || undefined}
+                        contactId={invoicingOrder?.supplier || orders.find((o: PurchaseOrder) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === selectedInvoice.id))?.supplier || undefined}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {

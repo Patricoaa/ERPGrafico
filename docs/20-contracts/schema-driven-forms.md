@@ -1,7 +1,14 @@
 ---
 description: Contrato de interfaz para formularios generados desde backend (Schema-Driven).
+status: superseded
+superseded_by: "[ADR-0020](../10-architecture/adr/0020-modal-on-list-edit-ux.md)"
+superseded_date: 2026-05-09
 precondition: [form-layout-architecture.md, component-form-patterns.md, component-selectors.md, component-visual-hierarchy.md]
 ---
+
+> [!CAUTION]
+> **Este contrato está SUPERSEDED (2026-05-09).** La expansión schema-driven fue descartada por [ADR-0020](../10-architecture/adr/0020-modal-on-list-edit-ux.md). Los formularios ricos existentes son el estándar canónico de edición. No implementar `EntityForm` en código nuevo. Este documento se conserva como nota histórica únicamente.
+
 
 # Contrato: Schema-Driven Forms (EntityForm)
 

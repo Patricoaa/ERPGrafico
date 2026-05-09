@@ -47,11 +47,90 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
 
     const startStr = dateRange ? format(dateRange.from, 'yyyy-MM-dd') : ''
     const endStr = dateRange ? format(dateRange.to, 'yyyy-MM-dd') : ''
-    const { data, isFetching: loading, refetch } = useLedger(accountId, startStr, endStr, { enabled: open })
+
+    return (
+        <>
+            {trigger ? (
+                React.isValidElement(trigger) ? (
+                    React.cloneElement(trigger as React.ReactElement<{ onClick?: (e: React.MouseEvent) => void }>, {
+                        onClick: (e: React.MouseEvent) => {
+                            e.stopPropagation();
+                            setOpen(true);
+                            if ((trigger as any).props.onClick) {
+                                (trigger as any).props.onClick(e);
+                            }
+                        }
+                    })
+                ) : (
+                    <div onClick={(e) => { e.stopPropagation(); setOpen(true); }} className="inline-block cursor-pointer">
+                        {trigger}
+                    </div>
+                )
+            ) : (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    title="Ver Libro Mayor"
+                    className="h-8 w-8 p-0"
+                    onClick={() => setOpen(true)}
+                >
+                    <Book className="h-4 w-4 text-primary" />
+                </Button>
+            )}
+            <BaseDrawer
+                open={open}
+                onOpenChange={setOpen}
+                title="Libro Mayor"
+                subtitle={`${accountCode} | ${accountName}`}
+                icon={Book}
+                height="full"
+            >
+                {open && dateRange && (
+                    <React.Suspense fallback={<CardSkeleton count={4} variant="grid" />}>
+                        <LedgerContent
+                            accountId={accountId}
+                            startDate={startStr}
+                            endDate={endStr}
+                            dateRange={dateRange}
+                            setDateRange={setDateRange}
+                        />
+                    </React.Suspense>
+                )}
+            </BaseDrawer>
+
+            {viewingEntry && (
+                <TransactionViewModal
+                    open={!!viewingEntry}
+                    onOpenChange={(open) => !open && setViewingEntry(null)}
+                    type="journal_entry"
+                    id={viewingEntry.id}
+                />
+            )}
+
+
+        </>
+    )
+}
+
+function LedgerContent({
+    accountId,
+    startDate,
+    endDate,
+    dateRange,
+    setDateRange
+}: {
+    accountId: number;
+    startDate: string;
+    endDate: string;
+    dateRange: { from: Date; to: Date };
+    setDateRange: (range: { from: Date; to: Date } | undefined) => void;
+}) {
+    const { serverDate } = useServerDate()
+    const { data, refetch } = useLedger(accountId, startDate, endDate)
+    const [viewingEntry, setViewingEntry] = useState<{ id: number | string } | null>(null)
 
     const deleteMutation = useDeleteJournalEntry({ onSuccess: refetch })
     const deleteConfirm = useConfirmAction<number>((entryId) => deleteMutation.mutateAsync(entryId))
-
     const handleDeleteEntry = (entryId: number) => deleteConfirm.requestConfirm(entryId)
 
     const columns: ColumnDef<LedgerMovement>[] = [
@@ -139,188 +218,6 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                         title="Eliminar Asiento"
                         className="text-destructive"
                         onClick={() => handleDeleteEntry(mov.entry_id)}
-                    />
-                </>
-            ),
-        })
-    ]
-
-    return (
-        <>
-            {trigger ? (
-                React.isValidElement(trigger) ? (
-                    React.cloneElement(trigger as React.ReactElement<{ onClick?: (e: React.MouseEvent) => void }>, {
-                        onClick: (e: React.MouseEvent) => {
-                            e.stopPropagation();
-                            setOpen(true);
-                            if ((trigger as any).props.onClick) {
-                                (trigger as any).props.onClick(e);
-                            }
-                        }
-                    })
-                ) : (
-                    <div onClick={(e) => { e.stopPropagation(); setOpen(true); }} className="inline-block cursor-pointer">
-                        {trigger}
-                    </div>
-                )
-            ) : (
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    title="Ver Libro Mayor"
-                    className="h-8 w-8 p-0"
-                    onClick={() => setOpen(true)}
-                >
-                    <Book className="h-4 w-4 text-primary" />
-                </Button>
-            )}
-            <BaseDrawer
-                open={open}
-                onOpenChange={setOpen}
-                title="Libro Mayor"
-                subtitle={`${accountCode} | ${accountName}`}
-                icon={Book}
-                height="full"
-            >
-                {open && dateRange && (
-                    <React.Suspense fallback={<CardSkeleton count={4} variant="grid" />}>
-                        <LedgerContent
-                            accountId={accountId}
-                            startDate={format(dateRange.from, 'yyyy-MM-dd')}
-                            endDate={format(dateRange.to, 'yyyy-MM-dd')}
-                            dateRange={dateRange}
-                            setDateRange={setDateRange}
-                            onDeleteEntry={handleDeleteEntry}
-                        />
-                    </React.Suspense>
-                )}
-            </BaseDrawer>
-
-            {viewingEntry && (
-                <TransactionViewModal
-                    open={!!viewingEntry}
-                    onOpenChange={(open) => !open && setViewingEntry(null)}
-                    type="journal_entry"
-                    id={viewingEntry.id}
-                />
-            )}
-
-            <ActionConfirmModal
-                open={deleteConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
-                onConfirm={deleteConfirm.confirm}
-                title="Eliminar Asiento Contable"
-                description="¿Está seguro de eliminar este asiento contable? Esta acción revertirá todos los movimientos asociados y no se puede deshacer."
-                variant="destructive"
-            />
-        </>
-    )
-}
-
-function LedgerContent({
-    accountId,
-    startDate,
-    endDate,
-    dateRange,
-    setDateRange,
-    onDeleteEntry
-}: {
-    accountId: number;
-    startDate: string;
-    endDate: string;
-    dateRange: { from: Date; to: Date };
-    setDateRange: (range: { from: Date; to: Date } | undefined) => void;
-    onDeleteEntry: (id: number) => void;
-}) {
-    const { serverDate } = useServerDate()
-    const { data } = useLedger(accountId, startDate, endDate)
-    const [viewingEntry, setViewingEntry] = useState<{ id: number | string } | null>(null)
-
-    const columns: ColumnDef<LedgerMovement>[] = [
-        {
-            accessorKey: "date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />
-            ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <span className="text-xs">{format(new Date(row.original.date), 'dd/MM/yyyy')}</span>
-                </div>
-            )
-        },
-        {
-            accessorKey: "description",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const mov = row.original
-                const glosa = mov.label || mov.description
-                return (
-                    <div className="flex justify-center w-full">
-                        <div className="max-w-[400px] text-xs leading-relaxed text-center" title={glosa}>
-                            {glosa}
-                        </div>
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "debit",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Debe" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const val = parseFloat(row.getValue("debit"))
-                return (
-                    <div className="flex justify-center w-full">
-                        <MoneyDisplay amount={val} showZeroAsDash />
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "credit",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Haber" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const val = parseFloat(row.getValue("credit"))
-                return (
-                    <div className="flex justify-center w-full">
-                        <MoneyDisplay amount={val} showZeroAsDash />
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "balance",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Saldo" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const val = parseFloat(row.getValue("balance"))
-                return (
-                    <div className="flex justify-center w-full">
-                        <MoneyDisplay amount={val} showColor={true} />
-                    </div>
-                )
-            },
-        },
-        createActionsColumn<LedgerMovement>({
-            renderActions: (mov) => (
-                <>
-                    <DataCell.Action
-                        icon={Eye}
-                        title="Ver Asiento"
-                        color="text-primary"
-                        onClick={() => setViewingEntry({ id: mov.entry_id })}
-                    />
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar Asiento"
-                        className="text-destructive"
-                        onClick={() => onDeleteEntry(mov.entry_id)}
                     />
                 </>
             ),
@@ -425,6 +322,15 @@ function LedgerContent({
                     id={viewingEntry.id}
                 />
             )}
+
+            <ActionConfirmModal
+                open={deleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onConfirm={deleteConfirm.confirm}
+                title="Eliminar Asiento Contable"
+                description="¿Está seguro de eliminar este asiento contable? Esta acción revertirá todos los movimientos asociados y no se puede deshacer."
+                variant="destructive"
+            />
         </div>
     )
 }

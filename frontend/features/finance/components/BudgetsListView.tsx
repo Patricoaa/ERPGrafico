@@ -18,14 +18,6 @@ import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 
 import { useSearchParams, usePathname } from "next/navigation"
 
-interface Budget {
-    id: number
-    name: string
-    start_date: string
-    end_date: string
-    description?: string
-}
-
 interface BudgetsListViewProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
@@ -74,6 +66,25 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
     // Edit Modal State
     const [isEditorOpen, setIsEditorOpen] = useState(false)
     const [budgetToEdit, setBudgetToEdit] = useState<Budget | null>(null)
+
+    // Open edit form if ?selected= is present (ADR-0020)
+    useEffect(() => {
+        const selectedId = searchParams.get('selected')
+        if (selectedId && budgets.length > 0) {
+            const b = budgets.find((b: Budget) => b.id === parseInt(selectedId))
+            if (b && (!isEditorOpen || budgetToEdit?.id !== b.id)) {
+                setBudgetToEdit(b)
+                setIsEditorOpen(true)
+            }
+        }
+    }, [searchParams, budgets])
+
+    const clearSelection = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('selected')
+        const query = params.toString()
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    }
 
     const handleCreate = async () => {
         try {
@@ -130,8 +141,9 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
                         icon={Pencil}
                         title="Editar Montos"
                         onClick={() => {
-                            setBudgetToEdit(item)
-                            setIsEditorOpen(true)
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.set('selected', String(item.id))
+                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
                         }}
                     />
                     <DataCell.Action
@@ -206,7 +218,13 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
             {budgetToEdit && (
                 <BudgetEditor
                     open={isEditorOpen}
-                    onOpenChange={setIsEditorOpen}
+                    onOpenChange={(open) => {
+                        setIsEditorOpen(open)
+                        if (!open) {
+                            setBudgetToEdit(null)
+                            clearSelection()
+                        }
+                    }}
                     budget={budgetToEdit}
                     onSave={() => {
                         refetch() // Optional: refresh if metadata changes, mostly for consistency

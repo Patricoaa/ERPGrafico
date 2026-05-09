@@ -229,4 +229,7 @@ Cuando `readonly={true}`:
 - Shell `FormSplitLayout` + `ActivitySidebar`: [form-layout-architecture.md §5-6](./form-layout-architecture.md)
 - Playbook para nueva entidad con ruta `[id]`: [add-feature.md §6](../30-playbooks/add-feature.md)
 - ADR de la convención: [ADR-0019](../10-architecture/adr/0019-entity-detail-route-convention.md)
+- ADR de Opción A (URL-state redirect): [ADR-0020](../10-architecture/adr/0020-modal-on-list-edit-ux.md)
+- **Patrón canónico de edición desde lista / Universal Search:** [list-modal-edit-pattern.md](./list-modal-edit-pattern.md)
 - Matriz de gap: [F7-route-matrix.md](../../docs/50-audit/Arquitectura%20Django/F7-route-matrix.md)
+

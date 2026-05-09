@@ -82,11 +82,15 @@ Esta es una **refactorización mayor** que se ejecutará por fases a lo largo de
 
 ## Estado del trabajo
 
-Sprint actual: **F1..F6 cerradas** (2026-05-08). **F7 y F8 planificadas** tras auditoría del 2026-05-08 que detectó dos brechas no cubiertas por F1..F6:
+Sprint actual: **F1..F7 cerradas** + **F8 ejecutada parcialmente (T-80..T-84)** + **F8 reorientada el 2026-05-09 a Opción A** tras detectar que el shell de página completa de F7 produce una segunda UI de edición que coexiste con el modal de la lista, y que la expansión schema-driven de F8 original es innecesaria dado que los formularios existentes ya cumplen los contratos UI del proyecto.
 
-1. **Universal Search → 404:** las 26 rutas declaradas en `apps.py::ready()` no coinciden con el App Router (slugs en español vs. rutas en inglés; sólo 4 entidades tienen `[id]` real).
-2. **Phase 4 forms → bifurcación crear/editar:** `EntityForm` no puede expresar `sections`, grid, widgets ricos ni `visible_if`; las migraciones de Budget/ProductCategory/UoM dejaron dos UIs distintas para la misma entidad y regresión visual.
+**Brechas iniciales (originadas en auditoría 2026-05-08):**
+1. **Universal Search → 404:** las 26 rutas declaradas en `apps.py::ready()` no coincidían con el App Router (slugs en español vs. rutas en inglés; sólo 4 entidades tenían `[id]` real). Resuelto en F7 (rutas `[id]` reales).
+2. **Phase 4 forms → bifurcación crear/editar:** las migraciones de Budget/ProductCategory/UoM a `EntityForm` dejaron dos UIs distintas para la misma entidad. Resuelto por los reverts T-81..T-83.
 
-F7 corrige (1) creando rutas `[id]` reales para todas las entidades searchable (Opción B). F8 revierte (2), expande el contrato del schema y publica un nuevo contrato visual (`docs/20-contracts/schema-driven-forms.md`) anclado a los contratos UI existentes.
+**Brecha residual (detectada el 2026-05-09):**
+3. **Doble UI de edición:** F7 introdujo `*DetailClient` + `EntityDetailPage` (página completa) que coexiste con el modal de edición local de la lista. Search lleva a página completa; click "Editar" en la lista abre modal. F8 (Opción A) corrige unificando el flujo sobre query-param: el deeplink redirige a `<list_url>?selected={id}` y la lista abre su modal local existente. Una sola UI canónica.
+
+F8 (Opción A) descarta explícitamente la migración a EntityForm schema-driven — los formularios existentes ya cumplen los contratos UI y son la fuente de verdad.
 
 Para actualizar el estado de cada tarea, edita [20-task-list.md](20-task-list.md). Para reportar bloqueos, agrégalos en la sección "Riesgos activos" de [40-migration-and-rollback.md](40-migration-and-rollback.md).

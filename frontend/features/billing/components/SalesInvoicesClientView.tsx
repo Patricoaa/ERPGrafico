@@ -2,6 +2,7 @@
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -28,6 +29,22 @@ export function SalesInvoicesClientView() {
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
     const [currentView, setCurrentView] = useState<'card' | 'list'>('card')
+
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    const pathname = usePathname()
+
+    const toggleSelection = (inv: Invoice) => {
+        const isSelected = hubConfig?.invoiceId === inv.id
+        const params = new URLSearchParams(searchParams.toString())
+        if (isSelected && isHubOpen) {
+            params.delete('selected')
+        } else {
+            params.set('selected', String(inv.id))
+        }
+        const query = params.toString()
+        router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    }
 
     const viewOptions = [
         { label: "Lista", value: "list", icon: List },
@@ -135,13 +152,7 @@ export function SalesInvoicesClientView() {
                         <IconButton
                             circular
                             className="h-8 w-8 hover:bg-transparent"
-                            onClick={() => {
-                                if (isSelected && isHubOpen) {
-                                    closeHub()
-                                } else {
-                                    openHub({ orderId: item.sale_order || null, invoiceId: item.id, type: 'sale', onActionSuccess: refetch })
-                                }
-                            }}
+                            onClick={() => toggleSelection(item)}
                         >
                             {isSelected && isHubOpen ? (
                                 <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
@@ -161,14 +172,7 @@ export function SalesInvoicesClientView() {
             <DataTable
                 columns={columns}
                 data={invoices}
-                onRowClick={(row: Invoice) => {
-                    const isSelected = hubConfig?.invoiceId === row.id
-                    if (isSelected && isHubOpen) {
-                        closeHub()
-                    } else {
-                        openHub({ orderId: row.sale_order || null, invoiceId: row.id, type: 'sale', onActionSuccess: refetch })
-                    }
-                }}
+                onRowClick={(row: Invoice) => toggleSelection(row)}
                 cardMode={true}
                 currentView={currentView}
                 onViewChange={(v: any) => setCurrentView(v as 'card' | 'list')}
@@ -214,18 +218,7 @@ export function SalesInvoicesClientView() {
                                         type="sale_invoice"
                                         isSelected={isSelected}
                                         visibleColumns={table.getState().columnVisibility}
-                                        onClick={() => {
-                                            if (isSelected) {
-                                                closeHub()
-                                            } else {
-                                                openHub({
-                                                    orderId: inv.sale_order || null,
-                                                    invoiceId: inv.id,
-                                                    type: 'sale',
-                                                    onActionSuccess: refetch
-                                                })
-                                            }
-                                        }}
+                                        onClick={() => toggleSelection(inv)}
                                     />
                                 )
                             })}

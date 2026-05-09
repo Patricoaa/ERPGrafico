@@ -103,7 +103,7 @@ Hooks import from `./api/[name]Api`, never from `@/lib/api` directly. See [front
 
 - Three states mandatory: loading (Skeleton), empty (EmptyState), error (toast handled by hook).
 - Status: `StatusBadge` only.
-- Forms: `react-hook-form` + `zodResolver(schema)`. Si la entidad es simple, revisa si aplica para el contrato [schema-driven-forms.md](../20-contracts/schema-driven-forms.md).
+- Forms: `react-hook-form` + `zodResolver(schema)`. El patrón canónico de edición desde lista es `useSelectedEntity` + modal local. Ver [list-modal-edit-pattern.md](../20-contracts/list-modal-edit-pattern.md).
 - Colors: semantic tokens only.
 
 ### 5. Write barrel
@@ -121,31 +121,19 @@ export type { [Name]Input } from './components/forms/schema'
 app/(dashboard)/[name]/
   page.tsx      # imports from features/[name]
   layout.tsx    # optional
-  [id]/page.tsx # detail
+  [id]/page.tsx # redirect server-side a ?selected (ADR-0020)
 ```
 
-> **Si la entidad está registrada en el `UniversalRegistry`** (aparece en la barra de búsqueda global), la ruta `[id]/page.tsx` DEBE usar el shell `EntityDetailPage` como contenedor. Ver [module-layout-navigation.md §7](../20-contracts/module-layout-navigation.md#7-searchable-entity-detail-route) para la convención completa, la tabla de módulos y el contrato de props.
+> **Si la entidad está registrada en el `UniversalRegistry`** (aparece en la barra de búsqueda global), la ruta `[id]/page.tsx` DEBE ser un **redirect server-side** a `<list_url>?selected={id}` per [ADR-0020](../10-architecture/adr/0020-modal-on-list-edit-ux.md). La lista lee el param y abre su modal local con `initialData` fetcheado. Ver [list-modal-edit-pattern.md](../20-contracts/list-modal-edit-pattern.md) para el contrato completo.
 
 ```tsx
 // app/(dashboard)/[module]/[entity-plural]/[id]/page.tsx
-import { notFound } from 'next/navigation'
-import { EntityDetailPage } from '@/components/shared'
-import { [Name]Form } from '@/features/[name]'
+import { redirect } from 'next/navigation'
+import { searchableEntityRoutes } from '@/lib/searchableEntityRoutes'
 
 export default async function [Name]DetailPage({ params }: { params: { id: string } }) {
-  const entity = await fetch[Name](params.id)  // server-side fetch
-  if (!entity) notFound()
-
-  return (
-    <EntityDetailPage
-      entityType="[name]"
-      title={entity.display_id}
-      icon="[lucide-icon]"
-      breadcrumb={[{ label: '[Module]', href: '/[module]' }, { label: '[Entities]', href: '/[module]/[entities]' }]}
-    >
-      <[Name]Form initialData={entity} />
-    </EntityDetailPage>
-  )
+  const listUrl = searchableEntityRoutes['[app].[entity]']  // e.g. 'sales.saleorder'
+  redirect(`${listUrl}?selected=${params.id}`)
 }
 ```
 
