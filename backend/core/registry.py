@@ -126,12 +126,13 @@ class UniversalRegistry:
             # If we are in a broad search, we use the original query
             current_search_term = clean_query if label in targeted_entities else query
             
-            # If the targeted entity has no numeric part after prefix, skip targeted search
-            if label in targeted_entities and not current_search_term:
-                continue
-
+            # If the targeted entity has no numeric part after prefix, we show recent items
+            # Otherwise, we perform the normal search.
             try:
-                qs = cls._build_fts_query(entity, current_search_term)[:limit]
+                if label in targeted_entities and not current_search_term:
+                    qs = entity.model.objects.filter(**entity.extra_filters).order_by("-id")[:limit]
+                else:
+                    qs = cls._build_fts_query(entity, current_search_term)[:limit]
 
                 for instance in qs:
                     results.append(
@@ -185,9 +186,9 @@ class UniversalRegistry:
                 return entity.model.objects.none()
             return entity.model.objects.filter(q_filter, **entity.extra_filters)
 
-        sv = SearchVector(*fts_fields, config='simple')
+        sv = SearchVector(*fts_fields, config='spanish')
         # 'plain' search_type: each word required (AND semantics, matches current multi-word logic)
-        sq = SearchQuery(query, config='simple', search_type='plain')
+        sq = SearchQuery(query, config='spanish', search_type='plain')
 
         if fk_fields:
             # Combined: FTS on direct fields OR icontains on FK fields (single SQL query)
@@ -224,13 +225,23 @@ class UniversalRegistry:
             clean_word = re.sub(r"[.\-]", "", word)
             
             for field in search_fields:
+                # 1. Standard search
                 field_clauses.append(Q(**{f"{field}__icontains": word}))
-                
-                # If the field seems to be a RUT/TaxID, add normalized check
-                if any(term in field.lower() for term in ["tax_id", "rut", "identification", "code"]):
+
+                # 2. Enhanced Tax/RUT/Code matching
+                is_tax_field = any(term in field.lower() for term in ["tax_id", "rut", "identification", "code"])
+                if is_tax_field:
+                    # Case A: User typed symbols (88.222), search also without them
                     if clean_word != word:
                         field_clauses.append(Q(**{f"{field}__icontains": clean_word}))
-            
+                    
+                    # Case B: User typed clean (88222), match formatted (88.222.333-k)
+                    # We use a regex to allow dots/dashes between characters
+                    if word.isalnum() and len(word) >= 3 and _is_postgres():
+                        # Pattern: 8[.-]?8[.-]?2...
+                        regex_pattern = "[.-]?".join(list(word))
+                        field_clauses.append(Q(**{f"{field}__iregex": regex_pattern}))
+
             # Combine field clauses with OR for this specific word
             word_clauses.append(reduce(operator.or_, field_clauses))
 
