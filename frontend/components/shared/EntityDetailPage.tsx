@@ -9,6 +9,7 @@ import { FormSplitLayout } from "@/components/shared/FormSplitLayout"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { getEntityMetadata, ENTITY_REGISTRY } from "@/lib/entity-registry"
 import { Package } from "lucide-react"
+import { EntityHeader } from "@/components/shared/EntityHeader"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -30,16 +31,23 @@ type ActivityEntityType = React.ComponentProps<typeof ActivitySidebar>["entityTy
 
 export interface EntityDetailPageProps {
     /**
-     * Entity type for the ActivitySidebar registry.
+     * Entity type for the ActivitySidebar registry (legacy).
      * Must be one of the valid entity types defined in ActivitySidebar.
+     * Optional when entityLabel is provided — the suffix of the label is used
+     * as a fallback (e.g. 'sales.saleorder' → 'sale_order').
      */
-    entityType: ActivityEntityType
+    entityType?: ActivityEntityType
+    /**
+     * The canonical entity label (e.g., 'sales.saleorder').
+     * If provided, this overrides entityType for metadata lookup.
+     */
+    entityLabel?: string
     /** Display title of the entity (e.g., "Nota de Venta") */
-    title: string
+    title?: string
     /** Visible identifier string (e.g., "NV-001"). Optional. */
     displayId?: string
-    /** Lucide icon name for the entity (e.g., "receipt-text") */
-    icon: string
+    /** Lucide icon name for the entity (legacy, e.g., "receipt-text") */
+    icon?: string
     /** Breadcrumb trail: [{label, href}, ...]. Last item is the current page. */
     breadcrumb: BreadcrumbItem[]
     /**
@@ -86,6 +94,7 @@ export interface EntityDetailPageProps {
 
 export function EntityDetailPage({
     entityType,
+    entityLabel,
     title,
     displayId,
     icon,
@@ -97,7 +106,12 @@ export function EntityDetailPage({
     className,
     children,
 }: EntityDetailPageProps) {
-    const metadata = getEntityMetadata(entityType);
+    const metadata = getEntityMetadata(entityLabel || (entityType as string));
+    
+    // Resolve ActivitySidebar entityType: explicit > derived from label suffix
+    const resolvedEntityType = (entityType ||
+        (entityLabel ? entityLabel.split('.')[1] as ActivityEntityType : undefined)
+    ) as ActivityEntityType | undefined;
     
     // Resolve identity from registry if available
     const resolvedTitle = title || metadata?.title || "Detalle";
@@ -106,16 +120,16 @@ export function EntityDetailPage({
     // Resolve sidebar: explicit override → auto ActivitySidebar → nothing
     const resolvedSidebar = React.useMemo(() => {
         if (sidebar !== undefined) return sidebar  // explicit (including null)
-        if (instanceId !== undefined) {
+        if (instanceId !== undefined && resolvedEntityType) {
             return (
                 <ActivitySidebar
                     entityId={instanceId}
-                    entityType={entityType}
+                    entityType={resolvedEntityType}
                 />
             )
         }
         return null
-    }, [sidebar, instanceId, entityType])
+    }, [sidebar, instanceId, resolvedEntityType])
 
     const showSidebar = resolvedSidebar !== null && resolvedSidebar !== undefined
 
@@ -128,65 +142,14 @@ export function EntityDetailPage({
             data-testid="entity-detail-page"
         >
             {/* ── Sticky Header ── */}
-            <header
-                className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shrink-0"
-                data-testid="entity-detail-header"
-            >
-                <div className="flex items-center gap-3 px-6 py-3">
-                    {/* Icon */}
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
-                        {RegistryIcon ? (
-                            <RegistryIcon className="h-4 w-4 text-primary" />
-                        ) : (
-                            <DynamicIcon name={icon || 'package'} className="h-4 w-4 text-primary" />
-                        )}
-                    </div>
-
-                    {/* Title block */}
-                    <div className="flex flex-col min-w-0">
-                        <div className="flex items-baseline gap-2">
-                            {displayId && (
-                                <span className="font-mono text-xs text-muted-foreground">
-                                    {displayId}
-                                </span>
-                            )}
-                            <h1 className="text-sm font-semibold text-foreground truncate">
-                                {resolvedTitle}
-                            </h1>
-                        </div>
-
-                        {/* Breadcrumb */}
-                        <nav
-                            aria-label="Breadcrumb"
-                            className="flex items-center gap-1 text-xs text-muted-foreground"
-                        >
-                            {breadcrumb.map((item, index) => (
-                                <React.Fragment key={item.href}>
-                                    {index > 0 && (
-                                        <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground/50" />
-                                    )}
-                                    <Link
-                                        href={item.href}
-                                        className="hover:text-foreground transition-colors truncate max-w-[120px]"
-                                    >
-                                        {item.label}
-                                    </Link>
-                                </React.Fragment>
-                            ))}
-                        </nav>
-                    </div>
-
-                    {/* Read-only badge */}
-                    {readonly && (
-                        <span
-                            className="ml-auto text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium shrink-0"
-                            data-testid="entity-detail-readonly-badge"
-                        >
-                            Solo lectura
-                        </span>
-                    )}
-                </div>
-            </header>
+            <EntityHeader
+                entityLabel={entityLabel || (entityType as string)}
+                data={{ id: displayId || instanceId }}
+                customTitle={resolvedTitle}
+                breadcrumb={breadcrumb}
+                readonly={readonly}
+                className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b shrink-0 px-6 py-3"
+            />
 
             {/* ── Main content with optional sidebar ── */}
             <div className="flex-1 flex min-h-0 overflow-hidden">

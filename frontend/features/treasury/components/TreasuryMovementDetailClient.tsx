@@ -42,10 +42,8 @@ export function TreasuryMovementDetailClient({ movementId }: TreasuryMovementDet
 
     return (
         <EntityDetailPage
-            entityType="payment"
-            title="Movimiento de Tesorería"
+            entityLabel="treasury.treasurymovement"
             displayId={displayId}
-            icon="landmark"
             breadcrumb={[
                 { label: "Movimientos", href: "/treasury/movements" },
                 { label: displayId, href: `/treasury/movements/${movementId}` },

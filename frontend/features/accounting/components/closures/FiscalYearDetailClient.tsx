@@ -69,10 +69,8 @@ export function FiscalYearDetailClient({ fiscalYearId }: FiscalYearDetailClientP
 
     return (
         <EntityDetailPage
-            entityType="fiscal_year"
-            title="Año Fiscal"
+            entityLabel="accounting.journalentry"
             displayId={fiscalYear.year.toString()}
-            icon="calendar"
             breadcrumb={[
                 { label: "Cierres Contables", href: "/accounting/closures" },
                 { label: `Ejercicio ${fiscalYear.year}`, href: `/accounting/closures/${fiscalYearId}` }

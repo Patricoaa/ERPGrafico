@@ -37,10 +37,8 @@ export function PurchaseOrderDetailClient({ orderId }: PurchaseOrderDetailClient
 
     return (
         <EntityDetailPage
-            entityType="purchase_order"
-            title="Orden de Compra"
+            entityLabel="purchasing.purchaseorder"
             displayId={order.number}
-            icon="shopping-cart"
             breadcrumb={[
                 { label: "Compras", href: "/purchasing/orders" },
                 { label: order.number, href: `/purchasing/orders/${orderId}` }

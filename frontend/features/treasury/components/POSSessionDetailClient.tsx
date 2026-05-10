@@ -82,10 +82,9 @@ export function POSSessionDetailClient({ sessionId }: POSSessionDetailClientProp
 
     return (
         <EntityDetailPage
-            entityType="payment" // closest available; sidebar suppressed below
-            title="Sesión de Caja POS"
+            entityLabel="treasury.treasurymovement"
+            // closest available; sidebar suppressed below
             displayId={displayId}
-            icon="calculator"
             breadcrumb={[
                 { label: "Sesiones POS", href: "/sales/sessions" },
                 { label: displayId, href: `/treasury/sessions/${sessionId}` },

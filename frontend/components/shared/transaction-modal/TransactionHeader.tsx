@@ -8,8 +8,12 @@ import type { TransactionType, TransactionData } from "@/types/transactions"
 
 import { getEntityMetadata, formatEntityDisplay, ENTITY_REGISTRY } from "@/lib/entity-registry"
 
+import { EntityHeader } from "../EntityHeader"
+
 export interface TransactionHeaderProps {
-    type: TransactionType
+    /** @deprecated Use entityLabel instead */
+    type?: TransactionType
+    entityLabel?: string
     data: TransactionData | null
     view?: 'details' | 'history' | 'all'
     canGoBack: boolean
@@ -37,6 +41,7 @@ const TYPE_TO_LABEL: Record<string, string> = {
 
 export function TransactionHeader({
     type,
+    entityLabel,
     data,
     view,
     canGoBack,
@@ -45,7 +50,8 @@ export function TransactionHeader({
     onClose
 }: TransactionHeaderProps) {
 
-    const label = TYPE_TO_LABEL[type];
+    // Transition logic: prefer entityLabel if provided, fallback to legacy type mapping
+    const label = entityLabel || (type ? TYPE_TO_LABEL[type] : '');
     const metadata = getEntityMetadata(label || '');
 
     const getHeaderInfo = () => {
@@ -53,7 +59,7 @@ export function TransactionHeader({
         if (view === 'history') return { main: "HISTORIAL DE PAGOS", sub: data.display_id || data.number || data.id }
 
         // Special case for Invoices (DTE labels)
-        if (type === 'invoice') {
+        if (type === 'invoice' || label === 'billing.invoice') {
             const typeLabel = data.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' :
                 data.dte_type === 'NOTA_DEBITO' ? 'Nota de Débito' :
                 data.dte_type === 'BOLETA' ? 'Boleta de Venta' :
@@ -66,58 +72,27 @@ export function TransactionHeader({
             }
         }
 
-        // Standard case using registry
-        if (metadata) {
-            return { 
-                main: metadata.title, 
-                sub: formatEntityDisplay(label, data) 
-            }
-        }
-
-        // Fallbacks
-        return { main: "Detalles de Transacción", sub: data.display_id || data.number || data.id }
+        return { main: undefined, sub: undefined } // Let EntityHeader handle defaults
     }
 
-    const { main: mainTitle, sub: subTitle } = getHeaderInfo()
-
-    const getIcon = () => {
-        if (view === 'history') return <History className="h-5 w-5 text-success" />
-        
-        const Icon = metadata?.icon || FileText;
-        const colorClass = type === 'payment' ? 'text-success' : 
-                         (type === 'sale_delivery' || type === 'purchase_receipt') ? 'text-warning' : 
-                         'text-primary';
-        
-        return <Icon className={cn("h-5 w-5", colorClass)} />
-    }
+    const { main: customTitle } = getHeaderInfo()
 
     return (
-        <div className="border-b p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 shrink-0 relative print:hidden">
-            {/* Back button and Basic Info */}
-            <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-4">
-                    {canGoBack && (
-                        <Button variant="ghost" size="icon" onClick={onGoBack} className="h-9 w-9 rounded-full bg-background shadow-sm hover:bg-muted border border-border/50 print:hidden">
-                            <ArrowLeft className="h-5 w-5 text-foreground" />
-                        </Button>
-                    )}
-                    <div className="p-3 bg-background rounded-lg shadow-sm border border-primary/10">
-                        {getIcon()}
-                    </div>
-                    <div className="flex flex-col">
-                        <h2 className="text-2xl font-black tracking-tight text-primary uppercase leading-none">{mainTitle}</h2>
-                        {subTitle && (
-                            <div className="flex items-center gap-2 mt-1">
-                                <span className="text-xs font-mono font-black text-muted-foreground bg-muted/50 px-2 py-0.5 rounded border border-dashed uppercase tracking-wider">{subTitle}</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
+        <EntityHeader
+            entityLabel={label || ''}
+            data={data}
+            customTitle={customTitle}
+            className="border-none pb-4"
+        >
+            <div className="flex items-center gap-4 w-full md:w-auto mt-4 md:mt-0">
+                {canGoBack && (
+                    <Button variant="ghost" size="icon" onClick={onGoBack} className="h-9 w-9 rounded-full bg-background shadow-sm hover:bg-muted border border-border/50 print:hidden" title="Volver">
+                        <ArrowLeft className="h-5 w-5 text-foreground" />
+                    </Button>
+                )}
+                
+                <div className="flex-1 md:flex-none"></div>
 
-            {/* Action Buttons & Close Control */}
-            <div className="flex items-center gap-4 print:hidden">
-                {/* ButtonGroup Container */}
                 <div className="flex items-center bg-background rounded-lg shadow-sm border border-border/60 overflow-hidden">
                     <Button
                         variant="ghost"
@@ -139,6 +114,6 @@ export function TransactionHeader({
                     className="hover:bg-destructive/10 hover:text-destructive"
                 />
             </div>
-        </div>
+        </EntityHeader>
     )
 }

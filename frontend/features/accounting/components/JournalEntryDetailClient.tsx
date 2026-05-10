@@ -39,10 +39,8 @@ export function JournalEntryDetailClient({ entryId }: JournalEntryDetailClientPr
 
     return (
         <EntityDetailPage
-            entityType="journal_entry"
-            title="Asiento Contable"
+            entityLabel="accounting.journalentry"
             displayId={entry.reference || `AS-${entry.number}`}
-            icon="notebook-pen"
             breadcrumb={[
                 { label: "Asientos", href: "/accounting/entries" },
                 { label: entry.reference || `AS-${entry.number}`, href: `/accounting/entries/${entryId}` }

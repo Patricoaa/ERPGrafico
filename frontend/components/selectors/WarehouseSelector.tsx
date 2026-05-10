@@ -54,7 +54,7 @@ export function WarehouseSelector({
     }, [warehouses, value])
 
     const filteredWarehouses = useMemo(() => {
-        let result = warehouses
+        const result = warehouses
         if (!searchTerm) return result
         const term = searchTerm.toLowerCase()
         return result.filter(w => 
