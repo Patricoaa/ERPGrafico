@@ -163,28 +163,36 @@ class UniversalRegistry:
         if not search_fields:
             return None
 
-        clauses = []
-        # Normalization for RUTs (Chilean Tax IDs): strip dots and hyphens
-        clean_query = re.sub(r"[.\-]", "", query)
-        
-        for field in search_fields:
-            # Basic icontains for the raw query
-            clauses.append(Q(**{f"{field}__icontains": query}))
-            
-            # If the field seems to be a RUT/TaxID, we add a normalized check
-            if any(term in field.lower() for term in ["tax_id", "rut", "identification", "code"]):
-                # If clean_query is different, search for it too
-                if clean_query != query:
-                    clauses.append(Q(**{f"{field}__icontains": clean_query}))
-                
-                # Advanced: if we are on PostgreSQL, we could use a Func to replace dots/hyphens in the field itself
-                # For now, searching for the clean version in the field covers the case where the DB has clean RUTs.
-                # To cover the case where DB has dots/hyphens but user types clean, we'd need:
-                # .annotate(clean_f=Replace(Replace(field, Value('.'), Value('')), Value('-'), Value('')))
-                # .filter(clean_f__icontains=clean_query)
-                # But this requires knowing the model context inside this static method.
+        # 1. Split query into words to support multi-term search (AND logic between words)
+        # Example: "Juan 1025" will find documents where "Juan" matches something AND "1025" matches something
+        words = [w for w in query.split() if len(w) > 1]
+        if not words:
+            # Fallback for single characters or empty strings
+            words = [query] if query else []
+            if not words: return None
 
-        return reduce(operator.or_, clauses)
+        word_clauses = []
+        for word in words:
+            # For each word, it must match at least ONE of the search fields (OR logic between fields)
+            field_clauses = []
+            
+            # Normalization for RUTs/Codes for this specific word
+            clean_word = re.sub(r"[.\-]", "", word)
+            
+            for field in search_fields:
+                field_clauses.append(Q(**{f"{field}__icontains": word}))
+                
+                # If the field seems to be a RUT/TaxID, add normalized check
+                if any(term in field.lower() for term in ["tax_id", "rut", "identification", "code"]):
+                    if clean_word != word:
+                        field_clauses.append(Q(**{f"{field}__icontains": clean_word}))
+            
+            # Combine field clauses with OR for this specific word
+            word_clauses.append(reduce(operator.or_, field_clauses))
+
+        # 2. Combine all word clauses with AND
+        # This means all words typed by the user must be present in the record
+        return reduce(operator.and_, word_clauses)
 
     @staticmethod
     def _render(template: str, instance: models.Model) -> str:
