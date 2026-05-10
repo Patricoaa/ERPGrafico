@@ -82,26 +82,54 @@ class UniversalRegistry:
         limit: int = 20,
     ) -> list[dict[str, Any]]:
         """
-        Full-text search across all registered entities.
-
-        Returns a list of result dicts, sorted by entity label then pk,
-        trimmed to `limit` total results.
+        Full-text search across all registered entities with prefix detection.
         """
         query = query.strip()
         if not query:
             return []
 
         results: list[dict[str, Any]] = []
-
+        
+        # 1. Identify if the query has a canonical prefix (e.g., "NV-", "OCS-")
+        # We check all entities to see if the query starts with their template's constant prefix
+        targeted_entities = []
+        clean_query = query
+        
         for label, entity in cls._entities.items():
+            # Extract constant prefix from short_display_template (e.g., "NV-{number}" -> "NV-")
+            prefix_match = re.match(r"^([^{]+)\{", entity.short_display_template)
+            if prefix_match:
+                prefix = prefix_match.group(1)
+                if query.upper().startswith(prefix.upper()):
+                    # Query has this prefix! 
+                    # Strip it to search for the numeric part or the rest of the string
+                    prefix_len = len(prefix)
+                    clean_query = query[prefix_len:].strip()
+                    targeted_entities.append(label)
+                    break # Assuming one prefix match is enough
+
+        # 2. Re-order entities: targeted first, then others
+        labels_to_search = targeted_entities + [l for l in cls._entities.keys() if l not in targeted_entities]
+
+        for label in labels_to_search:
+            entity = cls._entities[label]
             if entity.permission and not user.has_perm(entity.permission):
                 continue
 
-            q_filter = cls._build_icontains_filter(query, entity.search_fields)
+            # If we are in a targeted entity, we search with the clean_query
+            # If we are in a broad search, we use the original query
+            current_search_term = clean_query if label in targeted_entities else query
+            
+            # If the targeted entity has no numeric part after prefix, skip targeted search
+            if label in targeted_entities and not current_search_term:
+                continue
+
+            q_filter = cls._build_icontains_filter(current_search_term, entity.search_fields)
             if q_filter is None:
                 continue
 
             try:
+                # If targeted, we might want to boost exact matches on 'number' if it exists
                 qs = entity.model.objects.filter(q_filter, **entity.extra_filters)[:limit]
 
                 for instance in qs:
@@ -123,7 +151,6 @@ class UniversalRegistry:
                     if len(results) >= limit:
                         return results
             except Exception as e:
-                # Log error but continue searching other entities
                 import logging
                 logger = logging.getLogger(__name__)
                 logger.error(f"Error searching entity {label}: {e}")
