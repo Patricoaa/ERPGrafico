@@ -162,7 +162,28 @@ class UniversalRegistry:
     def _build_icontains_filter(query: str, search_fields: tuple[str, ...]) -> Q | None:
         if not search_fields:
             return None
-        clauses = [Q(**{f"{field}__icontains": query}) for field in search_fields]
+
+        clauses = []
+        # Normalization for RUTs (Chilean Tax IDs): strip dots and hyphens
+        clean_query = re.sub(r"[.\-]", "", query)
+        
+        for field in search_fields:
+            # Basic icontains for the raw query
+            clauses.append(Q(**{f"{field}__icontains": query}))
+            
+            # If the field seems to be a RUT/TaxID, we add a normalized check
+            if any(term in field.lower() for term in ["tax_id", "rut", "identification", "code"]):
+                # If clean_query is different, search for it too
+                if clean_query != query:
+                    clauses.append(Q(**{f"{field}__icontains": clean_query}))
+                
+                # Advanced: if we are on PostgreSQL, we could use a Func to replace dots/hyphens in the field itself
+                # For now, searching for the clean version in the field covers the case where the DB has clean RUTs.
+                # To cover the case where DB has dots/hyphens but user types clean, we'd need:
+                # .annotate(clean_f=Replace(Replace(field, Value('.'), Value('')), Value('-'), Value('')))
+                # .filter(clean_f__icontains=clean_query)
+                # But this requires knowing the model context inside this static method.
+
         return reduce(operator.or_, clauses)
 
     @staticmethod
