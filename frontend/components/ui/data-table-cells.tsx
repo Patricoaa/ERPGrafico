@@ -5,10 +5,8 @@ import Link from "next/link"
 import { ReactNode, HTMLAttributes } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { MoneyDisplay, StatusBadge, EntityBadge, CropFrame } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { CropFrame } from "@/components/shared/CropFrame"
 import { Button } from "@/components/ui/button"
 import {
     Tooltip,
@@ -45,12 +43,18 @@ export const DataCell = {
         </div>
     ),
 
-    /** Standardized Document ID with prefix and padding */
-    DocumentId: ({ type, number, className, ...props }: { type?: string, number: string | number | null | undefined, className?: string }) => (
-        <div className={cn("text-sm font-mono font-medium uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors flex justify-center items-center", className)} {...props}>
-            {formatDocumentId(type, number)}
-        </div>
-    ),
+    /** Standardized Document ID with prefix and padding (Uses EntityBadge) */
+    DocumentId: ({ type, number, label, data, className, ...props }: { type?: string, number?: string | number | null | undefined, label?: string, data?: any, className?: string }) => {
+        // Compatibility layer
+        const finalLabel = label || (type ? formatDocumentId(type, '___MAP___').replace('___MAP___', '') : undefined);
+        const finalData = data || { id: number, number, display_id: number };
+        
+        return (
+            <div className={cn("flex justify-center items-center", className)} {...props}>
+                <EntityBadge label={label || 'sales.saleorder'} data={finalData} size="sm" />
+            </div>
+        );
+    },
 
     /** Clickable contact/human identifier */
     ContactLink: ({ children, contactId, onClick, className, ...props }: HTMLAttributes<HTMLButtonElement> & { contactId?: number | string, onClick?: (e: React.MouseEvent) => void }) => {

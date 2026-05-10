@@ -1109,7 +1109,7 @@ class StockMove(models.Model):
 
     @property
     def display_id(self):
-        return f"MOV-{str(self.id).zfill(5)}"
+        return f"MOV-{self.id}"
 
     def save(self, *args, **kwargs):
         # Validate Accounting Period is not closed

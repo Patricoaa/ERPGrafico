@@ -14,8 +14,11 @@ class CoreConfig(AppConfig):
             UniversalRegistry.register(SearchableEntity(
                 model=User,
                 label='core.user',
+                title_singular='Usuario',
+                title_plural='Usuarios',
                 icon='user',
                 search_fields=('first_name', 'last_name', 'email'),
+                short_display_template='{first_name} {last_name}',
                 display_template='{first_name} {last_name}',
                 list_url='/settings/users',
                 detail_url_pattern='/settings/users/{id}',

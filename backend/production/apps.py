@@ -20,8 +20,11 @@ class ProductionConfig(AppConfig):
             UniversalRegistry.register(SearchableEntity(
                 model=WorkOrder,
                 label='production.workorder',
+                title_singular='Orden de Trabajo',
+                title_plural='Ordenes de Trabajo',
                 icon='wrench',
                 search_fields=('number', 'description', 'contact__name'),
+                short_display_template='OT-{number}',
                 display_template='OT-{number} · {description}',
                 list_url='/production/orders',
                 detail_url_pattern='/production/orders/{id}',

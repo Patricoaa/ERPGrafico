@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { X, Printer } from "lucide-react"
 import { formatPlainDate, translateStatus, translateReceivingStatus, translatePaymentMethod, formatCurrency, cn } from "@/lib/utils"
 import { useBranding } from "@/contexts/BrandingProvider"
+import { formatEntityDisplay, getEntityMetadata } from "@/lib/entity-registry"
 import type { TransactionData, TransactionLine } from "@/types/transactions"
 
 const formatFullDateTime = (dateStr: string | Date | null | undefined) => {
@@ -20,7 +21,7 @@ const formatFullDateTime = (dateStr: string | Date | null | undefined) => {
     }).format(date)
 }
 
-export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { data: TransactionData, currentType: string, mainTitle: string, subTitle: string }>(({ data, currentType, mainTitle, subTitle }, ref) => {
+export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { data: any, currentType: string, mainTitle: string, subTitle: string }>(({ data, currentType, mainTitle, subTitle }, ref) => {
     const { logo, company } = useBranding()
     if (!data) return null
 
@@ -28,9 +29,17 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
     const terminalName = data.terminal_name || data.pos_session?.terminal_name || data.session?.terminal_name
 
     const renderHeader = () => {
+        const metadata = getEntityMetadata(
+            currentType === 'sale_order' ? 'sales.saleorder' :
+            currentType === 'payment' ? 'treasury.treasurymovement' :
+            currentType === 'journal_entry' ? 'accounting.journalentry' :
+            currentType === 'work_order' ? 'production.workorder' :
+            currentType === 'sale_delivery' ? 'sales.saledelivery' :
+            currentType === 'inventory' ? 'inventory.stockmove' : ''
+        );
+
         const titleToShow = isSaleOrder ? "Comprobante de venta" : mainTitle
-        const prefix = isSaleOrder ? "NV-" : ""
-        const docNumber = data.number || data.id
+        const displayId = data.display_id || (metadata ? formatEntityDisplay(metadata.label, data) : (data.number || data.id));
 
         return (
             <div className="text-center space-y-2 mb-2 border-b border-dashed border-black/20 pb-2 flex flex-col items-center">
@@ -43,7 +52,7 @@ export const PrintableReceipt = React.memo(React.forwardRef<HTMLDivElement, { da
                 {/* Transaction Info Block (Now at the top) */}
                 <div className="w-full flex flex-col items-center gap-1">
                     <h1 className="text-xs font-black uppercase tracking-widest leading-tight">{titleToShow}</h1>
-                    <h2 className="text-xl font-black font-mono tracking-tighter">{prefix}{docNumber}</h2>
+                    <h2 className="text-xl font-black font-mono tracking-tighter">{displayId}</h2>
                 </div>
 
                 {/* Company Info Block (Now below transaction info) */}

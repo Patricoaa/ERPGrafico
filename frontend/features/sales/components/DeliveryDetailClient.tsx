@@ -6,6 +6,7 @@ import api from "@/lib/api"
 import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, FormSkeleton } from "@/components/shared"
 import { DeliveryForm } from "./DeliveryModal"
 import { toast } from "sonner"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 interface DeliveryDetailClientProps {
     orderId: string
@@ -36,15 +37,17 @@ export function DeliveryDetailClient({ orderId }: DeliveryDetailClientProps) {
         )
     }
 
+    const orderCode = formatEntityDisplay('sales.saleorder', order);
+
     return (
         <EntityDetailPage
-            entityType="sale_delivery"
+            entityType="sales.saledelivery"
             title="Despacho de Orden"
-            displayId={`NV-${order.number}`}
+            displayId={orderCode}
             icon="truck"
             breadcrumb={[
                 { label: "Ventas", href: "/sales/orders" },
-                { label: `NV-${order.number}`, href: `/sales/orders/${orderId}` },
+                { label: orderCode, href: `/sales/orders/${orderId}` },
                 { label: "Despacho", href: `/sales/deliveries/${orderId}` }
             ]}
             instanceId={order.id}

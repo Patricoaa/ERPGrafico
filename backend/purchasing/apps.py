@@ -19,8 +19,11 @@ class PurchasingConfig(AppConfig):
             UniversalRegistry.register(SearchableEntity(
                 model=PurchaseOrder,
                 label='purchasing.purchaseorder',
+                title_singular='Orden de Compra',
+                title_plural='Ordenes de Compra',
                 icon='shopping-cart',
                 search_fields=('number', 'supplier__name', 'supplier__tax_id'),
+                short_display_template='OCS-{number}',
                 display_template='OCS-{number} · {supplier.name}',
                 list_url='/purchasing/orders',
                 detail_url_pattern='/purchasing/orders/{id}',

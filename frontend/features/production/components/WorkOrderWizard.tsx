@@ -939,7 +939,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                             {m.purchase_order_number && (
                                                                                 <div className="flex items-center gap-2">
                                                                                     <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                                                                                        OC-{m.purchase_order_number}
+                                                                                        OCS-{m.purchase_order_number}
                                                                                     </span>
                                                                                     <span className="text-[10px] font-medium text-muted-foreground">
                                                                                         ({m.supplier_name})
@@ -1152,7 +1152,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                                                                 )}
                                                                 <div className="flex items-center gap-2">
                                                                     <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                                                                        OC-{m.purchase_order_number}
+                                                                        OCS-{m.purchase_order_number}
                                                                     </span>
                                                                     <span className="text-[10px] font-medium text-muted-foreground">
                                                                         ({m.supplier_name})
@@ -1638,7 +1638,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                 description={
                     <div className="space-y-3">
                         <p>
-                            ¿Está seguro de que desea <strong>ANULAR</strong> la Orden de Trabajo OT-{order?.number}?
+                            ¿Está seguro de que desea <strong>ANULAR</strong> la Orden de Trabajo {formatEntityDisplay('production.workorder', order)}?
                         </p>
                         <div className="bg-warning/10 border border-warning/20 p-3 rounded-md text-warning text-xs flex gap-3 font-medium">
                             <AlertTriangle className="h-5 w-5 shrink-0" />
@@ -1665,7 +1665,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                 description={
                     <div className="space-y-3">
                         <p>
-                            ¿Está seguro de que desea <strong>ELIMINAR</strong> permanentemente la Orden de Trabajo OT-{order?.number}?
+                            ¿Está seguro de que desea <strong>ELIMINAR</strong> permanentemente la Orden de Trabajo {formatEntityDisplay('production.workorder', order)}?
                         </p>
                         <p className="text-destructive font-semibold bg-destructive/10 p-2 rounded text-xs">
                             Esta acción es irreversible y borrará todos los registros históricos de esta orden.

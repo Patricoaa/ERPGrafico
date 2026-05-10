@@ -15,46 +15,32 @@ class AccountingConfig(AppConfig):
 
         try:
             from core.registry import UniversalRegistry, SearchableEntity
-            from accounting.models import Account, JournalEntry, FiscalYear, Budget
+            from accounting.models import Account, JournalEntry
             UniversalRegistry.register(SearchableEntity(
                 model=Account,
                 label='accounting.account',
-                icon='book-open',
+                title_singular='Cuenta Contable',
+                title_plural='Plan de Cuentas',
+                icon='book',
                 search_fields=('code', 'name'),
+                short_display_template='{code}',
                 display_template='{code} · {name}',
-                list_url='/accounting/ledger',  # T-103: AccountsClientView vive en /accounting/ledger (era /accounting/accounts)
-                detail_url_pattern='/accounting/accounts/{id}',
+                list_url='/accounting/ledger',
+                detail_url_pattern='/accounting/accounts/{id}/ledger',
                 permission='accounting.view_account',
             ))
             UniversalRegistry.register(SearchableEntity(
                 model=JournalEntry,
                 label='accounting.journalentry',
-                icon='notebook-pen',
-                search_fields=('number',),
-                display_template='AS-{number}',
+                title_singular='Asiento Contable',
+                title_plural='Libro Diario',
+                icon='hash',
+                search_fields=('number', 'description'),
+                short_display_template='AS-{number}',
+                display_template='AS-{number} · {description}',
                 list_url='/accounting/entries',
                 detail_url_pattern='/accounting/entries/{id}',
                 permission='accounting.view_journalentry',
-            ))
-            UniversalRegistry.register(SearchableEntity(
-                model=FiscalYear,
-                label='accounting.fiscalyear',
-                icon='calendar',
-                search_fields=('year',),
-                display_template='Año Fiscal {year}',
-                list_url='/accounting/closures',
-                detail_url_pattern='/accounting/closures/{id}',
-                permission='accounting.view_fiscalyear',
-            ))
-            UniversalRegistry.register(SearchableEntity(
-                model=Budget,
-                label='accounting.budget',
-                icon='wallet',
-                search_fields=('name',),
-                display_template='Presupuesto {name}',
-                list_url='/finances/budgets',
-                detail_url_pattern='/finances/budgets/{id}',
-                permission='accounting.view_budget',
             ))
         except Exception:
             pass

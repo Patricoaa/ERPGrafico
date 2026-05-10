@@ -19,8 +19,11 @@ class BillingConfig(AppConfig):
             UniversalRegistry.register(SearchableEntity(
                 model=Invoice,
                 label='billing.invoice',
+                title_singular='Factura/DTE',
+                title_plural='Facturas/DTEs',
                 icon='file-text',
                 search_fields=('number', 'contact__name', 'contact__tax_id'),
+                short_display_template='{dte_type} {number}',
                 display_template='{dte_type} {number} · {contact.name}',
                 list_url='/billing/sales',
                 detail_url_pattern='/billing/invoices/{id}',

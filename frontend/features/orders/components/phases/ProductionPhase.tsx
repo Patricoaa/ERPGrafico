@@ -1,4 +1,5 @@
 import { showApiError } from "@/lib/errors"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
@@ -94,7 +95,7 @@ export function ProductionPhase({
                 variant={totalOTs === 0 ? 'neutral' : (totalOTProgress === 100 ? 'success' : 'active')}
                 documents={activeDoc.work_orders?.map((ot: WorkOrder) => ({
                     type: 'Orden de Trabajo',
-                    number: ot.display_id || `OT-${ot.code || ot.id}`,
+                    number: formatEntityDisplay('production.workorder', ot),
                     icon: ClipboardList,
                     id: Number(ot.id),
                     docType: 'work_order',

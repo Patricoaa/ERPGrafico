@@ -1,4 +1,5 @@
 "use client"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 import { useState, useEffect } from "react"
 import { Check, ChevronDown, Search, Loader2, ShoppingBag, Eye, Calendar, FileText } from "lucide-react"
@@ -127,7 +128,7 @@ export function AdvancedSaleOrderSelector({
                         {selectedOrder ? (
                             <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                 <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                <span className="font-semibold text-sm shrink-0">NV-{selectedOrder.number}</span>
+                                <span className="font-semibold text-sm shrink-0">{formatEntityDisplay('sales.saleorder', selectedOrder)}</span>
                                 <span className="text-sm text-muted-foreground truncate">{selectedOrder.customer_name}</span>
                             </div>
                         ) : (
@@ -173,7 +174,7 @@ export function AdvancedSaleOrderSelector({
                                             </div>
                                             <div className="flex flex-col overflow-hidden flex-1">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="truncate font-bold">NV-{order.number}</span>
+                                                    <span className="truncate font-bold">{formatEntityDisplay('sales.saleorder', order)}</span>
                                                     <span className="text-[10px] font-mono text-muted-foreground">
                                                         {format(new Date(order.created_at), "dd/MM/yyyy")}
                                                     </span>

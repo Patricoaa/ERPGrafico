@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderForm"
 import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
 import { translateProductionStage } from "@/lib/utils"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 interface ProductionOrderDetailClientProps {
     orderId: string
@@ -105,7 +106,7 @@ export function ProductionOrderDetailClient({ orderId }: ProductionOrderDetailCl
                     <div className="space-y-2 col-span-2">
                         <p className="text-sm text-muted-foreground">Cliente / Nota de Venta</p>
                         <p className="font-semibold">
-                            {order.sale_order ? `NV-${order.sale_order} · ` : ''}{order.sale_customer_name || 'Sin cliente asociado'}
+                            {order.sale_order ? `${formatEntityDisplay('sales.saleorder', { number: order.sale_order })} · ` : ''}{order.sale_customer_name || 'Sin cliente asociado'}
                         </p>
                     </div>
                 </div>

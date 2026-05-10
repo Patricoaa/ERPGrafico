@@ -16,44 +16,30 @@ class InventoryConfig(AppConfig):
 
         try:
             from core.registry import UniversalRegistry, SearchableEntity
-            from inventory.models import Product, ProductCategory, Warehouse, StockMove
+            from inventory.models import Product, StockMove
             UniversalRegistry.register(SearchableEntity(
                 model=Product,
                 label='inventory.product',
+                title_singular='Producto',
+                title_plural='Productos',
                 icon='package',
                 search_fields=('name', 'code', 'internal_code'),
-                display_template='{name} · {code}',
+                short_display_template='{code}',
+                display_template='{code} · {name}',
                 list_url='/inventory/products',
                 detail_url_pattern='/inventory/products/{id}',
                 permission='inventory.view_product',
             ))
             UniversalRegistry.register(SearchableEntity(
-                model=ProductCategory,
-                label='inventory.productcategory',
-                icon='folder-tree',
-                search_fields=('name', 'prefix'),
-                display_template='{prefix} · {name}',
-                list_url='/inventory/products?tab=categories',  # T-103: tab real (era /inventory/categories)
-                detail_url_pattern='/inventory/categories/{id}',
-                permission='inventory.view_productcategory',
-            ))
-            UniversalRegistry.register(SearchableEntity(
-                model=Warehouse,
-                label='inventory.warehouse',
-                icon='warehouse',
-                search_fields=('name', 'code'),
-                display_template='{code} · {name}',
-                list_url='/inventory/stock?tab=warehouses',  # T-103: tab real (era /inventory/settings?tab=warehouses)
-                detail_url_pattern='/inventory/warehouses/{id}',
-                permission='inventory.view_warehouse',
-            ))
-            UniversalRegistry.register(SearchableEntity(
                 model=StockMove,
                 label='inventory.stockmove',
+                title_singular='Movimiento de Stock',
+                title_plural='Kardex',
                 icon='arrow-right-left',
                 search_fields=('id', 'description', 'adjustment_reason'),
+                short_display_template='MOV-{id}',
                 display_template='MOV-{id}',
-                list_url='/inventory/stock?tab=movements',  # T-103: tab real (era /inventory/stock-moves)
+                list_url='/inventory/stock?tab=movements',
                 detail_url_pattern='/inventory/stock-moves/{id}',
                 permission='inventory.view_stockmove',
             ))

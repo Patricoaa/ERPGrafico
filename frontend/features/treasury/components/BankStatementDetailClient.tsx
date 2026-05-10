@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react"
 import { notFound } from "next/navigation"
 import api from "@/lib/api"
 import { EntityDetailPage, FormSkeleton } from "@/components/shared"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { Landmark, Calendar, FileText, BarChart3 } from "lucide-react"
@@ -86,7 +87,7 @@ export function BankStatementDetailClient({ statementId }: BankStatementDetailCl
         )
     }
 
-    const displayId = data.display_id || `EXT-${String(data.id).padStart(6, "0")}`
+    const displayId = formatEntityDisplay('treasury.bankstatement', data)
     const openingBalance = typeof data.opening_balance === "string"
         ? parseFloat(data.opening_balance)
         : data.opening_balance

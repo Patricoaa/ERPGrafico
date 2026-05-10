@@ -8,6 +8,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { Badge } from "@/components/ui/badge"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 interface StockMoveDetailClientProps {
     moveId: string
@@ -52,11 +53,11 @@ export function StockMoveDetailClient({ moveId }: StockMoveDetailClientProps) {
         <EntityDetailPage
             entityType="stock_move"
             title="Movimiento de Stock"
-            displayId={move.display_id || `MOV-${move.id}`}
+            displayId={formatEntityDisplay('inventory.stockmove', move)}
             icon="arrow-right-left"
             breadcrumb={[
                 { label: "Movimientos", href: "/inventory/moves" },
-                { label: move.display_id || `MOV-${move.id}`, href: `/inventory/moves/${moveId}` }
+                { label: formatEntityDisplay('inventory.stockmove', move), href: `/inventory/moves/${moveId}` }
             ]}
             instanceId={move.id}
             readonly={true}

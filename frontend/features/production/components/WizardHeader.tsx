@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { formatPlainDate, cn, formatCurrency } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import type { WorkOrder } from "../types"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 interface WizardHeaderProps {
     order: WorkOrder
@@ -45,7 +46,7 @@ export function WizardHeader({
                     </span>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                    <span>OT-{order?.number}</span>
+                    <span>{formatEntityDisplay('production.workorder', order)}</span>
                     <span className="text-muted-foreground/30">|</span>
                     <span>{customerName}</span>
                     <span className="text-muted-foreground/30">|</span>

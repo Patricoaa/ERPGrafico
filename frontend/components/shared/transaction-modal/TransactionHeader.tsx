@@ -6,6 +6,8 @@ import { Separator } from "@/components/ui/separator"
 import { SheetCloseButton } from "../SheetCloseButton"
 import type { TransactionType, TransactionData } from "@/types/transactions"
 
+import { getEntityMetadata, formatEntityDisplay, ENTITY_REGISTRY } from "@/lib/entity-registry"
+
 export interface TransactionHeaderProps {
     type: TransactionType
     data: TransactionData | null
@@ -14,6 +16,23 @@ export interface TransactionHeaderProps {
     onGoBack: () => void
     onPrint: () => void
     onClose: () => void
+}
+
+const TYPE_TO_LABEL: Record<string, string> = {
+    'sale_order': 'sales.saleorder',
+    'purchase_order': 'purchasing.purchaseorder',
+    'invoice': 'billing.invoice',
+    'payment': 'treasury.treasurymovement',
+    'journal_entry': 'accounting.journalentry',
+    'inventory': 'inventory.stockmove',
+    'stock_move': 'inventory.stockmove',
+    'work_order': 'production.workorder',
+    'sale_delivery': 'sales.saledelivery',
+    'purchase_receipt': 'inventory.warehouse',
+    'sale_return': 'sales.salereturn',
+    'purchase_return': 'sales.salereturn',
+    'cash_movement': 'treasury.treasurymovement',
+    'terminal_batch': 'treasury.treasurymovement', // or batch label if added
 }
 
 export function TransactionHeader({
@@ -26,74 +45,50 @@ export function TransactionHeader({
     onClose
 }: TransactionHeaderProps) {
 
+    const label = TYPE_TO_LABEL[type];
+    const metadata = getEntityMetadata(label || '');
+
     const getHeaderInfo = () => {
         if (!data) return { main: "DETALLE DE TRANSACCIÓN", sub: "" }
         if (view === 'history') return { main: "HISTORIAL DE PAGOS", sub: data.display_id || data.number || data.id }
 
-        switch (type) {
-            case 'sale_order':
-                return { main: "Nota de Venta", sub: data.display_id || `NV-${data.number || data.id}` }
-            case 'purchase_order':
-                return { main: "Orden de Compra y Servicios", sub: data.display_id || `OCS-${data.number || data.id}` }
-            case 'invoice':
-                const typeLabel = data.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' :
-                    data.dte_type === 'NOTA_DEBITO' ? 'Nota de Débito' :
-                        data.dte_type === 'BOLETA' ? 'Boleta de Venta' :
-                            data.dte_type === 'FACTURA_EXENTA' ? 'Factura Exenta' :
-                                data.dte_type === 'BOLETA_EXENTA' ? 'Boleta Exenta' : 'Factura de Venta'
-
-                const prefix = data.dte_type === 'NOTA_CREDITO' ? 'NC' :
-                    data.dte_type === 'NOTA_DEBITO' ? 'ND' :
-                        data.dte_type === 'BOLETA' ? 'BOL' :
-                            data.dte_type === 'FACTURA_EXENTA' ? 'FAC-EX' :
-                                data.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FAC'
-
-                return { main: `Comprobante de ${typeLabel}`, sub: data.display_id || `${prefix}-${data.number || data.id}` }
-            case 'payment':
-                const payPrefix = data.payment_type === 'INBOUND' ? 'Comprobante de Ingreso' : 'Comprobante de Egreso'
-                const payId = data.display_id || (data.payment_type === 'INBOUND' ? 'DEP-' : 'RET-') + data.id
-                return { main: payPrefix, sub: payId }
-            case 'journal_entry':
-                return { main: "Asiento Contable", sub: data.display_id || `AS-${data.number || data.id}` }
-            case 'inventory':
-            case 'stock_move':
-                return { main: "Movimiento de Inventario", sub: data.reference_code || `MOV-${data.id}` }
-            case 'work_order':
-                return { main: "Orden de Trabajo", sub: data.code || `OT-${data.id}` }
-            case 'sale_delivery':
-                return { main: "Despacho de Venta", sub: data.display_id || `DES-${data.number || data.id}` }
-            case 'purchase_receipt':
-                const isService = (data.lines || []).some((l) => l.product_type === 'SERVICE')
-                return { main: isService ? "Entrega de Servicio" : "Recepción de Compra", sub: `REC-${data.id}` }
-            case 'sale_return':
-            case 'purchase_return':
-                return { main: "Devolución de Mercadería", sub: data.display_id || `DEV-${data.number || data.id}` }
-            case 'cash_movement':
-                const moveType = data.movement_type === 'DEPOSIT' ? 'Depósito' :
-                    data.movement_type === 'WITHDRAWAL' ? 'Retiro' : 'Traspaso'
-                return { main: `${moveType} de Efectivo`, sub: `MOV-${data.id}` }
-            case 'terminal_batch':
-                return { main: "Lote de Liquidación", sub: data.display_id || `BATCH-${data.id}` }
-            default:
-                return { main: "Detalles de Transacción", sub: "" }
+        // Special case for Invoices (DTE labels)
+        if (type === 'invoice') {
+            const typeLabel = data.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' :
+                data.dte_type === 'NOTA_DEBITO' ? 'Nota de Débito' :
+                data.dte_type === 'BOLETA' ? 'Boleta de Venta' :
+                data.dte_type === 'FACTURA_EXENTA' ? 'Factura Exenta' :
+                data.dte_type === 'BOLETA_EXENTA' ? 'Boleta Exenta' : 'Factura de Venta';
+            
+            return { 
+                main: `Comprobante de ${typeLabel}`, 
+                sub: formatEntityDisplay('billing.invoice', data) 
+            }
         }
+
+        // Standard case using registry
+        if (metadata) {
+            return { 
+                main: metadata.title, 
+                sub: formatEntityDisplay(label, data) 
+            }
+        }
+
+        // Fallbacks
+        return { main: "Detalles de Transacción", sub: data.display_id || data.number || data.id }
     }
 
     const { main: mainTitle, sub: subTitle } = getHeaderInfo()
 
     const getIcon = () => {
         if (view === 'history') return <History className="h-5 w-5 text-success" />
-        if (type === 'sale_order') return <ShoppingBag className="h-5 w-5 text-primary" />
-        if (type === 'purchase_order') return <FileText className="h-5 w-5 text-primary" />
-        if (type === 'invoice') return <Receipt className="h-5 w-5 text-primary" />
-        if (type === 'journal_entry') return <Hash className="h-5 w-5 text-primary" />
-        if (type === 'inventory' || type === 'stock_move') return <Package className="h-5 w-5 text-primary" />
-        if (type === 'payment') return <Banknote className="h-5 w-5 text-success" />
-        if (type === 'work_order') return <ClipboardList className="h-5 w-5 text-primary" />
-        if (type === 'sale_delivery' || type === 'purchase_receipt') return <Package className="h-5 w-5 text-warning" />
-        if (type === 'cash_movement') return <ArrowLeft className="h-5 w-5 text-primary" />
-        if (type === 'terminal_batch') return <ClipboardList className="h-5 w-5 text-primary" />
-        return <FileText className="h-5 w-5 text-primary" />
+        
+        const Icon = metadata?.icon || FileText;
+        const colorClass = type === 'payment' ? 'text-success' : 
+                         (type === 'sale_delivery' || type === 'purchase_receipt') ? 'text-warning' : 
+                         'text-primary';
+        
+        return <Icon className={cn("h-5 w-5", colorClass)} />
     }
 
     return (

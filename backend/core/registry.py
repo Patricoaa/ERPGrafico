@@ -22,9 +22,12 @@ from django.db.models import Q
 class SearchableEntity:
     model: type[models.Model]
     label: str                      # dot-notation app label, e.g. 'sales.saleorder'
+    title_singular: str             # e.g. 'Nota de Venta'
+    title_plural: str               # e.g. 'Notas de Venta'
     icon: str                       # lucide icon name, e.g. 'receipt-text'
     search_fields: tuple[str, ...]  # ORM field lookups, e.g. ('number', 'customer__name')
-    display_template: str           # Python str.format_map template, e.g. 'NV-{number}'
+    short_display_template: str     # e.g. 'NV-{number}'
+    display_template: str           # Python str.format_map template, e.g. 'NV-{number} · {customer.name}'
     list_url: str                   # frontend route, e.g. '/ventas/ordenes'
     detail_url_pattern: str         # frontend route with {id}, e.g. '/ventas/ordenes/{id}'
     permission: str | None = None   # Django permission codename, e.g. 'sales.view_saleorder'
@@ -45,7 +48,7 @@ class _DotAccessor:
                 obj = obj()
             if obj is None:
                 return ""
-        return str(obj)
+        return obj
 
 
 class UniversalRegistry:
@@ -103,8 +106,11 @@ class UniversalRegistry:
                     results.append(
                         {
                             "label": label,
+                            "title": entity.title_singular,
+                            "title_plural": entity.title_plural,
                             "icon": entity.icon,
                             "id": instance.pk,
+                            "short_display": cls._render(entity.short_display_template, instance),
                             "display": cls._render(entity.display_template, instance),
                             "list_url": entity.list_url,
                             "detail_url": entity.detail_url_pattern.replace("{id}", str(instance.pk)),

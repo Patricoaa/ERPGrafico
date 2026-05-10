@@ -127,7 +127,7 @@ export function PurchaseInvoicesClientView() {
         {
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => <DataCell.DocumentId type={row.original.dte_type} number={row.getValue("number")} />,
+            cell: ({ row }) => <DataCell.DocumentId label="billing.invoice" data={row.original} />,
         },
         {
             accessorKey: "date",

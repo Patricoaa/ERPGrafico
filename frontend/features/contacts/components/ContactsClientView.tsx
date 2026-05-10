@@ -14,6 +14,7 @@ import { useContacts, type Contact } from "@/features/contacts"
 import { LoadingFallback, StatusBadge } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 // Lazy load heavy components
 const ContactModal = lazy(() => import("./ContactModal"))
@@ -95,7 +96,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
         {
             accessorKey: "display_id",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Code className="font-semibold">{row.getValue("display_id")}</DataCell.Code></div>,
+            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Code className="font-semibold">{formatEntityDisplay('contacts.contact', row.original)}</DataCell.Code></div>,
         },
         {
             accessorKey: "name",

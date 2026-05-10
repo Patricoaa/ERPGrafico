@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { formatCurrency } from "@/lib/currency"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Card } from "@/components/ui/card"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 import { EmptyState, PeriodValidationDateInput, TableSkeleton, LabeledContainer, LabeledInput, LabeledSelect, CancelButton, SubmitButton, FormFooter, FormSection } from "@/components/shared"
@@ -48,7 +49,7 @@ export function SaleNoteModal({ open, onOpenChange, ...props }: SaleNoteModalPro
             title={
                 <span className="flex items-center gap-2">
                     <FileBadge className="h-6 w-6 text-primary" />
-                    Registrar Nota Crédito/Débito - {props.orderNumber ? `NV-${props.orderNumber}` : `Doc #${props.invoiceId}`}
+                    Registrar Nota Crédito/Débito - {props.orderNumber ? formatEntityDisplay('sales.saleorder', { number: props.orderNumber }) : `Doc #${props.invoiceId}`}
                 </span>
             }
             footer={

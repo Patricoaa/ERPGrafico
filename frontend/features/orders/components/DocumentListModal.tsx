@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { FileText, Package, Truck, ClipboardList, Download, ExternalLink, Hash } from "lucide-react"
 import { formatCurrency, formatPlainDate } from "@/lib/utils"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 interface DocumentItem {
     id: number | string
@@ -134,7 +135,9 @@ export function DocumentListModal({
 
                                             {type === 'work_orders' && (
                                                 <>
-                                                    <TableCell className="font-bold">OT-{item.number}</TableCell>
+                                                    <TableCell className="font-bold">
+                                                        {formatEntityDisplay('production.workorder', item)}
+                                                    </TableCell>
                                                     <TableCell className="text-xs truncate max-w-[200px]">{item.product_name}</TableCell>
                                                     <TableCell className="font-bold">{item.quantity} {item.unit}</TableCell>
                                                     <TableCell className="text-xs">{formatPlainDate(item.due_date)}</TableCell>
@@ -149,7 +152,9 @@ export function DocumentListModal({
                                             {/* Receipts & Deliveries (StockMoves) */}
                                             {(type === 'receipts' || type === 'deliveries') && (
                                                 <>
-                                                    <TableCell className="font-bold">SM-{item.id}</TableCell>
+                                                    <TableCell className="font-bold">
+                                                        {formatEntityDisplay('inventory.stockmove', item)}
+                                                    </TableCell>
                                                     <TableCell className="text-xs font-mono">{item.reference || '--'}</TableCell>
                                                     <TableCell className="text-xs">{formatPlainDate(item.date)}</TableCell>
                                                     <TableCell className="text-xs">{item.items_count || 0} ítems</TableCell>

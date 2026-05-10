@@ -37,10 +37,15 @@ interface UserFormProps {
     initialData?: UserInitialData
     onSuccess?: () => void
     trigger?: React.ReactNode
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
-export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: UserFormProps) {
-    const [open, setOpen] = useState(false)
+export function UserForm({ auditSidebar, initialData, onSuccess, trigger, open: controlledOpen, onOpenChange: setControlledOpen }: UserFormProps) {
+    const [internalOpen, setInternalOpen] = useState(false)
+    const isControlled = controlledOpen !== undefined
+    const open = isControlled ? controlledOpen : internalOpen
+    const setOpen = isControlled ? setControlledOpen! : setInternalOpen
     const [loading, setLoading] = useState(false)
     const [availableRoles, setAvailableRoles] = useState<[string, string][]>([])
     const [availableGroups, setAvailableGroups] = useState<AppGroup[]>([])
@@ -216,7 +221,7 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
                 ) : (
                     <div onClick={() => setOpen(true)}>{trigger}</div>
                 )
-            ) : (
+            ) : !isControlled && (
                 <Button size="sm" onClick={() => setOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
                     Nuevo Usuario
@@ -244,169 +249,182 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger }: User
                         }
                     />
                 }
-            >                <FormSplitLayout
-                    sidebar={auditSidebar}
-                    showSidebar={!!initialData?.id}
-                >
-                    <Form {...form}>
-                        <form id="user-form" onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
-                            <FormTabs
-                                items={tabItems}
-                                value={activeTab}
-                                onValueChange={setActiveTab}
-                                orientation="vertical"
-                                header={headerSlot}
-                                className="flex-1"
-                            >
-                                <div className="flex-1 p-6 lg:p-8 overflow-y-auto scrollbar-thin">
-                                    <FormTabsContent value="general" className="mt-0 space-y-8 outline-none">
-                                        <div className="space-y-8">
-                                            <div className="space-y-4">
-                                                <FormSection title="Vinculación y Cuenta" icon={User} />
-                                                <div className="grid grid-cols-4 gap-6">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="contact"
-                                                        render={({ field, fieldState }) => (
+            >
+                <Form {...form}>
+                    <form id="user-form" onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
+                        <FormTabs
+                            items={tabItems}
+                            value={activeTab}
+                            onValueChange={setActiveTab}
+                            orientation="vertical"
+                            header={headerSlot}
+                            contentClassName="bg-transparent"
+                            className="flex-1"
+                        >
+                                <fieldset disabled={loading} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full min-h-0">
+                                    <FormTabsContent value="general" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden outline-none">
+                                        <FormSplitLayout
+                                            sidebar={auditSidebar}
+                                            showSidebar={!!initialData?.id}
+                                            className="p-0"
+                                        >
+                                            <div className="p-6 lg:p-8 space-y-8 overflow-y-auto scrollbar-thin h-full">
+                                                <div className="space-y-8">
+                                                    <div className="space-y-4">
+                                                        <FormSection title="Vinculación y Cuenta" icon={User} />
+                                                        <div className="grid grid-cols-4 gap-6">
+                                                            <FormField
+                                                                control={form.control}
+                                                                name="contact"
+                                                                render={({ field, fieldState }) => (
+                                                                    <div className="col-span-4">
+                                                                        <AdvancedContactSelector
+                                                                            label="Contacto Vinculado"
+                                                                            error={fieldState.error?.message}
+                                                                            required
+                                                                            value={field.value?.toString() || ""}
+                                                                            onChange={(val) => field.onChange(val ? parseInt(val) : 0)}
+                                                                            disabled={!!initialData}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            />
+
                                                             <div className="col-span-4">
-                                                                <AdvancedContactSelector
-                                                                    label="Contacto Vinculado"
-                                                                    error={fieldState.error?.message}
-                                                                    required
-                                                                    value={field.value?.toString() || ""}
-                                                                    onChange={(val) => field.onChange(val ? parseInt(val) : 0)}
-                                                                    disabled={!!initialData}
+                                                                <FormField
+                                                                    control={form.control}
+                                                                    name="username"
+                                                                    render={({ field, fieldState }) => (
+                                                                        <LabeledInput
+                                                                            label="Nombre de Usuario"
+                                                                            required
+                                                                            disabled={!!initialData}
+                                                                            placeholder="ej: pmartinez"
+                                                                            error={fieldState.error?.message}
+                                                                            hint={initialData ? "Identificador único de sistema" : undefined}
+                                                                            {...field}
+                                                                        />
+                                                                    )}
                                                                 />
                                                             </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="space-y-4">
+                                                        <FormSection title="Seguridad y Acceso" icon={ShieldCheck} />
+                                                        <div className="grid grid-cols-4 gap-6">
+                                                            <div className="col-span-2">
+                                                                <FormField
+                                                                    control={form.control}
+                                                                    name="password"
+                                                                    render={({ field, fieldState }) => (
+                                                                        <LabeledInput
+                                                                            label={`Contraseña Credencial${initialData ? " (Cambiar)" : ""}`}
+                                                                            required={!initialData}
+                                                                            type="password"
+                                                                            placeholder="••••••••"
+                                                                            hint={!initialData ? "Mínimo 6 caracteres" : "Dejar en blanco para mantener"}
+                                                                            error={fieldState.error?.message}
+                                                                            {...field}
+                                                                        />
+                                                                    )}
+                                                                />
+                                                            </div>
+
+                                                            <div className="col-span-2">
+                                                                <FormField
+                                                                    control={form.control}
+                                                                    name="is_active"
+                                                                    render={({ field }) => (
+                                                                        <LabeledSwitch
+                                                                            label="Estado del Acceso"
+                                                                            description={field.value ? "ACTIVO" : "INACTIVO"}
+                                                                            checked={field.value}
+                                                                            onCheckedChange={field.onChange}
+                                                                            icon={<ShieldCheck className={cn("h-4 w-4 transition-colors", field.value ? "text-success" : "text-muted-foreground/30")} />}
+                                                                            className={cn(field.value ? "bg-success/5 border-success/20 shadow-sm" : "border-dashed")}
+                                                                        />
+                                                                    )}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </FormSplitLayout>
+                                    </FormTabsContent>
+
+                                    <FormTabsContent value="permissions" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden outline-none">
+                                        <FormSplitLayout
+                                            sidebar={auditSidebar}
+                                            showSidebar={!!initialData?.id}
+                                            className="p-0"
+                                        >
+                                            <div className="p-6 lg:p-8 space-y-8 overflow-y-auto scrollbar-thin h-full">
+                                                <div className="space-y-8">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="primary_role"
+                                                        render={({ field, fieldState }) => (
+                                                            <LabeledSelect
+                                                                label="Nivel de Permisos (Rol)"
+                                                                required
+                                                                error={fieldState.error?.message}
+                                                                hint="Define la capacidad técnica global del usuario."
+                                                                options={availableRoles.map(([val, label]) => ({ value: val, label }))}
+                                                                value={field.value}
+                                                                onChange={field.onChange}
+                                                            />
                                                         )}
                                                     />
 
-                                                    <div className="col-span-4">
+                                                    <div className="space-y-4">
+                                                        <FormSection title="Equipos Funcionales" icon={ShieldCheck} />
+
                                                         <FormField
                                                             control={form.control}
-                                                            name="username"
-                                                            render={({ field, fieldState }) => (
-                                                                <LabeledInput
-                                                                    label="Nombre de Usuario"
-                                                                    required
-                                                                    disabled={!!initialData}
-                                                                    placeholder="ej: pmartinez"
-                                                                    error={fieldState.error?.message}
-                                                                    hint={initialData ? "Identificador único de sistema" : undefined}
-                                                                    {...field}
-                                                                />
+                                                            name="functional_groups"
+                                                            render={() => (
+                                                                <FormItem>
+                                                                    <div className="grid grid-cols-2 gap-4">
+                                                                        {availableGroups.map((group) => (
+                                                                            <FormField
+                                                                                key={group.id}
+                                                                                control={form.control}
+                                                                                name="functional_groups"
+                                                                                render={({ field }) => (
+                                                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 bg-muted/5 rounded-xl border border-primary/5 hover:border-primary/20 hover:bg-muted/10 transition-all cursor-pointer group">
+                                                                                        <FormControl>
+                                                                                            <Checkbox
+                                                                                                checked={field.value?.includes(group.name)}
+                                                                                                onCheckedChange={(checked) => {
+                                                                                                    return checked
+                                                                                                        ? field.onChange([...field.value, group.name])
+                                                                                                        : field.onChange(field.value?.filter((v) => v !== group.name))
+                                                                                                }}
+                                                                                            />
+                                                                                        </FormControl>
+                                                                                        <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer w-full group-hover:text-primary transition-colors">
+                                                                                            {group.name}
+                                                                                        </FormLabel>
+                                                                                    </FormItem>
+                                                                                )}
+                                                                            />
+                                                                        ))}
+                                                                    </div>
+                                                                    <FormMessage />
+                                                                </FormItem>
                                                             )}
                                                         />
                                                     </div>
                                                 </div>
                                             </div>
-
-                                            <div className="space-y-4">
-                                                <FormSection title="Seguridad y Acceso" icon={ShieldCheck} />
-                                                <div className="grid grid-cols-4 gap-6">
-                                                    <div className="col-span-2">
-                                                        <FormField
-                                                            control={form.control}
-                                                            name="password"
-                                                            render={({ field, fieldState }) => (
-                                                                <LabeledInput
-                                                                    label={`Contraseña Credencial${initialData ? " (Cambiar)" : ""}`}
-                                                                    required={!initialData}
-                                                                    type="password"
-                                                                    placeholder="••••••••"
-                                                                    hint={!initialData ? "Mínimo 6 caracteres" : "Dejar en blanco para mantener"}
-                                                                    error={fieldState.error?.message}
-                                                                    {...field}
-                                                                />
-                                                            )}
-                                                        />
-                                                    </div>
-
-                                                    <div className="col-span-2">
-                                                        <FormField
-                                                            control={form.control}
-                                                            name="is_active"
-                                                            render={({ field }) => (
-                                                                <LabeledSwitch
-                                                                    label="Estado del Acceso"
-                                                                    description={field.value ? "ACTIVO" : "INACTIVO"}
-                                                                    checked={field.value}
-                                                                    onCheckedChange={field.onChange}
-                                                                    icon={<ShieldCheck className={cn("h-4 w-4 transition-colors", field.value ? "text-success" : "text-muted-foreground/30")} />}
-                                                                    className={cn(field.value ? "bg-success/5 border-success/20 shadow-sm" : "border-dashed")}
-                                                                />
-                                                            )}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        </FormSplitLayout>
                                     </FormTabsContent>
-
-                                    <FormTabsContent value="permissions" className="mt-0 space-y-8 outline-none">
-                                        <div className="space-y-8">
-                                            <FormField
-                                                control={form.control}
-                                                name="primary_role"
-                                                render={({ field, fieldState }) => (
-                                                        <LabeledSelect 
-                                                            label="Nivel de Permisos (Rol)" 
-                                                            required 
-                                                            error={fieldState.error?.message}
-                                                            hint="Define la capacidad técnica global del usuario."
-                                                            options={availableRoles.map(([val, label]) => ({ value: val, label }))}
-                                                            value={field.value}
-                                                            onChange={field.onChange}
-                                                        />
-                                                )}
-                                            />
-
-                                            <div className="space-y-4">
-                                                <FormSection title="Equipos Funcionales" icon={ShieldCheck} />
-                                                
-                                                <FormField
-                                                    control={form.control}
-                                                    name="functional_groups"
-                                                    render={() => (
-                                                        <FormItem>
-                                                            <div className="grid grid-cols-2 gap-4">
-                                                                {availableGroups.map((group) => (
-                                                                    <FormField
-                                                                        key={group.id}
-                                                                        control={form.control}
-                                                                        name="functional_groups"
-                                                                        render={({ field }) => (
-                                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-3 bg-muted/5 rounded-xl border border-primary/5 hover:border-primary/20 hover:bg-muted/10 transition-all cursor-pointer group">
-                                                                                <FormControl>
-                                                                                    <Checkbox
-                                                                                        checked={field.value?.includes(group.name)}
-                                                                                        onCheckedChange={(checked) => {
-                                                                                            return checked
-                                                                                                ? field.onChange([...field.value, group.name])
-                                                                                                : field.onChange(field.value?.filter((v) => v !== group.name))
-                                                                                        }}
-                                                                                    />
-                                                                                </FormControl>
-                                                                                <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer w-full group-hover:text-primary transition-colors">
-                                                                                    {group.name}
-                                                                                </FormLabel>
-                                                                            </FormItem>
-                                                                        )}
-                                                                    />
-                                                                ))}
-                                                            </div>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </div>
-                                        </div>
-                                    </FormTabsContent>
-                                </div>
-                            </FormTabs>
-                        </form>
-                    </Form>
-                </FormSplitLayout>
+                                </fieldset>
+                        </FormTabs>
+                    </form>
+                </Form>
             </BaseModal>
         </>
     )

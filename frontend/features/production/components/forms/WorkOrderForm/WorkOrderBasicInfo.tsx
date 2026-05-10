@@ -13,6 +13,7 @@ import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactS
 import { Skeleton, LabeledInput, LabeledContainer, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
 
 import { cn } from "@/lib/utils"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms"
 import type { SaleOrder, SaleOrderLine } from "@/features/sales/types"
 import type { Contact } from "@/features/contacts/types"
@@ -77,7 +78,7 @@ export function WorkOrderBasicInfo({
                                 <div className="flex flex-col">
                                     <div className="flex items-center gap-2">
                                         <span className="font-bold text-primary">
-                                            {initialData?.sale_order_number ? `NV-${initialData.sale_order_number}` : "Sin NV"}
+                                            {initialData?.sale_order_number ? formatEntityDisplay('sales.saleorder', { number: initialData.sale_order_number }) : "Sin NV"}
                                         </span>
                                         <span className="text-muted-foreground">
                                             - {typeof initialData?.sale_line === 'object'
