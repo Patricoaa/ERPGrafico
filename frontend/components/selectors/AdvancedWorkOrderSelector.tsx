@@ -1,4 +1,5 @@
 "use client"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 import { useState, useEffect } from "react"
 import { Check, ChevronDown, Search, Loader2, Package, Eye, Calendar, X, ClipboardList } from "lucide-react"
@@ -126,7 +127,7 @@ export function AdvancedWorkOrderSelector({
                         {selectedOrder ? (
                             <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                 <ClipboardList className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                <span className="font-semibold text-sm text-primary shrink-0">OT-{selectedOrder.number}</span>
+                                <span className="font-semibold text-sm text-primary shrink-0">{formatEntityDisplay('production.workorder', selectedOrder)}</span>
                                 <span className="text-sm text-muted-foreground truncate">{selectedOrder.product_name}</span>
                             </div>
                         ) : (
@@ -182,7 +183,7 @@ export function AdvancedWorkOrderSelector({
                                             </div>
                                             <div className="flex flex-col overflow-hidden flex-1">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="truncate font-bold text-xs">OT-{order.number}</span>
+                                                    <span className="truncate font-bold text-xs">{formatEntityDisplay('production.workorder', order)}</span>
                                                     <span className="text-[9px] font-mono text-muted-foreground">
                                                         {format(new Date(order.created_at), "dd/MM/yyyy")}
                                                     </span>

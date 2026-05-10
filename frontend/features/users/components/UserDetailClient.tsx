@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, FormSkeleton, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 import api from "@/lib/api"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { UserForm } from "@/features/users/components/UserForm"
@@ -47,7 +48,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
         )
     }
 
-    const displayId = user.username
+    const displayId = formatEntityDisplay('core.user', user)
 
     return (
         <EntityDetailPage

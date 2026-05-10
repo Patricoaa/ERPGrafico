@@ -658,7 +658,7 @@ class StockMoveSerializer(serializers.ModelSerializer):
 
     def get_reference_code(self, obj):
         # Prefer the internal MOV code as requested by the user
-        return f"MOV-{str(obj.id).zfill(6)}"
+        return f"MOV-{obj.id}"
 
     def get_reference(self, obj):
         # 1. Purchase Receipt
@@ -671,7 +671,7 @@ class StockMoveSerializer(serializers.ModelSerializer):
             delivery = getattr(obj.sale_delivery_line, 'delivery', None)
             if delivery:
                 # Use .number as .tracking_number does not exist in the model
-                return f"ENT-{delivery.number}"
+                return f"DES-{delivery.number}"
             
         return None
 

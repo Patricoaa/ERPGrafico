@@ -17,13 +17,16 @@ class TreasuryConfig(AppConfig):
 
         try:
             from core.registry import UniversalRegistry, SearchableEntity
-            from treasury.models import TreasuryMovement, TreasuryAccount, POSSession, BankStatement
+            from treasury.models import TreasuryMovement, TreasuryAccount
             UniversalRegistry.register(SearchableEntity(
                 model=TreasuryMovement,
                 label='treasury.treasurymovement',
+                title_singular='Movimiento de Tesorería',
+                title_plural='Movimientos de Tesorería',
                 icon='landmark',
                 search_fields=('transaction_number', 'contact__name', 'contact__tax_id'),
-                display_template='{transaction_number} · {contact.name}',
+                short_display_template='{display_id}',
+                display_template='{display_id} · {contact.name}',
                 list_url='/treasury/movements',
                 detail_url_pattern='/treasury/movements/{id}',
                 permission='treasury.view_treasurymovement',
@@ -31,33 +34,27 @@ class TreasuryConfig(AppConfig):
             UniversalRegistry.register(SearchableEntity(
                 model=TreasuryAccount,
                 label='treasury.treasuryaccount',
+                title_singular='Cuenta de Tesorería',
+                title_plural='Cuentas de Tesorería',
                 icon='piggy-bank',
                 search_fields=('name', 'account_number'),
+                short_display_template='{name}',
                 display_template='{name}',
                 list_url='/treasury/accounts',
                 detail_url_pattern='/treasury/accounts/{id}',
                 permission='treasury.view_treasuryaccount',
             ))
             UniversalRegistry.register(SearchableEntity(
-                model=POSSession,
-                label='treasury.possession',
-                icon='calculator',
-                search_fields=('terminal__name',),
-                display_template='Sesión POS {id}',
-                # List lives under sales module (POS context); detail has own canonical route
-                list_url='/sales/sessions',
-                detail_url_pattern='/treasury/sessions/{id}',
-                permission='treasury.view_possession',
-            ))
-            UniversalRegistry.register(SearchableEntity(
                 model=BankStatement,
                 label='treasury.bankstatement',
-                icon='file-spreadsheet',
-                search_fields=('treasury_account__name', 'statement_date'),
-                display_template='Cartola {treasury_account.name} {statement_date}',
-                # T-103: list_url alineado con frontend searchableEntityRoutes (era /treasury/reconciliation)
+                title_singular='Cartola Bancaria',
+                title_plural='Cartolas Bancarias',
+                icon='book-open',
+                search_fields=('id', 'treasury_account__name'),
+                short_display_template='{display_id}',
+                display_template='{display_id} · {treasury_account.name}',
                 list_url='/treasury/reconciliation?tab=statements',
-                detail_url_pattern='/treasury/statements/{id}',
+                detail_url_pattern='/treasury/reconciliation/statements/{id}',
                 permission='treasury.view_bankstatement',
             ))
         except Exception:

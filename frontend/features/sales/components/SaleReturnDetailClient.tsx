@@ -6,6 +6,7 @@ import api from "@/lib/api"
 import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, FormSkeleton } from "@/components/shared"
 import { SaleNoteForm } from "./SaleNoteModal"
 import { toast } from "sonner"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 interface SaleReturnDetailClientProps {
     orderId: string
@@ -36,15 +37,17 @@ export function SaleReturnDetailClient({ orderId }: SaleReturnDetailClientProps)
         )
     }
 
+    const orderCode = formatEntityDisplay('sales.saleorder', order);
+
     return (
         <EntityDetailPage
-            entityType="sale_return"
+            entityType="sales.salereturn"
             title="Devolución de Orden"
-            displayId={`NV-${order.number}`}
+            displayId={orderCode}
             icon="corner-down-left"
             breadcrumb={[
                 { label: "Ventas", href: "/sales/orders" },
-                { label: `NV-${order.number}`, href: `/sales/orders/${orderId}` },
+                { label: orderCode, href: `/sales/orders/${orderId}` },
                 { label: "Devolución", href: `/sales/returns/${orderId}` }
             ]}
             instanceId={order.id}

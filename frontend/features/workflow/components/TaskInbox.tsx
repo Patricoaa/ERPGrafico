@@ -14,8 +14,9 @@ import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { CardSkeleton, MoneyDisplay } from "@/components/shared"
+import { CardSkeleton, MoneyDisplay, EntityBadge } from "@/components/shared"
 import { useAuth } from "@/contexts/AuthContext"
+import { formatEntityDisplay, getEntityMetadata, detectEntityLabel } from "@/lib/entity-registry"
 
 const HUB_STAGE_LABELS: Record<string, string> = {
     origin: 'Origen',
@@ -201,23 +202,19 @@ export function TaskInbox() {
         }
     }
 
-    const getDocumentId = (task: Task): string | null => {
-        // Extract document ID from task metadata
-        if (task.object_id) {
-            // Try to infer document type from task_type
-            if (task.task_type?.includes('OT_') || task.title?.includes('OT-')) return `OT-${task.object_id}`
-            if (task.task_type?.includes('OC_') || task.title?.includes('OC-')) return `OC-${task.object_id}`
-            if (task.task_type?.includes('OV_') || task.title?.includes('OV-')) return `OV-${task.object_id}`
-            if (task.task_type?.includes('NC_')) return `NC-${task.object_id}`
-            if (task.task_type?.includes('ND_')) return `ND-${task.object_id}`
+    const getTaskEntityData = (task: Task): { label: string, data: any } | null => {
+        if (!task.object_id) return null;
+        
+        const label = detectEntityLabel(task.task_type || '') || detectEntityLabel(task.title || '');
+        if (!label) return null;
 
-            if (task.task_type === 'CREDIT_POS_REQUEST') return `CREDITO`
-
-            return `#${task.object_id}`
-        }
-        if (task.task_type === 'CREDIT_POS_REQUEST') return `CREDITO`
-
-        return null
+        return {
+            label,
+            data: { 
+                id: task.object_id, 
+                number: task.data?.order_number || task.object_id 
+            }
+        };
     }
 
     const formatShortDate = (dateStr: string) => {
@@ -229,7 +226,7 @@ export function TaskInbox() {
     const renderTaskCard = (task: Task) => {
         const isCompleted = task.status === 'COMPLETED'
         const initials = getUserInitials(task)
-        const docId = getDocumentId(task)
+        const entityData = getTaskEntityData(task)
 
         return (
             <Card
@@ -252,7 +249,7 @@ export function TaskInbox() {
                                 {task.data?.stage === 'billing' && <FileText className="h-4 w-4 text-muted-foreground/70" />}
                                 {task.data?.stage === 'treasury' && <Wallet className="h-4 w-4 text-muted-foreground/70" />}
                                 <span className="uppercase">{HUB_STAGE_LABELS[task.data?.stage as keyof typeof HUB_STAGE_LABELS] || task.data?.stage}</span>:
-                                {task.data?.prefix || (task.data?.order_type === 'purchase' ? 'OC' : 'NV')}-{task.data?.order_number}
+                                {' '}{formatEntityDisplay(task.data?.order_type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder', { number: task.data?.order_number })}
                             </>
                         ) : (
                             task.title
@@ -302,11 +299,23 @@ export function TaskInbox() {
                 {/* Row 2: Status & Timeline */}
                 <div className="flex items-center justify-between text-[11px] font-medium tracking-tight">
                     <div>
-                        {!task.task_type?.startsWith('HUB_') && docId && (
-                            <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full border border-primary/20 font-mono">
-                                {docId}
+                        {entityData ? (
+                            <EntityBadge 
+                                label={entityData.label} 
+                                data={entityData.data} 
+                                size="sm" 
+                                link={false}
+                                className="bg-primary/5 text-primary border-primary/20 font-mono"
+                            />
+                        ) : task.task_type === 'CREDIT_POS_REQUEST' ? (
+                            <span className="bg-warning/10 text-warning px-2 py-0.5 rounded-full border border-warning/20 font-mono">
+                                CREDITO
                             </span>
-                        )}
+                        ) : task.object_id ? (
+                            <span className="bg-muted text-muted-foreground px-2 py-0.5 rounded-full border border-border/50 font-mono">
+                                #{task.object_id}
+                            </span>
+                        ) : null}
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
                         {isCompleted ? (

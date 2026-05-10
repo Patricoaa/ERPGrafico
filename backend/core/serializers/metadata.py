@@ -82,6 +82,9 @@ def build_schema(model: type[models.Model], user=None) -> dict:
     if entity:
         schema.update({
             'icon': entity.icon,
+            'title': entity.title_singular,
+            'title_plural': entity.title_plural,
+            'short_display_template': entity.short_display_template,
             'list_url': entity.list_url,
             'detail_url_pattern': entity.detail_url_pattern,
         })

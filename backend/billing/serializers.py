@@ -266,7 +266,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
         
         return [{
             'id': m.id,
-            'display_id': f"MOV-{m.id:06d}",
+            'display_id': f"MOV-{m.id}",
             'date': m.date,
             'product': m.product.name,
             'quantity': m.quantity,

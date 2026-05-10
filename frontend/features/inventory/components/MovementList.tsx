@@ -83,7 +83,7 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex flex-col items-center gap-0.5">
-                    <DataCell.Code className="text-primary font-black uppercase">MOV-{row.original.id}</DataCell.Code>
+                    <DataCell.DocumentId label="inventory.stockmove" data={row.original} />
                     <DataCell.Date value={row.original.date} className="text-[10px] opacity-50" />
                 </div>
             ),

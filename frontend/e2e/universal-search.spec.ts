@@ -460,7 +460,7 @@ test.describe('Universal Search Navigation', () => {
                     {
                         id: 701,
                         type: 'treasury.treasurymovement',
-                        display: 'MOV-000701',
+                        display: 'TRX-701',
                         detail_url: '/treasury/movements/701',
                         icon: 'landmark',
                         label: 'treasury.treasurymovement'
@@ -473,7 +473,7 @@ test.describe('Universal Search Navigation', () => {
         await page.route('**/api/treasury/payments/701/', async route => {
             const json = {
                 id: 701,
-                display_id: 'MOV-000701',
+                display_id: 'TRX-701',
                 movement_type: 'INBOUND',
                 movement_type_display: 'Depósito',
                 payment_method: 'CASH',
@@ -494,7 +494,7 @@ test.describe('Universal Search Navigation', () => {
         await expect(page.getByRole('dialog', { name: /búsqueda/i })).toBeVisible();
         await page.keyboard.type('MOV-001');
 
-        const result = page.locator('text=MOV-000701');
+        const result = page.locator('text=TRX-701');
         await expect(result).toBeVisible();
         await result.click();
 
@@ -607,7 +607,7 @@ test.describe('Universal Search Navigation', () => {
     });
 
     test('Navigates to bank statement detail page correctly (readonly)', async ({ page }) => {
-        await page.route('**/api/search/universal/?q=EXT-001', async route => {
+        await page.route('**/api/search/universal/?q=CAR-001', async route => {
             const json = {
                 results: [
                     {
@@ -626,7 +626,7 @@ test.describe('Universal Search Navigation', () => {
         await page.route('**/api/treasury/statements/704/', async route => {
             const json = {
                 id: 704,
-                display_id: 'EXT-000704',
+                display_id: 'CAR-704',
                 treasury_account: 702,
                 treasury_account_name: 'Caja Principal',
                 statement_date: '2026-05-01',
@@ -647,7 +647,7 @@ test.describe('Universal Search Navigation', () => {
         await page.goto('/');
         await page.keyboard.press('Control+k');
         await expect(page.getByRole('dialog', { name: /búsqueda/i })).toBeVisible();
-        await page.keyboard.type('EXT-001');
+        await page.keyboard.type('CAR-001');
 
         const result = page.locator('text=Cartola Caja Principal 2026-05-01');
         await expect(result).toBeVisible();

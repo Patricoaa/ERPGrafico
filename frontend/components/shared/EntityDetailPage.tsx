@@ -7,6 +7,8 @@ import { DynamicIcon } from "@/components/ui/dynamic-icon"
 import { cn } from "@/lib/utils"
 import { FormSplitLayout } from "@/components/shared/FormSplitLayout"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
+import { getEntityMetadata, ENTITY_REGISTRY } from "@/lib/entity-registry"
+import { Package } from "lucide-react"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -81,6 +83,7 @@ export interface EntityDetailPageProps {
  * Convention: `/[module]/[entity-plural]/[id]`
  * See: docs/20-contracts/module-layout-navigation.md §7
  */
+
 export function EntityDetailPage({
     entityType,
     title,
@@ -94,6 +97,12 @@ export function EntityDetailPage({
     className,
     children,
 }: EntityDetailPageProps) {
+    const metadata = getEntityMetadata(entityType);
+    
+    // Resolve identity from registry if available
+    const resolvedTitle = title || metadata?.title || "Detalle";
+    const RegistryIcon = metadata?.icon;
+
     // Resolve sidebar: explicit override → auto ActivitySidebar → nothing
     const resolvedSidebar = React.useMemo(() => {
         if (sidebar !== undefined) return sidebar  // explicit (including null)
@@ -126,7 +135,11 @@ export function EntityDetailPage({
                 <div className="flex items-center gap-3 px-6 py-3">
                     {/* Icon */}
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10">
-                        <DynamicIcon name={icon} className="h-4 w-4 text-primary" />
+                        {RegistryIcon ? (
+                            <RegistryIcon className="h-4 w-4 text-primary" />
+                        ) : (
+                            <DynamicIcon name={icon || 'package'} className="h-4 w-4 text-primary" />
+                        )}
                     </div>
 
                     {/* Title block */}
@@ -138,7 +151,7 @@ export function EntityDetailPage({
                                 </span>
                             )}
                             <h1 className="text-sm font-semibold text-foreground truncate">
-                                {title}
+                                {resolvedTitle}
                             </h1>
                         </div>
 

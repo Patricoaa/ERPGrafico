@@ -365,7 +365,7 @@ class JournalEntry(AuditedModel):
             last_entry = JournalEntry.objects.all().order_by('id').last()
             if last_entry and last_entry.number:
                 try:
-                    self.number = str(int(last_entry.number) + 1).zfill(6)
+                    self.number = str(int(last_entry.number) + 1)
                 except ValueError:
                     self.number = '000001'
             else:

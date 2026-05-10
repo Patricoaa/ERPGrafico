@@ -106,7 +106,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 const m = row.original
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.DocumentId type={m.payment_method === 'WRITE_OFF' ? 'WRITE_OFF' : m.movement_type} number={m.id} />
+                        <DataCell.DocumentId label="treasury.treasurymovement" data={m} />
                     </div>
                 )
             },

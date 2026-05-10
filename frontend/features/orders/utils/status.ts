@@ -280,15 +280,20 @@ export const getInvoiceHubStatuses = (invoice: InvoiceBase) => {
 }
 
 
-// Helper to prevent duplicate prefixes (e.g. OC-OC-123)
+// Helper to prevent duplicate prefixes (e.g. OCS-OCS-123)
 export const formatDocumentId = (prefix: string, number: string | number, displayId?: string) => {
     if (displayId) return displayId
+    
+    // Standardize prefixes to match registry
+    let standardPrefix = prefix
+    if (prefix === 'OC') standardPrefix = 'OCS'
+    if (prefix === 'FACT') standardPrefix = 'FAC'
+    
     const numStr = String(number || '')
-    const cleanPrefix = prefix.replace('-', '') // Handle both "OC" and "OC-" inputs if needed, though we usually pass "OC"
+    const cleanPrefix = standardPrefix.replace('-', '')
 
-    // Check if it already starts with the prefix (case insensitive)
     if (numStr.toUpperCase().startsWith(cleanPrefix.toUpperCase())) {
         return numStr
     }
-    return `${prefix}-${numStr}`
+    return `${standardPrefix}-${numStr}`
 }

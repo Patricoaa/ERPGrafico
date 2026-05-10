@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, FormSkeleton, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 import { getEmployee, updateEmployee, getAFPs, getPayrollConcepts } from "@/features/hr/api/hrApi"
 import type { Employee, AFP, PayrollConcept } from "@/types/hr"
 import { toast } from "sonner"
@@ -50,7 +51,7 @@ export function EmployeeDetailClient({ employeeId }: EmployeeDetailClientProps) 
         )
     }
 
-    const displayId = employee.display_id || `#${employeeId}`
+    const displayId = formatEntityDisplay('hr.employee', employee)
 
     return (
         <EntityDetailPage

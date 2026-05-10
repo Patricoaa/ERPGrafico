@@ -28,6 +28,7 @@ import api from "@/lib/api"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from "@/components/ui/data-table-cells"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FormTabs, FormTabsContent } from "@/components/shared"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
@@ -472,7 +473,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                                     </TableCell>
                                                     <TableCell>
                                                         <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                                                            OT-{usage.ot_number}
+                                                            {formatEntityDisplay('production.workorder', { number: usage.ot_number })}
                                                         </span>
                                                     </TableCell>
                                                     <TableCell>

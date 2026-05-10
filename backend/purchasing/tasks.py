@@ -110,7 +110,7 @@ def generate_subscription_orders(self):
                             # Notify configured recipients about the new order
                             WorkflowService.send_notification(
                                 notification_type='SUBSCRIPTION_OC_CREATED',
-                                title=f"Nueva Orden de Suscripción: OC-{order.number}",
+                                title=f"Nueva Orden de Suscripción: OCS-{order.number}",
                                 message=f"Proveedor: {order.supplier.name if order.supplier else 'N/A'}",
                                 level=Notification.Type.INFO,
                                 link=f"/purchasing/orders?openHub={order.id}",

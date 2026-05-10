@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, FormSkeleton, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 import api from "@/lib/api"
 import type { Contact } from "@/features/contacts/types"
 import { formatRUT } from "@/lib/utils/format"
@@ -50,7 +51,7 @@ export function ContactDetailClient({ contactId }: ContactDetailClientProps) {
         )
     }
 
-    const displayId = contact.display_id || `#${contactId}`
+    const displayId = formatEntityDisplay('contacts.contact', contact)
 
     return (
         <EntityDetailPage

@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/sheet'
 import { CollapsibleSheet } from '@/components/shared/CollapsibleSheet'
 import { Zap } from 'lucide-react'
+import { formatEntityDisplay } from '@/lib/entity-registry'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -128,7 +129,7 @@ export function OrderActionPanel({
                         ) : (
                             <div className="flex items-center gap-2">
                                 <span className="font-mono">
-                                    {orderType === 'purchase' ? 'OC' : 'NV'}-{order?.number}
+                                    {formatEntityDisplay(orderType === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder', order)}
                                 </span>
                                 <Badge variant={getStatusVariant(order?.status || "")}>
                                     {getStatusLabel(order?.status || "")}

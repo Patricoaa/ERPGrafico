@@ -20,8 +20,11 @@ class ContactsConfig(AppConfig):
             UniversalRegistry.register(SearchableEntity(
                 model=Contact,
                 label='contacts.contact',
+                title_singular='Contacto',
+                title_plural='Contactos',
                 icon='users',
                 search_fields=('name', 'tax_id', 'contact_name', 'code'),
+                short_display_template='{name}',
                 display_template='{name} · {tax_id}',
                 list_url='/contacts',
                 detail_url_pattern='/contacts/{id}',

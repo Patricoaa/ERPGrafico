@@ -301,14 +301,14 @@ class TreasuryMovement(models.Model):
     @property
     def display_id(self):
         if self.payment_method == self.Method.WRITE_OFF:
-            return f"CAS-{str(self.id).zfill(6)}"
+            return f"CAS-{self.id}"
             
         prefix = 'MOV'
         if self.movement_type == self.Type.INBOUND: prefix = 'DEP'
         elif self.movement_type == self.Type.OUTBOUND: prefix = 'RET'
         elif self.movement_type == self.Type.TRANSFER: prefix = 'TRAS'
         elif self.movement_type == self.Type.ADJUSTMENT: prefix = 'ADJ'
-        return f"{prefix}-{str(self.id).zfill(6)}"
+        return f"{prefix}-{self.id}"
 
     @property
     def treasury_account(self):
@@ -783,7 +783,7 @@ class BankStatement(models.Model):
     
     @property
     def display_id(self):
-        return f"EXT-{str(self.id).zfill(6)}"
+        return f"CAR-{self.id}"
     
     @property
     def reconciliation_progress(self):
@@ -1521,7 +1521,7 @@ class TerminalBatch(models.Model):
     
     @property
     def display_id(self):
-        return f"LOTE-{str(self.id).zfill(6)}"
+        return f"LOTE-{self.id}"
     
     def clean(self):
         """Validar que net_amount = gross_amount - commission_total"""
