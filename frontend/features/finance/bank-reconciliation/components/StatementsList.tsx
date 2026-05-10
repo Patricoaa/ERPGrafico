@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useRouter, useSearchParams, usePathname } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Eye } from "lucide-react"
 import { useStatementsQuery } from "../hooks/useReconciliationQueries"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -22,7 +22,6 @@ interface StatementsListProps {
 export function StatementsList({ externalOpen = false, createAction }: StatementsListProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const pathname = usePathname()
     const { data: statements = [], isLoading, refetch } = useStatementsQuery()
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<BankStatement>({
         endpoint: '/treasury/statements'
@@ -38,13 +37,11 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
     }, [searchParams])
 
     // Handle deep-linked statement selection (ADR-0020)
-    // NOTE: clearSelection() is intentionally omitted — the destination URL
-    // (/treasury/reconciliation/<id>) does NOT contain ?selected, so calling
-    // router.replace here would race with the router.push and cause the user
-    // to land on the list instead of the workbench ~5-10% of the time. (T-98)
+    // replace (not push): reemplaza la entrada ?selected= en el historial sin añadir una nueva.
+    // El botón "Ver" ya navega directo al workbench — este efecto solo atiende deeplinks externos.
     useEffect(() => {
         if (selectedFromUrl) {
-            router.push(`/treasury/reconciliation/${selectedFromUrl.id}`)
+            router.replace(`/treasury/reconciliation/${selectedFromUrl.id}`)
         }
     }, [selectedFromUrl, router])
 
@@ -173,9 +170,7 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
                     icon={Eye}
                     title="Ver"
                     onClick={() => {
-                        const params = new URLSearchParams(searchParams.toString())
-                        params.set('selected', String(item.id))
-                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                        router.push(`/treasury/reconciliation/${item.id}`)
                     }}
                 />
             )

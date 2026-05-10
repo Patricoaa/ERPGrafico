@@ -1,5 +1,8 @@
 # Auditoría: Búsqueda Universal & Deeplinks de Modales
 
+> **Estado:** Documento histórico — refleja el estado al 2026-05-09 (pre-fix).
+> Los ítems P0 y P1 del §5 fueron resueltos en la misma sesión. Ver ADR-0018 para la migración FTS.
+
 **Fecha:** 2026-05-09
 **Alcance:** UniversalSearch (Ctrl+K), HubPanelProvider, GlobalModalProvider, TransactionViewModal, useSelectedEntity (ADR-0020 / T-87/T-88), redirects `[id]/page.tsx`.
 **Método:** cross-check de `UniversalRegistry` (backend) ↔ `searchableEntityRoutes` (frontend) ↔ App Router pages ↔ DRF routers ↔ patrones router.push/replace.

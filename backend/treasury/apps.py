@@ -17,7 +17,7 @@ class TreasuryConfig(AppConfig):
 
         try:
             from core.registry import UniversalRegistry, SearchableEntity
-            from treasury.models import TreasuryMovement, TreasuryAccount
+            from treasury.models import TreasuryMovement, TreasuryAccount, BankStatement
             UniversalRegistry.register(SearchableEntity(
                 model=TreasuryMovement,
                 label='treasury.treasurymovement',
@@ -60,7 +60,7 @@ class TreasuryConfig(AppConfig):
                 subtitle_template='{treasury_account.name}',
                 extra_info_template='{date}',
                 list_url='/treasury/reconciliation?tab=statements',
-                detail_url_pattern='/treasury/reconciliation/statements/{id}',
+                detail_url_pattern='/treasury/statements/{id}',
                 permission='treasury.view_bankstatement',
             ))
         except Exception:
