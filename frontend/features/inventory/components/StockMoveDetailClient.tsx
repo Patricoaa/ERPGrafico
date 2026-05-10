@@ -51,10 +51,8 @@ export function StockMoveDetailClient({ moveId }: StockMoveDetailClientProps) {
 
     return (
         <EntityDetailPage
-            entityType="stock_move"
-            title="Movimiento de Stock"
+            entityLabel="inventory.stockmove"
             displayId={formatEntityDisplay('inventory.stockmove', move)}
-            icon="arrow-right-left"
             breadcrumb={[
                 { label: "Movimientos", href: "/inventory/moves" },
                 { label: formatEntityDisplay('inventory.stockmove', move), href: `/inventory/moves/${moveId}` }

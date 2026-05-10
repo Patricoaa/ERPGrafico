@@ -20,6 +20,7 @@ import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
 import { Tabs } from "@/components/ui/tabs"
 import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/features/sales"
 import { cn } from "@/lib/utils"
+import { ENTITY_REGISTRY } from "@/lib/entity-registry"
 
 
 interface SalesOrdersViewProps {
@@ -331,7 +332,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                             return (
                                 <EmptyState
                                     context="search"
-                                    title={viewMode === 'orders' ? "No se encontraron órdenes" : "No se encontraron notas"}
+                                    title={viewMode === 'orders' ? `No se encontraron ${ENTITY_REGISTRY['sales.saleorder']?.titlePlural.toLowerCase()}` : "No se encontraron notas"}
                                     description="Ajusta el rango de fechas o los filtros para encontrar lo que buscas."
                                 />
                             )

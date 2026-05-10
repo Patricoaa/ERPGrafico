@@ -42,10 +42,8 @@ export function AccountDetailClient({ accountId }: AccountDetailClientProps) {
 
     return (
         <EntityDetailPage
-            entityType="account"
-            title="Cuenta Contable"
+            entityLabel="accounting.account"
             displayId={account.code}
-            icon="tag"
             breadcrumb={[
                 { label: "Plan de Cuentas", href: "/accounting/ledger" },
                 { label: account.name, href: `/accounting/accounts/${accountId}` }

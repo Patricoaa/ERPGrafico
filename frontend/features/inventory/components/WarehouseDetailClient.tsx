@@ -37,10 +37,8 @@ export function WarehouseDetailClient({ warehouseId }: WarehouseDetailClientProp
 
     return (
         <EntityDetailPage
-            entityType="warehouse"
-            title="Bodega"
+            entityLabel="inventory.warehouse"
             displayId={warehouse.code}
-            icon="warehouse"
             breadcrumb={[
                 { label: "Bodegas", href: "/inventory/settings?tab=warehouses" },
                 { label: warehouse.name, href: `/inventory/warehouses/${warehouseId}` }

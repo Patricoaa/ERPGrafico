@@ -1,8 +1,8 @@
 "use client"
-import { formatEntityDisplay } from "@/lib/entity-registry"
+import { formatEntityDisplay, getEntityIcon } from "@/lib/entity-registry"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, Search, Loader2, Package, Eye, Calendar, X, ClipboardList } from "lucide-react"
+import { Check, ChevronDown, Search, Loader2, Eye, Calendar, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -124,13 +124,16 @@ export function AdvancedWorkOrderSelector({
                                 disabled && "opacity-50 cursor-not-allowed"
                             )}
                         >
-                        {selectedOrder ? (
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                <ClipboardList className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                <span className="font-semibold text-sm text-primary shrink-0">{formatEntityDisplay('production.workorder', selectedOrder)}</span>
-                                <span className="text-sm text-muted-foreground truncate">{selectedOrder.product_name}</span>
-                            </div>
-                        ) : (
+                        {selectedOrder ? (() => {
+                            const OrderIcon = getEntityIcon('production.workorder');
+                            return (
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <OrderIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                    <span className="font-semibold text-sm text-primary shrink-0">{formatEntityDisplay('production.workorder', selectedOrder)}</span>
+                                    <span className="text-sm text-muted-foreground truncate">{selectedOrder.product_name}</span>
+                                </div>
+                            );
+                        })() : (
                             <span className="text-muted-foreground italic text-sm truncate">{placeholder}</span>
                         )}
                         <div className="flex items-center gap-2">
@@ -179,7 +182,10 @@ export function AdvancedWorkOrderSelector({
                                     >
                                         <div className="flex items-center gap-3 w-full overflow-hidden">
                                             <div className="flex-shrink-0 p-2 bg-muted rounded-md group-hover:bg-background transition-colors">
-                                                <Package className="h-4 w-4 text-primary" />
+                                                {(() => {
+                                                    const OrderIcon = getEntityIcon('production.workorder');
+                                                    return <OrderIcon className="h-4 w-4 text-primary" />;
+                                                })()}
                                             </div>
                                             <div className="flex flex-col overflow-hidden flex-1">
                                                 <div className="flex items-center justify-between">

@@ -38,10 +38,8 @@ export function SaleOrderDetailClient({ orderId }: SaleOrderDetailClientProps) {
 
     return (
         <EntityDetailPage
-            entityType="sale_order"
-            title="Nota de Venta"
+            entityLabel="sales.saleorder"
             displayId={order.number}
-            icon="receipt"
             breadcrumb={[
                 { label: "Ventas", href: "/sales/orders" },
                 { label: order.number, href: `/sales/orders/${orderId}` }

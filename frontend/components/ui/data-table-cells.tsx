@@ -44,14 +44,35 @@ export const DataCell = {
     ),
 
     /** Standardized Document ID with prefix and padding (Uses EntityBadge) */
-    DocumentId: ({ type, number, label, data, className, ...props }: { type?: string, number?: string | number | null | undefined, label?: string, data?: any, className?: string }) => {
-        // Compatibility layer
-        const finalLabel = label || (type ? formatDocumentId(type, '___MAP___').replace('___MAP___', '') : undefined);
+    DocumentId: ({ entityLabel, type, number, label, data, className, ...props }: { entityLabel?: string, type?: string, number?: string | number | null | undefined, label?: string, data?: any, className?: string }) => {
+        // Resolve label: prefer entityLabel > label > legacy type mapping
+        let resolvedLabel = entityLabel || label;
+        
+        if (!resolvedLabel && type) {
+            const TYPE_TO_LABEL: Record<string, string> = {
+                'sale_order': 'sales.saleorder',
+                'purchase_order': 'purchasing.purchaseorder',
+                'invoice': 'billing.invoice',
+                'payment': 'treasury.treasurymovement',
+                'journal_entry': 'accounting.journalentry',
+                'inventory': 'inventory.stockmove',
+                'stock_move': 'inventory.stockmove',
+                'work_order': 'production.workorder',
+                'sale_delivery': 'sales.saledelivery',
+                'purchase_receipt': 'inventory.warehouse',
+                'sale_return': 'sales.salereturn',
+                'purchase_return': 'sales.salereturn',
+                'cash_movement': 'treasury.treasurymovement',
+                'terminal_batch': 'treasury.treasurymovement',
+            };
+            resolvedLabel = TYPE_TO_LABEL[type];
+        }
+
         const finalData = data || { id: number, number, display_id: number };
         
         return (
             <div className={cn("flex justify-center items-center", className)} {...props}>
-                <EntityBadge label={label || 'sales.saleorder'} data={finalData} size="sm" />
+                <EntityBadge label={resolvedLabel || 'sales.saleorder'} data={finalData} size="sm" />
             </div>
         );
     },

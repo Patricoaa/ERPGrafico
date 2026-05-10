@@ -2,7 +2,7 @@
 
 import React from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { ArrowLeft, ShoppingBag, FileText, Receipt, Package, ClipboardList, Banknote, Hash, Eye } from "lucide-react"
+import { ArrowLeft, Package, Eye } from "lucide-react"
 import type { TransactionData, RelatedDocument, TransactionType } from "@/types/transactions"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"

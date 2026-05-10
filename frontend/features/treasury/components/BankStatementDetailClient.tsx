@@ -97,10 +97,9 @@ export function BankStatementDetailClient({ statementId }: BankStatementDetailCl
 
     return (
         <EntityDetailPage
-            entityType="payment" // closest available; sidebar suppressed below
-            title="Cartola Bancaria"
+            entityLabel="treasury.treasurymovement"
+            // closest available; sidebar suppressed below
             displayId={displayId}
-            icon="file-spreadsheet"
             breadcrumb={[
                 { label: "Conciliación", href: "/treasury/reconciliation" },
                 { label: displayId, href: `/treasury/statements/${statementId}` },

@@ -37,10 +37,8 @@ export function CategoryDetailClient({ categoryId }: CategoryDetailClientProps) 
 
     return (
         <EntityDetailPage
-            entityType="category"
-            title="Categoría"
+            entityLabel="inventory.product"
             displayId={category.name}
-            icon="folder-tree"
             breadcrumb={[
                 { label: "Categorías", href: "/inventory/categories" },
                 { label: category.name, href: `/inventory/categories/${categoryId}` }

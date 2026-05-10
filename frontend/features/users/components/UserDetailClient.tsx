@@ -52,10 +52,8 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
 
     return (
         <EntityDetailPage
-            entityType="user"
-            title="Perfil de Usuario"
+            entityLabel="core.user"
             displayId={displayId}
-            icon="user"
             breadcrumb={[
                 { label: "Usuarios", href: "/settings/users" },
                 { label: displayId, href: `/settings/users/${userId}` },

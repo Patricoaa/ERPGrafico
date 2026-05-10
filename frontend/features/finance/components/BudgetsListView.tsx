@@ -80,13 +80,6 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
         }
     }, [selectedFromUrl, isEditorOpen, budgetToEdit])
 
-    const clearSelection = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('selected')
-        const query = params.toString()
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    }
-
     const handleCreate = async () => {
         try {
             await createBudget(newBudget)

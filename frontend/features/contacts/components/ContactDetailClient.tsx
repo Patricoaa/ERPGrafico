@@ -55,10 +55,8 @@ export function ContactDetailClient({ contactId }: ContactDetailClientProps) {
 
     return (
         <EntityDetailPage
-            entityType="contact"
-            title="Ficha de Contacto"
+            entityLabel="contacts.contact"
             displayId={displayId}
-            icon="user"
             breadcrumb={[
                 { label: "Contactos", href: "/contacts" },
                 { label: displayId, href: `/contacts/${contactId}` },

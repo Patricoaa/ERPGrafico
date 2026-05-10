@@ -37,10 +37,8 @@ export function ProductDetailClient({ productId }: ProductDetailClientProps) {
 
     return (
         <EntityDetailPage
-            entityType="product"
-            title="Producto"
+            entityLabel="inventory.product"
             displayId={product.code || product.name}
-            icon="package"
             breadcrumb={[
                 { label: "Productos", href: "/inventory/products" },
                 { label: product.code || product.name, href: `/inventory/products/${productId}` }

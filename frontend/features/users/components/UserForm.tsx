@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, ShieldAlert } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, SubmitButton, LabeledSeparator, LabeledInput, LabeledContainer, FormSection, FormTabs, FormTabsContent, type FormTabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch } from "@/components/shared"
+import { CancelButton, SubmitButton, LabeledSeparator, LabeledInput, LabeledContainer, FormSection, FormTabs, FormTabsContent, type FormTabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, EntityHeader } from "@/components/shared"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -191,19 +191,12 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger, open: 
     ]
 
     const headerSlot = (
-        <div className="px-6 py-4 border-b bg-muted/5">
-            <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                    <User className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                    <h3 className="font-bold tracking-tight text-foreground text-sm uppercase">Ficha de Usuario</h3>
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                        {initialData ? initialData.username : "Nuevo acceso al sistema"}
-                    </p>
-                </div>
-            </div>
-        </div>
+        <EntityHeader
+            entityLabel="core.user"
+            data={initialData}
+            action={initialData ? 'edit' : 'create'}
+            className="border-none px-6 py-4 bg-muted/5 print:hidden"
+        />
     )
 
     return (

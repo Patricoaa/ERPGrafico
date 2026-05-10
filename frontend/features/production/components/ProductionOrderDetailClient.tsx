@@ -57,13 +57,11 @@ export function ProductionOrderDetailClient({ orderId }: ProductionOrderDetailCl
 
     return (
         <EntityDetailPage
-            entityType="production_order"
-            title="Orden de Trabajo"
+            entityLabel="production.workorder"
             displayId={order.number}
-            icon="factory"
             breadcrumb={[
                 { label: "OTs", href: "/production/orders" },
-                { label: order.number, href: `/production/orders/${orderId}` },
+                { label: order.number || "Nueva", href: `/production/orders/${orderId}` },
             ]}
             instanceId={parseInt(orderId)}
             readonly={true}

@@ -55,10 +55,8 @@ export function EmployeeDetailClient({ employeeId }: EmployeeDetailClientProps) 
 
     return (
         <EntityDetailPage
-            entityType="employee"
-            title="Ficha de Empleado"
+            entityLabel="hr.employee"
             displayId={displayId}
-            icon="user-check"
             breadcrumb={[
                 { label: "Empleados", href: "/hr/employees" },
                 { label: displayId, href: `/hr/employees/${employeeId}` },
