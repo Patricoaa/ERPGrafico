@@ -8,6 +8,7 @@ so permission filtering happens server-side.
 
 from __future__ import annotations
 
+import logging
 import operator
 import re
 from dataclasses import dataclass, field
@@ -17,6 +18,8 @@ from typing import Any, ClassVar
 from django.db import connection as _db_connection
 from django.db import models
 from django.db.models import Q
+
+logger = logging.getLogger(__name__)
 
 
 def _is_postgres() -> bool:
@@ -97,6 +100,8 @@ class UniversalRegistry:
         if not query:
             return []
 
+        logger.debug(f"Search started: query='{query}', user='{user}'")
+        
         results: list[dict[str, Any]] = []
         
         # 1. Identify if the query has a canonical prefix (e.g., "NV-", "OCS-")
@@ -146,12 +151,19 @@ class UniversalRegistry:
             if not entity.permission or user.has_perm(entity.permission)
         ]
         
+        if not cls._entities:
+            logger.warning("UniversalRegistry search called but NO entities are registered.")
+            return []
+
         # If user has no permissions for any searchable entity, return empty
         if not allowed_labels:
+            logger.info(f"User '{user}' has no permissions for any searchable entity. Registered: {list(cls._entities.keys())}")
             return []
 
         # Prepare Query Term and SearchQuery
         q_term = clean_query if targeted_entities else query
+        
+        logger.debug(f"Search parameters: q_term='{q_term}', targeted={targeted_entities}, allowed={len(allowed_labels)}")
         
         # Use websearch for FTS as it handles most user inputs gracefully.
         # Prefix matching (e.g., "NV-1") is handled by the icontains filter on denormalized fields.
@@ -191,7 +203,11 @@ class UniversalRegistry:
 
         # Collect results
         final_results = []
-        for idx in qs[:limit]:
+        full_qs = qs[:limit]
+        
+        logger.debug(f"Search Queryset: {full_qs.query}")
+        
+        for idx in full_qs:
             entity = cls._entities.get(idx.entity_label)
             if not entity:
                 continue

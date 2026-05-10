@@ -66,6 +66,7 @@ class SalesConfig(AppConfig):
                 detail_url_pattern='/sales/returns/{id}',
                 permission='sales.view_salereturn',
             ))
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Error registering search entities in 'sales' app: {e}")
 
