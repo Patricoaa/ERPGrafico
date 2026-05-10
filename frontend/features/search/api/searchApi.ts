@@ -2,9 +2,13 @@ import api from '@/lib/api'
 
 export interface SearchResult {
     label: string
+    title: string
+    title_plural: string
     icon: string
     id: number
     display: string
+    subtitle?: string
+    extra_info?: string
     list_url: string
     detail_url: string
 }

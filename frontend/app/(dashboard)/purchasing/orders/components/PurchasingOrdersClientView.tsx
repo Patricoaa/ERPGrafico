@@ -307,7 +307,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             ),
             cell: ({ row }) => (
                 <div className="flex flex-col items-center">
-                    <DataCell.DocumentId type="PURCHASE_ORDER" number={row.getValue("number")} />
+                    <DataCell.DocumentId type="purchase_order" number={row.getValue("number")} />
                 </div>
             ),
             meta: { title: "Folio" },
