@@ -100,9 +100,18 @@ export function useCart() {
 
         const isManufacturable = product.product_type === 'MANUFACTURABLE' || product.requires_advanced_manufacturing
 
-        // Pre-fetch BOM if manufacturable
-        if (isManufacturable && product.has_bom) {
-            await fetchBOM(product.id)
+        // JIT BOM and Component Resolution
+        if (isManufacturable) {
+            const { bom, components } = BOMResolver.resolveForProduct(product)
+            if (bom) {
+                updateBomCache(product.id, bom)
+                Object.entries(components).forEach(([id, data]) => {
+                    updateComponentCache(parseInt(id), data)
+                })
+            } else if (product.has_bom) {
+                // Fallback to API if not preloaded in product object
+                await fetchBOM(product.id)
+            }
         }
 
         // Check if already exists in cart (only for non-manufacturable)

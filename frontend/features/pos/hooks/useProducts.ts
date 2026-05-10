@@ -36,7 +36,8 @@ export function useProducts() {
         queryFn: () => inventoryApi.getProducts({ 
             active: true, 
             can_be_sold: true,
-            fields: 'id,name,sale_price,sale_price_gross,image,uom_name,internal_code,barcode,product_type,track_inventory,requires_advanced_manufacturing,category,uom,available_uoms,is_favorite'
+            page_size: 2000, // Ensure we get all sellable items in one go for instant search
+            fields: 'id,name,sale_price,sale_price_gross,image,uom_name,internal_code,barcode,product_type,track_inventory,requires_advanced_manufacturing,category,uom,available_uoms,is_favorite,has_bom'
         }) as unknown as Promise<Product[]>,
         staleTime: 1000 * 60 * 5, 
     })
@@ -49,10 +50,7 @@ export function useProducts() {
     // 2. Fetch Categories
     const { data: categories = [], isLoading: loadingCategories } = useQuery({
         queryKey: ['categories'],
-        queryFn: async () => {
-            const res = await api.get('/inventory/categories/?page_size=9999')
-            return res.data.results || res.data
-        },
+        queryFn: () => inventoryApi.getCategories(),
         staleTime: 1000 * 60 * 60,
     })
 
@@ -60,7 +58,7 @@ export function useProducts() {
     const { data: uoms = [], isLoading: loadingUoms } = useQuery({
         queryKey: ['uoms'],
         queryFn: async () => {
-            const res = await api.get('/inventory/uoms/?page_size=9999')
+            const res = await api.get('/inventory/uoms/', { params: { active: true, page_size: 500 } })
             return res.data.results || res.data
         },
         staleTime: 1000 * 60 * 60,
@@ -75,21 +73,6 @@ export function useProducts() {
         }
     }, [loadingProducts, loadingCategories, loadingUoms, setLoading])
 
-    // Setup caches when products load (only for products that already have BOM data if any)
-    useEffect(() => {
-        if (products.length > 0) {
-            const { bomCache: newBomCache, componentCache: newComponentCache } =
-                BOMResolver.initializeCachesFromProducts(products)
-
-            Object.entries(newBomCache).forEach(([productId, bom]) => {
-                updateBomCache(parseInt(productId), bom)
-            })
-
-            Object.entries(newComponentCache).forEach(([componentId, data]) => {
-                updateComponentCache(parseInt(componentId), data)
-            })
-        }
-    }, [products, updateBomCache, updateComponentCache])
 
 
     // Filtered products based on search and category
