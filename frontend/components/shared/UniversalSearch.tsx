@@ -25,13 +25,14 @@ import {
     CornerDownLeft,
     X,
 } from "lucide-react"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle, DialogPortal, DialogOverlay } from "@/components/ui/dialog"
 import { useDebounce } from "@/hooks/use-debounce"
 import { useUniversalSearch } from "@/features/search"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
+import { Skeleton } from "@/components/ui/skeleton"
 import { DynamicIcon } from "@/components/ui/dynamic-icon"
 
 const ICON_MAP: Record<string, any> = {
@@ -148,80 +149,109 @@ export function UniversalSearch() {
             </button>
 
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent
-                    className="max-w-5xl gap-0 overflow-hidden border-none p-0 shadow-2xl backdrop-blur-3xl dark:bg-black/95"
-                    aria-label="Búsqueda universal"
-                >
-                    <DialogTitle className="sr-only">Búsqueda universal</DialogTitle>
+                <DialogPortal>
+                    <DialogOverlay className="bg-black/40 backdrop-blur-md" />
+                    <DialogContent
+                        size="xl"
+                        showCloseButton={false}
+                        className="gap-0 overflow-hidden border-none p-0 shadow-2xl backdrop-blur-3xl dark:bg-black/95"
+                        aria-label="Búsqueda universal"
+                    >
+                        <DialogTitle className="sr-only">Búsqueda universal</DialogTitle>
 
-                    {/* Search Input Area */}
-                    <div className="relative flex items-center border-b border-white/5 px-6 py-6">
-                        <Search className="mr-4 size-6 shrink-0 text-muted-foreground/60" aria-hidden />
-                        <input
-                            ref={inputRef}
-                            role="combobox"
-                            aria-expanded={filteredResults.length > 0}
-                            aria-controls="search-results"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Busca por número, nombre, RUT o código..."
-                            className="flex-1 bg-transparent text-2xl font-light outline-none placeholder:text-muted-foreground/30"
-                            autoComplete="off"
-                            spellCheck={false}
-                        />
-                        {isLoading ? (
-                            <Loader2 className="size-6 animate-spin text-primary" aria-label="Buscando…" />
-                        ) : (
-                            <div className="flex items-center gap-3">
-
-                                <button onClick={() => setOpen(false)} className="rounded-full p-2 hover:bg-white/10">
-                                    <X className="size-5 text-muted-foreground" />
-                                </button>
+                        {/* Progress Bar Loader */}
+                        {isLoading && (
+                            <div className="absolute top-0 left-0 h-[2px] w-full overflow-hidden bg-primary/20">
+                                <div className="h-full bg-primary animate-pulse w-full" />
                             </div>
                         )}
-                    </div>
 
-                    {/* Segmenters (Tabs) */}
-                    {results.length > 0 && (
-                        <div className="flex items-center gap-2 border-b border-white/5 bg-black/20 px-6 py-3">
-                            <button
-                                onClick={() => setSelectedType(null)}
-                                className={cn(
-                                    "flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all",
-                                    !selectedType
-                                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                                        : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                                )}
-                            >
-                                Todos
-                            </button>
-                            {entityTypes.map((type) => (
-                                <button
-                                    key={type.label}
-                                    onClick={() => setSelectedType(type.label)}
-                                    className={cn(
-                                        "flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all",
-                                        selectedType === type.label
-                                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                                            : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                                    )}
-                                >
-                                    <DynamicIcon name={type.icon} className="size-3.5" />
-                                    {type.title_plural}
-                                </button>
-                            ))}
+                        {/* Search Input Area */}
+                        <div className="relative flex items-center border-b border-white/5 px-6 py-8">
+                            <Search className="mr-4 size-8 shrink-0 text-muted-foreground/60" aria-hidden />
+                            <input
+                                ref={inputRef}
+                                role="combobox"
+                                aria-expanded={filteredResults.length > 0}
+                                aria-controls="search-results"
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                placeholder="Busca por número, nombre, RUT o código..."
+                                className="flex-1 bg-transparent text-3xl font-light outline-none placeholder:text-muted-foreground/30"
+                                autoComplete="off"
+                                spellCheck={false}
+                            />
+                            {isLoading ? (
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                                    <Loader2 className="size-6 animate-spin text-primary" />
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-3">
+                                    <button onClick={() => setOpen(false)} className="rounded-full p-2 hover:bg-white/10">
+                                        <X className="size-6 text-muted-foreground" />
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                    )}
 
-                    {/* Results List - Fixed Height for 5 items (5 * 64px = 320px) */}
-                    <ScrollArea className="h-[320px]">
-                        <ul
-                            id="search-results"
-                            role="listbox"
-                            className="divide-y divide-white/5"
-                        >
-                            {filteredResults.length === 0 && debouncedQuery.length >= 2 && !isLoading && (
+                        {/* Segmenters (Tabs) - Horizontal Scrollable */}
+                        {results.length > 0 && (
+                            <div className="flex items-center border-b border-white/5 bg-black/20 px-6 py-3">
+                                <div className="flex w-full items-center gap-2 overflow-x-auto flex-nowrap scrollbar-none [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1">
+                                    <button
+                                        onClick={() => setSelectedType(null)}
+                                        className={cn(
+                                            "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all",
+                                            !selectedType
+                                                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                                                : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                                        )}
+                                    >
+                                        Todos
+                                    </button>
+                                    {entityTypes.map((type) => (
+                                        <button
+                                            key={type.label}
+                                            onClick={() => setSelectedType(type.label)}
+                                            className={cn(
+                                                "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all",
+                                                selectedType === type.label
+                                                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                                                    : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                                            )}
+                                        >
+                                            {type.icon && <DynamicIcon name={type.icon} className="size-3" />}
+                                            {type.title_plural}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Results List - Fixed Height for 5 items (5 * 64px = 320px) */}
+                        <ScrollArea className="h-[320px]">
+                            <ul
+                                id="search-results"
+                                role="listbox"
+                                className="divide-y divide-white/5"
+                            >
+                                {isLoading && (
+                                    <>
+                                        {[...Array(5)].map((_, i) => (
+                                            <li key={i} className="flex items-center gap-4 px-6 py-4">
+                                                <Skeleton className="size-10 rounded-full" />
+                                                <div className="flex-1 space-y-2">
+                                                    <Skeleton className="h-4 w-[40%]" />
+                                                    <Skeleton className="h-3 w-[20%]" />
+                                                </div>
+                                                <Skeleton className="h-6 w-20 rounded-full" />
+                                            </li>
+                                        ))}
+                                    </>
+                                )}
+
+                                {!isLoading && filteredResults.length === 0 && debouncedQuery.length >= 2 && (
                                 <li className="flex h-full flex-col items-center justify-center py-20 text-center">
                                     <div className="mb-4 rounded-full bg-muted/20 p-6">
                                         <Search className="size-10 text-muted-foreground/30" />
@@ -235,11 +265,19 @@ export function UniversalSearch() {
                                 </li>
                             )}
 
-                            {filteredResults.length === 0 && debouncedQuery.length < 2 && (
-                                <li className="flex flex-col items-center justify-center py-20 text-center">
-                                    <CommandIcon className="mb-4 size-12 text-muted-foreground/20" />
-                                    <p className="text-sm text-muted-foreground">
-                                        Busca órdenes, clientes, productos y más
+                            {!isLoading && filteredResults.length === 0 && debouncedQuery.length < 2 && (
+                                <li className="flex flex-col items-center justify-center py-24 text-center">
+                                    <div className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 shadow-2xl">
+                                        <div className="absolute inset-0 animate-pulse rounded-2xl bg-primary/5 blur-xl" />
+                                        <span className="relative bg-gradient-to-br from-primary to-primary/50 bg-clip-text text-4xl font-black tracking-tighter text-transparent">
+                                            EG
+                                        </span>
+                                    </div>
+                                    <h3 className="mb-2 text-xl font-semibold tracking-tight text-foreground">
+                                        ERPGrafico
+                                    </h3>
+                                    <p className="max-w-[300px] text-sm text-muted-foreground">
+                                        Ingresa un número de documento, nombre de cliente o código de producto para comenzar.
                                     </p>
                                 </li>
                             )}
@@ -325,7 +363,8 @@ export function UniversalSearch() {
                             </div>
                         )}
                     </div>
-                </DialogContent>
+                    </DialogContent>
+                </DialogPortal>
             </Dialog>
         </>
     )
