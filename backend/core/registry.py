@@ -28,10 +28,10 @@ class SearchableEntity:
     search_fields: tuple[str, ...]  # ORM field lookups, e.g. ('number', 'customer__name')
     short_display_template: str     # e.g. 'NV-{number}'
     display_template: str           # Python str.format_map template, e.g. 'NV-{number} · {customer.name}'
-    subtitle_template: str = ""     # e.g. '{customer.email}'
-    extra_info_template: str = ""   # e.g. '{status}'
     list_url: str                   # frontend route, e.g. '/ventas/ordenes'
     detail_url_pattern: str         # frontend route with {id}, e.g. '/ventas/ordenes/{id}'
+    subtitle_template: str = ""     # e.g. '{customer.email}'
+    extra_info_template: str = ""   # e.g. '{status}'
     permission: str | None = None   # Django permission codename, e.g. 'sales.view_saleorder'
     extra_filters: dict[str, Any] = field(default_factory=dict)
 
