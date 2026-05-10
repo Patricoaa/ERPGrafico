@@ -138,10 +138,10 @@ export function UniversalSearch() {
                 type="button"
                 onClick={() => setOpen(true)}
                 aria-label="Búsqueda universal (Ctrl+K)"
-                className="group relative flex w-full max-w-[240px] items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-muted/50 hover:ring-2 hover:ring-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 sm:max-w-[320px]"
+                className="group relative flex w-12 items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-muted/50 hover:ring-2 hover:ring-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 sm:w-full sm:max-w-[600px]"
             >
                 <Search className="size-4 transition-colors group-hover:text-foreground" aria-hidden />
-                <span className="hidden flex-1 text-left sm:inline">Buscar en el sistema...</span>
+                <span className="hidden flex-1 text-left sm:inline">Buscar clientes, productos, órdenes o cualquier documento...</span>
                 <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
                     <span className="text-xs">⌘</span>K
                 </kbd>
@@ -149,14 +149,14 @@ export function UniversalSearch() {
 
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent
-                    className="max-w-2xl gap-0 overflow-hidden border-none p-0 shadow-2xl backdrop-blur-xl dark:bg-black/80"
+                    className="max-w-5xl gap-0 overflow-hidden border-none p-0 shadow-2xl backdrop-blur-3xl dark:bg-black/95"
                     aria-label="Búsqueda universal"
                 >
                     <DialogTitle className="sr-only">Búsqueda universal</DialogTitle>
-                    
+
                     {/* Search Input Area */}
-                    <div className="relative flex items-center border-b border-white/5 px-4 py-4">
-                        <Search className="mr-3 size-5 shrink-0 text-muted-foreground/60" aria-hidden />
+                    <div className="relative flex items-center border-b border-white/5 px-6 py-6">
+                        <Search className="mr-4 size-6 shrink-0 text-muted-foreground/60" aria-hidden />
                         <input
                             ref={inputRef}
                             role="combobox"
@@ -165,20 +165,18 @@ export function UniversalSearch() {
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="Empieza a escribir para buscar..."
-                            className="flex-1 bg-transparent text-lg font-medium outline-none placeholder:text-muted-foreground/40"
+                            placeholder="Busca por número, nombre, RUT o código..."
+                            className="flex-1 bg-transparent text-2xl font-light outline-none placeholder:text-muted-foreground/30"
                             autoComplete="off"
                             spellCheck={false}
                         />
                         {isLoading ? (
-                            <Loader2 className="size-5 animate-spin text-primary" aria-label="Buscando…" />
+                            <Loader2 className="size-6 animate-spin text-primary" aria-label="Buscando…" />
                         ) : (
-                            <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="hidden border-white/10 text-[10px] sm:flex">
-                                    ESC para cerrar
-                                </Badge>
-                                <button onClick={() => setOpen(false)} className="rounded-full p-1 hover:bg-white/10">
-                                    <X className="size-4 text-muted-foreground" />
+                            <div className="flex items-center gap-3">
+
+                                <button onClick={() => setOpen(false)} className="rounded-full p-2 hover:bg-white/10">
+                                    <X className="size-5 text-muted-foreground" />
                                 </button>
                             </div>
                         )}
@@ -186,13 +184,13 @@ export function UniversalSearch() {
 
                     {/* Segmenters (Tabs) */}
                     {results.length > 0 && (
-                        <div className="flex items-center gap-1 border-b border-white/5 px-4 py-2">
+                        <div className="flex items-center gap-2 border-b border-white/5 bg-black/20 px-6 py-3">
                             <button
                                 onClick={() => setSelectedType(null)}
                                 className={cn(
-                                    "flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                                    !selectedType 
-                                        ? "bg-primary text-primary-foreground" 
+                                    "flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all",
+                                    !selectedType
+                                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                                         : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
                                 )}
                             >
@@ -203,40 +201,40 @@ export function UniversalSearch() {
                                     key={type.label}
                                     onClick={() => setSelectedType(type.label)}
                                     className={cn(
-                                        "flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
-                                        selectedType === type.label 
-                                            ? "bg-primary text-primary-foreground" 
+                                        "flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all",
+                                        selectedType === type.label
+                                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                                             : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
                                     )}
                                 >
-                                    <DynamicIcon name={type.icon} className="size-3" />
+                                    <DynamicIcon name={type.icon} className="size-3.5" />
                                     {type.title_plural}
                                 </button>
                             ))}
                         </div>
                     )}
 
-                    {/* Results List */}
-                    <ScrollArea className="max-h-[480px]">
+                    {/* Results List - Fixed Height for 5 items (5 * 64px = 320px) */}
+                    <ScrollArea className="h-[320px]">
                         <ul
                             id="search-results"
                             role="listbox"
                             className="divide-y divide-white/5"
                         >
                             {filteredResults.length === 0 && debouncedQuery.length >= 2 && !isLoading && (
-                                <li className="flex flex-col items-center justify-center py-20 text-center">
-                                    <div className="mb-4 rounded-full bg-muted/20 p-4">
-                                        <Search className="size-8 text-muted-foreground/40" />
+                                <li className="flex h-full flex-col items-center justify-center py-20 text-center">
+                                    <div className="mb-4 rounded-full bg-muted/20 p-6">
+                                        <Search className="size-10 text-muted-foreground/30" />
                                     </div>
-                                    <p className="text-sm font-medium text-foreground">
-                                        No encontramos nada para &ldquo;{debouncedQuery}&rdquo;
+                                    <p className="text-base font-medium text-foreground">
+                                        No se encontraron coincidencias
                                     </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        Intenta con otros términos o filtros
+                                    <p className="text-sm text-muted-foreground">
+                                        Intenta con términos más generales
                                     </p>
                                 </li>
                             )}
-                            
+
                             {filteredResults.length === 0 && debouncedQuery.length < 2 && (
                                 <li className="flex flex-col items-center justify-center py-20 text-center">
                                     <CommandIcon className="mb-4 size-12 text-muted-foreground/20" />
@@ -320,7 +318,7 @@ export function UniversalSearch() {
                                 Cerrar
                             </span>
                         </div>
-                        
+
                         {filteredResults.length > 0 && (
                             <div className="text-muted-foreground">
                                 <span className="font-medium text-foreground">{filteredResults.length}</span> resultados encontrados
