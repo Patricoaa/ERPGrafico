@@ -147,7 +147,6 @@ class UniversalRegistry:
         # Enhanced RUT logic for the unified index (Search across denormalized display fields)
         if q_term.isalnum() and len(q_term) >= 3:
              # If the query is clean alphanumeric, try to match formatted patterns in display fields
-             import re
              regex_pattern = "[.-]?".join(list(q_term))
              q_filter |= Q(title__iregex=regex_pattern) | Q(subtitle__iregex=regex_pattern)
 
