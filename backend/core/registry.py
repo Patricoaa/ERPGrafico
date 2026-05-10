@@ -120,7 +120,10 @@ class UniversalRegistry:
             q_upper = query.upper()
             
             # Match if query starts with the prefix letters (e.g., "NV100" or "NV-100" matches "NV-")
-            if q_upper.startswith(clean_prefix):
+            # We ensure it's a true prefix by checking if it's followed by a non-letter or if it's the whole query.
+            if q_upper == clean_prefix or (
+                q_upper.startswith(clean_prefix) and not q_upper[len(clean_prefix)].isalpha()
+            ):
                 # We skip the prefix letters and any common separators in the user's query
                 match_len = len(clean_prefix)
                 remaining = query[match_len:].lstrip(" -./_:")
@@ -137,12 +140,35 @@ class UniversalRegistry:
         from django.contrib.postgres.search import SearchRank, SearchQuery
         from django.db.models import F
 
-        # Prepare Query
-        q_term = clean_query if targeted_entities else query
-        sq = SearchQuery(q_term, config='spanish', search_type='plain')
+        # Filter by allowed entities (Permission check at DB level for performance and correctness)
+        allowed_labels = [
+            label for label, entity in cls._entities.items()
+            if not entity.permission or user.has_perm(entity.permission)
+        ]
         
-        # Base filter: FTS
-        q_filter = Q(search_vector=sq)
+        # If user has no permissions for any searchable entity, return empty
+        if not allowed_labels:
+            return []
+
+        # Prepare Query Term and SearchQuery
+        q_term = clean_query if targeted_entities else query
+        
+        # Use websearch for FTS as it handles most user inputs gracefully.
+        # Prefix matching (e.g., "NV-1") is handled by the icontains filter on denormalized fields.
+        if q_term:
+            sq = SearchQuery(q_term, config='spanish', search_type='websearch')
+        else:
+            sq = None
+
+        # Base QuerySet
+        qs = GlobalSearchIndex.objects.filter(entity_label__in=allowed_labels)
+        
+        # Build Filter
+        q_filter = Q()
+        if sq:
+            q_filter |= Q(search_vector=sq)
+            # Fallback to icontains for exact substring matches (e.g. middle of a code)
+            q_filter |= Q(title__icontains=q_term) | Q(subtitle__icontains=q_term)
 
         # Enhanced RUT logic for the unified index (Search across denormalized display fields)
         if q_term.isalnum() and len(q_term) >= 3:
@@ -150,24 +176,24 @@ class UniversalRegistry:
              regex_pattern = "[.-]?".join(list(q_term))
              q_filter |= Q(title__iregex=regex_pattern) | Q(subtitle__iregex=regex_pattern)
 
-        # Base QuerySet
-        qs = GlobalSearchIndex.objects.annotate(
-            rank=SearchRank(F('search_vector'), sq)
-        ).filter(q_filter)
-
         # Filter by targeted entities if prefix detected
         if targeted_entities:
-            qs = qs.filter(entity_label__in=targeted_entities)
+            # Intersect allowed with targeted
+            final_targets = [t for t in targeted_entities if t in allowed_labels]
+            qs = qs.filter(entity_label__in=final_targets)
 
-        # Apply Permissions and collect results
+        # Annotate rank only if we have a search query
+        if sq:
+            qs = qs.annotate(rank=SearchRank(F('search_vector'), sq))
+            qs = qs.filter(q_filter).order_by("-rank", "-last_updated")
+        else:
+            qs = qs.order_by("-last_updated")
+
+        # Collect results
         final_results = []
-        # We order by rank (Relevance) and latest updated
-        for idx in qs.order_by("-rank", "-last_updated")[:limit * 2]: # Fetch extra to account for permission filtering
+        for idx in qs[:limit]:
             entity = cls._entities.get(idx.entity_label)
             if not entity:
-                continue
-                
-            if entity.permission and not user.has_perm(entity.permission):
                 continue
 
             final_results.append({
@@ -319,7 +345,7 @@ class UniversalRegistry:
         )
 
         # 2. Update display fields
-        idx.title = cls._render(entity.title_singular, instance)
+        idx.title = cls._render(entity.display_template, instance)
         idx.subtitle = cls._render(entity.subtitle_template, instance)
         idx.extra_info = cls._render(entity.extra_info_template, instance)
         idx.icon = entity.icon
@@ -327,15 +353,22 @@ class UniversalRegistry:
         idx.save()
 
         # 3. Update search vector (calculated from original model fields)
-        fts_fields = [f for f in entity.search_fields if "__" not in f]
+        # We now include ALL search fields, including related ones (__)
+        fts_fields = entity.search_fields
         if fts_fields:
             # We annotate the vector on the original instance to get its value
-            instance_with_vector = instance.__class__.objects.annotate(
-                computed_vector=SearchVector(*fts_fields, config='spanish')
-            ).get(pk=instance.pk)
-            
-            idx.search_vector = instance_with_vector.computed_vector
-            idx.save()
+            # Django's SearchVector handles foreign key traversals correctly in annotate()
+            try:
+                instance_with_vector = instance.__class__.objects.annotate(
+                    computed_vector=SearchVector(*fts_fields, config='spanish')
+                ).get(pk=instance.pk)
+                
+                idx.search_vector = instance_with_vector.computed_vector
+                idx.save()
+            except Exception as e:
+                # Log error but don't fail indexing if vector fails (e.g. non-string fields)
+                # We still have title/subtitle for icontains search
+                pass
 
     @classmethod
     def remove_from_index(cls, instance: models.Model) -> None:
