@@ -23,7 +23,7 @@ class ProductionConfig(AppConfig):
                 title_singular='Orden de Trabajo',
                 title_plural='Ordenes de Trabajo',
                 icon='wrench',
-                search_fields=('number', 'description', 'contact__name'),
+                search_fields=('number', 'description', 'related_contact__name'),
                 short_display_template='OT-{number}',
                 display_template='OT-{number}',
                 subtitle_template='{description}',

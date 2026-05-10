@@ -76,7 +76,6 @@ interface PurchasePaymentData {
 export default function PurchaseInvoicesPage() {
     const [documents, setDocuments] = useState<PurchaseDocument[]>([])
     const [loading, setLoading] = useState(true)
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: string, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
 
     const [payingDoc, setPayingDoc] = useState<PurchaseDocument | null>(null)
     const [receivingDoc, setReceivingDoc] = useState<PurchaseDocument | null>(null)
@@ -90,6 +89,31 @@ export default function PurchaseInvoicesPage() {
     const pathname = usePathname()
     const selectedId = searchParams.get('selected')
     const [hubEverOpened, setHubEverOpened] = useState(false)
+
+    // TransactionViewModal — URL sync (ADR-0020)
+    const transactionId = searchParams.get('transaction')
+    const transactionType = searchParams.get('transactionType')
+    const transactionView = (searchParams.get('transactionView') ?? 'details') as 'details' | 'history' | 'all'
+    const viewingTransaction = transactionId && transactionType
+        ? { type: transactionType, id: transactionId, view: transactionView }
+        : null
+
+    const openTransaction = (id: number | string, type: string, view: 'details' | 'history' | 'all' = 'details') => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('transaction', String(id))
+        params.set('transactionType', type)
+        params.set('transactionView', view)
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const closeTransaction = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('transaction')
+        params.delete('transactionType')
+        params.delete('transactionView')
+        const query = params.toString()
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    }
 
     // Open Hub if ?selected= is present (ADR-0020)
     useEffect(() => {
@@ -353,7 +377,7 @@ export default function PurchaseInvoicesPage() {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'details' })}
+                                    onClick={() => openTransaction(doc.id, 'invoice', 'details')}
                                     title="Ver Detalle"
                                 >
                                     <Eye className="h-4 w-4" />
@@ -418,7 +442,7 @@ export default function PurchaseInvoicesPage() {
                                         variant="ghost"
                                         size="icon"
                                         className="text-success"
-                                        onClick={() => setViewingTransaction({ type: 'invoice', id: doc.id, view: 'history' })}
+                                        onClick={() => openTransaction(doc.id, 'invoice', 'history')}
                                         title="Historial de Pagos"
                                     >
                                         <History className="h-4 w-4" />
@@ -526,7 +550,7 @@ export default function PurchaseInvoicesPage() {
                 viewingTransaction && (
                     <TransactionViewModal
                         open={!!viewingTransaction}
-                        onOpenChange={(open: boolean) => !open && setViewingTransaction(null)}
+                        onOpenChange={(open: boolean) => !open && closeTransaction()}
                         type={viewingTransaction.type as any}
                         id={viewingTransaction.id}
                         view={viewingTransaction.view}

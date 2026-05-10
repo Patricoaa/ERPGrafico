@@ -1,5 +1,7 @@
 # Benchmark: UniversalSearch Baseline (2026-05)
 
+> **Estado:** Línea base histórica (icontains). Post-FTS (2026-05-10): p95 medido en 22–72 ms. Ver ADR-0018.
+
 ## Entorno de Prueba
 - **Dataset:** 50.000 Contactos, 100.000 Órdenes de Venta (generado vía `seed_benchmark_data.py`).
 - **Entidades registradas:** 26 modelos en `UniversalRegistry`.

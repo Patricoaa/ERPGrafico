@@ -14,8 +14,13 @@ from dataclasses import dataclass, field
 from functools import reduce
 from typing import Any, ClassVar
 
+from django.db import connection as _db_connection
 from django.db import models
 from django.db.models import Q
+
+
+def _is_postgres() -> bool:
+    return _db_connection.vendor == 'postgresql'
 
 
 @dataclass(frozen=True)
@@ -55,6 +60,7 @@ class _DotAccessor:
 
 class UniversalRegistry:
     _entities: ClassVar[dict[str, SearchableEntity]] = {}
+    _TAX_INDICATORS: ClassVar[tuple[str, ...]] = ("tax_id", "rut", "identification")
 
     @classmethod
     def register(cls, entity: SearchableEntity) -> None:
@@ -124,13 +130,8 @@ class UniversalRegistry:
             if label in targeted_entities and not current_search_term:
                 continue
 
-            q_filter = cls._build_icontains_filter(current_search_term, entity.search_fields)
-            if q_filter is None:
-                continue
-
             try:
-                # If targeted, we might want to boost exact matches on 'number' if it exists
-                qs = entity.model.objects.filter(q_filter, **entity.extra_filters)[:limit]
+                qs = cls._build_fts_query(entity, current_search_term)[:limit]
 
                 for instance in qs:
                     results.append(
@@ -157,6 +158,49 @@ class UniversalRegistry:
                 continue
 
         return results
+
+    @classmethod
+    def _build_fts_query(cls, entity: SearchableEntity, query: str) -> models.QuerySet[Any]:
+        has_tax_field = any(
+            any(t in f.lower() for t in cls._TAX_INDICATORS)
+            for f in entity.search_fields
+        )
+
+        if has_tax_field or not _is_postgres():
+            q_filter = cls._build_icontains_filter(query, entity.search_fields)
+            if q_filter is None:
+                return entity.model.objects.none()
+            return entity.model.objects.filter(q_filter, **entity.extra_filters)
+
+        from django.contrib.postgres.search import SearchVector, SearchQuery
+
+        # Exclude integer PK and FK traversal fields (SearchVector only accepts direct columns)
+        fts_fields = [f for f in entity.search_fields if f != 'id' and '__' not in f]
+        fk_fields = tuple(f for f in entity.search_fields if '__' in f)
+
+        if not fts_fields:
+            # All fields are FK traversal → icontains handles them via JOIN
+            q_filter = cls._build_icontains_filter(query, entity.search_fields)
+            if q_filter is None:
+                return entity.model.objects.none()
+            return entity.model.objects.filter(q_filter, **entity.extra_filters)
+
+        sv = SearchVector(*fts_fields, config='simple')
+        # 'plain' search_type: each word required (AND semantics, matches current multi-word logic)
+        sq = SearchQuery(query, config='simple', search_type='plain')
+
+        if fk_fields:
+            # Combined: FTS on direct fields OR icontains on FK fields (single SQL query)
+            q_fk = cls._build_icontains_filter(query, fk_fields)
+            fts_q = Q(_fts=sq)
+            combined = (fts_q | q_fk) if q_fk else fts_q
+            return (
+                entity.model.objects
+                .annotate(_fts=sv)
+                .filter(combined, **entity.extra_filters)
+            )
+
+        return entity.model.objects.annotate(_fts=sv).filter(_fts=sq, **entity.extra_filters)
 
     @staticmethod
     def _build_icontains_filter(query: str, search_fields: tuple[str, ...]) -> Q | None:

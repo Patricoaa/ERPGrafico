@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
-    ArrowLeft, FileText, Calendar, Banknote, TrendingUp, TrendingDown,
-    Undo2, Info, AlertCircle, Loader2, CheckCircle2, GraduationCap, ExternalLink, Activity
+    Calendar, Banknote, TrendingUp, TrendingDown,
+    Undo2, Info, AlertCircle, ExternalLink, Activity
 } from "lucide-react"
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { PageHeader } from "@/components/shared/PageHeader"
@@ -29,13 +29,12 @@ import { formatCurrency } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { parseISO } from "date-fns"
+
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { toast } from "sonner"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 
 interface BankStatementLine {
     id: number
@@ -155,7 +154,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 <div className="flex flex-col max-w-[200px]">
                     <span className="font-medium text-xs truncate" title={row.getValue("description")}>{row.getValue("description")}</span>
                     {row.original.reference && (
-                    <span className="text-[10px] text-muted-foreground truncate"> {/* intentional: badge density */} {row.original.reference}</span>
+                        <span className="text-[10px] text-muted-foreground truncate"> {/* intentional: badge density */} {row.original.reference}</span>
                     )}
                 </div>
             ),
@@ -204,8 +203,8 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 const state = row.getValue("reconciliation_state") as string
                 const label = row.original.reconciliation_state_display
                 return (
-                    <DataCell.Status 
-                        status={state} 
+                    <DataCell.Status
+                        status={state}
                         label={state === 'MATCHED' ? "Sugerencia Match" : label}
                     />
                 )
@@ -217,9 +216,9 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             cell: ({ row }) => {
                 const info = row.original.matched_payment_info
                 if (!info) return <span className="text-muted-foreground/30 ml-4">-</span>
-                
+
                 return (
-                    <button 
+                    <button
                         onClick={() => setPaymentModal({ open: true, id: info.id })}
                         className="text-[10px] font-mono font-bold text-primary hover:underline flex items-center gap-1 group w-full justify-center"
                     >
@@ -282,10 +281,10 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const navigation = {
         tabs: [
             { value: "movements", label: "Movimientos", iconName: "banknote", href: "/treasury?view=movements" },
-            { 
-                value: "accounts", 
-                label: "Cuentas y Caja", 
-                iconName: "landmark", 
+            {
+                value: "accounts",
+                label: "Cuentas y Caja",
+                iconName: "landmark",
                 href: "/treasury?view=accounts",
                 subTabs: [
                     { value: "accounts", label: "Cuentas", href: "/treasury?view=accounts&sub=accounts" },
@@ -293,10 +292,10 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     { value: "methods", label: "Métodos", href: "/treasury?view=accounts&sub=methods" },
                 ]
             },
-            { 
-                value: "reconciliation", 
-                label: "Conciliación", 
-                iconName: "history", 
+            {
+                value: "reconciliation",
+                label: "Conciliación",
+                iconName: "history",
                 href: "/treasury?view=reconciliation",
                 subTabs: [
                     { value: "statements", label: "Cartolas", iconName: "file-text", href: "/treasury?view=reconciliation&sub=statements" },
@@ -304,10 +303,10 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     { value: "intelligence", label: "Inteligencia", iconName: "brain", href: "/treasury/reconciliation?tab=intelligence" },
                 ]
             },
-            { 
-                value: "config", 
-                label: "Config", 
-                iconName: "settings", 
+            {
+                value: "config",
+                label: "Config",
+                iconName: "settings",
                 href: "/treasury?view=config",
                 subTabs: [
                     { value: "conciliation", label: "Conciliación", href: "/treasury?view=config&tab=conciliation", iconName: "arrow-left-right" },
@@ -482,7 +481,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-            
+
             <ActionConfirmModal
                 open={confirmAction.isOpen}
                 onOpenChange={(open) => { if (!open) confirmAction.cancel() }}
