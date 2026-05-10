@@ -4,17 +4,15 @@ import React, { useState, useEffect, lazy, Suspense } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
 import { Plus, ArrowDown, Eye } from "lucide-react"
-import { cn, formatCurrency, formatPlainDate } from "@/lib/utils"
-import api from "@/lib/api"
-import { toast } from "sonner"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FormSkeleton } from "@/components/shared"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
+import { useTreasuryMovements } from "@/features/treasury/hooks/useTreasuryMovements"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 // Lazy load heavy components
 const CashMovementModal = lazy(() => import("./CashMovementModal"))

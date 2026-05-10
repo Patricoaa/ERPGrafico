@@ -9,14 +9,14 @@ stability: contract-changes-require-ADR
 
 # Component Contracts
 
-Public API of every shared component in `components/shared/`. Consumers import only what's documented here. Changing a prop requires ADR.
-
 ## Legend
 
 - 🟢 Stable — safe to use
 - 🟡 Beta — API may still change
 - 🔴 Pendiente de contrato — read source before use
 - Columns: `prop` | `type` | `required` | `default` | `notes`
+
+> 📄 **System-wide Contract**: For entity prefixes, icons, and labels, see **[entity-identity.md](./entity-identity.md)**.
 
 ---
 
@@ -66,6 +66,7 @@ The positioning relative to a `notched-field` (fieldset + legend) depends on the
 ## StatusBadge 🟢
 
 Only authorized component for rendering entity states. No ad-hoc badges allowed.
+> 📄 Para la resolución de íconos y títulos de entidad, ver **[entity-identity.md](./entity-identity.md)**.
 
 ```tsx
 <StatusBadge variant="sale-order" status="in_production" />
@@ -152,6 +153,8 @@ States handled: entry/exit animations via `AnimatePresence`. Responsive centerin
 ---
 
 ## PageHeader 🟢
+
+> 📄 Para el uso de íconos centralizados (`iconName`), ver **[entity-identity.md §8](./entity-identity.md#8-pageheader--integración-con-iconos)**.
 
 | prop | type | required | notes |
 |------|------|----------|-------|
@@ -731,6 +734,8 @@ Catálogo: `SubmitButton` · `CancelButton` · `DangerButton` · `IconButton` ·
 ---
 
 ## PageTabs 🟢
+
+> 📄 Para el uso de `iconName`, ver **[entity-identity.md §3](./entity-identity.md#3-dynamicicon)**.
 
 Industrial underline navigation tabs with optional subtab dropdowns.
 

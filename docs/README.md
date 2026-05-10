@@ -15,7 +15,7 @@
 |-------|--------|---------|--------------|
 | 00 | `00-context/` | What project is, domain vocabulary, stack | First contact with repo |
 | 10 | `10-architecture/` | How pieces fit together, ADRs | Before structural change |
-| 20 | `20-contracts/` | Public APIs (components, hooks, endpoints, state) | Before consuming or exposing API |
+| 20 | `20-contracts/` | Public APIs (components, hooks, endpoints, state, **entity identity**) | Before consuming or exposing API |
 | 30 | `30-playbooks/` | Step-by-step recipes for common tasks | Every implementation task |
 | 40 | `40-quality/` | Testing, security, observability, performance, CI/CD | Cross-cutting concerns |
 | 50 | `50-audit/` | Major refactor audits and roadmaps | Before launching multi-sprint refactor |
@@ -58,6 +58,7 @@
 | "versioning", "release process", "SemVer", "how to version" | [versioning-policy.md](90-governance/versioning-policy.md) | 90 |
 | "ADR", "decision record", "major change" | [adr/README.md](10-architecture/adr/README.md) | 10 |
 | "signals", "signal receiver", "post_save hook", "cross-app event" | [workflow-signals-registry.md](10-architecture/workflow-signals-registry.md) | 10 |
+| "entity identity", "entity prefix", "registry", "display id", "centralized icons" | [entity-identity.md](20-contracts/entity-identity.md) | 20 |
 | "generic form", "universal registry", "metadata schema", "data-driven UI", "Django architecture refactor" | [50-audit/Arquitectura Django/README.md](50-audit/Arquitectura%20Django/README.md) | 50 |
 
 ## Global invariants (violate = PR rejected)
