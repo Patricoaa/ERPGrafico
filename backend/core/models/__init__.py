@@ -10,6 +10,7 @@ from core.validators import validate_file_size, validate_file_extension, validat
 from core.storages import PublicMediaStorage, PrivateMediaStorage
 
 from .abstracts import TimeStampedModel, AuditedModel, TransactionalDocument
+from .search import GlobalSearchIndex
 
 __all__ = [
     'User',
@@ -20,6 +21,7 @@ __all__ = [
     'TimeStampedModel',
     'AuditedModel',
     'TransactionalDocument',
+    'GlobalSearchIndex',
 ]
 
 
