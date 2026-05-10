@@ -137,8 +137,16 @@ export function useDraftSync({
     }, [enabled, posSessionId])
 
     const handleSocketEvent = useCallback((data: any) => {
-        const { event, draft, draft_id } = data
+        const { event, draft, draft_id, error } = data
         const currentUserId = user?.id
+
+        if (event === 'LOCK_LOST') {
+            if (draft_id === activeLockDraftId) {
+                setActiveLockDraftId(null)
+                toast.warning('Bloqueo perdido', { description: error })
+            }
+            return
+        }
 
         setSyncDrafts(prev => {
             let next = [...prev]
@@ -177,7 +185,7 @@ export function useDraftSync({
             // Sort by updated_at desc
             return next.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
         })
-    }, [user?.id])
+    }, [user?.id, activeLockDraftId])
 
     // ── Initial Fetch & Fallback ────────────────────────────────
 
@@ -205,29 +213,24 @@ export function useDraftSync({
         return () => clearInterval(interval)
     }, [enabled, posSessionId, isSocketConnected, pollInterval, initialFetch])
 
-    // ── Heartbeat (Legacy HTTP for now) ─────────────────────────
+    // ── Heartbeat (Efficient via WebSocket) ─────────────────────
 
     useEffect(() => {
-        if (!activeLockDraftId || !posSessionId) return
+        if (!activeLockDraftId || !posSessionId || !isSocketConnected) return
 
-        const sendHeartbeat = async () => {
-            try {
-                await api.post(`/sales/pos-drafts/${activeLockDraftId}/heartbeat/`, {
-                    pos_session_id: posSessionId,
-                    session_key: browserSessionKey,
-                })
-            } catch (error) {
-                const err = error as { response?: { status?: number } }
-                if (err.response?.status === 409) {
-                    setActiveLockDraftId(null)
-                    toast.warning('El bloqueo del borrador se ha perdido.')
-                }
+        const sendHeartbeat = () => {
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+                socketRef.current.send(JSON.stringify({
+                    event: 'HEARTBEAT',
+                    draft_id: activeLockDraftId,
+                    session_key: browserSessionKey
+                }))
             }
         }
 
         const interval = setInterval(sendHeartbeat, heartbeatInterval)
         return () => clearInterval(interval)
-    }, [activeLockDraftId, posSessionId, heartbeatInterval, browserSessionKey])
+    }, [activeLockDraftId, posSessionId, heartbeatInterval, browserSessionKey, isSocketConnected])
 
     // ── Page Unload ─────────────────────────────────────────────
 

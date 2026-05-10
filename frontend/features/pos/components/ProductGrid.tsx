@@ -14,6 +14,7 @@ import { Plus, Heart } from 'lucide-react'
 import { memo } from 'react'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { resolveMediaUrl } from '@/lib/api'
+import { VirtuosoGrid } from 'react-virtuoso'
 
 interface ProductGridProps {
     products: Product[]
@@ -53,8 +54,12 @@ function ProductGridComponent({
             : "grid-cols-2 lg:grid-cols-4"  // Desktop: 2-4 columns
 
     return (
-        <div className={cn("grid gap-4", gridCols)}>
-            {products.map(product => {
+        <VirtuosoGrid
+            useWindowScroll
+            totalCount={products.length}
+            listClassName={cn("grid gap-4", gridCols)}
+            itemContent={(index) => {
+                const product = products[index]
                 const categoryId = typeof product.category === 'object'
                     ? product.category?.id
                     : product.category
@@ -75,33 +80,28 @@ function ProductGridComponent({
                 let isMfgDisabled = false
                 if (isManufacturable) {
                     if (mfgSubType === 'SIMPLE') {
-                        // Simple: behaves like STORABLE — disabled when no stock
                         isMfgDisabled = (product.qty_available || 0) <= 0
                     } else if (mfgSubType === 'EXPRESS') {
-                        // Express: without active BOM → always disabled; with BOM → disabled when 0 fabricable
                         if (!product.has_bom) {
                             isMfgDisabled = true
                         } else {
                             isMfgDisabled = product.manufacturable_quantity === 0
                         }
                     }
-                    // Advanced: NEVER disabled
                 }
                 const isDisabled = isStorableNoStock || isMfgDisabled
 
                 return (
                     <Card
-                        key={product.id}
                         className={cn(
                             "group cursor-pointer hover:shadow-md transition-all border-2 overflow-hidden flex flex-col h-full",
-                            isTouchPOS && "active:scale-95", // Feedback for touch
-                            isDisabled && "opacity-50 grayscale cursor-not-allowed" // Removed pointer-events-none to allow favorite toggle
+                            isTouchPOS && "active:scale-95",
+                            isDisabled && "opacity-50 grayscale cursor-not-allowed"
                         )}
                         onClick={() => !isDisabled && onProductClick(product)}
                     >
                         <div className={cn(
                             "aspect-square bg-muted/50 flex items-center justify-center relative",
-                            // Larger image area for touch devices
                             isTouchPOS && "min-h-[120px]"
                         )}>
                             {product.image ? (
@@ -151,9 +151,8 @@ function ProductGridComponent({
                                 </div>
                             )}
 
-                            {/* MANUFACTURABLE badges differentiated by sub-type */}
+                            {/* MANUFACTURABLE badges */}
                             {isManufacturable && mfgSubType === 'SIMPLE' && (
-                                // Simple: same badge as STORABLE (stock-based)
                                 <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
                                     <div className={`h-2 w-2 rounded-full ${(limits[`prod_${product.id}`] ?? product.qty_available ?? 0) > 0
                                         ? 'bg-success'
@@ -164,7 +163,6 @@ function ProductGridComponent({
                             )}
 
                             {isManufacturable && mfgSubType === 'EXPRESS' && (
-                                // Express: without BOM → "Sin BOM" grey; with BOM → fabricable qty
                                 <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
                                     {!product.has_bom ? (
                                         <>
@@ -181,7 +179,6 @@ function ProductGridComponent({
                             )}
 
                             {isManufacturable && mfgSubType === 'ADVANCED' && (
-                                // Advanced: with BOM → show fabricable qty; without BOM → "Disponible"
                                 <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/90 p-1 px-2 rounded-full shadow-sm border text-[10px] font-medium">
                                     {product.has_bom ? (
                                         <>
@@ -209,7 +206,7 @@ function ProductGridComponent({
 
                         <CardContent className={cn(
                             "p-2 text-center flex-1 flex flex-col justify-center gap-1",
-                            isTouchPOS && "p-3"  // More padding for touch
+                            isTouchPOS && "p-3"
                         )}>
                             <div className="flex flex-wrap justify-center gap-1 mb-1">
                                 {product.internal_code && (
@@ -225,7 +222,7 @@ function ProductGridComponent({
                             </div>
                             <div className={cn(
                                 "font-bold line-clamp-2",
-                                isTouchPOS ? "text-base" : "text-sm"  // Larger font for touch
+                                isTouchPOS ? "text-base" : "text-sm"
                             )}>
                                 {product.name}
                             </div>
@@ -247,8 +244,8 @@ function ProductGridComponent({
                         </CardContent>
                     </Card>
                 )
-            })}
-        </div>
+            }}
+        />
     )
 }
 
