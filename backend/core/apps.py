@@ -30,5 +30,6 @@ class CoreConfig(AppConfig):
             # - No existe viewset en core/urls.py
             # - No existe /files/page.tsx ni /files/[id]/page.tsx funcional
             # Registrar cuando se implemente el explorador de archivos.
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Error registering 'core.user' in UniversalRegistry: {e}")
