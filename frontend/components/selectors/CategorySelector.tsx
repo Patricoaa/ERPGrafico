@@ -99,12 +99,12 @@ export function CategorySelector({
                     <Button
                         role="combobox"
                         className={cn(
-                            "w-full justify-between overflow-hidden h-7 py-0 px-2 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
+                            "w-full justify-between overflow-hidden h-[1.5rem]! min-h-0! py-0 px-2 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
                             icon && "pl-1"
                         )}
                         disabled={disabled}
                     >
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-1 min-w-0 h-full">
                             {icon && (
                                 <div className="flex items-center justify-center text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0">
                                     {icon}
@@ -113,10 +113,10 @@ export function CategorySelector({
                             {selectedCategory ? (
                                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                     {!icon && <Tag className={cn("h-3 w-3 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />}
-                                    <span className="font-bold text-[11px] truncate uppercase tracking-tight text-foreground">{selectedCategory.name}</span>
+                                    <span className="font-bold text-[11px] truncate uppercase tracking-tight text-foreground leading-none">{selectedCategory.name}</span>
                                 </div>
                             ) : (
-                                <span className="text-[11px] text-muted-foreground opacity-50 truncate">{placeholder}</span>
+                                <span className="text-[11px] text-muted-foreground opacity-50 truncate leading-none">{placeholder}</span>
                             )}
                         </div>
                         {!disabled && <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-30" />}
