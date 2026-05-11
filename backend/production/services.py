@@ -32,15 +32,7 @@ class WorkOrderService:
                 f"Por favor, asigne un BOM a {'esta variante' if product.parent_template else 'este producto'}."
             )
 
-        # Determine number
-        last_order = WorkOrder.objects.all().order_by('id').last()
-        if last_order and last_order.number.isdigit():
-            number = str(int(last_order.number) + 1).zfill(6)
-        else:
-            number = '000001'
-
         work_order = WorkOrder.objects.create(
-            number=number,
             description=f"{product.name} - NV-{sale_line.order.number}",
             sale_order=sale_line.order,
             sale_line=sale_line,
@@ -304,16 +296,8 @@ class WorkOrderService:
                 f"Por favor, asigne un BOM a {'esta variante' if product.parent_template else 'este producto'}."
             )
         
-        # Determine number
-        last_order = WorkOrder.objects.all().order_by('id').last()
-        if last_order and last_order.number.isdigit():
-            number = str(int(last_order.number) + 1).zfill(6)
-        else:
-            number = '000001'
-        
         # Create OT with delivered quantity
         work_order = WorkOrder.objects.create(
-            number=number,
             description=f"{product.name} - Despacho {delivery_line.delivery.number}",
             sale_order=sale_line.order,
             sale_line=sale_line,
@@ -460,46 +444,6 @@ class WorkOrderService:
                 "❌ No se puede anular: ya existen consumos de materiales registrados en el sistema.\n"
                 "⚠️ Debe revertir los consumos manualmente antes de anular la OT.\n"
             )
-        
-        # 1. Revert Stock Movements (if any)
-        # We find consumptions linked to this OT
-        consumptions = ProductionConsumption.objects.filter(work_order=work_order)
-        for consumption in consumptions:
-            move = consumption.stock_move
-            if move:
-                # Create a reversing move
-                StockMove.objects.create(
-                    product=move.product,
-                    warehouse=move.warehouse,
-                    uom=move.uom,
-                    quantity=abs(move.quantity), # If it was -5, now it's +5
-                    move_type=StockMove.Type.IN,
-                    description=f"Reversa consumo OT-{work_order.number} (Anulación)"
-                )
-                move.description += " (ANULADO)"
-                move.save()
-            consumption.delete()
-
-        # Revert Finished Product Entry (if finished)
-        if work_order.status == WorkOrder.Status.FINISHED:
-            product = work_order.product or (work_order.sale_line.product if work_order.sale_line else None)
-            if product:
-                # We need to find the entry move. Usually matching description or looking at StockMove
-                entry_move = StockMove.objects.filter(
-                    product=product,
-                    description=f"Entrada producción OT-{work_order.number}"
-                ).first()
-                if entry_move:
-                    StockMove.objects.create(
-                        product=entry_move.product,
-                        warehouse=entry_move.warehouse,
-                        uom=entry_move.uom,
-                        quantity=-abs(entry_move.quantity), # Revert entry
-                        move_type=StockMove.Type.OUT,
-                        description=f"Reversa entrada OT-{work_order.number} (Anulación)"
-                    )
-                    entry_move.description += " (ANULADO)"
-                    entry_move.save()
 
         # 2. Cancel Linked Purchase Orders
         for po in work_order.purchase_orders.all():
@@ -549,8 +493,10 @@ class WorkOrderService:
         """
         old_stage = work_order.current_stage
         
-        # Merge stage data
+        # Validate and merge stage data
         if data:
+            from .validators import validate_transition_data
+            validate_transition_data(data, next_stage)
             if not work_order.stage_data:
                 work_order.stage_data = {}
             work_order.stage_data[next_stage.lower()] = data
@@ -852,8 +798,12 @@ class WorkOrderService:
         
         if work_order.sale_line:
             product = work_order.sale_line.product
-            quantity = work_order.sale_line.quantity
             uom = work_order.sale_line.uom
+            # Use actual_quantity_produced when set (rectification on NV-linked OT)
+            if work_order.actual_quantity_produced is not None:
+                quantity = work_order.actual_quantity_produced
+            else:
+                quantity = work_order.sale_line.quantity
         elif work_order.product:
             product = work_order.product
             # Use actual_quantity_produced if set (from rectification), otherwise planned quantity
@@ -902,10 +852,8 @@ class WorkOrderService:
                 description=f"Entrada producción OT-{work_order.number}"
             )
         
-        # 3. Generate Accounting Entry for non-tracked manufacturable products
-        # For products that don't track inventory, we need to expense the materials immediately
-        # since there's no intermediate "Finished Goods Inventory" asset account
-        if product and not product.track_inventory and product.product_type == Product.Type.MANUFACTURABLE:
+        # 3. Generate Accounting Entry for Production
+        if product and product.product_type == Product.Type.MANUFACTURABLE:
             if total_material_cost > 0:
                 from accounting.models import AccountingSettings, JournalEntry
                 from accounting.services import JournalEntryService
@@ -914,10 +862,16 @@ class WorkOrderService:
                 if not settings:
                     raise ValidationError("Debe configurar la contabilidad primero.")
                 
-                # Get COGS account (expense)
-                cogs_account = product.get_expense_account or settings.default_expense_account
-                if not cogs_account:
-                    raise ValidationError(f"Falta configurar cuenta de costo/gasto para el producto {product.internal_code}.")
+                # Get debit account (Asset if track_inventory, Expense if not)
+                if product.track_inventory:
+                    debit_account = product.get_asset_account or settings.default_inventory_account
+                    label = f"Ingreso Inventario: {product.name[:100]}"
+                else:
+                    debit_account = product.get_expense_account or settings.default_expense_account
+                    label = f"COGS Producción: {product.name[:100]}"
+                    
+                if not debit_account:
+                    raise ValidationError(f"Falta configurar cuenta (inventario o gasto) para el producto {product.internal_code}.")
                 
                 # Create journal entry
                 entry_data = {
@@ -929,12 +883,12 @@ class WorkOrderService:
                 
                 items = []
                 
-                # Debit: COGS (Expense)
+                # Debit
                 items.append({
-                    'account': cogs_account,
+                    'account': debit_account,
                     'debit': total_material_cost,
                     'credit': Decimal('0.00'),
-                    'label': f"COGS Producción: {product.name[:100]}"
+                    'label': label
                 })
                 
                 # Credit: Component Inventory Accounts (grouped by account)
@@ -968,11 +922,35 @@ class WorkOrderService:
                     if consumption.stock_move:
                         consumption.stock_move.journal_entry = entry
                         consumption.stock_move.save()
+                        
+                # If track_inventory, also link the entry to the entry move
+                if product.track_inventory:
+                    entry_move = StockMove.objects.filter(
+                        product=product,
+                        description=f"Entrada producción OT-{work_order.number}"
+                    ).first()
+                    if entry_move:
+                        entry_move.journal_entry = entry
+                        entry_move.save()
         
-        # If associated with a sale line, update its status (conceptually)
-        if work_order.sale_line:
-            # Possible logic to mark line as 'Produced' or 'Ready for dispatch'
-            pass
+        # Record production discrepancy in audit trail when quantity differs from sale line
+        if work_order.sale_line and work_order.actual_quantity_produced is not None:
+            sold_qty = work_order.sale_line.quantity
+            produced_qty = work_order.actual_quantity_produced
+            if produced_qty != sold_qty:
+                delta = produced_qty - sold_qty
+                sign = "+" if delta > 0 else ""
+                WorkOrderHistory.objects.create(
+                    work_order=work_order,
+                    stage=work_order.current_stage,
+                    status=work_order.status,
+                    notes=(
+                        f"DISCREPANCIA: Se produjeron {produced_qty} unidades "
+                        f"(vendido: {sold_qty}, delta: {sign}{delta}). "
+                        "El vendedor debe revisar el pedido."
+                    ),
+                    user=user,
+                )
 
     @staticmethod
     @transaction.atomic
@@ -1028,14 +1006,8 @@ class WorkOrderService:
                     material.quantity_planned = actual_qty
                     material.save()
         
-        # 2. Adjust produced quantity (only for manual OTs)
+        # 2. Adjust produced quantity
         if produced_quantity is not None:
-            if not work_order.is_manual:
-                raise ValidationError(
-                    "Solo se puede ajustar la cantidad producida en OTs manuales. "
-                    "Las OTs vinculadas a Notas de Venta producen según la línea de venta."
-                )
-            
             produced_qty = Decimal(str(produced_quantity))
             if produced_qty <= Decimal('0'):
                 raise ValidationError("La cantidad real producida debe ser mayor a 0.")

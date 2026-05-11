@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial
 from .serializers import (
-    WorkOrderSerializer, 
+    WorkOrderSerializer,
     ProductionConsumptionSerializer,
     BillOfMaterialsSerializer,
     BillOfMaterialsLineSerializer
@@ -11,7 +11,7 @@ from .serializers import (
 from .services import WorkOrderService
 from inventory.models import Product, Warehouse, UoM
 from decimal import Decimal
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.http import HttpResponse
 from reportlab.pdfgen import canvas
 from io import BytesIO
@@ -20,8 +20,46 @@ from django.contrib.contenttypes.models import ContentType
 from core.models import Attachment
 
 class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    queryset = WorkOrder.objects.all()
+    queryset = WorkOrder.objects.select_related(
+        'sale_order', 'sale_order__customer', 'related_contact', 'product', 'sale_line', 'warehouse'
+    ).prefetch_related(
+        'materials', 'materials__component', 'materials__uom', 'materials__purchase_line',
+        'consumptions', 'stage_history', 'attachments'
+    )
     serializer_class = WorkOrderSerializer
+
+    def _build_stock_context(self, work_order):
+        """
+        Returns a dict {product_id: stock_float} for all storable materials in this OT,
+        computed in a single aggregated query against the OT's warehouse.
+        """
+        from inventory.models import StockMove
+        warehouse = work_order.warehouse
+        if not warehouse:
+            return {}
+
+        component_ids = list(
+            work_order.materials
+            .exclude(component__product_type='SERVICE')
+            .values_list('component_id', flat=True)
+        )
+        if not component_ids:
+            return {}
+
+        rows = (
+            StockMove.objects
+            .filter(warehouse=warehouse, product_id__in=component_ids)
+            .values('product_id')
+            .annotate(total=Sum('quantity'))
+        )
+        return {row['product_id']: float(row['total'] or 0.0) for row in rows}
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        context = self.get_serializer_context()
+        context['stocks_by_product'] = self._build_stock_context(instance)
+        serializer = self.get_serializer(instance, context=context)
+        return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
         """
@@ -239,8 +277,9 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
             # Validation: Stock Availability for Stage Transition
             if work_order.current_stage == 'MATERIAL_APPROVAL' and next_stage not in ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'CANCELLED']:
-                # The user is trying to move forward from Stock Approval
-                serializer = WorkOrderSerializer(work_order)
+                ctx = self.get_serializer_context()
+                ctx['stocks_by_product'] = self._build_stock_context(work_order)
+                serializer = WorkOrderSerializer(work_order, context=ctx)
                 materials = serializer.data.get('materials', [])
                 for m in materials:
                     if not m.get('is_available', False):
