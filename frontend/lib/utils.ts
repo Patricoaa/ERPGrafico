@@ -21,7 +21,6 @@ export function translateStatus(status: string | null | undefined): string {
     'ACTIVE': 'Activo',
     'PAUSED': 'Pausado',
     'PENDING': 'Pendiente',
-    'PLANNED': 'Planificada',
     'IN_PROGRESS': 'En Proceso',
     'FINISHED': 'Terminada',
     'REJECTED': 'Rechazado',

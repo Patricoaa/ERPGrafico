@@ -133,7 +133,7 @@ export function AdvancedContactSelector({
                         "w-full justify-between overflow-hidden py-0 shadow-none focus-visible:ring-0 transition-all",
                         variant === 'standalone'
                             ? "h-[1.5rem] px-3 border-none bg-transparent hover:bg-primary/[0.03]"
-                            : cn("h-9 text-xs px-2 border border-border/80 rounded-md bg-background hover:bg-primary/[0.02]", className),
+                            : cn("h-9 text-xs px-2 bg-background hover:bg-primary/[0.02]", className),
                         icon && "pl-1"
                     )}
                     disabled={disabled}
@@ -248,31 +248,33 @@ export function AdvancedContactSelector({
     )
 
     return (
-        <div className={cn("w-full group", variant === 'standalone' && cn("relative", className))}>
+        <>
             {variant === 'standalone' ? (
-                <fieldset 
-                    className={cn(
-                        "notched-field w-full group transition-all",
-                        open && "focused",
-                        error && "error",
-                        disabled && "opacity-50 cursor-not-allowed bg-muted/10"
+                <div className={cn("w-full group relative", className)}>
+                    <fieldset 
+                        className={cn(
+                            "notched-field w-full group transition-all",
+                            open && "focused",
+                            error && "error",
+                            disabled && "opacity-50 cursor-not-allowed bg-muted/10"
+                        )}
+                    >
+                        {label && (
+                            <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
+                                {label}
+                                {required && <span className="ml-1 text-destructive">*</span>}
+                            </legend>
+                        )}
+                        {selectTrigger}
+                    </fieldset>
+                    {error && (
+                        <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
+                            {error}
+                        </p>
                     )}
-                >
-                    {label && (
-                        <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
-                            {label}
-                            {required && <span className="ml-1 text-destructive">*</span>}
-                        </legend>
-                    )}
-                    {selectTrigger}
-                </fieldset>
+                </div>
             ) : (
                 selectTrigger
-            )}
-            {error && (
-                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
-                    {error}
-                </p>
             )}
 
             {isCreateModalOpen && (
@@ -285,6 +287,6 @@ export function AdvancedContactSelector({
                     />
                 </Suspense>
             )}
-        </div>
+        </>
     )
 }

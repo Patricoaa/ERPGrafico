@@ -12,11 +12,10 @@ import { ShoppingCart, Package, Scale, Truck, Layers, Factory, Loader2, History,
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 
-import { FormSkeleton, FormSection, FormFooter, FormSplitLayout, FormTabs, FormTabsContent, type FormTabItem } from "@/components/shared"
+import { FormSection, FormFooter, FormSplitLayout, FormTabs, FormTabsContent, type FormTabItem, SkeletonShell } from "@/components/shared"
 
 // Import modular components
 import { productSchema, type ProductFormValues } from "./product/schema"
-import { ProductImageUpload } from "./product/ProductImageUpload"
 import { ProductBasicInfo } from "./product/ProductBasicInfo"
 import { ProductPricingSection } from "./product/ProductPricingSection"
 import { ProductInventoryTab } from "./product/ProductInventoryTab"
@@ -63,7 +62,15 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
 
     const form: UseFormReturn<ProductFormValues> = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema) as any,
-        defaultValues: {
+        defaultValues: initialData ? {
+            code: initialData.code || "",
+            name: initialData.name || "————————————",
+            product_type: initialData.product_type || "STORABLE",
+            can_be_sold: initialData.can_be_sold ?? true,
+            has_bom: initialData.has_bom ?? false,
+            has_variants: initialData.has_variants ?? false,
+            // ... partial fill to avoid undefined during skeleton phase
+        } : {
             code: "",
             internal_code: "",
             name: "",
@@ -73,8 +80,6 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             sale_price_gross: 0,
             is_dynamic_pricing: false,
             uom: "",
-            // ...
-            // ... (rest of default values)
             sale_uom: "",
             purchase_uom: "",
             allowed_sale_uoms: [],
@@ -177,7 +182,7 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             if (form.getValues("track_inventory")) form.setValue("track_inventory", false, opts)
             if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false, opts)
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [productType])
 
     // Effect 2: Tab redirect when active tab becomes invalid.
@@ -231,7 +236,7 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
         if (!currentSaleUom || !filteredAllowed.includes(currentSaleUom.toString())) {
             form.setValue("sale_uom", stockUomId.toString())
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stockUomId, uoms])
 
 
@@ -476,14 +481,14 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             formData.append('sale_price', data.sale_price.toString())
             formData.append('sale_price_gross', (data.sale_price_gross || 0).toString())
             formData.append('is_dynamic_pricing', data.is_dynamic_pricing ? 'true' : 'false')
-            
+
             // Related IDs - Sanitization (Avoid sending empty strings which can cause 400 errors)
             if (data.category) formData.append('category', data.category)
             if (data.uom) formData.append('uom', data.uom)
             if (data.sale_uom) formData.append('sale_uom', data.sale_uom)
             if (data.purchase_uom) formData.append('purchase_uom', data.purchase_uom)
             if (data.receiving_warehouse) formData.append('receiving_warehouse', data.receiving_warehouse)
-            
+
             if (data.income_account) formData.append('income_account', data.income_account)
             if (data.expense_account) formData.append('expense_account', data.expense_account)
             if (data.preferred_supplier) {
@@ -648,11 +653,15 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
         <div className="flex flex-col p-6 pb-2">
             <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-3">
                 <Package className="h-6 w-6 text-primary" />
-                {initialData ? "Editar Producto" : "Nuevo Producto"}
+                <div className="flex flex-col">
+                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-0.5">
+                        {initialData ? "Editar Producto" : "Nuevo Producto"}
+                    </span>
+                    <span className="truncate max-w-[300px]">
+                        {initialData ? form.watch("name") : "Maestro de Producto"}
+                    </span>
+                </div>
             </h1>
-            <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest mt-1">
-                Ficha Maestra <span className="opacity-30">|</span> Gestión de Inventario
-            </div>
         </div>
     )
 
@@ -673,21 +682,17 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
         <>
             <Form {...form}>
                 <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
-                {isFetchingInitialData ? (
-                    <div className="p-6 flex-1">
-                        <FormSkeleton hasTabs tabs={6} cards={2} fields={5} />
-                    </div>
-                ) : (
-                    <FormTabs
-                        items={tabItems}
-                        value={activeTab}
-                        onValueChange={setActiveTab}
-                        orientation="vertical"
-                        header={tabHeader}
-                        className="flex-1"
-                        contentClassName="bg-transparent"
-                    >
-                        <fieldset disabled={loading} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full min-h-0">
+                    <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando ficha de producto" className="flex-1 flex flex-col h-full">
+                        <FormTabs
+                            items={tabItems}
+                            value={activeTab}
+                            onValueChange={setActiveTab}
+                            orientation="vertical"
+                            header={tabHeader}
+                            className="flex-1"
+                            contentClassName="bg-transparent"
+                        >
+                            <fieldset disabled={loading} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full min-h-0">
                                 <FormTabsContent value="general" className="h-full w-full flex-1 flex flex-col m-0 p-0 border-0 outline-none overflow-hidden">
                                     <FormSplitLayout
                                         sidebar={
@@ -782,7 +787,7 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                                 )}
                             </fieldset>
                         </FormTabs>
-                    )}
+                    </SkeletonShell>
                 </form>
             </Form>
 

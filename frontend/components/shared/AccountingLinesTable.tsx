@@ -48,6 +48,8 @@ interface AccountingLinesTableProps {
     control: Control<any>
     /** Name of the field array in the form schema */
     name: string
+    /** Loading state */
+    isLoading?: boolean
 }
 
 // ─────────────────────────────────────────────────────────
@@ -78,7 +80,7 @@ const COLUMNS = [
  * - Payment registrations with accounting impacts
  * - Manual accounting adjustments
  */
-export function AccountingLinesTable({ control, name }: AccountingLinesTableProps) {
+export function AccountingLinesTable({ control, name, isLoading }: AccountingLinesTableProps) {
     const { fields, append, remove } = useFieldArray({ control, name })
 
     return (
@@ -87,6 +89,7 @@ export function AccountingLinesTable({ control, name }: AccountingLinesTableProp
             onAdd={() => append({ account: "", label: "", debit: 0, credit: 0 })}
             addButtonText="Agregar Línea"
             footer={<TotalBalance control={control} name={name} />}
+            isLoading={isLoading}
         >
             <TableBody>
                 {fields.map((field, index) => (

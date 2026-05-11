@@ -64,9 +64,18 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                                 label="Precio Dinámico / Variable"
                                 description="Permite definir el precio al momento de la venta (ideal para servicios o productos a medida)"
                                 checked={field.value}
-                                onCheckedChange={field.onChange}
-                                icon={<Zap className={cn("h-3.5 w-3.5", field.value ? "text-yellow-500" : "text-muted-foreground/30")} />}
-                                className={cn("p-4", field.value ? "bg-yellow-500/5 border-yellow-500/20 shadow-sm" : "border-dashed")}
+                                onCheckedChange={(val) => {
+                                    requestAnimationFrame(() => {
+                                        field.onChange(val)
+                                    })
+                                }}
+                                icon={<Zap className={cn("h-4 w-4 transition-colors", field.value ? "text-yellow-600 fill-yellow-600/20" : "text-muted-foreground/40")} />}
+                                className={cn(
+                                    "p-4 transition-all duration-300", 
+                                    field.value 
+                                        ? "bg-yellow-500/10 border-yellow-500/30 shadow-sm ring-1 ring-yellow-500/10" 
+                                        : "bg-muted/5 border-border/60 hover:border-border"
+                                )}
                             />
                         )}
                     />

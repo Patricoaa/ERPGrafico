@@ -221,7 +221,7 @@ export function ProductSelector({
                         "w-full justify-between overflow-hidden py-0 shadow-none focus-visible:ring-0 transition-all",
                         variant === 'standalone' 
                             ? "h-[1.5rem] px-3 border-none bg-transparent hover:bg-primary/[0.03]" 
-                            : cn("h-9 text-xs px-2 border border-border/80 rounded-md bg-background hover:bg-primary/[0.02]", className)
+                            : cn("h-9 text-xs px-2 bg-background hover:bg-primary/[0.02]", className)
                     )}
                 >
                     {selectedProduct ? (() => {
@@ -394,9 +394,7 @@ export function ProductSelector({
                     )}
                 </div>
             ) : (
-                <div className={cn("w-full", className)}>
-                    {selectButton}
-                </div>
+                selectButton
             )}
 
             <BaseModal

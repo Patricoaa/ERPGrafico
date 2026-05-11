@@ -29,7 +29,6 @@ import { usePathname } from "next/navigation"
 import type { WorkOrder } from "@/features/production/types"
 const statusOptions = [
     { label: "Borrador", value: "DRAFT" },
-    { label: "Planificada", value: "PLANNED" },
     { label: "En Proceso", value: "IN_PROGRESS" },
     { label: "Terminada", value: "FINISHED" },
     { label: "Anulada", value: "CANCELLED" },
@@ -37,7 +36,6 @@ const statusOptions = [
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "outline" | "destructive" }> = {
     'DRAFT': { label: 'Borrador', variant: 'secondary' },
-    'PLANNED': { label: 'Planificada', variant: 'default' },
     'IN_PROGRESS': { label: 'En Proceso', variant: 'outline' },
     'FINISHED': { label: 'Terminada', variant: 'outline' },
     'CANCELLED': { label: 'Anulada', variant: 'destructive' },

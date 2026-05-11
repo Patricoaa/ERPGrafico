@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Package, Zap, Factory, Wrench, Repeat, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { LabeledContainer } from "@/components/shared"
 
 interface ProductTypeSelectorProps {
     value?: string | null
@@ -38,58 +39,45 @@ export function ProductTypeSelector({
     const isDisabled = disabled || !!lockedType
 
     return (
-        <div className="relative w-full flex flex-col group">
-            <fieldset 
-                className={cn(
-                    "notched-field w-full group transition-all",
-                    open && "focused",
-                    error && "error",
-                    isDisabled && "opacity-50 cursor-not-allowed bg-muted/10"
-                )}
+        <LabeledContainer
+            label={label}
+            required={required}
+            error={error}
+            disabled={isDisabled}
+            containerClassName={cn("w-full", lockedType && "opacity-80")}
+        >
+            <Select
+                disabled={isDisabled}
+                onValueChange={onChange}
+                value={value || undefined}
+                onOpenChange={setOpen}
             >
-                {label && (
-                    <legend className={cn("notched-legend", error && "text-destructive", isDisabled && "text-muted-foreground/50")}>
-                        {label}
-                        {required && <span className="ml-1 text-destructive">*</span>}
-                    </legend>
-                )}
-                <Select
-                    disabled={isDisabled}
-                    onValueChange={onChange}
-                    value={value || undefined}
-                    onOpenChange={setOpen}
+                <SelectTrigger 
+                    role="combobox"
+                    className="w-full h-7 py-0 px-2 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                 >
-                    <SelectTrigger 
-                        className="w-full h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
-                    >
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                            {selectedType ? (
-                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                    <selectedType.icon className={cn("h-3.5 w-3.5 shrink-0", selectedType.color)} />
-                                    <span className="font-bold text-sm truncate">{selectedType.label}</span>
-                                </div>
-                            ) : (
-                                <SelectValue placeholder="Seleccionar tipo..." />
-                            )}
-                        </div>
-                    </SelectTrigger>
-                    <SelectContent position="popper" sideOffset={4} className="w-[var(--radix-select-trigger-width)]">
-                        {PRODUCT_TYPES.map((t) => (
-                            <SelectItem key={t.id} value={t.id} className="cursor-pointer">
-                                <div className="flex items-center gap-2">
-                                    <t.icon className={cn("h-3.5 w-3.5", t.color)} />
-                                    <span>{t.label}</span>
-                                </div>
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </fieldset>
-            {error && (
-                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
-                    {error}
-                </p>
-            )}
-        </div>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                        {selectedType ? (
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                <selectedType.icon className={cn("h-3 w-3 shrink-0", selectedType.color)} />
+                                <span className="font-bold text-[11px] truncate uppercase tracking-tight">{selectedType.label}</span>
+                            </div>
+                        ) : (
+                            <span className="text-[11px] text-muted-foreground opacity-50">Seleccionar tipo...</span>
+                        )}
+                    </div>
+                </SelectTrigger>
+                <SelectContent position="popper" sideOffset={4} className="w-[var(--radix-select-trigger-width)]">
+                    {PRODUCT_TYPES.map((t) => (
+                        <SelectItem key={t.id} value={t.id} className="cursor-pointer">
+                            <div className="flex items-center gap-2">
+                                <t.icon className={cn("h-3.5 w-3.5", t.color)} />
+                                <span className="text-xs font-medium">{t.label}</span>
+                            </div>
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </LabeledContainer>
     )
 }

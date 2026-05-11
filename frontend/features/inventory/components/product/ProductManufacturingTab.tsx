@@ -128,10 +128,19 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                                     label="Lista de Materiales"
                                                     description={isExpress && !hasVariants ? "Requerido para modo Express." : "Habilitar receta de fabricación."}
                                                     checked={field.value}
-                                                    onCheckedChange={field.onChange}
+                                                    onCheckedChange={(val) => {
+                                                        requestAnimationFrame(() => {
+                                                            field.onChange(val)
+                                                        })
+                                                    }}
                                                     disabled={isExpress && !hasVariants}
-                                                    icon={<Package className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-                                                    className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                                    icon={<Package className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/40")} />}
+                                                    className={cn(
+                                                        "transition-all duration-300", 
+                                                        field.value 
+                                                            ? "bg-primary/10 border-primary/30 shadow-sm ring-1 ring-primary/10" 
+                                                            : "bg-muted/5 border-border/60 hover:border-border"
+                                                    )}
                                                 />
                                             )
                                         }}
@@ -145,9 +154,18 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                                 label="Variantes"
                                                 description="Múltiples versiones del mismo producto."
                                                 checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                                icon={<Layers className={cn("h-4 w-4 transition-colors", field.value ? "text-warning" : "text-muted-foreground/30")} />}
-                                                className={cn(field.value ? "bg-warning/5 border-warning/20 shadow-sm" : "border-dashed")}
+                                                onCheckedChange={(val) => {
+                                                    requestAnimationFrame(() => {
+                                                        field.onChange(val)
+                                                    })
+                                                }}
+                                                icon={<Layers className={cn("h-4 w-4 transition-colors", field.value ? "text-warning" : "text-muted-foreground/40")} />}
+                                                className={cn(
+                                                    "transition-all duration-300", 
+                                                    field.value 
+                                                        ? "bg-warning/10 border-warning/30 shadow-sm ring-1 ring-warning/10" 
+                                                        : "bg-muted/5 border-border/60 hover:border-border"
+                                                )}
                                             />
                                         )}
                                     />
