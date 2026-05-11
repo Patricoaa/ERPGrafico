@@ -40,7 +40,7 @@ export function CategoryFilter({
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 absolute left-0 z-10 bg-background/80 backdrop-blur shadow-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-10 w-10 absolute left-0 z-10 bg-background/80 backdrop-blur shadow-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={scrollLeft}
                 >
                     <ChevronLeft className="h-4 w-4" />
@@ -57,8 +57,8 @@ export function CategoryFilter({
             >
                 <button
                     className={cn(
-                        "whitespace-nowrap flex items-center justify-center rounded-full font-bold uppercase tracking-wider transition-all border",
-                        isTouchPOS ? "h-10 px-5 text-xs" : "h-7 px-3 text-[10px]",
+                        "whitespace-nowrap flex items-center justify-center rounded-md font-bold uppercase tracking-wider transition-all border",
+                        isTouchPOS ? "h-12 px-6 text-xs" : "h-10 px-4 text-[10px]",
                         selectedCategoryId === null
                             ? "bg-primary text-primary-foreground border-primary shadow-sm"
                             : "bg-background border-muted-foreground/20 text-muted-foreground hover:border-primary/50 hover:bg-muted/30",
@@ -72,8 +72,8 @@ export function CategoryFilter({
                     <button
                         key={cat.id}
                         className={cn(
-                            "whitespace-nowrap flex items-center justify-center gap-1.5 rounded-full font-bold uppercase tracking-wider transition-all border",
-                            isTouchPOS ? "h-10 px-5 text-xs" : "h-7 px-3 text-[10px]",
+                            "whitespace-nowrap flex items-center justify-center gap-1.5 rounded-md font-bold uppercase tracking-wider transition-all border",
+                            isTouchPOS ? "h-12 px-6 text-xs" : "h-10 px-4 text-[10px]",
                             selectedCategoryId === cat.id
                                 ? "bg-primary text-primary-foreground border-primary shadow-sm"
                                 : "bg-background border-muted-foreground/20 text-muted-foreground hover:border-primary/50 hover:bg-muted/30",
@@ -91,7 +91,7 @@ export function CategoryFilter({
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w7 absolute right-0 z-10 bg-background/80 backdrop-blur shadow-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-10 w-10 absolute right-0 z-10 bg-background/80 backdrop-blur shadow-sm rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={scrollRight}
                 >
                     <ChevronRight className="h-4 w-4" />
