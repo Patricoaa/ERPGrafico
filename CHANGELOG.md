@@ -2,8 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-### Unreleased
-* **architecture:** ADR-0019 accepted. Decided to revert Phase 4 Schema-Driven Forms for Budget, ProductCategory, and UoM to restore visual parity, and defined a new expansion strategy and UI contract for schema-driven forms.
+### [0.1.18](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.17...v0.1.18) (2026-05-11)
+
+
+### ✨ Features
+
+* Adit & docs ([a67fea1](https://github.com/Patricoaa/ERPGrafico/commit/a67fea17f3dbf1927a300a696e75c2c8a20649d7))
+* ajustes backend ([c049030](https://github.com/Patricoaa/ERPGrafico/commit/c04903092a8fc56d779628def3c3e522118e1109))
+* estandarizacion de iconos por entidad ([8fd0883](https://github.com/Patricoaa/ERPGrafico/commit/8fd088378771aacc4e57ed046268f437af73349e))
+* Phase 1 ([62cd4a3](https://github.com/Patricoaa/ERPGrafico/commit/62cd4a340260285cbb77f160a81f4c9915c66f0e))
+* Phase 4 ([9387cb9](https://github.com/Patricoaa/ERPGrafico/commit/9387cb91ec91673705bc3729556ffeadc87cddc3))
+* Phase 5 ([cae76cb](https://github.com/Patricoaa/ERPGrafico/commit/cae76cbad4e2a0e539d20737271591b5255605e6))
+* Phase 6 pt2 ([b04170d](https://github.com/Patricoaa/ERPGrafico/commit/b04170d091b2b93899b1c46bc5ce20429bdd1a31))
+* Phase 8 ([8d83829](https://github.com/Patricoaa/ERPGrafico/commit/8d8382922bba9255b27f41cf171ee74f6b9696d8))
+* Phase 9 ([368c29f](https://github.com/Patricoaa/ERPGrafico/commit/368c29f3ac973f5ba003f03839d05ffd56a167c6))
 
 ### [0.1.17](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.16...v0.1.17) (2026-05-07)
 
