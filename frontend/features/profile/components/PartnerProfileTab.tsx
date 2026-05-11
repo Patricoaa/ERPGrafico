@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState, lazy, Suspense } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
@@ -42,8 +43,22 @@ export function PartnerProfileTab({ contactId }: Props) {
     const [loading, setLoading] = useState(true)
     
     // Movement Details state
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const transactionId = searchParams.get('transaction')
+    const transactionType = searchParams.get('transactionType')
+
     const [detailsOpen, setDetailsOpen] = useState(false)
     const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
+
+    useEffect(() => {
+        if (transactionId && transactionType === 'payment' && !detailsOpen) {
+            setSelectedMovementId(Number(transactionId))
+            setDetailsOpen(true)
+        }
+    }, [transactionId, transactionType, detailsOpen])
 
     const fetchData = async () => {
         if (!contactId) return
@@ -63,8 +78,19 @@ export function PartnerProfileTab({ contactId }: Props) {
     }, [contactId])
 
     const handleViewDetails = (movementId: number) => {
-        setSelectedMovementId(movementId)
-        setDetailsOpen(true)
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('transaction', String(movementId))
+        params.set('transactionType', 'payment')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const closeDetails = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('transaction')
+        params.delete('transactionType')
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        setDetailsOpen(false)
+        setSelectedMovementId(null)
     }
 
     const columns: ColumnDef<PartnerTransaction>[] = [
@@ -258,7 +284,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                 {selectedMovementId && (
                     <TransactionViewModal
                         open={detailsOpen}
-                        onOpenChange={setDetailsOpen}
+                        onOpenChange={(open) => !open && closeDetails()}
                         type="payment"
                         id={selectedMovementId}
                         view="details"

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, Search, Loader2, User } from "lucide-react"
+import { Check, ChevronDown, Search, Loader2 } from "lucide-react"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -85,13 +86,16 @@ export function UserSelector({ value, onChange, placeholder = "Seleccionar usuar
                     className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                     disabled={disabled}
                 >
-                    {selectedUser ? (
-                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                            <User className="h-3.5 w-3.5 shrink-0 text-primary" />
-                            <span className="font-medium text-sm truncate">{selectedUser.username}</span>
-                            <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">{selectedUser.email}</span>
-                        </div>
-                    ) : (
+                    {selectedUser ? (() => {
+                        const UserIcon = getEntityIcon('core.user');
+                        return (
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                <UserIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                <span className="font-medium text-sm truncate">{selectedUser.username}</span>
+                                <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">{selectedUser.email}</span>
+                            </div>
+                        );
+                    })() : (
                         <span className="text-muted-foreground truncate">{placeholder}</span>
                     )}
                     <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />

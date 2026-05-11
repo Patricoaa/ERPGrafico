@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -51,6 +51,21 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
+    // Open detail modal if ?selected= is present (ADR-0020)
+    useEffect(() => {
+        const selectedId = searchParams.get('selected')
+        if (selectedId && !viewingTransaction) {
+            setViewingTransaction({ type: 'inventory', id: selectedId })
+        }
+    }, [searchParams, viewingTransaction])
+
+    const clearSelection = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('selected')
+        const query = params.toString()
+        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    }
+
     const handleCloseModal = () => {
         setShowAdjustmentModal(false)
         onExternalOpenChange?.(false)
@@ -68,7 +83,7 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex flex-col items-center gap-0.5">
-                    <DataCell.Code className="text-primary font-black uppercase">MOV-{row.original.id}</DataCell.Code>
+                    <DataCell.DocumentId label="inventory.stockmove" data={row.original} />
                     <DataCell.Date value={row.original.date} className="text-[10px] opacity-50" />
                 </div>
             ),
@@ -139,7 +154,11 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
                     icon={Eye}
                     title="Ver Detalles"
                     color="text-primary"
-                    onClick={() => setViewingTransaction({ type: 'inventory', id: item.id })}
+                    onClick={() => {
+                        const params = new URLSearchParams(searchParams.toString())
+                        params.set('selected', String(item.id))
+                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                    }}
                 />
             ),
         }),
@@ -171,7 +190,12 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
             {viewingTransaction && (
                 <TransactionViewModal
                     open={!!viewingTransaction}
-                    onOpenChange={(open) => !open && setViewingTransaction(null)}
+                    onOpenChange={(open) => {
+                        if (!open) {
+                            setViewingTransaction(null)
+                            clearSelection()
+                        }
+                    }}
                     type={viewingTransaction.type}
                     id={viewingTransaction.id}
                     view={viewingTransaction.view}

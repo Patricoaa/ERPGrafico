@@ -1,7 +1,8 @@
 "use client"
+import { formatEntityDisplay, getEntityIcon } from "@/lib/entity-registry"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, Search, Loader2, ShoppingBag, Eye, Calendar, FileText } from "lucide-react"
+import { Check, ChevronDown, Search, Loader2, Eye, Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -124,13 +125,16 @@ export function AdvancedSaleOrderSelector({
                             disabled && "opacity-50 cursor-not-allowed"
                         )}
                     >
-                        {selectedOrder ? (
-                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                <span className="font-semibold text-sm shrink-0">NV-{selectedOrder.number}</span>
-                                <span className="text-sm text-muted-foreground truncate">{selectedOrder.customer_name}</span>
-                            </div>
-                        ) : (
+                        {selectedOrder ? (() => {
+                            const OrderIcon = getEntityIcon('sales.saleorder');
+                            return (
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <OrderIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                    <span className="font-semibold text-sm shrink-0">{formatEntityDisplay('sales.saleorder', selectedOrder)}</span>
+                                    <span className="text-sm text-muted-foreground truncate">{selectedOrder.customer_name}</span>
+                                </div>
+                            );
+                        })() : (
                             <span className="text-muted-foreground truncate">{placeholder}</span>
                         )}
                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -169,11 +173,14 @@ export function AdvancedSaleOrderSelector({
                                     >
                                         <div className="flex items-center gap-3 w-full overflow-hidden">
                                             <div className="flex-shrink-0 p-2 bg-muted rounded-md group-hover:bg-background transition-colors">
-                                                <ShoppingBag className="h-4 w-4 text-primary" />
+                                                {(() => {
+                                                    const OrderIcon = getEntityIcon('sales.saleorder');
+                                                    return <OrderIcon className="h-4 w-4 text-primary" />;
+                                                })()}
                                             </div>
                                             <div className="flex flex-col overflow-hidden flex-1">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="truncate font-bold">NV-{order.number}</span>
+                                                    <span className="truncate font-bold">{formatEntityDisplay('sales.saleorder', order)}</span>
                                                     <span className="text-[10px] font-mono text-muted-foreground">
                                                         {format(new Date(order.created_at), "dd/MM/yyyy")}
                                                     </span>

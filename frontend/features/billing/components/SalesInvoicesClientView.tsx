@@ -2,6 +2,7 @@
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -13,7 +14,6 @@ import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { Invoice } from "@/features/billing/types"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { toast } from "sonner"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { SaleNoteModal } from "@/features/sales"
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -24,10 +24,25 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 export function SalesInvoicesClientView() {
     const { invoices, refetch, annulInvoice } = useInvoices()
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: string, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
     const [currentView, setCurrentView] = useState<'card' | 'list'>('card')
+
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    const pathname = usePathname()
+
+    const toggleSelection = (inv: Invoice) => {
+        const isSelected = hubConfig?.invoiceId === inv.id
+        const params = new URLSearchParams(searchParams.toString())
+        if (isSelected && isHubOpen) {
+            params.delete('selected')
+        } else {
+            params.set('selected', String(inv.id))
+        }
+        const query = params.toString()
+        router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    }
 
     const viewOptions = [
         { label: "Lista", value: "list", icon: List },
@@ -96,7 +111,7 @@ export function SalesInvoicesClientView() {
         {
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => <DataCell.DocumentId type={row.original.dte_type} number={row.original.number} />,
+            cell: ({ row }) => <DataCell.DocumentId label="billing.invoice" data={row.original} />,
         },
         {
             accessorKey: "date",
@@ -135,13 +150,7 @@ export function SalesInvoicesClientView() {
                         <IconButton
                             circular
                             className="h-8 w-8 hover:bg-transparent"
-                            onClick={() => {
-                                if (isSelected && isHubOpen) {
-                                    closeHub()
-                                } else {
-                                    openHub({ orderId: item.sale_order || null, invoiceId: item.id, type: 'sale', onActionSuccess: refetch })
-                                }
-                            }}
+                            onClick={() => toggleSelection(item)}
                         >
                             {isSelected && isHubOpen ? (
                                 <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
@@ -161,14 +170,7 @@ export function SalesInvoicesClientView() {
             <DataTable
                 columns={columns}
                 data={invoices}
-                onRowClick={(row: Invoice) => {
-                    const isSelected = hubConfig?.invoiceId === row.id
-                    if (isSelected && isHubOpen) {
-                        closeHub()
-                    } else {
-                        openHub({ orderId: row.sale_order || null, invoiceId: row.id, type: 'sale', onActionSuccess: refetch })
-                    }
-                }}
+                onRowClick={(row: Invoice) => toggleSelection(row)}
                 cardMode={true}
                 currentView={currentView}
                 onViewChange={(v: any) => setCurrentView(v as 'card' | 'list')}
@@ -214,18 +216,7 @@ export function SalesInvoicesClientView() {
                                         type="sale_invoice"
                                         isSelected={isSelected}
                                         visibleColumns={table.getState().columnVisibility}
-                                        onClick={() => {
-                                            if (isSelected) {
-                                                closeHub()
-                                            } else {
-                                                openHub({
-                                                    orderId: inv.sale_order || null,
-                                                    invoiceId: inv.id,
-                                                    type: 'sale',
-                                                    onActionSuccess: refetch
-                                                })
-                                            }
-                                        }}
+                                        onClick={() => toggleSelection(inv)}
                                     />
                                 )
                             })}
@@ -233,18 +224,6 @@ export function SalesInvoicesClientView() {
                     )
                 } : undefined}
             />
-
-
-
-            {viewingTransaction && (
-                <TransactionViewModal
-                    open={!!viewingTransaction}
-                    onOpenChange={(open) => !open && setViewingTransaction(null)}
-                    type={viewingTransaction.type as any}
-                    id={viewingTransaction.id}
-                    view={viewingTransaction.view}
-                />
-            )}
 
             {notingInvoice && (
                 <SaleNoteModal

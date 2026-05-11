@@ -633,17 +633,11 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
             accessorKey: "display_id",
             header: "Número",
             cell: ({ row }) => {
-                let prefix = ""
-                let variant: "outline" | "indigo" | "warning" | "purple" = "outline"
-                if (type === 'sale') { prefix = "NV-"; variant = "indigo" }
-                else if (type === 'purchase') { prefix = "OC-"; variant = "warning" }
-                else if (type === 'work_order') { prefix = "OT-"; variant = "purple" }
-
-                return (
-                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-sm border border-border bg-muted/50 text-muted-foreground tracking-tight">
-                        {(row.original as any).display_id || `${prefix}${(row.original as any).number?.toString().padStart(6, '0')}`}
-                    </span>
-                )
+                let label = 'sales.saleorder';
+                if (type === 'purchase') label = 'purchasing.purchaseorder';
+                else if (type === 'work_order') label = 'production.workorder';
+                
+                return <DataCell.DocumentId label={label} data={row.original} />;
             },
         },
         ...(type !== 'work_order' ? [
@@ -841,11 +835,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Order[], 
         {
             accessorKey: "number",
             header: "Número",
-            cell: ({ row }) => (
-                <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground tracking-tight">
-                    NV-{(row.original.number as any)?.toString().padStart(6, '0')}
-                </span>
-            ),
+            cell: ({ row }) => <DataCell.DocumentId label="sales.saleorder" data={row.original} />,
         },
         {
             accessorKey: "balance",

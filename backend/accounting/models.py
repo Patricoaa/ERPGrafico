@@ -1,4 +1,6 @@
 from django.db import models
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from core.utils import get_current_date
 from django.utils.translation import gettext_lazy as _
@@ -6,6 +8,7 @@ from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from simple_history.models import HistoricalRecords
 from decimal import Decimal
+from core.models import AuditedModel, TimeStampedModel
 
 class AccountType(models.TextChoices):
     ASSET = 'ASSET', _('Activo')
@@ -36,19 +39,22 @@ class BSCategory(models.TextChoices):
     NON_CURRENT_LIABILITY = 'NON_CURRENT_LIABILITY', _('Pasivo No Corriente')
     EQUITY = 'EQUITY', _('Patrimonio')
 
-class Account(models.Model):
+class Account(TimeStampedModel):
     code = models.CharField(_("Código"), max_length=20, unique=True, blank=True, help_text="Ej: 1.1.01.001")
     name = models.CharField(_("Nombre"), max_length=255)
     account_type = models.CharField(_("Tipo"), max_length=20, choices=AccountType.choices)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children', verbose_name=_("Cuenta Padre"))
     is_reconcilable = models.BooleanField(_("Conciliable"), default=False)
     history = HistoricalRecords()
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
 
     @property
     def is_selectable(self):
         """
         An account is selectable for postings if it has no children.
         """
+        if hasattr(self, 'annotated_children_count'):
+            return self.annotated_children_count == 0
         return not self.children.exists()
     
     # Reporting Mapping
@@ -93,10 +99,14 @@ class Account(models.Model):
 
     @property
     def debit_total(self):
+        if hasattr(self, 'annotated_debit_total') and self.annotated_debit_total is not None:
+            return self.annotated_debit_total
         return sum(item.debit for item in self.journal_items.filter(entry__status='POSTED'))
 
     @property
     def credit_total(self):
+        if hasattr(self, 'annotated_credit_total') and self.annotated_credit_total is not None:
+            return self.annotated_credit_total
         return sum(item.credit for item in self.journal_items.filter(entry__status='POSTED'))
 
     @property
@@ -240,7 +250,7 @@ class Account(models.Model):
                 child.account_type = self.account_type
                 child.save()
 
-class JournalEntry(models.Model):
+class JournalEntry(AuditedModel):
     # NOTE: This class uses "Status" and field name "status" to match the convention of all
     # other transactional models (SaleOrder, Invoice, PurchaseOrder, etc.).
     # The inner class is named both Status AND State (alias) for backwards compatibility.
@@ -272,15 +282,20 @@ class JournalEntry(models.Model):
         default=False,
         help_text=_("Indica si el asiento pertenece a un periodo cerrado")
     )
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    history = HistoricalRecords()
 
+    source_content_type = models.ForeignKey(
+        ContentType, null=True, blank=True, on_delete=models.SET_NULL
+    )
+    source_object_id = models.PositiveIntegerField(null=True, blank=True)
+    source_document = GenericForeignKey('source_content_type', 'source_object_id')
+    
     class Meta:
         ordering = ['-id']
         verbose_name = _("Asiento Contable")
         verbose_name_plural = _("Libro Diario")
+        indexes = [
+            models.Index(fields=['source_content_type', 'source_object_id']),
+        ]
 
     def __str__(self):
         return self.display_id
@@ -350,123 +365,50 @@ class JournalEntry(models.Model):
             last_entry = JournalEntry.objects.all().order_by('id').last()
             if last_entry and last_entry.number:
                 try:
-                    self.number = str(int(last_entry.number) + 1).zfill(6)
+                    self.number = str(int(last_entry.number) + 1)
                 except ValueError:
                     self.number = '000001'
             else:
                 self.number = '000001'
-        
         super().save(*args, **kwargs)
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('finances')
 
     def delete(self, *args, **kwargs):
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('finances')
         super().delete(*args, **kwargs)
 
     @property
     def get_source_documents(self):
-        docs = []
-        # Invoice
-        try:
-            if hasattr(self, 'invoice') and self.invoice:
-                docs.append({
-                    'type': 'invoice',
-                    'id': self.invoice.id,
-                    'name': str(self.invoice),
-                    'url': f'/billing/{"sales" if self.invoice.sale_order_id else "purchases"}'
-                })
-        except (ObjectDoesNotExist, AttributeError):
-            pass
-
-        # Payment
-        try:
-            if hasattr(self, 'payment') and self.payment:
-                docs.append({
-                    'type': 'payment',
-                    'id': self.payment.id,
-                    'name': str(self.payment),
-                    'url': '/treasury/payments'
-                })
-        except (ObjectDoesNotExist, AttributeError):
-            pass
-
-        # Sale Order
-        try:
-            if hasattr(self, 'sale_order') and self.sale_order:
-                docs.append({
-                    'type': 'sale_order',
-                    'id': self.sale_order.id,
-                    'name': str(self.sale_order),
-                    'url': '/sales/orders'
-                })
-        except (ObjectDoesNotExist, AttributeError):
-            pass
-
-        # Purchase Order
-        try:
-            if hasattr(self, 'purchase_order') and self.purchase_order:
-                docs.append({
-                    'type': 'purchase_order',
-                    'id': self.purchase_order.id,
-                    'name': str(self.purchase_order),
-                    'url': '/purchasing/orders'
-                })
-        except (ObjectDoesNotExist, AttributeError):
-            pass
-
-        # Stock Moves
-        try:
-            moves = self.stock_moves.all()
-            if moves.exists():
-                for move in moves:
-                    docs.append({
-                        'type': 'inventory',
-                        'id': move.id,
-                        'name': f"MOV-{str(move.id).zfill(6)}",
-                        'url': '/inventory/movements'
-                    })
-        except (ObjectDoesNotExist, AttributeError):
-            pass
-            
-        return docs
+        # Mantenemos por retrocompatibilidad momentánea mientras migramos vistas.
+        # Retorna una lista con la nueva información de source.
+        info = self.source_info
+        return [info] if info else []
 
     @property
     def get_source_document(self):
-        try:
-            if hasattr(self, 'invoice'):
-                return {
-                    'type': 'invoice',
-                    'id': self.invoice.id,
-                    'name': str(self.invoice),
-                    'url': f'/billing/{"sales" if self.invoice.sale_order else "purchases"}' # Simplified URL
-                }
-        except ObjectDoesNotExist:
-            pass
+        return self.source_document
 
-        try:
-            if hasattr(self, 'payment'):
-                return {
-                    'type': 'payment',
-                    'id': self.payment.id,
-                    'name': f"Pago {self.payment.id}",
-                    'url': '/treasury/payments'
-                }
-        except ObjectDoesNotExist:
-            pass
-
-        if self.stock_moves.exists():
-            move = self.stock_moves.first()
-            return {
-                'type': 'inventory',
-                'id': move.id,
-                'name': f"Mov. Stock {move.id}",
-                'url': '/inventory/movements'
+    @property
+    def source_info(self) -> dict | None:
+        if not self.source_document:
+            return None
+        from core.registry import UniversalRegistry
+        entity = UniversalRegistry.get_for_model(type(self.source_document))
+        if not entity:
+             return {
+                'type': self.source_content_type.model,
+                'id': self.source_object_id,
+                'name': str(self.source_document),
+                'url': '#'
             }
-        return None
+        return {
+            'type': entity.label,
+            'id': self.source_document.pk,
+            'name': str(self.source_document),
+            'url': entity.detail_url_pattern.format(id=self.source_document.pk),
+        }
 
-class JournalItem(models.Model):
+class JournalItem(TimeStampedModel):
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
+    # Backfill: created_at = updated_at = entry.created_at (ver migración 0011).
     entry = models.ForeignKey(JournalEntry, on_delete=models.CASCADE, related_name='items')
     account = models.ForeignKey(Account, on_delete=models.PROTECT, related_name='journal_items')
     partner = models.ForeignKey(
@@ -495,18 +437,15 @@ class JournalItem(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('finances')
 
     def delete(self, *args, **kwargs):
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('finances')
         super().delete(*args, **kwargs)
 
 class InventoryValuationMethod(models.TextChoices):
     AVERAGE = 'AVERAGE', _('Promedio Ponderado')
 
-class AccountingSettings(models.Model):
+class AccountingSettings(TimeStampedModel):
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     # Default Accounts
     default_receivable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_receivable')
     default_payable_account = models.ForeignKey(Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='settings_payable')
@@ -924,15 +863,19 @@ class AccountingSettings(models.Model):
         old_sep = "."
 
         if not is_new:
-            old_obj = AccountingSettings.objects.get(pk=self.pk)
-            old_prefixes = {
-                'ASSET': old_obj.asset_prefix,
-                'LIABILITY': old_obj.liability_prefix,
-                'EQUITY': old_obj.equity_prefix,
-                'INCOME': old_obj.income_prefix,
-                'EXPENSE': old_obj.expense_prefix,
-            }
-            old_sep = old_obj.code_separator
+            try:
+                old_obj = AccountingSettings.objects.get(pk=self.pk)
+                old_prefixes = {
+                    'ASSET': old_obj.asset_prefix,
+                    'LIABILITY': old_obj.liability_prefix,
+                    'EQUITY': old_obj.equity_prefix,
+                    'INCOME': old_obj.income_prefix,
+                    'EXPENSE': old_obj.expense_prefix,
+                }
+                old_sep = old_obj.code_separator
+            except AccountingSettings.DoesNotExist:
+                # If get_solo created it but it wasn't saved, it might not exist yet
+                pass
 
         super().save(*args, **kwargs)
 
@@ -1038,6 +981,9 @@ class AccountingSettings(models.Model):
         verbose_name = _("Configuración Contable")
         verbose_name_plural = _("Configuración Contable")
 
+    class FormMeta:
+        exclude_fields = []  # Sin campos sensibles — cuentas contables FK y parámetros de tasas.
+
     def __str__(self):
         return "Configuración Contable Global"
 
@@ -1120,12 +1066,20 @@ class FiscalYear(models.Model):
 
 # --- Budgeting Models ---
 
-class Budget(models.Model):
+class Budget(TimeStampedModel):
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
+    # Budget ya tenía created_at manual — migrado a TimeStampedModel; se añade updated_at.
     name = models.CharField(_("Nombre del Presupuesto"), max_length=255)
     start_date = models.DateField(_("Fecha Inicio"))
     end_date = models.DateField(_("Fecha Fin"))
     description = models.TextField(_("Descripción"), blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+
+    class FormMeta:
+        ui_layout = {
+            'tabs': [
+                {'id': 'main', 'label': 'General', 'fields': ['name', 'start_date', 'end_date', 'description']}
+            ]
+        }
 
     class Meta:
         ordering = ['-id']
@@ -1135,13 +1089,21 @@ class Budget(models.Model):
     def __str__(self):
         return f"{self.name} ({self.start_date} - {self.end_date})"
 
-class BudgetItem(models.Model):
+class BudgetItem(TimeStampedModel):
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     budget = models.ForeignKey(Budget, on_delete=models.CASCADE, related_name='items')
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='budget_items')
     year = models.IntegerField(_("Año"), default=2024)
     month = models.IntegerField(_("Mes"), default=1, help_text="Mes del presupuesto (1-12)")
     amount = models.DecimalField(_("Monto Presupuestado"), max_digits=20, decimal_places=0, validators=[MinValueValidator(0)])
     
+    class FormMeta:
+        ui_layout = {
+            'tabs': [
+                {'id': 'main', 'label': 'General', 'fields': ['budget', 'account', 'year', 'month', 'amount']}
+            ]
+        }
+
     class Meta:
         unique_together = ['budget', 'account', 'year', 'month']
         verbose_name = _("Item de Presupuesto")

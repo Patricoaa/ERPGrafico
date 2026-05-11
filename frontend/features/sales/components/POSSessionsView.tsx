@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -46,13 +46,29 @@ import { usePOSSessions } from "@/features/pos/hooks/usePOSSessions"
 
 export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) => {
     const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
     const { sessions, refetch } = usePOSSessions()
+
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<POSSession>({
+        endpoint: '/treasury/pos-sessions'
+    })
 
     const [selectedSession, setSelectedSession] = useState<POSSession | null>(null)
     const [reportDialogOpen, setReportDialogOpen] = useState(false)
     const [reportData, setReportData] = useState<Record<string, unknown> | null>(null)
     const [reportType, setReportType] = useState<"X" | "Z">("X")
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
+
+    useEffect(() => {
+        if (selectedFromUrl) {
+            setSelectedSession(selectedFromUrl)
+            // Decide what to open. If it's closed, maybe show report Z.
+            // If it's open, maybe show report X.
+            // For now, let's just open report X by default if selected.
+            handleShowReport(selectedFromUrl, selectedFromUrl.status === 'CLOSED' ? 'Z' : 'X')
+        }
+    }, [selectedFromUrl])
 
     const handleShowReport = async (session: POSSession, type: "X" | "Z") => {
         try {
@@ -142,11 +158,19 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                 <>
                     {session.status === 'OPEN' ? (
                         <>
-                            <DataCell.Action icon={FileText} title="Reporte X" className="text-info" onClick={() => handleShowReport(session, "X")} />
+                            <DataCell.Action icon={FileText} title="Reporte X" className="text-info" onClick={() => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set('selected', String(session.id))
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                            }} />
                             <DataCell.Action icon={Lock} title="Cerrar Caja" className="text-destructive" onClick={() => { setSelectedSession(session); setCloseDialogOpen(true); }} />
                         </>
                     ) : (
-                        <DataCell.Action icon={FileText} title="Reporte Z" className="text-success" onClick={() => handleShowReport(session, "Z")} />
+                        <DataCell.Action icon={FileText} title="Reporte Z" className="text-success" onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.set('selected', String(session.id))
+                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                        }} />
                     )}
                 </>
             )
@@ -177,7 +201,10 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                                 data={reportData as any}
                                 type={reportType}
                                 title={reportType === 'Z' ? 'Informe de Cierre (Z)' : 'Informe Parcial (X)'}
-                                onClose={() => setReportDialogOpen(false)}
+                                onClose={() => {
+                                    setReportDialogOpen(false)
+                                    clearSelection()
+                                }}
                             />
                         )}
                     </div>

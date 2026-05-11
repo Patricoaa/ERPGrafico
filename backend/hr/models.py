@@ -3,12 +3,14 @@ from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 from simple_history.models import HistoricalRecords
+from core.models import TimeStampedModel
 
 
-class GlobalHRSettings(models.Model):
+class GlobalHRSettings(TimeStampedModel):
     """
     Singleton de parámetros globales de RRHH (Chile).
     Valores actuales de UF, UTM, topes imponibles y porcentajes estándar.
+    NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     """
     uf_current_value = models.DecimalField(
         _("Valor UF Actual"), max_digits=10, decimal_places=2, default=Decimal('37000.00'),
@@ -46,6 +48,9 @@ class GlobalHRSettings(models.Model):
     class Meta:
         verbose_name = _("Parámetros Globales RRHH")
         verbose_name_plural = _("Parámetros Globales RRHH")
+
+    class FormMeta:
+        exclude_fields = []  # Sin campos sensibles — sólo valores UF/UTM y cuentas contables FK.
 
     def __str__(self):
         return "Configuración Global RRHH"

@@ -1,0 +1,279 @@
+{
+  "assets": [
+    {
+      "balance": 38598631.0,
+      "children": [
+        {
+          "balance": 15309550.0,
+          "children": [
+            {
+              "balance": -3351000.0,
+              "children": [],
+              "code": "1.1.01.01",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Caja General",
+              "type": "ASSET",
+              "variance": -3351000.0
+            },
+            {
+              "balance": 18660550.0,
+              "children": [],
+              "code": "1.1.01.02",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Banco Principal",
+              "type": "ASSET",
+              "variance": 18660550.0
+            }
+          ],
+          "code": "1.1.01",
+          "comp_balance": 0.0,
+          "id": "<id>",
+          "name": "Efectivo y Equivalentes",
+          "type": "ASSET",
+          "variance": 15309550.0
+        },
+        {
+          "balance": -1596766.0,
+          "children": [
+            {
+              "balance": -1596766.0,
+              "children": [],
+              "code": "1.1.02.01",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Clientes Locales",
+              "type": "ASSET",
+              "variance": -1596766.0
+            }
+          ],
+          "code": "1.1.02",
+          "comp_balance": 0.0,
+          "id": "<id>",
+          "name": "Deudores Comerciales",
+          "type": "ASSET",
+          "variance": -1596766.0
+        },
+        {
+          "balance": 20942403.0,
+          "children": [
+            {
+              "balance": 20942403.0,
+              "children": [],
+              "code": "1.1.03.01",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Mercaderías / Productos Terminados",
+              "type": "ASSET",
+              "variance": 20942403.0
+            }
+          ],
+          "code": "1.1.03",
+          "comp_balance": 0.0,
+          "id": "<id>",
+          "name": "Inventarios",
+          "type": "ASSET",
+          "variance": 20942403.0
+        },
+        {
+          "balance": 3943444.0,
+          "children": [
+            {
+              "balance": 3943444.0,
+              "children": [],
+              "code": "1.1.04.01",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "IVA Crédito Fiscal",
+              "type": "ASSET",
+              "variance": 3943444.0
+            }
+          ],
+          "code": "1.1.04",
+          "comp_balance": 0.0,
+          "id": "<id>",
+          "name": "Impuestos por Recuperar",
+          "type": "ASSET",
+          "variance": 3943444.0
+        }
+      ],
+      "code": "1.1",
+      "comp_balance": 0.0,
+      "id": "<id>",
+      "name": "Activos Corrientes",
+      "type": "ASSET",
+      "variance": 38598631.0
+    },
+    {
+      "balance": -2400000.0,
+      "children": [
+        {
+          "balance": -2400000.0,
+          "children": [
+            {
+              "balance": -2400000.0,
+              "children": [],
+              "code": "1.2.02.01",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Depreciación Acumulada PPE",
+              "type": "ASSET",
+              "variance": -2400000.0
+            }
+          ],
+          "code": "1.2.02",
+          "comp_balance": 0.0,
+          "id": "<id>",
+          "name": "Depreciación Acumulada",
+          "type": "ASSET",
+          "variance": -2400000.0
+        }
+      ],
+      "code": "1.2",
+      "comp_balance": 0.0,
+      "id": "<id>",
+      "name": "Activos No Corrientes",
+      "type": "ASSET",
+      "variance": -2400000.0
+    }
+  ],
+  "check": 0.0,
+  "check_comp": 0.0,
+  "equity": [
+    {
+      "balance": 10000000.0,
+      "children": [
+        {
+          "balance": 10000000.0,
+          "children": [
+            {
+              "balance": 10000000.0,
+              "children": [],
+              "code": "3.1.01",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Capital Social (Cuenta Maestra)",
+              "type": "EQUITY",
+              "variance": 10000000.0
+            }
+          ],
+          "code": "3.1",
+          "comp_balance": 0.0,
+          "id": "<id>",
+          "name": "Capital Pagado",
+          "type": "EQUITY",
+          "variance": 10000000.0
+        }
+      ],
+      "code": "3",
+      "comp_balance": 0.0,
+      "id": "<id>",
+      "name": "Patrimonio Neto",
+      "type": "EQUITY",
+      "variance": 10000000.0
+    },
+    {
+      "balance": -9304347.0,
+      "children": [],
+      "code": "",
+      "comp_balance": 0,
+      "id": "<id>",
+      "name": "Resultado del Ejercicio (Calculado)",
+      "type": "EQUITY",
+      "variance": -9304347.0
+    }
+  ],
+  "liabilities": [
+    {
+      "balance": 35502978.0,
+      "children": [
+        {
+          "balance": 13606414.0,
+          "children": [
+            {
+              "balance": 13606414.0,
+              "children": [],
+              "code": "2.1.01.01",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Proveedores Locales",
+              "type": "LIABILITY",
+              "variance": 13606414.0
+            }
+          ],
+          "code": "2.1.01",
+          "comp_balance": 0.0,
+          "id": "<id>",
+          "name": "Cuentas por Pagar Comerciales",
+          "type": "LIABILITY",
+          "variance": 13606414.0
+        },
+        {
+          "balance": 3896564.0,
+          "children": [
+            {
+              "balance": 3896564.0,
+              "children": [],
+              "code": "2.1.02.01",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "IVA Débito Fiscal",
+              "type": "LIABILITY",
+              "variance": 3896564.0
+            }
+          ],
+          "code": "2.1.02",
+          "comp_balance": 0.0,
+          "id": "<id>",
+          "name": "Obligaciones por Impuestos",
+          "type": "LIABILITY",
+          "variance": 3896564.0
+        },
+        {
+          "balance": 18000000.0,
+          "children": [
+            {
+              "balance": 18000000.0,
+              "children": [],
+              "code": "2.1.03.01",
+              "comp_balance": 0.0,
+              "id": "<id>",
+              "name": "Remuneraciones por Pagar",
+              "type": "LIABILITY",
+              "variance": 18000000.0
+            }
+          ],
+          "code": "2.1.03",
+          "comp_balance": 0.0,
+          "id": "<id>",
+          "name": "Obligaciones Laborales",
+          "type": "LIABILITY",
+          "variance": 18000000.0
+        }
+      ],
+      "code": "2.1",
+      "comp_balance": 0.0,
+      "id": "<id>",
+      "name": "Pasivos Corrientes",
+      "type": "LIABILITY",
+      "variance": 35502978.0
+    },
+    {
+      "balance": 0.0,
+      "children": [],
+      "code": "2.2",
+      "comp_balance": 0.0,
+      "id": "<id>",
+      "name": "Pasivos No Corrientes",
+      "type": "LIABILITY",
+      "variance": 0.0
+    }
+  ],
+  "total_assets": 36198631.0,
+  "total_assets_comp": 0.0,
+  "total_equity": 695653.0,
+  "total_equity_comp": 0.0,
+  "total_liabilities": 35502978.0,
+  "total_liabilities_comp": 0.0
+}

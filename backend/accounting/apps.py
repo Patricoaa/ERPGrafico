@@ -12,3 +12,44 @@ class AccountingConfig(AppConfig):
             ])
         except ImportError:
             pass
+
+        try:
+            from core.registry import UniversalRegistry, SearchableEntity
+            from accounting.models import Account, JournalEntry
+            UniversalRegistry.register(SearchableEntity(
+                model=Account,
+                label='accounting.account',
+                title_singular='Cuenta Contable',
+                title_plural='Plan de Cuentas',
+                icon='book',
+                search_fields=('code', 'name'),
+                short_display_template='{code}',
+                display_template='{name}',
+                subtitle_template='Código: {code}',
+                extra_info_template='{type}',
+                list_url='/accounting/ledger',
+                detail_url_pattern='/accounting/accounts/{id}/ledger',
+                permission='accounting.view_account',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=JournalEntry,
+                label='accounting.journalentry',
+                title_singular='Asiento Contable',
+                title_plural='Libro Diario',
+                icon='hash',
+                search_fields=('number', 'description'),
+                short_display_template='AS-{number}',
+                display_template='AS-{number}',
+                subtitle_template='{description}',
+                extra_info_template='{date}',
+                list_url='/accounting/entries',
+                detail_url_pattern='/accounting/entries/{id}',
+                permission='accounting.view_journalentry',
+            ))
+        except Exception:
+            pass
+
+        try:
+            import accounting.signals
+        except ImportError:
+            pass

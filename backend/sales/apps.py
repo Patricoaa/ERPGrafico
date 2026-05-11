@@ -18,3 +18,55 @@ class SalesConfig(AppConfig):
         # Import signals
         import sales.signals
 
+        try:
+            from core.registry import UniversalRegistry, SearchableEntity
+            from sales.models import SaleOrder, SaleDelivery, SaleReturn
+            UniversalRegistry.register(SearchableEntity(
+                model=SaleOrder,
+                label='sales.saleorder',
+                title_singular='Nota de Venta',
+                title_plural='Notas de Venta',
+                icon='receipt-text',
+                search_fields=('number', 'customer__name', 'customer__tax_id'),
+                short_display_template='NV-{number}',
+                display_template='NV-{number}',
+                subtitle_template='{customer.name} · {customer.tax_id}',
+                extra_info_template='{total}',
+                list_url='/sales/orders',
+                detail_url_pattern='/sales/orders/{id}',
+                permission='sales.view_saleorder',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=SaleDelivery,
+                label='sales.saledelivery',
+                title_singular='Guía de Despacho',
+                title_plural='Guías de Despacho',
+                icon='truck',
+                search_fields=('number', 'sale_order__customer__name'),
+                short_display_template='DES-{number}',
+                display_template='DES-{number}',
+                subtitle_template='{sale_order.customer.name} · {sale_order.customer.tax_id}',
+                extra_info_template='{status}',
+                list_url='/sales/deliveries',
+                detail_url_pattern='/sales/deliveries/{id}',
+                permission='sales.view_saledelivery',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=SaleReturn,
+                label='sales.salereturn',
+                title_singular='Devolución',
+                title_plural='Devoluciones',
+                icon='undo-2',
+                search_fields=('number', 'sale_order__customer__name'),
+                short_display_template='DEV-{number}',
+                display_template='DEV-{number}',
+                subtitle_template='{sale_order.customer.name} · {sale_order.customer.tax_id}',
+                extra_info_template='{status}',
+                list_url='/sales/returns',
+                detail_url_pattern='/sales/returns/{id}',
+                permission='sales.view_salereturn',
+            ))
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Error registering search entities in 'sales' app: {e}")
+

@@ -16,6 +16,7 @@ import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { cn } from "@/lib/utils"
 import type { Payroll, PayrollItem } from "@/types/hr"
 import { DataCell } from "@/components/ui/data-table-cells"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -200,7 +201,7 @@ export function PayrollCard({
                                         {payroll.period_label}
                                     </span>
                                     <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-widest mt-0.5">
-                                        Folio <span className="opacity-30">|</span> <span className="font-bold text-primary/80">{payroll.display_id}</span>
+                                        Folio <span className="opacity-30">|</span> <span className="font-bold text-primary/80">{formatEntityDisplay('hr.payroll', payroll)}</span>
                                     </span>
                                 </div>
                             </div>

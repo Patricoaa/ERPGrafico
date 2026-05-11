@@ -2,8 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### Unreleased
+* **architecture:** ADR-0019 accepted. Decided to revert Phase 4 Schema-Driven Forms for Budget, ProductCategory, and UoM to restore visual parity, and defined a new expansion strategy and UI contract for schema-driven forms.
+
 ### [0.1.17](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.16...v0.1.17) (2026-05-07)
 
+### ⚙️ Refactors
+
+* **architecture:** document feature flags omission decision and big-bang rollback strategy in ADR-0017.
 ### [0.1.16](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.15...v0.1.16) (2026-05-07)
 
 

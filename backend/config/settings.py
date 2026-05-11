@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
@@ -238,6 +239,7 @@ REST_FRAMEWORK = {
         'anon': '30/minute',
         'user': '300/minute',
         'heavy_report': '10/minute',
+        'search': '60/minute',
     },
 }
 

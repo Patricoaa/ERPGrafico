@@ -132,35 +132,6 @@ class Contact(models.Model):
         if not self.code:
             self.code = SequenceService.get_next_number(Contact, field_name='code')
 
-        # We handle the 'one default' rule here to act as a switch instead of a blocker
-        if self.is_default_customer:
-            Contact.objects.filter(is_default_customer=True).exclude(pk=self.pk).update(is_default_customer=False)
-        
-        if self.is_default_vendor:
-            Contact.objects.filter(is_default_vendor=True).exclude(pk=self.pk).update(is_default_vendor=False)
-
-        # Partner Multi-Account Auto-Creation
-        if self.is_partner:
-            from accounting.models import AccountingSettings, Account
-            settings = AccountingSettings.get_solo()
-            if settings:
-                # Map: (contact field, settings parent field, prefix)
-                account_specs = [
-                    ('partner_contribution_account', 'partner_capital_contribution_account', 'C.A.'),
-                    ('partner_provisional_withdrawal_account', 'partner_provisional_withdrawal_account', 'R.P.'),
-                    ('partner_earnings_account', 'partner_current_year_earnings_account', 'Ut.'),
-                    ('partner_dividends_payable_account', 'partner_dividends_payable_account', 'Div.'),
-                ]
-                for contact_field, settings_field, prefix in account_specs:
-                    if not getattr(self, f'{contact_field}_id') and getattr(settings, settings_field, None):
-                        parent = getattr(settings, settings_field)
-                        new_acc = Account.objects.create(
-                            name=f"{prefix} {self.name}",
-                            parent=parent,
-                            account_type=parent.account_type
-                        )
-                        setattr(self, contact_field, new_acc)
-
         self.full_clean()
         super().save(*args, **kwargs)
 

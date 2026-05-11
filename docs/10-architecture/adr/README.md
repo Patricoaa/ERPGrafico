@@ -75,5 +75,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | 0009 | Celery for async side effects | Accepted |
 | 0012 | Unified system versioning | Accepted |
 | 0013 | ActionDock pattern for floating tasks | Proposed |
+| 0014 | `decimal_places=0` para totales de documentos transaccionales | Accepted |
+| 0015 | DocumentService and Metadata Schema for UI Forms | Accepted |
 
 (Create individual files lazily as decisions are revisited or disputed.)

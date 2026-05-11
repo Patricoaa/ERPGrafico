@@ -37,7 +37,12 @@ api.interceptors.request.use(
             config.url = config.url.substring(1);
         }
 
-        const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+        let token = null;
+        if (typeof window !== 'undefined') {
+            try {
+                token = localStorage.getItem('access_token');
+            } catch (e) {}
+        }
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -55,31 +60,40 @@ api.interceptors.response.use(
         if (error.response?.status === 401 && !originalRequest._retry) {
             originalRequest._retry = true;
             
-            const isBrowser = typeof window !== 'undefined';
-            const refreshToken = isBrowser ? localStorage.getItem('refresh_token') : null;
-            
-            if (refreshToken) {
-                try {
-                    // Use standard baseURL for refresh
-                    const response = await axios.post(`${baseURL}token/refresh/`, {
-                        refresh: refreshToken
-                    });
-                    if (response.status === 200) {
-                        if (isBrowser) {
-                            localStorage.setItem('access_token', response.data.access);
-                        }
-                        api.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.access;
-                        return api(originalRequest);
-                    }
-                } catch (refreshError) {
-                    // Handle refresh token failure (e.g., logout)
+        const isBrowser = typeof window !== 'undefined';
+        let refreshToken = null;
+        if (isBrowser) {
+            try {
+                refreshToken = localStorage.getItem('refresh_token');
+            } catch (e) {}
+        }
+        
+        if (refreshToken) {
+            try {
+                // Use standard baseURL for refresh
+                const response = await axios.post(`${baseURL}token/refresh/`, {
+                    refresh: refreshToken
+                });
+                if (response.status === 200) {
                     if (isBrowser) {
+                        try {
+                            localStorage.setItem('access_token', response.data.access);
+                        } catch (e) {}
+                    }
+                    api.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.access;
+                    return api(originalRequest);
+                }
+            } catch (refreshError) {
+                // Handle refresh token failure (e.g., logout)
+                if (isBrowser) {
+                    try {
                         localStorage.removeItem('access_token');
                         localStorage.removeItem('refresh_token');
-                        window.location.href = '/login';
-                    }
+                    } catch (e) {}
+                    window.location.href = '/login';
                 }
             }
+        }
         }
         return Promise.reject(error);
     }

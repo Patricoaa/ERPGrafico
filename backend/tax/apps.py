@@ -8,3 +8,10 @@ class TaxConfig(AppConfig):
 
     def ready(self):
         import tax.signals  # noqa
+
+        try:
+            from core.registry import UniversalRegistry, SearchableEntity
+            # F29Declaration: NO se expone en búsqueda (removido a petición del usuario).
+            # AccountingPeriod: modelo interno del cierre fiscal — NO se expone en búsqueda.
+        except Exception:
+            pass

@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, Search, Loader2, AlertCircle, Package } from "lucide-react"
+import { Check, ChevronDown, Search, Loader2, AlertCircle } from "lucide-react"
 import { cn, translateProductType } from "@/lib/utils"
+import { getEntityIcon } from "@/lib/entity-registry"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Button } from "@/components/ui/button"
 import {
@@ -223,15 +224,18 @@ export function ProductSelector({
                             : cn("h-9 text-xs px-2 border border-border/80 rounded-md bg-background hover:bg-primary/[0.02]", className)
                     )}
                 >
-                    {selectedProduct ? (
-                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                            <Package className={cn("h-3.5 w-3.5 shrink-0 text-primary", variant === 'inline' && "h-3 w-3")} />
-                            <span className={cn("font-medium text-sm truncate", variant === 'inline' && "text-xs")}>{selectedProduct.name}</span>
-                            <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
-                                {selectedProduct.internal_code || selectedProduct.code}
-                            </span>
-                        </div>
-                    ) : (
+                    {selectedProduct ? (() => {
+                        const ProductIcon = getEntityIcon('inventory.product');
+                        return (
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                <ProductIcon className={cn("h-3.5 w-3.5 shrink-0 text-primary", variant === 'inline' && "h-3 w-3")} />
+                                <span className={cn("font-medium text-sm truncate", variant === 'inline' && "text-xs")}>{selectedProduct.name}</span>
+                                <span className="text-[10px] text-muted-foreground shrink-0 hidden sm:inline">
+                                    {selectedProduct.internal_code || selectedProduct.code}
+                                </span>
+                            </div>
+                        );
+                    })() : (
                         <span className={cn("text-muted-foreground truncate", variant === 'inline' && "text-xs")}>{placeholder}</span>
                     )}
                     <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 opacity-50", variant === 'inline' && "h-3 w-3")} />

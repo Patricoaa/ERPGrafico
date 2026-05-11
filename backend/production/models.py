@@ -234,7 +234,7 @@ class WorkOrder(models.Model):
         if not self.number:
             last_order = WorkOrder.objects.all().order_by('id').last()
             if last_order and last_order.number.isdigit():
-                self.number = str(int(last_order.number) + 1).zfill(6)
+                self.number = str(int(last_order.number) + 1)
             else:
                 self.number = '000001'
         

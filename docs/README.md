@@ -15,9 +15,10 @@
 |-------|--------|---------|--------------|
 | 00 | `00-context/` | What project is, domain vocabulary, stack | First contact with repo |
 | 10 | `10-architecture/` | How pieces fit together, ADRs | Before structural change |
-| 20 | `20-contracts/` | Public APIs (components, hooks, endpoints, state) | Before consuming or exposing API |
+| 20 | `20-contracts/` | Public APIs (components, hooks, endpoints, state, **entity identity**) | Before consuming or exposing API |
 | 30 | `30-playbooks/` | Step-by-step recipes for common tasks | Every implementation task |
 | 40 | `40-quality/` | Testing, security, observability, performance, CI/CD | Cross-cutting concerns |
+| 50 | `50-audit/` | Major refactor audits and roadmaps | Before launching multi-sprint refactor |
 | 90 | `90-governance/` | Rules, policies, decision records | Before proposing deviation |
 
 ## Task Routing — intent → playbook
@@ -40,10 +41,12 @@
 | "what is X", "domain term", "glossary" | [domain-glossary.md](00-context/domain-glossary.md) | 00 |
 | "architecture", "folder structure", "where does X go" | [frontend-fsd.md](10-architecture/frontend-fsd.md) / [backend-apps.md](10-architecture/backend-apps.md) | 10 |
 | "which component", "component decision", "what to use" | [component-decision-tree.md](20-contracts/component-decision-tree.md) | 20 |
+| "Schema-driven form", "EntityForm", "backend form" | ~~[schema-driven-forms.md](20-contracts/schema-driven-forms.md)~~ — **superseded** por [ADR-0020](10-architecture/adr/0020-modal-on-list-edit-ux.md). No usar `EntityForm` en código nuevo. | 20 |
 | "component API", "prop signature", "StatusBadge usage" | [component-contracts.md](20-contracts/component-contracts.md) | 20 |
 | "selector component", "entity search", "combobox", "AccountSelector" | [component-selectors.md](20-contracts/component-selectors.md) | 20 |
 | "module layout", "navigation pattern", "dynamic header", "module tabs" | [module-layout-navigation.md](20-contracts/module-layout-navigation.md) | 20 |
 | "form size", "form pattern", "when to use tabs", "wizard vs form", "form surface", "form layout" | [component-form-patterns.md](20-contracts/component-form-patterns.md) | 20 |
+| "edit modal", "list edit", "?selected param", "open modal from search", "detail from search" | [list-modal-edit-pattern.md](20-contracts/list-modal-edit-pattern.md) | 20 |
 | "hook signature", "return shape" | [hook-contracts.md](20-contracts/hook-contracts.md) | 20 |
 | "entity state", "status values" | [state-map.md](20-contracts/state-map.md) | 20 |
 | "testing strategy", "coverage", "fixtures" | [testing.md](40-quality/testing.md) | 40 |
@@ -55,6 +58,9 @@
 | "versioning", "release process", "SemVer", "how to version" | [versioning-policy.md](90-governance/versioning-policy.md) | 90 |
 | "ADR", "decision record", "major change" | [adr/README.md](10-architecture/adr/README.md) | 10 |
 | "signals", "signal receiver", "post_save hook", "cross-app event" | [workflow-signals-registry.md](10-architecture/workflow-signals-registry.md) | 10 |
+| "entity identity", "entity prefix", "registry", "display id", "centralized icons" | [entity-identity.md](20-contracts/entity-identity.md) | 20 |
+| "searchable entity", "global search", "index", "rebuild search" | [add-searchable-entity.md](30-playbooks/add-searchable-entity.md) | 30 |
+| "generic form", "universal registry", "metadata schema", "data-driven UI", "Django architecture refactor" | [50-audit/Arquitectura Django/README.md](50-audit/Arquitectura%20Django/README.md) | 50 |
 
 ## Global invariants (violate = PR rejected)
 

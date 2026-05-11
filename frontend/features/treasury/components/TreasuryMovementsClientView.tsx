@@ -4,17 +4,15 @@ import React, { useState, useEffect, lazy, Suspense } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
 import { Plus, ArrowDown, Eye } from "lucide-react"
-import { cn, formatCurrency, formatPlainDate } from "@/lib/utils"
-import api from "@/lib/api"
-import { toast } from "sonner"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FormSkeleton } from "@/components/shared"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
+import { useTreasuryMovements } from "@/features/treasury/hooks/useTreasuryMovements"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 // Lazy load heavy components
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
@@ -62,25 +60,41 @@ interface TreasuryMovementsClientViewProps {
     createAction?: React.ReactNode
 }
 
-import { useTreasuryMovements } from "@/features/treasury/hooks/useTreasuryMovements"
-
 export function TreasuryMovementsClientView({ externalOpen, createAction }: TreasuryMovementsClientViewProps) {
     const { openContact, openTreasuryAccount } = useGlobalModalActions()
     const { movements, refetch } = useTreasuryMovements()
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const pathname = usePathname()
+
     const [openModal, setOpenModal] = useState(false)
     const [detailsOpen, setDetailsOpen] = useState(false)
-    const [selectedMovementId, setSelectedMovementId] = useState<number | string>(0)
+    const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
+
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryMovement>({
+        endpoint: '/treasury/movements'
+    })
 
     useEffect(() => {
+        if (selectedFromUrl) {
+            setSelectedMovementId(selectedFromUrl.id)
+            setDetailsOpen(true)
+        }
+    }, [selectedFromUrl])
+
+    // T-105: cancelAnimationFrame cleanup prevents setState on unmounted component
+    useEffect(() => {
         if (externalOpen) {
-            requestAnimationFrame(() => setOpenModal(true))
+            const handle = requestAnimationFrame(() => setOpenModal(true))
+            return () => cancelAnimationFrame(handle)
         }
     }, [externalOpen])
 
     const handleViewDetails = React.useCallback((id: number) => {
-        setSelectedMovementId(id)
-        setDetailsOpen(true)
-    }, [])
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('selected', String(id))
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [searchParams, pathname, router])
 
     const columns = React.useMemo<ColumnDef<TreasuryMovement>[]>(() => [
         {
@@ -90,7 +104,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 const m = row.original
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.DocumentId type={m.payment_method === 'WRITE_OFF' ? 'WRITE_OFF' : m.movement_type} number={m.id} />
+                        <DataCell.DocumentId label="treasury.treasurymovement" data={m} />
                     </div>
                 )
             },
@@ -321,7 +335,10 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
             <Suspense fallback={<FormSkeleton />}>
                 <TransactionViewModal
                     open={detailsOpen}
-                    onOpenChange={setDetailsOpen}
+                    onOpenChange={(open) => {
+                        setDetailsOpen(open)
+                        if (!open) clearSelection()
+                    }}
                     type="payment"
                     id={selectedMovementId}
                     view="details"

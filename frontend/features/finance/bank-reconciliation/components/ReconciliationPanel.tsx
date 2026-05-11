@@ -3,6 +3,7 @@
 
 import * as React from "react"
 import dynamic from "next/dynamic"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
@@ -163,12 +164,37 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const [bankParams, setBankParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
     const [systemParams, setSystemParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
 
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const transactionId = searchParams.get('transaction')
+    const transactionType = searchParams.get('transactionType')
+
     const [selectedMovement, setSelectedMovement] = useState<{ id: number | string, type: any } | null>(null)
     const [detailsOpen, setDetailsOpen] = useState(false)
 
+    useEffect(() => {
+        if (transactionId && transactionType && !detailsOpen) {
+            setSelectedMovement({ id: transactionId, type: transactionType })
+            setDetailsOpen(true)
+        }
+    }, [transactionId, transactionType, detailsOpen])
+
     const openTransactionDetail = (id: number | string, type: any) => {
-        setSelectedMovement({ id, type })
-        setDetailsOpen(true)
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('transaction', String(id))
+        params.set('transactionType', String(type))
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const clearTransactionDetail = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('transaction')
+        params.delete('transactionType')
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        setSelectedMovement(null)
+        setDetailsOpen(false)
     }
 
     const { data: statement } = useStatementQuery(statementId)
@@ -1495,7 +1521,11 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 {selectedMovement && (
                     <TransactionViewModal
                         open={detailsOpen}
-                        onOpenChange={setDetailsOpen}
+                        onOpenChange={(open) => {
+                            if (!open) {
+                                clearTransactionDetail()
+                            }
+                        }}
                         type={selectedMovement.type}
                         id={selectedMovement.id}
                         view="all"

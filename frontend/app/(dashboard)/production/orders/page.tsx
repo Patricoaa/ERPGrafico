@@ -23,6 +23,8 @@ import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
 import { translateProductionStage } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { usePathname } from "next/navigation"
 
 import type { WorkOrder } from "@/features/production/types"
 const statusOptions = [
@@ -51,6 +53,18 @@ export default function WorkOrdersPage() {
     const [viewMode, setViewMode] = useState<string>("kanban")
     const searchParams = useSearchParams()
     const router = useRouter()
+    const pathname = usePathname()
+
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<WorkOrder>({
+        endpoint: '/production/orders'
+    })
+
+    // Open detail modal if ?selected= is present (ADR-0020)
+    useEffect(() => {
+        if (selectedFromUrl) {
+            setActiveWizardId(selectedFromUrl.id)
+        }
+    }, [selectedFromUrl])
     const isNewModalOpen = searchParams.get("modal") === "new"
     const [requestedStage, setRequestedStage] = useState<string | undefined>()
 
@@ -210,7 +224,11 @@ export default function WorkOrdersPage() {
                     <DataCell.Action
                         icon={Settings}
                         title="Gestionar Workflow"
-                        onClick={() => setActiveWizardId(order.id)}
+                        onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.set('selected', String(order.id))
+                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                        }}
                     />
                     {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order.current_stage) && (
                         <DataCell.Action
@@ -278,6 +296,7 @@ export default function WorkOrdersPage() {
                         if (!open) {
                             setActiveWizardId(null)
                             setRequestedStage(undefined)
+                            clearSelection()
                         }
                     }}
                     onSuccess={fetchOrders}

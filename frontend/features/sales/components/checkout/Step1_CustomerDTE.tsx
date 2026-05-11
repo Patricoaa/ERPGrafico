@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { LabeledContainer, FormSection, LabeledSwitch } from "@/components/shared"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 import { CheckoutDTEData, PendingDebt } from "../../types"
 
@@ -127,7 +128,7 @@ export function Step1_CustomerDTE({
                                     className="h-6 px-2 border-warning/20 text-warning-foreground hover:bg-warning/10 text-[10px] gap-1 font-medium bg-white/50"
                                     onClick={() => onDebtClick?.(debt)}
                                 >
-                                    <span className="font-mono">NV-{debt.number}</span>
+                                    <span className="font-mono">{formatEntityDisplay('sales.saleorder', debt)}</span>
                                     <span className="opacity-60">
                                         ${Number(debt.balance).toLocaleString("es-CL")}
                                     </span>
@@ -160,7 +161,7 @@ export function Step1_CustomerDTE({
                 />
             </div>
 
-            <Separator className="opacity-30" />
+
 
             {/* ── DTE Document Section ────────────────────────── */}
             <div className="space-y-4">

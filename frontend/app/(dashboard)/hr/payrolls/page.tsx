@@ -21,6 +21,7 @@ import { PaymentModal } from "@/features/treasury"
 
 
 import { ToolbarCreateButton } from "@/components/shared"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 // Schema and dialog moved to features/hr/components/CreatePayrollDialog
 
@@ -30,12 +31,20 @@ export default function PayrollsPage() {
     const searchParams = useSearchParams()
     const [payrolls, setPayrolls] = useState<Payroll[]>([])
     const [loading, setLoading] = useState(true)
-    const isNewModalOpen = searchParams.get("modal") === "new"
-    const [dialogOpen, setDialogOpen] = useState(isNewModalOpen)
+
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Payroll>({
+        endpoint: '/hr/payrolls'
+    })
 
     useEffect(() => {
-        setDialogOpen(isNewModalOpen)
-    }, [isNewModalOpen])
+        if (selectedFromUrl) {
+            setActivePayrollId(selectedFromUrl.id)
+            setDetailSheetOpen(true)
+        }
+    }, [selectedFromUrl])
+
+    const isNewModalOpen = searchParams.get("modal") === "new"
+    const [dialogOpen, setDialogOpen] = useState(isNewModalOpen)
 
     const fetchPayrolls = useCallback(async () => {
         try {
@@ -97,8 +106,9 @@ export default function PayrollsPage() {
     const [activePayrollId, setActivePayrollId] = useState<number | null>(null)
 
     const openDetail = (id: number) => {
-        setActivePayrollId(id)
-        setDetailSheetOpen(true)
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('selected', String(id))
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const handleConfirmPayment = async (data: Record<string, unknown>) => {
@@ -339,7 +349,10 @@ export default function PayrollsPage() {
                 <PayrollDetailSheet 
                     payrollId={activePayrollId}
                     open={detailSheetOpen}
-                    onOpenChange={setDetailSheetOpen}
+                    onOpenChange={(open) => {
+                        setDetailSheetOpen(open)
+                        if (!open) clearSelection()
+                    }}
                     onUpdate={fetchPayrolls}
                 />
 

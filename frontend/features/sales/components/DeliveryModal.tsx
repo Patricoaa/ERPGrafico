@@ -61,11 +61,17 @@ interface StockLevel {
     [productId: number]: number
 }
 
-interface DeliveryModalProps {
-    open: boolean
-    onOpenChange: (open: boolean) => void
+export interface DeliveryFormProps {
     orderId: number
     onSuccess?: () => void
+    id?: string
+    onLoadingChange?: (loading: boolean) => void
+    onCancel?: () => void
+}
+
+export interface DeliveryModalProps extends Omit<DeliveryFormProps, "id" | "onLoadingChange" | "onCancel"> {
+    open: boolean
+    onOpenChange: (open: boolean) => void
 }
 
 import { useDeliveryData } from "@/features/sales/hooks/useDeliveryData"
@@ -88,6 +94,38 @@ export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: Delive
 }
 
 function DeliveryModalInner({ open, onOpenChange, orderId, onSuccess }: DeliveryModalProps) {
+    const [loading, setLoading] = useState(false)
+    const formId = "modal-delivery-form"
+
+    return (
+        <BaseModal
+            open={open}
+            onOpenChange={onOpenChange}
+            size="xl"
+            title={`Despachar Orden`}
+            description={`Ingrese los productos a despachar.`}
+            footer={
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
+                            <SubmitButton
+                                form={`${formId}-form`}
+                                loading={loading}
+                            >
+                                Confirmar Despacho
+                            </SubmitButton>
+                        </>
+                    }
+                />
+            }
+        >
+            <DeliveryForm id={formId} orderId={orderId} onSuccess={() => { onOpenChange(false); if(onSuccess) onSuccess(); }} onLoadingChange={setLoading} onCancel={() => onOpenChange(false)} />
+        </BaseModal>
+    )
+}
+
+export function DeliveryForm({ orderId, onSuccess, id = "delivery-form", onLoadingChange, onCancel }: DeliveryFormProps) {
     const { dateString } = useServerDate()
     const { order, warehouses } = useDeliveryData(orderId)
 
@@ -206,6 +244,7 @@ function DeliveryModalInner({ open, onOpenChange, orderId, onSuccess }: Delivery
         }
 
         setSubmitting(true)
+        if (onLoadingChange) onLoadingChange(true)
         try {
             const hasPartialQuantities = order?.lines.some((line: any) => {
                 const requestedQty = deliveryQuantities[line.id] || 0
@@ -234,13 +273,13 @@ function DeliveryModalInner({ open, onOpenChange, orderId, onSuccess }: Delivery
             }
 
             toast.success("Despacho registrado correctamente")
-            onOpenChange(false)
             onSuccess?.()
         } catch (error: unknown) {
             console.error("Error dispatching order:", error)
             showApiError(error, "Error al registrar el despacho")
         } finally {
             setSubmitting(false)
+            if (onLoadingChange) onLoadingChange(false)
         }
     }
 
@@ -288,38 +327,11 @@ function DeliveryModalInner({ open, onOpenChange, orderId, onSuccess }: Delivery
         return { type: 'warning', message: 'Despacho parcial', icon: AlertTriangle }
     }
 
+    const canSubmit = selectedWarehouse && !order?.lines.some((line: any) => { const qty = deliveryQuantities[line.id] || 0; if (qty <= 0) return false; const status = getStockStatus(line); return status?.type === 'error'; });
+
     return (
-        <BaseModal
-            open={open}
-            onOpenChange={onOpenChange}
-            size="xl"
-            title={`Despachar Orden NV-${order?.number}`}
-            description={`Cliente: ${order?.customer_name}`}
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
-                            <SubmitButton
-                                onClick={handleDispatch}
-                                loading={submitting}
-                                disabled={
-                                    !selectedWarehouse ||
-                                    order?.lines.some((line: any) => {
-                                        const qty = deliveryQuantities[line.id] || 0
-                                        if (qty <= 0) return false
-                                        const status = getStockStatus(line)
-                                        return status?.type === 'error'
-                                    })
-                                }
-                            >
-                                Confirmar Despacho
-                            </SubmitButton>
-                        </>
-                    }
-                />
-            }
-        >
+        <div id={id} className="space-y-4">
+            <form id={`${id}-form`} onSubmit={(e) => { e.preventDefault(); if (canSubmit) handleDispatch(); }} className="hidden" />
             <div className="space-y-4">
                 <FormSection title="Configuración de Entrega" icon={Package} />
                 <div className="grid grid-cols-2 gap-4">
@@ -482,7 +494,7 @@ function DeliveryModalInner({ open, onOpenChange, orderId, onSuccess }: Delivery
                     </Alert>
                 )}
             </div>
-        </BaseModal>
+        </div>
     )
 }
 

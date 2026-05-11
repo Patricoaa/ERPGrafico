@@ -171,21 +171,21 @@ class WorkOrderSerializer(serializers.ModelSerializer):
             return obj.stage_data['phases'].get('prepress', False)
         # 2. Fallback to product default
         if obj.sale_line and obj.sale_line.product:
-            return obj.sale_line.product.mfg_enable_prepress
+            return obj.sale_line.product.mfg_profile.mfg_enable_prepress if obj.sale_line.product.mfg_profile else False
         return False
 
     def get_requires_press(self, obj):
         if obj.stage_data and 'phases' in obj.stage_data:
             return obj.stage_data['phases'].get('press', False)
         if obj.sale_line and obj.sale_line.product:
-            return obj.sale_line.product.mfg_enable_press
+            return obj.sale_line.product.mfg_profile.mfg_enable_press if obj.sale_line.product.mfg_profile else False
         return False
 
     def get_requires_postpress(self, obj):
         if obj.stage_data and 'phases' in obj.stage_data:
             return obj.stage_data['phases'].get('postpress', False)
         if obj.sale_line and obj.sale_line.product:
-            return obj.sale_line.product.mfg_enable_postpress
+            return obj.sale_line.product.mfg_profile.mfg_enable_postpress if obj.sale_line.product.mfg_profile else False
         return False
 
     def get_main_product_id(self, obj):

@@ -1,13 +1,29 @@
-from django.db.models import Q, QuerySet, Sum
+from django.db.models import Q, QuerySet, Sum, FilteredRelation, Count
+
 
 from .models import Account, AccountType
 
 
 def list_accounts(*, params: dict) -> QuerySet:
-    """Base account list. Supports ?is_leaf=true to return only leaf (posting) accounts."""
+    """Base account list with optimized totals annotation."""
     queryset = Account.objects.all()
+    
+    # Annotate with posted totals to avoid N+1 queries during serialization
+    queryset = queryset.annotate(
+        annotated_debit_total=Sum(
+            'journal_items__debit',
+            filter=Q(journal_items__entry__status='POSTED')
+        ),
+        annotated_credit_total=Sum(
+            'journal_items__credit',
+            filter=Q(journal_items__entry__status='POSTED')
+        ),
+        annotated_children_count=Count('children'),
+    )
+
     if params.get("is_leaf", "").lower() == "true":
         queryset = queryset.filter(children__isnull=True)
+    
     return queryset
 
 
@@ -85,7 +101,7 @@ def get_account_ledger(*, account: Account, start_date: str | None, end_date: st
                 "balance": float(balance),
                 "partner": item.partner.name if item.partner else "",
                 "label": item.label or "",
-                "source_document": item.entry.get_source_document,
+                "source": item.entry.source_info,
             }
         )
 

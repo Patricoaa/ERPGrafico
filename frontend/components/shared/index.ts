@@ -6,6 +6,15 @@
 // not from individual component files.
 // ─────────────────────────────────────────────────────────
 
+// Search
+export * from './UniversalSearch';
+
+// Dynamic Entity Form (schema-driven)
+export { EntityForm } from './EntityForm';
+export type { EntityFormProps } from './EntityForm';
+export type { EntitySchema, FieldSchema, TabSchema } from './EntityForm/hooks/useSchema';
+export { useSchema } from './EntityForm/hooks/useSchema';
+
 // Modals & Sheets
 export * from './ActionConfirmModal';
 export * from './BaseModal';
@@ -40,6 +49,7 @@ export * from './ColorBar';
 export * from './MoneyDisplay';
 export * from './QuantityDisplay';
 export * from './StatusBadge';
+export * from './EntityBadge';
 export * from './AutoSaveStatusBadge';
 export * from './ReportTable';
 export * from './DataManagement';
@@ -48,12 +58,15 @@ export * from './AttachmentList';
 export * from './DocumentAttachmentDropzone';
 
 // Navigation & Layout
+export * from './EntityHeader';
 export * from './PageHeader';
 export * from './PageContainer';
 export * from './FormTabs';
 export * from './FormFooter';
 export * from './FormSplitLayout';
+export * from './EntityDetailPage';
 export * from './EmptyState';
+
 
 // Industrial Identity
 export * from './CropFrame';

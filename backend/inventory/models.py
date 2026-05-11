@@ -11,9 +11,57 @@ from django.core.exceptions import ValidationError
 from core.storages import PublicMediaStorage
 from imagekit.models import ImageSpecField
 from imagekit.processors import ResizeToFill
+from core.models import TimeStampedModel
 
 
-class ProductCategory(models.Model):
+class ProductManufacturingProfile(models.Model):
+    """
+    Perfil de fabricación para productos de tipo MANUFACTURABLE.
+    Extrae los campos mfg_* de Product a un modelo 1:1 opcional.
+    T-44: https://docs.arquitectura-django/#t-44
+    """
+    product = models.OneToOneField(
+        'Product',
+        on_delete=models.CASCADE,
+        related_name='manufacturing_profile',
+        verbose_name=_("Producto"),
+    )
+
+    # Stage Enablers
+    mfg_auto_finalize = models.BooleanField(
+        _("Finalizar Automáticamente"), default=False,
+        help_text=_("Si se activa, la OT se marcará como Terminada automáticamente al generarse (Flujo Express)")
+    )
+    mfg_enable_prepress = models.BooleanField(_("Habilitar Pre-Impresión"), default=False)
+    mfg_enable_press = models.BooleanField(_("Habilitar Impresión"), default=False)
+    mfg_enable_postpress = models.BooleanField(_("Habilitar Post-Impresión"), default=False)
+
+    # Pre-Press Options
+    mfg_prepress_design = models.BooleanField(_("Pre-Impresión: Diseño Requerido"), default=False)
+    mfg_prepress_specs = models.BooleanField(_("Pre-Impresión: Especificaciones"), default=False)
+    mfg_prepress_folio = models.BooleanField(_("Pre-Impresión: Folio"), default=False)
+
+    # Press Options
+    mfg_press_offset = models.BooleanField(_("Impresión: Offset"), default=False)
+    mfg_press_digital = models.BooleanField(_("Impresión: Digital"), default=False)
+    mfg_press_special = models.BooleanField(_("Impresión: Especial"), default=False)
+
+    # Post-Press Options
+    mfg_postpress_finishing = models.BooleanField(_("Post-Impresión: Acabados"), default=False)
+    mfg_postpress_binding = models.BooleanField(_("Post-Impresión: Encuadernación/Troquelado"), default=False)
+
+    class Meta:
+        verbose_name = _("Perfil de Fabricación")
+        verbose_name_plural = _("Perfiles de Fabricación")
+
+    def __str__(self):
+        return f"MfgProfile → {self.product_id}"
+
+
+
+
+class ProductCategory(TimeStampedModel):
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     name = models.CharField(_("Nombre"), max_length=100)
     prefix = models.CharField(_("Prefijo"), max_length=10, null=True, blank=True, help_text=_("Usado para generar el código interno (ej: IMP, DIS)"))
     icon = models.CharField(_("Icono"), max_length=50, null=True, blank=True, help_text=_("Nombre del icono de Lucide (ej: Package, Coffee)"))
@@ -34,6 +82,13 @@ class ProductCategory(models.Model):
         limit_choices_to={'account_type': AccountType.EXPENSE}
     )
 
+    class FormMeta:
+        ui_layout = {
+            'tabs': [
+                {'id': 'main', 'label': 'General', 'fields': ['name', 'prefix', 'icon', 'parent', 'asset_account', 'income_account', 'expense_account']}
+            ]
+        }
+
     class Meta:
         verbose_name = _("Categoría de Producto")
         verbose_name_plural = _("Categorías de Producto")
@@ -42,7 +97,8 @@ class ProductCategory(models.Model):
     def __str__(self):
         return self.name
 
-class UoMCategory(models.Model):
+class UoMCategory(TimeStampedModel):
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     name = models.CharField(_("Nombre"), max_length=100)
     history = HistoricalRecords()
     
@@ -54,7 +110,8 @@ class UoMCategory(models.Model):
     def __str__(self):
         return self.name
 
-class UoM(models.Model):
+class UoM(TimeStampedModel):
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     class Type(models.TextChoices):
         REFERENCE = 'REFERENCE', _('Referencia para esta categoría')
         BIGGER = 'BIGGER', _('Más grande que la referencia')
@@ -68,6 +125,13 @@ class UoM(models.Model):
     active = models.BooleanField(default=True)
     history = HistoricalRecords()
     
+    class FormMeta:
+        ui_layout = {
+            'tabs': [
+                {'id': 'main', 'label': 'General', 'fields': ['name', 'category', 'uom_type', 'ratio', 'rounding', 'active']}
+            ]
+        }
+
     class Meta:
         verbose_name = _("Unidad de Medida")
         verbose_name_plural = _("Unidades de Medida")
@@ -76,10 +140,11 @@ class UoM(models.Model):
     def __str__(self):
         return self.name
 
-class ProductAttribute(models.Model):
+class ProductAttribute(TimeStampedModel):
     """Atributo maestro (ej: Color, Talla)"""
+    # NOTE: created_at heredado de TimeStampedModel (T-14); updated_at es nuevo.
+    # created_at ya existía como campo manual en el modelo — ahora heredado.
     name = models.CharField(_("Nombre"), max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords()
 
     class Meta:
@@ -90,8 +155,9 @@ class ProductAttribute(models.Model):
     def __str__(self):
         return self.name
 
-class ProductAttributeValue(models.Model):
+class ProductAttributeValue(TimeStampedModel):
     """Valor específico de un atributo (ej: Rojo, XL)"""
+    # NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
     attribute = models.ForeignKey(ProductAttribute, on_delete=models.CASCADE, related_name='values')
     value = models.CharField(_("Valor"), max_length=100)
     history = HistoricalRecords()
@@ -465,6 +531,63 @@ class Product(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class FormMeta:
+        ui_layout = {
+            'tabs': [
+                {
+                    'id': 'main',
+                    'label': 'General',
+                    'fields': [
+                        'name', 'code', 'category', 'product_type',
+                        'sale_price', 'sale_price_gross', 'can_be_sold', 'can_be_purchased',
+                        'income_account', 'expense_account', 'active'
+                    ]
+                },
+                {
+                    'id': 'logistics',
+                    'label': 'Logística',
+                    'fields': ['uom', 'track_inventory', 'receiving_warehouse', 'sale_uom', 'purchase_uom', 'preferred_supplier']
+                },
+                {
+                    'id': 'manufacturing',
+                    'label': 'Fabricación',
+                    'fields': ['has_bom', 'requires_advanced_manufacturing']
+                },
+                {
+                    'id': 'subscription',
+                    'label': 'Suscripción',
+                    'fields': [
+                        'subscription_supplier', 'subscription_amount', 'recurrence_period',
+                        'subscription_start_date', 'auto_activate_subscription', 'is_indefinite',
+                        'contract_end_date', 'default_invoice_type', 'payment_day_type',
+                        'payment_day', 'payment_interval_days', 'renewal_notice_days'
+                    ]
+                }
+            ]
+        }
+        field_config = {
+            'has_bom': {'visible_if': {'field': 'product_type', 'equals': 'MANUFACTURABLE'}},
+            'requires_advanced_manufacturing': {'visible_if': {'field': 'product_type', 'equals': 'MANUFACTURABLE'}},
+            'uom': {'visible_if': {'field': 'product_type', 'in': ['STORABLE', 'MANUFACTURABLE']}},
+            'track_inventory': {'visible_if': {'field': 'product_type', 'in': ['STORABLE', 'MANUFACTURABLE']}},
+            'receiving_warehouse': {'visible_if': {'field': 'product_type', 'in': ['STORABLE', 'MANUFACTURABLE']}},
+            'sale_uom': {'visible_if': {'field': 'product_type', 'in': ['STORABLE', 'MANUFACTURABLE']}},
+            'purchase_uom': {'visible_if': {'field': 'product_type', 'in': ['STORABLE', 'MANUFACTURABLE']}},
+            'preferred_supplier': {'visible_if': {'field': 'product_type', 'in': ['STORABLE', 'MANUFACTURABLE']}},
+            'subscription_supplier': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'subscription_amount': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'subscription_start_date': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'auto_activate_subscription': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'is_indefinite': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'contract_end_date': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'default_invoice_type': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'payment_day_type': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'payment_day': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'payment_interval_days': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'renewal_notice_days': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+            'recurrence_period': {'visible_if': {'field': 'product_type', 'equals': 'SUBSCRIPTION'}},
+        }
+
     class Meta:
         verbose_name = _("Producto")
         verbose_name_plural = _("Productos")
@@ -573,11 +696,23 @@ class Product(models.Model):
 
         super().save(*args, **kwargs)
 
+    # T-44: Forward mfg_* access to ProductManufacturingProfile if it exists.
+    # The legacy fields on Product remain active during the deprecation window.
+    # Code should prefer `product.manufacturing_profile.mfg_auto_finalize` going forward.
+    @property
+    def mfg_profile(self):
+        """Returns the associated ProductManufacturingProfile, or None."""
+        try:
+            return self.manufacturing_profile
+        except Exception:
+            return None
+
     # BOM-related helpers
     @property
     def is_express_variant(self):
         """Check if this is an Express variant (has parent and is Express)."""
         return self.parent_template is not None and self.mfg_auto_finalize
+
 
     def has_active_bom(self):
         """Check if this product has an active BOM assigned."""
@@ -974,7 +1109,7 @@ class StockMove(models.Model):
 
     @property
     def display_id(self):
-        return f"MOV-{str(self.id).zfill(5)}"
+        return f"MOV-{self.id}"
 
     def save(self, *args, **kwargs):
         # Validate Accounting Period is not closed
@@ -1007,12 +1142,8 @@ class StockMove(models.Model):
             pass
 
         super().save(*args, **kwargs)
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('inventory')
 
     def delete(self, *args, **kwargs):
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('inventory')
         super().delete(*args, **kwargs)
 
 class PricingRule(models.Model):

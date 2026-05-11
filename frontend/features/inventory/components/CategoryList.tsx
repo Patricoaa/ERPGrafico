@@ -2,22 +2,24 @@
 
 import { showApiError } from "@/lib/errors"
 
-import { useEffect, useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
-import api from "@/lib/api"
+
 import { CategoryForm } from "./CategoryForm"
-import { Pencil, Trash2, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { BaseModal } from "@/components/shared/BaseModal"
+import { Pencil, Trash2 } from "lucide-react"
+
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import React from "react"
 
 import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
 import * as LucideIcons from "lucide-react"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 interface CategoryListProps {
     externalOpen?: boolean
@@ -28,7 +30,8 @@ interface CategoryListProps {
 export function CategoryList({ externalOpen, onExternalOpenChange, createAction }: CategoryListProps) {
     const { categories, refetch, deleteCategory } = useCategories()
     const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-    const [isFormOpen, setIsFormOpen] = useState(false)
+    const [isCreateOpen, setIsCreateOpen] = useState(false)  // EntityForm modal
+    const [isFormOpen, setIsFormOpen] = useState(false)       // CategoryForm (edit)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null)
 
@@ -36,11 +39,25 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Category>({
+        endpoint: '/inventory/categories'
+    })
+
+    // Open edit form if ?selected= is present (ADR-0020)
+    useEffect(() => {
+        if (selectedFromUrl && (!isFormOpen || editingCategory?.id !== selectedFromUrl.id)) {
+            setEditingCategory(selectedFromUrl)
+            setIsFormOpen(true)
+        }
+    }, [selectedFromUrl, isFormOpen, editingCategory])
+
     const handleCloseModal = () => {
         setIsFormOpen(false)
+        setIsCreateOpen(false)
         setEditingCategory(null)
         onExternalOpenChange?.(false)
-        
+        clearSelection()
+
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
@@ -78,7 +95,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
                     <div className="flex items-center justify-center w-full">
                         <div className="flex items-center justify-center h-8 w-8 rounded-md bg-muted/30 border border-muted-foreground/10 transition-colors">
                             {(() => {
-                const Icon = (LucideIcons as unknown as Record<string, React.ElementType>)[iconName] ?? LucideIcons.Package
+                                const Icon = (LucideIcons as unknown as Record<string, React.ElementType>)[iconName] ?? LucideIcons.Package
                                 return <Icon className="h-4 w-4 text-muted-foreground/70" />
                             })()}
                         </div>
@@ -99,12 +116,21 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
         createActionsColumn<Category>({
             renderActions: (item) => (
                 <>
-                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => { setEditingCategory(item); setIsFormOpen(true) }} />
+                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => {
+                        const params = new URLSearchParams(searchParams.toString())
+                        params.set('selected', String(item.id))
+                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                    }} />
                     <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item)} />
                 </>
             ),
         }),
     ], [handleDelete])
+
+    // Sync external trigger (toolbar button) → create modal (EntityForm)
+    React.useEffect(() => {
+        if (externalOpen) setIsCreateOpen(true)
+    }, [externalOpen])
 
 
     const globalFilterFields = useMemo(() => ["name", "parent_name"], [])
@@ -115,21 +141,22 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
                 columns={columns}
                 data={categories}
                 cardMode
-                
+
                 searchPlaceholder="Buscar categoría por nombre..."
                 globalFilterFields={globalFilterFields}
                 useAdvancedFilter={true}
                 createAction={createAction}
             />
 
+            {/* Unified Modal — CategoryForm keeps rich selectors + audit for both create and edit */}
             <CategoryForm
-                onSuccess={() => { void refetch() }}
-                open={isFormOpen || !!externalOpen}
+                onSuccess={() => { void refetch(); handleCloseModal() }}
+                open={isFormOpen || isCreateOpen}
                 onOpenChange={(open) => {
-                    if (!open) {
-                        handleCloseModal()
-                    } else {
-                        setIsFormOpen(true)
+                    if (!open) { handleCloseModal() }
+                    else {
+                        if (isCreateOpen) setIsCreateOpen(true)
+                        if (isFormOpen) setIsFormOpen(true)
                     }
                 }}
                 initialData={editingCategory || undefined}

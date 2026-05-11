@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency, formatPlainDate } from "@/lib/utils"
 import { Landmark, Calendar, User, Hash, FileText } from "lucide-react"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 import type { TransactionData } from "@/types/transactions"
 
 interface Payment {
@@ -47,7 +48,7 @@ export function PaymentHistoryModal({
             title={
                 <div className="flex items-center gap-2 text-xl font-bold">
                     <Landmark className="h-6 w-6 text-primary" />
-                    Historial de Pagos y Referencias - {order.number ? ((order.dte_type === 'NOTA_CREDITO' ? 'NC-' : order.dte_type === 'NOTA_DEBITO' ? 'ND-' : '') + order.number) : 'Borrador'}
+                    Historial de Pagos y Referencias - {order.number ? formatEntityDisplay(order.document_type === 'PURCHASE_ORDER' ? 'purchasing.purchaseorder' : 'sales.saleorder', order) : 'Borrador'}
                 </div>
             }
         >

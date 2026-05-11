@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 from accounting.models import Account, AccountType
 # from sales.models import SaleOrder
 # from purchasing.models import PurchaseOrder
@@ -11,6 +13,7 @@ from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from core.validators import validate_file_size, validate_file_extension
 from core.storages import PrivateMediaStorage
+from core.models import TimeStampedModel
 
 
 def get_default_date():
@@ -169,7 +172,14 @@ class TreasuryMovement(models.Model):
     # Unified contact field
     contact = models.ForeignKey('contacts.Contact', on_delete=models.SET_NULL, null=True, blank=True, related_name='treasury_movements')
     
-    # Allocation
+    # Allocation (GFK)
+    allocated_content_type = models.ForeignKey(
+        ContentType, null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+    )
+    allocated_object_id = models.PositiveIntegerField(null=True, blank=True)
+    allocated_to = GenericForeignKey('allocated_content_type', 'allocated_object_id')
+
+    # Legacy Allocation fields
     invoice = models.ForeignKey('billing.Invoice', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
     sale_order = models.ForeignKey('sales.SaleOrder', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
     purchase_order = models.ForeignKey('purchasing.PurchaseOrder', on_delete=models.SET_NULL, null=True, blank=True, related_name='payments')
@@ -291,14 +301,14 @@ class TreasuryMovement(models.Model):
     @property
     def display_id(self):
         if self.payment_method == self.Method.WRITE_OFF:
-            return f"CAS-{str(self.id).zfill(6)}"
+            return f"CAS-{self.id}"
             
         prefix = 'MOV'
         if self.movement_type == self.Type.INBOUND: prefix = 'DEP'
         elif self.movement_type == self.Type.OUTBOUND: prefix = 'RET'
         elif self.movement_type == self.Type.TRANSFER: prefix = 'TRAS'
         elif self.movement_type == self.Type.ADJUSTMENT: prefix = 'ADJ'
-        return f"{prefix}-{str(self.id).zfill(6)}"
+        return f"{prefix}-{self.id}"
 
     @property
     def treasury_account(self):
@@ -344,14 +354,8 @@ class TreasuryMovement(models.Model):
             pass
 
         super().save(*args, **kwargs)
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('treasury')
-        invalidate_report_cache('contacts')
 
     def delete(self, *args, **kwargs):
-        from core.cache import invalidate_report_cache
-        invalidate_report_cache('treasury')
-        invalidate_report_cache('contacts')
         super().delete(*args, **kwargs)
 
 class TreasuryAccountManager(models.Manager):
@@ -779,7 +783,7 @@ class BankStatement(models.Model):
     
     @property
     def display_id(self):
-        return f"EXT-{str(self.id).zfill(6)}"
+        return f"CAR-{self.id}"
     
     @property
     def reconciliation_progress(self):
@@ -946,8 +950,11 @@ class BankStatementLine(models.Model):
         return self.credit - self.debit
 
 
-class ReconciliationSettings(models.Model):
-    """Configuración global de conciliación por cuenta de tesorería"""
+class ReconciliationSettings(TimeStampedModel):
+    """Configuración global de conciliación por cuenta de tesorería.
+    NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
+    Tenía updated_at manual — ahora heredado; se añade created_at.
+    """
     treasury_account = models.OneToOneField(
         'TreasuryAccount',
         on_delete=models.CASCADE,
@@ -983,13 +990,16 @@ class ReconciliationSettings(models.Model):
         help_text=_("Si es True, el sistema concilia automáticamente sobre el umbral de confianza")
     )
 
-    updated_at = models.DateTimeField(auto_now=True)
+    # updated_at heredado de TimeStampedModel; campo manual eliminado (T-14).
     history = HistoricalRecords()
 
     class Meta:
         verbose_name = _("Inteligencia de Conciliación")
         verbose_name_plural = _("Inteligencia de Conciliación")
-    
+
+    class FormMeta:
+        exclude_fields = []  # Sin campos sensibles — pesos de scoring y umbrales numéricos.
+
     @classmethod
     def get_for_account(cls, account=None):
         """
@@ -1511,7 +1521,7 @@ class TerminalBatch(models.Model):
     
     @property
     def display_id(self):
-        return f"LOTE-{str(self.id).zfill(6)}"
+        return f"LOTE-{self.id}"
     
     def clean(self):
         """Validar que net_amount = gross_amount - commission_total"""
