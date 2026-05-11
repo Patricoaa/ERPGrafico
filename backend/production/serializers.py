@@ -46,31 +46,43 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
     def get_stock_available(self, obj):
         component = obj.component
         if component.product_type == 'SERVICE':
-            return 999999 # Practically infinite
-            
+            return 999999
+
         if component.product_type == 'MANUFACTURABLE' and not component.requires_advanced_manufacturing:
-            # Express manufacturable: calculate what can be made
             return component.get_manufacturable_quantity() or 0.0
-            
-        # Standard storable or advanced manufacturable: check warehouse stock
-        from django.db.models import Sum
+
         warehouse = obj.work_order.warehouse
         if not warehouse:
             return 0.0
-            
-        # Simplified: sum moves for this product in this warehouse
-        stock = component.stock_moves.filter(warehouse=warehouse).aggregate(total=Sum('quantity'))['total'] or 0.0
-        
-        # Convert to the UoM used in the OT material line for display consistency
+
+        # 1. Pre-computed dict injected by WorkOrderViewSet.retrieve() — zero extra queries
+        stocks_by_product = self.context.get('stocks_by_product')
+        if stocks_by_product is not None:
+            stock = stocks_by_product.get(component.id, 0.0)
+        else:
+            # 2. Fallback for list() or other actions: request-level cache
+            from django.db.models import Sum
+            request = self.context.get('request')
+            if request:
+                if not hasattr(request, '_stock_cache'):
+                    request._stock_cache = {}
+                cache_key = (warehouse.id, component.id)
+                if cache_key in request._stock_cache:
+                    stock = request._stock_cache[cache_key]
+                else:
+                    stock = component.stock_moves.filter(warehouse=warehouse).aggregate(total=Sum('quantity'))['total'] or 0.0
+                    request._stock_cache[cache_key] = stock
+            else:
+                stock = component.stock_moves.filter(warehouse=warehouse).aggregate(total=Sum('quantity'))['total'] or 0.0
+
+        # Convert from component base UoM to line UoM for display consistency
         from inventory.services import UoMService
         try:
-             # Logic from services.convert_quantity: converts FROM base TO line uom
-             # component stock is always in base uom
-             if component.uom and obj.uom and component.uom != obj.uom:
-                 stock = UoMService.convert_quantity(stock, component.uom, obj.uom)
-        except:
-             pass
-             
+            if component.uom and obj.uom and component.uom != obj.uom:
+                stock = UoMService.convert_quantity(stock, component.uom, obj.uom)
+        except Exception:
+            pass
+
         return float(stock)
 
     def get_is_available(self, obj):
@@ -132,9 +144,23 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     requires_postpress = serializers.SerializerMethodField()
     checkout_files = serializers.SerializerMethodField()
     workflow_tasks = serializers.SerializerMethodField()
+    production_discrepancy = serializers.SerializerMethodField()
     
     def get_display_id(self, obj):
         return obj.display_id
+
+    def get_production_discrepancy(self, obj):
+        if not obj.sale_line or obj.actual_quantity_produced is None:
+            return None
+        sold = float(obj.sale_line.quantity)
+        produced = float(obj.actual_quantity_produced)
+        if produced == sold:
+            return None
+        return {
+            'produced': produced,
+            'sold': sold,
+            'delta': round(produced - sold, 4),
+        }
 
     def get_product_description(self, obj):
         if obj.stage_data and obj.stage_data.get('product_description'):
