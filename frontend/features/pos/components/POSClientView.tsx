@@ -558,7 +558,7 @@ export function POSClientView() {
                                         <SearchBar value={searchTerm} onChange={setSearchTerm} onEnter={handleSearchEnter} />
                                         <CategoryFilter categories={categories} selectedCategoryId={selectedCategoryId} onSelectCategory={setSelectedCategoryId} />
                                     </div>
-                                    <div className="flex-1 overflow-auto p-4"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} onProductClick={handleProductClick} onToggleFavorite={toggleFavorite} /></div>
+                                    <div className="flex-1 p-4"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} onProductClick={handleProductClick} onToggleFavorite={toggleFavorite} /></div>
                                 </Card>
                             </motion.div>
                         ) : (

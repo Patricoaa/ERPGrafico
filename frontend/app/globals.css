@@ -656,8 +656,8 @@
     height: 1px;
     background: linear-gradient(to right,
         transparent,
-        oklch(from var(--border) l c h / 0.6) 15%,
-        oklch(from var(--border) l c h / 0.6) 85%,
+        oklch(var(--border-raw) / 0.3) 15%,
+        oklch(var(--border-raw) / 0.3) 85%,
         transparent);
     margin: var(--spacing-r-lg) 0;
   }

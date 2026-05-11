@@ -161,7 +161,7 @@ export function Step1_CustomerDTE({
                 />
             </div>
 
-            <Separator className="opacity-30" />
+
 
             {/* ── DTE Document Section ────────────────────────── */}
             <div className="space-y-4">
