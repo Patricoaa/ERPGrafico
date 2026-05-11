@@ -731,60 +731,50 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                                     </FormSplitLayout>
                                 </FormTabsContent>
 
-                                {(productType === 'MANUFACTURABLE' || hasBom) && (
-                                    <FormTabsContent value="manufacturing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                        <ProductManufacturingTab
-                                            form={form}
-                                            initialData={initialData}
-                                            products={products}
-                                            uoms={uoms}
-                                            variantMode={variantMode}
-                                        />
-                                    </FormTabsContent>
-                                )}
+                                <FormTabsContent value="manufacturing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                    <ProductManufacturingTab
+                                        form={form}
+                                        initialData={initialData}
+                                        products={products}
+                                        uoms={uoms}
+                                        variantMode={variantMode}
+                                    />
+                                </FormTabsContent>
 
-                                {hasVariants && !variantMode && (
-                                    <FormTabsContent value="variants" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                        <ProductVariantsTab
-                                            key={variantsRefreshKey}
-                                            form={form}
-                                            initialData={initialData}
-                                            onTabChange={(tab: string) => setActiveTab(tab)}
-                                        />
-                                    </FormTabsContent>
-                                )}
+                                <FormTabsContent value="variants" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                    <ProductVariantsTab
+                                        key={variantsRefreshKey}
+                                        form={form}
+                                        initialData={initialData}
+                                        onTabChange={(tab: string) => setActiveTab(tab)}
+                                    />
+                                </FormTabsContent>
 
-                                {['STORABLE', 'MANUFACTURABLE'].includes(productType) && (
-                                    <FormTabsContent value="logistics" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                        <ProductInventoryTab
-                                            form={form}
-                                            initialData={initialData}
-                                            warehouses={warehouses}
-                                            uoms={uoms}
-                                            isEditing={!!initialData}
-                                        />
-                                    </FormTabsContent>
-                                )}
+                                <FormTabsContent value="logistics" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                    <ProductInventoryTab
+                                        form={form}
+                                        initialData={initialData}
+                                        warehouses={warehouses}
+                                        uoms={uoms}
+                                        isEditing={!!initialData}
+                                    />
+                                </FormTabsContent>
 
-                                {productType === 'SUBSCRIPTION' && (
-                                    <FormTabsContent value="commercial" className="mt-0 animate-in fade-in duration-300 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                        <ProductSubscriptionTab form={form} isEditing={!!initialData} />
-                                    </FormTabsContent>
-                                )}
+                                <FormTabsContent value="commercial" className="mt-0 animate-in fade-in duration-300 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                    <ProductSubscriptionTab form={form} isEditing={!!initialData} />
+                                </FormTabsContent>
 
-                                {canBeSold && productType !== 'SUBSCRIPTION' && (
-                                    <FormTabsContent value="pricing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                        <ProductPricingTab
-                                            initialData={initialData}
-                                            pricingRules={pricingRules}
-                                            fetchPricingRules={fetchPricingRules}
-                                            onOpenRuleDialog={(rule) => {
-                                                setSelectedPricingRule(rule || null)
-                                                setPricingRuleDialogOpen(true)
-                                            }}
-                                        />
-                                    </FormTabsContent>
-                                )}
+                                <FormTabsContent value="pricing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                    <ProductPricingTab
+                                        initialData={initialData}
+                                        pricingRules={pricingRules}
+                                        fetchPricingRules={fetchPricingRules}
+                                        onOpenRuleDialog={(rule) => {
+                                            setSelectedPricingRule(rule || null)
+                                            setPricingRuleDialogOpen(true)
+                                        }}
+                                    />
+                                </FormTabsContent>
                             </fieldset>
                         </FormTabs>
                     </SkeletonShell>

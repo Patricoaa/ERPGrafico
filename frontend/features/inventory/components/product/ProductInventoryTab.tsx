@@ -164,7 +164,11 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                     label="Seguimiento de Inventario"
                                     description="Habilita el control de existencias y movimientos para este producto."
                                     checked={field.value}
-                                    onCheckedChange={field.onChange}
+                                    onCheckedChange={(val) => {
+                                        requestAnimationFrame(() => {
+                                            form.setValue("track_inventory", val, { shouldDirty: true, shouldValidate: false })
+                                        })
+                                    }}
                                     disabled={isSwitchDisabled}
                                     icon={<Warehouse className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
                                     className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}

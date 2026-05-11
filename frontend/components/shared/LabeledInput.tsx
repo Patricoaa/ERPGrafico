@@ -143,7 +143,7 @@ export const LabeledInput = forwardRef<
 
                 <div className="flex items-center w-full h-full px-1">
                     {icon && (
-                        <div className="flex items-center justify-center pl-2 pr-1 text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0 select-none">
+                        <div className="flex items-center justify-center pl-2 pr-0 text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0 select-none leading-none">
                             {icon}
                         </div>
                     )}

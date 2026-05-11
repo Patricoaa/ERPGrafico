@@ -130,16 +130,16 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                                     checked={field.value}
                                                     onCheckedChange={(val) => {
                                                         requestAnimationFrame(() => {
-                                                            field.onChange(val)
+                                                            form.setValue("has_bom", val, { shouldDirty: true, shouldValidate: false })
                                                         })
                                                     }}
                                                     disabled={isExpress && !hasVariants}
-                                                    icon={<Package className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/40")} />}
+                                                    icon={<Package className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/60")} />}
                                                     className={cn(
                                                         "transition-all duration-300", 
                                                         field.value 
                                                             ? "bg-primary/10 border-primary/30 shadow-sm ring-1 ring-primary/10" 
-                                                            : "bg-muted/5 border-border/60 hover:border-border"
+                                                            : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.02)]"
                                                     )}
                                                 />
                                             )
@@ -156,15 +156,15 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                                 checked={field.value}
                                                 onCheckedChange={(val) => {
                                                     requestAnimationFrame(() => {
-                                                        field.onChange(val)
+                                                        form.setValue("has_variants", val, { shouldDirty: true, shouldValidate: false })
                                                     })
                                                 }}
-                                                icon={<Layers className={cn("h-4 w-4 transition-colors", field.value ? "text-warning" : "text-muted-foreground/40")} />}
+                                                icon={<Layers className={cn("h-4 w-4 transition-colors", field.value ? "text-warning" : "text-muted-foreground/60")} />}
                                                 className={cn(
                                                     "transition-all duration-300", 
                                                     field.value 
                                                         ? "bg-warning/10 border-warning/30 shadow-sm ring-1 ring-warning/10" 
-                                                        : "bg-muted/5 border-border/60 hover:border-border"
+                                                        : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.02)]"
                                                 )}
                                             />
                                         )}
@@ -196,9 +196,18 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                                     <LabeledSwitch
                                                         label={stage.label}
                                                         checked={field.value}
-                                                        onCheckedChange={field.onChange}
+                                                        onCheckedChange={(val) => {
+                                                            requestAnimationFrame(() => {
+                                                                form.setValue(stage.name as any, val, { shouldDirty: true, shouldValidate: false })
+                                                            })
+                                                        }}
                                                         icon={<stage.icon className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
-                                                        className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}
+                                                        className={cn(
+                                                            "transition-all duration-300",
+                                                            field.value 
+                                                                ? "bg-primary/10 border-primary/30 shadow-sm ring-1 ring-primary/10" 
+                                                                : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.02)]"
+                                                        )}
                                                     />
                                                 )}
                                             />
