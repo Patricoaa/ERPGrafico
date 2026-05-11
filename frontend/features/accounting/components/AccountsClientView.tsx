@@ -20,6 +20,7 @@ import { ChevronRight, ChevronDown } from "lucide-react"
 import { buildAccountTree } from "../utils/accountTree"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ActivitySidebar } from "@/features/audit/components"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 interface AccountsClientViewProps {
     externalOpen?: boolean
@@ -53,17 +54,26 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Account>({
+        endpoint: '/accounting/accounts'
+    })
+
+    // Open edit form if ?selected= is present (ADR-0020)
+    useEffect(() => {
+        if (selectedFromUrl && (!isFormOpen || editingAccount?.id !== selectedFromUrl.id)) {
+            setEditingAccount(selectedFromUrl)
+            setIsFormOpen(true)
+        }
+    }, [selectedFromUrl, isFormOpen, editingAccount])
+
+
+
     const handleCloseModal = () => {
         setIsFormOpen(false)
         setEditingAccount(null)
         setFormParentId(null)
         onExternalOpenChange?.(false)
-
-        if (externalOpen || searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
+        clearSelection()
     }
 
     const handleAddAccount = (parentId?: string) => {
@@ -73,9 +83,9 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     }
 
     const handleEditAccount = (account: Account) => {
-        setEditingAccount(account)
-        setFormParentId(null)
-        setIsFormOpen(true)
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('selected', String(account.id))
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     // Synchronize external modal trigger
@@ -276,6 +286,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                         <ActivitySidebar entityId={editingAccount.id} entityType="account" />
                     ) : undefined
                 }
+                readonly={editingAccount ? !editingAccount.is_selectable : false}
                 onSuccess={() => {
                     refetch()
                     handleCloseModal()

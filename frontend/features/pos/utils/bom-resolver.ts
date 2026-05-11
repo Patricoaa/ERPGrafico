@@ -88,22 +88,36 @@ export function initializeCachesFromProducts(
     const newComponentCache: ComponentCache = {}
 
     products.forEach((p) => {
-        if (p.boms && p.boms.length > 0) {
-            const activeBom = p.boms.find(b => b.active)
-            if (activeBom) {
-                newBomCache[p.id] = activeBom
-                // Also pre-cache component stock from BOM lines
-                activeBom.lines?.forEach((line) => {
-                    if (line.component && line.component_stock !== undefined) {
-                        newComponentCache[line.component] = {
-                            stock: line.component_stock || 0,
-                            uom: line.uom || 0
-                        }
-                    }
-                })
-            }
+        const result = resolveForProduct(p)
+        if (result.bom) {
+            newBomCache[p.id] = result.bom
+            Object.assign(newComponentCache, result.components)
         }
     })
 
     return { bomCache: newBomCache, componentCache: newComponentCache }
+}
+
+/**
+ * Resolve BOM and component data for a single product
+ */
+export function resolveForProduct(product: Product): { bom: BOM | null, components: ComponentCache } {
+    const components: ComponentCache = {}
+    let activeBom: BOM | null = null
+
+    if (product.boms && product.boms.length > 0) {
+        activeBom = product.boms.find(b => b.active) || null
+        if (activeBom) {
+            activeBom.lines?.forEach((line) => {
+                if (line.component && line.component_stock !== undefined) {
+                    components[line.component] = {
+                        stock: line.component_stock || 0,
+                        uom: line.uom || 0
+                    }
+                }
+            })
+        }
+    }
+
+    return { bom: activeBom, components }
 }

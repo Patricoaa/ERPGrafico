@@ -273,7 +273,7 @@ export function PurchaseNoteModal({
                             {orderNumber ? (
                                 <span>Ref: OCS-{orderNumber}</span>
                             ) : orderDetails?.number ? (
-                                <span>Ref: DOC-{orderDetails.number}</span>
+                                <span>Ref: OCS-{orderDetails.number}</span>
                             ) : (
                                 <span>Ref: Documento #{invoiceId}</span>
                             )}
@@ -328,7 +328,7 @@ export function PurchaseNoteModal({
                     currentStep={step}
                     totalSteps={totalSteps}
                     orderNumber={orderNumber}
-                    referenceText={orderNumber ? undefined : (orderDetails?.number ? `Sobre DOC-${orderDetails.number}` : `Sobre Documento #${invoiceId}`)}
+                    referenceText={orderNumber ? undefined : (orderDetails?.number ? `Sobre OCS-${orderDetails.number}` : `Sobre Documento #${invoiceId}`)}
                     supplierName={(orderDetails as any)?.supplier_name}
                     warehouseName={(orderDetails as any)?.warehouse_name}
                     noteType={noteType}

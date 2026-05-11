@@ -13,3 +13,24 @@ class ProductionConfig(AppConfig):
             ])
         except ImportError:
             pass
+
+        try:
+            from core.registry import UniversalRegistry, SearchableEntity
+            from production.models import WorkOrder
+            UniversalRegistry.register(SearchableEntity(
+                model=WorkOrder,
+                label='production.workorder',
+                title_singular='Orden de Trabajo',
+                title_plural='Ordenes de Trabajo',
+                icon='wrench',
+                search_fields=('number', 'description', 'related_contact__name'),
+                short_display_template='OT-{number}',
+                display_template='OT-{number}',
+                subtitle_template='{description}',
+                extra_info_template='{status}',
+                list_url='/production/orders',
+                detail_url_pattern='/production/orders/{id}',
+                permission='production.view_workorder',
+            ))
+        except Exception:
+            pass

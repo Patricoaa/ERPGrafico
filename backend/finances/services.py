@@ -352,7 +352,17 @@ class FinanceService:
         # 2. Investing Activities
         investing_activities = []
         inv_accs = Account.objects.filter(cf_category=CFCategory.INVESTING).exclude(id__in=cash_pool_ids)
-        inv_roots = [acc for acc in inv_accs if not any(p.cf_category == CFCategory.INVESTING for p in acc.get_parents())]
+        inv_roots = []
+        for acc in inv_accs:
+            has_parent = False
+            curr = acc.parent
+            while curr:
+                if curr.cf_category == CFCategory.INVESTING:
+                    has_parent = True
+                    break
+                curr = curr.parent
+            if not has_parent:
+                inv_roots.append(acc)
 
         for acc in inv_roots:
             val = float(FinanceService._get_aggregated_balance(acc, 'cf', CFCategory.INVESTING, start_date, end_date))
@@ -370,7 +380,17 @@ class FinanceService:
         # 3. Financing Activities
         financing_activities = []
         fin_accs = Account.objects.filter(cf_category=CFCategory.FINANCING).exclude(id__in=cash_pool_ids)
-        fin_roots = [acc for acc in fin_accs if not any(p.cf_category == CFCategory.FINANCING for p in acc.get_parents())]
+        fin_roots = []
+        for acc in fin_accs:
+            has_parent = False
+            curr = acc.parent
+            while curr:
+                if curr.cf_category == CFCategory.FINANCING:
+                    has_parent = True
+                    break
+                curr = curr.parent
+            if not has_parent:
+                fin_roots.append(acc)
 
         for acc in fin_roots:
             val = float(FinanceService._get_aggregated_balance(acc, 'cf', CFCategory.FINANCING, start_date, end_date))

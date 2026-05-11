@@ -12,7 +12,6 @@ interface UseAccountsProps {
 
 const EMPTY_ARRAY: Account[] = []
 
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
 export function useAccounts({ filters }: UseAccountsProps = {}) {
     const queryClient = useQueryClient()

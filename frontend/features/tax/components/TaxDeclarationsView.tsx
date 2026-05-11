@@ -27,6 +27,7 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TaxPeriod, TaxDeclaration, TaxPaymentData } from "../types"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { Row } from "@tanstack/react-table"
 import { CardSkeleton, TableSkeleton } from "@/components/shared"
 
@@ -47,19 +48,22 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     const [selectedPeriodId, setSelectedPeriodId] = useState<number | undefined>(undefined)
     const [selectedDeclaration, setSelectedDeclaration] = useState<TaxDeclaration | null>(null)
 
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TaxPeriod>({
+        endpoint: '/tax/periods'
+    })
+
     const handleCloseModal = () => {
         setIsWizardOpen(false)
         setIsPaymentOpen(false)
+        setSelectedPeriodId(undefined)
+        setSelectedDeclaration(null)
         onExternalOpenChange?.(false)
         
-        if (externalOpen || searchParams.get("modal")) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.delete("modal")
-            params.delete("year")
-            params.delete("month")
-            params.delete("action")
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-        }
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete("selected")
+        params.delete("action")
+        params.delete("modal")
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const handleWizardOpenChange = (open: boolean) => {
@@ -77,22 +81,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
             const fetchedPeriods = (response.data as { results?: TaxPeriod[] }).results || (response.data as TaxPeriod[])
             setPeriods(fetchedPeriods)
             
-            const year = searchParams.get('year')
-            const month = searchParams.get('month')
-            const action = searchParams.get('action')
-
-            if (year && month && fetchedPeriods.length > 0) {
-                const target = fetchedPeriods.find((p: TaxPeriod) => 
-                    p.year.toString() === year && p.month.toString() === month
-                )
-                if (target) {
-                    if (action === 'pay') {
-                        handleOpenPayment(target)
-                    } else {
-                        handleOpenWizard(target)
-                    }
-                }
-            }
+            // The effect above will handle the modal opening based on selectedFromUrl
         } catch (error) {
             console.error("Error fetching tax periods:", error)
             toast.error("Error al cargar los períodos tributarios")
@@ -111,12 +100,42 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
         }
     }, [externalOpen])
 
+    // State watchers for URL params without re-fetching
+    useEffect(() => {
+        if (selectedFromUrl) {
+            const action = searchParams.get('action')
+            if (action === 'pay') {
+                if (!isPaymentOpen && selectedDeclaration?.tax_period_year !== selectedFromUrl.year) {
+                    openPaymentModal(selectedFromUrl)
+                }
+            } else {
+                if (!isWizardOpen && selectedPeriodId !== selectedFromUrl.id) {
+                    openWizardModal(selectedFromUrl)
+                }
+            }
+        }
+    }, [selectedFromUrl, searchParams])
+
     const handleOpenWizard = (period: TaxPeriod) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('selected', String(period.id))
+        params.delete('action')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const openWizardModal = (period: TaxPeriod) => {
         setSelectedPeriodId(period.id)
         setIsWizardOpen(true)
     }
 
-    const handleOpenPayment = async (period: TaxPeriod) => {
+    const handleOpenPayment = (period: TaxPeriod) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('selected', String(period.id))
+        params.set('action', 'pay')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const openPaymentModal = async (period: TaxPeriod) => {
         if (period.declaration_summary) {
             setSelectedDeclaration({
                 id: period.declaration_summary.id,

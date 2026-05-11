@@ -21,10 +21,33 @@ interface UsersSettingsViewProps {
 }
 
 import { useUsers } from "@/features/users/hooks/useUsers"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
 
 export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
     const { users, refetch } = useUsers()
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const pathname = usePathname()
+
+    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<AppUser>({
+        endpoint: '/core/users'
+    })
+
+    const [isUserModalOpen, setIsUserModalOpen] = useState(false)
+    const [userToEdit, setUserToEdit] = useState<AppUser | null>(null)
+
+    useEffect(() => {
+        if (selectedFromUrl) {
+            const transformedUser = {
+                ...selectedFromUrl,
+                groups: selectedFromUrl.groups?.map(g => typeof g === 'string' ? g : g.name)
+            }
+            setUserToEdit(transformedUser)
+            setIsUserModalOpen(true)
+        }
+    }, [selectedFromUrl])
 
     const columns: ColumnDef<AppUser>[] = useMemo(() => [
         {
@@ -101,15 +124,15 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
         },
         createActionsColumn<AppUser>({
             renderActions: (user) => {
-                const transformedUser = {
-                    ...user,
-                    groups: user.groups?.map(g => typeof g === 'string' ? g : g.name)
-                }
                 return (
-                    <UserForm
-                        initialData={transformedUser}
-                        onSuccess={refetch}
-                        trigger={<DataCell.Action icon={Edit} title="Editar" />}
+                    <DataCell.Action 
+                        icon={Edit} 
+                        title="Editar" 
+                        onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.set('selected', String(user.id))
+                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                        }}
                     />
                 )
             }
@@ -159,6 +182,25 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                         facetedFilters={roleFilters}
                         createAction={usersCreateAction}
                     />
+                    {isUserModalOpen && (
+                        <UserForm
+                            open={isUserModalOpen}
+                            onOpenChange={(open) => {
+                                setIsUserModalOpen(open)
+                                if (!open) {
+                                    setUserToEdit(null)
+                                    clearSelection()
+                                }
+                            }}
+                            initialData={userToEdit || undefined}
+                            onSuccess={() => {
+                                refetch()
+                                setIsUserModalOpen(false)
+                                setUserToEdit(null)
+                                clearSelection()
+                            }}
+                        />
+                    )}
                 </TabsContent>
 
                 <TabsContent value="groups" className="mt-0 outline-none">

@@ -9,7 +9,6 @@ import { Invoice } from "@/features/billing/types"
 
 // Lazy load heavy components
 const SalesCheckoutWizard = lazy(() => import("./SalesCheckoutWizard"))
-const TransactionViewModal = lazy(() => import("@/components/shared/TransactionViewModal"))
 const DeliveryModal = lazy(() => import("./DeliveryModal"))
 const DocumentCompletionModal = lazy(() => import("@/components/shared/DocumentCompletionModal"))
 const SaleNoteModal = lazy(() => import("./SaleNoteModal"))
@@ -22,7 +21,6 @@ interface SalesOrdersClientViewProps {
 }
 
 export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateModalOpen }: SalesOrdersClientViewProps) {
-    const [viewingTransaction, setViewingTransaction] = useState<{ type: string, id: number | string, view: 'details' | 'history' } | null>(null)
     const [payingOrder, setPayingOrder] = useState<SaleOrder | null>(null)
     const [dispatchingOrder, setDispatchingOrder] = useState<number | null>(null)
     const [completingFolio, setCompletingFolio] = useState<SaleOrder | null>(null)
@@ -44,18 +42,6 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
             <SalesOrdersView viewMode={viewMode} />
 
             {/* Modals & Forms */}
-            {viewingTransaction && (
-                <Suspense fallback={<FormSkeleton />}>
-                    <TransactionViewModal
-                        open={!!viewingTransaction}
-                        onOpenChange={(open: boolean) => !open && setViewingTransaction(null)}
-                        type={viewingTransaction.type as any}
-                        id={viewingTransaction.id as any}
-                        view={viewingTransaction.view}
-                    />
-                </Suspense>
-            )}
-
             {(payingOrder || checkoutData) && (
                 <Suspense fallback={<FormSkeleton />}>
                     <SalesCheckoutWizard

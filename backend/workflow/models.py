@@ -4,7 +4,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from core.models import User
+from core.models import User, TimeStampedModel
 
 class TaskAssignmentRule(models.Model):
     """
@@ -155,9 +155,11 @@ class Notification(models.Model):
         return f"{self.user}: {self.title}"
 
 
-class WorkflowSettings(models.Model):
+class WorkflowSettings(TimeStampedModel):
     """
     Singleton model for global workflow configurations.
+    NOTE: created_at / updated_at heredados de TimeStampedModel (T-14).
+    WorkflowSettings tenía updated_at manual; ahora heredado. Se añade created_at.
     """
     # F29 Recurring Task Days
     f29_creation_day = models.PositiveIntegerField(
@@ -189,11 +191,14 @@ class WorkflowSettings(models.Model):
         help_text=_("Si el margen de un producto baja de este porcentaje, se envía una notificación (0 para desactivar).")
     )
 
-    updated_at = models.DateTimeField(auto_now=True)
+    # updated_at heredado de TimeStampedModel; campo manual eliminado (T-14).
 
     class Meta:
         verbose_name = _("Configuración de Flujo")
         verbose_name_plural = _("Configuración de Flujos")
+
+    class FormMeta:
+        exclude_fields = []  # Sin campos sensibles — días de ciclo y umbrales numéricos.
 
     def __str__(self):
         return "Configuración de Flujo Global"

@@ -541,6 +541,34 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             summary[key] = str(summary[key])
         return Response(summary)
 
+    @action(detail=True, methods=['post'], url_path='promote-partner')
+    def promote_partner(self, request, pk=None):
+        """
+        Promotes a contact to Partner (Socio), auto-creating the necessary accounting sub-accounts.
+        """
+        contact = self.get_object()
+        from .services import ContactPartnerService
+        try:
+            ContactPartnerService.promote_to_partner(contact, user=request.user)
+            return Response(self.get_serializer(contact).data)
+        except Exception as e:
+            from rest_framework import status
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], url_path='demote-partner')
+    def demote_partner(self, request, pk=None):
+        """
+        Demotes a Partner back to a regular Contact, removing the partner accounts if possible.
+        """
+        contact = self.get_object()
+        from .services import ContactPartnerService
+        try:
+            ContactPartnerService.demote_from_partner(contact, user=request.user)
+            return Response(self.get_serializer(contact).data)
+        except Exception as e:
+            from rest_framework import status
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=True, methods=['post', 'put', 'patch'])
     def setup_partner(self, request, pk=None):
         """Enable or update partner specific settings for a contact"""

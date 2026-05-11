@@ -3,7 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell } from "@/components/ui/data-table-cells"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import { StatusBadge, EntityBadge } from "@/components/shared"
 import { CreditContact, CreditHistoryEntry } from "@/features/credits/api/creditsApi"
 import { cn } from "@/lib/utils"
 import { AlertCircle } from "lucide-react"
@@ -150,7 +150,7 @@ export const historyColumns: ColumnDef<CreditHistoryEntry>[] = [
         header: ({ column }) => <DataTableColumnHeader column={column} title="Nota Venta" className="justify-center" />,
         cell: ({ row }) => (
             <div className="flex justify-center w-full">
-                <DataCell.Code>NV-{row.original.number}</DataCell.Code>
+                <EntityBadge label="sales.saleorder" data={row.original} size="sm" />
             </div>
         )
     },

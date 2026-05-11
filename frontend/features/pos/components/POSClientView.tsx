@@ -411,10 +411,10 @@ export function POSClientView() {
                     </h2>
                     {currentSession?.status === 'OPEN' && (
                         <div className="hidden sm:flex items-center gap-2">
-                            <span className="border border-primary/20 bg-primary/5 text-primary tracking-widest px-2 py-0.5 text-[10px] h-5 font-bold uppercase transition-colors rounded-[0.25rem]">
+                            <span className="border border-primary/20 bg-primary/5 text-primary tracking-widest px-2 py-0.5 text-[10px] h-6 font-bold uppercase transition-colors rounded-sm">
                                 Sesión #{currentSession.id}
                             </span>
-                            <span className="border border-success/30 bg-success/5 text-success px-2 py-0.5 text-[10px] h-5 font-medium uppercase rounded-[0.25rem]">
+                            <span className="border border-success/30 bg-success/5 text-success px-2 py-0.5 text-[10px] h-6 font-medium uppercase rounded-sm">
                                 {user?.first_name} {user?.last_name}
                             </span>
                         </div>
@@ -458,7 +458,7 @@ export function POSClientView() {
                                             variant="outline"
                                             size="sm"
                                             className={cn(
-                                                "h-8 min-w-[32px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative rounded-[0.25rem]",
+                                                "h-10 min-w-[40px] px-3 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative rounded-sm",
                                                 currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-sm border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
                                                 isSaving && currentDraftId === d.id && "animate-pulse opacity-70",
                                                 lockedByOther && "border-destructive/40 opacity-60",
@@ -481,7 +481,7 @@ export function POSClientView() {
                                     )
                                 })}
                                 {currentDraftId === null && items.length > 0 && (
-                                    <span className="h-8 border border-dashed border-muted-foreground/30 text-[9px] px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-[0.25rem] text-muted-foreground uppercase font-bold tracking-widest">
+                                    <span className="h-10 border border-dashed border-muted-foreground/30 text-[9px] px-3 opacity-50 bg-muted/20 flex items-center justify-center rounded-sm text-muted-foreground uppercase font-bold tracking-widest">
                                         Nuevo...
                                     </span>
                                 )}
@@ -490,7 +490,7 @@ export function POSClientView() {
                     })()}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-2 h-9">
+                            <Button variant="outline" size="sm" className="gap-2 h-10 px-4">
                                 <LayoutGrid className="h-4 w-4" />
                                 <span className="hidden sm:inline">Menú</span>
                                 <ChevronDown className="h-3 w-3 opacity-50" />
@@ -540,7 +540,7 @@ export function POSClientView() {
             <div className="relative grid grid-cols-1 md:grid-cols-12 gap-4 flex-1 min-h-0 overflow-hidden">
                 {currentSession !== undefined && currentSession === null && (
                     <div className="absolute inset-0 z-30 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
-                        <Card className="w-full max-w-md shadow-sm border-primary/20 p-8 text-center space-y-4 rounded-[0.25rem]">
+                        <Card className="w-full max-w-md shadow-sm border-primary/20 p-8 text-center space-y-4 rounded-md">
                             <Lock className="h-12 w-12 text-primary mx-auto mb-2" />
                             <h3 className="text-2xl font-bold">Caja Cerrada</h3>
                             <p className="text-muted-foreground">Debe abrir una sesión de caja para realizar ventas.</p>
@@ -558,11 +558,11 @@ export function POSClientView() {
                                         <SearchBar value={searchTerm} onChange={setSearchTerm} onEnter={handleSearchEnter} />
                                         <CategoryFilter categories={categories} selectedCategoryId={selectedCategoryId} onSelectCategory={setSelectedCategoryId} />
                                     </div>
-                                    <div className="flex-1 overflow-auto p-4"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} onProductClick={handleProductClick} onToggleFavorite={toggleFavorite} /></div>
+                                    <div className="flex-1 p-4"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} onProductClick={handleProductClick} onToggleFavorite={toggleFavorite} /></div>
                                 </Card>
                             </motion.div>
                         ) : (
-                            <motion.div key={currentDraftId || 'checkout-new'} initial={{ opacity: 0, scale: 0.98, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex-1 flex flex-col min-h-0 bg-background border rounded-[0.25rem] shadow-sm overflow-hidden relative border-primary/20">
+                            <motion.div key={currentDraftId || 'checkout-new'} initial={{ opacity: 0, scale: 0.98, x: 20 }} animate={{ opacity: 1, scale: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex-1 flex flex-col min-h-0 bg-background border rounded-md shadow-sm overflow-hidden relative border-primary/20">
                                 <SalesCheckoutWizardContent
                                     key={currentDraftId || 'checkout-new'}
                                     order={null}
@@ -629,7 +629,7 @@ export function POSClientView() {
             <SalesOrdersModal open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
 
             <AlertDialog open={!!completedSaleData} onOpenChange={(open) => { if (!open) setCompletedSaleData(null) }}>
-                <AlertDialogContent className="max-w-md bg-card border-primary/10 shadow-sm rounded-[0.25rem]">
+                <AlertDialogContent className="max-w-md bg-card border-primary/10 shadow-sm rounded-lg">
                     <AlertDialogHeader>
                         <div className="mx-auto bg-primary text-primary-foreground p-4 rounded-full mb-4 shadow-sm">
                             <Check className="h-10 w-10 stroke-[3px]" />
@@ -641,7 +641,7 @@ export function POSClientView() {
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col sm:flex-row gap-3 mt-4">
                         <Button
-                            className="flex-1 h-14 rounded-[0.25rem] text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-sm group"
+                            className="flex-1 h-14 rounded-md text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-sm group"
                             onClick={() => {
                                 handlePrint();
                                 setCompletedSaleData(null);
@@ -651,7 +651,7 @@ export function POSClientView() {
                             Imprimir
                         </Button>
                         <AlertDialogCancel
-                            className="flex-1 h-14 border-primary/20 text-primary hover:bg-primary/5 rounded-[0.25rem] text-lg font-bold"
+                            className="flex-1 h-14 border-primary/20 text-primary hover:bg-primary/5 rounded-md text-lg font-bold"
                             onClick={() => setCompletedSaleData(null)}
                         >
                             Cerrar
@@ -676,7 +676,7 @@ export function POSClientView() {
 
             {/* Partner Withdrawal Confirmation */}
             <AlertDialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
-                <AlertDialogContent className="max-w-md bg-card border-warning/10 shadow-sm rounded-[0.25rem]">
+                <AlertDialogContent className="max-w-md bg-card border-warning/10 shadow-sm rounded-lg">
                     <AlertDialogHeader>
                         <div className="mx-auto bg-warning/10 text-warning p-4 rounded-full mb-4 border border-warning/20">
                             <ShoppingCart className="h-8 w-8" />
@@ -706,7 +706,7 @@ export function POSClientView() {
 
                     <AlertDialogFooter className="flex-col sm:flex-row gap-3 mt-2">
                         <Button
-                            className="flex-1 h-12 rounded-[0.25rem] text-sm font-bold uppercase tracking-wider bg-warning hover:bg-warning shadow-sm disabled:opacity-50"
+                            className="flex-1 h-12 rounded-md text-sm font-bold uppercase tracking-wider bg-warning hover:bg-warning shadow-sm disabled:opacity-50"
                             onClick={handleWithdraw}
                             disabled={isWithdrawing || !selectedPartnerId}
                         >
@@ -714,7 +714,7 @@ export function POSClientView() {
                             Confirmar Retiro
                         </Button>
                         <AlertDialogCancel
-                            className="flex-1 h-12 border-warning/20 text-warning hover:bg-warning/10 rounded-[0.25rem] text-sm font-bold"
+                            className="flex-1 h-12 border-warning/20 text-warning hover:bg-warning/10 rounded-md text-sm font-bold"
                             disabled={isWithdrawing}
                         >
                             Cancelar

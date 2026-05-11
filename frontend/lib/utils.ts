@@ -280,51 +280,41 @@ export function formatPlainDate(value: string | Date | null | undefined): string
   return date.toLocaleDateString('es-CL', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
+import { formatEntityDisplay } from './entity-registry'
+
 export function formatDocumentId(type: string | null | undefined, number: string | number | null | undefined): string {
   if (!number) return '---'
 
-  const prefixes: Record<string, string> = {
-    'FACTURA': 'FAC-',
-    'BOLETA': 'BOL-',
-    'BOLETA_ELECTRONICA': 'BOL-',
-    'RECEPTION': 'REC-',
-    'RECEIPT': 'REC-',
-    'GUIA_DESPACHO': 'DES-',
-    'DELIVERY': 'DES-',
-    'WITHDRAWAL': 'RET-',
-    'RETIRO': 'RET-',
-    'DEPOSIT': 'DEP-',
-    'DEPOSITO': 'DEP-',
-    'SALE_ORDER': 'NV-',
-    'SALE': 'NV-',
-    'NV': 'NV-',
-    'PURCHASE_ORDER': 'OCS-',
-    'PURCHASE': 'OCS-',
-    'OCS': 'OCS-',
-    'NOTA_CREDITO': 'NC-',
-    'NOTA_DEBITO': 'ND-',
-    'SERVICE_OBLIGATION': 'OB-',
-    'OB': 'OB-',
-    'INVENTORY_MOVEMENT': 'MOV-',
-    'MOV': 'MOV-',
-    'JOURNAL_ENTRY': 'AS-',
-    'AS': 'AS-',
-    'INBOUND': 'ING-',
-    'ING': 'ING-',
-    'OUTBOUND': 'EGR-',
-    'EGR': 'EGR-',
-    'TRANSFER': 'TRAS-',
-    'TRAS': 'TRAS-',
-    'ADJUSTMENT': 'ADJ-',
-    'ADJ': 'ADJ-',
-    'PRODUCTION_ORDER': 'OT-',
-    'OT': 'OT-',
-    'WRITE_OFF': 'CAS-',
-    'CAS': 'CAS-',
+  const typeMap: Record<string, string> = {
+    'FACTURA': 'billing.invoice',
+    'BOLETA': 'billing.invoice',
+    'GUIA_DESPACHO': 'sales.saledelivery',
+    'DELIVERY': 'sales.saledelivery',
+    'SALE_ORDER': 'sales.saleorder',
+    'SALE': 'sales.saleorder',
+    'NV': 'sales.saleorder',
+    'PURCHASE_ORDER': 'purchasing.purchaseorder',
+    'PURCHASE': 'purchasing.purchaseorder',
+    'OCS': 'purchasing.purchaseorder',
+    'INVENTORY_MOVEMENT': 'inventory.stockmove',
+    'MOV': 'inventory.stockmove',
+    'JOURNAL_ENTRY': 'accounting.journalentry',
+    'AS': 'accounting.journalentry',
+    'PRODUCTION_ORDER': 'production.workorder',
+    'OT': 'production.workorder',
+    'DEPOSIT': 'treasury.treasurymovement',
+    'WITHDRAWAL': 'treasury.treasurymovement',
+    'TRANSFER': 'treasury.treasurymovement',
+    'ADJUSTMENT': 'treasury.treasurymovement',
+    'WRITE_OFF': 'treasury.treasurymovement',
   }
 
-  const prefix = prefixes[type?.toUpperCase() || ''] || ''
-  const numStr = number.toString().padStart(5, '0')
+  const label = typeMap[type?.toUpperCase() || '']
+  if (label) {
+    // If it's a dynamic treasury move, we might need more context, 
+    // but formatEntityDisplay will handle it if data has display_id
+    return formatEntityDisplay(label, { id: number, number, display_id: number })
+  }
 
-  return `${prefix}${numStr}`
+  return number.toString()
 }

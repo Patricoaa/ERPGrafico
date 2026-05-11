@@ -1,0 +1,92 @@
+{
+  "beginning_cash": 10000000.0,
+  "beginning_cash_comp": 0.0,
+  "calculated_net_increase": 10556430.0,
+  "culprit_accounts": [
+    {
+      "code": "1.1.04.01",
+      "name": "IVA Crédito Fiscal",
+      "type": "ASSET",
+      "variation": 3943444.0
+    },
+    {
+      "code": "2.1.02.01",
+      "name": "IVA Débito Fiscal",
+      "type": "LIABILITY",
+      "variation": 3896564.0
+    },
+    {
+      "code": "4.1.01",
+      "name": "Venta de Productos",
+      "type": "INCOME",
+      "variation": 20508220.0
+    },
+    {
+      "code": "5.1.01",
+      "name": "Costo de Mercaderías Vendidas",
+      "type": "EXPENSE",
+      "variation": -187433.0
+    },
+    {
+      "code": "5.2.01.01",
+      "name": "Sueldo Base y Gratificaciones",
+      "type": "EXPENSE",
+      "variation": 18000000.0
+    },
+    {
+      "code": "5.2.02",
+      "name": "Arriendos",
+      "type": "EXPENSE",
+      "variation": 12000000.0
+    }
+  ],
+  "discrepancy": -5246880.0,
+  "ending_cash": 15309550.0,
+  "ending_cash_comp": 0.0,
+  "financing": [
+    {
+      "amount": 10000000.0,
+      "amount_comp": 0,
+      "name": "Actividad de Financiamiento: Capital Pagado"
+    }
+  ],
+  "investing": [],
+  "is_balanced": false,
+  "net_increase": 5309550.0,
+  "net_increase_comp": 0.0,
+  "operating": [
+    {
+      "amount": -9304347.0,
+      "amount_comp": 0.0,
+      "name": "Utilidad Neta"
+    },
+    {
+      "amount": -2400000.0,
+      "amount_comp": 0,
+      "name": "Depreciación/Amortización: Depreciación Acumulada PPE"
+    },
+    {
+      "amount": 1596766.0,
+      "amount_comp": 0,
+      "name": "Cambio en Deudores Comerciales"
+    },
+    {
+      "amount": -20942403.0,
+      "amount_comp": 0,
+      "name": "Cambio en Inventarios"
+    },
+    {
+      "amount": 13606414.0,
+      "amount_comp": 0,
+      "name": "Cambio en Cuentas por Pagar Comerciales"
+    },
+    {
+      "amount": 18000000.0,
+      "amount_comp": 0,
+      "name": "Cambio en Obligaciones Laborales"
+    }
+  ],
+  "total_financing": 10000000.0,
+  "total_investing": 0,
+  "total_operating": 556430.0
+}

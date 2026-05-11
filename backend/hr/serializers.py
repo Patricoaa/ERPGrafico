@@ -45,6 +45,7 @@ class EmployeeConceptAmountSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmployeeConceptAmount
         fields = ['id', 'employee', 'concept', 'concept_name', 'amount']
+        read_only_fields = ['employee']
 
 
 class EmployeeSerializer(serializers.ModelSerializer):

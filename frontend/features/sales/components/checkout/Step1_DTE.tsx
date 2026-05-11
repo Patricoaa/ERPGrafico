@@ -28,10 +28,10 @@ interface Step1_DTEProps {
     onPeriodValidityChange?: (isValid: boolean) => void
 }
 
-export function Step1_DTE({ 
-    dteData, 
-    setDteData, 
-    isPurchase = false, 
+export function Step1_DTE({
+    dteData,
+    setDteData,
+    isPurchase = false,
     isDefaultCustomer = false,
     isPeriodClosed = false,
     periodMessage = "",
@@ -96,7 +96,7 @@ export function Step1_DTE({
 
             {isDefaultCustomer && (
                 <Alert className="bg-warning/5 border-warning/20 text-warning-foreground py-3">
-                    <AlertCircle className="h-4 w-4 text-warning" />
+                    <AlertCircle className="h-4 w-4 shrink-0 text-info" />
                     <AlertDescription className="text-xs font-medium">
                         El cliente por defecto solo permite emisión de <strong>Boleta Electrónica</strong>.
                     </AlertDescription>
@@ -161,23 +161,23 @@ export function Step1_DTE({
                                     disabled={dteData.isPending}
                                 />
                             </div>
-                                <div>
-                                    <PeriodValidationDateInput
-                                        date={dteData.date ? new Date(`${dteData.date}T12:00:00`) : undefined}
-                                        onDateChange={(d) => {
-                                            if (d) {
-                                                const year = d.getFullYear();
-                                                const month = String(d.getMonth() + 1).padStart(2, '0');
-                                                const day = String(d.getDate()).padStart(2, '0');
-                                                setDteData({ ...dteData, date: `${year}-${month}-${day}` });
-                                            } else {
-                                                setDteData({ ...dteData, date: "" });
-                                            }
-                                        }}
-                                        validationType="both"
-                                        onValidityChange={onPeriodValidityChange}
-                                    />
-                                </div>
+                            <div>
+                                <PeriodValidationDateInput
+                                    date={dteData.date ? new Date(`${dteData.date}T12:00:00`) : undefined}
+                                    onDateChange={(d) => {
+                                        if (d) {
+                                            const year = d.getFullYear();
+                                            const month = String(d.getMonth() + 1).padStart(2, '0');
+                                            const day = String(d.getDate()).padStart(2, '0');
+                                            setDteData({ ...dteData, date: `${year}-${month}-${day}` });
+                                        } else {
+                                            setDteData({ ...dteData, date: "" });
+                                        }
+                                    }}
+                                    validationType="both"
+                                    onValidityChange={onPeriodValidityChange}
+                                />
+                            </div>
                             <div className="col-span-2">
                                 <DocumentAttachmentDropzone
                                     file={dteData.attachment}
@@ -192,14 +192,14 @@ export function Step1_DTE({
             )}
 
             {dteData.type !== 'BOLETA' && !dteData.isPending && (!dteData.attachment || !dteData.number) && (
-                <div className="flex items-start gap-2 p-3 bg-warning/5 text-warning-foreground rounded-lg text-xs leading-tight border border-warning/20">
+                <div className="flex items-start gap-2 p-3 bg-warning/5 text-warning-foreground text-xs leading-tight border border-warning/20">
                     <AlertCircle className="h-4 w-4 shrink-0 text-warning" />
                     <p>El folio y el adjunto son requeridos para registrar este tipo de documento.</p>
                 </div>
             )}
 
             {dteData.type === 'BOLETA' && !isPurchase && (
-                <div className="flex items-start gap-2 p-3 bg-info/5 text-info-foreground rounded-lg text-xs leading-tight border border-info/20">
+                <div className="flex items-start gap-2 p-3 bg-info/5 text-info-foreground text-xs leading-tight border border-info/20">
                     <AlertCircle className="h-4 w-4 shrink-0 text-info" />
                     <p>El sistema asignará el siguiente folio disponible automáticamente al finalizar la venta.</p>
                 </div>

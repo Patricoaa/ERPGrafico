@@ -20,6 +20,7 @@ interface InvoiceCardProps {
     className?: string
     isSelected?: boolean
     visibleColumns?: Record<string, boolean>
+    isDetailView?: boolean
 }
 
 const dteTypeLabel: Record<string, string> = {
@@ -32,7 +33,7 @@ const dteTypeLabel: Record<string, string> = {
     PURCHASE_INV: 'FAC',
 }
 
-export function InvoiceCard({ item, type, onClick, onActionSuccess, className, isSelected = false, visibleColumns }: InvoiceCardProps) {
+export function InvoiceCard({ item, type, onClick, onActionSuccess, className, isSelected = false, visibleColumns, isDetailView = false }: InvoiceCardProps) {
     const { openHub } = useHubPanel()
     const isSale = type === 'sale_invoice'
     const isPurchase = type === 'purchase_invoice'
@@ -85,8 +86,11 @@ export function InvoiceCard({ item, type, onClick, onActionSuccess, className, i
             aria-selected={isSelected}
             data-state={isSelected ? 'selected' : undefined}
             className={cn(
-                "group flex flex-col p-4 relative z-10 cursor-pointer border border-border/50 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1",
-                isSelected && "ring-2 ring-inset ring-primary/40 bg-primary/5 border-transparent",
+                "group flex flex-col p-4 relative z-10 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 border",
+                isDetailView 
+                    ? "bg-card shadow-sm border-border" 
+                    : "cursor-pointer border-border/50 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10",
+                isSelected && !isDetailView && "ring-2 ring-inset ring-primary/40 bg-primary/5 border-transparent",
                 className
             )}
             onClick={handleClick}
@@ -181,7 +185,9 @@ export function InvoiceCard({ item, type, onClick, onActionSuccess, className, i
                         )}
                     </div>
 
-                    <ArrowRight className="h-5 w-5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                    {!isDetailView && (
+                        <ArrowRight className="h-5 w-5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                    )}
                 </div>
             </div>
 

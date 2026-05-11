@@ -38,7 +38,19 @@ export function HubPanelProvider({
     const searchParams = useSearchParams()
     const [hubConfig, setHubConfig] = useState<HubConfig | null>(null)
     const [isHubTemporarilyHidden, setHubTemporarilyHidden] = useState(false)
+    const [currentPath, setCurrentPath] = useState(pathname)
     const actionEngineRef = React.useRef<any>(null)
+
+    // Auto-close on route change (pathname only)
+    // T-88: we exclude searchParams because ?selected=id now drives the hub
+    // By resetting state during render, we ensure it happens BEFORE child pages'
+    // useEffects that might legitimately open the hub (avoiding race conditions)
+    if (pathname !== currentPath) {
+        setCurrentPath(pathname)
+        setHubConfig(null)
+        setHubTemporarilyHidden(false)
+        onHubOpenChange?.(false)
+    }
 
     const triggerAction = useCallback((actionId: string) => {
         if (actionEngineRef.current) {
@@ -62,10 +74,7 @@ export function HubPanelProvider({
         onHubOpenChange?.(false)
     }, [onHubOpenChange])
 
-    // Auto-close on route change (including search params)
-    useEffect(() => {
-        requestAnimationFrame(() => closeHub())
-    }, [pathname, searchParams, closeHub])
+
 
     const isHubEffectivelyOpen = isHubOpen && !isHubTemporarilyHidden
 

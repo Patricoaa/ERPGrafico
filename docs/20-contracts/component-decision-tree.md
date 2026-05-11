@@ -76,11 +76,14 @@ graph TD
 - **`PageTabs`**: Para navegación secundaria dentro de una página.
 - **`CollapsibleSheet`**: Cuando necesites un panel lateral con contenido secundario (ej. Ver el detalle de una orden al lado de un listado).
 - **`BaseDrawer`**: Panel inferior (bottom drawer) para subvistas secundarias ricas en datos (tablas, históricos, libros mayores) **cuando el usuario no debe perder el contexto visual de la página principal**. El drawer se superpone parcialmente sin tapar la UI subyacente. No usar para formularios — solo para lectura/navegación de datos relacionados.
+- **`EntityDetailPage`**: ~~Shell de página completa para rutas `[id]`.~~ **Deprecado — en proceso de decommission (T-95).** Las rutas `[id]` redirigen server-side a `<list_url>?selected={id}` per ADR-0020. Ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md).
 - **Skeletons (`SkeletonShell`, `CardSkeleton`, `TableSkeleton`)**: Úsalos durante el renderizado inicial y las transiciones asíncronas para evitar el salto de layout (CLS).
+
 
 ## 5. Formularios y Surfaces
 
 > 📄 Documentación completa en **[component-form-patterns.md](./component-form-patterns.md)**.
+> 📄 Para el patrón canónico de edición desde lista (modal + query param `?selected`), consulta **[list-modal-edit-pattern.md](./list-modal-edit-pattern.md)**.
 
 Antes de construir un formulario, decide **qué contenedor** (surface) usar:
 

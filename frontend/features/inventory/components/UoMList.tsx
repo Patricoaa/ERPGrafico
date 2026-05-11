@@ -29,7 +29,6 @@ interface UoMListProps {
 export function UoMList({ externalOpen, onExternalOpenChange, createAction }: UoMListProps) {
     const { uoms, refetch, deleteUoM } = useUoMs()
 
-    // Modal State
     const [isUoMModalOpen, setIsUoMModalOpen] = useState(false)
     const [editingUoM, setEditingUoM] = useState<Partial<UoM>>({})
 
@@ -185,6 +184,7 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                 createAction={createAction}
             />
 
+            {/* Unified Modal — UoMForm keeps rich FK + audit widgets for both create and edit */}
             <UoMForm
                 open={isUoMModalOpen || !!externalOpen}
                 onOpenChange={(open) => {
@@ -195,7 +195,7 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                     }
                 }}
                 initialData={editingUoM.id ? editingUoM : undefined}
-                onSuccess={refetch}
+                onSuccess={() => { refetch(); handleCloseModal() }}
             />
 
             <ActionConfirmModal

@@ -89,6 +89,27 @@ States: `idle | dirty | invalid | saving | synced | error`. Pair with `<AutoSave
 
 Attaches a `beforeunload` warning while the autosave status is `dirty | saving | invalid`. Pass the status returned by `useAutoSaveForm`.
 
+### `useSelectedEntity<T>(opts)` 🟢
+
+Lee el query param `?selected=<id>` y fetchea la entidad desde el endpoint dado. Reutiliza cache de TanStack Query. Maneja 404 y 403 con toast y cleanup automático. Usado por listas para implementar el patrón deeplink → modal (ADR-0020).
+
+```ts
+const { entity, isLoading, clearSelection } = useSelectedEntity<Category>({
+  endpoint: '/api/inventory/categories',
+  paramName: 'selected',  // default — omitible
+})
+```
+
+| prop/return | type | notes |
+|-------------|------|-------|
+| `endpoint` | `string` | Base API endpoint sin trailing slash ni id |
+| `paramName` | `string?` | Nombre del param. Default: `'selected'` |
+| `entity` | `T \| null` | Entidad fetcheada; null si param ausente, loading, o error |
+| `isLoading` | `boolean` | true solo cuando hay id presente y se está fetching |
+| `clearSelection` | `() => void` | `router.replace(pathname)` sin el param; preserva otros params |
+
+Ver contrato completo: [list-modal-edit-pattern.md §2.3](./list-modal-edit-pattern.md#23-hook-useselectedentity).
+
 ## Feature-scoped hook examples (reference shape)
 
 Do not import across features. These illustrate the canonical return shape.

@@ -51,7 +51,11 @@ def handle_stock_move_updates(sender, instance, created, **kwargs):
     """
     Handles side effects of stock movements:
     1. Resets unit cost to 0 if stock is zero (requested by business rule).
+    2. Invalidates report cache (T-24).
     """
+    from core.cache import invalidate_report_cache
+    invalidate_report_cache('inventory')
+
     product = instance.product
     if not product.track_inventory:
         return
@@ -61,6 +65,12 @@ def handle_stock_move_updates(sender, instance, created, **kwargs):
     if product.qty_on_hand <= 0 and product.cost_price != 0:
         product.cost_price = 0
         product.save(update_fields=['cost_price'])
+
+from django.db.models.signals import post_delete
+@receiver(post_delete, sender=StockMove)
+def handle_stock_move_delete(sender, instance, **kwargs):
+    from core.cache import invalidate_report_cache
+    invalidate_report_cache('inventory')
 
 
 @receiver(post_save, sender=Product)

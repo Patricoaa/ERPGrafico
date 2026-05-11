@@ -34,19 +34,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
 
     const fetchUser = async () => {
-        const token = localStorage.getItem("access_token");
-        if (!token) {
-            setIsLoading(false);
-            return;
-        }
-
         try {
+            const token = typeof window !== 'undefined' ? localStorage.getItem("access_token") : null;
+            if (!token) {
+                setIsLoading(false);
+                return;
+            }
+
             const res = await api.get('/core/auth/me/');
 
             if (res.status === 200) {
                 const userData = res.data;
                 console.log("=== AuthContext Loaded User ===", userData);
-                console.log("=== User Permissions ===", userData.permissions);
                 setUser(userData);
                 setIsAuthenticated(true);
             } else {
@@ -57,6 +56,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (error) {
             console.error("Auth init error:", error);
             setIsAuthenticated(false);
+            // On storage error or other failure, clear tokens
+            if (typeof window !== 'undefined') {
+                try {
+                    localStorage.removeItem("access_token");
+                    localStorage.removeItem("refresh_token");
+                } catch (e) {}
+            }
         } finally {
             setIsLoading(false);
         }

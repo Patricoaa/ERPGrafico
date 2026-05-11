@@ -11,87 +11,10 @@ from decimal import Decimal
 
 class SalesService:
     @staticmethod
-    @transaction.atomic
     def confirm_sale(order: SaleOrder, line_files=None):
-        """
-        Confirms a sale order and creates the corresponding Journal Entry.
-        Debit: Accounts Receivable (or Cash)
-        Credit: Sales Revenue
-        Credit: Tax Payable
-        """
-        if order.status != SaleOrder.Status.DRAFT:
-            return order
-
-        # Acquire strict product locks to prevent concurrent double-spends
-        product_ids = [line.product_id for line in order.lines.all() if line.product_id]
-        lock_resources = [f"stock_prod_{pid}" for pid in set(product_ids)]
-        
-        from core.cache import acquire_locks
-        with acquire_locks(lock_resources, timeout=10):
-            # 1. Validate Stock Availability (Strict Reservation)
-            from inventory.services import UoMService
-            from sales.models import SalesSettings
-            settings = SalesSettings.get_solo()
-            
-            if settings and settings.restrict_stock_sales:
-                for line in order.lines.all():
-                    product = line.product
-                    if product and product.track_inventory:
-                        # Convert requested qty to Product UoM
-                        qty_needed = UoMService.convert_quantity(
-                            line.quantity,
-                            from_uom=line.uom,
-                            to_uom=product.uom
-                        )
-                        
-                        # Check availability
-                        if product.qty_available < qty_needed:
-                            raise ValidationError(
-                                f"Stock insuficiente para '{product.name}'. "
-                                f"Solicitado: {qty_needed} {product.uom.name}, "
-                                f"Disponible: {product.qty_available} {product.uom.name}"
-                            )
-
-            # 2. Update Order Status
-            order.status = SaleOrder.Status.CONFIRMED
-            order.save()
-
-            # 3. Trigger Work Order creation ONLY for ADVANCED manufacturable products
-            # Express products (mfg_auto_finalize=True) will have OTs created at dispatch time
-            from production.services import WorkOrderService
-            from inventory.models import Product
-            
-            for i, line in enumerate(order.lines.all()):
-                if line.product and line.product.product_type == Product.Type.MANUFACTURABLE:
-                    # IMPORTANT: Only create OT if requires advanced manufacturing
-                    # Express products: OT will be created during delivery confirmation
-                    if line.product.requires_advanced_manufacturing:
-                        # Check if an OT already exists for this line to avoid duplicates
-                        if not line.work_orders.exists():
-                            print(f"DEBUG: Triggering auto-OT for ADVANCED product {line.product.internal_code} on SaleOrder {order.number}")
-                            try:
-                                # Extract files for this specific line if provided
-                                current_line_files = line_files.get(i) if line_files else None
-                                ot = WorkOrderService.create_from_sale_line(line, files=current_line_files)
-                                if ot:
-                                    print(f"DEBUG: Successfully created OT {ot.number} for {line.product.internal_code}")
-                                else:
-                                    print(f"DEBUG: WorkOrderService.create_from_sale_line returned None for {line.product.internal_code}")
-                            except Exception as e:
-                                print(f"ERROR creating OT for {line.product.internal_code}: {str(e)}")
-                        else:
-                            print(f"DEBUG: OT already exists for line {line.id} ({line.product.internal_code})")
-                    else:
-                        print(f"DEBUG: Skipping OT creation for EXPRESS product {line.product.internal_code} - will be created at dispatch")
-
-            # NOTE: Accounting entry moved to BillingService.create_sale_invoice
-            
-            # Create HUB stage tasks for the inbox
-            # HUB Tasks Sync
-            from workflow.services import WorkflowService
-            WorkflowService.sync_hub_tasks(order)
-            
-            return order
+        """Deprecated: Use SaleOrderService().confirm() instead."""
+        from core.services.document import DocumentRegistry
+        return DocumentRegistry.for_instance(order).confirm(order, user=None, line_files=line_files)
 
     @staticmethod
     @transaction.atomic
@@ -126,7 +49,8 @@ class SalesService:
                 # Case 1: Advanced Manufacturing (Needs Finished OT)
                 if product.product_type == 'MANUFACTURABLE' and product.requires_advanced_manufacturing:
                     # Check if all associated OTs are finished (unless auto-finalize/express)
-                    if not product.mfg_auto_finalize:
+                    auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
+                    if not auto_finalize:
                         ots = sale_line.work_orders.exclude(status='CANCELLED')
                         if not ots.exists() or not all(ot.current_stage == 'FINISHED' for ot in ots):
                              raise ValidationError(
@@ -136,7 +60,8 @@ class SalesService:
 
                 # Case 2: Simple/Express Manufacturing (Needs BOM components stock)
                 elif product.product_type == 'MANUFACTURABLE' and not product.requires_advanced_manufacturing:
-                    if product.has_bom and not product.mfg_auto_finalize:
+                    auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
+                    if product.has_bom and not auto_finalize:
                         manufacturable_qty = product.get_manufacturable_quantity()
                         # get_manufacturable_quantity returns None if no BOM or no constraints
                         if manufacturable_qty is not None and manufacturable_qty < requested_qty:
@@ -302,7 +227,8 @@ class SalesService:
             if product:
                 # Case 1: Advanced Manufacturing (Needs Finished OT)
                 if product.product_type == 'MANUFACTURABLE' and product.requires_advanced_manufacturing:
-                    if not product.mfg_auto_finalize:
+                    auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
+                    if not auto_finalize:
                         ots = sale_line.work_orders.exclude(status='CANCELLED')
                         if not ots.exists() or not all(ot.current_stage == 'FINISHED' for ot in ots):
                              raise ValidationError(
@@ -312,7 +238,8 @@ class SalesService:
 
                 # Case 2: Simple/Express Manufacturing (Needs BOM components stock)
                 elif product.product_type == 'MANUFACTURABLE' and not product.requires_advanced_manufacturing:
-                    if product.has_bom and not product.mfg_auto_finalize:
+                    auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
+                    if product.has_bom and not auto_finalize:
                         manufacturable_qty = product.get_manufacturable_quantity()
                         if manufacturable_qty is not None and manufacturable_qty < quantity:
                             raise ValidationError(
@@ -417,7 +344,8 @@ class SalesService:
                     continue
                 
                 # Create OT for express products
-                if product.mfg_auto_finalize:
+                auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
+                if auto_finalize:
                     print(f"DEBUG: Creating OT for EXPRESS product {product.internal_code} in delivery {delivery.number}")
                     work_order = WorkOrderService.create_ot_for_delivery_line(
                         delivery_line=line,
@@ -717,36 +645,10 @@ class SalesService:
         return delivery
 
     @staticmethod
-    @transaction.atomic
     def annul_sale_order(order: SaleOrder, force: bool = False):
-        """
-        Annuls a sale order and all its associated documents.
-        """
-        if order.status == SaleOrder.Status.CANCELLED:
-             return order
-             
-        from billing.models import Invoice
-        from billing.services import BillingService
-        from treasury.services import TreasuryService
-
-        # 1. Annul Invoices (this will block if payments exist and force is False)
-        for invoice in order.invoices.all():
-            if invoice.status != Invoice.Status.CANCELLED:
-                 BillingService.annul_invoice(invoice, force=force)
-        
-        # 2. Annul Deliveries
-        for delivery in order.deliveries.all():
-            if delivery.status != SaleDelivery.Status.CANCELLED:
-                 SalesService.annul_delivery(delivery)
-        
-        # 3. Annul stand-alone Payments (if any)
-        for movement in order.payments.all():
-            if movement.journal_entry and movement.journal_entry.status == 'POSTED':
-                 TreasuryService.annul_movement(movement)
-        
-        order.status = SaleOrder.Status.CANCELLED
-        order.save()
-        return order
+        """Deprecated: Use SaleOrderService().cancel() instead."""
+        from core.services.document import DocumentRegistry
+        return DocumentRegistry.for_instance(order).cancel(order, user=None, force=force)
     @staticmethod
     @transaction.atomic
     def create_note(order: SaleOrder, note_type: str, amount_net: Decimal, amount_tax: Decimal, 
@@ -1018,3 +920,129 @@ class SalesService:
         invoice.save()
         
         return invoice
+
+from core.services.document import DocumentService, DocumentRegistry
+
+@DocumentRegistry.register('sales.saleorder')
+class SaleOrderService(DocumentService):
+    @transaction.atomic
+    def confirm(self, document, *, user, **kwargs):
+        """
+        Confirms a sale order and creates the corresponding Journal Entry.
+        """
+        order = document
+        line_files = kwargs.get('line_files')
+        
+        if order.status != SaleOrder.Status.DRAFT:
+            return order
+
+        # Compute totals before confirming (part of P-04 pattern)
+        if hasattr(order, 'totals_strategy') and order.totals_strategy:
+            order.totals_strategy().compute(order)
+
+        # Acquire strict product locks to prevent concurrent double-spends
+        product_ids = [line.product_id for line in order.lines.all() if line.product_id]
+        lock_resources = [f"stock_prod_{pid}" for pid in set(product_ids)]
+        
+        from core.cache import acquire_locks
+        with acquire_locks(lock_resources, timeout=10):
+            # 1. Validate Stock Availability (Strict Reservation)
+            from inventory.services import UoMService
+            from sales.models import SalesSettings
+            settings = SalesSettings.get_solo()
+            
+            if settings and settings.restrict_stock_sales:
+                for line in order.lines.all():
+                    product = line.product
+                    if product and product.track_inventory:
+                        # Convert requested qty to Product UoM
+                        qty_needed = UoMService.convert_quantity(
+                            line.quantity,
+                            from_uom=line.uom,
+                            to_uom=product.uom
+                        )
+                        
+                        # Check availability
+                        if product.qty_available < qty_needed:
+                            raise ValidationError(
+                                f"Stock insuficiente para '{product.name}'. "
+                                f"Solicitado: {qty_needed} {product.uom.name}, "
+                                f"Disponible: {product.qty_available} {product.uom.name}"
+                            )
+
+            # 2. Update Order Status
+            order.status = SaleOrder.Status.CONFIRMED
+            order.save()
+
+            # 3. Trigger Work Order creation ONLY for ADVANCED manufacturable products
+            # Express products (mfg_auto_finalize=True) will have OTs created at dispatch time
+            from production.services import WorkOrderService
+            from inventory.models import Product
+            
+            for i, line in enumerate(order.lines.all()):
+                if line.product and line.product.product_type == Product.Type.MANUFACTURABLE:
+                    # IMPORTANT: Only create OT if requires advanced manufacturing
+                    # Express products: OT will be created during delivery confirmation
+                    if line.product.requires_advanced_manufacturing:
+                        # Check if an OT already exists for this line to avoid duplicates
+                        if not line.work_orders.exists():
+                            print(f"DEBUG: Triggering auto-OT for ADVANCED product {line.product.internal_code} on SaleOrder {order.number}")
+                            try:
+                                # Extract files for this specific line if provided
+                                current_line_files = line_files.get(i) if line_files else None
+                                ot = WorkOrderService.create_from_sale_line(line, files=current_line_files)
+                                if ot:
+                                    print(f"DEBUG: Successfully created OT {ot.number} for {line.product.internal_code}")
+                                else:
+                                    print(f"DEBUG: WorkOrderService.create_from_sale_line returned None for {line.product.internal_code}")
+                            except Exception as e:
+                                print(f"ERROR creating OT for {line.product.internal_code}: {str(e)}")
+                        else:
+                            print(f"DEBUG: OT already exists for line {line.id} ({line.product.internal_code})")
+                    else:
+                        print(f"DEBUG: Skipping OT creation for EXPRESS product {line.product.internal_code} - will be created at dispatch")
+
+            # NOTE: Accounting entry moved to BillingService.create_sale_invoice
+            
+            # Create HUB stage tasks for the inbox
+            # HUB Tasks Sync
+            from workflow.services import WorkflowService
+            WorkflowService.sync_hub_tasks(order)
+            
+            return order
+
+    @transaction.atomic
+    def cancel(self, document, *, user, reason: str = '', **kwargs):
+        """
+        Annuls a sale order and all its associated documents.
+        """
+        order = document
+        force = kwargs.get('force', False)
+        
+        if order.status == SaleOrder.Status.CANCELLED:
+             return order
+             
+        from billing.models import Invoice
+        from billing.services import BillingService
+        from treasury.services import TreasuryService
+
+        # 1. Annul Invoices (this will block if payments exist and force is False)
+        for invoice in order.invoices.all():
+            if invoice.status != Invoice.Status.CANCELLED:
+                 BillingService.annul_invoice(invoice, force=force)
+        
+        # 2. Annul Deliveries
+        for delivery in order.deliveries.all():
+            if delivery.status != SaleDelivery.Status.CANCELLED:
+                 SalesService.annul_delivery(delivery)
+        
+        # 3. Annul stand-alone Payments (if any)
+        for movement in order.payments.all():
+            if movement.journal_entry and movement.journal_entry.status == 'POSTED':
+                 TreasuryService.annul_movement(movement)
+        
+        order.status = SaleOrder.Status.CANCELLED
+        if reason:
+            order.notes = (order.notes or '') + f"\nAnulado: {reason}"
+        order.save()
+        return order

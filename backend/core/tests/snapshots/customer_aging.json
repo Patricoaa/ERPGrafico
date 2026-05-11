@@ -1,0 +1,14 @@
+[
+  {
+    "contact_id": "<id>",
+    "credit_days": 30,
+    "current": "386750",
+    "name": "Cliente Final POS",
+    "overdue_30": "745702",
+    "overdue_60": "456960",
+    "overdue_90": "499800",
+    "overdue_90plus": "4141390",
+    "tax_id": "66100005-5",
+    "total": "6230602"
+  }
+]

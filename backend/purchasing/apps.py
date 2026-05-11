@@ -12,3 +12,24 @@ class PurchasingConfig(AppConfig):
             ])
         except ImportError:
             pass
+
+        try:
+            from core.registry import UniversalRegistry, SearchableEntity
+            from purchasing.models import PurchaseOrder
+            UniversalRegistry.register(SearchableEntity(
+                model=PurchaseOrder,
+                label='purchasing.purchaseorder',
+                title_singular='Orden de Compra',
+                title_plural='Ordenes de Compra',
+                icon='shopping-cart',
+                search_fields=('number', 'supplier__name', 'supplier__tax_id'),
+                short_display_template='OCS-{number}',
+                display_template='OCS-{number}',
+                subtitle_template='{supplier.name} · {supplier.tax_id}',
+                extra_info_template='{total}',
+                list_url='/purchasing/orders',
+                detail_url_pattern='/purchasing/orders/{id}',
+                permission='purchasing.view_purchaseorder',
+            ))
+        except Exception:
+            pass

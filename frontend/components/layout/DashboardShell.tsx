@@ -12,9 +12,8 @@ import { UserActions } from "@/components/layout/UserActions"
 import { useHeader } from "@/components/providers/HeaderProvider"
 import { motion, AnimatePresence } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
-import { PageHeaderSkeleton } from "@/components/shared"
+import { PageHeaderSkeleton, UniversalSearch } from "@/components/shared"
 import { Loader2 } from "lucide-react"
-import { IndustryMark } from "@/components/shared/IndustryMark"
 import { DynamicIcon } from "@/components/ui/dynamic-icon"
 import { HeaderNavDropdowns } from "@/components/shared/HeaderNavDropdowns"
 
@@ -171,6 +170,11 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                             <PageHeaderSkeleton />
                         )}
                     </AnimatePresence>
+                </div>
+
+                {/* Center-right: Universal Search */}
+                <div className="shrink-0 mr-3">
+                    <UniversalSearch />
                 </div>
 
                 {/* Right: UserActions */}

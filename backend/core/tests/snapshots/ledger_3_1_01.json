@@ -1,0 +1,21 @@
+{
+  "closing_balance": 10000000.0,
+  "movements": [
+    {
+      "balance": 10000000.0,
+      "credit": 10000000.0,
+      "date": "2026-01-01",
+      "debit": 0.0,
+      "description": "Aporte inicial de capital",
+      "entry_id": "<id>",
+      "id": "<id>",
+      "label": "",
+      "partner": "",
+      "reference": "APERTURA-2026",
+      "source_document": null
+    }
+  ],
+  "opening_balance": 0.0,
+  "period_credit": 10000000.0,
+  "period_debit": 0.0
+}

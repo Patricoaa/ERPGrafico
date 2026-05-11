@@ -1,0 +1,25 @@
+{
+  "liquidity": {
+    "acid_test": 0.49731681663436794,
+    "current_assets": 38598631.0,
+    "current_liabilities": 35502978.0,
+    "current_ratio": 1.087194178471451
+  },
+  "profitability": {
+    "gross_margin": 0,
+    "net_margin": 0,
+    "operating_margin": 0,
+    "total_revenue": 0
+  },
+  "solvency": {
+    "solvency_ratio": 1.0195942154486308
+  },
+  "structure": {
+    "debt_ratio": 0.9807823395310171,
+    "debt_to_equity": 51.03547027037905,
+    "equity_ratio": 0.01921766046898293,
+    "total_assets": 36198631.0,
+    "total_equity": 695653.0,
+    "total_liabilities": 35502978.0
+  }
+}

@@ -47,7 +47,7 @@ class TestCashFlowIntegrity(TestCase):
         
         found_wc = False
         for op in cf['operating']:
-            if "Clientes" in op['name']:
+            if "Deudores" in op['name'] or "Clientes" in op['name']:
                 self.assertEqual(op['amount'], 100)
                 found_wc = True
         

@@ -1,0 +1,1 @@
+sed -i "s/export { default as DeliveryModal } from '.\/components\/DeliveryModal'/export { default as DeliveryModal, DeliveryForm } from '.\/components\/DeliveryModal'/g" frontend/features/sales/index.ts

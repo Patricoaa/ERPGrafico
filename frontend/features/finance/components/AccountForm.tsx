@@ -44,6 +44,9 @@ interface AccountFormProps {
     triggerVariant?: "default" | "circular"
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    inline?: boolean
+    onLoadingChange?: (loading: boolean) => void
+    readonly?: boolean
 }
 
 export function AccountForm({
@@ -55,7 +58,10 @@ export function AccountForm({
     triggerVariant = "default",
     open: openProp,
     onOpenChange,
-    auditSidebar
+    auditSidebar,
+    inline = false,
+    onLoadingChange,
+    readonly = false
 }: AccountFormProps) {
     const [internalOpen, setInternalOpen] = useState(false)
     const open = openProp !== undefined ? openProp : internalOpen
@@ -63,6 +69,12 @@ export function AccountForm({
 
     const { createAccount, updateAccount, isCreating, isUpdating } = useAccounts()
     const loading = isCreating || isUpdating
+
+    useEffect(() => {
+        if (onLoadingChange) {
+            onLoadingChange(loading)
+        }
+    }, [loading, onLoadingChange])
 
     const form = useForm<AccountFormValues>({
         resolver: zodResolver(accountSchema),
@@ -147,6 +159,96 @@ export function AccountForm({
         )
     }
 
+    const formContent = (
+        <FormSplitLayout
+            sidebar={auditSidebar}
+            showSidebar={!!initialData?.id}
+        >
+            <Form {...form}>
+                <form id="account-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
+
+                    <div className="grid grid-cols-4 gap-4">
+                        <div className="col-span-1">
+                            <FormField
+                                control={form.control}
+                                name="code"
+                                render={({ field }) => (
+                                    <LabeledInput
+                                        label="Código"
+                                        placeholder="Auto"
+                                        disabled={true}
+                                        hint="Jerárquico"
+                                        {...field}
+                                    />
+                                )}
+                            />
+                        </div>
+                        <div className="col-span-3">
+                            <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Nombre"
+                                        required
+                                        placeholder="Ej: Caja Chica"
+                                        error={fieldState.error?.message}
+                                        disabled={readonly}
+                                        {...field}
+                                    />
+                                )}
+                            />
+                        </div>
+
+                        <div className="col-span-2">
+                            <FormField
+                                control={form.control}
+                                name="account_type"
+                                render={({ field, fieldState }) => (
+                                    <LabeledSelect
+                                        label="Tipo de Cuenta"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        error={fieldState.error?.message}
+                                        disabled={readonly || (!!parentId && parentId !== "__none__" && parentId !== "none")}
+                                        options={[
+                                            { value: "ASSET", label: "Activo" },
+                                            { value: "LIABILITY", label: "Pasivo" },
+                                            { value: "EQUITY", label: "Patrimonio" },
+                                            { value: "INCOME", label: "Ingreso" },
+                                            { value: "EXPENSE", label: "Gasto" },
+                                        ]}
+                                    />
+                                )}
+                            />
+                        </div>
+                        <div className="col-span-2">
+                            <FormField
+                                control={form.control}
+                                name="parent"
+                                render={({ field, fieldState }) => (
+                                    <AccountSelector
+                                        label="Cuenta Padre (Opcional)"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        showAll={true}
+                                        placeholder="Sin padre (Raíz)"
+                                        error={fieldState.error?.message}
+                                        disabled={readonly}
+                                    />
+                                )}
+                            />
+                        </div>
+                    </div>
+                </form>
+            </Form>
+        </FormSplitLayout>
+    )
+
+    if (inline) {
+        return <>{formContent}</>
+    }
+
     return (
         <>
             <Trigger />
@@ -174,99 +276,21 @@ export function AccountForm({
                     </div>
                 }
                 footer={
-                    <FormFooter
-                        actions={
-                            <>
-                                <CancelButton onClick={() => setOpen(false)} />
-                                <ActionSlideButton type="submit" form="account-form" loading={loading}>
-                                    {initialData ? "Guardar Cambios" : "Crear Cuenta"}
-                                </ActionSlideButton>
-                            </>
-                        }
-                    />
+                    !readonly ? (
+                        <FormFooter
+                            actions={
+                                <>
+                                    <CancelButton onClick={() => setOpen(false)} />
+                                    <ActionSlideButton type="submit" form="account-form" loading={loading}>
+                                        {initialData ? "Guardar Cambios" : "Crear Cuenta"}
+                                    </ActionSlideButton>
+                                </>
+                            }
+                        />
+                    ) : undefined
                 }
             >
-                <FormSplitLayout
-                    sidebar={auditSidebar}
-                    showSidebar={!!initialData?.id}
-                >
-                    <Form {...form}>
-                        <form id="account-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
-
-                            <div className="grid grid-cols-4 gap-4">
-                                <div className="col-span-1">
-                                    <FormField
-                                        control={form.control}
-                                        name="code"
-                                        render={({ field }) => (
-                                            <LabeledInput
-                                                label="Código"
-                                                placeholder="Auto"
-                                                disabled
-                                                hint="Jerárquico"
-                                                {...field}
-                                            />
-                                        )}
-                                    />
-                                </div>
-                                <div className="col-span-3">
-                                    <FormField
-                                        control={form.control}
-                                        name="name"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledInput
-                                                label="Nombre"
-                                                required
-                                                placeholder="Ej: Caja Chica"
-                                                error={fieldState.error?.message}
-                                                {...field}
-                                            />
-                                        )}
-                                    />
-                                </div>
-
-                                <div className="col-span-2">
-                                    <FormField
-                                        control={form.control}
-                                        name="account_type"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledSelect
-                                                label="Tipo de Cuenta"
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                error={fieldState.error?.message}
-                                                disabled={!!parentId && parentId !== "__none__" && parentId !== "none"}
-                                                options={[
-                                                    { value: "ASSET", label: "Activo" },
-                                                    { value: "LIABILITY", label: "Pasivo" },
-                                                    { value: "EQUITY", label: "Patrimonio" },
-                                                    { value: "INCOME", label: "Ingreso" },
-                                                    { value: "EXPENSE", label: "Gasto" },
-                                                ]}
-                                            />
-                                        )}
-                                    />
-                                </div>
-                                <div className="col-span-2">
-                                    <FormField
-                                        control={form.control}
-                                        name="parent"
-                                        render={({ field, fieldState }) => (
-                                            <AccountSelector
-                                                label="Cuenta Padre (Opcional)"
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                showAll={true}
-                                                placeholder="Sin padre (Raíz)"
-                                                error={fieldState.error?.message}
-                                            />
-                                        )}
-                                    />
-                                </div>
-                            </div>
-                        </form>
-                    </Form>
-                </FormSplitLayout>
+                {formContent}
             </BaseModal>
         </>
     )

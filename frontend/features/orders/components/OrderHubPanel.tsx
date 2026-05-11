@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -45,7 +46,20 @@ export function OrderHubPanel({
     const { activeDoc, activeInvoice, isNoteMode, fetchOrderDetails } = hubData
 
     const { setHubTemporarilyHidden } = useHubPanel()
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const transactionId = searchParams.get('transaction')
+    const transactionType = searchParams.get('transactionType')
+
     const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: string, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
+
+    useEffect(() => {
+        if (transactionId && transactionType && !detailsModal.open) {
+            setDetailsModal({ open: true, type: transactionType, id: transactionId })
+        }
+    }, [transactionId, transactionType, detailsModal.open])
 
     const { openWorkOrder } = useGlobalModals()
 
@@ -54,7 +68,18 @@ export function OrderHubPanel({
             openWorkOrder(Number(docId))
             return
         }
-        setDetailsModal({ open: true, type: docType, id: docId })
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('transaction', String(docId))
+        params.set('transactionType', docType)
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const closeDetails = () => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.delete('transaction')
+        params.delete('transactionType')
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        setDetailsModal(prev => ({ ...prev, open: false }))
     }
 
     const globalStatus = useMemo(() => {
@@ -161,7 +186,7 @@ export function OrderHubPanel({
                 {/* Shared Modal for viewing Details */}
                 <TransactionViewModal
                     open={detailsModal.open}
-                    onOpenChange={(open) => setDetailsModal(prev => ({ ...prev, open }))}
+                    onOpenChange={(open) => !open && closeDetails()}
                     type={detailsModal.type as any}
                     id={Number(detailsModal.id)}
                 />

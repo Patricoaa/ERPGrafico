@@ -157,3 +157,10 @@ def cleanup_orphaned_treasury_account(sender, instance, **kwargs):
     except Exception:
         # No queremos que el cleanup falle y rompa la experiencia del usuario si algo sale mal
         pass
+
+@receiver(post_save, sender='treasury.TreasuryMovement')
+@receiver(post_delete, sender='treasury.TreasuryMovement')
+def handle_treasury_movement_cache_invalidation(sender, instance, **kwargs):
+    from core.cache import invalidate_report_cache
+    invalidate_report_cache('treasury')
+    invalidate_report_cache('contacts')

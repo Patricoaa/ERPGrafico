@@ -49,6 +49,7 @@ import { TableCell, TableRow } from "@/components/ui/table"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { formatEntityDisplay } from "@/lib/entity-registry"
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -200,7 +201,7 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, o
                                                     {ledger.map((entry) => (
                                                         <tr key={entry.id} className="text-[12px] group">
                                                             <td className="py-2 pr-4 text-center">
-                                                                <DataCell.Code className="font-bold">NV-{entry.number}</DataCell.Code>
+                                                                <DataCell.Code className="font-bold">{formatEntityDisplay('sales.saleorder', entry)}</DataCell.Code>
                                                             </td>
                                                             <td className="py-2 pr-4 text-center">
                                                                 <DataCell.Date value={entry.date} className="text-muted-foreground" />

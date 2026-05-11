@@ -60,7 +60,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
         return obj.product.requires_advanced_manufacturing if obj.product else False
 
     def get_mfg_auto_finalize(self, obj):
-        return obj.product.mfg_auto_finalize if obj.product else False
+        return obj.product.mfg_profile.mfg_auto_finalize if (obj.product and obj.product.mfg_profile) else False
 
     def get_has_bom(self, obj):
         return obj.product.has_bom if obj.product else False
