@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { SkeletonShell } from "@/components/shared/SkeletonShell";
 
 export interface ReportNode {
     id: number | string;
@@ -128,6 +129,15 @@ const ReportRow = ({
     );
 };
 
+const SKELETON_DATA: ReportNode[] = Array.from({ length: 6 }, (_, i) => ({
+    id: `sk-${i}`,
+    code: "00.00.00",
+    name: "————————————————————————————",
+    balance: 0,
+    comp_balance: 0,
+    variance: 0,
+}));
+
 export const ReportTableSkeleton = ({ showComparison }: { showComparison?: boolean }) => (
     <div className="space-y-4 p-4 animate-in fade-in duration-500">
         <div className="h-10 w-1/3 bg-muted/50 rounded-sm mb-6" />
@@ -165,9 +175,9 @@ export const ReportTable: React.FC<ReportTableProps> = ({
     mode = 'tree',
     accentColor = 'primary'
 }) => {
-    if (isLoading) return <ReportTableSkeleton showComparison={showComparison} />;
-    
-    if (!data || data.length === 0) {
+    const displayData = isLoading ? SKELETON_DATA : data;
+
+    if (!isLoading && (!displayData || displayData.length === 0)) {
         return (
             <div className="p-12">
                 <EmptyState 
@@ -200,27 +210,29 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {data.map(node => (
+                    {displayData?.map(node => (
                         <ReportRow key={node.id} node={node} showComparison={showComparison} mode={mode} />
                     ))}
-                    {totalLabel && totalValue !== undefined && (
+                    {(totalLabel || isLoading) && (
                         <TableRow className={cn(
                             "font-black border-t-2 shadow-sm relative z-10",
                             accentColor === 'primary' ? "bg-primary/5 border-primary/20" :
                             accentColor === 'success' ? "bg-success/5 border-success/20" :
                             accentColor === 'info' ? "bg-info/5 border-info/20" : "bg-destructive/5 border-destructive/20"
                         )}>
-                            <TableCell className="p-5 text-foreground uppercase tracking-tighter text-sm font-black italic">{totalLabel}</TableCell>
-                            <TableCell className="text-right p-5">
-                                <MoneyDisplay amount={totalValue} showColor={false} className="text-xl font-black" />
+                            <TableCell className="p-5 text-foreground uppercase tracking-tighter text-sm font-black italic">
+                                {isLoading ? "————————————————" : totalLabel}
                             </TableCell>
-                            {showComparison && totalValueComp !== undefined && (
+                            <TableCell className="text-right p-5">
+                                <MoneyDisplay amount={isLoading ? 0 : totalValue} showColor={false} className="text-xl font-black" />
+                            </TableCell>
+                            {showComparison && (
                                 <>
                                     <TableCell className="text-right p-5 border-l border-muted/20">
-                                        <MoneyDisplay amount={totalValueComp} showColor={false} className="text-xl text-muted-foreground font-bold opacity-70" />
+                                        <MoneyDisplay amount={isLoading ? 0 : totalValueComp} showColor={false} className="text-xl text-muted-foreground font-bold opacity-70" />
                                     </TableCell>
                                     <TableCell className="text-right p-5">
-                                        <MoneyDisplay amount={totalValue - totalValueComp} className="text-xl font-black" />
+                                        <MoneyDisplay amount={isLoading ? 0 : (totalValue! - totalValueComp!)} className="text-xl font-black" />
                                     </TableCell>
                                 </>
                             )}
@@ -231,9 +243,9 @@ export const ReportTable: React.FC<ReportTableProps> = ({
         </div>
     );
 
-    if (embedded) return tableContent;
-
-    return (
+    const container = embedded ? (
+        tableContent
+    ) : (
         <div className="rounded-none border bg-card shadow-sm overflow-hidden">
             {title && (
                 <div className="p-4 border-b bg-muted/30 flex justify-between items-center h-12">
@@ -242,5 +254,11 @@ export const ReportTable: React.FC<ReportTableProps> = ({
             )}
             {tableContent}
         </div>
+    );
+
+    return (
+        <SkeletonShell isLoading={!!isLoading} ariaLabel="Cargando reporte contable">
+            {container}
+        </SkeletonShell>
     );
 };

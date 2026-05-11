@@ -90,7 +90,7 @@ export const LabeledSelect = forwardRef<
                     "w-full shadow-none focus:ring-0 focus:ring-offset-0 transition-all !py-0",
                     variant === 'standalone'
                         ? "!h-[1.5rem] border-0 bg-transparent hover:bg-primary/[0.03]"
-                        : cn("h-9 text-xs border border-border/80 rounded-md bg-background hover:bg-primary/[0.02]", className),
+                : cn("h-9 text-xs bg-background hover:bg-primary/[0.02]", className),
                     !value && "text-muted-foreground font-normal"
                 )}
             >
@@ -107,8 +107,8 @@ export const LabeledSelect = forwardRef<
     )
 
     return (
-        <div className={cn("relative w-full group", variant === 'standalone' && containerClassName)}>
-            {variant === 'standalone' ? (
+        variant === 'standalone' ? (
+            <div className={cn("relative w-full group", containerClassName)}>
                 <fieldset
                     className={cn(
                         "notched-field transition-all duration-200",
@@ -139,21 +139,21 @@ export const LabeledSelect = forwardRef<
                         {selectTrigger}
                     </div>
                 </fieldset>
-            ) : (
-                selectTrigger
-            )}
 
-            {/* Error or Hint Text */}
-            {hasError ? (
-                <div className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 px-1">
-                    {error}
-                </div>
-            ) : hint ? (
-                <div className="mt-1.5 text-[11px] font-medium text-muted-foreground/70 px-1">
-                    {hint}
-                </div>
-            ) : null}
-        </div>
+                {/* Error or Hint Text */}
+                {hasError ? (
+                    <div className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 px-1">
+                        {error}
+                    </div>
+                ) : hint ? (
+                    <div className="mt-1.5 text-[11px] font-medium text-muted-foreground/70 px-1">
+                        {hint}
+                    </div>
+                ) : null}
+            </div>
+        ) : (
+            selectTrigger
+        )
     )
 })
 

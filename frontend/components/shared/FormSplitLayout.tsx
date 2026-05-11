@@ -39,7 +39,7 @@ export function FormSplitLayout({
                 <aside
                     className={cn(
                         sidebarWidth,
-                        "border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex"
+                        "border-l flex flex-col pt-4 hidden lg:flex"
                     )}
                 >
                     {sidebar}

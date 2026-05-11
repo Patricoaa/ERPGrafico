@@ -318,6 +318,14 @@
   }
 }
 
+/* Table Input Alignment - Force precision radius (8px) on all table controls */
+table input,
+table button,
+table [role="combobox"],
+table [data-notched-field] {
+  border-radius: var(--radius) !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -515,6 +523,7 @@
   /* Strip border/outline from the actual control — fieldset provides the border */
   fieldset.notched-field input,
   fieldset.notched-field textarea,
+  fieldset.notched-field button,
   fieldset.notched-field [role="combobox"] {
     border: none !important;
     outline: none !important;

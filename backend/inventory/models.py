@@ -1010,7 +1010,6 @@ class Product(models.Model):
             component=self,
             work_order__status__in=[
                 WorkOrder.Status.DRAFT,
-                WorkOrder.Status.PLANNED,
                 WorkOrder.Status.IN_PROGRESS
             ]
         )

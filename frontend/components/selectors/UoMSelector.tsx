@@ -124,7 +124,10 @@ export function UoMSelector({
                     role="combobox"
                     disabled={disabled || (context !== 'stock' && !product && !categoryId)}
                     className={cn(
-                        "w-full justify-between h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent font-normal",
+                        "w-full justify-between shadow-none focus-visible:ring-0 font-normal transition-all",
+                        variant === 'standalone' 
+                            ? "h-[1.5rem] py-0 px-3 border-none bg-transparent hover:bg-transparent" 
+                            : cn(className),
                         !value && "text-muted-foreground"
                     )}
                 >
@@ -204,9 +207,9 @@ export function UoMSelector({
             </div>
         </LabeledContainer>
     ) : (
-        <div className={cn("flex items-center gap-1.5 min-w-0", className)}>
-            {selectComponent}
-            {conversionHint && (
+        conversionHint ? (
+            <div className={cn("flex items-center gap-1.5 min-w-0", className)}>
+                {selectComponent}
                 <TooltipProvider delayDuration={0}>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -219,8 +222,8 @@ export function UoMSelector({
                         </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
-            )}
-        </div>
+            </div>
+        ) : selectComponent
     )
 
     return wrappedComponent

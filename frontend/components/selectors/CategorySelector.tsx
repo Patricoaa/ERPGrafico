@@ -12,7 +12,7 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { useQuery } from "@tanstack/react-query"
 import api from "@/lib/api"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { EmptyState, LabeledContainer } from "@/components/shared"
 import { ProductCategory } from "@/types/entities"
 import { CATEGORIES_QUERY_KEY } from "@/features/inventory/hooks/useCategories"
 import { CategoryForm } from "@/features/inventory/components/CategoryForm"
@@ -87,49 +87,42 @@ export function CategorySelector({
     }
 
     return (
-        <div className={cn("relative w-full flex flex-col group", className)}>
-            <fieldset 
-                className={cn(
-                    "notched-field w-full group transition-all",
-                    open && "focused",
-                    error && "error",
-                    disabled && "opacity-50 cursor-not-allowed bg-muted/10"
-                )}
-            >
-                {label && (
-                    <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
-                        {label}
-                        {required && <span className="ml-1 text-destructive">*</span>}
-                    </legend>
-                )}
-                <Popover open={open} onOpenChange={setOpen}>
-                    <PopoverTrigger asChild>
-                        <Button
-                            className={cn(
-                                "w-full justify-between overflow-hidden min-h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
-                                icon && "pl-1"
+        <LabeledContainer
+            label={label}
+            required={required}
+            error={error}
+            disabled={disabled}
+            className={className}
+        >
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        role="combobox"
+                        className={cn(
+                            "w-full justify-between overflow-hidden h-7 py-0 px-2 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
+                            icon && "pl-1"
+                        )}
+                        disabled={disabled}
+                    >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                            {icon && (
+                                <div className="flex items-center justify-center text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0">
+                                    {icon}
+                                </div>
                             )}
-                            disabled={disabled}
-                        >
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                                {icon && (
-                                    <div className="flex items-center justify-center text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0">
-                                        {icon}
-                                    </div>
-                                )}
-                                {selectedCategory ? (
-                                    <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                        {!icon && <Tag className={cn("h-3.5 w-3.5 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />}
-                                        <span className="font-medium text-sm truncate text-foreground">{selectedCategory.name}</span>
-                                    </div>
-                                ) : (
-                                    <span className="text-muted-foreground truncate">{placeholder}</span>
-                                )}
-                            </div>
-                            {!disabled && <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" side="bottom" sideOffset={4}>
+                            {selectedCategory ? (
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    {!icon && <Tag className={cn("h-3 w-3 shrink-0", disabled ? "text-muted-foreground" : "text-primary")} />}
+                                    <span className="font-bold text-[11px] truncate uppercase tracking-tight text-foreground">{selectedCategory.name}</span>
+                                </div>
+                            ) : (
+                                <span className="text-[11px] text-muted-foreground opacity-50 truncate">{placeholder}</span>
+                            )}
+                        </div>
+                        {!disabled && <ChevronDown className="ml-2 h-3 w-3 shrink-0 opacity-30" />}
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" side="bottom" sideOffset={4}>
                         <div className="p-2">
                             <div className="flex items-center gap-2 mb-2">
                                 <div className="flex-1 flex items-center px-3 border rounded-md bg-background">
@@ -215,18 +208,11 @@ export function CategorySelector({
                         </div>
                     </PopoverContent>
                 </Popover>
-            </fieldset>
-            {error && (
-                <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
-                    {error}
-                </p>
-            )}
-
             <CategoryForm 
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
                 onSuccess={handleCreateSuccess}
             />
-        </div>
+        </LabeledContainer>
     )
 }

@@ -87,10 +87,19 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                 <LabeledSwitch
                                     label="Venta"
                                     checked={field.value}
-                                    onCheckedChange={field.onChange}
+                                    onCheckedChange={(val) => {
+                                        requestAnimationFrame(() => {
+                                            field.onChange(val)
+                                        })
+                                    }}
                                     disabled={['CONSUMABLE', 'SUBSCRIPTION'].includes(productType)}
-                                    icon={<ShoppingCart className={cn("h-3.5 w-3.5", field.value ? "text-emerald-500" : "text-muted-foreground/30")} />}
-                                    className={cn("h-full", field.value ? "bg-emerald-500/5 border-emerald-500/20 shadow-sm" : "border-dashed")}
+                                    icon={<ShoppingCart className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-emerald-600" : "text-muted-foreground/40")} />}
+                                    className={cn(
+                                        "h-full transition-all duration-300", 
+                                        field.value 
+                                            ? "bg-emerald-500/10 border-emerald-500/30 shadow-sm ring-1 ring-emerald-500/10" 
+                                            : "bg-muted/5 border-border/60 hover:border-border"
+                                    )}
                                 />
                             )}
                         />
@@ -104,10 +113,19 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                 <LabeledSwitch
                                     label="Compra"
                                     checked={field.value}
-                                    onCheckedChange={field.onChange}
+                                    onCheckedChange={(val) => {
+                                        requestAnimationFrame(() => {
+                                            field.onChange(val)
+                                        })
+                                    }}
                                     disabled={productType === 'MANUFACTURABLE'}
-                                    icon={<Truck className={cn("h-3.5 w-3.5", field.value ? "text-amber-500" : "text-muted-foreground/30")} />}
-                                    className={cn("h-full", field.value ? "bg-amber-500/5 border-amber-500/20 shadow-sm" : "border-dashed")}
+                                    icon={<Truck className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-amber-600" : "text-muted-foreground/40")} />}
+                                    className={cn(
+                                        "h-full transition-all duration-300", 
+                                        field.value 
+                                            ? "bg-amber-500/10 border-amber-500/30 shadow-sm ring-1 ring-amber-500/10" 
+                                            : "bg-muted/5 border-border/60 hover:border-border"
+                                    )}
                                 />
                             )}
                         />
