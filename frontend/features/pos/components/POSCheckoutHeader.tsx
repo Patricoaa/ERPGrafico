@@ -44,16 +44,16 @@ export function POSCheckoutHeader() {
                             )}
                         >
                             <div className={cn(
-                                "h-7 w-7 rounded-lg flex items-center justify-center transition-all duration-300 border-2",
+                                "h-10 w-10 rounded-sm flex items-center justify-center transition-all duration-300 border-2",
                                 isActive ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20 scale-110" : 
                                 isCompleted ? "bg-success/10 border-success text-success" : 
                                 "bg-muted border-transparent text-muted-foreground opacity-40"
                             )}>
-                                {isCompleted ? <Check className="h-4 w-4" /> : <Icon className="h-3.5 w-3.5" />}
+                                {isCompleted ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
                                 
                                 {/* Indicator Pulse for Active */}
                                 {isActive && (
-                                    <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 bg-primary rounded-full border-2 border-background animate-pulse" />
+                                    <span className="absolute -top-0.5 -right-0.5 h-3 w-3 bg-primary rounded-full border-2 border-background animate-pulse" />
                                 )}
                             </div>
                             <span className={cn(

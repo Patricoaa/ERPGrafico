@@ -107,10 +107,10 @@ export function Cart({
     }
 
     return (
-        <Card className="flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-sm">
+        <Card className="flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-sm rounded-md">
             <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="px-6 pt-4 pb-4 border-b bg-background/50 flex flex-col justify-center rounded-t-xl h-[88px] shrink-0 gap-1.5">
+                <div className="px-6 pt-4 pb-4 border-b bg-background/50 flex flex-col justify-center rounded-t-md h-[88px] shrink-0 gap-1.5">
                     <div className="flex justify-between items-center">
                         <span className="font-bold text-xl tracking-tight">Resumen de Venta</span>
                         <div className="flex items-center gap-2">
@@ -119,7 +119,7 @@ export function Cart({
                                     #{currentDraftId}
                                 </span>
                             )}
-                            <span className="text-[9px] font-black bg-primary text-primary-foreground px-2 py-0.5 rounded-md uppercase tracking-tighter">
+                            <span className="text-[9px] font-black bg-primary text-primary-foreground px-2 py-0.5 rounded-sm uppercase tracking-tighter">
                                 {items.length} Items
                             </span>
                         </div>
@@ -141,7 +141,7 @@ export function Cart({
                 </div>
 
                 {/* Items List */}
-                <div className="flex-1 overflow-auto bg-background/50 rounded-b-xl relative scrollbar-thin">
+                <div className="flex-1 overflow-auto bg-background/50 rounded-b-md relative scrollbar-thin">
                     {items.length === 0 ? (
                         /* Empty State ... */
                         <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-muted-foreground/60 gap-4 animate-in fade-in zoom-in duration-500">
@@ -201,7 +201,7 @@ export function Cart({
                 <div className="p-4 bg-muted/20 border-t space-y-4">
                     {/* Sale Metadata Summary (New Section) */}
                     {(customerName || dteType || deliveryType) && items.length > 0 && (
-                        <div className="flex flex-col gap-2 p-3 bg-background/50 rounded-lg border border-primary/10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <div className="flex flex-col gap-2 p-3 bg-background/50 rounded-md border border-primary/10 animate-in fade-in slide-in-from-bottom-2 duration-500">
                             <div className="flex items-center justify-between text-[11px]">
                                 <div className="flex items-center gap-1.5 text-muted-foreground uppercase font-bold tracking-tight">
                                     <User className="h-3 w-3 text-primary" />
@@ -296,7 +296,7 @@ export function Cart({
                                     <Input
                                         type="number"
                                         className={cn(
-                                            "h-7 w-24 text-right text-sm bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0 pr-1",
+                                            "h-9 w-24 text-right text-sm bg-background/50 border border-border/50 focus-visible:ring-1 focus-visible:ring-primary shadow-none px-2 rounded-sm",
                                             (totalDiscountAmount || 0) > 0 && "text-primary font-bold"
                                         )}
                                         value={totalDiscountAmount || ""}
