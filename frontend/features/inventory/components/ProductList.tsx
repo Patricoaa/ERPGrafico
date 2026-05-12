@@ -35,9 +35,13 @@ interface ProductListProps {
 }
 
 export function ProductList({ externalOpen, onExternalOpenChange, createAction }: ProductListProps) {
-    const { products, refetch, updateProduct } = useProducts({
-        filters: { active: 'all', parent_template__isnull: true, page_size: 1000 }
-    })
+    const filters = useMemo(() => ({ 
+        active: 'all' as const, 
+        parent_template__isnull: true, 
+        page_size: 1000 
+    }), [])
+
+    const { products, refetch, updateProduct } = useProducts({ filters })
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
 

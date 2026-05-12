@@ -66,17 +66,10 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                                 description="Permite definir el precio al momento de la venta (ideal para servicios o productos a medida)"
                                 checked={field.value}
                                 onCheckedChange={(val) => {
-                                    requestAnimationFrame(() => {
-                                        form.setValue("is_dynamic_pricing", val, { shouldDirty: true, shouldValidate: false })
-                                    })
+                                    form.setValue("is_dynamic_pricing", val, { shouldDirty: true, shouldValidate: false })
                                 }}
-                                icon={<Zap className={cn("h-4 w-4 transition-colors", field.value ? "text-yellow-600 fill-yellow-600/20" : "text-muted-foreground/60")} />}
-                                className={cn(
-                                    "transition-all duration-300", 
-                                    field.value 
-                                        ? "bg-yellow-500/10 border-yellow-500/30 shadow-sm ring-1 ring-yellow-500/10" 
-                                        : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.02)]"
-                                )}
+                                icon={<Zap className="h-4 w-4" />}
+                                color="warning"
                             />
                         )}
                     />

@@ -120,6 +120,7 @@ export function UoMSelector({
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
+                    type="button"
                     variant="outline"
                     role="combobox"
                     disabled={disabled || (context !== 'stock' && !product && !categoryId)}

@@ -250,29 +250,16 @@ export function AdvancedContactSelector({
     return (
         <>
             {variant === 'standalone' ? (
-                <div className={cn("w-full group relative", className)}>
-                    <fieldset 
-                        className={cn(
-                            "notched-field w-full group transition-all",
-                            open && "focused",
-                            error && "error",
-                            disabled && "opacity-50 cursor-not-allowed bg-muted/10"
-                        )}
-                    >
-                        {label && (
-                            <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
-                                {label}
-                                {required && <span className="ml-1 text-destructive">*</span>}
-                            </legend>
-                        )}
-                        {selectTrigger}
-                    </fieldset>
-                    {error && (
-                        <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
-                            {error}
-                        </p>
-                    )}
-                </div>
+                <LabeledContainer
+                    label={label}
+                    required={required}
+                    error={error}
+                    disabled={disabled}
+                    className={className}
+                    icon={icon}
+                >
+                    {selectTrigger}
+                </LabeledContainer>
             ) : (
                 selectTrigger
             )}

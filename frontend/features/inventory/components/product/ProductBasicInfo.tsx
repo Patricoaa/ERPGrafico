@@ -34,7 +34,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
             {/* Identification and Classification Section - 4-Column Refined Layout */}
             <div className="space-y-4">
                 <FormSection title="Identificación y Clasificación" icon={Fingerprint} />
-                <div className="grid grid-cols-4 gap-4 items-start">
+                <div className="grid grid-cols-4 gap-4 items-stretch">
                     {/* Fila 1: Nombre (3) / Imagen (1) */}
                     <div className="col-span-3">
                         <FormField<ProductFormValues>
@@ -52,7 +52,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                             )}
                         />
                     </div>
-                    <div className="col-span-1 row-span-3">
+                    <div className="col-span-1 row-span-3 h-full">
                         <ProductImageUpload
                             form={form}
                             imagePreview={imagePreview}
@@ -62,9 +62,9 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
 
                     <div className="col-span-1">
                         <LabeledContainer
-                            label="ID Sistema"
+                            label="ID"
                             disabled
-                            className="w-full opacity-80 bg-muted/30 border-dashed"
+                            className="w-full opacity-80 bg-muted/30"
                         >
                             <div className="flex items-center gap-2 h-full px-3">
                                 <span className="text-muted-foreground text-[10px] font-mono">#</span>
