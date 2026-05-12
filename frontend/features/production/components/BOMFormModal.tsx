@@ -24,7 +24,7 @@ import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 import { LabeledInput, LabeledSelect, LabeledSwitch, FormSection, FormFooter, FormLineItemsTable, IconButton } from "@/components/shared"
 
-const tableInputClass = "h-9 w-full bg-background border border-border/80 rounded px-2 text-xs focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"
+const tableInputClass = "h-9 w-full bg-background border border-border/80 rounded-sm px-2 text-xs focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"
 
 // Schema for material lines (stock components)
 const materialLineSchema = z.object({
@@ -374,7 +374,7 @@ export function BOMFormModal({
                 />
             }
         >
-            <div className="flex-1 overflow-y-auto px-1">
+            <div className="px-1">
                 <Form {...form}>
                     <form id="bom-form" 
                         onSubmit={form.handleSubmit(onSubmit as any, (errors) => {
@@ -398,7 +398,7 @@ export function BOMFormModal({
                                             description={field.value ? "Lista Principal" : "Lista de Respaldo"}
                                             icon={field.value ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Workflow className="h-4 w-4 text-muted-foreground/30" />}
                                             className={cn(
-                                                "rounded-lg transition-all",
+                                                "transition-all",
                                                 field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed"
                                             )}
                                         />
@@ -464,13 +464,13 @@ export function BOMFormModal({
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="flex items-center gap-3 bg-primary/[0.02] p-2 rounded-xl border border-primary/10 h-[3.25rem]">
-                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                                            <Box className="h-4 w-4 text-primary" />
+                                    <div className="flex items-center gap-3 bg-primary/[0.02] p-2 rounded-md border border-primary/10 h-[2.5rem]">
+                                        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                            <Box className="h-3.5 w-3.5 text-primary" />
                                         </div>
                                         <div className="flex flex-col min-w-0">
-                                            <span className="text-[9px] font-black uppercase text-primary/60 tracking-widest leading-none mb-0.5">Producto</span>
-                                            <span className="text-xs font-black text-foreground truncate">
+                                            <span className="text-[8px] font-black uppercase text-primary/60 tracking-widest leading-none mb-0.5">Producto</span>
+                                            <span className="text-[10px] font-black text-foreground truncate uppercase">
                                                 {selectedVariant ? (selectedVariant.variant_display_name || selectedVariant.name) : (selectedProduct?.name || "")}
                                             </span>
                                         </div>
@@ -907,7 +907,7 @@ export function BOMFormModal({
                                                 control={form.control as any}
                                                 name={`service_lines.${index}.quantity`}
                                                 render={({ field, fieldState }) => (
-                                                    <input type="number" step="1" {...field} className={cn(tableInputClass, "rounded text-center font-bold", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")} />
+                                                    <input type="number" step="1" {...field} className={cn(tableInputClass, "text-center font-bold", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")} />
                                                 )}
                                             />
                                         </TableCell>
@@ -929,7 +929,7 @@ export function BOMFormModal({
                                                         variant="inline"
                                                         showConversionHint={false}
                                                         label=""
-                                                        className={cn(tableInputClass, "rounded font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
+                                                        className={cn(tableInputClass, "font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                     />
                                                 )}
                                             />
@@ -945,7 +945,7 @@ export function BOMFormModal({
                                                         type="number"
                                                         {...field}
                                                         onFocus={e => e.target.select()}
-                                                        className={cn(tableInputClass, "rounded text-right font-mono font-bold text-primary", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
+                                                        className={cn(tableInputClass, "text-right font-mono font-bold text-primary", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                     />
                                                 )}
                                             />

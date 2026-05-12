@@ -213,14 +213,15 @@ export function ProductSelector({
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
+                    type="button"
                     variant="ghost"
                     role="combobox"
                     aria-expanded={open}
                     disabled={disabled}
                     className={cn(
-                        "w-full justify-between overflow-hidden py-0 shadow-none focus-visible:ring-0 transition-all",
+                        "w-full justify-between overflow-hidden shadow-none focus-visible:ring-0 transition-all",
                         variant === 'standalone' 
-                            ? "h-[1.5rem] px-3 border-none bg-transparent hover:bg-primary/[0.03]" 
+                            ? "h-[1.5rem] px-0 border-none bg-transparent hover:bg-transparent" 
                             : cn("h-9 text-xs px-2 bg-background hover:bg-primary/[0.02]", className)
                     )}
                 >
@@ -370,29 +371,15 @@ export function ProductSelector({
     return (
         <>
             {variant === 'standalone' ? (
-                <div className={cn("relative w-full group", className)}>
-                    <fieldset 
-                        className={cn(
-                            "notched-field w-full group transition-all",
-                            open && "focused",
-                            error && "error",
-                            disabled && "opacity-50 cursor-not-allowed bg-muted/10"
-                        )}
-                    >
-                        {label && (
-                            <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
-                                {label}
-                                {required && <span className="text-destructive ml-0.5">*</span>}
-                            </legend>
-                        )}
-                        {selectButton}
-                    </fieldset>
-                    {error && (
-                        <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
-                            {error}
-                        </p>
-                    )}
-                </div>
+                <LabeledContainer
+                    label={label}
+                    required={required}
+                    error={error}
+                    disabled={disabled}
+                    className={className}
+                >
+                    {selectButton}
+                </LabeledContainer>
             ) : (
                 selectButton
             )}

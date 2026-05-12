@@ -36,7 +36,8 @@ interface CategorySelectorProps {
 export function CategorySelector({
     value,
     onChange,
-    placeholder = "Seleccionar categoría...",
+    placeholder = "",
+
     disabled,
     label,
     error,
@@ -123,92 +124,92 @@ export function CategorySelector({
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start" side="bottom" sideOffset={4}>
-                        <div className="p-2">
-                            <div className="flex items-center gap-2 mb-2">
-                                <div className="flex-1 flex items-center px-3 border rounded-md bg-background">
-                                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                    <input
-                                        className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                                        placeholder="Buscar categoría..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        autoFocus
-                                    />
-                                </div>
-                                {showPlusButton && (
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button
-                                                    type="button"
-                                                    variant="outline"
-                                                    size="icon"
-                                                    className="h-10 w-10 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
-                                                    onClick={() => {
-                                                        setOpen(false)
-                                                        setIsCreateModalOpen(true)
-                                                    }}
-                                                >
-                                                    <Plus className="h-4 w-4" />
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>Nueva categoría</p>
-                                            </TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                )}
+                    <div className="p-2">
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="flex-1 flex items-center px-3 border rounded-md bg-background">
+                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                <input
+                                    className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                    placeholder="Buscar categoría..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    autoFocus
+                                />
                             </div>
-                            <div className="max-h-[300px] overflow-y-auto space-y-1">
-                                {isLoading ? (
-                                    <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin text-primary" /></div>
-                                ) : (
-                                    <>
-                                        {allowNone && (
-                                            <div
-                                                className={cn(
-                                                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                    !selectedCategory && "bg-accent"
-                                                )}
+                            {showPlusButton && (
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="icon"
+                                                className="h-10 w-10 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
                                                 onClick={() => {
-                                                    onChange("none")
                                                     setOpen(false)
+                                                    setIsCreateModalOpen(true)
                                                 }}
                                             >
-                                                <Tag className="h-3.5 w-3.5 mr-2 text-muted-foreground opacity-20" />
-                                                <span className="font-medium text-muted-foreground italic">{noneLabel}</span>
-                                                {!selectedCategory && (
+                                                <Plus className="h-4 w-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Nueva categoría</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            )}
+                        </div>
+                        <div className="max-h-[300px] overflow-y-auto space-y-1">
+                            {isLoading ? (
+                                <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin text-primary" /></div>
+                            ) : (
+                                <>
+                                    {allowNone && (
+                                        <div
+                                            className={cn(
+                                                "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                !selectedCategory && "bg-accent"
+                                            )}
+                                            onClick={() => {
+                                                onChange("none")
+                                                setOpen(false)
+                                            }}
+                                        >
+                                            <Tag className="h-3.5 w-3.5 mr-2 text-muted-foreground opacity-20" />
+                                            <span className="font-medium text-muted-foreground italic">{noneLabel}</span>
+                                            {!selectedCategory && (
+                                                <Check className="ml-auto h-4 w-4 opacity-100" />
+                                            )}
+                                        </div>
+                                    )}
+                                    {filteredCategories.length === 0 && !allowNone ? (
+                                        <EmptyState context="inventory" variant="compact" title="No se encontraron categorías" />
+                                    ) : (
+                                        filteredCategories.map((cat) => (
+                                            <div
+                                                key={cat.id}
+                                                className={cn(
+                                                    "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                    selectedCategory?.id === cat.id && "bg-accent"
+                                                )}
+                                                onClick={() => handleSelect(cat)}
+                                            >
+                                                <Tag className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                                                <span className="font-medium">{cat.name}</span>
+                                                {selectedCategory?.id === cat.id && (
                                                     <Check className="ml-auto h-4 w-4 opacity-100" />
                                                 )}
                                             </div>
-                                        )}
-                                        {filteredCategories.length === 0 && !allowNone ? (
-                                            <EmptyState context="inventory" variant="compact" title="No se encontraron categorías" />
-                                        ) : (
-                                            filteredCategories.map((cat) => (
-                                                <div
-                                                    key={cat.id}
-                                                    className={cn(
-                                                        "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                        selectedCategory?.id === cat.id && "bg-accent"
-                                                    )}
-                                                    onClick={() => handleSelect(cat)}
-                                                >
-                                                    <Tag className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                                                    <span className="font-medium">{cat.name}</span>
-                                                    {selectedCategory?.id === cat.id && (
-                                                        <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                    )}
-                                                </div>
-                                            ))
-                                        )}
-                                    </>
-                                )}
-                            </div>
+                                        ))
+                                    )}
+                                </>
+                            )}
                         </div>
-                    </PopoverContent>
-                </Popover>
-            <CategoryForm 
+                    </div>
+                </PopoverContent>
+            </Popover>
+            <CategoryForm
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
                 onSuccess={handleCreateSuccess}

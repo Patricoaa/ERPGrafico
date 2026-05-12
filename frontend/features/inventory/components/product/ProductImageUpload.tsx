@@ -14,13 +14,13 @@ interface ProductImageUploadProps {
 
 export function ProductImageUpload({ form, imagePreview, setImagePreview }: ProductImageUploadProps) {
     return (
-        <div className="space-y-2">
+        <div className="h-full">
             <FormField<ProductFormValues>
                 control={form.control}
                 name="image"
                 render={({ field, fieldState }) => (
-                    <div className="space-y-1">
-                        <div className="relative group w-full h-[210px] rounded-md border-2 border-dashed border-muted-foreground/20 overflow-hidden bg-muted/10 flex items-center justify-center transition-all hover:border-primary/50">
+                    <div className="flex flex-col h-full">
+                        <div className="relative group w-full flex-1 rounded-md border-2 border-dashed border-muted-foreground/20 overflow-hidden bg-muted/10 flex items-center justify-center transition-all hover:border-primary/50">
                             {imagePreview ? (
                                 <>
                                     <Image
@@ -46,7 +46,7 @@ export function ProductImageUpload({ form, imagePreview, setImagePreview }: Prod
                                     </div>
                                 </>
                             ) : (
-                                <label className="flex flex-col items-center gap-2 cursor-pointer p-4 text-center">
+                                <label className="flex flex-col items-center justify-center gap-2 cursor-pointer p-4 text-center w-full h-full">
                                     <Plus className="h-6 w-6 text-muted-foreground" />
                                     <span className="text-xs font-medium text-muted-foreground">Subir imagen</span>
                                     <input
